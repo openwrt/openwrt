@@ -1039,13 +1039,28 @@ int otto_tc_cls_flower_stats(struct dsa_switch *ds, int port,
 	return ret;
 }
 
+static void otto_tc_red_apply(struct otto_dsa_priv *priv, int port, int queue, bool allowed)
+{
+	struct rtldsa_port *pp = &priv->ports[port];
+	struct rtldsa_red *red = queue < 0 ? &pp->red : &pp->queue_red[queue];
+	bool offload = allowed && red->handle && !red->params.is_ecn && !red->child;
+
+	if (offload)
+		offload = !priv->r->red_set(priv, port, queue, &red->params);
+	if (!offload && red->offloaded && (queue < 0 || !pp->red.handle))
+		priv->r->red_set(priv, port, queue, NULL);
+
+	red->offloaded = offload;
+}
+
 static bool otto_tc_ets_offloaded(struct rtldsa_port *pp)
 {
 	if (!pp->ets_offloadable || pp->ets_children)
 		return false;
 
 	for (int queue = 0; queue < MAX_PRIOS; queue++)
-		if (pp->queue_tbf[queue].handle && !pp->queue_tbf[queue].offloaded)
+		if ((pp->queue_tbf[queue].handle && !pp->queue_tbf[queue].offloaded) ||
+		    (pp->queue_red[queue].handle && !pp->queue_red[queue].offloaded))
 			return false;
 
 	return true;
@@ -1056,18 +1071,22 @@ static void otto_tc_ets_apply(struct otto_dsa_priv *priv, int port)
 	struct rtldsa_port *pp = &priv->ports[port];
 	bool offload = pp->ets_offloadable && !pp->ets_children;
 
-	for (int queue = 0; queue < MAX_PRIOS; queue++)
+	for (int queue = 0; queue < MAX_PRIOS; queue++) {
 		otto_tc_tbf_apply(priv, port, queue, offload);
+		otto_tc_red_apply(priv, port, queue, offload);
+	}
 
 	offload = otto_tc_ets_offloaded(pp);
 
 	for (int queue = 0; queue < MAX_PRIOS; queue++) {
-		if (!offload)
+		if (!offload) {
 			otto_tc_tbf_apply(priv, port, queue, false);
-		else if (pp->ets_weights[queue])
+			otto_tc_red_apply(priv, port, queue, false);
+		} else if (pp->ets_weights[queue]) {
 			priv->r->queue_sched_set(priv, port, queue, pp->ets_weights[queue], false);
-		else
+		} else {
 			priv->r->queue_sched_set(priv, port, queue, 1, true);
+		}
 	}
 
 	if (!offload)
@@ -1118,12 +1137,13 @@ static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
 		if (pp->ets_handle != qopt->handle)
 			return -EOPNOTSUPP;
 		/* the kernel keeps a refused child, so the qdisc stays out of the hardware
-		 * while any band has one, other than a TBF on the queue of the band
+		 * while any band has one, other than a TBF or RED on the queue of the band
 		 */
 		band = qopt->graft_params.band;
 		child = qopt->graft_params.child_handle;
 		if (child && (band >= MAX_PRIOS ||
-			      child != pp->queue_tbf[MAX_PRIOS - 1 - band].handle))
+			      (child != pp->queue_tbf[MAX_PRIOS - 1 - band].handle &&
+			       child != pp->queue_red[MAX_PRIOS - 1 - band].handle)))
 			pp->ets_children |= BIT(band);
 		else
 			pp->ets_children &= ~BIT(band);
@@ -1132,14 +1152,74 @@ static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
 		return -EOPNOTSUPP;
 	}
 
-	/* the TBFs on the bands of another ETS cannot be matched to a queue */
-	for (int queue = 0; pp->ets_handle != old_handle && queue < MAX_PRIOS; queue++)
+	/* the qdiscs on the bands of another ETS cannot be matched to a queue */
+	for (int queue = 0; pp->ets_handle != old_handle && queue < MAX_PRIOS; queue++) {
 		pp->queue_tbf[queue].handle = 0;
+		pp->queue_red[queue].handle = 0;
+	}
 
 	scoped_guard(mutex, &priv->reg_mutex)
 		otto_tc_ets_apply(priv, port);
 
 	return (otto_tc_ets_offloaded(pp) || qopt->command == TC_ETS_DESTROY) ? 0 : -EOPNOTSUPP;
+}
+
+static int otto_tc_setup_qdisc_red(struct otto_dsa_priv *priv, int port,
+				   struct tc_red_qopt_offload *qopt)
+{
+	unsigned int band = TC_H_MIN(qopt->parent);
+	struct rtldsa_port *pp = &priv->ports[port];
+	struct rtldsa_red *red;
+	int queue = -1;
+
+	if (!priv->r->red_set)
+		return -EOPNOTSUPP;
+
+	if (qopt->parent == TC_H_ROOT) {
+		red = &pp->red;
+	} else if (pp->ets_handle && TC_H_MAJ(qopt->parent) == pp->ets_handle &&
+		   band && band <= MAX_PRIOS) {
+		queue = MAX_PRIOS - band;
+		red = &pp->queue_red[queue];
+	} else {
+		return -EOPNOTSUPP;
+	}
+
+	switch (qopt->command) {
+	case TC_RED_REPLACE:
+		if (red->handle != qopt->handle)
+			red->child = false;
+		red->handle = qopt->handle;
+		red->params = qopt->set;
+		break;
+	case TC_RED_DESTROY:
+		if (red->handle != qopt->handle)
+			return 0;
+		red->handle = 0;
+		break;
+	case TC_RED_STATS:
+	case TC_RED_XSTATS:
+		if (red->handle != qopt->handle || !(priv->red_ports & BIT_ULL(port)))
+			return -EOPNOTSUPP;
+		return red->offloaded ? 0 : -EOPNOTSUPP;
+	case TC_RED_GRAFT:
+		if (red->handle != qopt->handle)
+			return -EOPNOTSUPP;
+		/* a refused or deleted child stays in the kernel, deleted as the noop qdisc */
+		red->child = true;
+		break;
+	default:
+		return -EOPNOTSUPP;
+	}
+
+	scoped_guard(mutex, &priv->reg_mutex) {
+		if (queue < 0)
+			otto_tc_red_apply(priv, port, queue, true);
+		else
+			otto_tc_ets_apply(priv, port);
+	}
+
+	return (red->offloaded || qopt->command == TC_RED_DESTROY) ? 0 : -EOPNOTSUPP;
 }
 
 static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
@@ -1188,10 +1268,7 @@ static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
 	case TC_TBF_GRAFT:
 		if (tbf->handle != qopt->handle)
 			return -EOPNOTSUPP;
-		/* the kernel keeps a refused child and puts the noop qdisc, which drops
-		 * everything, in place of a deleted one, so the qdisc stays out of the
-		 * hardware from its first graft on
-		 */
+		/* a refused or deleted child stays in the kernel, deleted as the noop qdisc */
 		tbf->child = true;
 		break;
 	default:
@@ -1215,6 +1292,8 @@ int otto_tc_port_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type ty
 	struct otto_dsa_priv *priv = ds->priv;
 
 	switch (type) {
+	case TC_SETUP_QDISC_RED:
+		return otto_tc_setup_qdisc_red(priv, port, type_data);
 	case TC_SETUP_QDISC_TBF:
 		return otto_tc_setup_qdisc_tbf(priv, port, type_data);
 	case TC_SETUP_QDISC_ETS:

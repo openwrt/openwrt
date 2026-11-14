@@ -2,6 +2,7 @@
 
 #include <net/dcbnl.h>
 #include <net/dsa.h>
+#include <net/pkt_cls.h>
 #include <linux/delay.h>
 #include <linux/regmap.h>
 #include <linux/soc/realtek/otto_table.h>
@@ -71,6 +72,24 @@
 #define RTL930X_FC_GLB_FCOFF_LO_THR		(0xD88C)
 #define RTL930X_FC_GLB_THR_ON_MASK		GENMASK(27, 16)
 #define RTL930X_FC_GLB_THR_OFF_MASK		GENMASK(11, 0)
+#define RTL930X_FC_GLB_SYS_UTIL_THR		(0xD878)
+#define RTL930X_FC_GLB_SYS_UTIL_THR_MASK	GENMASK(11, 0)
+
+#define RTL930X_FC_PORT_EGR_DROP_CTRL(port)	(0xC380 + ((port) << 2))
+#define RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST	BIT(1)
+#define RTL930X_FC_Q_EGR_DROP_THR(queue, set)	(0x791C + ((((queue) << 2) + (set)) << 2))
+#define RTL930X_FC_Q_EGR_DROP_THR_ON_MASK	GENMASK(27, 16)
+#define RTL930X_FC_Q_EGR_DROP_THR_SETS		4
+#define RTL930X_SWRED_PORT_CTRL			(0x7A04)
+#define RTL930X_SWRED_QUEUE_DROP_CTRL(queue, dp) \
+						(0x7A08 + ((queue) * 12) + ((dp) << 2))
+#define RTL930X_SWRED_RATE_MASK			GENMASK(31, 24)
+#define RTL930X_SWRED_MAX_MASK			GENMASK(23, 12)
+#define RTL930X_SWRED_MIN_MASK			GENMASK(11, 0)
+#define RTL930X_SWRED_PAGE_SIZE			256
+#define RTL930X_SWRED_RATE_SCALE		1023
+#define RTL930X_SWRED_DROP_PRECEDENCES		3
+#define RTL930X_SWRED_QUEUES			12
 
 #define DSCP_MAP_MAX 64
 
@@ -563,6 +582,102 @@ static void otto_qos_930x_set_fc_thresholds(struct otto_dsa_priv *priv)
 	regmap_update_bits(priv->map, RTL930X_FC_GLB_LO_THR, mask, lo);
 	regmap_update_bits(priv->map, RTL930X_FC_GLB_FCOFF_HI_THR, mask, hi);
 	regmap_update_bits(priv->map, RTL930X_FC_GLB_FCOFF_LO_THR, mask, lo);
+
+	/* egress drop thresholds and RED only act once the buffer holds more pages than this */
+	regmap_update_bits(priv->map, RTL930X_FC_GLB_SYS_UTIL_THR,
+			   RTL930X_FC_GLB_SYS_UTIL_THR_MASK, 1);
+}
+
+static u32 otto_qos_930x_red_tail_drop(struct otto_dsa_priv *priv, int queue)
+{
+	u32 thr = 0, v;
+
+	for (int set = 0; set < RTL930X_FC_Q_EGR_DROP_THR_SETS; set++) {
+		regmap_read(priv->map, RTL930X_FC_Q_EGR_DROP_THR(queue, set), &v);
+		thr = max(thr, FIELD_GET(RTL930X_FC_Q_EGR_DROP_THR_ON_MASK, v));
+	}
+
+	return FIELD_PREP(RTL930X_SWRED_MAX_MASK, thr) | FIELD_PREP(RTL930X_SWRED_MIN_MASK, thr);
+}
+
+static int otto_qos_930x_red_apply(struct otto_dsa_priv *priv, int port)
+{
+	u32 *wanted = priv->ports[port].red_cfg;
+	int ret = 0;
+
+	if (!memchr_inv(wanted, 0, sizeof(priv->red_cfg)))
+		goto disable;
+
+	if (priv->red_ports & ~BIT_ULL(port)) {
+		if (memcmp(wanted, priv->red_cfg, sizeof(priv->red_cfg))) {
+			dev_warn(priv->dev, "port %d: RED differs from the one in use\n", port);
+			ret = -EBUSY;
+			goto disable;
+		}
+	} else {
+		for (int queue = 0; queue < RTL930X_SWRED_QUEUES; queue++) {
+			u32 cfg = queue < MAX_PRIOS ? wanted[queue] : 0;
+
+			if (!cfg)
+				cfg = otto_qos_930x_red_tail_drop(priv, queue);
+
+			for (int dp = 0; dp < RTL930X_SWRED_DROP_PRECEDENCES; dp++)
+				regmap_write(priv->map,
+					     RTL930X_SWRED_QUEUE_DROP_CTRL(queue, dp), cfg);
+		}
+
+		memcpy(priv->red_cfg, wanted, sizeof(priv->red_cfg));
+	}
+
+	/* RED only drops while the egress drop stage looks at the egress queue */
+	regmap_clear_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
+			  RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
+	regmap_set_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
+	priv->red_ports |= BIT_ULL(port);
+
+	return 0;
+
+disable:
+	if (priv->red_ports & BIT_ULL(port)) {
+		regmap_clear_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
+		regmap_set_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
+				RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
+		priv->red_ports &= ~BIT_ULL(port);
+	}
+
+	return ret;
+}
+
+int otto_qos_930x_red_set(struct otto_dsa_priv *priv, int port, int queue,
+			  const struct tc_red_qopt_offload_params *p)
+{
+	u32 *wanted = priv->ports[port].red_cfg;
+	int ret, err = 0;
+	u32 cfg = 0;
+
+	if (p) {
+		u32 min = DIV_ROUND_UP(p->min, RTL930X_SWRED_PAGE_SIZE);
+		u32 max = p->max / RTL930X_SWRED_PAGE_SIZE;
+		u64 rate = ((u64)p->probability * RTL930X_SWRED_RATE_SCALE + U32_MAX) >> 32;
+
+		if (!min || min >= max || max > FIELD_MAX(RTL930X_SWRED_MAX_MASK) ||
+		    !rate || rate > FIELD_MAX(RTL930X_SWRED_RATE_MASK))
+			err = -EINVAL;
+		else
+			cfg = FIELD_PREP(RTL930X_SWRED_RATE_MASK, rate) |
+			      FIELD_PREP(RTL930X_SWRED_MAX_MASK, max) |
+			      FIELD_PREP(RTL930X_SWRED_MIN_MASK, min);
+	}
+
+	for (int i = 0; i < MAX_PRIOS; i++)
+		if (queue < 0 || queue == i)
+			wanted[i] = cfg;
+
+	ret = otto_qos_930x_red_apply(priv, port);
+	if (ret && cfg)
+		otto_qos_930x_red_set(priv, port, queue, NULL);
+
+	return err ?: ret;
 }
 
 void otto_qos_930x_init(struct otto_dsa_priv *priv)
