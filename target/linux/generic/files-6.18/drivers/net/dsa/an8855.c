@@ -206,7 +206,8 @@ static int an8855_update_port_member(struct dsa_switch *ds, int port,
 			continue;
 
 		other_isolated = !!(priv->port_isolated_map & BIT(dp->index));
-		port_mask |= BIT(dp->index);
+		if (!(isolated && other_isolated))
+			port_mask |= BIT(dp->index);
 		/* Add/remove this port to the portvlan mask of the other
 		 * ports in the bridge
 		 */
@@ -224,10 +225,12 @@ static int an8855_update_port_member(struct dsa_switch *ds, int port,
 			return ret;
 	}
 
-	/* Add/remove all other ports to this port's portvlan mask */
+	/* Add all other ports to this port's portvlan mask on join. On leave
+	 * only the CPU port, which is outside the user port matrix, remains.
+	 */
 	return regmap_update_bits(priv->regmap, AN8855_PORTMATRIX_P(port),
 				  AN8855_USER_PORTMATRIX,
-				  join ? port_mask : ~port_mask);
+				  join ? port_mask : 0);
 }
 
 static int an8855_port_pre_bridge_flags(struct dsa_switch *ds, int port,
@@ -340,6 +343,8 @@ static void an8855_port_bridge_leave(struct dsa_switch *ds, int port,
 {
 	struct an8855_priv *priv = ds->priv;
 
+	/* The bridge core does not clear BR_ISOLATED when a port leaves */
+	priv->port_isolated_map &= ~BIT(port);
 	an8855_update_port_member(ds, port, bridge.dev, false);
 
 	/* When a port is removed from the bridge, the port would be set up
@@ -555,7 +560,8 @@ static int an8855_vlan_del(struct an8855_priv *priv, u8 port,
 	if (port_mask) {
 		val = (val & AN8855_VA0_ETAG) | AN8855_VA0_IVL_MAC |
 		       AN8855_VA0_VTAG_EN | AN8855_VA0_VLAN_VALID |
-		       FIELD_PREP(AN8855_VA0_PORT, port_mask);
+		       FIELD_PREP(AN8855_VA0_PORT, port_mask) |
+		       FIELD_PREP(AN8855_VA0_FID, AN8855_FID_BRIDGED);
 		ret = regmap_write(priv->regmap, AN8855_VAWD0, val);
 		if (ret)
 			return ret;
@@ -609,12 +615,66 @@ static int an8855_port_set_pid(struct an8855_priv *priv, int port,
 				  FIELD_PREP(AN8855_G0_PORT_VID, pid));
 }
 
+/* Program a user port's VLAN mode and PVID from the PVID the bridge asked
+ * for. The PVID register cannot be read back for this: it is cleared while
+ * the port is VLAN-unaware, and the bridge does not replay its VLANs when
+ * filtering is turned back on. port_vlan_filtering, port_vlan_add and
+ * port_vlan_del program the port through here.
+ */
+static int an8855_port_commit_vlan(struct dsa_switch *ds, int port,
+				   bool vlan_filtering, u16 bridge_pvid)
+{
+	struct an8855_priv *priv = ds->priv;
+	u16 pvid;
+	int ret;
+
+	/* The CPU port is set up by an8855_setup() and
+	 * an8855_port_vlan_filtering()
+	 */
+	if (!dsa_is_user_port(ds, port))
+		return 0;
+
+	if (vlan_filtering) {
+		pvid = bridge_pvid;
+
+		/* Trapped into security mode allows packet forwarding through
+		 * VLAN table lookup. Set the port as a user port which is to be
+		 * able to recognize VID from incoming packets before fetching
+		 * entry within the VLAN table. Only accept tagged frames if the
+		 * port has no PVID.
+		 */
+		ret = an8855_port_set_vlan_mode(priv, port,
+						AN8855_PORT_SECURITY_MODE,
+						AN8855_VLAN_EG_DISABLED,
+						AN8855_VLAN_USER,
+						pvid ? AN8855_VLAN_ACC_ALL :
+						       AN8855_VLAN_ACC_TAGGED);
+	} else {
+		pvid = AN8855_PORT_VID_DEFAULT;
+
+		/* This is called after .port_bridge_leave when leaving a
+		 * VLAN-aware bridge. Don't set standalone ports to fallback
+		 * mode.
+		 */
+		ret = an8855_port_set_vlan_mode(priv, port,
+						dsa_port_bridge_dev_get(dsa_to_port(ds, port)) ?
+						AN8855_PORT_FALLBACK_MODE :
+						AN8855_PORT_MATRIX_MODE,
+						AN8855_VLAN_EG_CONSISTENT,
+						AN8855_VLAN_TRANSPARENT,
+						AN8855_VLAN_ACC_ALL);
+	}
+	if (ret)
+		return ret;
+
+	return an8855_port_set_pid(priv, port, pvid);
+}
+
 static int an8855_port_vlan_filtering(struct dsa_switch *ds, int port,
 				      bool vlan_filtering,
 				      struct netlink_ext_ack *extack)
 {
 	struct an8855_priv *priv = ds->priv;
-	u32 val;
 	int ret;
 
 	/* The port is being kept as VLAN-unaware port when bridge is
@@ -623,7 +683,6 @@ static int an8855_port_vlan_filtering(struct dsa_switch *ds, int port,
 	 * for becoming a VLAN-aware port.
 	 */
 	if (vlan_filtering) {
-		u32 acc_frm;
 		/* CPU port is set to fallback mode to let untagged
 		 * frames pass through.
 		 */
@@ -635,54 +694,21 @@ static int an8855_port_vlan_filtering(struct dsa_switch *ds, int port,
 		if (ret)
 			return ret;
 
-		ret = regmap_read(priv->regmap, AN8855_PVID_P(port), &val);
-		if (ret)
-			return ret;
-
-		/* Only accept tagged frames if PVID is not set */
-		if (FIELD_GET(AN8855_G0_PORT_VID, val) != AN8855_PORT_VID_DEFAULT)
-			acc_frm = AN8855_VLAN_ACC_TAGGED;
-		else
-			acc_frm = AN8855_VLAN_ACC_ALL;
-
-		/* Trapped into security mode allows packet forwarding through VLAN
-		 * table lookup.
-		 * Set the port as a user port which is to be able to recognize VID
-		 * from incoming packets before fetching entry within the VLAN table.
-		 */
-		ret = an8855_port_set_vlan_mode(priv, port,
-						AN8855_PORT_SECURITY_MODE,
-						AN8855_VLAN_EG_DISABLED,
-						AN8855_VLAN_USER,
-						acc_frm);
+		ret = an8855_port_commit_vlan(ds, port, true,
+					      priv->pvid_bridge[port]);
 		if (ret)
 			return ret;
 	} else {
 		bool disable_cpu_vlan = true;
 		struct dsa_port *dp;
-		u32 port_mode;
-
-		/* This is called after .port_bridge_leave when leaving a VLAN-aware
-		 * bridge. Don't set standalone ports to fallback mode.
-		 */
-		if (dsa_port_bridge_dev_get(dsa_to_port(ds, port)))
-			port_mode = AN8855_PORT_FALLBACK_MODE;
-		else
-			port_mode = AN8855_PORT_MATRIX_MODE;
 
 		/* When a port is removed from the bridge, the port would be set up
 		 * back to the default as is at initial boot which is a VLAN-unaware
-		 * port.
+		 * port. The PVID the bridge asked for is kept for when filtering
+		 * is turned back on.
 		 */
-		ret = an8855_port_set_vlan_mode(priv, port, port_mode,
-						AN8855_VLAN_EG_CONSISTENT,
-						AN8855_VLAN_TRANSPARENT,
-						AN8855_VLAN_ACC_ALL);
-		if (ret)
-			return ret;
-
-		/* Restore default PVID */
-		ret = an8855_port_set_pid(priv, port, AN8855_PORT_VID_DEFAULT);
+		ret = an8855_port_commit_vlan(ds, port, false,
+					      priv->pvid_bridge[port]);
 		if (ret)
 			return ret;
 
@@ -714,7 +740,7 @@ static int an8855_port_vlan_add(struct dsa_switch *ds, int port,
 	bool untagged = vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED;
 	bool pvid = vlan->flags & BRIDGE_VLAN_INFO_PVID;
 	struct an8855_priv *priv = ds->priv;
-	u32 val;
+	u16 new_pvid;
 	int ret;
 
 	mutex_lock(&priv->reg_mutex);
@@ -723,48 +749,29 @@ static int an8855_port_vlan_add(struct dsa_switch *ds, int port,
 	if (ret)
 		return ret;
 
-	if (pvid) {
-		/* Accept all frames if PVID is set */
-		regmap_update_bits(priv->regmap, AN8855_PVC_P(port), AN8855_ACC_FRM,
-				   FIELD_PREP(AN8855_ACC_FRM, AN8855_VLAN_ACC_ALL));
-
-		/* Only configure PVID if VLAN filtering is enabled */
-		if (dsa_port_is_vlan_filtering(dsa_to_port(ds, port))) {
-			ret = an8855_port_set_pid(priv, port, vlan->vid);
-			if (ret)
-				return ret;
-		}
-	} else if (vlan->vid) {
-		ret = regmap_read(priv->regmap, AN8855_PVID_P(port), &val);
-		if (ret)
-			return ret;
-
-		if (FIELD_GET(AN8855_G0_PORT_VID, val) != vlan->vid)
-			return 0;
-
+	if (pvid)
+		/* Kept even while the port is VLAN-unaware, as
+		 * configure_vlan_while_not_filtering is set
+		 */
+		new_pvid = vlan->vid;
+	else if (vlan->vid && priv->pvid_bridge[port] == vlan->vid)
 		/* This VLAN is overwritten without PVID, so unset it */
-		if (dsa_port_is_vlan_filtering(dsa_to_port(ds, port))) {
-			ret = regmap_update_bits(priv->regmap, AN8855_PVC_P(port),
-						 AN8855_ACC_FRM,
-						 FIELD_PREP(AN8855_ACC_FRM,
-							    AN8855_VLAN_ACC_TAGGED));
-			if (ret)
-				return ret;
-		}
+		new_pvid = AN8855_PORT_VID_DEFAULT;
+	else
+		return 0;
 
-		ret = an8855_port_set_pid(priv, port, AN8855_PORT_VID_DEFAULT);
-		if (ret)
-			return ret;
-	}
-
-	return 0;
+	ret = an8855_port_commit_vlan(ds, port,
+				      dsa_port_is_vlan_filtering(dsa_to_port(ds, port)),
+				      new_pvid);
+	if (!ret)
+		priv->pvid_bridge[port] = new_pvid;
+	return ret;
 }
 
 static int an8855_port_vlan_del(struct dsa_switch *ds, int port,
 				const struct switchdev_obj_port_vlan *vlan)
 {
 	struct an8855_priv *priv = ds->priv;
-	u32 val;
 	int ret;
 
 	mutex_lock(&priv->reg_mutex);
@@ -773,30 +780,18 @@ static int an8855_port_vlan_del(struct dsa_switch *ds, int port,
 	if (ret)
 		return ret;
 
-	ret = regmap_read(priv->regmap, AN8855_PVID_P(port), &val);
-	if (ret)
-		return ret;
-
 	/* PVID is being restored to the default whenever the PVID port
 	 * is being removed from the VLAN.
 	 */
-	if (FIELD_GET(AN8855_G0_PORT_VID, val) == vlan->vid) {
-		/* Only accept tagged frames if the port is VLAN-aware */
-		if (dsa_port_is_vlan_filtering(dsa_to_port(ds, port))) {
-			ret = regmap_update_bits(priv->regmap, AN8855_PVC_P(port),
-						 AN8855_ACC_FRM,
-						 FIELD_PREP(AN8855_ACC_FRM,
-							    AN8855_VLAN_ACC_TAGGED));
-			if (ret)
-				return ret;
-		}
+	if (!vlan->vid || priv->pvid_bridge[port] != vlan->vid)
+		return 0;
 
-		ret = an8855_port_set_pid(priv, port, AN8855_PORT_VID_DEFAULT);
-		if (ret)
-			return ret;
-	}
-
-	return 0;
+	ret = an8855_port_commit_vlan(ds, port,
+				      dsa_port_is_vlan_filtering(dsa_to_port(ds, port)),
+				      AN8855_PORT_VID_DEFAULT);
+	if (!ret)
+		priv->pvid_bridge[port] = AN8855_PORT_VID_DEFAULT;
+	return ret;
 }
 
 static int
@@ -1271,7 +1266,7 @@ static int an8855_trap_special_frames(struct an8855_priv *priv)
 	/* Trap frames with :03 MAC DAs to the CPU port(s) and egress
 	 * them VLAN-untagged.
 	 */
-	ret = regmap_update_bits(priv->regmap, AN8855_RGAC1,
+	ret = regmap_update_bits(priv->regmap, AN8855_RGAC2,
 				 AN8855_R03_BPDU_FR | AN8855_R03_EG_TAG |
 				 AN8855_R03_PORT_FW,
 				 AN8855_R03_BPDU_FR |
@@ -1283,7 +1278,7 @@ static int an8855_trap_special_frames(struct an8855_priv *priv)
 	/* Trap frames with :0E MAC DAs to the CPU port(s) and egress
 	 * them VLAN-untagged.
 	 */
-	return regmap_update_bits(priv->regmap, AN8855_RGAC1,
+	return regmap_update_bits(priv->regmap, AN8855_RGAC2,
 				  AN8855_R0E_BPDU_FR | AN8855_R0E_EG_TAG |
 				  AN8855_R0E_PORT_FW,
 				  AN8855_R0E_BPDU_FR |
@@ -2248,7 +2243,7 @@ static int an8855_switch_probe(struct platform_device *pdev)
 
 		/* Poll HWTRAP reg to wait for Switch to fully Init */
 		ret = regmap_read_poll_timeout(priv->regmap, AN8855_HWTRAP, val,
-					       val, 20, 200000);
+					       val && val != 0xffffffff, 1000, 1000000);
 		if (ret)
 			return ret;
 	}
