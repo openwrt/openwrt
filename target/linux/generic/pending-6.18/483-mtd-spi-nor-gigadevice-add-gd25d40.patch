@@ -1,0 +1,30 @@
+From 17975112296b6ff66fa6561237814cd04a08bd94 Mon Sep 17 00:00:00 2001
+From: Andrey Smirnov <contrib@kitsuned.com>
+Date: Sat, 14 Nov 2026 12:25:01 +0000
+Subject: [PATCH] mtd: spi-nor: gigadevice: add GD25D40
+
+The GD25D40 found on Philips Hue Bridge v2 BSB002 v2.1_X03A boards
+reports JEDEC ID c8 40 13 and has no SFDP table. Add its 512 KiB size
+and 4 KiB erase support so that the bootloader environment and ART
+partitions can be registered.
+
+Link: https://github.com/openwrt/openwrt/pull/26604#issuecomment-6864058290
+Signed-off-by: Andrey Smirnov <contrib@kitsuned.com>
+---
+ drivers/mtd/spi-nor/gigadevice.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/mtd/spi-nor/gigadevice.c
++++ b/drivers/mtd/spi-nor/gigadevice.c
+@@ -41,6 +41,11 @@ static const struct flash_info gigadevic
+ 		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB,
+ 		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
+ 	}, {
++		.id = SNOR_ID(0xc8, 0x40, 0x13),
++		.name = "gd25d40",
++		.size = SZ_512K,
++		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ,
++	}, {
+ 		.id = SNOR_ID(0xc8, 0x40, 0x15),
+ 		.name = "gd25q16",
+ 		.size = SZ_2M,

@@ -10,10 +10,42 @@ platform_check_image() {
 RAMFS_COPY_BIN='fw_printenv fw_setenv nandwrite'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
+bsb002_do_upgrade() {
+	local target slot
+
+	slot=$(fw_printenv -n bootslot 2>/dev/null) || {
+		echo "BSB002: cannot read bootslot"
+		nand_do_upgrade_failed
+	}
+	case "$slot" in
+	0) target=1 ;;
+	1) target=0 ;;
+	*)
+		echo "BSB002: unexpected bootslot '$slot'"
+		nand_do_upgrade_failed
+		;;
+	esac
+
+	CI_KERNPART="kernel-$target"
+	CI_UBIPART="root-$target"
+	nand_do_flash_file "$1" || {
+		echo "BSB002: failed to write slot $target"
+		nand_do_upgrade_failed
+	}
+	fw_setenv bootslot "$target" || {
+		echo "BSB002: failed to set bootslot"
+		nand_do_upgrade_failed
+	}
+	nand_do_upgrade_success
+}
+
 platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	philips,bsb002)
+		bsb002_do_upgrade "$1"
+		;;
 	glinet,gl-ar300m-nand|\
 	glinet,gl-ar300m-nor)
 		glinet_nand_nor_do_upgrade "$1"

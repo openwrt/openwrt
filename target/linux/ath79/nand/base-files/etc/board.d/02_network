@@ -87,6 +87,9 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6u@eth1"
 		;;
+	philips,bsb002)
+		ucidef_set_interface_lan "eth0" "dhcp"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
