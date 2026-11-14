@@ -68,13 +68,14 @@ function handle_link(dev, data, up)
 		wireless_ap: ap,
 	};
 
-	if (ap && config.multicast_to_unicast != null)
-		dev_data.multicast_to_unicast = config.multicast_to_unicast ? 1 : 0;
-
-	if (data.type == "vif" && config.mode == "ap") {
-		dev_data.wireless_proxyarp = !!config.proxy_arp;
-		dev_data.wireless_isolate = !!config.isolate;
+	if (ap) {
+		dev_data.multicast_to_unicast =
+			(config.multicast_to_unicast_all ?? config.multicast_to_unicast) ? 1 : 0;
+		dev_data.wireless_isolate = !!(config.isolate ?? config.ap_isolate);
 	}
+
+	if (data.type == "vif" && config.mode == "ap")
+		dev_data.wireless_proxyarp = !!config.proxy_arp;
 
 	if (up)
 		netifd.device_set(dev, dev_data);

@@ -289,6 +289,18 @@ function config_init(uci)
 
 				let config = parse_attribute_list(data, handler.vlan);
 
+				/* follow the isolation and multicast-to-unicast settings of
+				 * the wifi-iface, unless the wifi-vlan sets its own */
+				let parent = vif.config;
+				let inherit = {
+					bridge_isolate: parent.bridge_isolate,
+					isolate: parent.isolate ?? parent.ap_isolate,
+					multicast_to_unicast: parent.multicast_to_unicast_all ?? parent.multicast_to_unicast,
+				};
+				for (let k, v in inherit)
+					if (config[k] == null && v != null)
+						config[k] = v;
+
 				let vlan = {
 					name,
 					config
