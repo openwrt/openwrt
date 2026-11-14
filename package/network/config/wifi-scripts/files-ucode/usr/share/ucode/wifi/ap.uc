@@ -512,8 +512,14 @@ function iface_wpa_stations(config, stas) {
 		if (!sta.config.mac || !sta.config.key)
 			continue;
 
+		/* hostapd reports the keyid in AP-STA-CONNECTED. It rejects the
+		 * whole file over a keyid with a space or longer than 31
+		 * characters, and stations from service data can be named freely */
+		const keyid = match(sta.name, /^[A-Za-z0-9_]{1,31}$/) ? `keyid=${sta.name} ` : '';
+		const vlanid = sta.config.vid ? `vlanid=${sta.config.vid} ` : '';
+
 		for (let mac in sta.config.mac)
-			push(lines, (sta.config.vid ? `vlanid=${sta.config.vid} ` : '') + `${mac} ${sta.config.key}`);
+			push(lines, keyid + vlanid + `${mac} ${sta.config.key}`);
 	}
 
 	station_file_write(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`, lines);

@@ -435,13 +435,24 @@ hostapd_set_psk_file() {
 	local ifname="$1"
 	local vlan="$2"
 	local vlan_id=""
+	local keyid=""
+	local name
+
+	json_select ..
+	json_get_var name name
+	json_select config
 
 	json_get_vars vid key
 	json_get_values mac_list mac
 	set_default mac_list "00:00:00:00:00:00"
 	[ -n "$vid" ] && vlan_id="vlanid=$vid "
+	# same rule as iface_wpa_stations() in ap.uc
+	case "$name" in
+		""|*[!A-Za-z0-9_]*) ;;
+		*) [ ${#name} -lt 32 ] && keyid="keyid=$name " ;;
+	esac
 	for mac in $mac_list; do
-		echo "${vlan_id} ${mac} ${key}" >> /var/run/hostapd-${ifname}.psk
+		echo "${keyid}${vlan_id}${mac} ${key}" >> /var/run/hostapd-${ifname}.psk
 	done
 }
 
