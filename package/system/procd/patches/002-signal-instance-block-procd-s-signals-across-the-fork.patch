@@ -1,0 +1,112 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 21 Sep 2026 18:33:34 +0100
+Subject: [PATCH 2/2] signal, instance: block procd's signals across the fork
+
+e2010df9 restores the child's signal dispositions as its first
+statement, but the window between fork() returning in the child and
+that statement is still procd's. fork() returns in the parent
+independently of when the child is first scheduled, so the parent can
+store in->proc.pid and dispatch a queued ubus request while the child
+is still runnable, and kill(-1, SIGTERM) from STATE_HALT reaches a
+pre-exec child without anyone aiming at a pid at all. Measurement of
+that window found one handler run in the child per 45422 signals, and
+a child that runs signal_shutdown() is not procd: it enters the
+shutdown state and forks the inittab shutdown actions from there.
+
+Block the asynchronous signals procd installs handlers for across the
+fork and restore the mask in the child once the dispositions are back
+to default, so a signal arriving in the window is delivered against
+SIG_DFL instead, as it would have been moments later at execvp().
+SIGCHLD is not blocked, so nothing delays the parent's reaping, and
+SIGSEGV and SIGBUS are not blocked because blocking a fault signal is
+undefined and the kernel force-kills regardless.
+
+Fixes: f1bf99b09f66 ("add signal handler")
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+(cherry picked from commit 511952252e0b41895d011891f1304aa12c978b60)
+---
+ procd.h            |  2 ++
+ service/instance.c | 12 ++++++++++--
+ signal.c           | 20 ++++++++++++++++++++
+ 3 files changed, 32 insertions(+), 2 deletions(-)
+
+--- a/procd.h
++++ b/procd.h
+@@ -52,6 +52,8 @@ void procd_early(void);
+ void procd_preinit(void);
+ void procd_signal(void);
+ void procd_signal_reset(void);
++void procd_signal_block(sigset_t *oldset);
++void procd_signal_restore(const sigset_t *oldset);
+ void procd_signal_preinit(void);
+ void procd_inittab(void);
+ void procd_inittab_run(const char *action);
+--- a/service/instance.c
++++ b/service/instance.c
+@@ -625,9 +625,10 @@ instance_free_stdio(struct service_insta
+ void
+ instance_start(struct service_instance *in)
+ {
+-	int pid, ret;
+ 	int opipe[2] = { -1, -1 };
+ 	int epipe[2] = { -1, -1 };
++	sigset_t oldset;
++	int pid, ret;
+ 
+ 	if (!avl_is_empty(&in->errors.avl)) {
+ 		LOG("Not starting instance %s::%s, an error was indicated\n", in->srv->name, in->name);
+@@ -666,12 +667,17 @@ instance_start(struct service_instance *
+ 	if (!in->valid)
+ 		return;
+ 
++	procd_signal_block(&oldset);
++
+ 	pid = fork();
+-	if (pid < 0)
++	if (pid < 0) {
++		procd_signal_restore(&oldset);
+ 		return;
++	}
+ 
+ 	if (!pid) {
+ 		procd_signal_reset();
++		procd_signal_restore(&oldset);
+ 		uloop_done();
+ 		closefd(opipe[0]);
+ 		closefd(epipe[0]);
+@@ -684,6 +690,8 @@ instance_start(struct service_instance *
+ 		return;
+ 	}
+ 
++	procd_signal_restore(&oldset);
++
+ 	P_DEBUG(2, "Started instance %s::%s[%d]\n", in->srv->name, in->name, pid);
+ 	in->proc.pid = pid;
+ 	instance_writepid(in);
+--- a/signal.c
++++ b/signal.c
+@@ -115,3 +115,23 @@ void procd_signal_reset(void)
+ 	for (i = 1; i < _NSIG; i++)
+ 		sigaction(i, &s, NULL);
+ }
++
++void procd_signal_block(sigset_t *oldset)
++{
++	sigset_t set;
++
++	sigemptyset(&set);
++	sigaddset(&set, SIGTERM);
++	sigaddset(&set, SIGINT);
++	sigaddset(&set, SIGUSR1);
++	sigaddset(&set, SIGUSR2);
++	sigaddset(&set, SIGPWR);
++	sigaddset(&set, SIGHUP);
++
++	sigprocmask(SIG_BLOCK, &set, oldset);
++}
++
++void procd_signal_restore(const sigset_t *oldset)
++{
++	sigprocmask(SIG_SETMASK, oldset, NULL);
++}
