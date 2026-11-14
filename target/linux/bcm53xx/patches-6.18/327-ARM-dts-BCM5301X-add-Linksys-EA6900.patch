@@ -1,0 +1,193 @@
+From 62101ab40f2f67e2a3470603b2bde3fc11c4a44f Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Fri, 30 Oct 2026 14:06:58 +0100
+Subject: [PATCH] ARM: dts: BCM5301X: add Linksys EA6900
+
+Linksys EA6900: BCM4708A0, 256 MiB RAM, 128 MiB NAND (BCH-8), two
+BCM4360 radios (2.4 GHz and 5 GHz) on PCIe, WAN on switch port 0 and
+LAN 1-4 on ports 1-4.
+
+GPIOs from the CFE default nvram: WPS button 7, reset button 11, USB
+VBUS 9 (usbport1 = the USB 3.0 socket) and 10 (usbport2 = the USB 2.0
+socket), active high. Each socket's VBUS switch is the vbus-supply of the
+USB core that serves it, as on the other boards with a VBUS regulator.
+The logo LED has two drivers: GPIO 6 (active low, the power/status LED)
+and GPIO 8 (active high, used as the WAN LED), found by testing.
+
+The CPU port is switch port 8 (IMP0, gmac2), the switch's management
+port. The board's nvram has only et0macaddr, so gmac2 takes that one.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ arch/arm/boot/dts/broadcom/Makefile           |   1 +
+ .../dts/broadcom/bcm4708-linksys-ea6900.dts   | 153 ++++++++++++++++++
+ 2 files changed, 154 insertions(+)
+ create mode 100644 arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6900.dts
+
+--- a/arch/arm/boot/dts/broadcom/Makefile
++++ b/arch/arm/boot/dts/broadcom/Makefile
+@@ -57,6 +57,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+ 	bcm4708-buffalo-wzr-1166dhp2.dtb \
+ 	bcm4708-linksys-ea6300-v1.dtb \
+ 	bcm4708-linksys-ea6500-v2.dtb \
++	bcm4708-linksys-ea6900.dtb \
+ 	bcm4708-luxul-xap-1510.dtb \
+ 	bcm4708-luxul-xwc-1000.dtb \
+ 	bcm4708-netgear-r6250.dtb \
+--- /dev/null
++++ b/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6900.dts
+@@ -0,0 +1,153 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * Broadcom BCM470X / BCM5301X ARM platform code.
++ * DTS for Linksys EA6900
++ *
++ * BCM4708A0, 256 MiB RAM, 128 MiB NAND (BCH-8), two BCM4360 radios
++ * (2.4 GHz and 5 GHz) on PCIe. Switch: WAN on port 0, LAN 1-4 on
++ * ports 1-4.
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/leds/common.h>
++
++#include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
++
++/ {
++	compatible = "linksys,ea6900", "brcm,bcm4708";
++	model = "Linksys EA6900";
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x00000000 0x08000000>,
++		      <0x88000000 0x08000000>;
++	};
++
++	nvram@1c080000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c080000 0x100000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led-power {
++			color = <LED_COLOR_ID_WHITE>;
++			function = LED_FUNCTION_POWER;
++			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-on";
++		};
++
++		/*
++		 * Lights the same logo LED as led-power. Undriven, the pin
++		 * floats high and keeps the logo lit, which hides the status
++		 * blinking of led-power.
++		 */
++		led-wan {
++			color = <LED_COLOR_ID_WHITE>;
++			function = LED_FUNCTION_WAN;
++			gpios = <&chipcommon 8 GPIO_ACTIVE_HIGH>;
++		};
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		button-wps {
++			label = "WPS";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&chipcommon 7 GPIO_ACTIVE_LOW>;
++		};
++
++		button-restart {
++			label = "Reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	/* GPIO 10 = VBUS of the USB 2.0 socket (port 2) */
++	usb2_power: regulator-usb2 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb2-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpios = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	/* GPIO 9 = VBUS of the USB 3.0 socket (port 1) */
++	usb3_power: regulator-usb3 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb3-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++};
++
++&usb2 {
++	vbus-supply = <&usb2_power>;
++};
++
++&usb3 {
++	vbus-supply = <&usb3_power>;
++};
++
++&usb3_phy {
++	status = "okay";
++};
++
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
++&srab {
++	status = "okay";
++
++	ports {
++		port@0 {
++			label = "wan";
++		};
++
++		port@1 {
++			label = "lan1";
++		};
++
++		port@2 {
++			label = "lan2";
++		};
++
++		port@3 {
++			label = "lan3";
++		};
++
++		port@4 {
++			label = "lan4";
++		};
++
++		port@5 {
++			status = "disabled";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			label = "cpu";
++		};
++	};
++};
