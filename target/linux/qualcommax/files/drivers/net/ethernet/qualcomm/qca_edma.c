@@ -1218,7 +1218,9 @@ static void edma_queue_rings_drain(struct edma_queue *q)
 }
 
 /* Completions are only walked on rings the engine ran: a set that fails to
- * come up behind a reset has indices from the configuration before it.
+ * come up behind a reset has indices from the configuration before it. The
+ * frames still on a ring are freed with it, so its byte queue limit starts
+ * again from nothing.
  */
 static void edma_rings_drain(struct edma_priv *priv)
 {
@@ -1231,6 +1233,7 @@ static void edma_rings_drain(struct edma_priv *priv)
 		q->txcmpl_skb = NULL;
 		q->txcmpl_run = false;
 		edma_queue_rings_drain(q);
+		netdev_tx_reset_queue(netdev_get_tx_queue(priv->netdev, i));
 	}
 }
 
@@ -1919,12 +1922,8 @@ static int edma_ndo_open(struct net_device *netdev)
 
 	edma_rx_vlan_strip(priv, netdev->features);
 
-	for (i = 0; i < priv->num_queues; i++) {
-		struct edma_queue *q = &priv->q[i];
-
-		netdev_tx_reset_queue(netdev_get_tx_queue(netdev, i));
-		napi_enable(&q->napi);
-	}
+	for (i = 0; i < priv->num_queues; i++)
+		napi_enable(&priv->q[i].napi);
 
 	netif_tx_start_all_queues(netdev);
 	for (i = 0; i < priv->num_queues; i++) {
