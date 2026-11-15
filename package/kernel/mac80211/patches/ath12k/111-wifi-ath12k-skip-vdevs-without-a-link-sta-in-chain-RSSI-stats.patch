@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gael Julien <jgm509@protonmail.com>
+Date: Sun, 08 Nov 2026 14:06:15 -0500
+Subject: [PATCH] wifi: ath12k: skip vdevs without a link sta in chain RSSI stats
+
+The firmware answers a WMI_REQUEST_RSSI_PER_CHAIN_STAT request with an
+entry for every vdev on the pdev, including AP vdevs and stations that
+aren't associated. ath12k_wmi_tlv_rssi_chain_parse() returns -EPROTO for
+any entry whose vdev has no link sta for its BSSID, which drops the
+whole event:
+
+  ath12k_wifi7_pci 0003:01:00.0: not found link sta with bssid xx:xx:xx:xx:xx:xx for rssi chain
+  ath12k_wifi7_pci 0003:01:00.0: failed to pull fw stats: -71
+  ath12k_wifi7_pci 0003:01:00.0: time out while waiting for fw stats done
+
+So on a radio that runs a station next to APs (for example a WiFi
+uplink), every station statistics query waits for the stats timeout
+(1 s, or 3 s for fw_stats_done) while holding the wiphy lock. Any
+nl80211 query on the same wiphy waits behind it: on a QCN9274 with
+seven interfaces, "iwinfo <ifname> info" takes 3.1 s per interface.
+
+Skip those entries instead, and mark the event as a per-chain RSSI
+event before looking at the entries, so the request still completes
+when no entry matches.
+
+Tested on Askey SBE1V1K and CBE1V1K (IPQ9574 + QCN9274) with a WiFi
+uplink next to the APs: "iwinfo <ifname> info" went from 1.1 s (SBE)
+and 3.1 s (CBE) per interface to 0.03 s, the stats errors are gone and
+the station signal is still reported.
+
+Signed-off-by: Gael Julien <jgm509@protonmail.com>
+---
+ drivers/net/wireless/ath/ath12k/wmi.c | 24 +++++++++++++++---------
+ 1 file changed, 15 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath12k/wmi.c
++++ b/drivers/net/wireless/ath/ath12k/wmi.c
+@@ -8487,10 +8487,19 @@ static int ath12k_wmi_tlv_rssi_chain_par
+ 		return -EPROTO;
+ 	}
+ 
++	/* The firmware reports per-chain RSSI for every vdev on the pdev,
++	 * including AP vdevs and stations that aren't connected. Only a
++	 * connected station has a link sta for its BSSID; skip the other
++	 * entries instead of failing the whole event, which would leave the
++	 * request waiting for its timeout.
++	 */
++	stats->stats_id = WMI_REQUEST_RSSI_PER_CHAIN_STAT;
++
+ 	arvif = ath12k_mac_get_arvif(ar, vdev_id);
+ 	if (!arvif) {
+-		ath12k_warn(ab, "not found vif for vdev id %d\n", vdev_id);
+-		return -EPROTO;
++		ath12k_dbg(ab, ATH12K_DBG_WMI,
++			   "rssi chain: no vif for vdev id %d, skipping\n", vdev_id);
++		return 0;
+ 	}
+ 
+ 	ath12k_dbg(ab, ATH12K_DBG_WMI,
+@@ -8500,10 +8509,10 @@ static int ath12k_wmi_tlv_rssi_chain_par
+ 	guard(spinlock_bh)(&ab->base_lock);
+ 	arsta = ath12k_link_sta_find_by_addr(ab, arvif->bssid);
+ 	if (!arsta) {
+-		ath12k_warn(ab,
+-			    "not found link sta with bssid %pM for rssi chain\n",
+-			    arvif->bssid);
+-		return -EPROTO;
++		ath12k_dbg(ab, ATH12K_DBG_WMI,
++			   "rssi chain: no link sta with bssid %pM, skipping\n",
++			   arvif->bssid);
++		return 0;
+ 	}
+ 
+ 	BUILD_BUG_ON(ARRAY_SIZE(arsta->chain_signal) >
+@@ -8512,8 +8521,6 @@ static int ath12k_wmi_tlv_rssi_chain_par
+ 	for (j = 0; j < ARRAY_SIZE(arsta->chain_signal); j++)
+ 		arsta->chain_signal[j] = le32_to_cpu(stats_rssi->rssi_avg_beacon[j]);
+ 
+-	stats->stats_id = WMI_REQUEST_RSSI_PER_CHAIN_STAT;
+-
+ 	return 0;
+ }
+ 
