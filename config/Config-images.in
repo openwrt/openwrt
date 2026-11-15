@@ -241,13 +241,27 @@ menu "Target Images"
 		bool "Build GRUB EFI images"
 		depends on TARGET_x86 || TARGET_armsr || TARGET_loongarch64
 		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_EROFS
-		select PACKAGE_grub2 if TARGET_x86
+		select PACKAGE_grub2-editenv if TARGET_x86 && !GRUB_EFI_HYBRID
 		select PACKAGE_grub2-efi if TARGET_x86
-		select PACKAGE_grub2-bios-setup if TARGET_x86
 		select PACKAGE_grub2-efi-arm if TARGET_armsr
 		select PACKAGE_grub2-efi-loongarch64 if TARGET_loongarch64
 		select PACKAGE_kmod-fs-vfat
 		default y
+
+	config GRUB_EFI_HYBRID
+		bool "Build hybrid EFI/BIOS GRUB images"
+		depends on GRUB_EFI_IMAGES && TARGET_x86
+		select PACKAGE_grub2
+		select PACKAGE_grub2-bios-setup
+		default y
+		help
+		  Keep BIOS boot support in the EFI images, so they boot in both
+		  BIOS and EFI mode.
+
+		  Disable it to build EFI-only images with an A/B layout: two
+		  rootfs partitions that sysupgrade writes in turn, with GRUB
+		  falling back to the previous one when the new one does not
+		  finish booting.
 
 	config GRUB_CONSOLE
 		bool "Use Console Terminal (in addition to Serial)"
@@ -363,7 +377,9 @@ menu "Target Images"
 		help
 		  Override the root partition on the final device. If left empty,
 		  it will be mounted by PARTUUID which makes the kernel find the
-		  appropriate disk automatically.
+		  appropriate disk automatically. x86 EFI images without hybrid
+		  BIOS support always mount openwrt_rootfs or openwrt_rootfs_alt
+		  by PARTLABEL and ignore it.
 
 	config TARGET_ROOTFS_PERSIST_VAR
 		bool "Make /var persistent"
