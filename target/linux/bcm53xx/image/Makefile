@@ -619,8 +619,7 @@ define Device/tplink_archer-c9-v1
   IMAGES := bin
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
   TPLINK_BOARD := ARCHERC9
-  BROKEN := y
 endef
-#TARGET_DEVICES += tplink_archer-c9-v1
+TARGET_DEVICES += tplink_archer-c9-v1
 
 $(eval $(call BuildImage))
