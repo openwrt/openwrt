@@ -1,0 +1,260 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Stock U-Boot boots whatever uImage sits at the start of "sys" and never
+ * reads bootcmd, so the firmware partition starts there. It spans the stock
+ * sys and usrappfs partitions. The stock rootfs images stay in place, as does
+ * everything else U-Boot needs, including its boot parameters in para.
+ *
+ * No led_set node: SFP TX-disable sits on the LED shift chain (third output
+ * per port), so the LED engine stays as the bootloader left it.
+ */
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "tplink,tl-st5008f-v2", "realtek,rtl930x-soc";
+	model = "TP-Link TL-ST5008F v2.0";
+
+	aliases {
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+		label-mac-device = &ethernet0;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>, /* 256 MiB lowmem */
+		      <0x20000000 0x10000000>; /* 256 MiB highmem */
+	};
+
+	chosen {
+		stdout-path = "serial0:38400n8";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys: led-0 {
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+
+	sfp0: sfp-p1 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+		mod-def0-gpio = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		maximum-power-milliwatt = <2000>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp1: sfp-p2 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1>;
+		mod-def0-gpio = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		maximum-power-milliwatt = <2000>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp2: sfp-p3 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c2>;
+		mod-def0-gpio = <&gpio0 2 GPIO_ACTIVE_LOW>;
+		maximum-power-milliwatt = <2000>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp3: sfp-p4 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c3>;
+		mod-def0-gpio = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		maximum-power-milliwatt = <2000>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp4: sfp-p5 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c4>;
+		mod-def0-gpio = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		maximum-power-milliwatt = <2000>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp5: sfp-p6 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c5>;
+		mod-def0-gpio = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		maximum-power-milliwatt = <2000>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp6: sfp-p7 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c6>;
+		mod-def0-gpio = <&gpio0 6 GPIO_ACTIVE_LOW>;
+		maximum-power-milliwatt = <2000>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp7: sfp-p8 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c7>;
+		mod-def0-gpio = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		maximum-power-milliwatt = <2000>;
+		#thermal-sensor-cells = <0>;
+	};
+};
+
+&gpio0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinmux_disable_spi0>;
+
+	mgmt-phy-hog {
+		gpio-hog;
+		gpios = <22 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "mgmt-phy-enable";
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	i2c0: i2c@0 { reg = <0>; };
+	i2c1: i2c@1 { reg = <1>; };
+	i2c2: i2c@2 { reg = <2>; };
+	i2c3: i2c@3 { reg = <3>; };
+	i2c4: i2c@4 { reg = <4>; };
+	i2c5: i2c@5 { reg = <5>; };
+	i2c6: i2c@6 { reg = <6>; };
+	i2c7: i2c@7 { reg = <7>; };
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <100000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xe0000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0xe0000 0x20000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "usrimg2";
+				reg = <0x100000 0x900000>;
+				read-only;
+			};
+
+			partition@a00000 {
+				label = "usrimg1";
+				reg = <0xa00000 0x900000>;
+				read-only;
+			};
+
+			partition@1300000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+				reg = <0x1300000 0xbc0000>;
+			};
+
+			partition@1ec0000 {
+				label = "tp_head";
+				reg = <0x1ec0000 0x40000>;
+				read-only;
+			};
+
+			partition@1f00000 {
+				label = "para";
+				reg = <0x1f00000 0x100000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_para: macaddr@fdff4 {
+						reg = <0xfdff4 0x6>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT_SFP(0, 1, 2, 0, 0)
+		SWITCH_PORT_SFP(8, 2, 3, 0, 1)
+		SWITCH_PORT_SFP(16, 3, 4, 0, 2)
+		SWITCH_PORT_SFP(20, 4, 5, 0, 3)
+		SWITCH_PORT_SFP(24, 5, 6, 0, 4)
+		SWITCH_PORT_SFP(25, 6, 7, 0, 5)
+		SWITCH_PORT_SFP(26, 7, 8, 0, 6)
+		SWITCH_PORT_SFP(27, 8, 9, 0, 7)
+
+		port@1c {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&thermal_zones {
+	sfp-thermal {
+		polling-delay-passive = <10000>;
+		polling-delay = <10000>;
+		thermal-sensors = <&sfp0>, <&sfp1>, <&sfp2>, <&sfp3>, <&sfp4>, <&sfp5>, <&sfp6>, <&sfp7>;
+		trips {
+			sfp-crit {
+				temperature = <110000>;
+				hysteresis = <1000>;
+				type = "critical";
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	nvmem-cells = <&macaddr_para>;
+	nvmem-cell-names = "mac-address";
+};
+
+&usb_ehci {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
