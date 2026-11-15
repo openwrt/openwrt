@@ -1,0 +1,254 @@
+From e025bc89af3fa13d2082c0c41bde757366489cdd Mon Sep 17 00:00:00 2001
+From: Andrei Lebedev <lebdron@gmail.com>
+Date: Mon, 16 Nov 2026 12:00:00 +1100
+Subject: [PATCH] wifi: ath10k: support LEDs described in the device tree
+
+ath10k registers one LED, on the chip's default GPIO (hw_params.led_pin),
+always active-low. Some boards wire more LEDs to the radio's GPIOs, e.g.
+the MikroTik hAP ac (RB962UiGS-5HacT2HnT) has a bicolour WLAN LED on
+QCA9880 GPIO 1 (green) and GPIO 2 (red), and there was no way to drive
+the second one.
+
+Read LEDs from child nodes of the radio's device tree node, using the
+same properties as ath9k and mt76 (led-sources, led-active-low):
+
+  led { led-sources = <1>; led-active-low; };      -> ath10k-<phy>
+  led-red { led-sources = <2>; led-active-low; };  -> ath10k-<phy>-red
+
+"led" keeps the existing name and the tpt default trigger; "led-<name>"
+LEDs get linux,default-trigger if set, otherwise none. If any such node
+exists, only the described LEDs are registered (a disabled "led" node
+turns the LED off); without them nothing changes.
+
+Signed-off-by: Andrei Lebedev <lebdron@gmail.com>
+---
+ drivers/net/wireless/ath/ath10k/core.h |  15 ++-
+ drivers/net/wireless/ath/ath10k/leds.c | 141 ++++++++++++++++++++-----
+ 2 files changed, 129 insertions(+), 27 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath10k/core.h
++++ b/drivers/net/wireless/ath/ath10k/core.h
+@@ -1008,6 +1008,16 @@ struct ath10k_bus_params {
+ 	bool hl_msdu_ids;
+ };
+ 
++#define ATH10K_LEDS_MAX 4
++
++struct ath10k_led {
++	struct ath10k *ar;
++	struct led_classdev cdev;
++	char label[48];
++	u32 pin;
++	bool active_low;
++};
++
+ struct ath10k {
+ 	struct ath_common ath_common;
+ 	struct ieee80211_hw *hw;
+@@ -1269,9 +1279,8 @@ struct ath10k {
+ 	} testmode;
+ 
+ 	struct {
+-		struct led_classdev cdev;
+-		char label[48];
+-		u32 gpio_state_pin;
++		struct ath10k_led led[ATH10K_LEDS_MAX];
++		int count;
+ 	} leds;
+ 
+ 	struct {
+--- a/drivers/net/wireless/ath/ath10k/leds.c
++++ b/drivers/net/wireless/ath/ath10k/leds.c
+@@ -7,8 +7,10 @@
+  */
+ 
+ #include <linux/leds.h>
++#include <linux/of.h>
+ 
+ #include "core.h"
++#include "debug.h"
+ #include "wmi.h"
+ #include "wmi-ops.h"
+ 
+@@ -17,15 +19,17 @@
+ static int ath10k_leds_set_brightness_blocking(struct led_classdev *led_cdev,
+ 					       enum led_brightness brightness)
+ {
+-	struct ath10k *ar = container_of(led_cdev, struct ath10k,
+-					 leds.cdev);
++	struct ath10k_led *led = container_of(led_cdev, struct ath10k_led,
++					      cdev);
++	struct ath10k *ar = led->ar;
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 
+ 	if (ar->state != ATH10K_STATE_ON)
+ 		goto out;
+ 
+-	ath10k_wmi_gpio_output(ar, ar->hw_params.led_pin, brightness == LED_OFF);
++	ath10k_wmi_gpio_output(ar, led->pin,
++			       (brightness != LED_OFF) ^ led->active_low);
+ 
+ out:
+ 	mutex_unlock(&ar->conf_mutex);
+@@ -35,50 +39,139 @@ out:
+ 
+ int ath10k_leds_start(struct ath10k *ar)
+ {
+-	if (ar->hw_params.led_pin == 0)
+-		/* leds not supported */
+-		return 0;
++	int i;
+ 
+ 	/* under some circumstances, the gpio pin gets reconfigured
+ 	 * to default state by the firmware, so we need to
+ 	 * reconfigure it this behaviour has only ben seen on
+ 	 * QCA9984 and QCA99XX devices so far
+ 	 */
+-	ath10k_wmi_gpio_config(ar, ar->hw_params.led_pin, 0,
+-			       WMI_GPIO_PULL_NONE, WMI_GPIO_INTTYPE_DISABLE);
+-	ath10k_wmi_gpio_output(ar, ar->hw_params.led_pin, 1);
++	for (i = 0; i < ar->leds.count; i++) {
++		struct ath10k_led *led = &ar->leds.led[i];
++
++		ath10k_wmi_gpio_config(ar, led->pin, 0, WMI_GPIO_PULL_NONE,
++				       WMI_GPIO_INTTYPE_DISABLE);
++		ath10k_wmi_gpio_output(ar, led->pin, led->active_low);
++	}
+ 
+ 	return 0;
+ }
+ 
+-int ath10k_leds_register(struct ath10k *ar)
++static int ath10k_leds_add(struct ath10k *ar, u32 pin, bool active_low,
++			   const char *suffix, const char *trigger)
+ {
++	struct ath10k_led *led;
+ 	int ret;
+ 
+-	if (ar->hw_params.led_pin == 0)
+-		/* leds not supported */
+-		return 0;
++	if (ar->leds.count >= ARRAY_SIZE(ar->leds.led))
++		return -ENOSPC;
++
++	led = &ar->leds.led[ar->leds.count];
++	led->ar = ar;
++	led->pin = pin;
++	led->active_low = active_low;
+ 
+-	snprintf(ar->leds.label, sizeof(ar->leds.label), "ath10k-%s",
+-		 wiphy_name(ar->hw->wiphy));
++	if (suffix)
++		snprintf(led->label, sizeof(led->label), "ath10k-%s-%s",
++			 wiphy_name(ar->hw->wiphy), suffix);
++	else
++		snprintf(led->label, sizeof(led->label), "ath10k-%s",
++			 wiphy_name(ar->hw->wiphy));
+ 
+-	ar->leds.cdev.name = ar->leds.label;
+-	ar->leds.cdev.brightness_set_blocking = ath10k_leds_set_brightness_blocking;
+-	ar->leds.cdev.default_trigger = ar->led_default_trigger;
++	led->cdev.name = led->label;
++	led->cdev.brightness_set_blocking = ath10k_leds_set_brightness_blocking;
++	led->cdev.default_trigger = trigger;
+ 
+-	ret = led_classdev_register(wiphy_dev(ar->hw->wiphy), &ar->leds.cdev);
++	ret = led_classdev_register(wiphy_dev(ar->hw->wiphy), &led->cdev);
+ 	if (ret)
+ 		return ret;
+ 
++	ar->leds.count++;
++
+ 	return 0;
+ }
+ 
+-void ath10k_leds_unregister(struct ath10k *ar)
++/* LEDs on the radio's GPIOs can be described in the device tree, like for
++ * ath9k and mt76, by child nodes of the radio node:
++ *
++ *	led {			-> "ath10k-<phy>", default trigger: tpt
++ *		led-sources = <1>;
++ *		led-active-low;
++ *	};
++ *	led-red {		-> "ath10k-<phy>-red", no default trigger
++ *		led-sources = <2>;
++ *		led-active-low;
++ *		linux,default-trigger = "...";	(optional)
++ *	};
++ *
++ * If any such node exists, only the described LEDs are registered (a
++ * disabled "led" node turns the LED off). Otherwise the chip's default
++ * hw_params.led_pin is used, active-low.
++ */
++static int ath10k_leds_register_dt(struct ath10k *ar, bool *found)
+ {
+-	if (ar->hw_params.led_pin == 0)
+-		/* leds not supported */
+-		return;
++	struct device_node *np = ar->dev->of_node;
++	struct device_node *child;
++	int ret = 0;
++
++	*found = false;
++
++	for_each_child_of_node(np, child) {
++		const char *trigger = NULL;
++		const char *suffix;
++		u32 pin;
++
++		if (of_node_name_eq(child, "led"))
++			suffix = NULL;
++		else if (of_node_name_prefix(child, "led-"))
++			suffix = child->name + strlen("led-");
++		else
++			continue;
++
++		*found = true;
++
++		if (!of_device_is_available(child))
++			continue;
++
++		if (of_property_read_u32(child, "led-sources", &pin)) {
++			ath10k_warn(ar, "%pOF: missing led-sources\n", child);
++			continue;
++		}
++
++		if (of_property_read_string(child, "linux,default-trigger",
++					    &trigger) && !suffix)
++			trigger = ar->led_default_trigger;
++
++		ret = ath10k_leds_add(ar, pin,
++				      of_property_read_bool(child, "led-active-low"),
++				      suffix, trigger);
++		if (ret) {
++			of_node_put(child);
++			break;
++		}
++	}
++
++	return ret;
++}
+ 
+-	led_classdev_unregister(&ar->leds.cdev);
++int ath10k_leds_register(struct ath10k *ar)
++{
++	bool found;
++	int ret;
++
++	ret = ath10k_leds_register_dt(ar, &found);
++	if (!ret && !found && ar->hw_params.led_pin)
++		ret = ath10k_leds_add(ar, ar->hw_params.led_pin, true, NULL,
++				      ar->led_default_trigger);
++
++	if (ret)
++		ath10k_leds_unregister(ar);
++
++	return ret;
+ }
+ 
++void ath10k_leds_unregister(struct ath10k *ar)
++{
++	while (ar->leds.count > 0)
++		led_classdev_unregister(&ar->leds.led[--ar->leds.count].cdev);
++}
