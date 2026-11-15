@@ -1984,13 +1984,17 @@ static int edma_get_sset_count(struct net_device *netdev, int sset)
 	if (sset != ETH_SS_STATS)
 		return -EOPNOTSUPP;
 
-	return ARRAY_SIZE(edma_stat_names);
+	return ARRAY_SIZE(edma_stat_names) +
+	       page_pool_ethtool_stats_get_count();
 }
 
 static void edma_get_strings(struct net_device *netdev, u32 sset, u8 *data)
 {
-	if (sset == ETH_SS_STATS)
-		memcpy(data, edma_stat_names, sizeof(edma_stat_names));
+	if (sset != ETH_SS_STATS)
+		return;
+
+	memcpy(data, edma_stat_names, sizeof(edma_stat_names));
+	page_pool_ethtool_stats_get_strings(data + sizeof(edma_stat_names));
 }
 
 static void edma_get_ethtool_stats(struct net_device *netdev,
@@ -2010,6 +2014,22 @@ static void edma_get_ethtool_stats(struct net_device *netdev,
 			data[j] += READ_ONCE(s[j]);
 	}
 	data[ARRAY_SIZE(edma_stat_names) - 1] = READ_ONCE(priv->misc_error);
+
+	/* The pools' own counts, which say how often a buffer came back to
+	 * the pool's cache, through its ring or not at all. They exist when
+	 * the kernel counts them.
+	 */
+#ifdef CONFIG_PAGE_POOL_STATS
+	{
+		struct page_pool_stats ps = {};
+
+		for (i = 0; i < priv->num_queues; i++)
+			if (priv->q[i].page_pool)
+				page_pool_get_stats(priv->q[i].page_pool, &ps);
+		page_pool_ethtool_stats_get(data + ARRAY_SIZE(edma_stat_names),
+					    &ps);
+	}
+#endif
 }
 
 /* One transmit and one receive queue per ring set, as many sets as the tree
