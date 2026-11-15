@@ -41,7 +41,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -2980,10 +2980,35 @@ exit:
+@@ -2999,10 +2999,35 @@ exit:
  	return ret;
  }
  
@@ -79,7 +79,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u32 order = 0;
  	int ret;
  
-@@ -3005,10 +3030,10 @@ static int rtl8224_mdi_config_order(stru
+@@ -3024,10 +3049,10 @@ static int rtl8224_mdi_config_order(stru
  					  order ? BIT(port_offset) : 0);
  }
  
@@ -92,7 +92,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u32 polarity = 0;
  	int ret;
  
-@@ -3032,20 +3057,33 @@ static int rtl8224_mdi_config_polarity(s
+@@ -3051,20 +3076,33 @@ static int rtl8224_mdi_config_polarity(s
  
  static int rtl8224_config_init(struct phy_device *phydev)
  {

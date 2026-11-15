@@ -1,0 +1,423 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Patrick Domack <patrickdk@patrickdk.com>
+Date: Sun, 08 Nov 2026 09:30:04 -0500
+Subject: net: phy: realtek: add PHY statistics for RTL826x
+
+Add ethtool PHY statistics to the RTL826x driver entries, so that
+ethtool --phy-statistics shows the link quality registers of the
+10GBASE-T PMA and PCS.
+
+On the RTL8261N the useful ones are the fast retrain counts in 1.147
+and the latched block lock and high BER bits in 3.33. On a unit that
+drops its link, a 15 second capture caught one link partner fast
+retrain while 3.33 read 0x53ff, meaning block lock lost, high BER, 19
+BER counts and 255 errored blocks. 1.1 kept the PMA receive link up the
+whole time, so phylib never saw the event. Both registers clear on read
+and their counts stop at 31, 63 and 255. read_status() reads them on
+every call and adds them to 64-bit totals.
+
+If 3.45 reads with bit 15 set and its reserved bit 14 clear, the PHY
+has the high order counters of 45.2.3.19 and 45.2.3.20, and 3.33 holds
+only the low bits of two 22-bit counters. The driver then reads 3.44
+and 3.45 right after each 3.33 read and adds the full values. The
+standard gives 3.44 no presence bit, so the driver uses it only when
+3.45 is present. The RTL8261N saturates at 255, so it has neither.
+
+3.33 belongs to the 10GBASE-T PCS. The driver counts it only while the
+link runs at 10G. At 1G and 100M that PCS has no block lock and the
+register means nothing. The 802.3bz drafts reuse the neighbouring 3.32
+for 2.5G and 5G, but no text at hand says the same of 3.33, so those
+speeds are not counted either.
+
+The statistics, in ethtool order:
+
+  pcs_link_drops           reads of 3.33 with bit 15 clear or bit 14
+                           set, in a link-up window at 10G
+  lp_fast_retrains         sum of 1.147 bits 15:11
+  ld_fast_retrains         sum of 1.147 bits 10:6
+  pcs_errored_blocks       sum of 3.33 bits 7:0, with 3.45 if present,
+                           link-up windows at 10G only
+  pcs_ber_count            sum of 3.33 bits 13:8, with 3.44 if 3.45 is
+                           present, link-up windows at 10G only
+  fast_retrain_negotiated  1.147 bit 3
+  fast_retrain_enabled     1.147 bit 0
+  lp_tx_power_backoff_db   1.131 bits 15:13 in 2 dB steps
+  ld_tx_power_backoff_db   1.131 bits 12:10 in 2 dB steps
+  short_reach_mode         1.131 bit 0
+
+The first five are counts. The other five are register state that no
+other interface shows. Without the two fast retrain bits, a fast
+retrain count of 0 cannot tell a quiet link from one that never
+negotiated fast retrain. The backoff and short reach values are what
+the next patch decides on. phylib already counts the link drops it
+sees in link_down_events, so they get no statistic here.
+
+All values are unsigned. The power backoff fields are valid only while
+1.129 bit 0 is set. A total not read yet, or a value whose latest read
+failed, shows ETHTOOL_STAT_NOT_SET, the U64_MAX other PHY drivers use
+for this. The number of statistics never changes and get_stats()
+cannot fail. The optional SNR margin, minimum margin and RX power
+registers, 1.133 to 1.144, are left out. The RTL8261N returns 0x0000 in
+all of them, and they would need a signed encoding.
+
+1.1 bit 2 latches low, and phylib depends on the latch. In polling mode
+genphy_c45_read_link() reads 1.1 once while the link is up, so a short
+drop shows up in that one read and nowhere else. The statistics never
+read 1.1.
+
+The PCS counters also run while the link trains or is down. Both units
+read 3.33 as 0x7fff after boot. A 3.33 read counts only if phylib had
+the link up at 10G at the previous 3.33 read and at this one. Other
+reads still clear the register, and the driver drops their counts. So
+a drop phylib reports counts in link_down_events and not here.
+pcs_link_drops holds the events phylib does not report. Those are PCS
+events while the PMA link stays up, and in interrupt mode a PMA drop
+that is over before phylib reads 1.1, where its double read reports
+the link up.
+
+In polling mode read_status() samples once a second, and get_stats()
+returns those totals without reading a counter. A sample between two
+polls could take a drop phylib has not yet read from 1.1 into the PCS
+totals as well. In interrupt mode read_status() runs only on link
+changes, so get_stats() samples too, and counts 3.33 only while 1.129
+bit 0 shows the PMA link up.
+
+This applies on top of 742 "net: phy: realtek: add 5G and 10G PHY
+support" and 743 "net: phy: realtek: reset RTL8261N USXGMII SerDes on
+link up", which are not in mainline yet.
+
+Signed-off-by: Patrick Domack <patrickdk@patrickdk.com>
+---
+ drivers/net/phy/realtek/realtek.h      |   15 ++
+ drivers/net/phy/realtek/realtek_main.c |  226 ++++++++++++++++++++++++++++++++-
+ 2 files changed, 240 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/realtek/realtek.h
++++ b/drivers/net/phy/realtek/realtek.h
+@@ -8,6 +8,20 @@
+ #include "phy_patch.h"
+ #include "phy_patch_rtl826x.h"
+ 
++struct rtl826x_stats {
++	u64 pcs_link_drops;
++	u64 lp_fast_retrains;
++	u64 ld_fast_retrains;
++	u64 pcs_errored_blocks;
++	u64 pcs_ber_count;
++	int fsrt;
++	bool fsrt_seen;
++	bool pcs_seen;
++	bool pcs_window_up;
++	bool pcs_hi_checked;
++	bool pcs_hi_present;
++};
++
+ struct rtl826x_priv {
+ 	struct rtlgen_phy_patch_db *patch;
+ 	bool enable_pma_low_power:1;
+@@ -15,6 +29,7 @@ struct rtl826x_priv {
+ 	struct delayed_work sds_work;
+ 	bool sds_work_disabled;
+ 	unsigned int sds_retries;
++	struct rtl826x_stats stats;
+ };
+ 
+ int rtl822x_hwmon_init(struct phy_device *phydev);
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -7,6 +7,7 @@
+  *
+  * Copyright (c) 2004 Freescale Semiconductor, Inc.
+  */
++#include <linux/bitfield.h>
+ #include <linux/bitops.h>
+ #include <linux/crc32.h>
+ #include <linux/ethtool_netlink.h>
+@@ -345,6 +346,24 @@ struct rtl8261x_fw_entry {
+ 
+ #define RTL826X_VND2_INSR			0xA43A
+ 
++/* IEEE 802.3 Clause 45 10GBASE-T registers not in uapi/linux/mdio.h */
++#define RTL826X_PMA_10GBT_STAT			129
++#define   RTL826X_PMA_10GBT_STAT_LP_INFO_VALID	BIT(0)
++#define RTL826X_PMA_10GBT_TXPWR_LP_PBO		GENMASK(15, 13)
++#define RTL826X_PMA_10GBT_TXPWR_LD_PBO		GENMASK(12, 10)
++#define RTL826X_PMA_10GBR_FSRT_LP_COUNT		GENMASK(15, 11)
++#define RTL826X_PMA_10GBR_FSRT_LD_COUNT		GENMASK(10, 6)
++#define RTL826X_PMA_10GBR_FSRT_NEGOTIATED	BIT(3)
++#define RTL826X_PCS_10GBRT_STAT2_BLKLK		BIT(15)
++#define RTL826X_PCS_10GBRT_STAT2_HIBER		BIT(14)
++#define RTL826X_PCS_10GBRT_BER_HI		44
++#define RTL826X_PCS_10GBRT_ERR_HI		45
++#define   RTL826X_PCS_10GBRT_ERR_HI_PRESENT	BIT(15)
++#define   RTL826X_PCS_10GBRT_ERR_HI_RSVD	BIT(14)
++#define   RTL826X_PCS_10GBRT_ERR_HI_COUNT	GENMASK(13, 0)
++
++#define RTL826X_PBO_STEP_DB			2
++
+ MODULE_DESCRIPTION("Realtek PHY driver");
+ MODULE_AUTHOR("Johnson Leung");
+ MODULE_LICENSE("GPL");
+@@ -3542,6 +3561,187 @@ static int rtl826x_config_aneg(struct ph
+ 	return genphy_c45_check_and_restart_aneg(phydev, changed);
+ }
+ 
++enum rtl826x_stat_index {
++	RTL826X_STAT_PCS_LINK_DROPS,
++	RTL826X_STAT_LP_FAST_RETRAINS,
++	RTL826X_STAT_LD_FAST_RETRAINS,
++	RTL826X_STAT_PCS_ERRORED_BLOCKS,
++	RTL826X_STAT_PCS_BER_COUNT,
++	RTL826X_STAT_FAST_RETRAIN_NEGOTIATED,
++	RTL826X_STAT_FAST_RETRAIN_ENABLED,
++	RTL826X_STAT_LP_PBO,
++	RTL826X_STAT_LD_PBO,
++	RTL826X_STAT_SHORT_REACH,
++	RTL826X_STAT_COUNT,
++};
++
++static const char * const rtl826x_stat_names[RTL826X_STAT_COUNT] = {
++	[RTL826X_STAT_PCS_LINK_DROPS]		= "pcs_link_drops",
++	[RTL826X_STAT_LP_FAST_RETRAINS]		= "lp_fast_retrains",
++	[RTL826X_STAT_LD_FAST_RETRAINS]		= "ld_fast_retrains",
++	[RTL826X_STAT_PCS_ERRORED_BLOCKS]	= "pcs_errored_blocks",
++	[RTL826X_STAT_PCS_BER_COUNT]		= "pcs_ber_count",
++	[RTL826X_STAT_FAST_RETRAIN_NEGOTIATED]	= "fast_retrain_negotiated",
++	[RTL826X_STAT_FAST_RETRAIN_ENABLED]	= "fast_retrain_enabled",
++	[RTL826X_STAT_LP_PBO]			= "lp_tx_power_backoff_db",
++	[RTL826X_STAT_LD_PBO]			= "ld_tx_power_backoff_db",
++	[RTL826X_STAT_SHORT_REACH]		= "short_reach_mode",
++};
++
++struct rtl826x_stat_regs {
++	int pma_10gbt_stat;
++	int txpwr;
++};
++
++static u64 rtl826x_stat_total(bool seen, u64 total)
++{
++	return seen ? total : ETHTOOL_STAT_NOT_SET;
++}
++
++static void rtl826x_stats_fsrt(struct rtl826x_stats *st, int val)
++{
++	st->fsrt = val;
++	if (val < 0)
++		return;
++
++	st->fsrt_seen = true;
++	st->lp_fast_retrains += FIELD_GET(RTL826X_PMA_10GBR_FSRT_LP_COUNT, val);
++	st->ld_fast_retrains += FIELD_GET(RTL826X_PMA_10GBR_FSRT_LD_COUNT, val);
++}
++
++/* 3.45 is there if bit 15 reads 1 and the reserved bit 14 reads 0 */
++static bool rtl826x_stats_pcs_hi(int err_hi)
++{
++	return err_hi >= 0 && (err_hi & RTL826X_PCS_10GBRT_ERR_HI_PRESENT) &&
++	       !(err_hi & RTL826X_PCS_10GBRT_ERR_HI_RSVD);
++}
++
++static void rtl826x_stats_pcs(struct rtl826x_stats *st, int val, int ber_hi,
++			      int err_hi, bool link)
++{
++	bool window_up = st->pcs_window_up && link;
++	u64 errored, ber;
++
++	st->pcs_window_up = window_up;
++	if (val < 0)
++		return;
++
++	st->pcs_seen = true;
++	st->pcs_window_up = link;
++	if (!window_up)
++		return;
++
++	if (!(val & RTL826X_PCS_10GBRT_STAT2_BLKLK) ||
++	    (val & RTL826X_PCS_10GBRT_STAT2_HIBER))
++		st->pcs_link_drops++;
++
++	errored = FIELD_GET(MDIO_PCS_10GBRT_STAT2_ERR, val);
++	ber = FIELD_GET(MDIO_PCS_10GBRT_STAT2_BER, val);
++	if (st->pcs_hi_present) {
++		if (err_hi >= 0)
++			errored |= (u64)FIELD_GET(RTL826X_PCS_10GBRT_ERR_HI_COUNT,
++						  err_hi) << 8;
++		if (ber_hi >= 0)
++			ber |= (u64)ber_hi << 6;
++	}
++
++	st->pcs_errored_blocks += errored;
++	st->pcs_ber_count += ber;
++}
++
++static void rtl826x_stats_fill(const struct rtl826x_stats *st,
++			       const struct rtl826x_stat_regs *regs, u64 *data)
++{
++	bool fsrt = st->fsrt_seen && st->fsrt >= 0;
++	bool pbo = regs->txpwr >= 0 && regs->pma_10gbt_stat >= 0 &&
++		   (regs->pma_10gbt_stat & RTL826X_PMA_10GBT_STAT_LP_INFO_VALID);
++
++	data[RTL826X_STAT_PCS_LINK_DROPS] =
++		rtl826x_stat_total(st->pcs_seen, st->pcs_link_drops);
++	data[RTL826X_STAT_LP_FAST_RETRAINS] =
++		rtl826x_stat_total(st->fsrt_seen, st->lp_fast_retrains);
++	data[RTL826X_STAT_LD_FAST_RETRAINS] =
++		rtl826x_stat_total(st->fsrt_seen, st->ld_fast_retrains);
++	data[RTL826X_STAT_PCS_ERRORED_BLOCKS] =
++		rtl826x_stat_total(st->pcs_seen, st->pcs_errored_blocks);
++	data[RTL826X_STAT_PCS_BER_COUNT] =
++		rtl826x_stat_total(st->pcs_seen, st->pcs_ber_count);
++
++	data[RTL826X_STAT_FAST_RETRAIN_NEGOTIATED] = fsrt ?
++		!!(st->fsrt & RTL826X_PMA_10GBR_FSRT_NEGOTIATED) :
++		ETHTOOL_STAT_NOT_SET;
++	data[RTL826X_STAT_FAST_RETRAIN_ENABLED] = fsrt ?
++		!!(st->fsrt & MDIO_PMA_10GBR_FSRT_ENABLE) :
++		ETHTOOL_STAT_NOT_SET;
++
++	data[RTL826X_STAT_LP_PBO] = pbo ? RTL826X_PBO_STEP_DB *
++		FIELD_GET(RTL826X_PMA_10GBT_TXPWR_LP_PBO, regs->txpwr) :
++		ETHTOOL_STAT_NOT_SET;
++	data[RTL826X_STAT_LD_PBO] = pbo ? RTL826X_PBO_STEP_DB *
++		FIELD_GET(RTL826X_PMA_10GBT_TXPWR_LD_PBO, regs->txpwr) :
++		ETHTOOL_STAT_NOT_SET;
++	data[RTL826X_STAT_SHORT_REACH] = regs->txpwr >= 0 ?
++		!!(regs->txpwr & MDIO_PMA_10GBT_TXPWR_SHORT) :
++		ETHTOOL_STAT_NOT_SET;
++}
++
++static void rtl826x_stats_sample(struct phy_device *phydev, bool pma_up)
++{
++	struct rtl826x_priv *priv = phydev->priv;
++	struct rtl826x_stats *st = &priv->stats;
++	int val, ber_hi = -ENODATA, err_hi = -ENODATA;
++
++	val = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_PMA_10GBR_FSRT_CSR);
++	rtl826x_stats_fsrt(st, val);
++
++	val = phy_read_mmd(phydev, MDIO_MMD_PCS, MDIO_PCS_10GBRT_STAT2);
++	if (val >= 0 && !st->pcs_hi_checked) {
++		st->pcs_hi_checked = true;
++		st->pcs_hi_present =
++			rtl826x_stats_pcs_hi(phy_read_mmd(phydev, MDIO_MMD_PCS,
++							  RTL826X_PCS_10GBRT_ERR_HI));
++	}
++	if (val >= 0 && st->pcs_hi_present) {
++		ber_hi = phy_read_mmd(phydev, MDIO_MMD_PCS,
++				      RTL826X_PCS_10GBRT_BER_HI);
++		err_hi = phy_read_mmd(phydev, MDIO_MMD_PCS,
++				      RTL826X_PCS_10GBRT_ERR_HI);
++	}
++	rtl826x_stats_pcs(st, val, ber_hi, err_hi, pma_up && phydev->link &&
++			  phydev->speed == SPEED_10000);
++}
++
++static int rtl826x_get_sset_count(struct phy_device *phydev)
++{
++	return RTL826X_STAT_COUNT;
++}
++
++static void rtl826x_get_strings(struct phy_device *phydev, u8 *data)
++{
++	int i;
++
++	for (i = 0; i < RTL826X_STAT_COUNT; i++)
++		ethtool_puts(&data, rtl826x_stat_names[i]);
++}
++
++static void rtl826x_get_stats(struct phy_device *phydev,
++			      struct ethtool_stats *stats, u64 *data)
++{
++	struct rtl826x_priv *priv = phydev->priv;
++	struct rtl826x_stat_regs regs;
++
++	regs.pma_10gbt_stat = phy_read_mmd(phydev, MDIO_MMD_PMAPMD,
++					   RTL826X_PMA_10GBT_STAT);
++	regs.txpwr = phy_read_mmd(phydev, MDIO_MMD_PMAPMD,
++				  MDIO_PMA_10GBT_TXPWR);
++
++	if (!phy_polling_mode(phydev))
++		rtl826x_stats_sample(phydev, regs.pma_10gbt_stat >= 0 &&
++				     (regs.pma_10gbt_stat &
++				      RTL826X_PMA_10GBT_STAT_LP_INFO_VALID));
++	rtl826x_stats_fill(&priv->stats, &regs, data);
++}
++
+ static int rtl826x_read_status(struct phy_device *phydev)
+ {
+ 	int status;
+@@ -3574,7 +3774,13 @@ static int rtl826x_read_status(struct ph
+ 			return ret;
+ 	}
+ 
+-	return genphy_c45_read_mdix(phydev);
++	ret = genphy_c45_read_mdix(phydev);
++	if (ret)
++		return ret;
++
++	rtl826x_stats_sample(phydev, true);
++
++	return 0;
+ }
+ 
+ static int rtl826x_config_intr(struct phy_device *phydev)
+@@ -4178,6 +4384,9 @@ static struct phy_driver realtek_drvs[]
+ 		.get_wol        = rtl826x_get_wol,
+ 		.get_tunable    = rtl826x_get_tunable,
+ 		.set_tunable    = rtl826x_set_tunable,
++		.get_sset_count = rtl826x_get_sset_count,
++		.get_strings    = rtl826x_get_strings,
++		.get_stats      = rtl826x_get_stats,
+ 	}, {
+ 		.name           = "RTL8254B 5Gbps PHY",
+ 		.config_init    = rtl826x_config_init,
+@@ -4195,6 +4404,9 @@ static struct phy_driver realtek_drvs[]
+ 		.get_wol        = rtl826x_get_wol,
+ 		.get_tunable    = rtl826x_get_tunable,
+ 		.set_tunable    = rtl826x_set_tunable,
++		.get_sset_count = rtl826x_get_sset_count,
++		.get_strings    = rtl826x_get_strings,
++		.get_stats      = rtl826x_get_stats,
+ 	}, {
+ 		.name           = "RTL8261BE 10Gbps PHY",
+ 		.config_init    = rtl826x_config_init,
+@@ -4213,6 +4425,9 @@ static struct phy_driver realtek_drvs[]
+ 		.get_wol        = rtl826x_get_wol,
+ 		.get_tunable    = rtl826x_get_tunable,
+ 		.set_tunable    = rtl826x_set_tunable,
++		.get_sset_count = rtl826x_get_sset_count,
++		.get_strings    = rtl826x_get_strings,
++		.get_stats      = rtl826x_get_stats,
+ 	}, {
+ 		.name           = "RTL8261N 10Gbps PHY",
+ 		.config_init    = rtl826x_config_init,
+@@ -4231,6 +4446,9 @@ static struct phy_driver realtek_drvs[]
+ 		.get_wol        = rtl826x_get_wol,
+ 		.get_tunable    = rtl826x_get_tunable,
+ 		.set_tunable    = rtl826x_set_tunable,
++		.get_sset_count = rtl826x_get_sset_count,
++		.get_strings    = rtl826x_get_strings,
++		.get_stats      = rtl826x_get_stats,
+ 	}, {
+ 		PHY_ID_MATCH_EXACT(RTL_8264),
+ 		.name           = "RTL8264 10Gbps PHY",
+@@ -4248,6 +4466,9 @@ static struct phy_driver realtek_drvs[]
+ 		.get_wol        = rtl826x_get_wol,
+ 		.get_tunable    = rtl826x_get_tunable,
+ 		.set_tunable    = rtl826x_set_tunable,
++		.get_sset_count = rtl826x_get_sset_count,
++		.get_strings    = rtl826x_get_strings,
++		.get_stats      = rtl826x_get_stats,
+ 	}, {
+ 		.name           = "RTL8264B 10Gbps PHY",
+ 		.config_init    = rtl826x_config_init,
+@@ -4265,6 +4486,9 @@ static struct phy_driver realtek_drvs[]
+ 		.get_wol        = rtl826x_get_wol,
+ 		.get_tunable    = rtl826x_get_tunable,
+ 		.set_tunable    = rtl826x_set_tunable,
++		.get_sset_count = rtl826x_get_sset_count,
++		.get_strings    = rtl826x_get_strings,
++		.get_stats      = rtl826x_get_stats,
+ 	},
+ };
+ 
