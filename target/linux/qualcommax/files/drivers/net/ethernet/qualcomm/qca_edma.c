@@ -267,26 +267,33 @@ static void edma_idx_write(struct edma_priv *priv, u32 reg, u32 val)
 	writel(val, priv->base + reg);
 }
 
+/* Fills the ring with every buffer the ring has room for. The buffers the
+ * engine holds are the ones the shadow array still has: a buffer comes back
+ * only through a descriptor, which the engine writes after it read the fill
+ * descriptor of that buffer, so a slot without a page is a fill descriptor
+ * the engine is done with. The slot after the one filled is kept free, so
+ * that a full ring is never the producer meeting the consumer, which is how
+ * the engine tells an empty one. That bounds the ring by what the driver
+ * itself accounts for, without reading the engine's consumer index.
+ */
 static int edma_rx_fill(struct edma_queue *q)
 {
 	struct edma_ring *rxfill_ring = &q->rxfill_ring;
 	struct edma_priv *priv = q->priv;
 	struct edma_rxfill_desc *rxfill_desc;
-	u16 prod, cons, next;
+	u16 prod, next;
 	struct page *page;
 	u16 filled = 0;
 	dma_addr_t dma;
 
 	prod = q->rxfill_prod;
-	cons = edma_idx_read(priv, EDMA_REG_RXFILL_CONS_IDX(q->rxfill)) &
-	       EDMA_RXFILL_CONS_IDX_MASK & (rxfill_ring->count - 1);
 
 	while (1) {
 		next = prod + 1;
 		if (next == rxfill_ring->count)
 			next = 0;
 
-		if (next == cons)
+		if (rxfill_ring->rx_store[next].page)
 			break;
 		/* The page may still be prefetched inside EDMA. */
 		if (unlikely(rxfill_ring->rx_store[prod].page))
