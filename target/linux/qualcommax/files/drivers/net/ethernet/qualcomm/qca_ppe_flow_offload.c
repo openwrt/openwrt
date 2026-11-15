@@ -100,6 +100,7 @@ struct ppe_flow_entry {
 	int uplink;
 	int in_uplink;
 	int session;
+	struct ppe_vp_flow vpf;
 	u8 iport;
 	u8 oport;
 	u16 ivid;
@@ -1125,6 +1126,32 @@ static void ppe_flow_free_ingress(struct qca_ppe_priv *priv,
 	if (ppe_res_put(priv->my_mac, entry->my_mac))
 		ppe_tbl_clear(priv, PPE_MY_MAC_TBL(entry->my_mac),
 			      PPE_MY_MAC_WORDS);
+}
+
+/**
+ * ppe_flow_drop_vp - drop flows that ingress on a virtual port
+ * @priv: the switch
+ * @vp: the virtual port, or -1 for any
+ * @br: the bridge the flows were built for, or NULL for any
+ *
+ * Both locks held. The flowtable offers again whatever is still live.
+ */
+void ppe_flow_drop_vp(struct qca_ppe_priv *priv, int vp,
+		      const struct net_device *br)
+{
+	struct ppe_flow_entry *entry, *tmp;
+
+	lockdep_assert_held(&priv->flow_lock);
+	lockdep_assert_held(&priv->vlan_lock);
+
+	list_for_each_entry_safe(entry, tmp, &priv->flow_list, list) {
+		if (!entry->vpf.key.vp ||
+		    (vp >= 0 && entry->vpf.key.vp != vp) ||
+		    (br && priv->port_br_dev[entry->iport] != br))
+			continue;
+
+		ppe_flow_drop(priv, entry);
+	}
 }
 
 /* The routing domain a set of flows was built for is going away. Their entries
@@ -2366,6 +2393,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	struct flow_action_entry *act;
 	bool snat, dnat, v6, uplink_in = false;
 	int i, ret, nfw, nhw, iport;
+	u8 vp = 0;
 
 	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
@@ -2392,9 +2420,27 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 			data.ivid = priv->ul_vid;
 			uplink_in = true;
 		}
+		/* A bridge port outside the switch is classified into the
+		 * bridge's VSI by its virtual port, as the switch's own are.
+		 */
+		if (iport < 0) {
+			int vport;
+
+			if (!ppe_vp_ingress(priv, match.key->ingress_ifindex,
+					    &vport, &vp))
+				iport = vport;
+		}
 		if (iport < 0)
 			return ppe_flow_reject(priv, PPE_REJECT_INGRESS_PORT);
 	}
+
+	/* A virtual port has the bridge's VSI and no VLAN classification, so a
+	 * flow from one is only that of a bridge that does not filter, with no
+	 * tag in its key.
+	 */
+	if (vp && (priv->vlan_filtering & BIT(iport) ||
+		   flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN)))
+		return ppe_flow_reject(priv, PPE_REJECT_INGRESS_VLAN);
 
 	/* An ingress tag is matched by the VSI it is classified into - the
 	 * uplink's tag on a PPPoE port, a bridge VLAN the port is a member
@@ -2425,6 +2471,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 				       ppe_flow_ht_params);
 	if (entry) {
 		if (entry->src_if == ppe_flow_src_if(priv, iport, data.ivid) &&
+		    entry->vpf.key.vp == vp &&
 		    ppe_flow_entry_age(priv, entry) >= 0)
 			return 0;
 
@@ -2449,7 +2496,8 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 		data.l4proto = match.key->ip_proto;
 	}
 
-	if (ppe_flow_proto(data.l4proto) < 0)
+	if (ppe_flow_proto(data.l4proto) < 0 ||
+	    (vp && data.l4proto != IPPROTO_TCP && data.l4proto != IPPROTO_UDP))
 		return ppe_flow_reject(priv, PPE_REJECT_PROTO);
 
 	/* The entry matches any flags; a flag the rule excludes is only
@@ -2657,6 +2705,36 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 		priv->flow_reject[ret == -ENOSPC ? PPE_REJECT_RESOURCE :
 				  PPE_REJECT_EGRESS_PORT]++;
 		goto err_ingress;
+	}
+
+	/* A flow that would leave through the CPU for a device outside the
+	 * switch gains nothing from a trip through the PPE: the frame comes
+	 * back to be queued on the host's interface, as it was received.
+	 */
+	if (vp && entry->xdev && !(entry->xdev & PPE_XDEV_UL)) {
+		priv->flow_reject[PPE_REJECT_VP_EGRESS]++;
+		ret = -EOPNOTSUPP;
+		goto err_egress;
+	}
+
+	/* The tuple as the frame arrives, which the egress half of the flow
+	 * has already rewritten in the entry.
+	 */
+	if (vp) {
+		struct ppe_vp_key *key = &entry->vpf.key;
+
+		key->vp = vp;
+		key->proto = data.l4proto;
+		key->v6 = v6;
+		key->port[0] = data.sport;
+		key->port[1] = data.dport;
+		if (v6) {
+			key->addr.v6[0] = data.v6_src;
+			key->addr.v6[1] = data.v6_dst;
+		} else {
+			key->addr.v4[0] = data.v4_src;
+			key->addr.v4[1] = data.v4_dst;
+		}
 	}
 
 	ppe_flow_encode(&data, v6, snat, dnat, entry->nexthop, entry->src_if,

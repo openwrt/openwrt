@@ -246,6 +246,12 @@ int qca_ppe_port_vlan_filtering(struct dsa_switch *ds, int port,
 	else
 		priv->vlan_filtering &= ~BIT(port);
 
+	/* A virtual port classifies into the bridge's own VSI whatever the
+	 * VLANs, so its flows are only right while the bridge does not filter.
+	 */
+	if (priv->port_br_dev[port])
+		ppe_flow_drop_vp(priv, -1, priv->port_br_dev[port]);
+
 	ppe_port_def_cvid_set(priv, port, priv->port_pvid[port],
 			      vlan_filtering && priv->port_pvid[port]);
 
