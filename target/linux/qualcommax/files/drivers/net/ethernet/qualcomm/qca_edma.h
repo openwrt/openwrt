@@ -6,6 +6,7 @@
 #ifndef __QCA_EDMA_H__
 #define __QCA_EDMA_H__
 
+#include <linux/dim.h>
 #include <linux/dsa/tag_qca.h>
 #include <linux/qca_edma.h>
 #include <linux/etherdevice.h>
@@ -142,6 +143,13 @@
 /* Default moderation: an interrupt per 16 frames, or after 100 us on RX. */
 #define EDMA_RX_COAL_US			100
 #define EDMA_COAL_FRAMES		16
+
+/* The profiles net DIM steps through scale the configured timer and frame
+ * count: the values above, or what ethtool -C sets, are the middle profile a
+ * ring starts on. Each step to the right waits longer and gathers more frames
+ * per interrupt, each step to the left less.
+ */
+#define EDMA_DIM_BASE_IX		2
 
 /* A moderation timer counts 128 cycles of the EDMA clock. */
 #define EDMA_MOD_TIMER_CYCLES		128
@@ -405,6 +413,18 @@ struct edma_queue {
 	 */
 	struct edma_stats stats;
 
+	/* What net DIM samples: the interrupts this set took and what its
+	 * receive and transmit completion rings moved. Only the poll writes
+	 * them, and the workers apply the profile DIM chose.
+	 */
+	struct dim rx_dim;
+	struct dim tx_dim;
+	u16 dim_events;
+	u64 rx_pkts;
+	u64 rx_bytes;
+	u64 tx_pkts;
+	u64 tx_bytes;
+
 	u8 idx;
 	u8 txdesc;
 	u8 txcmpl;
@@ -436,6 +456,8 @@ struct edma_priv {
 	u16 rx_mod_timer;
 	u16 tx_ugt_thre;
 	u16 rx_ugt_thre;
+	bool rx_adaptive;
+	bool tx_adaptive;
 
 	u64 misc_error;
 

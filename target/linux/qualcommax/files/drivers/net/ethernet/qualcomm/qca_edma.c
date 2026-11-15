@@ -6,6 +6,7 @@
 
 #include <linux/bitfield.h>
 #include <linux/clk.h>
+#include <linux/dim.h>
 #include <linux/ethtool.h>
 #include <linux/hash.h>
 #include <linux/if_vlan.h>
@@ -488,6 +489,9 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	if (cleaned == 0)
 		return 0;
 
+	q->tx_pkts += pkts;
+	q->tx_bytes += bytes;
+
 	/* A drain runs with the queue deliberately stopped and the rings about
 	 * to be freed, so only a poll may wake it.
 	 */
@@ -758,7 +762,7 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	struct sk_buff *skb;
 	u16 prod, cons;
 	struct page *page;
-	u32 done = 0;
+	u32 done = 0, bytes = 0;
 	u32 src_port, desc_status;
 	int pkt_len;
 
@@ -809,6 +813,7 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 
 		desc_status = cur.status;
 		pkt_len = desc_status & EDMA_RXDESC_PACKET_LEN_MASK;
+		bytes += pkt_len;
 
 		if (unlikely(desc_status & EDMA_RXDESC_MORE))
 			q->stats.rx_split_frame++;
@@ -905,6 +910,9 @@ next:
 
 	edma_rx_fill(q);
 
+	q->rx_pkts += done;
+	q->rx_bytes += bytes;
+
 	if (done) {
 		q->rxdesc_cons = cons;
 		edma_idx_write(priv, EDMA_REG_RXDESC_CONS_IDX(q->rxdesc), cons);
@@ -915,6 +923,110 @@ next:
 /* One poll serves a ring set's TX completions and its RX, so that each set
  * has a single NAPI context for the CPU its interrupts are on.
  */
+/* The timer and threshold a ring runs with on profile @ix of net DIM: the
+ * configured pair scaled, with the first profile an interrupt per frame.
+ */
+static void edma_coal_profile(u16 timer, u16 thre, unsigned int ix,
+			      u16 *ticks, u16 *ugt)
+{
+	static const u16 pct[NET_DIM_PARAMS_NUM_PROFILES] = {
+		10, 50, 100, 200, 400
+	};
+	u32 frames = ix ? ((u32)thre + 1) * pct[ix] / 100 : 1;
+	u32 t = timer ? max_t(u32, (u32)timer * pct[ix] / 100, 1) : 0;
+
+	*ticks = min_t(u32, t, EDMA_MOD_TIMER_MAX);
+	*ugt = clamp_t(u32, frames, 1, EDMA_UGT_THRE_MAX + 1) - 1;
+}
+
+static void edma_rx_coal_write(struct edma_queue *q)
+{
+	struct edma_priv *priv = q->priv;
+	unsigned int ix = EDMA_DIM_BASE_IX;
+	u16 ticks, ugt;
+
+	if (READ_ONCE(priv->rx_adaptive))
+		ix = READ_ONCE(q->rx_dim.profile_ix);
+	edma_coal_profile(priv->rx_mod_timer, priv->rx_ugt_thre, ix, &ticks,
+			  &ugt);
+	regmap_write(priv->regmap, EDMA_REG_RX_MOD_TIMER(q->rxdesc), ticks);
+	regmap_write(priv->regmap, EDMA_REG_RXDESC_UGT_THRE(q->rxdesc), ugt);
+}
+
+static void edma_tx_coal_write(struct edma_queue *q)
+{
+	struct edma_priv *priv = q->priv;
+	const struct edma_soc_data *soc = priv->soc;
+	unsigned int ix = EDMA_DIM_BASE_IX;
+	u16 ticks, ugt;
+
+	if (READ_ONCE(priv->tx_adaptive))
+		ix = READ_ONCE(q->tx_dim.profile_ix);
+	edma_coal_profile(priv->tx_mod_timer, priv->tx_ugt_thre, ix, &ticks,
+			  &ugt);
+	regmap_write(priv->regmap,
+		     EDMA_REG_TX_MOD_TIMER(soc->tx_int_base, q->txcmpl), ticks);
+	regmap_write(priv->regmap,
+		     EDMA_REG_TXCMPL_UGT_THRE(soc->txcmpl_base, q->txcmpl),
+		     ugt);
+}
+
+static void edma_rx_dim_work(struct work_struct *work)
+{
+	struct dim *dim = container_of(work, struct dim, work);
+	struct edma_queue *q = container_of(dim, struct edma_queue, rx_dim);
+
+	edma_rx_coal_write(q);
+	dim->state = DIM_START_MEASURE;
+}
+
+static void edma_tx_dim_work(struct work_struct *work)
+{
+	struct dim *dim = container_of(work, struct dim, work);
+	struct edma_queue *q = container_of(dim, struct edma_queue, tx_dim);
+
+	edma_tx_coal_write(q);
+	dim->state = DIM_START_MEASURE;
+}
+
+/* Back to the middle profile with no history, as a ring starts. */
+static void edma_dim_reset(struct dim *dim)
+{
+	dim->profile_ix = EDMA_DIM_BASE_IX;
+	dim->state = DIM_START_MEASURE;
+	dim->tune_state = DIM_PARKING_ON_TOP;
+	dim->steps_right = 0;
+	dim->steps_left = 0;
+	dim->tired = 0;
+	memset(&dim->prev_stats, 0, sizeof(dim->prev_stats));
+}
+
+/* Called as a poll completes, with the interrupts still masked: one event is
+ * one poll that went idle, which is what an interrupt starts.
+ */
+static void edma_dim_sample(struct edma_queue *q)
+{
+	struct edma_priv *priv = q->priv;
+	struct dim_sample sample;
+
+	q->dim_events++;
+
+	/* Pairs with the release in edma_set_coalesce(), which resets a dim
+	 * before it says the ring is adaptive.
+	 */
+	if (smp_load_acquire(&priv->rx_adaptive)) {
+		dim_update_sample(q->dim_events, q->rx_pkts, q->rx_bytes,
+				  &sample);
+		net_dim(&q->rx_dim, &sample);
+	}
+	/* As above, for the transmit side. */
+	if (smp_load_acquire(&priv->tx_adaptive)) {
+		dim_update_sample(q->dim_events, q->tx_pkts, q->tx_bytes,
+				  &sample);
+		net_dim(&q->tx_dim, &sample);
+	}
+}
+
 static int edma_napi(struct napi_struct *napi, int budget)
 {
 	struct edma_queue *q = container_of(napi, struct edma_queue, napi);
@@ -948,6 +1060,7 @@ static int edma_napi(struct napi_struct *napi, int budget)
 	}
 
 	if (napi_complete_done(napi, done)) {
+		edma_dim_sample(q);
 		edma_tx_irq_unmask(q);
 		edma_rx_irq_unmask(q);
 	}
@@ -1390,15 +1503,7 @@ static void edma_configure_txcmpl_ring(struct edma_queue *q)
 					  q->txcmpl),
 		     EDMA_TXCMPL_RETMODE_OPAQUE);
 
-	regmap_write(priv->regmap,
-		     EDMA_REG_TX_MOD_TIMER(soc->tx_int_base,
-					   q->txcmpl),
-		     priv->tx_mod_timer);
-
-	regmap_write(priv->regmap,
-		     EDMA_REG_TXCMPL_UGT_THRE(soc->txcmpl_base,
-					      q->txcmpl),
-		     priv->tx_ugt_thre);
+	edma_tx_coal_write(q);
 
 	regmap_write(priv->regmap,
 		     EDMA_REG_TX_INT_CTRL(soc->tx_int_base,
@@ -1428,13 +1533,7 @@ static void edma_configure_rxdesc_ring(struct edma_queue *q)
 		     EDMA_REG_RXDESC_RING_SIZE(q->rxdesc),
 		     val);
 
-	regmap_write(priv->regmap,
-		     EDMA_REG_RX_MOD_TIMER(q->rxdesc),
-		     priv->rx_mod_timer);
-
-	regmap_write(priv->regmap,
-		     EDMA_REG_RXDESC_UGT_THRE(q->rxdesc),
-		     priv->rx_ugt_thre);
+	edma_rx_coal_write(q);
 
 	regmap_write(priv->regmap,
 		     EDMA_REG_RX_INT_CTRL(q->rxdesc),
@@ -1700,6 +1799,8 @@ static int edma_get_coalesce(struct net_device *netdev,
 	ec->tx_coalesce_usecs = edma_mod_timer_us(priv, priv->tx_mod_timer);
 	ec->rx_max_coalesced_frames = priv->rx_ugt_thre + 1;
 	ec->tx_max_coalesced_frames = priv->tx_ugt_thre + 1;
+	ec->use_adaptive_rx_coalesce = priv->rx_adaptive;
+	ec->use_adaptive_tx_coalesce = priv->tx_adaptive;
 
 	return 0;
 }
@@ -1710,7 +1811,6 @@ static int edma_set_coalesce(struct net_device *netdev,
 			     struct netlink_ext_ack *extack)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
-	const struct edma_soc_data *soc = priv->soc;
 	u64 rx_ticks, tx_ticks;
 	unsigned int i;
 
@@ -1737,20 +1837,32 @@ static int edma_set_coalesce(struct net_device *netdev,
 	priv->rx_ugt_thre = ec->rx_max_coalesced_frames - 1;
 	priv->tx_ugt_thre = ec->tx_max_coalesced_frames - 1;
 
+	/* A ring that turns adaptive starts from the middle profile. One that
+	 * turns fixed may still have a worker queued; it then writes the fixed
+	 * pair, as the loop below does.
+	 */
 	for (i = 0; i < priv->num_queues; i++) {
 		struct edma_queue *q = &priv->q[i];
 
-		regmap_write(priv->regmap, EDMA_REG_RX_MOD_TIMER(q->rxdesc),
-			     priv->rx_mod_timer);
-		regmap_write(priv->regmap, EDMA_REG_RXDESC_UGT_THRE(q->rxdesc),
-			     priv->rx_ugt_thre);
-		regmap_write(priv->regmap,
-			     EDMA_REG_TX_MOD_TIMER(soc->tx_int_base, q->txcmpl),
-			     priv->tx_mod_timer);
-		regmap_write(priv->regmap,
-			     EDMA_REG_TXCMPL_UGT_THRE(soc->txcmpl_base,
-						      q->txcmpl),
-			     priv->tx_ugt_thre);
+		if (ec->use_adaptive_rx_coalesce && !priv->rx_adaptive)
+			edma_dim_reset(&q->rx_dim);
+		if (ec->use_adaptive_tx_coalesce && !priv->tx_adaptive)
+			edma_dim_reset(&q->tx_dim);
+	}
+	/* Pairs with the acquire in edma_dim_sample(). */
+	smp_store_release(&priv->rx_adaptive, ec->use_adaptive_rx_coalesce);
+	/* And for the transmit side. */
+	smp_store_release(&priv->tx_adaptive, ec->use_adaptive_tx_coalesce);
+
+	for (i = 0; i < priv->num_queues; i++) {
+		struct edma_queue *q = &priv->q[i];
+
+		if (!priv->rx_adaptive)
+			cancel_work_sync(&q->rx_dim.work);
+		if (!priv->tx_adaptive)
+			cancel_work_sync(&q->tx_dim.work);
+		edma_rx_coal_write(q);
+		edma_tx_coal_write(q);
 	}
 
 	return 0;
@@ -1974,7 +2086,9 @@ static int edma_set_rxfh(struct net_device *netdev,
 
 static const struct ethtool_ops edma_ethtool_ops = {
 	.supported_coalesce_params = ETHTOOL_COALESCE_USECS |
-				     ETHTOOL_COALESCE_MAX_FRAMES,
+				     ETHTOOL_COALESCE_MAX_FRAMES |
+				     ETHTOOL_COALESCE_USE_ADAPTIVE_RX |
+				     ETHTOOL_COALESCE_USE_ADAPTIVE_TX,
 	.get_coalesce = edma_get_coalesce,
 	.set_coalesce = edma_set_coalesce,
 	.get_sset_count = edma_get_sset_count,
@@ -2021,6 +2135,16 @@ static int edma_ndo_open(struct net_device *netdev)
 
 	edma_rx_vlan_strip(priv, netdev->features);
 
+	/* Every ring starts on the middle profile, whatever stop left. */
+	for (i = 0; i < priv->num_queues; i++) {
+		struct edma_queue *q = &priv->q[i];
+
+		edma_dim_reset(&q->rx_dim);
+		edma_dim_reset(&q->tx_dim);
+		edma_rx_coal_write(q);
+		edma_tx_coal_write(q);
+	}
+
 	for (i = 0; i < priv->num_queues; i++)
 		napi_enable(&priv->q[i].napi);
 
@@ -2051,8 +2175,11 @@ static int edma_ndo_stop(struct net_device *netdev)
 		edma_rx_irq_mask(&priv->q[i]);
 	}
 	netif_tx_stop_all_queues(netdev);
-	for (i = 0; i < priv->num_queues; i++)
+	for (i = 0; i < priv->num_queues; i++) {
 		napi_disable(&priv->q[i].napi);
+		cancel_work_sync(&priv->q[i].rx_dim.work);
+		cancel_work_sync(&priv->q[i].tx_dim.work);
+	}
 
 	/* A source-port frame parked for a queue is not sent once the rings
 	 * are gone, and none is parked once the queue says it is down, which
@@ -2902,6 +3029,10 @@ static int edma_probe(struct platform_device *pdev)
 		q->rxdesc = priv->soc->rxdesc_ring - i;
 		spin_lock_init(&q->tx_lock);
 		skb_queue_head_init(&q->src_backlog);
+		INIT_WORK(&q->rx_dim.work, edma_rx_dim_work);
+		INIT_WORK(&q->tx_dim.work, edma_tx_dim_work);
+		q->rx_dim.mode = DIM_CQ_PERIOD_MODE_START_FROM_EQE;
+		q->tx_dim.mode = DIM_CQ_PERIOD_MODE_START_FROM_EQE;
 	}
 
 	ret = edma_get_mac_address(netdev, dev->of_node);
@@ -2924,6 +3055,8 @@ static int edma_probe(struct platform_device *pdev)
 						   USEC_PER_SEC);
 	priv->rx_ugt_thre = EDMA_COAL_FRAMES - 1;
 	priv->tx_ugt_thre = EDMA_COAL_FRAMES - 1;
+	priv->rx_adaptive = true;
+	priv->tx_adaptive = true;
 	priv->rx_page_order = edma_rx_page_order(netdev->mtu);
 	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
 	priv->rx_frame_len = edma_rx_frame_len(netdev->mtu);
