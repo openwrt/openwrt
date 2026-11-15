@@ -52,6 +52,11 @@ static void rteth_839x_create_tx_header(struct rteth_frag *frag, unsigned int po
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
 	frag->cpu_tag[1] = 0x0100; /* RTL8390_CPU_TAG marker */
+	/* DPM_TYPE=1 (physical): without it the ASIC resolves the port mask
+	 * through a trunk and sends to another LAG member (SDK
+	 * NIC_FWD_TYPE_PHYISCAL)
+	 */
+	frag->cpu_tag[1] |= BIT(7);
 	frag->cpu_tag[2] = BIT(4); /* AS_DPM flag */
 	frag->cpu_tag[3] = frag->cpu_tag[4] = frag->cpu_tag[5] = 0;
 	/* h->cpu_tag[1] |= BIT(1) | BIT(0); */ /* Bypass filter 1/2 */
