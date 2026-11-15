@@ -224,6 +224,14 @@ int otto_lag_port_change(struct dsa_switch *ds, int port)
 	if (dp->lag_tx_enabled)
 		otto_stp_port_state_set(ds, port, dp->stp_state);
 
+	/* Addresses are learned on the member port, not on the trunk. Entries
+	 * learned while the trunk had other members stop forwarding once the
+	 * member set changes, until the address is learned again.
+	 */
+	for (int p = 0; p < ds->num_ports; p++)
+		if (priv->lags_port_members[lag_group] & BIT_ULL(p))
+			rtldsa_port_fast_age(ds, p);
+
 	return 0;
 }
 
