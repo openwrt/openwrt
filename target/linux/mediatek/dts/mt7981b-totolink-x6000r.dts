@@ -97,7 +97,7 @@
 		reg = <1>;
 		phy-mode = "gmii";
 		phy-handle = <&int_gbe_phy>;
-		label = "wan";
+		openwrt,netdev-name = "wan";
 
 		nvmem-cells = <&macaddr_factory_1a>;
 		nvmem-cell-names = "mac-address";

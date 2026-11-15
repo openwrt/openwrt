@@ -68,7 +68,7 @@
 		phy-mode = "2500base-x";
 		nvmem-cell-names = "mac-address";
 		nvmem-cells = <&macaddr_bdinfo_de00 1>;
-		label = "wan";
+		openwrt,netdev-name = "wan";
 	};
 };
 

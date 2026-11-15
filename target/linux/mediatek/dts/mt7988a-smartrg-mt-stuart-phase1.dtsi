@@ -107,7 +107,7 @@
 &gmac1 {
 	nvmem-cells = <&macaddr 0x0>;
 	nvmem-cell-names = "mac-address";
-	label = "wan";
+	openwrt,netdev-name = "wan";
 	phy-mode = "usxgmii";
 
 	status = "okay";
@@ -116,7 +116,7 @@
 &gmac2 {
 	nvmem-cells = <&macaddr 0x1>;
 	nvmem-cell-names = "mac-address";
-	label = "lan1";
+	openwrt,netdev-name = "lan1";
 	phy-mode = "usxgmii";
 	managed = "in-band-status";
 	phy = <&phy8>;
