@@ -52,6 +52,7 @@
 #define RTL930X_LED_PORT_COPR_MASK_CTRL		(0xCC3C)
 #define RTL930X_LED_PORT_FIB_MASK_CTRL		(0xCC40)
 #define RTL930X_LED_PORT_COMBO_MASK_CTRL	(0xCC44)
+#define RTL930X_LED_PORT_MASK			GENMASK(RTL930X_CPU_PORT - 1, 0)
 
 #define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
 #define RTL930X_LED_CLK_SEL_MASK				GENMASK(17, 16)
@@ -263,6 +264,7 @@ static void rtl930x_led_init(struct otto_dsa_priv *priv)
 	u32 led_mode = 1;
 	u32 clk_freq;
 	u32 pm = 0;
+	u32 pm_copper, pm_fiber, pm_combo;
 	int ret;
 
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
@@ -379,10 +381,22 @@ static void rtl930x_led_init(struct otto_dsa_priv *priv)
 		regmap_write_bits(priv->map, RTL930X_LED_GLB_CTRL, RTL930X_LED_GLB_ACTIVE_LOW,
 				  RTL930X_LED_GLB_ACTIVE_LOW);
 
-	/* Set port type masks */
-	regmap_write(priv->map, RTL930X_LED_PORT_COPR_MASK_CTRL, pm);
-	regmap_write(priv->map, RTL930X_LED_PORT_FIB_MASK_CTRL, pm);
-	regmap_write(priv->map, RTL930X_LED_PORT_COMBO_MASK_CTRL, pm);
+	/*
+	 * The port type masks (copper LEDs, fiber LEDs, LEDs shared by both media) define the
+	 * layout of the serial LED chain. Bits beyond the last port are ignored.
+	 */
+	pm_copper = pm;
+	pm_fiber = pm;
+	pm_combo = pm;
+	of_property_read_u32(node, "realtek,led-copper-port-mask", &pm_copper);
+	of_property_read_u32(node, "realtek,led-fiber-port-mask", &pm_fiber);
+	of_property_read_u32(node, "realtek,led-combo-port-mask", &pm_combo);
+	pm_copper &= RTL930X_LED_PORT_MASK;
+	pm_fiber &= RTL930X_LED_PORT_MASK;
+	pm_combo &= RTL930X_LED_PORT_MASK;
+	regmap_write(priv->map, RTL930X_LED_PORT_COPR_MASK_CTRL, pm_copper);
+	regmap_write(priv->map, RTL930X_LED_PORT_FIB_MASK_CTRL, pm_fiber);
+	regmap_write(priv->map, RTL930X_LED_PORT_COMBO_MASK_CTRL, pm_combo);
 
 	for (int i = 0; i < 24; i++)
 		dev_dbg(dev, "%08x: %08x\n", 0xbb00cc00 + i * 4,
