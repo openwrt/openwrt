@@ -154,6 +154,10 @@ identify_magic_long() {
 	esac
 }
 
+is_gpt_dualboot() {
+	grep -q 'PARTNAME=openwrt_boot' /sys/class/block/*/uevent 2>/dev/null
+}
+
 part_magic_efi() {
 	local magic=$(get_magic_gpt "$@")
 	[ "$magic" = "EFI PART" ]
@@ -237,6 +241,78 @@ export_partdevice() {
 				return 0
 			fi
 		fi
+	done
+
+	return 1
+}
+
+export_partdevice_label() {
+	local var="$1" label="$2"
+	local found uevent line MAJOR MINOR DEVNAME DEVTYPE DISKSEQ PARTN PARTNAME
+
+	found=
+	for uevent in /sys/class/block/*/uevent; do
+		DEVTYPE= DEVNAME= PARTNAME=
+		while read line; do
+			export -n "$line"
+		done < "$uevent"
+		if [ "$DEVTYPE" = "partition" -a "$label" = "$PARTNAME" -a -b "/dev/$DEVNAME" ]; then
+			[ -n "$found" ] && {
+				echo "$label found more than once, remove duplicate partitions and try again" >&2
+				return 1
+			}
+			echo "Found $label @ /dev/$DEVNAME"
+			found="$DEVNAME"
+		fi
+	done
+	[ -n "$found" ] || return 1
+
+	export "$var=$found"
+	return 0
+}
+
+# Prints the type GUID of GPT partition <n> as stored on disk. The entries
+# are found through the GPT header, at the disk's logical block size.
+get_gpt_part_type() { # <disk> <logical block size> <n>
+	local disk="$1" bs="$2" n="$3"
+	local lba count size
+
+	[ "$(dd if="$disk" bs=1 count=8 skip="$bs" 2>/dev/null)" = "EFI PART" ] || return 1
+
+	# entries LBA (low 32 bits) @72, entry count @80, entry size @84
+	set -- $(hexdump -v -n 16 -s "$((bs + 72))" -e '16/1 "%u "' "$disk")
+	[ "$#" -eq 16 ] || return 1
+	lba=$(($1 | $2 << 8 | $3 << 16 | $4 << 24))
+	count=$(($9 | ${10} << 8 | ${11} << 16 | ${12} << 24))
+	size=$((${13} | ${14} << 8 | ${15} << 16 | ${16} << 24))
+	[ "$n" -ge 1 -a "$n" -le "$count" ] || return 1
+
+	hexdump -v -n 16 -s "$((lba * bs + (n - 1) * size))" -e '16/1 "%02x"' "$disk"
+}
+
+# The ESP is found by its GPT type GUID, on the disk holding openwrt_boot,
+# so it does not depend on the name the partitioning tool gave it.
+export_partdevice_esp() {
+	local var="$1"
+	local bootpart disk bs uevent line MAJOR MINOR DEVNAME DEVTYPE DISKSEQ PARTN PARTNAME
+
+	export_partdevice_label bootpart openwrt_boot >/dev/null || return 1
+	disk="$(readlink -f "/sys/class/block/$bootpart/..")"
+	disk="${disk##*/}"
+	bs="$(cat "/sys/class/block/$disk/queue/logical_block_size")" || return 1
+
+	for uevent in /sys/class/block/$disk/*/uevent; do
+		DEVNAME= PARTN=
+		while read line; do
+			export -n "$line"
+		done < "$uevent"
+		[ -n "$PARTN" -a -b "/dev/$DEVNAME" ] || continue
+		# C12A7328-F81F-11D2-BA4B-00A0C93EC93B as stored on disk
+		[ "$(get_gpt_part_type "/dev/$disk" "$bs" "$PARTN")" = \
+			"28732ac11ff8d211ba4b00a0c93ec93b" ] || continue
+		echo "Found EFI system partition @ /dev/$DEVNAME"
+		export "$var=$DEVNAME"
+		return 0
 	done
 
 	return 1
