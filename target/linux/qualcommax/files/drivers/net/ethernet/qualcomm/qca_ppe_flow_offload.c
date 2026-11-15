@@ -2289,6 +2289,7 @@ static void ppe_flow_entry_destroy(struct qca_ppe_priv *priv,
 	 * entry pointing at side tables about to be reused is the worse half of
 	 * that trade.
 	 */
+	ppe_vp_flow_del(priv, &entry->vpf);
 	age = ppe_flow_entry_age(priv, entry);
 	if (age >= 0) {
 		u32 pkts = ppe_flow_counter_delta(priv, entry, &bytes);
@@ -2783,6 +2784,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 
 	list_add_tail(&entry->list, &priv->flow_list);
 	priv->flow_offloaded++;
+	ppe_vp_flow_add(priv, &entry->vpf);
 
 	return 0;
 

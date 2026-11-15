@@ -1501,9 +1501,15 @@ struct ppe_vp_key {
 };
 
 /* A flow offloaded with a virtual port as its ingress. @key.vp is zero for
- * every other flow.
+ * every other flow. @hold and @pass are jiffies, zero when unset: until @hold
+ * the flow's frames take the host's path, because the PPE just returned one;
+ * from @pass one frame goes that way, to keep what only the host sees of a
+ * flow, the bridge's address entry, alive.
  */
 struct ppe_vp_flow {
+	struct hlist_node node;
+	unsigned long hold;
+	unsigned long pass;
 	struct ppe_vp_key key;
 };
 
@@ -1660,6 +1666,8 @@ struct qca_ppe_priv {
 	 */
 	struct ppe_vp __rcu *vp[PPE_MAX_VPORT];
 	unsigned int vp_next;
+	struct hlist_head *vp_hash;
+	u32 vp_hash_mask;
 	bool vp_stopped;
 	struct notifier_block vp_nb;
 	u16 port_pvid[QCA_PPE_MAX_PORTS];
@@ -1907,6 +1915,8 @@ void ppe_vp_bridge_up(struct qca_ppe_priv *priv, struct net_device *br_dev);
 void ppe_vp_bridge_down(struct qca_ppe_priv *priv, struct net_device *br_dev);
 void ppe_vp_debugfs_init(struct qca_ppe_priv *priv);
 int ppe_vp_ingress(struct qca_ppe_priv *priv, int ifindex, int *port, u8 *id);
+void ppe_vp_flow_add(struct qca_ppe_priv *priv, struct ppe_vp_flow *f);
+void ppe_vp_flow_del(struct qca_ppe_priv *priv, struct ppe_vp_flow *f);
 bool ppe_vp_rx(struct dsa_switch *ds, struct sk_buff *skb, u32 port);
 
 #endif

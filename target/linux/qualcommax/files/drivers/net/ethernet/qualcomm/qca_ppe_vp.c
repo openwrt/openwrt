@@ -15,13 +15,36 @@
 #include <linux/if_arp.h>
 #include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
+#include <linux/jhash.h>
 #include <linux/netdevice.h>
+#include <linux/netfilter.h>
+#include <linux/netfilter_ipv4.h>
+#include <linux/netfilter_netdev.h>
+#include <linux/qca_edma.h>
 #include <linux/seq_file.h>
+#include <net/ip.h>
+#include <net/tcp.h>
 
 #include "qca_ppe.h"
 
+/* What the port did, per CPU. */
+struct ppe_vp_stats {
+	u64 sent;
+	u64 bytes;
+	u64 refused;
+	u64 parked;
+	u64 dropped;
+	u64 held;
+	u64 passed;
+	u64 returned;
+};
+
 /**
  * struct ppe_vp - one virtual source port
+ * @priv: the switch
+ * @ops: its netdev ingress hook
+ * @stats: what it did
+ * @hooked: @ops is registered
  * @dev: the bridge port it stands for
  * @br: the bridge it is a port of
  * @dev_tracker: reference on @dev
@@ -31,6 +54,10 @@
  * @vsi: the bridge's VSI the port is classified into
  */
 struct ppe_vp {
+	struct qca_ppe_priv *priv;
+	struct nf_hook_ops ops;
+	struct ppe_vp_stats __percpu *stats;
+	bool hooked;
 	struct net_device *dev;
 	struct net_device *br;
 	netdevice_tracker dev_tracker;
@@ -39,6 +66,251 @@ struct ppe_vp {
 	u8 id;
 	u8 vsi;
 };
+
+/* Run before every other netdev ingress hook of the port, nftables chains and
+ * flowtables included: a frame of a flow the PPE forwards is taken from the
+ * receive path at once, so that neither a chain nor the flowtable's software
+ * path sees, counts or forwards it a second time. Frames the PPE forwards for
+ * the switch's ports never reach the CPU at all, so none of those run for them
+ * either.
+ */
+#define PPE_VP_HOOK_PRIORITY	NF_IP_PRI_FIRST
+
+/* The bytes of a frame's headers the parse may read in the head. */
+#define PPE_VP_HDR_MAX		(sizeof(struct ipv6hdr) + sizeof(struct tcphdr))
+
+/* How long the flow's frames take the host's path after the PPE returned
+ * one, and how often one frame of a flow is let through on purpose.
+ */
+#define PPE_VP_HOLD		HZ
+#define PPE_VP_PASS		HZ
+
+/* The tuple of a frame a flow can be offloaded for, with the headers read from
+ * @nh, @len bytes of which are in the head and @total of which are in the
+ * frame. Anything the PPE would not take as a plain routed TCP or UDP packet
+ * is refused: IPv4 options, fragments, IPv6 extension headers and a length the
+ * packet does not have, which the host's own receive path would also drop.
+ */
+static bool ppe_vp_parse(const u8 *nh, unsigned int len, unsigned int total,
+			 __be16 proto, struct ppe_vp_key *key, u8 *ttl,
+			 u8 *tcpflags)
+{
+	const u8 *l4;
+	unsigned int l4len;
+
+	memset(key, 0, sizeof(*key));
+	*tcpflags = 0;
+
+	if (proto == htons(ETH_P_IP)) {
+		const struct iphdr *iph = (const void *)nh;
+
+		if (len < sizeof(*iph) || iph->version != 4 || iph->ihl != 5 ||
+		    iph->frag_off & htons(IP_MF | IP_OFFSET) ||
+		    ntohs(iph->tot_len) < sizeof(*iph) ||
+		    ntohs(iph->tot_len) > total || ip_fast_csum(nh, 5))
+			return false;
+
+		key->proto = iph->protocol;
+		key->addr.v4[0] = iph->saddr;
+		key->addr.v4[1] = iph->daddr;
+		*ttl = iph->ttl;
+		l4 = nh + sizeof(*iph);
+		l4len = len - sizeof(*iph);
+	} else if (proto == htons(ETH_P_IPV6)) {
+		const struct ipv6hdr *ip6h = (const void *)nh;
+
+		if (len < sizeof(*ip6h) || ip6h->version != 6 ||
+		    !ip6h->payload_len ||
+		    sizeof(*ip6h) + ntohs(ip6h->payload_len) > total)
+			return false;
+
+		key->v6 = 1;
+		key->proto = ip6h->nexthdr;
+		key->addr.v6[0] = ip6h->saddr;
+		key->addr.v6[1] = ip6h->daddr;
+		*ttl = ip6h->hop_limit;
+		l4 = nh + sizeof(*ip6h);
+		l4len = len - sizeof(*ip6h);
+	} else {
+		return false;
+	}
+
+	if (key->proto == IPPROTO_TCP) {
+		const struct tcphdr *th = (const void *)l4;
+
+		if (l4len < sizeof(*th) || th->doff < 5)
+			return false;
+		key->port[0] = th->source;
+		key->port[1] = th->dest;
+		*tcpflags = tcp_flag_byte(th);
+	} else if (key->proto == IPPROTO_UDP) {
+		const struct udphdr *uh = (const void *)l4;
+
+		if (l4len < sizeof(*uh))
+			return false;
+		key->port[0] = uh->source;
+		key->port[1] = uh->dest;
+	} else {
+		return false;
+	}
+
+	return true;
+}
+
+static struct hlist_head *ppe_vp_bucket(struct qca_ppe_priv *priv,
+					const struct ppe_vp_key *key)
+{
+	return &priv->vp_hash[jhash2((const u32 *)key, sizeof(*key) / 4, 0) &
+			      priv->vp_hash_mask];
+}
+
+static struct ppe_vp_flow *ppe_vp_flow_find(struct qca_ppe_priv *priv,
+					    const struct ppe_vp_key *key)
+{
+	struct ppe_vp_flow *f;
+
+	hlist_for_each_entry_rcu(f, ppe_vp_bucket(priv, key), node)
+		if (!memcmp(&f->key, key, sizeof(*key)))
+			return f;
+
+	return NULL;
+}
+
+/**
+ * ppe_vp_flow_add - make a flow's frames stealable
+ * @priv: the switch
+ * @f: the flow's part, with its key filled in
+ *
+ * A flow with no virtual port in its key is left alone. Called with the flow
+ * lock held, once the flow is in the hardware.
+ */
+void ppe_vp_flow_add(struct qca_ppe_priv *priv, struct ppe_vp_flow *f)
+{
+	lockdep_assert_held(&priv->flow_lock);
+
+	if (!f->key.vp)
+		return;
+
+	f->hold = 0;
+	f->pass = jiffies;
+	hlist_add_head_rcu(&f->node, ppe_vp_bucket(priv, &f->key));
+}
+
+/**
+ * ppe_vp_flow_del - stop stealing a flow's frames
+ * @priv: the switch
+ * @f: the flow's part
+ *
+ * Called with the flow lock held, before the flow leaves the hardware. The
+ * entry is freed only after the readers that may have found it are done.
+ */
+void ppe_vp_flow_del(struct qca_ppe_priv *priv, struct ppe_vp_flow *f)
+{
+	lockdep_assert_held(&priv->flow_lock);
+
+	if (f->key.vp)
+		hlist_del_init_rcu(&f->node);
+}
+
+/* A frame of an offloaded flow goes to the PPE as if it had arrived on the
+ * port's own switch port, and is gone from the receive path; every other frame
+ * is left for the bridge, the firewall and the routing.
+ *
+ * The frame must be one the PPE would route: addressed to the bridge, an
+ * untagged TCP or UDP packet of IPv4 or IPv6 that is not a fragment, has no
+ * options and has a TTL left, and not one a TCP flag sends to the CPU. Then it
+ * must belong to a flow in the hardware that ingresses on this port. The flow
+ * lets one frame in PPE_VP_PASS through for the bridge to learn the source
+ * address from, and none for PPE_VP_HOLD after the PPE returned one.
+ */
+static unsigned int ppe_vp_hook(void *data, struct sk_buff *skb,
+				const struct nf_hook_state *state)
+{
+	struct ppe_vp *vp = data;
+	struct qca_ppe_priv *priv = vp->priv;
+	struct ppe_vp_stats *st;
+	struct net_device *conduit;
+	struct ppe_vp_flow *f;
+	struct ppe_vp_key key;
+	unsigned long t;
+	unsigned int len;
+	u8 ttl, flags;
+	int rc;
+
+	if (skb->protocol != htons(ETH_P_IP) &&
+	    skb->protocol != htons(ETH_P_IPV6))
+		return NF_ACCEPT;
+
+	if (skb_vlan_tag_present(skb) || skb_shared(skb) ||
+	    !skb_mac_header_was_set(skb) ||
+	    skb_mac_header(skb) + ETH_HLEN != skb->data ||
+	    !ether_addr_equal(eth_hdr(skb)->h_dest, vp->br->dev_addr))
+		return NF_ACCEPT;
+
+	/* A GRO aggregate goes through the engine's segmentation, which the
+	 * switch then sees as the frames it was built from.
+	 */
+	if (skb_is_gso(skb) &&
+	    !(skb_shinfo(skb)->gso_type & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6)))
+		return NF_ACCEPT;
+
+	if (!pskb_may_pull(skb, min_t(unsigned int, skb->len, PPE_VP_HDR_MAX)))
+		return NF_ACCEPT;
+
+	if (!ppe_vp_parse(skb->data, skb_headlen(skb), skb->len, skb->protocol,
+			  &key, &ttl, &flags) ||
+	    ttl <= 1 || flags & (TCPHDR_FIN | TCPHDR_SYN | TCPHDR_RST))
+		return NF_ACCEPT;
+
+	key.vp = vp->id;
+	f = ppe_vp_flow_find(priv, &key);
+	if (!f)
+		return NF_ACCEPT;
+
+	st = this_cpu_ptr(vp->stats);
+
+	t = READ_ONCE(f->hold);
+	if (t) {
+		if (time_before(jiffies, t)) {
+			st->held++;
+			return NF_ACCEPT;
+		}
+		WRITE_ONCE(f->hold, 0);
+	}
+	t = READ_ONCE(f->pass);
+	if (time_after_eq(jiffies, t)) {
+		WRITE_ONCE(f->pass, jiffies + PPE_VP_PASS);
+		st->passed++;
+		return NF_ACCEPT;
+	}
+
+	conduit = dsa_to_port(&priv->ds, QCA_PPE_CPU_PORT)->conduit;
+	len = skb->len + ETH_HLEN;
+
+	/* The frame is not sent the host's way when the ring has no room: it
+	 * would arrive behind the frames of its flow the switch is still
+	 * forwarding. The transmit keeps it, in order, until the ring has room,
+	 * and frees it when it has kept as many as a ring holds.
+	 */
+	skb_push(skb, ETH_HLEN);
+	rc = qca_edma_src_xmit(skb, conduit, vp->id);
+	if (rc < 0) {
+		skb_pull(skb, ETH_HLEN);
+		st->refused++;
+		return NF_ACCEPT;
+	}
+
+	if (rc == QCA_EDMA_SRC_DROPPED) {
+		st->dropped++;
+	} else {
+		if (rc == QCA_EDMA_SRC_PARKED)
+			st->parked++;
+		st->sent++;
+		st->bytes += len;
+	}
+
+	return NF_STOLEN;
+}
 
 /* A port stands for the netdevs the bridge forwards for the host's own
  * stations or peers, never for one of the switch's ports, a device stacked on
@@ -84,6 +356,7 @@ static void ppe_vp_free_rcu(struct rcu_head *head)
 
 	netdev_put(vp->br, &vp->br_tracker);
 	netdev_put(vp->dev, &vp->dev_tracker);
+	free_percpu(vp->stats);
 	kfree(vp);
 }
 
@@ -101,6 +374,15 @@ static void ppe_vp_destroy(struct qca_ppe_priv *priv, struct ppe_vp *vp)
 {
 	lockdep_assert_held(&priv->flow_lock);
 	lockdep_assert_held(&priv->vlan_lock);
+
+	/* No frame is stolen for the port once the hook is gone and the readers
+	 * in it have finished.
+	 */
+	if (vp->hooked) {
+		nf_unregister_net_hook(dev_net(vp->dev), &vp->ops);
+		synchronize_net();
+		vp->hooked = false;
+	}
 
 	/* The flows keyed on the port go with it: the flowtable puts back what
 	 * is still live, and a port that is no longer there refuses them.
@@ -142,7 +424,13 @@ static void ppe_vp_create(struct qca_ppe_priv *priv, struct net_device *dev,
 	vp = kzalloc(sizeof(*vp), GFP_KERNEL);
 	if (!vp)
 		return;
+	vp->stats = alloc_percpu(struct ppe_vp_stats);
+	if (!vp->stats) {
+		kfree(vp);
+		return;
+	}
 
+	vp->priv = priv;
 	vp->id = id;
 	vp->vsi = vsi;
 	vp->dev = dev;
@@ -150,9 +438,24 @@ static void ppe_vp_create(struct qca_ppe_priv *priv, struct net_device *dev,
 	netdev_hold(dev, &vp->dev_tracker, GFP_KERNEL);
 	netdev_hold(br, &vp->br_tracker, GFP_KERNEL);
 
+	vp->ops.hook = ppe_vp_hook;
+	vp->ops.priv = vp;
+	vp->ops.pf = NFPROTO_NETDEV;
+	vp->ops.hooknum = NF_NETDEV_INGRESS;
+	vp->ops.priority = PPE_VP_HOOK_PRIORITY;
+	vp->ops.dev = dev;
+
 	ppe_vp_hw_set(priv, id, vsi);
 	rcu_assign_pointer(priv->vp[id], vp);
 	priv->vp_next = (id - first + 1) % n;
+
+	/* Last: a frame can be stolen from here on. A refusal leaves the
+	 * netdev on the ordinary path with no port.
+	 */
+	if (nf_register_net_hook(dev_net(dev), &vp->ops))
+		ppe_vp_destroy(priv, vp);
+	else
+		vp->hooked = true;
 }
 
 static void ppe_vp_remove_dev(struct qca_ppe_priv *priv, struct net_device *dev)
@@ -313,6 +616,28 @@ bool ppe_vp_rx(struct dsa_switch *ds, struct sk_buff *skb, u32 port)
 	if (!vp || !netif_running(vp->dev))
 		return false;
 
+	/* The frame is back because the PPE had no use for it, so the host
+	 * takes the flow's next frames for a while rather than send each
+	 * through the PPE to see it come back, and does not steal this one
+	 * again.
+	 */
+	if (skb_headlen(skb) >= ETH_HLEN) {
+		struct ppe_vp_key key;
+		struct ppe_vp_flow *f;
+		u8 ttl, flags;
+
+		if (ppe_vp_parse(skb->data + ETH_HLEN, skb_headlen(skb) - ETH_HLEN,
+				 skb->len - ETH_HLEN,
+				 ((struct ethhdr *)skb->data)->h_proto, &key,
+				 &ttl, &flags)) {
+			key.vp = vp->id;
+			f = ppe_vp_flow_find(priv, &key);
+			if (f)
+				WRITE_ONCE(f->hold, jiffies + PPE_VP_HOLD);
+		}
+	}
+	this_cpu_inc(vp->stats->returned);
+
 	skb->dev = vp->dev;
 	skb_record_rx_queue(skb, 0);
 	skb->protocol = eth_type_trans(skb, vp->dev);
@@ -324,11 +649,12 @@ bool ppe_vp_rx(struct dsa_switch *ds, struct sk_buff *skb, u32 port)
 static int ppe_vp_show(struct seq_file *s, void *data)
 {
 	struct qca_ppe_priv *priv = s->private;
+	struct qca_edma_src_stats es;
 	unsigned int id, used = 0;
 
 	guard(mutex)(&priv->flow_lock);
 
-	seq_puts(s, "vport netdev bridge vsi\n");
+	seq_puts(s, "vport netdev bridge vsi sent bytes refused parked dropped held passed returned\n");
 
 	for (id = priv->data->first_vport; id < PPE_MAX_VPORT; id++) {
 		struct ppe_vp *vp = rcu_dereference_protected(priv->vp[id],
@@ -337,11 +663,35 @@ static int ppe_vp_show(struct seq_file *s, void *data)
 		if (!vp)
 			continue;
 
+		struct ppe_vp_stats sum = {};
+		int cpu;
+
+		for_each_possible_cpu(cpu) {
+			const struct ppe_vp_stats *st = per_cpu_ptr(vp->stats, cpu);
+
+			sum.sent += READ_ONCE(st->sent);
+			sum.bytes += READ_ONCE(st->bytes);
+			sum.refused += READ_ONCE(st->refused);
+			sum.parked += READ_ONCE(st->parked);
+			sum.dropped += READ_ONCE(st->dropped);
+			sum.held += READ_ONCE(st->held);
+			sum.passed += READ_ONCE(st->passed);
+			sum.returned += READ_ONCE(st->returned);
+		}
+
 		used++;
-		seq_printf(s, "%-5u %s %s %u\n", id, vp->dev->name, vp->br->name,
-			   vp->vsi);
+		seq_printf(s, "%-5u %s %s %u %llu %llu %llu %llu %llu %llu %llu %llu\n",
+			   id, vp->dev->name, vp->br->name, vp->vsi, sum.sent,
+			   sum.bytes, sum.refused, sum.parked, sum.dropped,
+			   sum.held, sum.passed, sum.returned);
 	}
 
+	/* The backlog is the conduit's, so it is counted for every port. */
+	qca_edma_src_stats(dsa_to_port(&priv->ds, QCA_PPE_CPU_PORT)->conduit,
+			   &es);
+	seq_printf(s, "backlog parked %llu drained %llu dropped %llu stop: drv %llu stack %llu ring %llu order %llu\n",
+		   es.parked, es.drained, es.dropped, es.park_drv,
+		   es.park_stack, es.park_ring, es.park_order);
 	seq_printf(s, "used %u of %u\n", used,
 		   priv->data->first_vport ?
 		   PPE_MAX_VPORT - priv->data->first_vport : 0);
@@ -357,9 +707,24 @@ void ppe_vp_debugfs_init(struct qca_ppe_priv *priv)
 
 int ppe_vp_init(struct qca_ppe_priv *priv)
 {
-	priv->vp_nb.notifier_call = ppe_vp_netdev_event;
+	int ret;
 
-	return register_netdevice_notifier(&priv->vp_nb);
+	/* A flow with a virtual port is a flow of the table, so the table
+	 * sizes the buckets and the memory is the same however many ports
+	 * there are.
+	 */
+	priv->vp_hash_mask = roundup_pow_of_two(priv->data->num_flow_entries) - 1;
+	priv->vp_hash = kvcalloc(priv->vp_hash_mask + 1, sizeof(*priv->vp_hash),
+				 GFP_KERNEL);
+	if (!priv->vp_hash)
+		return -ENOMEM;
+
+	priv->vp_nb.notifier_call = ppe_vp_netdev_event;
+	ret = register_netdevice_notifier(&priv->vp_nb);
+	if (ret)
+		kvfree(priv->vp_hash);
+
+	return ret;
 }
 
 /**
@@ -392,4 +757,5 @@ void ppe_vp_exit(struct qca_ppe_priv *priv)
 {
 	/* The ports' callbacks are code of this module. */
 	rcu_barrier();
+	kvfree(priv->vp_hash);
 }
