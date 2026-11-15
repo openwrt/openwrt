@@ -1302,6 +1302,7 @@ enum ppe_flow_reject {
 	PPE_REJECT_ACTION,
 	PPE_REJECT_L2,
 	PPE_REJECT_EGRESS_PORT,
+	PPE_REJECT_VP_EGRESS,
 	PPE_REJECT_NAT_BOTH,
 	PPE_REJECT_NAT_IPV6,
 	PPE_REJECT_RESOURCE,
@@ -1481,6 +1482,30 @@ struct ppe_sb_occ {
 struct ppe_flow_entry;
 
 struct ppe_vp;
+
+/* The tuple a frame of a flow arrives with, and the virtual port it arrives
+ * on: what the flow can be told by before the PPE has touched it. Zero in
+ * every byte a short address or a missing field leaves, so the key compares
+ * and hashes whole.
+ */
+struct ppe_vp_key {
+	union {
+		__be32 v4[2];
+		struct in6_addr v6[2];
+	} addr;
+	__be16 port[2];
+	u8 proto;
+	u8 v6;
+	u8 vp;
+	u8 pad;
+};
+
+/* A flow offloaded with a virtual port as its ingress. @key.vp is zero for
+ * every other flow.
+ */
+struct ppe_vp_flow {
+	struct ppe_vp_key key;
+};
 
 struct qca_ppe_priv {
 	struct dsa_switch ds;
@@ -1866,6 +1891,8 @@ int ppe_flow_shaper_set(struct qca_ppe_priv *priv, bool upload,
 #define PPE_XDEV_DL		BIT_ULL(33)
 #define PPE_XDEV_UL		BIT_ULL(34)
 void ppe_flow_purge_vsi(struct qca_ppe_priv *priv, u32 vsi);
+void ppe_flow_drop_vp(struct qca_ppe_priv *priv, int vp,
+		      const struct net_device *br);
 void ppe_flow_offload_exit(struct qca_ppe_priv *priv);
 
 struct qca_ppe_bridge_vsi *bridge_vsi_find(struct qca_ppe_priv *priv,
@@ -1879,6 +1906,7 @@ void ppe_vp_exit(struct qca_ppe_priv *priv);
 void ppe_vp_bridge_up(struct qca_ppe_priv *priv, struct net_device *br_dev);
 void ppe_vp_bridge_down(struct qca_ppe_priv *priv, struct net_device *br_dev);
 void ppe_vp_debugfs_init(struct qca_ppe_priv *priv);
+int ppe_vp_ingress(struct qca_ppe_priv *priv, int ifindex, int *port, u8 *id);
 bool ppe_vp_rx(struct dsa_switch *ds, struct sk_buff *skb, u32 port);
 
 #endif

@@ -1180,6 +1180,10 @@ static void qca_ppe_port_bridge_leave(struct dsa_switch *ds, int port,
 	if (!bvsi)
 		return;
 
+	/* The flows of a virtual port were built from one of the bridge's
+	 * switch ports, which may be this one.
+	 */
+	ppe_flow_drop_vp(priv, -1, bridge.dev);
 	priv->port_vsi[port] = 0;
 	priv->port_br_dev[port] = NULL;
 	ppe_port_vsi_set(priv, port, 0);

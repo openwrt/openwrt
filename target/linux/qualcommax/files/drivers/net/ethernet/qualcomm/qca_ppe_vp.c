@@ -102,6 +102,10 @@ static void ppe_vp_destroy(struct qca_ppe_priv *priv, struct ppe_vp *vp)
 	lockdep_assert_held(&priv->flow_lock);
 	lockdep_assert_held(&priv->vlan_lock);
 
+	/* The flows keyed on the port go with it: the flowtable puts back what
+	 * is still live, and a port that is no longer there refuses them.
+	 */
+	ppe_flow_drop_vp(priv, vp->id, NULL);
 	RCU_INIT_POINTER(priv->vp[vp->id], NULL);
 	/* No frame is sent from the port once the table says nothing names
 	 * it, and the number is not handed on while frames sent from it may
@@ -243,6 +247,45 @@ static int ppe_vp_netdev_event(struct notifier_block *nb, unsigned long event,
 	}
 
 	return NOTIFY_DONE;
+}
+
+/**
+ * ppe_vp_ingress - the flow offload's view of a virtual port's netdev
+ * @priv: the switch
+ * @ifindex: the ingress interface a flow was seen on
+ * @port: set to a switch port of the same bridge
+ * @id: set to the virtual port
+ *
+ * A virtual port is classified into the bridge's VSI as the bridge's switch
+ * ports are, so a flow from it is built as one from the first of them.
+ * Called with the flow lock held.
+ *
+ * Return: 0, or -ENODEV when @ifindex has no virtual port.
+ */
+int ppe_vp_ingress(struct qca_ppe_priv *priv, int ifindex, int *port, u8 *id)
+{
+	unsigned int i, p;
+
+	lockdep_assert_held(&priv->flow_lock);
+
+	for (i = priv->data->first_vport; i < PPE_MAX_VPORT; i++) {
+		struct ppe_vp *vp = rcu_dereference_protected(priv->vp[i],
+				lockdep_is_held(&priv->flow_lock));
+
+		if (!vp || vp->dev->ifindex != ifindex)
+			continue;
+
+		for (p = 0; p < priv->ds.num_ports; p++) {
+			if (priv->port_br_dev[p] != vp->br)
+				continue;
+
+			*port = p;
+			*id = vp->id;
+			return 0;
+		}
+	}
+
+	return -ENODEV;
 }
 
 /**
