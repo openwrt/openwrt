@@ -437,6 +437,34 @@ if [ $TEST -eq 1 ]; then
 	exit 0
 fi
 
+# A dual-boot upgrade writes the slot that is not running, so it runs in
+# place, without stage2
+if is_gpt_dualboot; then
+	ask_bool 1 "Proceed with upgrade?" || {
+		rm -f /tmp/sysupgrade.*
+		exit 0
+	}
+
+	v "Performing system upgrade..."
+	platform_do_upgrade "$IMAGE" || {
+		v "Upgrade failed, the running system is still the one to boot"
+		rm -f /tmp/sysupgrade.*
+		exit 1
+	}
+
+	if [ $SAVE_CONFIG -eq 1 ]; then
+		export UPGRADE_BACKUP="$CONF_TAR"
+		platform_copy_config
+	fi
+	rm -f /tmp/sysupgrade.*
+	v "Upgrade completed"
+
+	[ $INTERACTIVE -eq 1 ] && ! ask_bool 0 "Reboot now?" && exit 0
+	v "Rebooting system..."
+	reboot
+	exit 0
+fi
+
 install_bin /sbin/upgraded
 v "Commencing upgrade. Closing all shell sessions."
 
