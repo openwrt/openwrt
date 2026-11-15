@@ -3,16 +3,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cypress-firmware
-PKG_VERSION_REAL:=5.10.9-2022_0909
+PKG_VERSION_REAL:=6.1.145-2026_0407
 PKG_VERSION:=$(subst _,.,$(subst -,.,$(PKG_VERSION_REAL)))
-PKG_RELEASE:=4
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/Infineon/ifx-linux-firmware/
-PKG_MIRROR_HASH:=cbdd862fbaad08f5905482038e8a97fafea9bab5673d65370d90ef248c4172d1
+PKG_MIRROR_HASH:=1f119e1a0d3c6c9ff5f2c07d73eb732dfdf16756e26e2408e3cd4322d7da46bd
 PKG_SOURCE_VERSION:=release-v$(PKG_VERSION_REAL)
 
 PKG_MAINTAINER:=Álvaro Fernández Rojas <noltari@gmail.com>
+PKG_LICENSE:=LicenseRef-Cypress
 PKG_LICENSE_FILES:=LICENCE
 
 include $(INCLUDE_DIR)/package.mk
@@ -166,14 +167,14 @@ define Package/cypress-firmware-4373-usb/install
 		$(PKG_BUILD_DIR)/firmware/cyfmac4373-usb.bin \
 		$(1)/lib/firmware/cypress/
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac4373.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4373-usb.clm_blob \
 		$(1)/lib/firmware/cypress/
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(LN) \
 		../cypress/cyfmac4373-usb.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4373-usb.bin
 	$(LN) \
-		../cypress/cyfmac4373.clm_blob \
+		../cypress/cyfmac4373-usb.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac4373.clm_blob
 endef
 
