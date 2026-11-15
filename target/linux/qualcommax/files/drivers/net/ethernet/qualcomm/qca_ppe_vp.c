@@ -176,6 +176,33 @@ static struct ppe_vp_flow *ppe_vp_flow_find(struct qca_ppe_priv *priv,
 	return NULL;
 }
 
+/* A CPU's frames mostly belong to the flow of the frame before, as a GRO
+ * burst or a train of one stream is, so the tuple is compared with the last
+ * one found before it is hashed. The entry the cache names is freed only a
+ * grace period after the generation moves on, and a frame is handled inside
+ * one.
+ */
+static struct ppe_vp_flow *ppe_vp_flow_lookup(struct qca_ppe_priv *priv,
+					      const struct ppe_vp_key *key)
+{
+	struct ppe_vp_cache *c = this_cpu_ptr(priv->vp_cache);
+	/* Pairs with the release in ppe_vp_flow_add() and ppe_vp_flow_del(). */
+	unsigned int gen = smp_load_acquire(&priv->vp_gen);
+	struct ppe_vp_flow *f;
+
+	if (likely(c->gen == gen && c->f && !memcmp(&c->key, key, sizeof(*key))))
+		return c->f;
+
+	f = ppe_vp_flow_find(priv, key);
+	if (f) {
+		c->key = *key;
+		c->f = f;
+		c->gen = gen;
+	}
+
+	return f;
+}
+
 /**
  * ppe_vp_flow_add - make a flow's frames stealable
  * @priv: the switch
@@ -194,6 +221,8 @@ void ppe_vp_flow_add(struct qca_ppe_priv *priv, struct ppe_vp_flow *f)
 	f->hold = 0;
 	f->pass = jiffies;
 	hlist_add_head_rcu(&f->node, ppe_vp_bucket(priv, &f->key));
+	/* After the table changed, so a reader of the new count sees it. */
+	smp_store_release(&priv->vp_gen, priv->vp_gen + 1);
 }
 
 /**
@@ -208,8 +237,11 @@ void ppe_vp_flow_del(struct qca_ppe_priv *priv, struct ppe_vp_flow *f)
 {
 	lockdep_assert_held(&priv->flow_lock);
 
-	if (f->key.vp)
+	if (f->key.vp) {
 		hlist_del_init_rcu(&f->node);
+		/* After the table changed, as in ppe_vp_flow_add(). */
+		smp_store_release(&priv->vp_gen, priv->vp_gen + 1);
+	}
 }
 
 /* A frame of an offloaded flow goes to the PPE as if it had arrived on the
@@ -263,7 +295,7 @@ static unsigned int ppe_vp_hook(void *data, struct sk_buff *skb,
 		return NF_ACCEPT;
 
 	key.vp = vp->id;
-	f = ppe_vp_flow_find(priv, &key);
+	f = ppe_vp_flow_lookup(priv, &key);
 	if (!f)
 		return NF_ACCEPT;
 
@@ -719,10 +751,18 @@ int ppe_vp_init(struct qca_ppe_priv *priv)
 	if (!priv->vp_hash)
 		return -ENOMEM;
 
+	priv->vp_cache = alloc_percpu(struct ppe_vp_cache);
+	if (!priv->vp_cache) {
+		kvfree(priv->vp_hash);
+		return -ENOMEM;
+	}
+
 	priv->vp_nb.notifier_call = ppe_vp_netdev_event;
 	ret = register_netdevice_notifier(&priv->vp_nb);
-	if (ret)
+	if (ret) {
+		free_percpu(priv->vp_cache);
 		kvfree(priv->vp_hash);
+	}
 
 	return ret;
 }
@@ -757,5 +797,6 @@ void ppe_vp_exit(struct qca_ppe_priv *priv)
 {
 	/* The ports' callbacks are code of this module. */
 	rcu_barrier();
+	free_percpu(priv->vp_cache);
 	kvfree(priv->vp_hash);
 }
