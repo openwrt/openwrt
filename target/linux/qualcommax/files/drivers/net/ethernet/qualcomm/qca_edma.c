@@ -341,6 +341,7 @@ static int edma_rx_fill(struct edma_queue *q)
 	struct page *page;
 	u16 filled = 0;
 	dma_addr_t dma;
+	unsigned int off, size;
 
 	prod = q->rxfill_prod;
 
@@ -355,15 +356,17 @@ static int edma_rx_fill(struct edma_queue *q)
 		if (unlikely(rxfill_ring->rx_store[prod].page))
 			break;
 
-		page = page_pool_dev_alloc_pages(q->page_pool);
+		size = priv->rx_truesize;
+		page = page_pool_dev_alloc(q->page_pool, &off, &size);
 		if (unlikely(!page))
 			break;
 
 		rxfill_desc = EDMA_RXFILL_DESC(rxfill_ring, prod);
 
-		dma = page_pool_get_dma_addr(page);
+		dma = page_pool_get_dma_addr(page) + off;
 		rxfill_ring->rx_store[prod].page = page;
 		rxfill_ring->rx_store[prod].dma = dma;
+		rxfill_ring->rx_store[prod].off = off;
 		rxfill_desc->buffer_addr = cpu_to_le32(dma + NET_SKB_PAD);
 		rxfill_desc->word1 = cpu_to_le32(priv->rx_buffer_size &
 						 EDMA_RXFILL_BUF_SIZE_MASK);
@@ -800,10 +803,10 @@ static void edma_rx_peek(struct edma_queue *q, u16 idx, u16 slot,
 	pk->buf = buf;
 	__page_pool_dma_sync_for_cpu(q->page_pool, buf->dma, 0,
 				     edma_rx_sync_len(q, pk->status));
-	data = page_address(buf->page);
+	data = page_address(buf->page) + buf->off;
 	prefetch(data + NET_SKB_PAD);
 	prefetch(data + NET_SKB_PAD + L1_CACHE_BYTES);
-	prefetchw(data + (PAGE_SIZE << q->priv->rx_page_order) -
+	prefetchw(data + q->priv->rx_truesize -
 		  SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
 }
 
@@ -816,6 +819,7 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	struct edma_rx_preheader *rxph;
 	struct edma_rx_peek cur, nxt;
 	unsigned char *frame;
+	void *data;
 	bool ahead = false;
 	struct sk_buff *skb;
 	u16 prod, cons;
@@ -870,7 +874,8 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		}
 		page = buf->page;
 		buf->page = NULL;
-		rxph = page_address(page) + NET_SKB_PAD;
+		data = page_address(page) + buf->off;
+		rxph = data + NET_SKB_PAD;
 
 		desc_status = cur.status;
 		pkt_len = desc_status & EDMA_RXDESC_PACKET_LEN_MASK;
@@ -913,8 +918,7 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 
 		src_port = rxph->src_info & EDMA_SRC_PORT_MASK;
 
-		skb = napi_build_skb(page_address(page),
-				     PAGE_SIZE << priv->rx_page_order);
+		skb = napi_build_skb(data, priv->rx_truesize);
 		if (unlikely(!skb)) {
 			page_pool_put_full_page(q->page_pool, page, true);
 			q->stats.rx_no_skb++;
@@ -2895,30 +2899,51 @@ static u32 edma_rx_frame_len(int mtu)
 	return EDMA_RX_PREHDR_SIZE + mtu + ETH_HLEN + 2 * VLAN_HLEN;
 }
 
-static u8 edma_rx_page_order(int mtu)
+/* The memory a receive buffer takes: headroom, the longest frame and the
+ * shared info the skb is built with. One that fits half a page is a fragment
+ * of a page, one that does not takes whole pages.
+ */
+static u32 edma_rx_truesize(int mtu)
 {
-	return get_order(NET_SKB_PAD + edma_rx_frame_len(mtu) +
-			 SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
+	u32 need = NET_SKB_PAD + edma_rx_frame_len(mtu) +
+		   SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+
+	if (need <= EDMA_RX_FRAG_SIZE)
+		return EDMA_RX_FRAG_SIZE;
+
+	return PAGE_SIZE << get_order(need);
 }
 
-static u32 edma_rx_buffer_size(u8 order)
+static u32 edma_rx_buffer_size(u32 truesize)
 {
-	return (PAGE_SIZE << order) - NET_SKB_PAD -
+	return truesize - NET_SKB_PAD -
 	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 }
 
+/* The pool syncs, for the device, from the start of the first buffer's
+ * preheader to the end of the last buffer's longest frame, as a page comes
+ * back from its last user.
+ */
+static u32 edma_rx_sync_span(u32 truesize, u32 frame_len)
+{
+	u32 order_size = PAGE_SIZE << get_order(truesize);
+
+	return order_size - truesize + frame_len;
+}
+
 static struct page_pool *edma_page_pool_create(struct edma_priv *priv,
-					       u8 order, u32 len, u16 size,
+					       u32 truesize, u32 frame_len,
+					       u16 size,
 					       struct napi_struct *napi)
 {
 	struct page_pool_params pp = {
-		.order     = order,
+		.order     = get_order(truesize),
 		.pool_size = size,
 		.nid       = NUMA_NO_NODE,
 		.dev       = &priv->pdev->dev,
 		.dma_dir   = DMA_FROM_DEVICE,
 		.offset    = NET_SKB_PAD,
-		.max_len   = len,
+		.max_len   = edma_rx_sync_span(truesize, frame_len),
 		.flags     = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
 		.napi      = napi,
 	};
@@ -2934,14 +2959,15 @@ static void edma_page_pools_destroy(struct page_pool **pools, unsigned int n)
 		page_pool_destroy(pools[i]);
 }
 
-static int edma_page_pools_create(struct edma_priv *priv, int mtu, u16 size,
-				  struct page_pool **pools, unsigned int n)
+static int edma_page_pools_create(struct edma_priv *priv, int mtu, u32 truesize,
+				  u16 size, struct page_pool **pools,
+				  unsigned int n)
 {
 	unsigned int i;
 
 	memset(pools, 0, EDMA_MAX_QUEUES * sizeof(*pools));
 	for (i = 0; i < n; i++) {
-		pools[i] = edma_page_pool_create(priv, edma_rx_page_order(mtu),
+		pools[i] = edma_page_pool_create(priv, truesize,
 						 edma_rx_frame_len(mtu), size,
 						 &priv->q[i].napi);
 		if (IS_ERR(pools[i])) {
@@ -2985,15 +3011,16 @@ static int edma_reconfigure(struct edma_priv *priv, int mtu, unsigned int nq,
 	struct page_pool *pools[EDMA_MAX_QUEUES];
 	struct net_device *netdev = priv->netdev;
 	unsigned int old_nq = priv->num_queues;
-	u8 old_order = priv->rx_page_order;
+	u32 old_truesize = priv->rx_truesize;
 	u32 old_len = priv->rx_frame_len;
+	u32 truesize = edma_rx_truesize(mtu);
 	u16 old_tx = priv->tx_ring_size;
 	u16 old_rx = priv->rx_ring_size;
 	unsigned int i;
 	bool running;
 	int ret;
 
-	ret = edma_page_pools_create(priv, mtu, rx_size, pools, nq);
+	ret = edma_page_pools_create(priv, mtu, truesize, rx_size, pools, nq);
 	if (ret)
 		return ret;
 
@@ -3013,8 +3040,8 @@ static int edma_reconfigure(struct edma_priv *priv, int mtu, unsigned int nq,
 
 	edma_page_pools_swap(priv, pools);
 	priv->num_queues = nq;
-	priv->rx_page_order = edma_rx_page_order(mtu);
-	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
+	priv->rx_truesize = truesize;
+	priv->rx_buffer_size = edma_rx_buffer_size(truesize);
 	priv->rx_frame_len = edma_rx_frame_len(mtu);
 	priv->tx_ring_size = tx_size;
 	priv->rx_ring_size = rx_size;
@@ -3025,8 +3052,8 @@ static int edma_reconfigure(struct edma_priv *priv, int mtu, unsigned int nq,
 
 		edma_page_pools_swap(priv, pools);
 		priv->num_queues = old_nq;
-		priv->rx_page_order = old_order;
-		priv->rx_buffer_size = edma_rx_buffer_size(old_order);
+		priv->rx_truesize = old_truesize;
+		priv->rx_buffer_size = edma_rx_buffer_size(old_truesize);
 		priv->rx_frame_len = old_len;
 		priv->tx_ring_size = old_tx;
 		priv->rx_ring_size = old_rx;
@@ -3244,11 +3271,11 @@ static int edma_probe(struct platform_device *pdev)
 	priv->tx_ugt_thre = EDMA_COAL_FRAMES - 1;
 	priv->rx_adaptive = true;
 	priv->tx_adaptive = true;
-	priv->rx_page_order = edma_rx_page_order(netdev->mtu);
-	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
+	priv->rx_truesize = edma_rx_truesize(netdev->mtu);
+	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_truesize);
 	priv->rx_frame_len = edma_rx_frame_len(netdev->mtu);
-	ret = edma_page_pools_create(priv, netdev->mtu, priv->rx_ring_size,
-				     pools, nq);
+	ret = edma_page_pools_create(priv, netdev->mtu, priv->rx_truesize,
+				     priv->rx_ring_size, pools, nq);
 	if (ret)
 		return ret;
 	edma_page_pools_swap(priv, pools);

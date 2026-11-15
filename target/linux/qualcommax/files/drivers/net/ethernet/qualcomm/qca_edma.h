@@ -214,7 +214,11 @@
 		      (2 * VLAN_HLEN))
 #define EDMA_TX_PREHDR_SIZE	(sizeof(struct edma_tx_preheader))
 #define EDMA_TX_RING_SIZE	128
-#define EDMA_RX_RING_SIZE	2048
+#define EDMA_RX_RING_SIZE	512
+/* A receive buffer that fits in this much is half a page, the other half of
+ * which is the next buffer.
+ */
+#define EDMA_RX_FRAG_SIZE	2048
 /* The bounds a frame is described to the engine within: at most this many
  * buffers, and no buffer below this size before the last. The queue stops
  * with room for a frame that takes every descriptor, or it would restart on
@@ -360,6 +364,7 @@ struct edma_soc_data {
 struct edma_rx_buf {
 	struct page *page;
 	dma_addr_t dma;
+	u32 off;
 };
 
 struct edma_ring {
@@ -461,7 +466,7 @@ struct edma_priv {
 	struct reset_control *rst;
 	u32 rx_buffer_size;
 	u32 rx_frame_len;
-	u8 rx_page_order;
+	u32 rx_truesize;
 	u16 tx_ring_size;
 	u16 rx_ring_size;
 	unsigned long clk_rate;
