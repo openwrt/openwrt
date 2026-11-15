@@ -1,0 +1,155 @@
+From 89fab95632f6413e77929a4ecb8575735a5cf187 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 7 Nov 2026 14:34:34 +0100
+Subject: [PATCH] wifi: ath11k: replace a pairwise key in place
+
+mac80211 replaces an in-use PTK by calling set_key() with DISABLE_KEY
+for the old key and SET_KEY for the new one, which ath11k sends to the
+firmware as an install of cipher NONE followed by an install of the new
+key. Commit 97acb0259cc9 ("wifi: ath11k: fix group data packet drops
+during rekey") stopped this clear-then-install sequence for group keys,
+and it fails the same way for a pairwise key: on an IPQ8074 AP, the
+station stopped receiving at its first PTK rekey in 6 of 6 runs, with a
+Broadcom and a Qualcomm client, the REO counted up to 165 PN check
+failures per run, and hostapd deauthenticated the station at the next
+rekey. Because ath11k does not set NL80211_EXT_FEATURE_CAN_REPLACE_PTK0,
+mac80211 also warns "Rekeying PTK for STA ... but driver can't safely do
+that" and flushes the queues, which waits ATH11K_FLUSH_TIMEOUT (5 s) for
+the whole radio whenever a busy station keeps frames pending.
+
+Keep the old pairwise key in the firmware when mac80211 disables it for
+a station, so that the following SET_KEY overwrites it in place, as the
+group key path already does. Outside raw mode the hardware encrypts a
+frame with the key it holds for the peer and generates the PN, so a
+frame queued across the replace leaves with the old key or the new one
+and never in the clear, and the SET_KEY resets the REO PN state. A
+pairwise key removed without a replacement is cleared when the station
+leaves the authorized state, and peer deletion drops it with the peer.
+With this, advertise NL80211_EXT_FEATURE_CAN_REPLACE_PTK0.
+
+With hostapd rekeying the PTK every 20 s, a download to a FastConnect
+7800 station holds 914 to 945 Mbit/s through four rekeys, with no
+second below 854 Mbit/s (3 runs); before, the station lost the
+connection in 3 of 3 runs.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.12-01460-QCAHKSWPL_SILICONZ-1
+
+Fixes: 436a4e886598 ("ath11k: clear the keys properly via DISABLE_KEY")
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -576,6 +576,14 @@ struct ath11k_sta {
+ 	bool use_4addr_set;
+ 	u16 tcl_metadata;
+ 
++	/* A pairwise key mac80211 removed but the firmware still holds,
++	 * cleared by the next SET_KEY or when the port closes.
++	 * Protected by ar->conf_mutex.
++	 */
++	bool ptk_clear_pending;
++	u8 ptk_clear_idx;
++	u32 ptk_clear_cipher;
++
+ 	/* Protected with ar->data_lock */
+ 	enum ath11k_wmi_peer_ps_state peer_ps_state;
+ 	u64 ps_start_time;
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -4509,6 +4509,33 @@ static int ath11k_set_group_keys(struct ath11k_vif *arvif)
+ 	return first_errno;
+ }
+ 
++static int ath11k_mac_clear_ptk(struct ath11k_vif *arvif,
++				struct ieee80211_sta *sta)
++{
++	struct ath11k_sta *arsta = ath11k_sta_to_arsta(sta);
++	struct ieee80211_key_conf key = {
++		.cipher = arsta->ptk_clear_cipher,
++		.keyidx = arsta->ptk_clear_idx,
++		.flags = IEEE80211_KEY_FLAG_PAIRWISE,
++	};
++	int ret;
++
++	lockdep_assert_held(&arvif->ar->conf_mutex);
++
++	arsta->ptk_clear_pending = false;
++
++	ret = ath11k_install_key(arvif, &key, DISABLE_KEY, sta->addr,
++				 WMI_KEY_PAIRWISE);
++	if (!ret)
++		ret = ath11k_dp_peer_rx_pn_replay_config(arvif, sta->addr,
++							 DISABLE_KEY, &key);
++	if (ret)
++		ath11k_warn(arvif->ar->ab, "failed to clear pairwise key of %pM: %d\n",
++			    sta->addr, ret);
++
++	return ret;
++}
++
+ static int ath11k_mac_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
+ 				 struct ieee80211_vif *vif, struct ieee80211_sta *sta,
+ 				 struct ieee80211_key_conf *key)
+@@ -4519,6 +4546,7 @@ static int ath11k_mac_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
+ 	struct ath11k_peer *peer;
+ 	struct ath11k_sta *arsta;
+ 	bool is_ap_with_no_sta;
++	bool keep_ptk;
+ 	const u8 *peer_addr;
+ 	int ret = 0;
+ 	u32 flags = 0;
+@@ -4614,7 +4642,21 @@ static int ath11k_mac_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
+ 
+ 	is_ap_with_no_sta = (vif->type == NL80211_IFTYPE_AP &&
+ 			     !arvif->num_stations);
+-	if (flags == WMI_KEY_PAIRWISE || cmd == SET_KEY || is_ap_with_no_sta) {
++
++	/* The same firmware race hits a pairwise key: a clear followed by
++	 * an install of the same peer's key leaves the firmware dropping
++	 * every unicast frame to the peer. mac80211 replaces a PTK by
++	 * DISABLE_KEY on the old key and SET_KEY on the new one, so keep
++	 * the old key until the new one overwrites it in place. Frames
++	 * queued in the hardware leave with the old key or the new one,
++	 * never in the clear. A removal not followed by an install is
++	 * completed when the port closes, and peer deletion drops the
++	 * key with the peer.
++	 */
++	keep_ptk = sta && flags == WMI_KEY_PAIRWISE && cmd == DISABLE_KEY;
++
++	if (!keep_ptk &&
++	    (flags == WMI_KEY_PAIRWISE || cmd == SET_KEY || is_ap_with_no_sta)) {
+ 		ret = ath11k_install_key(arvif, key, cmd, peer_addr, flags);
+ 		if (ret) {
+ 			ath11k_warn(ab, "ath11k_install_key failed (%d)\n", ret);
+@@ -4656,6 +4698,12 @@ static int ath11k_mac_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
+ 	if (sta) {
+ 		arsta = ath11k_sta_to_arsta(sta);
+ 
++		if (flags == WMI_KEY_PAIRWISE) {
++			arsta->ptk_clear_pending = keep_ptk;
++			arsta->ptk_clear_idx = key->keyidx;
++			arsta->ptk_clear_cipher = key->cipher;
++		}
++
+ 		switch (key->cipher) {
+ 		case WLAN_CIPHER_SUITE_TKIP:
+ 		case WLAN_CIPHER_SUITE_CCMP:
+@@ -10073,6 +10121,9 @@ static int ath11k_mac_op_sta_state(struct ieee80211_hw *hw,
+ 		}
+ 	} else if (old_state == IEEE80211_STA_AUTHORIZED &&
+ 		   new_state == IEEE80211_STA_ASSOC) {
++		if (arsta->ptk_clear_pending)
++			ath11k_mac_clear_ptk(arvif, sta);
++
+ 		spin_lock_bh(&ar->ab->base_lock);
+ 
+ 		peer = ath11k_peer_find(ar->ab, arvif->vdev_id, sta->addr);
+@@ -10624,6 +10675,8 @@ static int __ath11k_mac_register(struct ath11k *ar)
+ 
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_STA_TX_PWR);
++	wiphy_ext_feature_set(ar->hw->wiphy,
++			      NL80211_EXT_FEATURE_CAN_REPLACE_PTK0);
+ 	if (test_bit(WMI_TLV_SERVICE_BSS_COLOR_OFFLOAD,
+ 		     ar->ab->wmi_ab.svc_map)) {
+ 		wiphy_ext_feature_set(ar->hw->wiphy,
