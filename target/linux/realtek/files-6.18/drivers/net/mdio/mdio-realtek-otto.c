@@ -221,6 +221,7 @@ struct rtmd_bus {
 };
 
 struct rtmd_ctrl {
+	struct device *dev;
 	struct mutex lock; /* protect HW access */
 	struct regmap *map;
 	const struct rtmd_config *cfg;
@@ -256,12 +257,12 @@ struct rtmd_config {
 	u16 num_ports;
 	u32 poll_ctrl;
 	int port_map_base;
-	int (*read_c22)(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val);
-	int (*read_c45)(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 *val);
+	int (*read_c22)(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val);
+	int (*read_c45)(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 *val);
 	int (*setup_ctrl)(struct rtmd_ctrl *ctrl);
 	int (*setup_polling)(struct rtmd_ctrl *ctrl);
-	int (*write_c22)(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val);
-	int (*write_c45)(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 val);
+	int (*write_c22)(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 val);
+	int (*write_c45)(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 val);
 };
 
 struct rtmd_phy_info {
@@ -286,10 +287,9 @@ static int rtmd_phy_to_port(struct mii_bus *bus, int phy)
 	return chan->port[phy];
 }
 
-static int rtmd_run_cmd(struct mii_bus *bus, u32 cmd,
+static int rtmd_run_cmd(struct rtmd_ctrl *ctrl, u32 cmd,
 			struct rtmd_command_data *cmd_data, u32 *val)
 {
-	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
 	u32 cmdstate;
 	int ret;
 
@@ -331,12 +331,12 @@ static int rtmd_run_cmd(struct mii_bus *bus, u32 cmd,
 	ret = regmap_read_poll_timeout(ctrl->map, ctrl->cfg->cmd_regs.c22_adr,
 				       cmdstate, !(cmdstate & RTMD_RUN), 20, 500000);
 	if (ret) {
-		dev_warn_once(&bus->dev, "access timed out\n");
+		dev_warn_once(ctrl->dev, "access timed out\n");
 		return ret;
 	}
 
 	if (cmdstate & ctrl->cfg->cmd_fail) {
-		dev_warn_once(&bus->dev, "access failed\n");
+		dev_warn_once(ctrl->dev, "access failed\n");
 		return -EIO;
 	}
 
@@ -351,17 +351,17 @@ static int rtmd_run_cmd(struct mii_bus *bus, u32 cmd,
 	return ret;
 }
 
-static int rtmd_838x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val)
+static int rtmd_838x_read_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_838X_C22_DATA(page, reg),
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_838X_CMD_READ_C22, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_838X_CMD_READ_C22, &cmd_data, val);
 }
 
-static int rtmd_838x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val)
+static int rtmd_838x_write_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_838X_C22_DATA(page, reg),
@@ -369,20 +369,20 @@ static int rtmd_838x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u
 		.mask_lo = BIT(pn),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_838X_CMD_WRITE_C22, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_838X_CMD_WRITE_C22, &cmd_data, NULL);
 }
 
-static int rtmd_838x_read_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 *val)
+static int rtmd_838x_read_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_838X_CMD_READ_C45, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_838X_CMD_READ_C45, &cmd_data, val);
 }
 
-static int rtmd_838x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 val)
+static int rtmd_838x_write_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
@@ -390,10 +390,10 @@ static int rtmd_838x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 		.mask_lo = BIT(pn),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_838X_CMD_WRITE_C45, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_838X_CMD_WRITE_C45, &cmd_data, NULL);
 }
 
-static int rtmd_839x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val)
+static int rtmd_839x_read_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_839X_C22_DATA(page, reg),
@@ -401,10 +401,10 @@ static int rtmd_839x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u3
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_839X_CMD_READ_C22, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_839X_CMD_READ_C22, &cmd_data, val);
 }
 
-static int rtmd_839x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val)
+static int rtmd_839x_write_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_839X_C22_DATA(page, reg),
@@ -414,20 +414,20 @@ static int rtmd_839x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u
 		.mask_hi = (u32)(BIT_ULL(pn) >> 32),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_839X_CMD_WRITE_C22, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_839X_CMD_WRITE_C22, &cmd_data, NULL);
 }
 
-static int rtmd_839x_read_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 *val)
+static int rtmd_839x_read_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_839X_CMD_READ_C45, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_839X_CMD_READ_C45, &cmd_data, val);
 }
 
-static int rtmd_839x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 val)
+static int rtmd_839x_write_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
@@ -436,20 +436,20 @@ static int rtmd_839x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 		.mask_hi = (u32)(BIT_ULL(pn) >> 32),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_839X_CMD_WRITE_C45, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_839X_CMD_WRITE_C45, &cmd_data, NULL);
 }
 
-static int rtmd_930x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val)
+static int rtmd_930x_read_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_930X_C22_DATA(page, reg),
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_930X_CMD_READ_C22, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_930X_CMD_READ_C22, &cmd_data, val);
 }
 
-static int rtmd_930x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val)
+static int rtmd_930x_write_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_930X_C22_DATA(page, reg),
@@ -457,20 +457,20 @@ static int rtmd_930x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u
 		.mask_lo = BIT(pn),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_930X_CMD_WRITE_C22, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_930X_CMD_WRITE_C22, &cmd_data, NULL);
 }
 
-static int rtmd_930x_read_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 *val)
+static int rtmd_930x_read_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_930X_CMD_READ_C45, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_930X_CMD_READ_C45, &cmd_data, val);
 }
 
-static int rtmd_930x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 val)
+static int rtmd_930x_write_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
@@ -478,10 +478,10 @@ static int rtmd_930x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 		.mask_lo = BIT(pn),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_930X_CMD_WRITE_C45, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_930X_CMD_WRITE_C45, &cmd_data, NULL);
 }
 
-static int rtmd_931x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val)
+static int rtmd_931x_read_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.brdcast = RTMD_931X_SMI_INDRT_PORT(pn),
@@ -489,10 +489,10 @@ static int rtmd_931x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u3
 		.ex_page = RTMD_931X_SMI_INDRT_SKIP_EXT_PAGE,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_931X_CMD_READ_C22, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_931X_CMD_READ_C22, &cmd_data, val);
 }
 
-static int rtmd_931x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val)
+static int rtmd_931x_write_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_931X_C22_DATA(page, reg),
@@ -502,20 +502,20 @@ static int rtmd_931x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u
 		.io_data = val,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_931X_CMD_WRITE_C22, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_931X_CMD_WRITE_C22, &cmd_data, NULL);
 }
 
-static int rtmd_931x_read_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 *val)
+static int rtmd_931x_read_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.brdcast = RTMD_931X_SMI_INDRT_PORT(pn),
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_931X_CMD_READ_C45, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_931X_CMD_READ_C45, &cmd_data, val);
 }
 
-static int rtmd_931x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 val)
+static int rtmd_931x_write_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
@@ -524,7 +524,7 @@ static int rtmd_931x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 		.io_data = val,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_931X_CMD_WRITE_C45, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_931X_CMD_WRITE_C45, &cmd_data, NULL);
 }
 
 static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
@@ -537,7 +537,7 @@ static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
 		return -ENOENT;
 
 	scoped_guard(mutex, &ctrl->lock)
-		ret = (*ctrl->cfg->read_c45)(bus, pn, devnum, regnum, &val);
+		ret = (*ctrl->cfg->read_c45)(ctrl, pn, devnum, regnum, &val);
 
 	dev_dbg(&bus->dev, "rd_MMD(phy=0x%02x, dev=0x%04x, reg=0x%04x) = 0x%04x, ret = %d\n",
 		phy, devnum, regnum, val, ret);
@@ -561,7 +561,7 @@ static int rtmd_read_c22(struct mii_bus *bus, int phy, int regnum)
 			return page;
 
 		ctrl->port[pn].raw = (page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
-		ret = (*ctrl->cfg->read_c22)(bus, pn, page, regnum, &val);
+		ret = (*ctrl->cfg->read_c22)(ctrl, pn, page, regnum, &val);
 	}
 
 	dev_dbg(&bus->dev, "rd_PHY(phy=0x%02x, pag=0x%04x, reg=0x%04x) = 0x%04x, ret = %d\n",
@@ -580,7 +580,7 @@ static int rtmd_write_c45(struct mii_bus *bus, int phy, int devnum, int regnum, 
 		return -ENOENT;
 
 	scoped_guard(mutex, &ctrl->lock)
-		ret = (*ctrl->cfg->write_c45)(bus, pn, devnum, regnum, val);
+		ret = (*ctrl->cfg->write_c45)(ctrl, pn, devnum, regnum, val);
 	dev_dbg(&bus->dev, "wr_MMD(phy=0x%02x, dev=0x%04x, reg=0x%04x, val=0x%04x), ret = %d\n",
 		phy, devnum, regnum, val, ret);
 
@@ -608,7 +608,7 @@ static int rtmd_write_c22(struct mii_bus *bus, int phy, int regnum, u16 val)
 
 		if (do_write) {
 			ctrl->port[pn].raw = (page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
-			ret = (*ctrl->cfg->write_c22)(bus, pn, page, regnum, val);
+			ret = (*ctrl->cfg->write_c22)(ctrl, pn, page, regnum, val);
 		} else {
 			ctrl->port[pn].raw = false;
 		}
@@ -1113,6 +1113,7 @@ static int rtmd_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	ctrl->dev = dev;
 	platform_set_drvdata(pdev, ctrl);
 	ctrl->cfg = (const struct rtmd_config *)device_get_match_data(dev);
 	ctrl->map = syscon_node_to_regmap(pdev->dev.of_node->parent);
