@@ -402,6 +402,10 @@ struct edma_queue {
 	/* The slot of the fill ring whose buffer the engine returns next. */
 	u16 rx_slot;
 	u16 rxdesc_cons;
+	/* The descriptors being read are the rest of a frame longer than a
+	 * buffer, which is dropped.
+	 */
+	bool rx_more;
 	bool tx_kick;
 
 	spinlock_t tx_lock;
