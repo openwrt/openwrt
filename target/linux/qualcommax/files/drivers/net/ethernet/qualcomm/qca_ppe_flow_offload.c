@@ -2957,8 +2957,17 @@ static int ppe_flow_offload_stats(struct qca_ppe_priv *priv,
 	 * the hardware has aged out and handed to another flow.
 	 */
 	age = ppe_flow_entry_age(priv, entry);
-	if (age >= 0 && (entry->unread_packets || age == PPE_FLOW_AGE_MAX))
-		entry->last_used = jiffies;
+	if (age >= 0) {
+		u64 bytes;
+		u32 pkts = ppe_flow_counter_delta(priv, entry, &bytes);
+
+		/* What the sparse work has not yet read, so that the answer
+		 * is as current as the counter.
+		 */
+		ppe_flow_account(priv, entry, pkts, bytes);
+		if (entry->unread_packets || age == PPE_FLOW_AGE_MAX)
+			entry->last_used = jiffies;
+	}
 
 	flow_stats_update(&f->stats, entry->unread_bytes, entry->unread_packets,
 			  0, entry->last_used, FLOW_ACTION_HW_STATS_DELAYED);
@@ -3084,6 +3093,14 @@ int ppe_setup_ft_block(struct qca_ppe_priv *priv,
 #define PPE_SPARSE_PKTS		8
 #define PPE_SPARSE_QUIET	10
 
+/* A flow that is not ranked in a shaped queue has nothing to be promoted to,
+ * so its counter is read once in this many periods, each flow in the period
+ * its slot number falls in, rather than in every one. What it moved is
+ * banked a little later and the deltas stay exact; the flowtable's stats
+ * request and the removal of the flow read the counter themselves.
+ */
+#define PPE_SPARSE_SLICES	10
+
 static bool ppe_sparse_flows = true;
 module_param_named(sparse_flows, ppe_sparse_flows, bool, 0644);
 MODULE_PARM_DESC(sparse_flows,
@@ -3161,12 +3178,29 @@ static void ppe_sparse_work(struct work_struct *work)
 	struct qca_ppe_priv *priv = container_of(work, struct qca_ppe_priv,
 						 sparse_work.work);
 	struct ppe_flow_entry *entry;
-	u32 pkts, delta;
+	u32 pkts, delta, tick;
 	bool shaped;
 
 	mutex_lock(&priv->flow_lock);
+	tick = priv->sparse_tick++;
 	list_for_each_entry(entry, &priv->flow_list, list) {
 		u64 bytes;
+
+		/* The list is a queue of a shaped user port, so only a flow
+		 * that leaves by one has a use for it. Anywhere else the profile
+		 * buys nothing and costs the flow the DSCP its ACL rule writes,
+		 * which the switch stops applying once the flow's profile
+		 * outranks the ACL.
+		 */
+		shaped = entry->oport != QCA_PPE_CPU_PORT &&
+			 ppe_port_shaped(priv, entry->oport);
+
+		/* A promoted flow is looked at every period, so that it is
+		 * demoted at the end of the one it burst in.
+		 */
+		if ((!shaped || !ppe_sparse_flows) && !entry->sparse &&
+		    (entry->index + tick) % PPE_SPARSE_SLICES)
+			continue;
 
 		regmap_read(priv->regmap, PPE_IN_FLOW_CNT_TBL(entry->index),
 			    &pkts);
@@ -3181,15 +3215,6 @@ static void ppe_sparse_work(struct work_struct *work)
 
 			ppe_flow_account(priv, entry, acct, bytes);
 		}
-
-		/* The list is a queue of a shaped user port, so only a flow
-		 * that leaves by one has a use for it. Anywhere else the profile
-		 * buys nothing and costs the flow the DSCP its ACL rule writes,
-		 * which the switch stops applying once the flow's profile
-		 * outranks the ACL.
-		 */
-		shaped = entry->oport != QCA_PPE_CPU_PORT &&
-			 ppe_port_shaped(priv, entry->oport);
 
 		if (delta > PPE_SPARSE_PKTS || !ppe_sparse_flows || !shaped) {
 			entry->quiet = 0;

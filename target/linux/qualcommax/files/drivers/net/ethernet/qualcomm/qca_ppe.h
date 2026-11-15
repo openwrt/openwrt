@@ -1605,6 +1605,7 @@ struct qca_ppe_priv {
 	u32 flow_stale;
 	u32 flow_sparse_promoted;
 	u32 flow_sparse_demoted;
+	u32 sparse_tick;
 	/* Guards the VSI, translation-index and bridge-VLAN state, and the
 	 * read-modify-write an MDB update makes of an FDB entry. The switchdev
 	 * ops reach it under rtnl, the FDB and MDB work from a workqueue that
