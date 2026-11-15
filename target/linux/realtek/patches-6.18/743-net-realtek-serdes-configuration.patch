@@ -42,7 +42,7 @@
  #define RTL8221B_PHYCR1				0xa430
  #define RTL8221B_PHYCR1_ALDPS_EN		BIT(2)
  #define RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN	BIT(12)
-@@ -3025,6 +3060,147 @@ static int rtl8224_get_base_addr(struct
+@@ -3036,6 +3071,147 @@ static int rtl8224_get_base_addr(struct
  	return 0;
  }
  
@@ -190,7 +190,7 @@
  static int rtl8224_mdi_config_order(struct phy_device *phydev, u8 port_offset)
  {
  	struct device_node *np = phydev->mdio.dev.of_node;
-@@ -3085,6 +3261,10 @@ static int rtl8224_config_init(struct ph
+@@ -3096,6 +3272,10 @@ static int rtl8224_config_init(struct ph
  		return ret;
  
  	port_offset = phydev->mdio.addr - base_addr;
