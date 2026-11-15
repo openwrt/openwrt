@@ -1,0 +1,46 @@
+From d84ad02045bd694f981657cbd6ed4089c95dd779 Mon Sep 17 00:00:00 2001
+From: Akshat Singh <automobilehacks@gmail.com>
+Date: Sun, 15 Nov 2026 08:21:02 +0000
+Subject: [PATCH] wifi: mt76: defer probe while the EEPROM's NVMEM provider is
+ missing
+
+mt76_eeprom_init() turns every error from mt76_get_of_eeprom() into "not
+found", so when the NVMEM provider of the "eeprom" cell hasn't registered
+yet, the driver goes on without calibration. The MT7603 then takes the
+contents of its efuse instead, which is empty on boards that keep the
+calibration in flash, and with those values a Nokia G-140W-C locked up
+hard right after loading the MT7592's firmware.
+
+Pass -EPROBE_DEFER on, so the probe waits for the provider, as it does
+for the MAC address cell.
+
+Signed-off-by: Akshat Singh <automobilehacks@gmail.com>
+---
+ eeprom.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+--- a/eeprom.c
++++ b/eeprom.c
+@@ -548,11 +548,21 @@
+ int
+ mt76_eeprom_init(struct mt76_dev *dev, int len)
+ {
++	int ret;
++
+ 	dev->eeprom.size = len;
+ 	dev->eeprom.data = devm_kzalloc(dev->dev, len, GFP_KERNEL);
+ 	if (!dev->eeprom.data)
+ 		return -ENOMEM;
+ 
+-	return !mt76_get_of_eeprom(dev, dev->eeprom.data, len);
++	/*
++	 * The calibration's NVMEM provider isn't there yet: wait for it
++	 * instead of bringing the radio up without calibration.
++	 */
++	ret = mt76_get_of_eeprom(dev, dev->eeprom.data, len);
++	if (ret == -EPROBE_DEFER)
++		return ret;
++
++	return !ret;
+ }
+ EXPORT_SYMBOL_GPL(mt76_eeprom_init);
