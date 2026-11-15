@@ -576,6 +576,19 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	return cleaned;
 }
 
+/* The engine parsed the transport and found its checksum, and for IPv4 the
+ * header's, good.
+ */
+static bool edma_rx_l4_ok(u32 status)
+{
+	u8 pid = (status >> EDMA_RXDESC_PID_SHIFT) & EDMA_RXDESC_PID_MASK;
+
+	return (BIT(pid) & EDMA_RXDESC_PID_TCP_UDP) &&
+	       (status & EDMA_RXDESC_L4_CSUM_OK) &&
+	       ((pid & EDMA_RXDESC_PID_IPV6) ||
+		(status & EDMA_RXDESC_L3_CSUM_OK));
+}
+
 /* The engine verifies the transport checksum of a TCP or UDP frame and
  * reports the result per descriptor. It reports a header checksum too, which
  * only IPv4 carries, and it names the packet type it parsed so that a verdict
@@ -599,14 +612,8 @@ static void edma_rx_csum(struct net_device *netdev, struct sk_buff *skb,
 	 * settles the frame without the stack reading it at all.
 	 */
 	if (BIT(pid) & EDMA_RXDESC_PID_TCP_UDP) {
-		if (!(status & EDMA_RXDESC_L4_CSUM_OK))
-			return;
-
-		if (!(pid & EDMA_RXDESC_PID_IPV6) &&
-		    !(status & EDMA_RXDESC_L3_CSUM_OK))
-			return;
-
-		skb->ip_summed = CHECKSUM_UNNECESSARY;
+		if (edma_rx_l4_ok(status))
+			skb->ip_summed = CHECKSUM_UNNECESSARY;
 		return;
 	}
 
@@ -691,26 +698,31 @@ static void edma_rx_vlan(struct net_device *netdev, struct sk_buff *skb,
 /* The switch routed the frame to the CPU port on a flow it holds, with no
  * exception: its driver may own the egress and send it on unchanged.
  */
-static bool edma_rx_flow(struct net_device *netdev, struct sk_buff *skb,
-			 const struct edma_rx_preheader *rxph)
+static bool edma_rx_is_flow(const struct edma_rx_preheader *rxph)
 {
-	u32 pre2 = le32_to_cpu(rxph->rx_pre2);
+	return ((le32_to_cpu(rxph->rx_pre2) >> EDMA_RXPH_HASH_FLAG_SHIFT) &
+		EDMA_RXPH_HASH_FLAG_MASK) == EDMA_RXPH_HASH_FLOW &&
+	       le16_to_cpu(rxph->dst_info) == EDMA_PREHDR_DSTINFO_PORTID_IND << 8 &&
+	       !FIELD_GET(EDMA_RXPH_CPU_CODE, le32_to_cpu(rxph->rx_pre4));
+}
+
+static u32 edma_rx_flow_id(const struct edma_rx_preheader *rxph)
+{
+	return le32_to_cpu(rxph->rx_pre2) & EDMA_RXPH_HASH_MASK;
+}
+
+static bool edma_rx_flow(struct net_device *netdev, struct sk_buff *skb,
+			 u32 flow)
+{
 	struct edma_priv *priv = netdev_priv(netdev);
 	const struct qca_edma_switch_ops *ops;
-
-	if (((pre2 >> EDMA_RXPH_HASH_FLAG_SHIFT) & EDMA_RXPH_HASH_FLAG_MASK) !=
-	    EDMA_RXPH_HASH_FLOW ||
-	    le16_to_cpu(rxph->dst_info) != EDMA_PREHDR_DSTINFO_PORTID_IND << 8 ||
-	    FIELD_GET(EDMA_RXPH_CPU_CODE, le32_to_cpu(rxph->rx_pre4)))
-		return false;
 
 	ops = READ_ONCE(priv->sw_ops);
 	if (!ops || !ops->flow_xmit)
 		return false;
 
 	skb->dev = netdev;
-	return ops->flow_xmit(READ_ONCE(priv->sw_ds), skb,
-			      pre2 & EDMA_RXPH_HASH_MASK);
+	return ops->flow_xmit(READ_ONCE(priv->sw_ds), skb, flow);
 }
 
 /* The switch returned a frame that the CPU sent with a virtual source port:
@@ -810,6 +822,380 @@ static void edma_rx_peek(struct edma_queue *q, u16 idx, u16 slot,
 		  SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
 }
 
+#define EDMA_GRO_SEGS	8
+
+static void edma_rx_netstats(struct net_device *netdev, u32 packets, u32 bytes)
+{
+	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev->tstats);
+
+	u64_stats_update_begin(&tstats->syncp);
+	u64_stats_add(&tstats->rx_packets, packets);
+	u64_stats_add(&tstats->rx_bytes, bytes);
+	u64_stats_update_end(&tstats->syncp);
+}
+
+/* A frame that the normal receive path takes: one the switch returned from a
+ * virtual port, or the rest. @segs frames of @bytes in all, which are more
+ * than one for an aggregate whose flow's egress went away before it was
+ * sent; its checksum is then the one the aggregate was given.
+ */
+static void edma_rx_slow(struct edma_queue *q, struct sk_buff *skb,
+			 const struct edma_rx_preheader *rxph, u32 status,
+			 u32 src_port, u32 segs, u32 bytes)
+{
+	struct edma_priv *priv = q->priv;
+	struct net_device *netdev = priv->netdev;
+	unsigned char *frame;
+
+	/* Only the CPU and the switch's ports send frames the PPE
+	 * can return, and a port above them is a virtual one.
+	 */
+	if (src_port >= EDMA_PORTS) {
+		if (edma_rx_vp(netdev, skb, src_port)) {
+			edma_rx_netstats(netdev, segs, bytes);
+		} else {
+			dev_kfree_skb_any(skb);
+			q->stats.rx_vp_unclaimed++;
+			DEV_STATS_INC(netdev, rx_dropped);
+		}
+		return;
+	}
+
+	edma_rx_vlan(netdev, skb, rxph);
+	frame = skb->data;
+	skb->protocol = eth_type_trans(skb, netdev);
+	if (!skb_is_gso(skb))
+		edma_rx_csum(netdev, skb, rxph, status, skb->data - frame);
+	edma_rx_hash(netdev, skb, rxph);
+
+	/* A forwarded frame names its port in a metadata dst, which
+	 * DSA reads without a tagger; a trapped one carries a tag.
+	 */
+	if (src_port < EDMA_PORTS && netdev_uses_dsa(netdev)) {
+		if (!FIELD_GET(EDMA_RXPH_CPU_CODE, le32_to_cpu(rxph->rx_pre4))) {
+			skb_dst_set_noref(skb, &priv->port_md[src_port]->dst);
+		} else if (unlikely(!edma_rx_tag(skb, src_port))) {
+			dev_kfree_skb_any(skb);
+			q->stats.rx_no_tag++;
+			DEV_STATS_INC(netdev, rx_dropped);
+			return;
+		}
+	}
+
+	/* An aggregate takes the same way as a single frame, so it cannot
+	 * pass the frames of its flow that GRO still holds for the poll.
+	 */
+	edma_rx_netstats(netdev, segs, bytes);
+	napi_gro_receive(&q->napi, skb);
+}
+
+/* The headers of a TCP data segment of an IPv4 or IPv6 frame that carries
+ * nothing the merge would lose: no VLAN or PPPoE header, no IP options or
+ * extension headers, no fragment, a length that is the frame's, flags of a
+ * plain acknowledgment, and a TCP checksum the engine found good, which the
+ * merged frame is given again.
+ */
+static bool edma_gro_parse(const struct net_device *netdev,
+			   struct sk_buff *skb, u32 status, struct edma_tcp *t)
+{
+	unsigned int len = skb_headlen(skb), thoff, thlen;
+	u8 *d = skb->data;
+	struct tcphdr *th;
+
+	if (!(netdev->features & NETIF_F_RXCSUM) || !edma_rx_l4_ok(status) ||
+	    len < ETH_HLEN + sizeof(struct iphdr) + sizeof(*th))
+		return false;
+
+	t->eth = (struct ethhdr *)d;
+	if (t->eth->h_proto == htons(ETH_P_IP)) {
+		struct iphdr *iph = (struct iphdr *)(d + ETH_HLEN);
+
+		if (*(u8 *)iph != 0x45 || iph->protocol != IPPROTO_TCP ||
+		    (iph->frag_off & htons(IP_MF | IP_OFFSET)) ||
+		    ETH_HLEN + ntohs(iph->tot_len) != len)
+			return false;
+		t->ip4 = iph;
+		t->v6 = false;
+		thoff = ETH_HLEN + sizeof(*iph);
+	} else if (t->eth->h_proto == htons(ETH_P_IPV6)) {
+		struct ipv6hdr *ip6h = (struct ipv6hdr *)(d + ETH_HLEN);
+
+		if (len < ETH_HLEN + sizeof(*ip6h) + sizeof(*th) ||
+		    ip6h->version != 6 || ip6h->nexthdr != IPPROTO_TCP ||
+		    ETH_HLEN + sizeof(*ip6h) + ntohs(ip6h->payload_len) != len)
+			return false;
+		t->ip6 = ip6h;
+		t->v6 = true;
+		thoff = ETH_HLEN + sizeof(*ip6h);
+	} else {
+		return false;
+	}
+
+	th = (struct tcphdr *)(d + thoff);
+	thlen = th->doff * 4;
+	if (thlen < sizeof(*th) || thoff + thlen >= len)
+		return false;
+
+	/* Only an acknowledgment, that may push; a segment with any other
+	 * flag, or an urgent pointer, ends a run.
+	 */
+	if (!th->ack || th->fin || th->syn || th->rst || th->urg ||
+	    th->ece || th->cwr || th->urg_ptr)
+		return false;
+
+	t->th = th;
+	t->hdr_len = thoff + thlen;
+	t->payload = len - t->hdr_len;
+
+	return true;
+}
+
+/* Whether segment @t follows the aggregate's last one as one segment of the
+ * same stream would: the same flow, link and IP header but for the ID, the
+ * same ports, acknowledgment, window and options, the next sequence
+ * number, and an ID that goes up by one, or is the same where the egress can
+ * keep it so. Sent again by the segmentation of the stack or the TCL, the
+ * frames are then the ones that came in.
+ */
+static bool edma_gro_fits(const struct edma_gro *g, const struct edma_tcp *t,
+			  u32 flow, bool *fixed)
+{
+	const struct edma_tcp *h = &g->t;
+	unsigned int optlen;
+
+	if (flow != g->flow || t->v6 != h->v6 || t->hdr_len != h->hdr_len ||
+	    t->payload > g->mss || ntohl(t->th->seq) != g->next_seq ||
+	    g->head->len + t->payload > g->gso.max_size ||
+	    memcmp(t->eth, h->eth, ETH_HLEN) ||
+	    memcmp(&t->th->source, &h->th->source, sizeof(__be32)) ||
+	    t->th->ack_seq != h->th->ack_seq || t->th->window != h->th->window)
+		return false;
+
+	optlen = t->hdr_len - ((u8 *)t->th - (u8 *)t->eth) - sizeof(*t->th);
+	if (memcmp(t->th + 1, h->th + 1, optlen))
+		return false;
+
+	if (t->v6) {
+		if (*(__be32 *)t->ip6 != *(__be32 *)h->ip6 ||
+		    t->ip6->hop_limit != h->ip6->hop_limit ||
+		    memcmp(&t->ip6->saddr, &h->ip6->saddr,
+			   2 * sizeof(t->ip6->saddr)))
+			return false;
+		return true;
+	}
+
+	if (t->ip4->tos != h->ip4->tos || t->ip4->ttl != h->ip4->ttl ||
+	    t->ip4->frag_off != h->ip4->frag_off ||
+	    memcmp(&t->ip4->saddr, &h->ip4->saddr, 2 * sizeof(__be32)))
+		return false;
+
+	if (g->segs > 1)
+		*fixed = g->fixedid;
+	else
+		*fixed = ntohs(t->ip4->id) == g->last_id;
+	if (*fixed)
+		return (t->ip4->frag_off & htons(IP_DF)) &&
+		       (g->gso.features & NETIF_F_TSO_MANGLEID);
+
+	return ntohs(t->ip4->id) == (u16)(g->last_id + 1);
+}
+
+/* Gives the aggregate what the TCP GRO of the stack gives its own: the
+ * length of the IP packet it has become, the pseudo-header sum its checksum
+ * is finished from by whoever segments it, and the size and number of the
+ * segments.
+ */
+static void edma_gro_complete(struct edma_gro *g)
+{
+	struct sk_buff *skb = g->head;
+	struct edma_tcp *t = &g->t;
+	unsigned int thoff = (u8 *)t->th - skb->data;
+	unsigned int l4len = skb->len - thoff;
+	struct skb_shared_info *shinfo = skb_shinfo(skb);
+
+	if (t->v6) {
+		t->ip6->payload_len = htons(skb->len - ETH_HLEN -
+					    sizeof(*t->ip6));
+		t->th->check = ~csum_ipv6_magic(&t->ip6->saddr, &t->ip6->daddr,
+						l4len, IPPROTO_TCP, 0);
+		shinfo->gso_type = SKB_GSO_TCPV6;
+	} else {
+		__be16 len = htons(skb->len - ETH_HLEN);
+
+		csum_replace2(&t->ip4->check, t->ip4->tot_len, len);
+		t->ip4->tot_len = len;
+		t->th->check = ~csum_tcpudp_magic(t->ip4->saddr, t->ip4->daddr,
+						  l4len, IPPROTO_TCP, 0);
+		shinfo->gso_type = SKB_GSO_TCPV4;
+		if (g->fixedid)
+			shinfo->gso_type |= SKB_GSO_TCP_FIXEDID;
+	}
+
+	skb_set_network_header(skb, ETH_HLEN);
+	skb_set_transport_header(skb, thoff);
+	skb->csum_start = (u8 *)t->th - skb->head;
+	skb->csum_offset = offsetof(struct tcphdr, check);
+	skb->ip_summed = CHECKSUM_PARTIAL;
+	shinfo->gso_size = g->mss;
+	shinfo->gso_segs = g->segs;
+}
+
+/* Sends the aggregate the poll holds. It is the frame of the flow that was
+ * first in the poll's order and every frame after it of the flow has been
+ * merged into it, so nothing of the flow waits behind or ahead of it.
+ */
+static void edma_gro_flush(struct edma_queue *q)
+{
+	struct net_device *netdev = q->priv->netdev;
+	struct edma_gro *g = &q->gro;
+	struct sk_buff *skb = g->head;
+
+	if (!skb)
+		return;
+
+	/* complete before the aggregate is let go: it reads g->head */
+	if (g->segs > 1)
+		edma_gro_complete(g);
+	g->head = NULL;
+
+	if (edma_rx_flow(netdev, skb, g->flow)) {
+		edma_rx_netstats(netdev, g->segs, g->bytes);
+		if (g->segs > 1) {
+			q->stats.rx_flow_merged += g->segs;
+			q->stats.rx_flow_aggs++;
+		} else {
+			q->stats.rx_flow_single++;
+		}
+		return;
+	}
+
+	edma_rx_slow(q, skb, g->rxph, g->desc_status, g->src_port, g->segs,
+		     g->bytes);
+}
+
+/* Appends the payload of @skb, a segment that fits, to the aggregate as a
+ * fragment, which takes the page it was received in and leaves the segment's
+ * own skb to be freed. The segment that cannot be taken is left as it was.
+ */
+static bool edma_gro_join(struct edma_queue *q, struct sk_buff *skb,
+			  const struct edma_tcp *t, u32 bytes, bool fixed)
+{
+	struct edma_gro *g = &q->gro;
+	u16 payload = t->payload, id = t->v6 ? 0 : ntohs(t->ip4->id);
+	u16 hdr_len = t->hdr_len;
+	bool push = t->th->psh, fragstolen;
+	int delta;
+
+	skb_pull(skb, hdr_len);
+	if (!skb_try_coalesce(g->head, skb, &fragstolen, &delta)) {
+		skb_push(skb, hdr_len);
+		return false;
+	}
+	kfree_skb_partial(skb, fragstolen);
+
+	if (g->segs == 1)
+		g->fixedid = fixed;
+	g->segs++;
+	g->bytes += bytes;
+	g->next_seq += payload;
+	g->last_id = id;
+	if (push)
+		g->t.th->psh = 1;
+
+	/* A segment that ends a write ends the run, as does a short one, and
+	 * the bound on its size.
+	 */
+	if (push || payload < g->mss || g->segs >= g->max_segs)
+		edma_gro_flush(q);
+
+	return true;
+}
+
+/* Starts an aggregate with @skb when its flow leaves by a device that takes
+ * a merged frame whole: with the segmentation offload for the frame's
+ * family and for the IP ID it carries, scatter-gather, and more than one
+ * segment.
+ */
+static bool edma_gro_open(struct edma_queue *q, struct sk_buff *skb,
+			  const struct edma_rx_preheader *rxph, u32 status,
+			  u32 src_port, u32 bytes, u32 flow,
+			  const struct edma_tcp *t)
+{
+	struct edma_priv *priv = q->priv;
+	const struct qca_edma_switch_ops *ops = READ_ONCE(priv->sw_ops);
+	struct edma_gro *g = &q->gro;
+	netdev_features_t need = NETIF_F_SG | (t->v6 ? NETIF_F_TSO6 :
+						      NETIF_F_TSO);
+
+	if (!ops || !ops->flow_gso)
+		return false;
+
+	skb->dev = priv->netdev;
+	if (!ops->flow_gso(READ_ONCE(priv->sw_ds), skb, flow, &g->gso) ||
+	    (g->gso.features & need) != need || g->gso.max_segs < 2)
+		return false;
+
+	g->head = skb;
+	g->rxph = rxph;
+	g->t = *t;
+	g->flow = flow;
+	g->desc_status = status;
+	g->src_port = src_port;
+	g->bytes = bytes;
+	g->mss = t->payload;
+	g->next_seq = ntohl(t->th->seq) + t->payload;
+	g->last_id = t->v6 ? 0 : ntohs(t->ip4->id);
+	g->segs = 1;
+	g->fixedid = false;
+	g->max_segs = min_t(u32, EDMA_GRO_SEGS, g->gso.max_segs);
+
+	return true;
+}
+
+/* A frame the switch routed on a flow: merged into the aggregate the poll
+ * holds when it is the next segment of it, else the aggregate is sent and the
+ * frame starts one, or is sent alone. The frames of one flow leave in the
+ * order they came in, and a frame never waits behind another flow's: any
+ * frame that does not join ends the aggregate before it is handled.
+ *
+ * Return: false when the flow's driver left the frame to the receive path.
+ */
+static bool edma_gro_rx(struct edma_queue *q, struct sk_buff *skb,
+			const struct edma_rx_preheader *rxph, u32 status,
+			u32 src_port, u32 pkt_len)
+{
+	struct net_device *netdev = q->priv->netdev;
+	u32 flow = edma_rx_flow_id(rxph);
+	struct edma_gro *g = &q->gro;
+	struct edma_tcp t;
+	bool fixed = false, ok;
+
+	ok = src_port < EDMA_PORTS &&
+	     !(rxph->rx_pre2 & cpu_to_le32(EDMA_RXPH_CTAG_FLAG)) &&
+	     edma_gro_parse(netdev, skb, status, &t);
+
+	if (g->head) {
+		if (ok && edma_gro_fits(g, &t, flow, &fixed) &&
+		    edma_gro_join(q, skb, &t, pkt_len, fixed))
+			return true;
+		edma_gro_flush(q);
+	}
+
+	if (ok && !t.th->psh && q->gro_skip != flow + 1) {
+		if (edma_gro_open(q, skb, rxph, status, src_port, pkt_len,
+				  flow, &t))
+			return true;
+		q->gro_skip = flow + 1;
+	}
+
+	if (!edma_rx_flow(netdev, skb, flow))
+		return false;
+
+	edma_rx_netstats(netdev, 1, pkt_len);
+	q->stats.rx_flow_single++;
+	return true;
+}
+
 static u32 edma_clean_rx(struct edma_queue *q, int budget)
 {
 	struct edma_ring *rxdesc_ring = &q->rxdesc_ring;
@@ -818,7 +1204,6 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	struct platform_device *pdev = priv->pdev;
 	struct edma_rx_preheader *rxph;
 	struct edma_rx_peek cur, nxt;
-	unsigned char *frame;
 	void *data;
 	bool ahead = false;
 	struct sk_buff *skb;
@@ -834,6 +1219,8 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	edma_ring_sync_cpu(priv, rxdesc_ring, cons,
 			   min_t(u32, (prod - cons) & (rxdesc_ring->count - 1),
 				 budget));
+
+	q->gro_skip = 0;
 
 	while (cons != prod && done < budget) {
 		u16 next = cons + 1;
@@ -934,50 +1321,15 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		 * the ring, so each ring's CPU feeds a queue of its own.
 		 */
 		skb_record_rx_queue(skb, q->idx);
-		if (edma_rx_flow(netdev, skb, rxph)) {
-			dev_sw_netstats_rx_add(netdev, pkt_len);
-			goto next;
-		}
-
-		/* Only the CPU and the switch's ports send frames the PPE
-		 * can return, and a port above them is a virtual one.
-		 */
-		if (src_port >= EDMA_PORTS) {
-			if (edma_rx_vp(netdev, skb, src_port)) {
-				dev_sw_netstats_rx_add(netdev, pkt_len);
-			} else {
-				dev_kfree_skb_any(skb);
-				q->stats.rx_vp_unclaimed++;
-				DEV_STATS_INC(netdev, rx_dropped);
-			}
-			goto next;
-		}
-
-		edma_rx_vlan(netdev, skb, rxph);
-		frame = skb->data;
-		skb->protocol = eth_type_trans(skb, priv->netdev);
-		edma_rx_csum(netdev, skb, rxph, desc_status,
-			     skb->data - frame);
-		edma_rx_hash(netdev, skb, rxph);
-
-		/* A forwarded frame names its port in a metadata dst, which
-		 * DSA reads without a tagger; a trapped one carries a tag.
-		 */
-		if (src_port < EDMA_PORTS && netdev_uses_dsa(netdev)) {
-			if (!FIELD_GET(EDMA_RXPH_CPU_CODE,
-				       le32_to_cpu(rxph->rx_pre4))) {
-				skb_dst_set_noref(skb,
-						  &priv->port_md[src_port]->dst);
-			} else if (unlikely(!edma_rx_tag(skb, src_port))) {
-				dev_kfree_skb_any(skb);
-				q->stats.rx_no_tag++;
-				DEV_STATS_INC(netdev, rx_dropped);
+		if (edma_rx_is_flow(rxph)) {
+			if (edma_gro_rx(q, skb, rxph, desc_status, src_port,
+					pkt_len))
 				goto next;
-			}
+		} else {
+			edma_gro_flush(q);
 		}
 
-		dev_sw_netstats_rx_add(priv->netdev, pkt_len);
-		napi_gro_receive(&q->napi, skb);
+		edma_rx_slow(q, skb, rxph, desc_status, src_port, 1, pkt_len);
 
 next:
 		if (++cons == rxdesc_ring->count)
@@ -986,6 +1338,7 @@ next:
 		done++;
 	}
 
+	edma_gro_flush(q);
 	edma_rx_fill(q);
 
 	q->rx_pkts += done;
@@ -2050,6 +2403,9 @@ static const char edma_stat_names[][ETH_GSTRING_LEN] = {
 	"rx_vp_unclaimed",
 	"rx_split_frame",
 	"rx_fill_starved",
+	"rx_flow_single",
+	"rx_flow_merged",
+	"rx_flow_aggs",
 	"tx_desc_error",
 	"tx_unnamed_frame",
 	"tx_gso_frames",

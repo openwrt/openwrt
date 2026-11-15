@@ -9,7 +9,22 @@
 struct dsa_switch;
 
 /**
+ * struct qca_edma_gso - what the egress of a flow takes whole
+ * @features: the features of every device the frame passes before it leaves
+ * @max_segs: the most segments of one GSO frame the devices take unsplit
+ * @max_size: the largest GSO frame, in bytes
+ */
+struct qca_edma_gso {
+	netdev_features_t features;
+	unsigned int max_segs;
+	unsigned int max_size;
+};
+
+/**
  * struct qca_edma_switch_ops - what the switch behind the conduit provides
+ * @flow_gso: fill @gso with what the egress of flow @flow, as the frame @skb
+ *	would take it, takes as a GSO frame; returns false when @flow has no
+ *	such egress, or when the frame must not leave as a merged one
  * @flow_xmit: send on a frame the switch routed to the CPU port on flow
  *	@flow, finished; returns false to leave it to the receive path
  * @vp_rx: take a frame the switch returned that was sent with the virtual
@@ -17,6 +32,8 @@ struct dsa_switch;
  *	when no such port exists, and the frame is dropped
  */
 struct qca_edma_switch_ops {
+	bool (*flow_gso)(struct dsa_switch *ds, const struct sk_buff *skb,
+			 u32 flow, struct qca_edma_gso *gso);
 	bool (*flow_xmit)(struct dsa_switch *ds, struct sk_buff *skb, u32 flow);
 	bool (*vp_rx)(struct dsa_switch *ds, struct sk_buff *skb, u32 port);
 };

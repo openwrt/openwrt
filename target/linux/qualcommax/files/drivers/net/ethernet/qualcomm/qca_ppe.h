@@ -1913,6 +1913,9 @@ int ppe_setup_ft_block(struct qca_ppe_priv *priv,
 		       struct flow_block_offload *f);
 int ppe_flow_offload_init(struct qca_ppe_priv *priv);
 bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow);
+struct qca_edma_gso;
+bool ppe_flow_gso(struct dsa_switch *ds, const struct sk_buff *skb, u32 flow,
+		  struct qca_edma_gso *gso);
 void ppe_flow_shaper_get(struct qca_ppe_priv *priv, bool upload, char *name);
 void ppe_flow_ct_dscp_set(struct qca_ppe_priv *priv, bool on);
 void ppe_flow_uplink_get(struct qca_ppe_priv *priv, char *name);

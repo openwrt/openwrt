@@ -2898,6 +2898,7 @@ void qca_ppe_port_mirror_del(struct dsa_switch *ds, int port,
 }
 
 static const struct qca_edma_switch_ops qca_ppe_edma_ops = {
+	.flow_gso = ppe_flow_gso,
 	.flow_xmit = ppe_flow_xmit,
 	.vp_rx = ppe_vp_rx,
 };
