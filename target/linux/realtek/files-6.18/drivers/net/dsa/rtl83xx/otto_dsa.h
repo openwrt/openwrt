@@ -554,6 +554,11 @@ struct rtldsa_config {
 	 * STP.
 	 */
 	bool lag_tx_uses_member_mask;
+	/**
+	 * @lag_offload_l34: Offload bonds with xmit_hash_policy layer3+4; the
+	 * hash setup of this family programs the L4 port bits.
+	 */
+	bool lag_offload_l34;
 	int (*lag_setup_algomask)(struct otto_dsa_priv *priv, int group,
 				  struct netdev_lag_upper_info *info);
 	int (*lag_set_distribution_algorithm)(struct otto_dsa_priv *priv,

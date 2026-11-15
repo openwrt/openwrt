@@ -173,6 +173,7 @@ static bool otto_lag_83xx_can_offload(struct dsa_switch *ds,
 				      struct net_device *lag,
 				      struct netdev_lag_upper_info *info)
 {
+	struct otto_dsa_priv *priv = ds->priv;
 	int id;
 
 	id = dsa_lag_id(ds->dst, lag);
@@ -182,7 +183,11 @@ static bool otto_lag_83xx_can_offload(struct dsa_switch *ds,
 	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH)
 		return false;
 
-	if (info->hash_type != NETDEV_LAG_HASH_L2 && info->hash_type != NETDEV_LAG_HASH_L23)
+	if (info->hash_type != NETDEV_LAG_HASH_L2 && info->hash_type != NETDEV_LAG_HASH_L23 &&
+	    info->hash_type != NETDEV_LAG_HASH_L34)
+		return false;
+
+	if (info->hash_type == NETDEV_LAG_HASH_L34 && !priv->r->lag_offload_l34)
 		return false;
 
 	return true;
@@ -318,7 +323,9 @@ int otto_lag_port_join(struct dsa_switch *ds, int port, struct dsa_lag lag,
 
 	err = otto_lag_add(priv->ds, group, port, info);
 	if (err) {
-		err = -EINVAL;
+		/* Keep -EOPNOTSUPP: DSA then runs the LAG in software */
+		if (err != -EOPNOTSUPP)
+			err = -EINVAL;
 		goto out;
 	}
 
@@ -648,7 +655,24 @@ int otto_lag_838x_trk_mbr_ctr(int group)
 int otto_lag_838x_set_distribution_algorithm(struct otto_dsa_priv *priv,
 					     int group, int algoidx, u32 algomsk)
 {
+	u32 cur, idx;
+	int i;
+
 	algoidx &= 1; /* RTL838X only supports 2 concurrent algorithms */
+
+	/* layer2 and layer3+4 share slot 0, layer2+3 uses slot 1. Refuse a
+	 * different mask while another active LAG uses the same slot, the
+	 * bond then falls back to software.
+	 */
+	regmap_read(priv->map, RTL838X_TRK_HASH_CTRL + (algoidx << 2), &cur);
+	for (i = 0; i < priv->ds->num_lag_ids; i++) {
+		if (i == group || !priv->lags_port_members[i])
+			continue;
+		regmap_read(priv->map, RTL838X_TRK_HASH_IDX_CTRL + ((i >> 3) << 2), &idx);
+		if (((idx >> (i % 8)) & 1) == algoidx && cur != algomsk)
+			return -EOPNOTSUPP;
+	}
+
 	regmap_write_bits(priv->map, RTL838X_TRK_HASH_IDX_CTRL + ((group >> 3) << 2),
 			  1 << (group % 8), algoidx << (group % 8));
 	regmap_write(priv->map, RTL838X_TRK_HASH_CTRL + (algoidx << 2), algomsk);
