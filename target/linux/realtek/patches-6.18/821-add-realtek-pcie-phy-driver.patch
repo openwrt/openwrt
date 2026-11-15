@@ -1,10 +1,17 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rustam Adilov <adilov@tutamail.com>
+Date: Mon, 1 Sep 2026 12:00:00 +0200
+Subject: [PATCH] phy: realtek: add RTL9607C PCIe PHY driver
+
+Signed-off-by: Rustam Adilov <adilov@tutamail.com>
+---
 --- a/drivers/phy/realtek/Kconfig
 +++ b/drivers/phy/realtek/Kconfig
 @@ -3,7 +3,7 @@
  # Phy drivers for Realtek platforms
  #
  
--if ARCH_REALTEK || COMPILE_TEST
+-if ARCH_REALTEK || MACH_REALTEK_RTL || COMPILE_TEST
 +if ARCH_REALTEK || (MACH_REALTEK_RTL && RTL960X) || COMPILE_TEST
  
  config PHY_RTK_RTD_USB2PHY
@@ -13,7 +20,7 @@
  	  DWC3 USB IP. This driver will do the PHY initialization
  	  of the parameters.
  
--endif # ARCH_REALTEK || COMPILE_TEST
+-endif # ARCH_REALTEK || MACH_REALTEK_RTL || COMPILE_TEST
 +config PHY_RTK_PCIEPHY
 +	tristate "Realtek PCIE PHY Transceiver Driver"
 +	depends on OF
