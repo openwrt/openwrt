@@ -875,8 +875,21 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		pkt_len = desc_status & EDMA_RXDESC_PACKET_LEN_MASK;
 		bytes += pkt_len;
 
-		if (unlikely(desc_status & EDMA_RXDESC_MORE))
-			q->stats.rx_split_frame++;
+		/* A frame longer than a buffer arrives in several descriptors,
+		 * which the driver cannot assemble, and the later ones are not
+		 * frames of their own. The whole run is dropped: the first
+		 * counts as the length error and the last, which has the bit
+		 * clear, ends it.
+		 */
+		if (unlikely(q->rx_more || (desc_status & EDMA_RXDESC_MORE))) {
+			if (desc_status & EDMA_RXDESC_MORE)
+				q->stats.rx_split_frame++;
+			if (!q->rx_more)
+				DEV_STATS_INC(netdev, rx_length_errors);
+			q->rx_more = desc_status & EDMA_RXDESC_MORE;
+			page_pool_put_full_page(q->page_pool, page, true);
+			goto next;
+		}
 
 		if (unlikely(EDMA_RX_PREHDR_SIZE + pkt_len > priv->rx_frame_len)) {
 			page_pool_put_full_page(q->page_pool, page, true);
@@ -1619,6 +1632,7 @@ static void edma_configure_rxfill_ring(struct edma_queue *q)
 	q->rxfill_prod = edma_idx_read(priv, EDMA_REG_RXFILL_PROD_IDX(q->rxfill)) &
 			 EDMA_RXFILL_PROD_IDX_MASK & (rxfill_ring->count - 1);
 	q->rx_slot = q->rxfill_prod;
+	q->rx_more = false;
 	edma_rx_fill(q);
 }
 
