@@ -37,6 +37,8 @@ struct ppe_vp_stats {
 	u64 held;
 	u64 passed;
 	u64 returned;
+	u64 aggr;
+	u64 segs;
 };
 
 /**
@@ -265,7 +267,7 @@ static unsigned int ppe_vp_hook(void *data, struct sk_buff *skb,
 	struct ppe_vp_flow *f;
 	struct ppe_vp_key key;
 	unsigned long t;
-	unsigned int len;
+	unsigned int len, segs;
 	u8 ttl, flags;
 	int rc;
 
@@ -279,12 +281,21 @@ static unsigned int ppe_vp_hook(void *data, struct sk_buff *skb,
 	    !ether_addr_equal(eth_hdr(skb)->h_dest, vp->br->dev_addr))
 		return NF_ACCEPT;
 
-	/* A GRO aggregate goes through the engine's segmentation, which the
-	 * switch then sees as the frames it was built from.
+	/* A GRO aggregate of TCP goes to the engine whole, which cuts it into
+	 * the frames it was built from, so the switch sees those and the flow
+	 * is looked up for each, with the lookup done here once. An aggregate
+	 * whose type says more than that, such as a CWR mark the engine would
+	 * copy to every segment, is left to the host.
 	 */
-	if (skb_is_gso(skb) &&
-	    !(skb_shinfo(skb)->gso_type & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6)))
-		return NF_ACCEPT;
+	if (skb_is_gso(skb)) {
+		u32 tcp = skb->protocol == htons(ETH_P_IP) ? SKB_GSO_TCPV4 :
+							     SKB_GSO_TCPV6;
+		u32 type = skb_shinfo(skb)->gso_type;
+
+		if (!(type & tcp) ||
+		    type & ~(tcp | SKB_GSO_TCP_FIXEDID | SKB_GSO_FRAGLIST))
+			return NF_ACCEPT;
+	}
 
 	if (!pskb_may_pull(skb, min_t(unsigned int, skb->len, PPE_VP_HDR_MAX)))
 		return NF_ACCEPT;
@@ -318,6 +329,7 @@ static unsigned int ppe_vp_hook(void *data, struct sk_buff *skb,
 
 	conduit = dsa_to_port(&priv->ds, QCA_PPE_CPU_PORT)->conduit;
 	len = skb->len + ETH_HLEN;
+	segs = skb_is_gso(skb) ? skb_shinfo(skb)->gso_segs : 0;
 
 	/* The frame is not sent the host's way when the ring has no room: it
 	 * would arrive behind the frames of its flow the switch is still
@@ -339,6 +351,10 @@ static unsigned int ppe_vp_hook(void *data, struct sk_buff *skb,
 			st->parked++;
 		st->sent++;
 		st->bytes += len;
+		if (segs) {
+			st->aggr++;
+			st->segs += segs;
+		}
 	}
 
 	return NF_STOLEN;
@@ -686,7 +702,7 @@ static int ppe_vp_show(struct seq_file *s, void *data)
 
 	guard(mutex)(&priv->flow_lock);
 
-	seq_puts(s, "vport netdev bridge vsi sent bytes refused parked dropped held passed returned\n");
+	seq_puts(s, "vport netdev bridge vsi sent bytes refused parked dropped held passed returned aggr segs\n");
 
 	for (id = priv->data->first_vport; id < PPE_MAX_VPORT; id++) {
 		struct ppe_vp *vp = rcu_dereference_protected(priv->vp[id],
@@ -709,13 +725,16 @@ static int ppe_vp_show(struct seq_file *s, void *data)
 			sum.held += READ_ONCE(st->held);
 			sum.passed += READ_ONCE(st->passed);
 			sum.returned += READ_ONCE(st->returned);
+			sum.aggr += READ_ONCE(st->aggr);
+			sum.segs += READ_ONCE(st->segs);
 		}
 
 		used++;
-		seq_printf(s, "%-5u %s %s %u %llu %llu %llu %llu %llu %llu %llu %llu\n",
+		seq_printf(s, "%-5u %s %s %u %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
 			   id, vp->dev->name, vp->br->name, vp->vsi, sum.sent,
 			   sum.bytes, sum.refused, sum.parked, sum.dropped,
-			   sum.held, sum.passed, sum.returned);
+			   sum.held, sum.passed, sum.returned, sum.aggr,
+			   sum.segs);
 	}
 
 	/* The backlog is the conduit's, so it is counted for every port. */
