@@ -2954,6 +2954,20 @@ static int edma_tx_fraglist(struct sk_buff *skb)
 	return 0;
 }
 
+/* The backlog holds the frames that arrive while the queue is stopped. It
+ * stops for its ring, when every descriptor is in use, or for the byte limit
+ * of the stack, when the bytes in flight reach it; either ends when the
+ * frames in flight complete, and they hold at most one ring of descriptors.
+ * What arrives meanwhile is of the same order, and a stop for the byte limit
+ * can follow one for the ring at once, so two rings are kept. The count is
+ * in descriptors because a frame takes one per fragment, and an aggregate
+ * takes up to EDMA_TX_MAX_SEGS of a ring of 128 by default, so a ring alone
+ * holds a handful of them. The bound stays one of the ring's size, at most
+ * 2 * EDMA_MAX_RING_SIZE descriptors of a queue, and with the default ring
+ * 256.
+ */
+#define EDMA_SRC_BACKLOG_RINGS	2
+
 /* Sends one frame of qca_edma_src_xmit() with the queue's transmit lock held:
  * behind the frames already waiting, or parked when the ring, the stop or
  * those frames hold it back.
@@ -2992,7 +3006,8 @@ static int edma_src_send_locked(struct edma_queue *q, struct netdev_queue *txq,
 	}
 
 	ndesc = edma_tx_ndesc(skb);
-	if (q->src_backlog_desc + ndesc > priv->tx_ring_size) {
+	if (q->src_backlog_desc + ndesc >
+	    EDMA_SRC_BACKLOG_RINGS * priv->tx_ring_size) {
 		kfree_skb(skb);
 		q->stats.tx_src_dropped++;
 		DEV_STATS_INC(conduit, tx_dropped);
@@ -3068,8 +3083,8 @@ static int edma_src_set_headers(struct sk_buff *skb)
  *
  * A frame the queue cannot take now, because its ring is full or the queue is
  * stopped for the ring or for its byte limit, waits in a backlog of that
- * queue and goes out, in order and ahead of later frames, when a completion
- * makes room. Sending it another way instead would put it behind the frames
+ * queue, as long as two rings, and goes out, in order and ahead of later
+ * frames, when a completion makes room. Sending it another way instead would put it behind the frames
  * the switch is still forwarding. A frame that finds the backlog full is
  * dropped, as a full qdisc drops one.
  *
