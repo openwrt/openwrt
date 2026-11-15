@@ -1871,6 +1871,12 @@ unsigned long ppe_clk_rate(struct qca_ppe_priv *priv);
 void ppe_debugfs_init(struct qca_ppe_priv *priv);
 void ppe_debugfs_exit(struct qca_ppe_priv *priv);
 
+/* The small-packet rule's length and priority, which the hardware rule and the
+ * stamp of a frame handed to Wi-Fi share.
+ */
+extern ushort ppe_small_pkt_len;
+extern ushort ppe_small_pkt_prio;
+
 void ppe_acl_init(struct qca_ppe_priv *priv);
 void ppe_acl_exit(struct qca_ppe_priv *priv);
 int qca_ppe_cls_flower_add(struct dsa_switch *ds, int port,

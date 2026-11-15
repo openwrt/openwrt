@@ -1416,6 +1416,49 @@ static void ppe_flow_dscp_apply(struct sk_buff *skb, u8 dscp)
 		ipv6_change_dsfield(ipv6_hdr(skb), INET_ECN_MASK, dscp << 2);
 }
 
+/* The small-packet rule of the switch classifier, for the egress it cannot
+ * reach: a frame to a Wi-Fi client leaves by the CPU port and mac80211 then
+ * picks its access category from skb->priority, which nothing on the way from
+ * the switch has set. The rule is the switch's own: a frame whose L3 length is
+ * at most small_pkt_len, and that is not a TCP segment with PSH, gets
+ * small_pkt_prio, here as the direct 802.1d tag cfg80211_classify8021d() reads
+ * from 256 to 263. A segment with PSH ends a write of a flow whose others are
+ * full size, and in a higher access category it would overtake them.
+ */
+static void ppe_flow_wifi_prio(struct sk_buff *skb)
+{
+	unsigned int len = READ_ONCE(ppe_small_pkt_len), l3, off = ETH_HLEN;
+	const u8 *nh = skb->data + ETH_HLEN;
+	u8 proto;
+
+	if (!len)
+		return;
+
+	if (skb->protocol == htons(ETH_P_IP)) {
+		const struct iphdr *iph = (const void *)nh;
+
+		l3 = ntohs(iph->tot_len);
+		proto = iph->protocol;
+		off += iph->ihl * 4;
+	} else {
+		const struct ipv6hdr *ip6h = (const void *)nh;
+
+		l3 = sizeof(*ip6h) + ntohs(ip6h->payload_len);
+		proto = ip6h->nexthdr;
+		off += sizeof(*ip6h);
+	}
+
+	if (l3 > len)
+		return;
+
+	if (proto == IPPROTO_TCP &&
+	    (skb_headlen(skb) < off + sizeof(struct tcphdr) ||
+	     tcp_flag_byte((const struct tcphdr *)(skb->data + off)) & TCPHDR_PSH))
+		return;
+
+	skb->priority = 256 + READ_ONCE(ppe_small_pkt_prio);
+}
+
 /* A slot is one pointer, so a poll finds a flow's egress, port, VLAN, DSCP
  * and conntrack together, and none of them change while the entry is in it.
  */
@@ -1875,6 +1918,11 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 
 	if (entry->dscp)
 		ppe_flow_dscp_apply(skb, entry->dscp & 0x3f);
+
+#if IS_ENABLED(CONFIG_CFG80211_HEADERS)
+	if (dev->ieee80211_ptr)
+		ppe_flow_wifi_prio(skb);
+#endif
 
 	xport = entry->xport;
 
