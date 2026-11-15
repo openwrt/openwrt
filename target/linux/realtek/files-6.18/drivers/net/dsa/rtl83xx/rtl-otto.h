@@ -111,6 +111,7 @@ struct rtldsa_port {
 	bool has_pcs;
 	bool inband;
 	int led_set;
+	int led_set_fiber;
 	int leds_on_this_port;
 	struct otto_stats_counter_state counters;
 	const struct dsa_port *dp;
