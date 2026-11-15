@@ -128,7 +128,11 @@ ucidef_set_network_device_path_port() {
 }
 
 ucidef_set_network_device_gro() {
-	_ucidef_set_network_device_common $1 gro $2
+	json_select_object "network_device"
+	json_select_object "${1}"
+	json_add_boolean gro "${2}"
+	json_select ..
+	json_select ..
 }
 
 ucidef_set_network_device_conduit() {
