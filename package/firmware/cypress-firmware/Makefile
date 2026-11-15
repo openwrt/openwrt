@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=cypress-firmware
 PKG_VERSION_REAL:=5.10.9-2022_0909
 PKG_VERSION:=$(subst _,.,$(subst -,.,$(PKG_VERSION_REAL)))
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/Infineon/ifx-linux-firmware/
@@ -228,25 +228,6 @@ define Package/cypress-firmware-54591-sdio/install
 endef
 
 $(eval $(call BuildPackage,cypress-firmware-54591-sdio))
-
-# Cypress 55560 PCIe Firmware
-define Package/cypress-firmware-55560-pcie
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW55560 FullMac PCIe firmware
-endef
-
-define Package/cypress-firmware-55560-pcie/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac55560-pcie.trxse \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac55560-pcie.trxse \
-		$(1)/lib/firmware/brcm/brcmfmac55560-pcie.trxse
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-55560-pcie))
 
 # Cypress 55572 PCIe Firmware
 define Package/cypress-firmware-55572-pcie
