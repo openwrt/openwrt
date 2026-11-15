@@ -1358,6 +1358,10 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	stop = ((cons - prod - 1) & mask) < EDMA_TX_RING_THRESH;
 
 	dev_sw_netstats_tx_add(netdev, 1, bytes);
+	if (tso) {
+		q->stats.tx_gso_frames++;
+		q->stats.tx_gso_segs += shinfo->gso_segs;
+	}
 
 	/* A queue about to stop gets its frames now: nothing after the stop
 	 * would hand them over.
@@ -2043,6 +2047,8 @@ static const char edma_stat_names[][ETH_GSTRING_LEN] = {
 	"rx_fill_starved",
 	"tx_desc_error",
 	"tx_unnamed_frame",
+	"tx_gso_frames",
+	"tx_gso_segs",
 	"tx_src_parked",
 	"tx_src_drained",
 	"tx_src_dropped",
