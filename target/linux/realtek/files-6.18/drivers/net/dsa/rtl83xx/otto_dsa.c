@@ -1100,8 +1100,8 @@ static int otto_dsa_led_set_size(struct device_node *led_node, u32 set)
 static int otto_dsa_port_leds_probe(struct otto_dsa_priv *priv, struct device_node *dn,
 				    struct device_node *led_node, u32 pn)
 {
+	u32 set, set_fiber;
 	int leds;
-	u32 set;
 
 	if (of_property_read_u32(dn, "led-set", &set))
 		set = 0;
@@ -1112,7 +1112,17 @@ static int otto_dsa_port_leds_probe(struct otto_dsa_priv *priv, struct device_no
 		return leds;
 	}
 
+	/* Both media of a port share its LEDs, so their sets must be of the same size */
+	if (of_property_read_u32(dn, "realtek,led-set-fiber", &set_fiber))
+		set_fiber = set;
+	if (set_fiber != set && otto_dsa_led_set_size(led_node, set_fiber) != leds) {
+		dev_err(priv->dev, "realtek,led-set-fiber %u for port %u is invalid or differs in size from led-set %u\n",
+			set_fiber, pn, set);
+		return -EINVAL;
+	}
+
 	priv->ports[pn].led_set = set;
+	priv->ports[pn].led_set_fiber = set_fiber;
 	priv->ports[pn].leds_on_this_port = leds;
 
 	return 0;

@@ -334,6 +334,7 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 		set = priv->ports[i].led_set;
 		regmap_write_bits(priv->map, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i),
 				  GENMASK(1, 0) << pos, (set & 0x3) << pos);
+		set = priv->ports[i].led_set_fiber;
 		regmap_write_bits(priv->map, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i),
 				  GENMASK(1, 0) << pos, (set & 0x3) << pos);
 	}
