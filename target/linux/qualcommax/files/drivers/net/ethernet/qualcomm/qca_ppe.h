@@ -1273,6 +1273,10 @@ struct ppe_data {
 	u8 num_gmacs;
 	u8 mru_mtu_ctrl_stride;
 	u8 loopback_port;
+	/* First of the virtual source ports a CPU-injected frame can carry, up
+	 * to PPE_MAX_VPORT; zero where the injection has not been tried.
+	 */
+	u8 first_vport;
 	u8 bm_phy_end;
 	u8 bm_internal_start;
 	u16 bm_group_buf;
@@ -1476,6 +1480,8 @@ struct ppe_sb_occ {
 
 struct ppe_flow_entry;
 
+struct ppe_vp;
+
 struct qca_ppe_priv {
 	struct dsa_switch ds;
 	struct regmap *regmap;
@@ -1624,6 +1630,13 @@ struct qca_ppe_priv {
 	struct net_device *port_br_dev[QCA_PPE_MAX_PORTS];
 	u32 vlan_filtering;
 	struct notifier_block netdev_nb;
+	/* Virtual source ports of non-switch bridge ports, by port number;
+	 * written under both locks.
+	 */
+	struct ppe_vp __rcu *vp[PPE_MAX_VPORT];
+	unsigned int vp_next;
+	bool vp_stopped;
+	struct notifier_block vp_nb;
 	u16 port_pvid[QCA_PPE_MAX_PORTS];
 	struct clk *ppe_clk;
 	struct clk *port_rx_clk[QCA_PPE_MAX_PORTS];
@@ -1854,5 +1867,17 @@ int ppe_flow_shaper_set(struct qca_ppe_priv *priv, bool upload,
 #define PPE_XDEV_UL		BIT_ULL(34)
 void ppe_flow_purge_vsi(struct qca_ppe_priv *priv, u32 vsi);
 void ppe_flow_offload_exit(struct qca_ppe_priv *priv);
+
+struct qca_ppe_bridge_vsi *bridge_vsi_find(struct qca_ppe_priv *priv,
+					   struct net_device *br_dev);
+void ppe_port_vsi_set(struct qca_ppe_priv *priv, int port, u32 vsi);
+void ppe_port_mru_mtu_set(struct qca_ppe_priv *priv, int port, u32 frame_size);
+
+int ppe_vp_init(struct qca_ppe_priv *priv);
+void ppe_vp_stop(struct qca_ppe_priv *priv);
+void ppe_vp_exit(struct qca_ppe_priv *priv);
+void ppe_vp_bridge_up(struct qca_ppe_priv *priv, struct net_device *br_dev);
+void ppe_vp_bridge_down(struct qca_ppe_priv *priv, struct net_device *br_dev);
+void ppe_vp_debugfs_init(struct qca_ppe_priv *priv);
 
 #endif

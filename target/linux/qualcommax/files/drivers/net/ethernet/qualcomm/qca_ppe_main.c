@@ -181,8 +181,7 @@ static void ppe_port_cnt_enable(struct qca_ppe_priv *priv, int port)
  * alone leaves the write staged. Word 1 holds the counter enables and the
  * source profile and goes back unchanged.
  */
-static void ppe_port_mtu_set(struct qca_ppe_priv *priv, int port,
-			     u32 frame_size)
+void ppe_port_mru_mtu_set(struct qca_ppe_priv *priv, int port, u32 frame_size)
 {
 	u32 reg = PPE_MRU_MTU_CTRL(port, priv->data->mru_mtu_ctrl_stride);
 	u32 w1;
@@ -195,6 +194,12 @@ static void ppe_port_mtu_set(struct qca_ppe_priv *priv, int port,
 		     FIELD_PREP(PPE_MRU_MTU_CTRL_MTU, frame_size) |
 		     FIELD_PREP(PPE_MRU_MTU_CTRL_MTU_CMD, PPE_SIZE_CMD_DROP));
 	regmap_write(priv->regmap, reg + 4, w1);
+}
+
+static void ppe_port_mtu_set(struct qca_ppe_priv *priv, int port,
+			     u32 frame_size)
+{
+	ppe_port_mru_mtu_set(priv, port, frame_size);
 
 	regmap_update_bits(priv->regmap, PPE_MC_MTU_CTRL(port),
 			   PPE_MC_MTU_CTRL_MTU | PPE_MC_MTU_CTRL_MTU_CMD,
@@ -350,7 +355,7 @@ static void ppe_port_isolation_update(struct qca_ppe_priv *priv)
 /* The entry latches on the write to its last word: rewriting word 1 alone is
  * staged and never takes effect, so the whole entry is read and written back.
  */
-static void ppe_port_vsi_set(struct qca_ppe_priv *priv, int port, u32 vsi)
+void ppe_port_vsi_set(struct qca_ppe_priv *priv, int port, u32 vsi)
 {
 	u32 val[3];
 	int i;
@@ -961,15 +966,19 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 		/* The state DSA gives a port no bridge has claimed: it floods,
 		 * and it does not learn, so two of them cannot reach each
 		 * other behind the CPU's back.
+		 *
+		 * The CPU port never learns either. Frames a virtual port
+		 * hands to the switch arrive as the CPU port's and are learned
+		 * through its bits, with the source address as the host, and
+		 * a 4addr station's source is any address of the bridge. Every
+		 * address the CPU port stands for is a static entry: DSA
+		 * installs the bridge's own and, with assisted learning, the
+		 * ones the software bridge learned on a foreign port.
 		 */
 		priv->port_brflags[i] = BR_FLOOD | BR_MCAST_FLOOD |
 					BR_BCAST_FLOOD;
 
 		val = FIELD_PREP(PPE_BRIDGE_PORT_ISOL, port_mask);
-		if (dsa_is_cpu_port(ds, i)) {
-			val |= PPE_BRIDGE_LRN_EN;
-			priv->port_brflags[i] |= BR_LEARNING;
-		}
 		regmap_update_bits(priv->regmap, PPE_PORT_BRIDGE_CTRL(i),
 				   PPE_BRIDGE_LRN_EN | PPE_BRIDGE_PORT_ISOL,
 				   val);
@@ -1066,7 +1075,7 @@ static void qca_ppe_port_disable(struct dsa_switch *ds, int port)
 	ppe_port_queues_enable(priv, port, false);
 }
 
-static struct qca_ppe_bridge_vsi *
+struct qca_ppe_bridge_vsi *
 bridge_vsi_find(struct qca_ppe_priv *priv, struct net_device *br_dev)
 {
 	int i;
@@ -1108,6 +1117,7 @@ static void bridge_vsi_put(struct qca_ppe_priv *priv,
 	if (bvsi->refcount > 0)
 		return;
 
+	ppe_vp_bridge_down(priv, bvsi->br_dev);
 	ppe_flow_purge_vsi(priv, bvsi->vsi);
 	ppe_vsi_free(priv, bvsi->vsi);
 	bvsi->br_dev = NULL;
@@ -1152,6 +1162,7 @@ static int qca_ppe_port_bridge_join(struct dsa_switch *ds, int port,
 
 	ppe_port_vsi_set(priv, port, bvsi->vsi);
 	bridge_vsi_members_update(priv, bvsi);
+	ppe_vp_bridge_up(priv, bridge.dev);
 
 	return 0;
 }
@@ -3231,6 +3242,12 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_acl;
 
+	ret = ppe_vp_init(priv);
+	if (ret) {
+		ppe_flow_offload_exit(priv);
+		goto err_acl;
+	}
+
 	if (data->type == PPE_TYPE_IPQ6018)
 		ppe_ipq6018_mux_setup(priv);
 
@@ -3245,13 +3262,16 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	}
 	ppe_debugfs_init(priv);
 	ppe_flow_debugfs_init(priv);
+	ppe_vp_debugfs_init(priv);
 
 	platform_set_drvdata(pdev, priv);
 
 	return 0;
 
 err_flow:
+	ppe_vp_stop(priv);
 	ppe_flow_offload_exit(priv);
+	ppe_vp_exit(priv);
 err_acl:
 	ppe_acl_exit(priv);
 	ppe_scheduler_exit(priv);
@@ -3264,11 +3284,13 @@ static void qca_ppe_remove(struct platform_device *pdev)
 
 	ppe_debugfs_exit(priv);
 	ppe_scheduler_unready(priv);
+	ppe_vp_stop(priv);
 	dsa_unregister_switch(&priv->ds);
 	/* After the switch is gone: unregistering its ports unbinds the
 	 * flowtable blocks, and the block release walks the flow table.
 	 */
 	ppe_flow_offload_exit(priv);
+	ppe_vp_exit(priv);
 	ppe_acl_exit(priv);
 	ppe_scheduler_exit(priv);
 }
@@ -3299,6 +3321,7 @@ static const struct ppe_data ipq8074_ppe_data = {
 	.num_gmacs		= 6,
 	.mru_mtu_ctrl_stride	= 0x8,
 	.loopback_port		= 7,
+	.first_vport		= 64,
 	.bm_phy_end		= 13,
 	.bm_internal_start	= 14,
 	.bm_group_buf		= 1400,
