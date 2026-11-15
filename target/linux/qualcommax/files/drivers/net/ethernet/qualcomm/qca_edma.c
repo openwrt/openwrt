@@ -201,9 +201,8 @@ static int edma_rx_ring_alloc(struct edma_priv *priv, struct edma_ring *ring,
 	if (ret)
 		return ret;
 
-	ring->page_store = kcalloc(count, sizeof(*ring->page_store),
-				   GFP_KERNEL);
-	if (!ring->page_store) {
+	ring->rx_store = kcalloc(count, sizeof(*ring->rx_store), GFP_KERNEL);
+	if (!ring->rx_store) {
 		dma_free_coherent(&priv->pdev->dev, count * desc_size,
 				  ring->desc, ring->dma);
 		ring->desc = NULL;
@@ -273,7 +272,6 @@ static int edma_rx_fill(struct edma_queue *q)
 	struct edma_ring *rxfill_ring = &q->rxfill_ring;
 	struct edma_priv *priv = q->priv;
 	struct edma_rxfill_desc *rxfill_desc;
-	struct edma_rx_preheader *rxph;
 	u16 prod, cons, next;
 	struct page *page;
 	u16 filled = 0;
@@ -291,7 +289,7 @@ static int edma_rx_fill(struct edma_queue *q)
 		if (next == cons)
 			break;
 		/* The page may still be prefetched inside EDMA. */
-		if (unlikely(rxfill_ring->page_store[prod]))
+		if (unlikely(rxfill_ring->rx_store[prod].page))
 			break;
 
 		page = page_pool_dev_alloc_pages(q->page_pool);
@@ -300,13 +298,10 @@ static int edma_rx_fill(struct edma_queue *q)
 
 		rxfill_desc = EDMA_RXFILL_DESC(rxfill_ring, prod);
 
-		dma = page_pool_get_dma_addr(page) + NET_SKB_PAD;
-		rxph = page_address(page) + NET_SKB_PAD;
-		rxph->opaque = cpu_to_le32(prod);
-		dma_sync_single_for_device(&priv->pdev->dev, dma,
-					   sizeof(rxph->opaque), DMA_FROM_DEVICE);
-		rxfill_ring->page_store[prod] = page;
-		rxfill_desc->buffer_addr = cpu_to_le32(dma);
+		dma = page_pool_get_dma_addr(page);
+		rxfill_ring->rx_store[prod].page = page;
+		rxfill_ring->rx_store[prod].dma = dma;
+		rxfill_desc->buffer_addr = cpu_to_le32(dma + NET_SKB_PAD);
 		rxfill_desc->word1 = cpu_to_le32(priv->rx_buffer_size &
 						 EDMA_RXFILL_BUF_SIZE_MASK);
 
@@ -323,35 +318,30 @@ static int edma_rx_fill(struct edma_queue *q)
 	return filled;
 }
 
-static bool edma_rx_page_take(struct edma_queue *q, struct page *page,
-			      u32 store_idx)
+/* The buffer the descriptor at @addr hands back. The engine returns the
+ * buffers of a fill ring in the order they were filled, so it is the one at
+ * the next slot, which the address names; the page is not read to find out.
+ * A buffer that comes back out of order is looked for in the whole ring, so
+ * that the order is only ever a matter of speed, and the next frame is
+ * expected after it.
+ */
+static struct edma_rx_buf *edma_rx_buf_find(struct edma_queue *q, u32 addr)
 {
 	struct edma_ring *ring = &q->rxfill_ring;
-	struct edma_priv *priv = q->priv;
 	int i;
 
-	if (likely(store_idx < ring->count &&
-		   ring->page_store[store_idx] == page)) {
-		ring->page_store[store_idx] = NULL;
-		return true;
-	}
-
 	for (i = 0; i < ring->count; i++) {
-		if (ring->page_store[i] != page)
+		struct edma_rx_buf *buf = &ring->rx_store[i];
+
+		if (!buf->page || lower_32_bits(buf->dma + NET_SKB_PAD) != addr)
 			continue;
 
-		ring->page_store[i] = NULL;
-		dev_warn_ratelimited(&priv->pdev->dev,
-				     "rx page has invalid store index %u, expected %d\n",
-				     store_idx, i);
-		return true;
+		q->stats.rx_fifo_miss++;
+		q->rx_slot = (i + 1) & (ring->count - 1);
+		return buf;
 	}
 
-	/* The page may already belong to an skb, so it cannot be freed safely. */
-	dev_warn_ratelimited(&priv->pdev->dev,
-			     "rx page with store index %u is not tracked\n",
-			     store_idx);
-	return false;
+	return NULL;
 }
 
 /* Descriptors the transmit ring has left, taken from the hardware rather than
@@ -698,24 +688,54 @@ static bool edma_rx_tag(struct sk_buff *skb, u32 src_port)
 	return true;
 }
 
-/* Reads a descriptor and hands its frame's lines to the CPU. The preheader
- * and the headers behind it are prefetched, which the caller does one frame
- * ahead so that they arrive while the frame before is processed.
+/* What a peek found: the descriptor, and the buffer of the slot it expected it
+ * in, NULL when the descriptor does not name that buffer.
  */
-static void edma_rx_peek(struct edma_queue *q, u16 idx, u32 *addr, u32 *status)
-{
-	u64 desc = edma_desc_read(EDMA_RXDESC_DESC(&q->rxdesc_ring, idx));
-	void *rxph;
+struct edma_rx_peek {
+	u32 addr;
+	u32 status;
+	u16 slot;
+	struct edma_rx_buf *buf;
+};
 
-	*addr = lower_32_bits(desc);
-	*status = upper_32_bits(desc);
-	rxph = phys_to_virt(*addr);
-	page_pool_dma_sync_for_cpu(q->page_pool, virt_to_head_page(rxph), 0,
-				   min_t(u32, EDMA_RX_PREHDR_SIZE +
-					 (*status & EDMA_RXDESC_PACKET_LEN_MASK),
-					 q->priv->rx_frame_len));
-	prefetch(rxph);
-	prefetch(rxph + L1_CACHE_BYTES);
+static u32 edma_rx_sync_len(struct edma_queue *q, u32 status)
+{
+	return min_t(u32, EDMA_RX_PREHDR_SIZE +
+		     (status & EDMA_RXDESC_PACKET_LEN_MASK),
+		     q->priv->rx_frame_len);
+}
+
+/* Reads a descriptor and, when it names the buffer of @slot, hands that
+ * buffer's lines to the CPU: the preheader and the headers behind it are
+ * prefetched, and so is the shared info the skb is built over, which the
+ * caller does one frame ahead so that they arrive while the frame before is
+ * processed. The buffer's shadow entry has its address, so nothing is read
+ * from the page's own struct.
+ */
+static void edma_rx_peek(struct edma_queue *q, u16 idx, u16 slot,
+			 struct edma_rx_peek *pk)
+{
+	struct edma_rx_buf *buf = &q->rxfill_ring.rx_store[slot];
+	u64 desc = edma_desc_read(EDMA_RXDESC_DESC(&q->rxdesc_ring, idx));
+	void *data;
+
+	pk->addr = lower_32_bits(desc);
+	pk->status = upper_32_bits(desc);
+	pk->slot = slot;
+	pk->buf = NULL;
+
+	if (unlikely(!buf->page ||
+		     lower_32_bits(buf->dma + NET_SKB_PAD) != pk->addr))
+		return;
+
+	pk->buf = buf;
+	__page_pool_dma_sync_for_cpu(q->page_pool, buf->dma, 0,
+				     edma_rx_sync_len(q, pk->status));
+	data = page_address(buf->page);
+	prefetch(data + NET_SKB_PAD);
+	prefetch(data + NET_SKB_PAD + L1_CACHE_BYTES);
+	prefetchw(data + (PAGE_SIZE << q->priv->rx_page_order) -
+		  SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
 }
 
 static u32 edma_clean_rx(struct edma_queue *q, int budget)
@@ -725,14 +745,14 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	struct net_device *netdev = priv->netdev;
 	struct platform_device *pdev = priv->pdev;
 	struct edma_rx_preheader *rxph;
-	u32 next_addr, next_status;
+	struct edma_rx_peek cur, nxt;
 	unsigned char *frame;
 	bool ahead = false;
 	struct sk_buff *skb;
 	u16 prod, cons;
 	struct page *page;
 	u32 done = 0;
-	u32 src_port;
+	u32 src_port, desc_status;
 	int pkt_len;
 
 	prod = edma_idx_read(priv, EDMA_REG_RXDESC_PROD_IDX(q->rxdesc)) &
@@ -740,37 +760,51 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	cons = q->rxdesc_cons;
 
 	while (cons != prod && done < budget) {
-		u32 desc_addr, desc_status;
 		u16 next = cons + 1;
-		u32 store_idx;
+		struct edma_rx_buf *buf;
 
-		if (ahead) {
-			desc_addr = next_addr;
-			desc_status = next_status;
-		} else {
-			edma_rx_peek(q, cons, &desc_addr, &desc_status);
-		}
+		if (ahead)
+			cur = nxt;
+		else
+			edma_rx_peek(q, cons, q->rx_slot, &cur);
 
 		if (next == rxdesc_ring->count)
 			next = 0;
 		ahead = next != prod && done + 1 < budget;
 		if (ahead)
-			edma_rx_peek(q, next, &next_addr, &next_status);
+			edma_rx_peek(q, next, (q->rx_slot + 1) &
+				     (q->rxfill_ring.count - 1), &nxt);
 
-		rxph = phys_to_virt(desc_addr);
-		page = virt_to_head_page(rxph);
+		/* The buffer of the next slot, unless the peek of this frame
+		 * was made for a slot an earlier out-of-order buffer moved
+		 * the expectation from.
+		 */
+		buf = cur.buf;
+		if (likely(buf && cur.slot == q->rx_slot)) {
+			q->rx_slot = (q->rx_slot + 1) &
+				     (q->rxfill_ring.count - 1);
+		} else {
+			buf = edma_rx_buf_find(q, cur.addr);
+			if (unlikely(!buf)) {
+				dev_warn_ratelimited(&pdev->dev,
+						     "rx buffer %#x is not tracked\n",
+						     cur.addr);
+				q->stats.rx_untracked_page++;
+				DEV_STATS_INC(netdev, rx_errors);
+				goto next;
+			}
+			__page_pool_dma_sync_for_cpu(q->page_pool, buf->dma, 0,
+						     edma_rx_sync_len(q, cur.status));
+		}
+		page = buf->page;
+		buf->page = NULL;
+		rxph = page_address(page) + NET_SKB_PAD;
 
+		desc_status = cur.status;
 		pkt_len = desc_status & EDMA_RXDESC_PACKET_LEN_MASK;
 
 		if (unlikely(desc_status & EDMA_RXDESC_MORE))
 			q->stats.rx_split_frame++;
-
-		store_idx = le32_to_cpu(rxph->opaque);
-		if (unlikely(!edma_rx_page_take(q, page, store_idx))) {
-			q->stats.rx_untracked_page++;
-			DEV_STATS_INC(netdev, rx_errors);
-			goto next;
-		}
 
 		if (unlikely(EDMA_RX_PREHDR_SIZE + pkt_len > priv->rx_frame_len)) {
 			page_pool_put_full_page(q->page_pool, page, true);
@@ -793,7 +827,8 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 
 		src_port = rxph->src_info & EDMA_SRC_PORT_MASK;
 
-		skb = napi_build_skb(page_address(page), page_size(page));
+		skb = napi_build_skb(page_address(page),
+				     PAGE_SIZE << priv->rx_page_order);
 		if (unlikely(!skb)) {
 			page_pool_put_full_page(q->page_pool, page, true);
 			q->stats.rx_no_skb++;
@@ -1199,19 +1234,19 @@ static void edma_rx_ring_free(struct edma_queue *q, struct edma_ring *ring,
 	struct edma_priv *priv = q->priv;
 	int i;
 
-	if (ring->page_store) {
+	if (ring->rx_store) {
 		/* Hardware indices do not account for prefetched RX pages. */
 		for (i = 0; i < ring->count; i++) {
-			if (!ring->page_store[i])
+			if (!ring->rx_store[i].page)
 				continue;
 
 			page_pool_put_full_page(q->page_pool,
-						ring->page_store[i], false);
-			ring->page_store[i] = NULL;
+						ring->rx_store[i].page, false);
+			ring->rx_store[i].page = NULL;
 		}
 
-		kfree(ring->page_store);
-		ring->page_store = NULL;
+		kfree(ring->rx_store);
+		ring->rx_store = NULL;
 	}
 
 	edma_ring_free(priv, ring, desc_size);
@@ -1417,6 +1452,7 @@ static void edma_configure_rxfill_ring(struct edma_queue *q)
 
 	q->rxfill_prod = edma_idx_read(priv, EDMA_REG_RXFILL_PROD_IDX(q->rxfill)) &
 			 EDMA_RXFILL_PROD_IDX_MASK & (rxfill_ring->count - 1);
+	q->rx_slot = q->rxfill_prod;
 	edma_rx_fill(q);
 }
 
@@ -1805,6 +1841,7 @@ static void edma_get_regs(struct net_device *netdev,
 
 static const char edma_stat_names[][ETH_GSTRING_LEN] = {
 	"rx_untracked_page",
+	"rx_fifo_miss",
 	"rx_bad_src_info",
 	"rx_no_skb",
 	"rx_no_tag",

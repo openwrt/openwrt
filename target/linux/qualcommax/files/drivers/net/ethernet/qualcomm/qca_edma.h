@@ -306,6 +306,7 @@ struct edma_rx_preheader {
 
 struct edma_stats {
 	u64 rx_untracked_page;
+	u64 rx_fifo_miss;
 	u64 rx_bad_src_info;
 	u64 rx_no_skb;
 	u64 rx_no_tag;
@@ -336,12 +337,21 @@ struct edma_soc_data {
 	bool axiw_enable;
 };
 
+/* A receive buffer the fill ring holds: its page and the address the page
+ * pool mapped it at, kept here so that taking it back needs nothing from the
+ * page's own, cold, struct.
+ */
+struct edma_rx_buf {
+	struct page *page;
+	dma_addr_t dma;
+};
+
 struct edma_ring {
 	void *desc;
 	dma_addr_t dma;
 	u16 count;
 	struct sk_buff **skb_store;
-	struct page **page_store;
+	struct edma_rx_buf *rx_store;
 };
 
 /* The rings a transmit and a receive queue each run on, the hardware numbers
@@ -374,6 +384,8 @@ struct edma_queue {
 	u16 tx_cons;
 	u16 txcmpl_cons;
 	u16 rxfill_prod;
+	/* The slot of the fill ring whose buffer the engine returns next. */
+	u16 rx_slot;
 	u16 rxdesc_cons;
 	bool tx_kick;
 
