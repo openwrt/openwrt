@@ -5,7 +5,8 @@ move_config() {
 
 	. /lib/upgrade/common.sh
 
-	if export_bootdevice && export_partdevice partdev 1; then
+	if { is_gpt_dualboot && export_partdevice_label partdev openwrt_boot; } || \
+	   { export_bootdevice && export_partdevice partdev 1; }; then
 		mkdir -p /boot
 		part_magic_fat "/dev/$partdev" && parttype=vfat
 		mount -t $parttype -o rw,noatime "/dev/$partdev" /boot
