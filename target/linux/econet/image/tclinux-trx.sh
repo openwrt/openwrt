@@ -32,6 +32,8 @@ Options:
   --model    Model/platform name, max 31 chars (default: empty)
   --loadaddr Address the bootloader decompresses the kernel to
              (default: 0x80020000)
+  --pad      Size the header+kernel are ff-padded to, in bytes
+             (default: 4194304)
 EOF
     exit 1
 }
@@ -69,6 +71,10 @@ while [ $# -gt 0 ]; do
             ;;
         --loadaddr)
             loadaddr="$2"
+            shift 2
+            ;;
+        --pad)
+            PAD_ROOTFS_OFFSET_TO=$(($2))
             shift 2
             ;;
         -h|--help)
