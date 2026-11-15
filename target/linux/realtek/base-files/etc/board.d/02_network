@@ -138,6 +138,37 @@ realtek_setup_macs()
 	local label_mac=""
 
 	case $board in
+	acorid,gls7700-24f8g-4x|\
+	d-link,dgs-1250-28x|\
+	draytek,g2282x|\
+	hasivo,s1100wp-8gt-se|\
+	hasivo,s600wp-5gt-2sx-se|\
+	horaco,zx-swtgw2c48ns|\
+	hpe,1920-8g|\
+	hpe,1920-8g-poe-65w|\
+	hpe,1920-8g-poe-180w|\
+	hpe,1920-16g|\
+	hpe,1920-24g|\
+	hpe,1920-24g-poe-180w|\
+	hpe,1920-24g-poe-370w|\
+	hpe,1920-48g|\
+	hpe,1920-48g-poe|\
+	mokerlink,2g080gm|\
+	plasmacloud,esx28|\
+	plasmacloud,mcx3|\
+	plasmacloud,psx8|\
+	plasmacloud,psx10|\
+	plasmacloud,psx28|\
+	sirivision,sr-st3408f|\
+	sirivision,sr-st3808f|\
+	sirivision,sr-st31212f|\
+	ubnt,usw-pro-max-24-poe|\
+	ubnt,usw-pro-xg-10-poe|\
+	ubnt,usw-pro-xg-8-poe|\
+	zyxel,gs1920-24-v1|\
+	zyxel,gs1920-24hp-v2)
+		lan_mac="$(get_mac_label)"
+		;;
 	allnet,all-sg8208m|\
 	apresia,aplgs120gtss|\
 	d-link,dgs-1210-10mp-f|\
@@ -196,36 +227,6 @@ realtek_setup_macs()
 		for port in $lan_list wan; do
 			[ -n "$lan_mac" ] && ucidef_set_network_device_mac $port $lan_mac
 		done
-		;;
-	d-link,dgs-1250-28x|\
-	draytek,g2282x|\
-	hasivo,s1100wp-8gt-se|\
-	hasivo,s600wp-5gt-2sx-se|\
-	horaco,zx-swtgw2c48ns|\
-	hpe,1920-8g|\
-	hpe,1920-8g-poe-65w|\
-	hpe,1920-8g-poe-180w|\
-	hpe,1920-16g|\
-	hpe,1920-24g|\
-	hpe,1920-24g-poe-180w|\
-	hpe,1920-24g-poe-370w|\
-	hpe,1920-48g|\
-	hpe,1920-48g-poe|\
-	mokerlink,2g080gm|\
-	plasmacloud,esx28|\
-	plasmacloud,mcx3|\
-	plasmacloud,psx8|\
-	plasmacloud,psx10|\
-	plasmacloud,psx28|\
-	sirivision,sr-st3408f|\
-	sirivision,sr-st3808f|\
-	sirivision,sr-st31212f|\
-	ubnt,usw-pro-max-24-poe|\
-	ubnt,usw-pro-xg-10-poe|\
-	ubnt,usw-pro-xg-8-poe|\
-	zyxel,gs1920-24-v1|\
-	zyxel,gs1920-24hp-v2)
-		lan_mac="$(get_mac_label)"
 		;;
 	datto,l8|\
 	edgecore,ecs2100-52t|\
