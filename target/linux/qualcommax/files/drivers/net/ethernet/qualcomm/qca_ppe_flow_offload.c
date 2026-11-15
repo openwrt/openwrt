@@ -1843,6 +1843,72 @@ static bool ppe_flow_frame_is(const struct ppe_flow_entry *entry,
 }
 
 /**
+ * ppe_flow_gso - what the egress of a flow takes as one GSO frame
+ * @ds: the switch
+ * @skb: a frame of the flow, with skb->data at its Ethernet header
+ * @flow: the flow index from the frame's receive preheader
+ * @gso: filled with the limits of the devices the frame passes
+ *
+ * ppe_flow_xmit() sends a frame to the flow's device, or into the download
+ * shaper in front of it, by dev_queue_xmit(), so a merged frame meets the
+ * same qdiscs as a single one, and a qdisc that splits GSO frames splits it
+ * into the frames it was made of. The limits are those of the device and, for
+ * a download flow, of the shaper device too. A flow that leaves by the uplink
+ * or a switch port never takes a merged frame: the uplink is shaped per
+ * frame and a switch port is sent by the driver's own transmit.
+ *
+ * Called from the EDMA NAPI poll.
+ *
+ * Return: false when the flow has no egress that takes a merged frame, or
+ * @skb is not of the flow.
+ */
+bool ppe_flow_gso(struct dsa_switch *ds, const struct sk_buff *skb, u32 flow,
+		  struct qca_edma_gso *gso)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	const struct ppe_flow_entry *entry;
+	struct net_device *dev, *shaper;
+	u64 xdev;
+
+	if (flow >= priv->data->num_flow_entries)
+		return false;
+	entry = rcu_dereference_bh(priv->flow_slot[flow]);
+	if (!entry || entry->xport || !ppe_flow_frame_is(entry, skb))
+		return false;
+	xdev = entry->xdev;
+	if (xdev & (PPE_XDEV_UL | PPE_XDEV_PUSH))
+		return false;
+
+	dev = rcu_dereference_bh(entry->xndev);
+	if (!dev || !netif_running(dev))
+		return false;
+
+#if IS_ENABLED(CONFIG_CFG80211_HEADERS)
+	/* The segments of a frame that ppe_flow_wifi_prio() ranks by its own
+	 * length would be ranked by the length of the whole.
+	 */
+	if (dev->ieee80211_ptr &&
+	    skb->len - ETH_HLEN <= READ_ONCE(ppe_small_pkt_len))
+		return false;
+#endif
+
+	gso->features = dev->features;
+	gso->max_segs = dev->gso_max_segs;
+	gso->max_size = dev->gso_max_size;
+
+	if (xdev & PPE_XDEV_DL) {
+		shaper = rcu_dereference_bh(priv->dl_ndev);
+		if (shaper && netif_running(shaper)) {
+			gso->features &= shaper->features;
+			gso->max_segs = min(gso->max_segs, shaper->gso_max_segs);
+			gso->max_size = min(gso->max_size, shaper->gso_max_size);
+		}
+	}
+
+	return true;
+}
+
+/**
  * ppe_flow_xmit - send a frame the PPE routed to the CPU port for a flow
  * @ds: the switch
  * @skb: the frame, with skb->data at its Ethernet header

@@ -11,8 +11,11 @@
 #include <linux/qca_edma.h>
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
+#include <linux/ip.h>
+#include <linux/ipv6.h>
 #include <linux/netdevice.h>
 #include <linux/platform_device.h>
+#include <linux/tcp.h>
 #include <net/dsa.h>
 #include <net/page_pool/helpers.h>
 
@@ -322,6 +325,41 @@ struct edma_rx_preheader {
 	u32 rx_pre7;
 };
 
+/* The headers of a TCP segment, as found in a frame that starts at its
+ * Ethernet header.
+ */
+struct edma_tcp {
+	struct ethhdr *eth;
+	union {
+		struct iphdr *ip4;
+		struct ipv6hdr *ip6;
+	};
+	struct tcphdr *th;
+	u16 hdr_len;
+	u16 payload;
+	bool v6;
+};
+
+/* A run of segments of one flow, merged into the first one's skb as its
+ * fragments, and what the next segment has to be to join it.
+ */
+struct edma_gro {
+	struct sk_buff *head;
+	const struct edma_rx_preheader *rxph;
+	struct qca_edma_gso gso;
+	struct edma_tcp t;
+	u32 flow;
+	u32 desc_status;
+	u32 bytes;
+	u32 next_seq;
+	u16 last_id;
+	u16 mss;
+	u16 segs;
+	u16 max_segs;
+	u8 src_port;
+	bool fixedid;
+};
+
 struct edma_stats {
 	u64 rx_untracked_page;
 	u64 rx_fifo_miss;
@@ -331,6 +369,9 @@ struct edma_stats {
 	u64 rx_vp_unclaimed;
 	u64 rx_split_frame;
 	u64 rx_fill_starved;
+	u64 rx_flow_single;
+	u64 rx_flow_merged;
+	u64 rx_flow_aggs;
 	u64 tx_desc_error;
 	u64 tx_unnamed_frame;
 	u64 tx_gso_frames;
@@ -430,6 +471,13 @@ struct edma_queue {
 	 * the reasons a frame went missing for.
 	 */
 	struct edma_stats stats;
+
+	/* The aggregate of consecutive segments of one flow the poll holds
+	 * open, and the flow the switch last said takes none. Both are only
+	 * the poll's, and the aggregate is always sent before the poll ends.
+	 */
+	struct edma_gro gro;
+	u32 gro_skip;
 
 	/* What net DIM samples: the interrupts this set took and what its
 	 * receive and transmit completion rings moved. Only the poll writes
