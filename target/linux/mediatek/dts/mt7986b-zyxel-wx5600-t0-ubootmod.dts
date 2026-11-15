@@ -323,7 +323,7 @@
 		nvmem-cell-names = "mac-address";
 		phy-mode = "2500base-x";
 		phy-handle = <&phy5>;
-		label = "lan2";
+		openwrt,netdev-name = "lan2";
 	};
 
 	gmac1: mac@1 {
@@ -333,7 +333,7 @@
 		nvmem-cell-names = "mac-address";
 		phy-mode = "2500base-x";
 		phy-handle = <&phy6>;
-		label = "lan1";
+		openwrt,netdev-name = "lan1";
 	};
 
 	mdio: mdio-bus{

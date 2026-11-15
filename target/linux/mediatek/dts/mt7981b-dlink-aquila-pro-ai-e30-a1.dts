@@ -57,7 +57,7 @@
 		reg = <1>;
 		phy-mode = "gmii";
 		phy-handle = <&int_gbe_phy>;
-		label = "lan";
+		openwrt,netdev-name = "lan";
 
 		nvmem-cells = <&macaddr_odm 0>;
 		nvmem-cell-names = "mac-address";
