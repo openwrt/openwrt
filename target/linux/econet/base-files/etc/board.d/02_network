@@ -6,11 +6,20 @@ econet_setup_interfaces()
 {
 	local board="$1"
 
-	ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
-
 	case "$board" in
+	nokia,g140w-c)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "lan4"
+		# econet-eth has no checksum or scatter-gather offload, so GRO
+		# only makes the CPU split and checksum forwarded packets again
+		for port in lan1 lan2 lan3 lan4; do
+			ucidef_set_network_device_gro "$port" 0
+		done
+		;;
 	tplink,archer-vr1200v-v2)
-		ucidef_set_interface_wan "wan"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
+	*)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	esac
 }
@@ -32,6 +41,11 @@ econet_setup_macs()
 		lan_mac=$(get_mac_ascii "$conffile" brmac)
 		wan_mac=$(get_mac_ascii "$conffile" internetmac)
 		label_mac=$wan_mac
+		;;
+	nokia,g140w-c)
+		label_mac="$(mtd_get_mac_binary ri 0x3e)"
+		lan_mac="$label_mac"
+		wan_mac="$(macaddr_add "$label_mac" 1)"
 		;;
 	esac
 

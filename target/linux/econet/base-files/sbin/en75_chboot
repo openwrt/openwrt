@@ -128,6 +128,19 @@ main() {
         code_factory=000000000000000100000001000000010000000000000000
            read_mask=000000000000000X00000000000000000000000000000000
         ;;
+    nokia,g140w-c)
+        # tcboot flag words, as printed by the bootloader:
+        #   commit, next_active, image0_is_valid, image1_is_valid,
+        #   boot_fail_num, (unused)
+        # OpenWrt lives in image0 (tclinux), stock stays in image1 (slave).
+        part=$(part_named '"flag"')
+        offset_blocks=0
+        block_size=$((1024 * 128))
+        code_offset=0
+        code_openwrt=000000010000000000000001000000010000000000000000
+        code_factory=000000010000000100000001000000010000000000000000
+           read_mask=000000000000000X00000000000000000000000000000000
+        ;;
     smartfiber,xp8421-b)
         # 0dfc0000
         part=$(part_named '"reservearea"')

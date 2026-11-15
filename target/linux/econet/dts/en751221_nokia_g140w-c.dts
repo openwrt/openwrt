@@ -1,0 +1,346 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/*
+ * Nokia G-140W-C (EcoNet EN7526G, 512 MiB DDR3, 256 MiB SPI-NAND W25M02GV,
+ * MT7592 + MT7612E)
+ *
+ * Derived from en751221_nokia_g240g-e.dts, which has an identical flash
+ * layout.
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "en751221g.dtsi"
+
+/ {
+	model = "Nokia G-140W-C";
+	compatible = "nokia,g140w-c", "econet,en751221";
+
+	/*
+	 * 512 MiB DDR3 fitted, but only the part below the 0x1c000000 I/O
+	 * window is reachable; the stock kernel uses 0x0-0x1b800000 (440 MiB).
+	 */
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x1b800000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x1b7e0000>;
+	};
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_red;
+		led-running = &led_power;
+		led-upgrade = &led_pon;
+	};
+
+	/*
+	 * The stock led_drv.ko/gpio_mgr.ko have a table for this board
+	 * ("G140WC"): power GPIO 6, PON GPIO 2, LOS GPIO 24, Internet GPIO 28,
+	 * phone GPIO 25 (LED id 9, used by the SIP app) and USB GPIO 11 (LED
+	 * ids 15/67, used by the USB notifier). All active-low; each one was
+	 * lit from Linux and matched to its D-number on the PCB. GPIO 27 is the
+	 * PON laser TX-disable line and must stay alone. The 2.4 GHz WLAN LED
+	 * (D505) hangs off the MT7592 (see &slot0).
+	 * Edge order from the power LED (D508): D501 D504 D510 D511 D512 D502
+	 * D506 D513 D505 D515 D514 D503.
+	 * D510, D511, D512, D502, D513 and D515 are not on SoC GPIOs.
+	 */
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led_pon: led-1 {
+			/* D501, "PON" position (2nd from power) */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led_red: led-2 {
+			/* D504, red, "LOS" position (3rd from power) */
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_ALARM;
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		};
+
+		led_phone: led-3 {
+			/* D506, phone (no VoIP in OpenWrt, so free to reassign) */
+			color = <LED_COLOR_ID_GREEN>;
+			function = "phone";
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		};
+
+		led_internet: led-4 {
+			/* D503, "Internet" in the stock table */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		};
+
+		led_usb: led-5 {
+			/* D514, USB */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	/*
+	 * From the stock button_driver.ko table for this board: reset on GPIO 0
+	 * and an "LED" (lights on/off) button on GPIO 5, both idle high. The
+	 * WLAN and WPS buttons are wired to the Wi-Fi chip, which mt76 cannot
+	 * read.
+	 */
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		key-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		};
+
+		key-lights {
+			label = "lights";
+			linux,code = <KEY_LIGHTS_TOGGLE>;
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "romfile";
+			reg = <0x40000 0x40000>;
+		};
+
+		/*
+		 * Slot A (stock "linux" / "image0"). The bootloader writes the
+		 * factory image across all of it; OpenWrt splits it into a raw
+		 * TRX kernel and a UBI area holding rootfs + rootfs_data.
+		 * Slot B ("kernel_slave"/"rootfs_slave") keeps the stock firmware.
+		 *
+		 * Slot A has no econet,enable-remap. With it, a read error in
+		 * old stock data makes the BMT driver remap the block, and the
+		 * bootloader redoes such a remap on every boot once UBI has
+		 * erased the replacement block and its mapping mark, which
+		 * wipes UBI data. Test images had remapped blocks 36-58 of the
+		 * reference unit that way, so UBI starts after them, at block 59.
+		 */
+		partition@80000 {
+			label = "tclinux";
+			reg = <0x80000 0x2200000>;
+		};
+
+		partition1@80000 {
+			label = "tclinux_kernel";
+			reg = <0x80000 0x400000>;
+		};
+
+		partition@760000 {
+			label = "ubi";
+			reg = <0x760000 0x1b20000>;
+
+			volumes {
+				ubi-volume-calibration {
+					volname = "calibration";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_cal_2g: eeprom@0 {
+							reg = <0x0 0x400>;
+						};
+
+						eeprom_cal_5g: eeprom@400 {
+							reg = <0x400 0x200>;
+						};
+					};
+				};
+			};
+		};
+
+		/* Stock firmware stays here: fallback via the bootloader flag */
+		partition@2280000 {
+			label = "kernel_slave";
+			reg = <0x2280000 0x300000>;
+			read-only;
+		};
+
+		partition@2580000 {
+			label = "rootfs_slave";
+			reg = <0x2580000 0x1f00000>;
+			read-only;
+		};
+
+		partition@4480000 {
+			label = "kernel_oflt";
+			reg = <0x4480000 0x300000>;
+			read-only;
+		};
+
+		partition@4780000 {
+			label = "rootfs_oflt";
+			reg = <0x4780000 0xc00000>;
+			read-only;
+		};
+
+		partition@5380000 {
+			label = "config";
+			reg = <0x5380000 0x800000>;
+			read-only;
+		};
+
+		partition@5b80000 {
+			label = "log";
+			reg = <0x5b80000 0xc00000>;
+		};
+
+		partition@6780000 {
+			label = "extfs";
+			reg = <0x6780000 0x600000>;
+		};
+
+		partition@6d80000 {
+			label = "bosa";
+			reg = <0x6d80000 0x40000>;
+			read-only;
+		};
+
+		partition@6dc0000 {
+			label = "flag";
+			reg = <0x6dc0000 0x40000>;
+		};
+
+		partition@6e00000 {
+			label = "flagback";
+			reg = <0x6e00000 0x40000>;
+		};
+
+		partition@6e40000 {
+			label = "ri";
+			reg = <0x6e40000 0x40000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* Base MAC: the same value ritool reports as MACAddress */
+				macaddr_ri_3e: macaddr@3e {
+					compatible = "mac-base";
+					reg = <0x3e 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@6e80000 {
+			label = "riback";
+			reg = <0x6e80000 0x40000>;
+			read-only;
+		};
+	};
+};
+
+&gmac0 {
+	status = "okay";
+	nvmem-cells = <&macaddr_ri_3e 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+/*
+ * Radio placement confirmed from the stock boot log: MT7592 (14c3:7603) on
+ * PCIe RC0, MT7612E (14c3:7662, 64-bit BAR) on the Gen2 RC1.
+ *
+ * Their calibration comes from the "calibration" UBI volume, which
+ * sysupgrade fills from the stock settings (see platform.sh).
+ */
+&pcie0 {
+	status = "okay";
+};
+
+&slot0 {
+	wifi@0,0 {
+		/* MT7592 2.4 GHz (mt7603 driver); stock used base MAC + 0x9 */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_cal_2g>, <&macaddr_ri_3e 9>;
+		nvmem-cell-names = "eeprom", "mac-address";
+
+		/* LED pin 0 drives the front WLAN LED; it is active-low */
+		led {
+			led-active-low;
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&slot1 {
+	wifi@0,0 {
+		/* MT7612E 5 GHz; stock used base MAC + 0xd */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_cal_5g>, <&macaddr_ri_3e 13>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+/*
+ * The LAN sockets are on the MT7530 module inside the EN7526G (MDIO address
+ * 31), behind port 5 of the on-die switch, which en751221g.dtsi sets up.
+ * LAN1-LAN4 are its ports 1-4 (LAN2 and LAN4 checked with the port counters,
+ * matching the stock port map). Port 0 has a PHY but no socket.
+ */
+&gsw_port1 {
+	status = "okay";
+	label = "lan1";
+};
+
+&gsw_port2 {
+	status = "okay";
+	label = "lan2";
+};
+
+&gsw_port3 {
+	status = "okay";
+	label = "lan3";
+};
+
+&gsw_port4 {
+	status = "okay";
+	label = "lan4";
+};

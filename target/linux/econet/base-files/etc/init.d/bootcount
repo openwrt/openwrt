@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+# The tcboot bootloader adds 1 to boot_fail_num in the flag partition on
+# every power-up and switches to the other firmware slot when it reaches 9.
+# The stock firmware clears it once it has booted, so OpenWrt does the same:
+# rewriting the OpenWrt boot flag sets the count back to 0.
+
+START=99
+
+boot() {
+	[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "nokia,g140w-c" ] || return 0
+	# Only when running from flash, not from a RAM-booted image
+	grep -q '^/dev/ubiblock' /proc/mounts || grep -q ' /rom ' /proc/mounts || return 0
+	/sbin/en75_chboot openwrt >/dev/null 2>&1
+}

@@ -44,6 +44,32 @@ define Device/huawei_hg2821t-u
 endef
 TARGET_DEVICES += huawei_hg2821t-u
 
+# Kernel in a raw TRX at the start of slot A, squashfs + overlay in UBI after
+# it (same scheme as the JioFiber/GS3101 boards), so sysupgrade and persistent
+# settings work. The stock tcboot is a "free bootbase" build (decompAddr
+# 0x80002000 in the factory TRX), hence the jump stub.
+define Device/nokia_g140w-c
+  $(call Device/tclinux-ubi)
+  DEVICE_VENDOR := Nokia
+  DEVICE_MODEL := G-140W-C
+  DEVICE_DTS := en751221_nokia_g140w-c
+  # No tclinux.trx: slot A also needs the bootloader's second stage, which
+  # only the router has, and UBI starts at 0x760000. sysupgrade from the
+  # RAM-booted initramfs installs it (see platform.sh).
+  IMAGES := sysupgrade.bin
+  TRX_LOADADDR := 0x80002000
+  # The bootram goes in at 0x3e0000, so the TRX (256-byte header + kernel)
+  # has to end before it. kernel-trx pads to 4 MiB, so check before it.
+  KERNEL := kernel-bin | append-dtb | tclinux-free-bootbase-jump | lzma | \
+    check-size 4062976 | kernel-trx
+  # RAM boot: tcboot's xmdm loads the image at 0x80020000 and the kernel
+  # decompresses to 0x81000000, so the loader (image, 1 MiB DTB slot and
+  # 4 MiB heap) has to end below that.
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | check-size 11394032
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7603 kmod-mt76x2 wpad-basic-mbedtls
+endef
+TARGET_DEVICES += nokia_g140w-c
+
 define Device/nokia_g240g-e
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := G-240G-E
