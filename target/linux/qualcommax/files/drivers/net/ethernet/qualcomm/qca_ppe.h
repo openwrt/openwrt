@@ -1559,6 +1559,12 @@ struct qca_ppe_priv {
 	 */
 	int dl_shaper;
 	int ul_shaper;
+	/* The devices dl_shaper and uplink_dev name, so that a frame handed to
+	 * them does not look them up by ifindex. Set under flow_lock with the
+	 * index, and cleared by the netdev notifier before the device goes.
+	 */
+	struct net_device __rcu *dl_ndev;
+	struct net_device __rcu *uplink_ndev;
 	char dl_shaper_name[IFNAMSIZ];
 	char ul_shaper_name[IFNAMSIZ];
 	/* The WAN's L3 device, named apart from the shapers so that its path
