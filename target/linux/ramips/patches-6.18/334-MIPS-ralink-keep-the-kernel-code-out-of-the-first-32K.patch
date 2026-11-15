@@ -75,13 +75,13 @@ Signed-off-by: Marco Martins <marcomartins86@gmail.com>
  
 +config RALINK_PAD_FIRST_32K
 +	bool
-+	default y if SOC_MT7620 && !PINCTRL_MT76X8
++	default y if (SOC_MT7620 && !PINCTRL_MT76X8) || SOC_RT305X
 +	help
 +	  Some 24K cores can save an EPC with wrong top four bits for an
 +	  interrupt at the target of a J or JAL in the first 32 KiB of a
 +	  256 MiB segment, and the kernel is linked at 0x80000000.
-+	  Needed on the MT7620, not on the MT7628 and MT7688, whose kernels
-+	  build the MT76x8 pin controller.
++	  Needed on the MT7620 and RT305x, not on the MT7628 and MT7688,
++	  whose kernels build the MT76x8 pin controller.
 +
  config IRQ_INTC
  	bool
