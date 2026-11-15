@@ -25,6 +25,7 @@
 #include <linux/reset.h>
 #include <net/dsa.h>
 #include <net/dst_metadata.h>
+#include <net/ip6_checksum.h>
 #include <net/netdev_queues.h>
 
 #include "qca_edma.h"
@@ -2517,6 +2518,79 @@ static void edma_src_drain(struct edma_queue *q)
 	__netif_tx_unlock(txq);
 }
 
+/* A fraglist aggregate is the head, which has the headers of the first
+ * segment, and one skb per further segment that holds the payload only, so it
+ * is the byte stream the engine cuts at gso_size, as a TSO frame is. It differs
+ * in what the receive path left in it: the segments were verified whole, so
+ * it is CHECKSUM_UNNECESSARY with the first segment's checksum in the header,
+ * and the engine writes a checksum only when asked, over what the header
+ * holds as the stack seeds a TSO frame, the pseudo header of the whole
+ * length. Make it that frame. Called with the headers behind the Ethernet
+ * header and nothing else in front of them, as a source-port frame has.
+ *
+ * Return: 0, or a negative errno with the frame as it was.
+ */
+static int edma_tx_fraglist(struct sk_buff *skb)
+{
+	u32 type = skb_shinfo(skb)->gso_type;
+	unsigned int thoff;
+	struct tcphdr *th;
+	int err;
+
+	if (!(type & SKB_GSO_FRAGLIST))
+		return 0;
+
+	if (type & SKB_GSO_TCPV4) {
+		const struct iphdr *iph;
+
+		if (!pskb_may_pull(skb, ETH_HLEN + sizeof(*iph)))
+			return -EOPNOTSUPP;
+		iph = (const struct iphdr *)(skb->data + ETH_HLEN);
+		if (iph->version != 4 || iph->ihl < 5 || iph->protocol != IPPROTO_TCP)
+			return -EOPNOTSUPP;
+		thoff = ETH_HLEN + iph->ihl * 4;
+	} else if (type & SKB_GSO_TCPV6) {
+		const struct ipv6hdr *ip6h;
+
+		if (!pskb_may_pull(skb, ETH_HLEN + sizeof(*ip6h)))
+			return -EOPNOTSUPP;
+		ip6h = (const struct ipv6hdr *)(skb->data + ETH_HLEN);
+		if (ip6h->version != 6 || ip6h->nexthdr != IPPROTO_TCP)
+			return -EOPNOTSUPP;
+		thoff = ETH_HLEN + sizeof(*ip6h);
+	} else {
+		return -EOPNOTSUPP;
+	}
+
+	/* The checksum field is written, so a head shared with a clone is
+	 * copied first, and the headers read above are read again after it.
+	 */
+	err = skb_ensure_writable(skb, thoff + sizeof(*th));
+	if (err)
+		return err;
+
+	th = (struct tcphdr *)(skb->data + thoff);
+	if (type & SKB_GSO_TCPV4) {
+		const struct iphdr *iph = (const struct iphdr *)(skb->data + ETH_HLEN);
+
+		th->check = ~csum_tcpudp_magic(iph->saddr, iph->daddr,
+					       skb->len - thoff, IPPROTO_TCP, 0);
+	} else {
+		const struct ipv6hdr *ip6h = (const struct ipv6hdr *)(skb->data + ETH_HLEN);
+
+		th->check = ~csum_ipv6_magic(&ip6h->saddr, &ip6h->daddr,
+					     skb->len - thoff, IPPROTO_TCP, 0);
+	}
+
+	skb->ip_summed = CHECKSUM_PARTIAL;
+	skb->csum_level = 0;
+	skb->csum_start = skb_headroom(skb) + thoff;
+	skb->csum_offset = offsetof(struct tcphdr, check);
+	skb_shinfo(skb)->gso_type = type & ~SKB_GSO_FRAGLIST;
+
+	return 0;
+}
+
 /**
  * qca_edma_src_xmit - hand a finished frame to the switch as received on a port
  * @skb: the frame, untagged, with skb->data at its Ethernet header
@@ -2539,9 +2613,14 @@ static void edma_src_drain(struct edma_queue *q)
  * Return: %QCA_EDMA_SRC_SENT when the frame is on the ring,
  * %QCA_EDMA_SRC_PARKED when it waits and %QCA_EDMA_SRC_DROPPED when it was
  * freed for want of room. -EOPNOTSUPP for a GSO frame the engine cannot take
- * whole, -ENETDOWN when the conduit is not running and -ENODEV when it is not
+ * whole or whose headers are not those of a TCP segment behind an Ethernet
+ * header, -ENETDOWN when the conduit is not running and -ENODEV when it is not
  * an EDMA conduit leave the frame the caller's, with its contents unchanged,
  * to send another way.
+ *
+ * A GSO frame goes to the engine as one frame, which cuts it into segments.
+ * A fraglist aggregate is made a frame the engine can cut first, as
+ * edma_tx_fraglist() says, so it is no longer one when it is taken.
  */
 int qca_edma_src_xmit(struct sk_buff *skb, struct net_device *conduit,
 		      unsigned int port)
@@ -2571,6 +2650,14 @@ int qca_edma_src_xmit(struct sk_buff *skb, struct net_device *conduit,
 	if (unlikely(!q->src_up)) {
 		__netif_tx_unlock(txq);
 		return -ENETDOWN;
+	}
+
+	if (skb_is_gso(skb)) {
+		rc = edma_tx_fraglist(skb);
+		if (rc) {
+			__netif_tx_unlock(txq);
+			return rc;
+		}
 	}
 
 	/* Frames already waiting go first. */
