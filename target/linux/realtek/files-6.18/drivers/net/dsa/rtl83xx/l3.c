@@ -3450,6 +3450,7 @@ static int otto_l3_fib_trap_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 {
 	struct net_device *ndev = rt->nh ? NULL : rt->fib6_nh->fib_nh_dev;
 	struct otto_l3_route *route;
+	int err;
 
 	/* While a copy of the address remains the kernel replaces the entry
 	 * rather than deleting it, so a row already trapping here is the row
@@ -3461,7 +3462,7 @@ static int otto_l3_fib_trap_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 				   0, &rt->fib6_dst.addr, rt->fib6_dst.plen);
 	if (route && ipv6_addr_any(&route->gw_ip)) {
 		route->members = members;
-		return 0;
+		goto router_mac;
 	}
 	if (route)
 		otto_l3_route_teardown(ctrl, route);
@@ -3496,18 +3497,31 @@ static int otto_l3_fib_trap_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 				ndev->dev_addr, &rt->fib6_dst.addr, rt->fib6_dst.plen);
 	}
 
-	route->row = otto_l3_route_place(ctrl, route);
-	if (route->row < FIRST_PREFIX_ROW) {
-		otto_l3_route_teardown(ctrl, route);
-		return -ENOSPC;
-	}
-
 	/* The next hop index stays zero, which is what the hardware reads as
 	 * "no next hop" on a route that only traps.
 	 */
-	ctrl->cfg->route_write(ctrl, route->row, route);
+	err = otto_l3_route_install(ctrl, route);
+	if (err) {
+		otto_l3_route_teardown(ctrl, route);
+		return err;
+	}
 	dev_dbg(ctrl->dev, "%pI6c/%d trapped at row %d\n",
 		&rt->fib6_dst.addr, rt->fib6_dst.plen, route->row);
+
+router_mac:
+	/* Connected prefixes and local addresses may be the only routes on an
+	 * IPv6-only interface: defaults and RA gateways are not offloaded.
+	 * Register its routing endpoint only after the trap is installed,
+	 * including when this route already traps. The MAC follows receiving
+	 * devices, independently of route lifetime. Without it the switch does
+	 * not route what arrives on this device, but the trap is still needed
+	 * for what arrives on any other router MAC, so keep it on failure.
+	 */
+	if (ctrl->cfg->set_router_mac && ndev && !rt->fib6_nh->fib_nh_gw_family &&
+	    otto_l3_port_dev_lower_find(ndev, ctrl) >= 0 &&
+	    otto_l3_router_mac_get(ctrl, ndev))
+		dev_warn(ctrl->dev, "no router MAC for %s, the switch does not route what arrives on it\n",
+			 ndev->name);
 
 	return 0;
 }
