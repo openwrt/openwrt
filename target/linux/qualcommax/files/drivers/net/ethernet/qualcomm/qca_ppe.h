@@ -1503,8 +1503,9 @@ struct ppe_vp_key {
 /* A flow offloaded with a virtual port as its ingress. @key.vp is zero for
  * every other flow. @hold and @pass are jiffies, zero when unset: until @hold
  * the flow's frames take the host's path, because the PPE just returned one;
- * from @pass one frame goes that way, to keep what only the host sees of a
- * flow, the bridge's address entry, alive.
+ * from @pass the bridge is taught the flow's source address by a frame of its
+ * own, to keep what only the host sees of a flow, the bridge's address entry,
+ * alive.
  */
 struct ppe_vp_flow {
 	struct hlist_node node;
