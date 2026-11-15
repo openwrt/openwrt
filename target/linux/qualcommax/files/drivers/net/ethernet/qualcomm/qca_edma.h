@@ -231,6 +231,12 @@
 #define EDMA_MIN_RING_SIZE	64
 #define EDMA_MAX_RING_SIZE	8192
 
+/* Every ring's descriptor is two words; the cached rings are synced by lines
+ * of these.
+ */
+#define EDMA_DESC_SIZE		8
+#define EDMA_DESCS_PER_LINE	(L1_CACHE_BYTES / EDMA_DESC_SIZE)
+
 /* Descriptor accessors */
 #define EDMA_GET_DESC(R, i, type) (&(((type *)((R)->desc))[i]))
 #define EDMA_RXFILL_DESC(R, i) EDMA_GET_DESC(R, i, struct edma_rxfill_desc)
@@ -358,6 +364,7 @@ struct edma_ring {
 	void *desc;
 	dma_addr_t dma;
 	u16 count;
+	bool cached;
 	struct sk_buff **skb_store;
 	struct edma_rx_buf *rx_store;
 };

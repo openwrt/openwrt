@@ -159,18 +159,57 @@ static irqreturn_t edma_misc_irq_handle(int irq, void *ctx)
 	return IRQ_HANDLED;
 }
 
+/* A ring the CPU only reads, the receive descriptors and the transmit
+ * completions, is cached memory: the engine writes it, and edma_ring_sync_cpu()
+ * discards what the CPU holds of the entries the engine has just produced, so
+ * that the loads that follow fill one line per EDMA_DESCS_PER_LINE entries
+ * instead of reading each entry from memory uncached. The CPU never stores to
+ * such a ring, so no line of it is ever dirty and an eviction cannot write a
+ * stale line over an entry the engine wrote. Memory from
+ * dma_alloc_noncoherent() belongs to the CPU, which just zeroed it into the
+ * cache: the sync for the device cleans those lines before the engine's rings
+ * are enabled. The rings the CPU writes, the transmit and fill descriptors,
+ * stay coherent (uncached) memory.
+ */
 static int edma_ring_alloc(struct edma_priv *priv, struct edma_ring *ring, int count,
-			   int desc_size)
+			   int desc_size, bool cached)
 {
 	struct device *dev = &priv->pdev->dev;
+	size_t size = count * desc_size;
 
 	ring->count = count;
-	ring->desc = dma_alloc_coherent(dev, count * desc_size, &ring->dma,
-					GFP_KERNEL);
+	ring->cached = cached;
+	if (cached) {
+		ring->desc = dma_alloc_noncoherent(dev, size, &ring->dma,
+						   DMA_FROM_DEVICE, GFP_KERNEL);
+		if (ring->desc)
+			dma_sync_single_for_device(dev, ring->dma, size,
+						   DMA_FROM_DEVICE);
+	} else {
+		ring->desc = dma_alloc_coherent(dev, size, &ring->dma,
+						GFP_KERNEL);
+	}
 	if (!ring->desc)
 		return -ENOMEM;
 
 	return 0;
+}
+
+static void edma_ring_free(struct edma_priv *priv, struct edma_ring *ring,
+			   int desc_size)
+{
+	size_t size = ring->count * desc_size;
+
+	if (!ring->desc)
+		return;
+
+	if (ring->cached)
+		dma_free_noncoherent(&priv->pdev->dev, size, ring->desc,
+				     ring->dma, DMA_FROM_DEVICE);
+	else
+		dma_free_coherent(&priv->pdev->dev, size, ring->desc,
+				  ring->dma);
+	ring->desc = NULL;
 }
 
 static int edma_tx_ring_alloc(struct edma_priv *priv, struct edma_ring *ring,
@@ -178,15 +217,13 @@ static int edma_tx_ring_alloc(struct edma_priv *priv, struct edma_ring *ring,
 {
 	int ret;
 
-	ret = edma_ring_alloc(priv, ring, count, desc_size);
+	ret = edma_ring_alloc(priv, ring, count, desc_size, false);
 	if (ret)
 		return ret;
 
 	ring->skb_store = kcalloc(count, sizeof(struct sk_buff *), GFP_KERNEL);
 	if (!ring->skb_store) {
-		dma_free_coherent(&priv->pdev->dev, count * desc_size,
-				  ring->desc, ring->dma);
-		ring->desc = NULL;
+		edma_ring_free(priv, ring, desc_size);
 		return -ENOMEM;
 	}
 
@@ -198,29 +235,46 @@ static int edma_rx_ring_alloc(struct edma_priv *priv, struct edma_ring *ring,
 {
 	int ret;
 
-	ret = edma_ring_alloc(priv, ring, count, desc_size);
+	ret = edma_ring_alloc(priv, ring, count, desc_size, false);
 	if (ret)
 		return ret;
 
 	ring->rx_store = kcalloc(count, sizeof(*ring->rx_store), GFP_KERNEL);
 	if (!ring->rx_store) {
-		dma_free_coherent(&priv->pdev->dev, count * desc_size,
-				  ring->desc, ring->dma);
-		ring->desc = NULL;
+		edma_ring_free(priv, ring, desc_size);
 		return -ENOMEM;
 	}
 
 	return 0;
 }
 
-static void edma_ring_free(struct edma_priv *priv, struct edma_ring *ring,
-			   int desc_size)
+/* Takes from the engine the lines holding the @n entries of @ring from
+ * @first on, which the producer index just showed it has written. The
+ * range is whole lines, the first and last of which may hold entries the
+ * engine writes meanwhile or has not yet; that is harmless, since nothing
+ * reads those before the next sync discards them again.
+ */
+static void edma_ring_sync_cpu(struct edma_priv *priv, struct edma_ring *ring,
+			       u32 first, u32 n)
 {
-	if (ring->desc) {
-		dma_free_coherent(&priv->pdev->dev, ring->count * desc_size,
-				  ring->desc, ring->dma);
-		ring->desc = NULL;
+	size_t start, end;
+
+	BUILD_BUG_ON(sizeof(struct edma_rxdesc) != EDMA_DESC_SIZE ||
+		     sizeof(struct edma_txcmpl) != EDMA_DESC_SIZE);
+
+	if (!ring->cached || !n)
+		return;
+
+	if (first + n > ring->count) {
+		edma_ring_sync_cpu(priv, ring, first, ring->count - first);
+		edma_ring_sync_cpu(priv, ring, 0, first + n - ring->count);
+		return;
 	}
+
+	start = ALIGN_DOWN(first * EDMA_DESC_SIZE, L1_CACHE_BYTES);
+	end = ALIGN((first + n) * EDMA_DESC_SIZE, L1_CACHE_BYTES);
+	dma_sync_single_for_cpu(&priv->pdev->dev, ring->dma + start,
+				end - start, DMA_FROM_DEVICE);
 }
 
 static u32 edma_tx_release(struct edma_queue *q, u32 idx, struct sk_buff *skb,
@@ -250,8 +304,8 @@ static void edma_tx_ring_free(struct edma_queue *q, struct edma_ring *ring,
 /* The ring index registers are accessed per frame and per poll, which the
  * register map's checks would cost more than the access itself.
  */
-/* The rings are uncached, so both words of a descriptor, the address and the
- * status, are read in one access.
+/* Both words of a descriptor, the address and the status, are read in one
+ * access. The caller has synced the descriptor's line from the engine.
  */
 static u64 edma_desc_read(const void *desc)
 {
@@ -436,6 +490,9 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 							    q->txcmpl)) &
 	       EDMA_TXCMPL_PROD_IDX_MASK;
 	cons = q->txcmpl_cons;
+	edma_ring_sync_cpu(priv, txcmpl_ring, cons,
+			   min_t(u32, (prod - cons) & (txcmpl_ring->count - 1),
+				 budget));
 
 	while (cons != prod && cleaned < budget) {
 		u64 desc = edma_desc_read(EDMA_TXCMPL_DESC(txcmpl_ring, cons));
@@ -769,6 +826,9 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	prod = edma_idx_read(priv, EDMA_REG_RXDESC_PROD_IDX(q->rxdesc)) &
 	       EDMA_RXDESC_PROD_IDX_MASK;
 	cons = q->rxdesc_cons;
+	edma_ring_sync_cpu(priv, rxdesc_ring, cons,
+			   min_t(u32, (prod - cons) & (rxdesc_ring->count - 1),
+				 budget));
 
 	while (cons != prod && done < budget) {
 		u16 next = cons + 1;
@@ -1383,7 +1443,7 @@ static int edma_queue_rings_alloc(struct edma_queue *q)
 		return ret;
 
 	ret = edma_ring_alloc(priv, &q->txcmpl_ring, priv->tx_ring_size,
-			      sizeof(struct edma_txcmpl));
+			      sizeof(struct edma_txcmpl), true);
 	if (ret)
 		goto err_txcmpl;
 
@@ -1393,7 +1453,7 @@ static int edma_queue_rings_alloc(struct edma_queue *q)
 		goto err_rxfill;
 
 	ret = edma_ring_alloc(priv, &q->rxdesc_ring, priv->rx_ring_size,
-			      sizeof(struct edma_rxdesc));
+			      sizeof(struct edma_rxdesc), true);
 	if (ret)
 		goto err_rxdesc;
 
