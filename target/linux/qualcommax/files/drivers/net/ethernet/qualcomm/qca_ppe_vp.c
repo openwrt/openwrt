@@ -245,6 +245,39 @@ static int ppe_vp_netdev_event(struct notifier_block *nb, unsigned long event,
 	return NOTIFY_DONE;
 }
 
+/**
+ * ppe_vp_rx - deliver a frame the switch returned to the port it was sent from
+ * @ds: the switch
+ * @skb: the frame, with skb->data at its Ethernet header
+ * @port: the virtual source port the frame carries
+ *
+ * The frame is the one the CPU sent, unchanged, back for the host to forward:
+ * a size limit or an exception of the lookup turned it away. It is received on
+ * the port's netdev, so the bridge, the firewall and the routing take it as
+ * they would have when it first arrived. Called from the EDMA NAPI poll.
+ *
+ * Return: false, with @skb untouched, when @port names no virtual port.
+ */
+bool ppe_vp_rx(struct dsa_switch *ds, struct sk_buff *skb, u32 port)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	struct ppe_vp *vp;
+
+	if (port >= PPE_MAX_VPORT)
+		return false;
+
+	vp = rcu_dereference_bh(priv->vp[port]);
+	if (!vp || !netif_running(vp->dev))
+		return false;
+
+	skb->dev = vp->dev;
+	skb_record_rx_queue(skb, 0);
+	skb->protocol = eth_type_trans(skb, vp->dev);
+	netif_receive_skb(skb);
+
+	return true;
+}
+
 static int ppe_vp_show(struct seq_file *s, void *data)
 {
 	struct qca_ppe_priv *priv = s->private;

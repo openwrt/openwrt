@@ -309,6 +309,7 @@ struct edma_stats {
 	u64 rx_bad_src_info;
 	u64 rx_no_skb;
 	u64 rx_no_tag;
+	u64 rx_vp_unclaimed;
 	u64 rx_split_frame;
 	u64 rx_fill_starved;
 	u64 tx_desc_error;

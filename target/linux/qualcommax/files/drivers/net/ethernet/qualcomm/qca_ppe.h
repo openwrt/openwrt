@@ -1879,5 +1879,6 @@ void ppe_vp_exit(struct qca_ppe_priv *priv);
 void ppe_vp_bridge_up(struct qca_ppe_priv *priv, struct net_device *br_dev);
 void ppe_vp_bridge_down(struct qca_ppe_priv *priv, struct net_device *br_dev);
 void ppe_vp_debugfs_init(struct qca_ppe_priv *priv);
+bool ppe_vp_rx(struct dsa_switch *ds, struct sk_buff *skb, u32 port);
 
 #endif

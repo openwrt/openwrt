@@ -651,6 +651,24 @@ static bool edma_rx_flow(struct net_device *netdev, struct sk_buff *skb,
 			      pre2 & EDMA_RXPH_HASH_MASK);
 }
 
+/* The switch returned a frame that the CPU sent with a virtual source port:
+ * an exception, such as a size limit or a flow entry that is gone. The
+ * switch's driver knows whose port it was.
+ */
+static bool edma_rx_vp(struct net_device *netdev, struct sk_buff *skb,
+		       u32 src_port)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+	const struct qca_edma_switch_ops *ops;
+
+	ops = READ_ONCE(priv->sw_ops);
+	if (!ops || !ops->vp_rx)
+		return false;
+
+	skb->dev = netdev;
+	return ops->vp_rx(READ_ONCE(priv->sw_ds), skb, src_port);
+}
+
 /* A frame the switch trapped to the CPU is the bridge's to forward, so it
  * goes through the tagger, which leaves it unmarked: it gets the header the
  * QCA tagger reads its source port from, right behind the addresses, and
@@ -793,6 +811,20 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		skb_record_rx_queue(skb, q->idx);
 		if (edma_rx_flow(netdev, skb, rxph)) {
 			dev_sw_netstats_rx_add(netdev, pkt_len);
+			goto next;
+		}
+
+		/* Only the CPU and the switch's ports send frames the PPE
+		 * can return, and a port above them is a virtual one.
+		 */
+		if (src_port >= EDMA_PORTS) {
+			if (edma_rx_vp(netdev, skb, src_port)) {
+				dev_sw_netstats_rx_add(netdev, pkt_len);
+			} else {
+				dev_kfree_skb_any(skb);
+				q->stats.rx_vp_unclaimed++;
+				DEV_STATS_INC(netdev, rx_dropped);
+			}
 			goto next;
 		}
 
@@ -1776,6 +1808,7 @@ static const char edma_stat_names[][ETH_GSTRING_LEN] = {
 	"rx_bad_src_info",
 	"rx_no_skb",
 	"rx_no_tag",
+	"rx_vp_unclaimed",
 	"rx_split_frame",
 	"rx_fill_starved",
 	"tx_desc_error",
