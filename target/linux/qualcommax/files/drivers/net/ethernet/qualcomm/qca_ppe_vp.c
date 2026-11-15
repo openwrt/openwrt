@@ -17,6 +17,7 @@
 #include <linux/if_vlan.h>
 #include <linux/jhash.h>
 #include <linux/netdevice.h>
+#include <linux/etherdevice.h>
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
 #include <linux/netfilter_netdev.h>
@@ -36,6 +37,7 @@ struct ppe_vp_stats {
 	u64 dropped;
 	u64 held;
 	u64 passed;
+	u64 learn_fail;
 	u64 returned;
 	u64 aggr;
 	u64 segs;
@@ -82,7 +84,7 @@ struct ppe_vp {
 #define PPE_VP_HDR_MAX		(sizeof(struct ipv6hdr) + sizeof(struct tcphdr))
 
 /* How long the flow's frames take the host's path after the PPE returned
- * one, and how often one frame of a flow is let through on purpose.
+ * one, and how often the bridge is taught the source of a flow's frames.
  */
 #define PPE_VP_HOLD		HZ
 #define PPE_VP_PASS		HZ
@@ -246,6 +248,41 @@ void ppe_vp_flow_del(struct qca_ppe_priv *priv, struct ppe_vp_flow *f)
 	}
 }
 
+/* The PPE takes every frame of an offloaded flow, so the bridge, which learns
+ * a station from the frames it receives on a port, would see none of the
+ * station's and age its entry out. br_fdb_update() is not exported, and the
+ * switchdev notification that enters an address into the table marks it
+ * learned by an external device, which the bridge never ages, so a station
+ * that moved or left would stay. The bridge's own rule is used instead: a
+ * frame that arrives on the port teaches the bridge its source. The frame
+ * is not one of the flow's: it has the station as its source and the bridge
+ * as its destination, and an EtherType no protocol handles, so the bridge
+ * learns from it, hands it to the bridge device as it does any frame
+ * addressed to it, and the stack drops it there for want of a handler. The
+ * flow's own frame goes on to the PPE. It is queued for the next receive
+ * poll, as the original was received, so nothing of the flow is sent the
+ * host's way.
+ */
+static bool ppe_vp_learn(const struct sk_buff *skb)
+{
+	const struct ethhdr *eh = eth_hdr(skb);
+	struct sk_buff *l = alloc_skb(ETH_ZLEN, GFP_ATOMIC);
+	struct ethhdr *lh;
+
+	if (!l)
+		return false;
+
+	lh = skb_put_zero(l, ETH_ZLEN);
+	ether_addr_copy(lh->h_dest, eh->h_dest);
+	ether_addr_copy(lh->h_source, eh->h_source);
+	lh->h_proto = htons(ETH_P_802_EX1);
+	l->dev = skb->dev;
+	l->protocol = eth_type_trans(l, skb->dev);
+	netif_rx(l);
+
+	return true;
+}
+
 /* A frame of an offloaded flow goes to the PPE as if it had arrived on the
  * port's own switch port, and is gone from the receive path; every other frame
  * is left for the bridge, the firewall and the routing.
@@ -254,8 +291,9 @@ void ppe_vp_flow_del(struct qca_ppe_priv *priv, struct ppe_vp_flow *f)
  * untagged TCP or UDP packet of IPv4 or IPv6 that is not a fragment, has no
  * options and has a TTL left, and not one a TCP flag sends to the CPU. Then it
  * must belong to a flow in the hardware that ingresses on this port. The flow
- * lets one frame in PPE_VP_PASS through for the bridge to learn the source
- * address from, and none for PPE_VP_HOLD after the PPE returned one.
+ * has the bridge learn the source address once in PPE_VP_PASS, from a frame
+ * of its own as ppe_vp_learn() says, and sends none the host's way for
+ * PPE_VP_HOLD after the PPE returned one.
  */
 static unsigned int ppe_vp_hook(void *data, struct sk_buff *skb,
 				const struct nf_hook_state *state)
@@ -322,9 +360,12 @@ static unsigned int ppe_vp_hook(void *data, struct sk_buff *skb,
 	}
 	t = READ_ONCE(f->pass);
 	if (time_after_eq(jiffies, t)) {
-		WRITE_ONCE(f->pass, jiffies + PPE_VP_PASS);
-		st->passed++;
-		return NF_ACCEPT;
+		if (ppe_vp_learn(skb)) {
+			WRITE_ONCE(f->pass, jiffies + PPE_VP_PASS);
+			st->passed++;
+		} else {
+			st->learn_fail++;
+		}
 	}
 
 	conduit = dsa_to_port(&priv->ds, QCA_PPE_CPU_PORT)->conduit;
@@ -704,7 +745,7 @@ static int ppe_vp_show(struct seq_file *s, void *data)
 
 	guard(mutex)(&priv->flow_lock);
 
-	seq_puts(s, "vport netdev bridge vsi sent bytes refused parked dropped held passed returned aggr segs\n");
+	seq_puts(s, "vport netdev bridge vsi sent bytes refused parked dropped held passed learn_fail returned aggr segs\n");
 
 	for (id = priv->data->first_vport; id < PPE_MAX_VPORT; id++) {
 		struct ppe_vp *vp = rcu_dereference_protected(priv->vp[id],
@@ -726,16 +767,17 @@ static int ppe_vp_show(struct seq_file *s, void *data)
 			sum.dropped += READ_ONCE(st->dropped);
 			sum.held += READ_ONCE(st->held);
 			sum.passed += READ_ONCE(st->passed);
+			sum.learn_fail += READ_ONCE(st->learn_fail);
 			sum.returned += READ_ONCE(st->returned);
 			sum.aggr += READ_ONCE(st->aggr);
 			sum.segs += READ_ONCE(st->segs);
 		}
 
 		used++;
-		seq_printf(s, "%-5u %s %s %u %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+		seq_printf(s, "%-5u %s %s %u %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
 			   id, vp->dev->name, vp->br->name, vp->vsi, sum.sent,
 			   sum.bytes, sum.refused, sum.parked, sum.dropped,
-			   sum.held, sum.passed, sum.returned, sum.aggr,
+			   sum.held, sum.passed, sum.learn_fail, sum.returned, sum.aggr,
 			   sum.segs);
 	}
 
