@@ -313,6 +313,13 @@ struct edma_stats {
 	u64 rx_fill_starved;
 	u64 tx_desc_error;
 	u64 tx_unnamed_frame;
+	u64 tx_src_parked;
+	u64 tx_src_drained;
+	u64 tx_src_dropped;
+	u64 tx_src_park_drv;
+	u64 tx_src_park_stack;
+	u64 tx_src_park_ring;
+	u64 tx_src_park_order;
 };
 
 struct edma_soc_data {
@@ -370,6 +377,15 @@ struct edma_queue {
 	bool tx_kick;
 
 	spinlock_t tx_lock;
+
+	/* Source-port frames the ring had no room for, in the order they came,
+	 * and the descriptors they will take. Only the queue's transmit lock
+	 * guards them, and src_up says the queue takes frames: it is set by
+	 * open and cleared, with the backlog purged, by stop.
+	 */
+	struct sk_buff_head src_backlog;
+	u16 src_backlog_desc;
+	bool src_up;
 
 	/* Counted here rather than in netdev->stats, which cannot say which of
 	 * the reasons a frame went missing for.

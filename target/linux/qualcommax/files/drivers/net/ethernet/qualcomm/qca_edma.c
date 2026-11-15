@@ -418,6 +418,8 @@ static u32 edma_tx_release(struct edma_queue *q, u32 idx, struct sk_buff *skb,
 	return bytes;
 }
 
+static void edma_src_drain(struct edma_queue *q);
+
 /* @napi_budget is the NAPI budget the poll was given, or zero when the caller
  * is not a poll: the skb cache napi_consume_skb() recycles into is per-CPU and
  * is only safe to touch from softirq context.
@@ -499,6 +501,15 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	q->txcmpl_cons = cons;
 	edma_idx_write(priv, EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base,
 						      q->txcmpl), cons);
+
+	/* The wake above does not order the check below after it: a frame
+	 * parked while the queue was still stopped is queued under the lock,
+	 * and either sees the queue running again and sends itself, or is
+	 * seen here.
+	 */
+	smp_mb();
+	if (napi_budget && !skb_queue_empty(&q->src_backlog))
+		edma_src_drain(q);
 
 	return cleaned;
 }
@@ -962,12 +973,14 @@ static bool edma_tx_map(struct device *dev, struct edma_ring *ring,
 	return true;
 }
 
-/* @dst_info names the switch port the frame leaves by, zero for the switch
- * to forward it; @tagged says the frame carries the QCA tag that named it,
- * which comes off once the frame is sure to be taken.
+/* @src_info names the port the switch is to take the frame as arriving on,
+ * zero for the CPU port; @dst_info names the switch port the frame leaves by,
+ * zero for the switch to forward it; @tagged says the frame carries the QCA
+ * tag that named it, which comes off once the frame is sure to be taken.
  */
 static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netdev,
-				  struct sk_buff *skb, u16 dst_info, bool tagged)
+				  struct sk_buff *skb, u16 src_info,
+				  u16 dst_info, bool tagged)
 {
 	struct netdev_queue *txq = netdev_get_tx_queue(netdev, q->idx);
 	const struct skb_shared_info *shinfo = skb_shinfo(skb);
@@ -1032,6 +1045,7 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	txph = (struct edma_tx_preheader *)skb_push(skb, EDMA_TX_PREHDR_SIZE);
 	memset((void *)txph, 0, EDMA_TX_PREHDR_SIZE);
 
+	txph->src_info = src_info;
 	txph->dst_info = dst_info;
 	edma_tx_csum(skb, txph, proto);
 	edma_tx_vlan(skb, txph);
@@ -1766,6 +1780,13 @@ static const char edma_stat_names[][ETH_GSTRING_LEN] = {
 	"rx_fill_starved",
 	"tx_desc_error",
 	"tx_unnamed_frame",
+	"tx_src_parked",
+	"tx_src_drained",
+	"tx_src_dropped",
+	"tx_src_park_drv",
+	"tx_src_park_stack",
+	"tx_src_park_ring",
+	"tx_src_park_order",
 	"misc_error",
 };
 
@@ -1926,6 +1947,14 @@ static int edma_ndo_open(struct net_device *netdev)
 	for (i = 0; i < priv->num_queues; i++)
 		napi_enable(&priv->q[i].napi);
 
+	for (i = 0; i < priv->num_queues; i++) {
+		struct netdev_queue *txq = netdev_get_tx_queue(netdev, i);
+
+		__netif_tx_lock_bh(txq);
+		priv->q[i].src_up = true;
+		__netif_tx_unlock_bh(txq);
+	}
+
 	netif_tx_start_all_queues(netdev);
 	for (i = 0; i < priv->num_queues; i++) {
 		edma_tx_irq_unmask(&priv->q[i]);
@@ -1947,6 +1976,22 @@ static int edma_ndo_stop(struct net_device *netdev)
 	netif_tx_stop_all_queues(netdev);
 	for (i = 0; i < priv->num_queues; i++)
 		napi_disable(&priv->q[i].napi);
+
+	/* A source-port frame parked for a queue is not sent once the rings
+	 * are gone, and none is parked once the queue says it is down, which
+	 * it does under the lock a transmit parks under.
+	 */
+	for (i = 0; i < priv->num_queues; i++) {
+		struct edma_queue *q = &priv->q[i];
+		struct netdev_queue *txq = netdev_get_tx_queue(netdev, i);
+
+		__netif_tx_lock_bh(txq);
+		q->src_up = false;
+		q->stats.tx_src_dropped += skb_queue_len(&q->src_backlog);
+		skb_queue_purge(&q->src_backlog);
+		q->src_backlog_desc = 0;
+		__netif_tx_unlock_bh(txq);
+	}
 
 	return 0;
 }
@@ -2046,7 +2091,7 @@ static u16 edma_tx_port(struct sk_buff *skb, struct net_device *netdev,
 }
 
 static netdev_tx_t edma_xmit(struct sk_buff *skb, struct net_device *netdev,
-			     u16 dst_info, bool tagged)
+			     u16 src_info, u16 dst_info, bool tagged)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
 	struct edma_queue *q = &priv->q[skb_get_queue_mapping(skb)];
@@ -2076,7 +2121,7 @@ static netdev_tx_t edma_xmit(struct sk_buff *skb, struct net_device *netdev,
 	if (skb_cow_head(skb, netdev->needed_headroom))
 		goto drop;
 
-	return edma_ring_xmit(q, netdev, skb, dst_info, tagged);
+	return edma_ring_xmit(q, netdev, skb, src_info, dst_info, tagged);
 
 drop:
 	dev_kfree_skb_any(skb);
@@ -2091,7 +2136,7 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 	bool tagged;
 	u16 dst_info = edma_tx_port(skb, netdev, &tagged);
 
-	return edma_xmit(skb, netdev, dst_info, tagged);
+	return edma_xmit(skb, netdev, 0, dst_info, tagged);
 }
 
 /**
@@ -2108,12 +2153,206 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 netdev_tx_t qca_edma_port_xmit(struct sk_buff *skb, struct net_device *conduit,
 			       unsigned int port)
 {
-	return edma_xmit(skb, conduit, (EDMA_DST_PORT_TYPE << 8) |
+	return edma_xmit(skb, conduit, 0, (EDMA_DST_PORT_TYPE << 8) |
 			 (port & EDMA_DST_PORT_ID_MASK), false);
 }
 EXPORT_SYMBOL_GPL(qca_edma_port_xmit);
 
 static const struct net_device_ops edma_netdev_ops;
+
+/* What a parked frame needs to be sent later, kept in its control buffer: the
+ * frame is the driver's from the moment it is parked.
+ */
+struct edma_src_cb {
+	u16 ndesc;
+	u16 src_info;
+};
+
+static struct edma_src_cb *edma_src_cb(struct sk_buff *skb)
+{
+	BUILD_BUG_ON(sizeof(struct edma_src_cb) > sizeof(skb->cb));
+
+	return (struct edma_src_cb *)skb->cb;
+}
+
+/* Sends the parked frames, oldest first, for as long as the queue takes them.
+ * Called with the queue's transmit lock held. A frame the ring refuses stays
+ * at the head, so nothing behind it overtakes it.
+ */
+static void edma_src_drain_locked(struct edma_queue *q,
+				  struct netdev_queue *txq)
+{
+	struct net_device *netdev = q->priv->netdev;
+	struct sk_buff *skb;
+
+	while (!netif_xmit_frozen_or_stopped(txq) &&
+	       (skb = __skb_dequeue(&q->src_backlog))) {
+		struct edma_src_cb cb = *edma_src_cb(skb);
+
+		q->src_backlog_desc -= cb.ndesc;
+		/* The doorbell rings once, for the last frame of the run. */
+		netdev_xmit_set_more(!skb_queue_empty(&q->src_backlog));
+		if (edma_xmit(skb, netdev, cb.src_info, 0, false) ==
+		    NETDEV_TX_BUSY) {
+			__skb_queue_head(&q->src_backlog, skb);
+			q->src_backlog_desc += cb.ndesc;
+			break;
+		}
+		q->stats.tx_src_drained++;
+	}
+	netdev_xmit_set_more(false);
+}
+
+/* The completion's side of the same: takes the lock a transmit would. */
+static void edma_src_drain(struct edma_queue *q)
+{
+	struct netdev_queue *txq = netdev_get_tx_queue(q->priv->netdev, q->idx);
+
+	__netif_tx_lock(txq, smp_processor_id());
+	edma_src_drain_locked(q, txq);
+	__netif_tx_unlock(txq);
+}
+
+/**
+ * qca_edma_src_xmit - hand a finished frame to the switch as received on a port
+ * @skb: the frame, untagged, with skb->data at its Ethernet header
+ * @conduit: the EDMA conduit
+ * @port: the port number the switch takes the frame as coming from
+ *
+ * The descriptor carries @port as its source and no destination, so the
+ * switch looks the frame up as it would one received on @port instead of one
+ * from the CPU. The frame goes out on the transmit ring of the set the
+ * calling CPU's transmit queue maps to, under that queue's lock, as the
+ * conduit's own transmit would send it. For BH context.
+ *
+ * A frame the queue cannot take now, because its ring is full or the queue is
+ * stopped for the ring or for its byte limit, waits in a backlog of that
+ * queue as long as one ring and goes out, in order and ahead of later frames,
+ * when a completion makes room. Sending it another way instead would put it
+ * behind the frames the switch is still forwarding. A frame that finds the
+ * backlog full is dropped, as a full qdisc drops one.
+ *
+ * Return: %QCA_EDMA_SRC_SENT when the frame is on the ring,
+ * %QCA_EDMA_SRC_PARKED when it waits and %QCA_EDMA_SRC_DROPPED when it was
+ * freed for want of room. -EOPNOTSUPP for a GSO frame the engine cannot take
+ * whole, -ENETDOWN when the conduit is not running and -ENODEV when it is not
+ * an EDMA conduit leave the frame the caller's, with its contents unchanged,
+ * to send another way.
+ */
+int qca_edma_src_xmit(struct sk_buff *skb, struct net_device *conduit,
+		      unsigned int port)
+{
+	u16 src_info = (EDMA_DST_PORT_TYPE << 8) | (port & EDMA_SRC_PORT_MASK);
+	struct edma_priv *priv;
+	struct netdev_queue *txq;
+	struct edma_queue *q;
+	bool drv, stack;
+	u16 qi, ndesc;
+	int rc;
+
+	if (unlikely(conduit->netdev_ops != &edma_netdev_ops))
+		return -ENODEV;
+	if (unlikely(!netif_running(conduit) ||
+		     !netif_device_present(conduit)))
+		return -ENETDOWN;
+	if (skb_is_gso(skb) && edma_tx_needs_linearize(skb))
+		return -EOPNOTSUPP;
+
+	priv = netdev_priv(conduit);
+	qi = smp_processor_id() % conduit->real_num_tx_queues;
+	q = &priv->q[qi];
+	txq = netdev_get_tx_queue(conduit, qi);
+
+	__netif_tx_lock(txq, smp_processor_id());
+	if (unlikely(!q->src_up)) {
+		__netif_tx_unlock(txq);
+		return -ENETDOWN;
+	}
+
+	/* Frames already waiting go first. */
+	edma_src_drain_locked(q, txq);
+
+	drv = netif_tx_queue_stopped(txq);
+	stack = test_bit(__QUEUE_STATE_STACK_XOFF, &txq->state);
+	skb_set_queue_mapping(skb, qi);
+	skb->dev = conduit;
+
+	if (skb_queue_empty(&q->src_backlog) &&
+	    !netif_xmit_frozen_or_stopped(txq) &&
+	    edma_xmit(skb, conduit, src_info, 0, false) != NETDEV_TX_BUSY) {
+		rc = QCA_EDMA_SRC_SENT;
+		goto out;
+	}
+
+	/* The stop says why, or the ring refused, or the frames ahead. */
+	if (drv)
+		q->stats.tx_src_park_drv++;
+	if (stack)
+		q->stats.tx_src_park_stack++;
+	if (!drv && !stack) {
+		if (skb_queue_empty(&q->src_backlog))
+			q->stats.tx_src_park_ring++;
+		else
+			q->stats.tx_src_park_order++;
+	}
+
+	ndesc = edma_tx_ndesc(skb);
+	if (q->src_backlog_desc + ndesc > priv->tx_ring_size) {
+		kfree_skb(skb);
+		q->stats.tx_src_dropped++;
+		DEV_STATS_INC(conduit, tx_dropped);
+		rc = QCA_EDMA_SRC_DROPPED;
+		goto out;
+	}
+
+	edma_src_cb(skb)->ndesc = ndesc;
+	edma_src_cb(skb)->src_info = src_info;
+	q->src_backlog_desc += ndesc;
+	__skb_queue_tail(&q->src_backlog, skb);
+	q->stats.tx_src_parked++;
+	rc = QCA_EDMA_SRC_PARKED;
+
+	/* A completion that woke the queue before the frame was queued found
+	 * the backlog empty and left it, so the queue is looked at again.
+	 */
+	smp_mb();
+	edma_src_drain_locked(q, txq);
+
+out:
+	__netif_tx_unlock(txq);
+	return rc;
+}
+EXPORT_SYMBOL_GPL(qca_edma_src_xmit);
+
+/**
+ * qca_edma_src_stats - sum what the source-port transmits did, over all queues
+ * @conduit: the EDMA conduit
+ * @st: filled in, zero when @conduit is not an EDMA conduit
+ */
+void qca_edma_src_stats(struct net_device *conduit,
+			struct qca_edma_src_stats *st)
+{
+	struct edma_priv *priv;
+	unsigned int i;
+
+	memset(st, 0, sizeof(*st));
+	if (conduit->netdev_ops != &edma_netdev_ops)
+		return;
+
+	priv = netdev_priv(conduit);
+	for (i = 0; i < ARRAY_SIZE(priv->q); i++) {
+		const struct edma_stats *s = &priv->q[i].stats;
+
+		st->parked += READ_ONCE(s->tx_src_parked);
+		st->drained += READ_ONCE(s->tx_src_drained);
+		st->dropped += READ_ONCE(s->tx_src_dropped);
+		st->park_drv += READ_ONCE(s->tx_src_park_drv);
+		st->park_stack += READ_ONCE(s->tx_src_park_stack);
+		st->park_ring += READ_ONCE(s->tx_src_park_ring);
+		st->park_order += READ_ONCE(s->tx_src_park_order);
+	}
+}
+EXPORT_SYMBOL_GPL(qca_edma_src_stats);
 
 /**
  * qca_edma_switch_register - bind the switch behind an EDMA conduit
@@ -2585,6 +2824,7 @@ static int edma_probe(struct platform_device *pdev)
 		q->rxfill = priv->soc->rxfill_ring - i;
 		q->rxdesc = priv->soc->rxdesc_ring - i;
 		spin_lock_init(&q->tx_lock);
+		skb_queue_head_init(&q->src_backlog);
 	}
 
 	ret = edma_get_mac_address(netdev, dev->of_node);
