@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=cypress-firmware
 PKG_VERSION_REAL:=5.10.9-2022_0909
 PKG_VERSION:=$(subst _,.,$(subst -,.,$(PKG_VERSION_REAL)))
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/Infineon/ifx-linux-firmware/
@@ -51,33 +51,6 @@ define Package/cypress-firmware-43012-sdio/install
 endef
 
 $(eval $(call BuildPackage,cypress-firmware-43012-sdio))
-
-# Cypress 43430 SDIO Firmware
-define Package/cypress-firmware-43430-sdio
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW43430 FullMac SDIO firmware
-  PROVIDES:=brcmfmac-firmware-43430-sdio
-  CONFLICTS:=brcmfmac-firmware-43430-sdio
-endef
-
-define Package/cypress-firmware-43430-sdio/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac43430-sdio.bin \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac43430-sdio.clm_blob \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac43430-sdio.bin \
-		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.bin
-	$(LN) \
-		../cypress/cyfmac43430-sdio.clm_blob \
-		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.clm_blob
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-43430-sdio))
 
 # Cypress 43439 SDIO Firmware
 define Package/cypress-firmware-43439-sdio
