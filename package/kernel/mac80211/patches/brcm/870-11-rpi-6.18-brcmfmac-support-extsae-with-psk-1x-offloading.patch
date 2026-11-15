@@ -14,7 +14,7 @@ JIRA: SWWLAN-142424
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -2184,6 +2184,11 @@ brcmf_set_key_mgmt(struct net_device *nd
+@@ -2212,6 +2212,11 @@ brcmf_set_key_mgmt(struct net_device *nd
  		switch (sme->crypto.akm_suites[0]) {
  		case WLAN_AKM_SUITE_SAE:
  			val = WPA3_AUTH_SAE_PSK;
@@ -26,7 +26,7 @@ JIRA: SWWLAN-142424
  			break;
  		case WLAN_AKM_SUITE_FT_OVER_SAE:
  			val = WPA3_AUTH_SAE_PSK | WPA2_AUTH_FT;
-@@ -2486,7 +2491,8 @@ brcmf_cfg80211_connect(struct wiphy *wip
+@@ -2514,7 +2519,8 @@ brcmf_cfg80211_connect(struct wiphy *wip
  
  	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_FWSUP)) {
  		if (sme->crypto.psk) {
@@ -36,7 +36,7 @@ JIRA: SWWLAN-142424
  				if (WARN_ON(profile->use_fwsup !=
  					BRCMF_PROFILE_FWSUP_NONE)) {
  					err = -EINVAL;
-@@ -2510,7 +2516,8 @@ brcmf_cfg80211_connect(struct wiphy *wip
+@@ -2538,7 +2544,8 @@ brcmf_cfg80211_connect(struct wiphy *wip
  			err = brcmf_fil_iovar_int_set(ifp, "sup_wpa", 0);
  		}
  

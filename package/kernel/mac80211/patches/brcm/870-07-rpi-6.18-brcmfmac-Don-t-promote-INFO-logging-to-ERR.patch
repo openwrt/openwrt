@@ -16,8 +16,8 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/debug.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/debug.h
-@@ -67,7 +67,12 @@ void __brcmf_err(struct brcmf_bus *bus,
- #if defined(DEBUG) || defined(CONFIG_BRCM_TRACING)
+@@ -68,7 +68,12 @@ void __brcmf_err(struct brcmf_bus *bus,
+ #if defined(DEBUG) || defined(CPTCFG_BRCM_TRACING)
  
  /* For debug/tracing purposes treat info messages as errors */
 -#define brcmf_info brcmf_err

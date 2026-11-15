@@ -31,7 +31,7 @@ Signed-off-by: Bogdan Nicolae <bogdan.nicolae@acm.org>
  static int brcmf_cyw_set_sae_pwd(struct brcmf_if *ifp,
  				 struct cfg80211_crypto_settings *crypto)
  {
-@@ -124,7 +127,7 @@ int brcmf_cyw_mgmt_tx(struct wiphy *wiph
+@@ -123,7 +126,7 @@ int brcmf_cyw_mgmt_tx(struct wiphy *wiph
  	if (!ieee80211_is_auth(mgmt->frame_control))
  		return brcmf_cfg80211_mgmt_tx(wiphy, wdev, params, cookie);
  
