@@ -505,6 +505,12 @@ struct rtldsa_config {
 	void (*prepare_lag_fdb)(struct otto_l2_entry *e, int lag_group);
 	int (*lag_set_port_members)(struct otto_dsa_priv *priv, int group, u64 members,
 				    struct netdev_lag_upper_info *info);
+	/**
+	 * @lag_tx_uses_member_mask: Write only LAG members with lag_tx_enabled
+	 * to the trunk member mask and keep the others blocking in hardware
+	 * STP.
+	 */
+	bool lag_tx_uses_member_mask;
 	int (*lag_setup_algomask)(struct otto_dsa_priv *priv, int group,
 				  struct netdev_lag_upper_info *info);
 	int (*lag_set_distribution_algorithm)(struct otto_dsa_priv *priv,
