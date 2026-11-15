@@ -66,6 +66,11 @@ struct ppe_flow_entry {
 	 * with, after translation, source first.
 	 */
 	u64 xdev;
+	/* The device xdev names, by pointer: set with the index and cleared by
+	 * the netdev notifier when the device unregisters, before the grace
+	 * period its readers are bound by.
+	 */
+	struct net_device __rcu *xndev;
 	unsigned long ct;
 	u16 vid;
 	u8 xport;
@@ -979,6 +984,58 @@ static bool ppe_flow_shaper_path(struct qca_ppe_priv *priv)
 	return changed;
 }
 
+/* Takes the egress device of a flow handed to the host: its index goes where
+ * ppe_flow_xmit() reads the flags beside it, and the device itself where it
+ * reads it from. The netdev notifier clears the pointer when the device
+ * unregisters, and the entry is in the flow list that it walks by the time the
+ * flow lock this is called with is released.
+ */
+static void ppe_flow_xdev_set(struct qca_ppe_priv *priv,
+			      struct ppe_flow_entry *entry, int ifindex)
+{
+	lockdep_assert_held(&priv->flow_lock);
+
+	entry->xdev = ifindex;
+	rcu_read_lock();
+	rcu_assign_pointer(entry->xndev,
+			   dev_get_by_index_rcu(&init_net, ifindex));
+	rcu_read_unlock();
+}
+
+/* No flow hands a frame to a device that is unregistering. Frames already on
+ * their way to it hold it under RCU, which the unregistration waits out after
+ * this notification.
+ */
+static void ppe_flow_xdev_forget(struct qca_ppe_priv *priv,
+				 struct net_device *dev)
+{
+	struct ppe_flow_entry *entry;
+
+	lockdep_assert_held(&priv->flow_lock);
+
+	list_for_each_entry(entry, &priv->flow_list, list)
+		if (rcu_access_pointer(entry->xndev) == dev)
+			RCU_INIT_POINTER(entry->xndev, NULL);
+}
+
+/* The devices a frame is handed to by the indices that name them: the
+ * download shaper and the uplink. Called under the flow lock after either
+ * index changed.
+ */
+static void ppe_flow_ndev_refresh(struct qca_ppe_priv *priv)
+{
+	int dl = priv->dl_shaper, up = priv->uplink_dev;
+
+	lockdep_assert_held(&priv->flow_lock);
+
+	rcu_read_lock();
+	rcu_assign_pointer(priv->dl_ndev,
+			   dl ? dev_get_by_index_rcu(&init_net, dl) : NULL);
+	rcu_assign_pointer(priv->uplink_ndev,
+			   up ? dev_get_by_index_rcu(&init_net, up) : NULL);
+	rcu_read_unlock();
+}
+
 /* A shaper is named, and the device of that name can go and come back with
  * another ifindex: a PPPoE session that reconnects brings up a new ppp
  * device. While it is gone that direction is not shaped rather than sent
@@ -1030,6 +1087,11 @@ static void ppe_flow_shaper_track(struct qca_ppe_priv *priv,
 		}
 		ppe_flow_shaper_drop(priv, upload || uplink);
 	}
+
+	/* On every event: the devices of the names may have changed under an
+	 * unchanged index, and a device that is going must not be left behind.
+	 */
+	ppe_flow_ndev_refresh(priv);
 }
 
 /* Each half of the size check follows the device that owns it: the routing
@@ -1061,6 +1123,8 @@ static int ppe_flow_netdev_event(struct notifier_block *nb, unsigned long event,
 	    event == NETDEV_CHANGENAME || event == NETDEV_UP) {
 		guard(mutex)(&priv->flow_lock);
 		guard(mutex)(&priv->vlan_lock);
+		if (event == NETDEV_UNREGISTER)
+			ppe_flow_xdev_forget(priv, dev);
 		ppe_flow_shaper_track(priv, dev, event);
 		return NOTIFY_DONE;
 	}
@@ -1265,7 +1329,8 @@ static int ppe_flow_shape(struct qca_ppe_priv *priv, struct ppe_flow_data *data,
 	    ppe_flow_on_uplink(priv, port,
 			       data->vlan_valid ? data->vlan_id : 0,
 			       data->pppoe_valid ? data->pppoe_sid : 0, true)) {
-		entry->xdev = ul | PPE_XDEV_UL;
+		ppe_flow_xdev_set(priv, entry, ul);
+		entry->xdev |= PPE_XDEV_UL;
 		entry->xport = port + 1;
 		return QCA_PPE_CPU_PORT;
 	}
@@ -1276,7 +1341,7 @@ static int ppe_flow_shape(struct qca_ppe_priv *priv, struct ppe_flow_data *data,
 	if (dl && !data->pppoe_valid &&
 	    ppe_flow_on_uplink(priv, entry->iport, data->ivid, 0, false)) {
 		if (port != QCA_PPE_CPU_PORT) {
-			entry->xdev = data->odev->ifindex;
+			ppe_flow_xdev_set(priv, entry, data->odev->ifindex);
 			entry->xport = port + 1;
 		}
 		entry->xdev |= PPE_XDEV_DL;
@@ -1768,7 +1833,7 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 	}
 	xdev = entry->xdev;
 
-	dev = dev_get_by_index_rcu(dev_net(skb->dev), xdev & PPE_XDEV_IFINDEX);
+	dev = rcu_dereference_bh(entry->xndev);
 	if (unlikely(!dev || !netif_running(dev)))
 		goto drop;
 
@@ -1781,7 +1846,7 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 	up = READ_ONCE(priv->uplink_dev);
 	if ((xdev & (PPE_XDEV_UL | PPE_XDEV_PUSH)) == PPE_XDEV_UL && up &&
 	    up != dev->ifindex) {
-		uplink = dev_get_by_index_rcu(dev_net(dev), up);
+		uplink = rcu_dereference_bh(priv->uplink_ndev);
 		if (unlikely(!uplink || !netif_running(uplink)))
 			goto drop;
 	}
@@ -1820,8 +1885,7 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 	 * unshaped, not lost.
 	 */
 	if (xdev & PPE_XDEV_DL) {
-		shaper = dev_get_by_index_rcu(dev_net(dev),
-					      READ_ONCE(priv->dl_shaper));
+		shaper = rcu_dereference_bh(priv->dl_ndev);
 		if (likely(shaper && netif_running(shaper))) {
 			if (entry->vid)
 				__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
@@ -1901,6 +1965,7 @@ int ppe_flow_uplink_set(struct qca_ppe_priv *priv, const char *name)
 
 	WRITE_ONCE(priv->uplink_dev, ifindex);
 	strscpy(priv->uplink_name, name, IFNAMSIZ);
+	ppe_flow_ndev_refresh(priv);
 	ppe_flow_shaper_path(priv);
 	ppe_flow_shaper_drop(priv, false);
 	ppe_flow_shaper_drop(priv, true);
@@ -1960,6 +2025,7 @@ int ppe_flow_shaper_set(struct qca_ppe_priv *priv, bool upload,
 		} else {
 			WRITE_ONCE(priv->dl_shaper, ifindex);
 			strscpy(priv->dl_shaper_name, name, IFNAMSIZ);
+			ppe_flow_ndev_refresh(priv);
 		}
 
 		ppe_flow_shaper_drop(priv, upload);
@@ -2094,7 +2160,7 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 	port = ppe_flow_port_by_ifindex(priv, data->odev->ifindex);
 	if (port < 0 && ppe_cpu_xmit_ok(data)) {
 		port = QCA_PPE_CPU_PORT;
-		entry->xdev = data->odev->ifindex;
+		ppe_flow_xdev_set(priv, entry, data->odev->ifindex);
 	}
 	if (port < 0)
 		return port;
