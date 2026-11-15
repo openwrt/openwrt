@@ -22,5 +22,38 @@ int qca_edma_switch_register(struct net_device *conduit, struct dsa_switch *ds,
 void qca_edma_switch_unregister(struct net_device *conduit);
 netdev_tx_t qca_edma_port_xmit(struct sk_buff *skb, struct net_device *conduit,
 			       unsigned int port);
+/* What qca_edma_src_xmit() did with a frame it took. */
+#define QCA_EDMA_SRC_SENT	0
+#define QCA_EDMA_SRC_PARKED	1
+#define QCA_EDMA_SRC_DROPPED	2
+
+int qca_edma_src_xmit(struct sk_buff *skb, struct net_device *conduit,
+		      unsigned int port);
+
+/**
+ * struct qca_edma_src_stats - what the transmits that name a source port did
+ * @parked: frames that waited for room
+ * @drained: parked frames sent
+ * @dropped: frames freed for want of room, or on the way down
+ * @park_drv: parks with the queue stopped for its ring
+ * @park_stack: parks with the queue stopped for its byte limit
+ * @park_ring: parks with the queue running, the ring refusing the frame
+ * @park_order: parks behind frames already waiting, with the queue running
+ *
+ * A park counts under every stop it found, so one with both stops set is in
+ * @park_drv and @park_stack.
+ */
+struct qca_edma_src_stats {
+	u64 parked;
+	u64 drained;
+	u64 dropped;
+	u64 park_drv;
+	u64 park_stack;
+	u64 park_ring;
+	u64 park_order;
+};
+
+void qca_edma_src_stats(struct net_device *conduit,
+			struct qca_edma_src_stats *st);
 
 #endif
