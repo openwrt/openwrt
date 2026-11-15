@@ -60,6 +60,8 @@ int qca_edma_src_xmit(struct sk_buff *skb, struct net_device *conduit,
  * @park_stack: parks with the queue stopped for its byte limit
  * @park_ring: parks with the queue running, the ring refusing the frame
  * @park_order: parks behind frames already waiting, with the queue running
+ * @split: GSO frames the engine cannot take whole, cut into segments here
+ * @split_segs: the segments they were cut into
  *
  * A park counts under every stop it found, so one with both stops set is in
  * @park_drv and @park_stack.
@@ -72,6 +74,8 @@ struct qca_edma_src_stats {
 	u64 park_stack;
 	u64 park_ring;
 	u64 park_order;
+	u64 split;
+	u64 split_segs;
 };
 
 void qca_edma_src_stats(struct net_device *conduit,

@@ -383,6 +383,8 @@ struct edma_stats {
 	u64 tx_src_park_stack;
 	u64 tx_src_park_ring;
 	u64 tx_src_park_order;
+	u64 tx_src_split;
+	u64 tx_src_split_segs;
 };
 
 struct edma_soc_data {
