@@ -621,7 +621,7 @@ else
 	  $$(if $$(Package/$(1)/PROVIDES),--info "provides:$$(Package/$(1)/PROVIDES)") \
 	  $$(if $$(Package/$(1)/PRIORITY),--info "provider-priority:$$(Package/$(1)/PRIORITY)") \
 	  $$(APK_SCRIPTS_$(1)) \
-	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \
+	  --info "depends:$$(strip $$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends)) $(foreach conflict,$(CONFLICTS),!$(conflict)))" \
 	  --files "$$(IDIR_$(1))" \
 	  $(if $(CONFIG_SIGN_EACH_PACKAGE),--sign $(BUILD_KEY_APK_SEC),) \
 	  --output "$$(PACK_$(1))"
