@@ -100,6 +100,35 @@ switch() {
     check
 }
 
+# Boot flags with checksums, see econet_benv_* in /lib/functions/econet.sh
+main_benv() {
+    . /lib/functions/econet.sh
+
+    case "$1" in
+    openwrt)
+        echo "Switching boot flag to openwrt"
+        econet_benv_set sw_commit=0 sw_active=0 sw_tryactive=0
+        echo "Flash write complete"
+        ;;
+    factory)
+        echo "Switching boot flag to factory"
+        econet_benv_set sw_commit=1 sw_active=1 sw_tryactive=0
+        echo "Flash write complete"
+        ;;
+    esac
+
+    case "$(econet_benv_get sw_commit)$(econet_benv_get sw_active)" in
+    00) echo "Current boot flag set to OS A (OpenWrt)" ;;
+    11) echo "Current boot flag set to OS B (Factory)" ;;
+    *) echo "Current boot flag unknown:" $(econet_benv_show) ;;
+    esac
+
+    if [ "$1" != openwrt ] && [ "$1" != factory ]; then
+        echo "Usage: $0 factory|openwrt  # Change boot flag to Factory OS or OpenWrt"
+        exit 1
+    fi
+}
+
 main() {
     case "$(board_name)" in
     tplink,archer-vr1200v-v2)
@@ -163,6 +192,10 @@ main() {
         code_offset=73
         code_openwrt=0000
         code_factory=0101
+        ;;
+    dlink,r18)
+        main_benv "$@"
+        exit 0
         ;;
     jiofiber,jcow407|\
     jiofiber,jcow414)

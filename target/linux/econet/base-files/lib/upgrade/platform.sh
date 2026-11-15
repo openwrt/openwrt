@@ -5,6 +5,7 @@ platform_check_image() {
 	chinamobile,gs3101|\
 	dasan,h660gm-a-airtel|\
 	dasan,h660gm-a-generic|\
+	dlink,r18|\
 	jiofiber,jcow407|\
 	jiofiber,jcow414)
 		return 0
@@ -21,6 +22,7 @@ platform_do_upgrade() {
 	chinamobile,gs3101|\
 	dasan,h660gm-a-airtel|\
 	dasan,h660gm-a-generic|\
+	dlink,r18|\
 	jiofiber,jcow407|\
 	jiofiber,jcow414)
 		CI_KERNPART="tclinux_kernel"
