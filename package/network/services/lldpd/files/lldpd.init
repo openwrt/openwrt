@@ -126,11 +126,15 @@ get_config_restart_hash() {
 resolve_bridge_member_ports() {
 	local _lower _bridge _port _name _ports=""
 
-	_lower=$(ls "/sys/class/net/$1/" 2>/dev/null | grep "^lower_" | head -1)
-	[ -n "$_lower" ] || return 1
+	if [ -d "/sys/class/net/$1/bridge" ]; then
+		_bridge="$1"
+	else
+		_lower=$(ls "/sys/class/net/$1/" 2>/dev/null | grep "^lower_" | head -1)
+		[ -n "$_lower" ] || return 1
 
-	_bridge="${_lower#lower_}"
-	[ -d "/sys/class/net/$_bridge/bridge" ] || return 1
+		_bridge="${_lower#lower_}"
+		[ -d "/sys/class/net/$_bridge/bridge" ] || return 1
+	fi
 
 	for _port in $(ls "/sys/class/net/$_bridge/" 2>/dev/null | grep "^lower_"); do
 		_name="${_port#lower_}"
