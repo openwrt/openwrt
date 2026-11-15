@@ -130,7 +130,7 @@ define Device/lemaker_bananapro
   DEVICE_VENDOR := LeMaker
   DEVICE_MODEL := Banana Pro
   DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi kmod-brcmfmac \
-	cypress-firmware-43362-sdio wpad-basic-mbedtls
+	brcmfmac-firmware-43362-sdio wpad-basic-mbedtls
   SOC := sun7i-a20
 endef
 TARGET_DEVICES += lemaker_bananapro
@@ -176,7 +176,7 @@ define Device/merrii_hummingbird
   $(call Device/FitImageGzip)
   DEVICE_VENDOR := Merrii
   DEVICE_MODEL := Hummingbird
-  DEVICE_PACKAGES:=kmod-brcmfmac cypress-firmware-43362-sdio wpad-basic-mbedtls
+  DEVICE_PACKAGES:=kmod-brcmfmac brcmfmac-firmware-43362-sdio wpad-basic-mbedtls
   SOC := sun6i-a31
 endef
 TARGET_DEVICES += merrii_hummingbird
