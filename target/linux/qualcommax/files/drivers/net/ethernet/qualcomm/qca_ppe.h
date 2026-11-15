@@ -1513,6 +1513,16 @@ struct ppe_vp_flow {
 	struct ppe_vp_key key;
 };
 
+/* The flow a CPU last found for a frame, with the table's generation it was
+ * found in: while that is still the table's, no flow has come or gone since,
+ * and a frame of the same tuple is that flow's.
+ */
+struct ppe_vp_cache {
+	struct ppe_vp_key key;
+	struct ppe_vp_flow *f;
+	unsigned int gen;
+};
+
 struct qca_ppe_priv {
 	struct dsa_switch ds;
 	struct regmap *regmap;
@@ -1674,6 +1684,11 @@ struct qca_ppe_priv {
 	unsigned int vp_next;
 	struct hlist_head *vp_hash;
 	u32 vp_hash_mask;
+	/* Counts the flows added to and removed from vp_hash, under flow_lock;
+	 * read without it, with the per-CPU cache of the last flow found.
+	 */
+	unsigned int vp_gen;
+	struct ppe_vp_cache __percpu *vp_cache;
 	bool vp_stopped;
 	struct notifier_block vp_nb;
 	u16 port_pvid[QCA_PPE_MAX_PORTS];
