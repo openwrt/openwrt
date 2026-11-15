@@ -331,10 +331,12 @@ static unsigned int ppe_vp_hook(void *data, struct sk_buff *skb,
 	len = skb->len + ETH_HLEN;
 	segs = skb_is_gso(skb) ? skb_shinfo(skb)->gso_segs : 0;
 
-	/* The frame is not sent the host's way when the ring has no room: it
-	 * would arrive behind the frames of its flow the switch is still
-	 * forwarding. The transmit keeps it, in order, until the ring has room,
-	 * and frees it when it has kept as many as a ring holds.
+	/* The frame is not sent the host's way when the ring has no room, or
+	 * when the engine cannot take it whole: it would arrive behind the
+	 * frames of its flow the switch is still forwarding. The transmit
+	 * keeps it, in order, until the ring has room, cuts an aggregate the
+	 * engine cannot take into its segments, and frees what it cannot
+	 * keep. Only a conduit that cannot be sent on refuses the frame.
 	 */
 	skb_push(skb, ETH_HLEN);
 	rc = qca_edma_src_xmit(skb, conduit, vp->id);
@@ -740,9 +742,10 @@ static int ppe_vp_show(struct seq_file *s, void *data)
 	/* The backlog is the conduit's, so it is counted for every port. */
 	qca_edma_src_stats(dsa_to_port(&priv->ds, QCA_PPE_CPU_PORT)->conduit,
 			   &es);
-	seq_printf(s, "backlog parked %llu drained %llu dropped %llu stop: drv %llu stack %llu ring %llu order %llu\n",
+	seq_printf(s, "backlog parked %llu drained %llu dropped %llu stop: drv %llu stack %llu ring %llu order %llu split %llu segs %llu\n",
 		   es.parked, es.drained, es.dropped, es.park_drv,
-		   es.park_stack, es.park_ring, es.park_order);
+		   es.park_stack, es.park_ring, es.park_order, es.split,
+		   es.split_segs);
 	seq_printf(s, "used %u of %u\n", used,
 		   priv->data->first_vport ?
 		   PPE_MAX_VPORT - priv->data->first_vport : 0);
