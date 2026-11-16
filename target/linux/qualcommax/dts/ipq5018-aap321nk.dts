@@ -1,0 +1,498 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Airtel/Nokia AAP321NK IDU (Qualcomm IPQ5018)
+ *
+ * Modeled on the Linksys MX2000 / GL-B3000 (same SoC, same radio pair:
+ * IPQ5018 integrated 2.4 GHz + QCN6122 5 GHz). Hardware facts taken from
+ * the vendor DTB extracted from the live device (/sys/firmware/fdt).
+ *
+ * Ethernet topology (from vendor ess-instance, num_devices = 2):
+ *
+ *    _______________________         _______________________
+ *   |        IPQ5018        |       |        QCA8337        |
+ *   | +------+   +--------+ |       | +--------+   +------+ |
+ *   | | MAC0 |---| GE Phy |-+--WAN  | |  Phy0  |---| MAC1 |-+-- LAN4
+ *   | +------+   +--------+ |       | +--------+   +------+ |
+ *   | +------+   +--------+ |       | +--------+   +------+ |
+ *   | | MAC1 |---| Uniphy |-+-SGMII-+-| SerDes |   |  ...  |-+-- LAN1..3
+ *   | +------+   +--------+ |       | +--------+   +------+ |
+ *   |_______________________|       |_______________________|
+ *
+ * MAC0 -> internal GE Phy (mdio0, addr 7)           = WAN
+ * MAC1 -> Uniphy -> SGMII -> QCA8337 (mdio1)        = LAN1..LAN4 (phy 0..3)
+ */
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Airtel/Nokia AAP321NK";
+	compatible = "airtel,aap321nk", "qcom,ipq5018";
+
+	aliases {
+		serial0 = &blsp1_uart1;
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+		label-mac-device = <&gmac0>;
+		led-boot = &led_pwr_white;
+		led-failsafe = &led_pwr_green;
+		led-running = &led_pwr_white;
+		led-upgrade = &led_pwr_green;
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1 swiotlb=1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		wps-button {
+			label = "wps";
+			gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		reset-button {
+			label = "reset";
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&leds_pins>;
+		pinctrl-names = "default";
+
+		led_pwr_white: power-white {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_pwr_green: power-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_ppp: power-ppp {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_ephy: power-ephy {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
+};
+
+// MAC0 -> GE Phy -> WAN
+&gmac0 {
+	status = "okay";
+
+	label = "wan";
+
+	nvmem-cells = <&macaddr_art 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+// MAC1 ---SGMII---> QCA8337 SerDes
+&gmac1 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+
+	nvmem-cells = <&macaddr_art 1>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+	/*
+	 * The AAP321NK exposes only TWO physical LAN jacks (+ one WAN on the
+	 * GE-PHY). They are wired to QCA8337 phy1 and phy2; phy0/phy3 have no
+	 * jack, so only these two switch user-ports are defined.
+	 */
+	// QCA8337 Phy1 -> LAN1
+	qca8337_1: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	// QCA8337 Phy2 -> LAN2
+	qca8337_2: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	// QCA8337 switch
+	switch1: ethernet-switch@17 {
+		compatible = "qca,qca8337";
+		reg = <17>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@2 {
+				reg = <2>;
+				label = "lan1";
+				phy-handle = <&qca8337_1>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-handle = <&qca8337_2>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&gmac1>;
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		nand-ecc-engine = <&qpic_nand>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0x140000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "0:MIBIB";
+				reg = <0x140000 0x140000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x280000 0x100000>;
+				read-only;
+			};
+
+			partition@380000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x380000 0x100000>;
+				read-only;
+			};
+
+			partition@480000 {
+				label = "0:QSEE";
+				reg = <0x480000 0x200000>;
+				read-only;
+			};
+
+			partition@680000 {
+				label = "0:QSEE_1";
+				reg = <0x680000 0x200000>;
+				read-only;
+			};
+
+			partition@880000 {
+				label = "0:DEVCFG";
+				reg = <0x880000 0x100000>;
+				read-only;
+			};
+
+			partition@980000 {
+				label = "0:DEVCFG_1";
+				reg = <0x980000 0x100000>;
+				read-only;
+			};
+
+			partition@a80000 {
+				label = "0:CDT";
+				reg = <0xa80000 0x100000>;
+				read-only;
+			};
+
+			partition@b80000 {
+				label = "0:CDT_1";
+				reg = <0xb80000 0x100000>;
+				read-only;
+			};
+
+			partition@c80000 {
+				label = "0:APPSBLENV";
+				reg = <0xc80000 0x140000>;
+			};
+
+			partition@dc0000 {
+				label = "RI";
+				reg = <0xdc0000 0x2c0000>;
+				read-only;
+			};
+
+			partition@1080000 {
+				label = "0:APPSBL";
+				reg = <0x1080000 0x1c0000>;
+				read-only;
+			};
+
+			partition@1240000 {
+				label = "0:APPSBL_1";
+				reg = <0x1240000 0x1c0000>;
+				read-only;
+			};
+
+			partition@1400000 {
+				label = "0:ART";
+				reg = <0x1400000 0x140000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@1540000 {
+				label = "cfg";
+				reg = <0x1540000 0x2000000>;
+			};
+
+			partition@3540000 {
+				label = "cfg_1";
+				reg = <0x3540000 0x2000000>;
+			};
+
+			partition@5540000 {
+				label = "0:TRAINING";
+				reg = <0x5540000 0x80000>;
+			};
+
+			partition@55c0000 {
+				label = "rootfs";
+				reg = <0x55c0000 0x6400000>;
+			};
+
+			partition@b9c0000 {
+				label = "rootfs_1";
+				reg = <0xb9c0000 0x6400000>;
+			};
+
+			partition@11dc0000 {
+				label = "log";
+				reg = <0x11dc0000 0x2000000>;
+			};
+
+			partition@13dc0000 {
+				label = "extfs";
+				reg = <0x13dc0000 0xc00000>;
+			};
+
+			partition@149c0000 {
+				label = "user_data";
+				reg = <0x149c0000 0xaac0000>;
+			};
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio23", "gpio38";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	leds_pins: leds-state {
+		pins = "gpio10", "gpio12", "gpio13", "gpio30";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	serial_0_pins: uart0-state {
+		pins = "gpio20", "gpio21";
+		function = "blsp0_uart0";
+		bias-disable;
+	};
+};
+
+&q6v5_wcss {
+	/*
+	 * boot-args MUST match the stock Airtel firmware's expectation verbatim
+	 * (taken from the vendor DTS) — the Q6 fw validates the per-userpd boot
+	 * info written to SMEM and a mismatch fatals as "err_smem_ver.2.1",
+	 * crashing the whole Q6. The generic single-entry mx2000-style layout
+	 * (QCN6122 on UPD2) does NOT work on this unit; the QCN6122 must be on
+	 * UPD3 and a second type-2 UPD2 entry is required. With this exact layout
+	 * both radios (2.4 GHz internal + 5 GHz QCN6122) come up cleanly.
+	 *   entry1: type1(PCIE0) len4 UPD3 reset-gpio15
+	 *   entry2: type2        len4 UPD2 val0x12
+	 */
+	boot-args = <
+			0x01 0x04 0x03 0x0f 0x00 0x00
+			0x02 0x04 0x02 0x12 0x00 0x00>;
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,ath11k-calibration-variant = "Airtel-AAP321NK";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+&wifi1 {
+	/*
+	 * QCN6122 5 GHz radio. Works once &q6v5_wcss boot-args matches the stock
+	 * vendor layout (see above) — board.bin (vendor BDF) + caldata from
+	 * 0:ART @0x26800 are supplied via files/ overlay + 11-ath11k-caldata.
+	 */
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,ath11k-calibration-variant = "Airtel-AAP321NK";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4d100000>;
+	qcom,m3-dump-addr = <0x4df00000>;
+};
