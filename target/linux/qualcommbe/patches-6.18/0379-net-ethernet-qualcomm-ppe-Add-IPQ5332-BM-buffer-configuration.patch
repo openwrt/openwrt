@@ -1,0 +1,103 @@
+From cddef72e7ec91fd5789c88e5606de50e85309797 Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Wed, 30 Sep 2026 21:39:53 +0200
+Subject: [PATCH] net: ethernet: qualcomm: ppe: Add IPQ5332 BM buffer
+ configuration
+
+IPQ5332 has ten BM ports: ports 0-7 serve EDMA and ports 8-9 serve the
+two Ethernet ports. Its smaller buffer pool needs different reserved
+buffers and flow-control thresholds.
+
+Configure 360 buffers for group0, 12 preallocated buffers per BM port,
+and the IPQ5332 thresholds from QSDK 14.0.1595.1665 qca-ssdk revision
+48484d531927b070b996685f1570aff3bccb9c32, src/init/ssdk_hppe.c.
+
+Use the existing PPE type dispatch to select this configuration and
+the ten-port BM table size. The BM register addresses are shared with
+IPQ9574.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -280,6 +280,37 @@ static const struct ppe_bm_port_config i
+ 	},
+ };
+ 
++/* IPQ5332 BM group0 shared buffer limit. */
++static const int ipq5332_ppe_bm_group_config = 360;
++
++/* IPQ5332: BM ports 0-7 serve EDMA, ports 8-9 serve ports 1-2. */
++static const struct ppe_bm_port_config ipq5332_ppe_bm_port_config[] = {
++	{
++		/* Buffer configuration for the BM port ID 0-7 of EDMA. */
++		.port_id_start	= 0,
++		.port_id_end	= 7,
++		.pre_alloc	= 12,
++		.in_fly_buf	= 40,
++		.ceil		= 30,
++		.weight		= 7,
++		.resume_offset	= 5,
++		.resume_ceil	= 20,
++		.dynamic	= true,
++	},
++	{
++		/* Buffer configuration for the BM port ID 8-9 of PPE ports. */
++		.port_id_start	= 8,
++		.port_id_end	= 9,
++		.pre_alloc	= 12,
++		.in_fly_buf	= 128,
++		.ceil		= 48,
++		.weight		= 7,
++		.resume_offset	= 5,
++		.resume_ceil	= 20,
++		.dynamic	= true,
++	},
++};
++
+ /* QM fetches the packet from PPE buffer management for transmitting the
+  * packet out. The QM group configuration limits the total number of buffers
+  * enqueued by all PPE hardware queues.
+@@ -1919,6 +1950,11 @@ static int ppe_config_bm(struct ppe_devi
+ 		port_cfg_cnt = ARRAY_SIZE(ipq5424_ppe_bm_port_config);
+ 		group_cfg = ipq5424_ppe_bm_group_config;
+ 		break;
++	case IPQ5332_PPE:
++		port_cfg = ipq5332_ppe_bm_port_config;
++		port_cfg_cnt = ARRAY_SIZE(ipq5332_ppe_bm_port_config);
++		group_cfg = ipq5332_ppe_bm_group_config;
++		break;
+ 	default:
+ 		dev_err(ppe_dev->dev, "Invalid PPE type %d\n", ppe_dev->type);
+ 		return -EINVAL;
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -415,19 +415,23 @@
+ #define PPE_PSCH_SCH_CFG_TBL_DES_SECOND_PORT_EN	BIT(16)
+ #define PPE_PSCH_SCH_CFG_TBL_DES_SECOND_PORT	GENMASK(20, 17)
+ 
+-/* There are 15 BM ports on IPQ9574 and 19 BM ports on IPQ5424, and
+- * 4 BM groups supported by PPE. On IPQ9574, BM port (0-7) is for EDMA
++/* There are 15 BM ports on IPQ9574, 19 on IPQ5424 and 10 on IPQ5332,
++ * and 4 BM groups supported by PPE. On IPQ9574, BM port (0-7) is for EDMA
+  * port 0, BM port (8-13) is for PPE physical port 1-6 and BM port 14
+  * is for EIP port. On IPQ5424, BM port (0-15) is for EDMA port 0 and
+- * BM port (16-18) is for PPE physical port 1-3.
++ * BM port (16-18) is for PPE physical port 1-3. On IPQ5332, BM port
++ * (0-7) is for EDMA port 0 and BM port (8-9) is for PPE physical port 1-2.
+  *
+  * The per-BM-port tables PPE_BM_PORT_FC_MODE and PPE_BM_PORT_FC_CFG_TBL
+- * are at the same address on both SoCs, IPQ5424 only has more entries.
++ * are at the same address on all three SoCs, with different entry counts.
++ * IPQ5332 also shares the remaining BM table addresses with IPQ9574.
+  */
+ #define PPE_BM_PORT_IPQ9574_ENTRIES		15
+ #define PPE_BM_PORT_IPQ5424_ENTRIES		19
++#define PPE_BM_PORT_IPQ5332_ENTRIES		10
+ #define PPE_BM_PORT_ENTRIES(ppe_dev)						\
+-	((ppe_dev)->type == IPQ5424_PPE ? PPE_BM_PORT_IPQ5424_ENTRIES :	\
++	((ppe_dev)->type == IPQ5332_PPE ? PPE_BM_PORT_IPQ5332_ENTRIES :	\
++	 (ppe_dev)->type == IPQ5424_PPE ? PPE_BM_PORT_IPQ5424_ENTRIES :	\
+ 					  PPE_BM_PORT_IPQ9574_ENTRIES)
+ 
+ #define PPE_BM_PORT_FC_MODE_ADDR		0x600100

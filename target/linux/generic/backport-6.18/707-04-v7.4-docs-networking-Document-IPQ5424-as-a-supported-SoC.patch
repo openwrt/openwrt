@@ -1,0 +1,35 @@
+From ff5f9cb0c28d3da55c32a9d1e5675c9c1df2a623 Mon Sep 17 00:00:00 2001
+From: Luo Jie <jie.luo@oss.qualcomm.com>
+Date: Sun, 11 Oct 2026 06:02:10 -0700
+Subject: [PATCH] docs: networking: Document IPQ5424 as a supported SoC
+
+Update the qualcomm PPE driver documentation to list IPQ5424 among the
+supported SoCs, and describe the per-SoC PPE hardware differences.
+
+The IPQ5424 PPE reuses the same switch core as IPQ9574, but runs at a clock
+rate of 375 MHz and supports only 3 front panel ports along with the EDMA
+FIFO port for host CPU communication. The EIP FIFO port is not available on
+IPQ5424.
+
+Signed-off-by: Luo Jie <jie.luo@oss.qualcomm.com>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20261011-qcom_ipq5424_ppe-v2-4-8c7b057e2c43@oss.qualcomm.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+--- a/Documentation/networking/device_drivers/ethernet/qualcomm/ppe/ppe.rst
++++ b/Documentation/networking/device_drivers/ethernet/qualcomm/ppe/ppe.rst
+@@ -167,6 +167,14 @@ PPE Driver Supported SoCs
+ The PPE driver supports the following IPQ SoC:
+ 
+ - IPQ9574
++    The PPE runs at a clock rate of 353 MHz. The switch core has 6 front panel
++    ports (port1 to port6) and two FIFO interfaces: the EDMA FIFO (port0) for
++    the host CPU communication and the EIP FIFO (port7) for the EIP engine.
++- IPQ5424
++    The PPE reuses the same switch core as IPQ9574 and runs at a clock rate of
++    375 MHz. It supports 3 front panel ports (port1 to port3) with MAC0 to MAC2,
++    and only the EDMA FIFO interface (port0) for the host CPU communication. The
++    EIP FIFO and port4 to port6 are not available.
+ 
+ 
+ Enabling the Driver

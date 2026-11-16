@@ -646,7 +646,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  #include "ppe.h"
  #include "ppe_config.h"
  #include "ppe_debugfs.h"
-@@ -206,10 +207,16 @@ static int qcom_ppe_probe(struct platfor
+@@ -293,10 +294,16 @@ static int qcom_ppe_probe(struct platfor
  	if (ret)
  		return dev_err_probe(dev, ret, "PPE HW config failed\n");
  
@@ -664,7 +664,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  
  	ppe_debugfs_setup(ppe_dev);
  	platform_set_drvdata(pdev, ppe_dev);
-@@ -224,6 +231,7 @@ static void qcom_ppe_remove(struct platf
+@@ -311,6 +318,7 @@ static void qcom_ppe_remove(struct platf
  	ppe_dev = platform_get_drvdata(pdev);
  	ppe_debugfs_teardown(ppe_dev);
  	ppe_port_mac_deinit(ppe_dev);
@@ -674,7 +674,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  }
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
-@@ -800,6 +800,259 @@
+@@ -853,6 +853,259 @@
  #define XGMAC_RXDISCARD_GB_ADDR			0x9AC
  #define XGMAC_RXDISCARDBYTE_GB_ADDR		0x9B4
  

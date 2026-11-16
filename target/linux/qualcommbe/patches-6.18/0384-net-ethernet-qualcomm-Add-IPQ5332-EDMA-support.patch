@@ -1,0 +1,88 @@
+From 43645c0632dbf27fe4508ad9ecc96a314e1e1aac Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Sun, 19 Apr 2026 00:00:00 +0200
+Subject: [PATCH] net: ethernet: qualcomm: Add IPQ5332 EDMA support
+
+IPQ5332 has fewer EDMA transmit and receive rings than IPQ9574. Select
+its ring layout and two external ports using the PPE type, and reject
+unsupported PPE types.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ drivers/net/ethernet/qualcomm/ppe/edma.c | 51 +++++++++++++++++++++++-
+ 1 file changed, 50 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -86,6 +86,34 @@ static const char * const clock_name[EDM
+ 	[EDMA_APB_CLK] = "apb",
+ };
+ 
++/* Rx Fill ring info for IPQ5332. */
++static struct edma_ring_info ipq5332_rxfill_ring_info = {
++	.max_rings = 8,
++	.ring_start = 4,
++	.num_rings = 4,
++};
++
++/* Rx ring info for IPQ5332. */
++static struct edma_ring_info ipq5332_rx_ring_info = {
++	.max_rings = 16,
++	.ring_start = 12,
++	.num_rings = 4,
++};
++
++/* Tx ring info for IPQ5332. */
++static struct edma_ring_info ipq5332_tx_ring_info = {
++	.max_rings = 24,
++	.ring_start = 4,
++	.num_rings = 12,
++};
++
++/* Tx complete ring info for IPQ5332. */
++static struct edma_ring_info ipq5332_txcmpl_ring_info = {
++	.max_rings = 24,
++	.ring_start = 4,
++	.num_rings = 12,
++};
++
+ /* Rx Fill ring info for IPQ9574. */
+ static struct edma_ring_info ipq9574_rxfill_ring_info = {
+ 	.max_rings = 8,
+@@ -114,6 +142,17 @@ static struct edma_ring_info ipq9574_txc
+ 	.num_rings = 24,
+ };
+ 
++/* HW info for IPQ5332. */
++static struct edma_hw_info ipq5332_hw_info = {
++	.rxfill = &ipq5332_rxfill_ring_info,
++	.rx = &ipq5332_rx_ring_info,
++	.tx = &ipq5332_tx_ring_info,
++	.txcmpl = &ipq5332_txcmpl_ring_info,
++	.max_ports = 2,
++	.napi_budget_rx = 128,
++	.napi_budget_tx = 512,
++};
++
+ /* HW info for IPQ9574. */
+ static struct edma_hw_info ipq9574_hw_info = {
+ 	.rxfill = &ipq9574_rxfill_ring_info,
+@@ -850,7 +889,17 @@ int edma_setup(struct ppe_device *ppe_de
+ 	if (!edma_ctx)
+ 		return -ENOMEM;
+ 
+-	edma_ctx->hw_info = &ipq9574_hw_info;
++	switch (ppe_dev->type) {
++	case IPQ9574_PPE:
++		edma_ctx->hw_info = &ipq9574_hw_info;
++		break;
++	case IPQ5332_PPE:
++		edma_ctx->hw_info = &ipq5332_hw_info;
++		break;
++	default:
++		return dev_err_probe(dev, -ENODEV, "Unsupported PPE type %d\n",
++				     ppe_dev->type);
++	}
+ 	edma_ctx->ppe_dev = ppe_dev;
+ 	edma_ctx->rx_buf_size = rx_buff_size;
+ 
