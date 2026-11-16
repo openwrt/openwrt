@@ -71,9 +71,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	/* For PCIC reset logic is inverted, 0:assert 1:deassert*/
 +	if (addr == REG_NP_SCU_PCIC)
-+		val |= assert ? 0 : BIT(id % RST_NR_PER_BANK);
++		val = assert ? 0 : BIT(id % RST_NR_PER_BANK);
 +	else
-+		val |= assert ? BIT(id % RST_NR_PER_BANK) : 0;
++		val = assert ? BIT(id % RST_NR_PER_BANK) : 0;
  
  	regmap_update_bits(rst_data->map, addr, BIT(id % RST_NR_PER_BANK),
 -			   assert ? BIT(id % RST_NR_PER_BANK) : 0);
