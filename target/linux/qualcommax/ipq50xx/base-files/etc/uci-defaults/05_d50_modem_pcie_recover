@@ -1,0 +1,75 @@
+#!/bin/sh
+
+# On the Xunison Exigo Hub D50 5G the Quectel RM500Q-AE sometimes misses the
+# PCIe link at boot (seen on the first boot after a U-Boot web-recovery
+# install). The kernel only waits about 1 s for the link and the link does not
+# train by itself afterwards, although the modem is up on USB. A soft restart
+# of the modem over its USB AT port brings the link up within a few seconds,
+# and a rescan then enumerates it.
+#
+# Only acts when the modem is missing from PCIe and is set to PCIe data mode
+# (no USB network interface). Runs before logd, so it logs to the kernel log.
+# Exits 1 only when the recovery failed, so it is tried again on the next boot.
+
+. /lib/functions.sh
+
+log() {
+	echo "modem_pcie_recover: $*" > /dev/kmsg
+}
+
+recover_d50_modem() {
+	local rp=/sys/devices/platform/soc@0/80000000.pcie/pci0001:00/0001:00:00.0
+	local usb at i j
+
+	[ -d "$rp" ] || return 0
+	[ -d "$rp/0001:01:00.0" ] && return 0
+
+	for i in $(seq 20); do
+		for j in /sys/bus/usb/devices/*; do
+			[ "$(cat "$j/idVendor" 2>/dev/null)" = 2c7c ] && usb=$j && break 2
+		done
+		sleep 1
+	done
+	[ -n "$usb" ] || {
+		log "modem missing from PCIe and USB"
+		return 1
+	}
+
+	# USB data mode adds a network interface (4); leave that alone
+	[ -d "$usb:1.4" ] && return 0
+
+	for i in $(seq 10); do
+		at=$(ls "$usb:1.2" 2>/dev/null | grep -m1 '^ttyUSB')
+		[ -c "/dev/$at" ] && break
+		sleep 1
+	done
+	[ -c "/dev/$at" ] || {
+		log "modem missing from PCIe, no AT port on USB"
+		return 1
+	}
+
+	log "modem missing from PCIe, restarting it via /dev/$at"
+	printf 'AT+CFUN=1,1\r' > "/dev/$at" 2>/dev/null || {
+		log "could not write to /dev/$at"
+		return 1
+	}
+
+	for i in $(seq 40); do
+		sleep 1
+		echo 1 > /sys/bus/pci/rescan
+		[ -d "$rp/0001:01:00.0" ] && {
+			log "modem back on PCIe after ${i}s"
+			return 0
+		}
+	done
+	log "modem still missing from PCIe, reboot to recover"
+	return 1
+}
+
+case "$(board_name)" in
+xunison,exigo-hub-d50-5g)
+	recover_d50_modem || exit 1
+	;;
+esac
+
+exit 0
