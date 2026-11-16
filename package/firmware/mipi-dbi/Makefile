@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mipi-dbi
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=
@@ -48,6 +48,17 @@ define Package/mipi-dbi-ubnt-utr/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ubnt,utr-lcd.bin $(1)/lib/firmware/
 endef
 
+define Package/mipi-dbi-ubnt-ucgfiber
+  $(Package/mipi-dbi-default)
+  TITLE:=MIPI DBI LCD init sequence for Ubiquiti UniFi Cloud Gateway Fiber
+  DEPENDS+=@TARGET_qualcommbe
+endef
+
+define Package/mipi-dbi-ubnt-ucgfiber/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ubnt,ucgfiber-lcd.bin $(1)/lib/firmware/
+endef
+
 define Package/mipi-dbi-ph240240t004-zar
   $(Package/mipi-dbi-default)
   TITLE:=MIPI DBI LCD init sequence for PH240240T004-ZAR
@@ -60,4 +71,5 @@ define Package/mipi-dbi-ph240240t004-zar/install
 endef
 
 $(eval $(call BuildPackage,mipi-dbi-ubnt-utr))
+$(eval $(call BuildPackage,mipi-dbi-ubnt-ucgfiber))
 $(eval $(call BuildPackage,mipi-dbi-ph240240t004-zar))
