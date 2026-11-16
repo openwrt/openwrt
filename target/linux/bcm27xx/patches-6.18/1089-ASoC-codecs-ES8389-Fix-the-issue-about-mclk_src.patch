@@ -1,0 +1,47 @@
+From c6f9bfe4af89e9d3cae9585691acd4b519c98077 Mon Sep 17 00:00:00 2001
+From: Zhang Yi <zhangyi@everest-semi.com>
+Date: Tue, 30 Jun 2026 15:23:07 +0800
+Subject: [PATCH] ASoC: codecs: ES8389: Fix the issue about mclk_src
+
+commit cbc559dd8d46acd0781a4f183d8ec550262714ab upstream.
+
+Fix the issue with incorrect modifications to mclk_src
+When the system needs to be configured to use the MCLK from the SCLK pin,
+the code still sets the relevant registers to use the MCLK from the MCLK pin
+
+Signed-off-by: Zhang Yi <zhangyi@everest-semi.com>
+Link: https://patch.msgid.link/20260630072311.8427-3-zhangyi@everest-semi.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/codecs/es8389.c | 2 +-
+ sound/soc/codecs/es8389.h | 8 +++++---
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+--- a/sound/soc/codecs/es8389.c
++++ b/sound/soc/codecs/es8389.c
+@@ -609,7 +609,7 @@ static int es8389_pcm_hw_params(struct s
+ 
+ 	if (es8389->mclk_src == ES8389_SCLK_PIN) {
+ 		regmap_update_bits(es8389->regmap, ES8389_MASTER_CLK,
+-					ES8389_MCLK_SOURCE, es8389->mclk_src);
++					ES8389_MCLK_MASK, ES8389_MCLK_FROM_SCLK);
+ 		es8389->sysclk = params_channels(params) * params_width(params) * params_rate(params);
+ 	}
+ 
+--- a/sound/soc/codecs/es8389.h
++++ b/sound/soc/codecs/es8389.h
+@@ -116,9 +116,11 @@
+ #define ES8389_TDM_SLOT               (0x70 << 0)
+ #define ES8389_TDM_SHIFT              4
+ 
+-#define ES8389_MCLK_SOURCE            (1 << 6)
+-#define ES8389_MCLK_PIN               (1 << 6)
+-#define ES8389_SCLK_PIN               (0 << 6)
++#define ES8389_MCLK_MASK              (3 << 6)
++#define ES8389_MCLK_FROM_SCLK         (1 << 6)
++#define ES8389_MCLK_SOURCE            ES8389_MCLK_PIN
++#define ES8389_MCLK_PIN               0
++#define ES8389_SCLK_PIN               1
+ 
+ /* ES8389_FMT */
+ #define ES8389_S24_LE                 (0 << 5)

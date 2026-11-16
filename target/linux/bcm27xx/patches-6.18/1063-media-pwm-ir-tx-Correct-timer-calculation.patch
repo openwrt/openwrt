@@ -1,0 +1,35 @@
+From a38f2ad8fb7a1c53cf6255a7980400f77eeb8c9b Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Mon, 12 Oct 2026 14:48:00 +0100
+Subject: [PATCH] media: pwm-ir-tx: Correct timer calculation
+
+Commit 44d7fb8acdf8 ("media: pwm-ir-tx: Avoid direct access to
+hrtimer clockbase") converted a loop conditional from
+               now = timer->base->get_time();
+       } while (hrtimer_get_expires_tv64(timer) < now);
+to
+       while (hrtimer_expires_remaining(timer) > 0);
+
+hrtimer_expires_remaining returns (expires - now), so the
+change has inverted the condition.
+
+Convert back to follow the original pattern, but using the
+proper API call.
+
+Fixes: 44d7fb8acdf8 ("media: pwm-ir-tx: Avoid direct access to hrtimer clockbase")
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/media/rc/pwm-ir-tx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/rc/pwm-ir-tx.c
++++ b/drivers/media/rc/pwm-ir-tx.c
+@@ -138,7 +138,7 @@ static enum hrtimer_restart pwm_ir_timer
+ 		hrtimer_add_expires_ns(timer, ns);
+ 
+ 		pwm_ir->txbuf_index++;
+-	} while (hrtimer_expires_remaining(timer) > 0);
++	} while (hrtimer_get_expires(timer) < hrtimer_cb_get_time(timer));
+ 
+ 	return HRTIMER_RESTART;
+ }

@@ -1,0 +1,31 @@
+From 1fe8f3c9bd128d443645f9b8a11f0f16ae78b05b Mon Sep 17 00:00:00 2001
+From: Ethan Tidmore <ethantidmore06@gmail.com>
+Date: Sun, 19 Jul 2026 17:15:02 -0500
+Subject: [PATCH] ASoC: codecs: ES8389: Remove redundant comparison
+
+commit acc414eda8e9b2e33c7afcd04549616b973704c2 upstream.
+
+The comparison (target_hz < 0) will always be false because the variable
+'target_hz' is of the u32 type.
+
+Remove redundant comparison and simply code around it.
+
+Fixes: 87592da1a490a ("ASoC: codecs: ES8389: Add private members about HPF")
+Signed-off-by: Ethan Tidmore <ethantidmore06@gmail.com>
+Link: https://patch.msgid.link/20260719221502.536804-1-ethantidmore06@gmail.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/codecs/es8389.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sound/soc/codecs/es8389.c
++++ b/sound/soc/codecs/es8389.c
+@@ -106,7 +106,7 @@ static bool find_best_hpf_freq(u32 targe
+ 	u32 f, diff;
+ 	int i, j;
+ 
+-	if ((target_hz > 1020) | (target_hz < 0))
++	if (target_hz > 1020)
+ 		return false;
+ 
+ 	for (i = 0; i < 10; i++) {

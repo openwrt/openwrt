@@ -1,0 +1,31 @@
+From dc92039e2da737c65d684c5fc5146fc7be238a04 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Thu, 3 Sep 2026 16:50:37 +0100
+Subject: [PATCH] media: sony-starvis2: Always program the sensor in window
+ mode
+
+If the requested region matched the defined active area then
+the driver switched to all-pixel mode. This left the possibility
+that the activeare was incorrect and not reading out the area
+expected.
+
+Switch to always requesting window mode.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/media/i2c/sony-starvis2.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- a/drivers/media/i2c/sony-starvis2.c
++++ b/drivers/media/i2c/sony-starvis2.c
+@@ -917,9 +917,7 @@ static int starvis2_program_window(struc
+ 	int ret = 0;
+ 
+ 	cci_write(starvis2->cci, STARVIS2_REG_ADDMODE, 0x00, &ret);
+-	cci_write(starvis2->cci, STARVIS2_REG_WINMODE,
+-		  v4l2_rect_equal(crop, &imx678_active_area) ? 0x00 : 0x04,
+-		  &ret);
++	cci_write(starvis2->cci, STARVIS2_REG_WINMODE, 0x04, &ret);
+ 	cci_write(starvis2->cci, STARVIS2_REG_PIX_HST,
+ 		  crop->left - imx678_active_area.left, &ret);
+ 	cci_write(starvis2->cci, STARVIS2_REG_PIX_HWIDTH, crop->width, &ret);

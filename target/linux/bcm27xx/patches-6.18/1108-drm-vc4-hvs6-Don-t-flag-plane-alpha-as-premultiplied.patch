@@ -1,0 +1,34 @@
+From 315a2b380e9c14d04a2efa771a60ddd2e0c1482e Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 10:55:44 +0000
+Subject: [PATCH] drm/vc4: hvs6: Don't flag plane alpha as premultiplied with
+ no pixel alpha
+
+On BCM2712 D0, a format with no alpha channel takes its alpha from the
+plane alpha property (ALPHA_MASK_FIXED). With the default
+"Pre-multiplied" blend mode the ALPHA_PREMULT flag was still set, so
+the HVS treated the colour as already multiplied by the plane alpha and
+added it unscaled on top of the planes below.
+
+The KMS blend modes are all equivalent when there is no pixel alpha,
+so only set ALPHA_PREMULT when the format has an alpha channel, as the
+other generations already do.
+
+Fixes: https://github.com/raspberrypi/linux/issues/7700
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -1333,7 +1333,8 @@ static u32 vc4_hvs5_get_alpha_blend_mode
+ 		}
+ 	case VC4_GEN_6_D:
+ 		/* 2712-D configures fixed alpha mode in CTL0 */
+-		return state->pixel_blend_mode == DRM_MODE_BLEND_PREMULTI ?
++		return state->fb->format->has_alpha &&
++		       state->pixel_blend_mode == DRM_MODE_BLEND_PREMULTI ?
+ 			SCALER5_CTL2_ALPHA_PREMULT : 0;
+ 	}
+ }

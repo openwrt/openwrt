@@ -1,0 +1,50 @@
+From 00a8cbac9d921c329af53ab8ec2e4e276944dbe9 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 16:47:44 +0000
+Subject: [PATCH] drm/vc4: Only use the TPZ upscale for RGB at an integer
+ position
+
+A source of 1 pixel or less is scaled with TPZ, which can't upscale and
+instead repeats the last pixel fetched. That goes wrong in two cases:
+
+- YUV: a 2 pixel wide NV12 source has a 1 pixel chroma channel, so chroma
+  uses TPZ while luma uses PPF, and a 1 pixel source puts luma on TPZ.
+  Either way the plane is rendered the wrong colour, and the chroma LBM,
+  sized from the source width, is overrun into the next plane. Seen on
+  BCM2835, BCM2711 and BCM2712.
+- A fractional source position: the mode_set functions fetch an extra
+  pixel at each partial end, so the pixel repeated across the plane is
+  the one beyond the source rectangle.
+
+Use PPF for a TPZ upscale in those cases, as larger sources already do.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -650,6 +650,22 @@ static int vc4_plane_setup_clipping_and_
+ 		vc4_state->y_scaling[1] = VC4_SCALING_NONE;
+ 	}
+ 
++	/*
++	 * The 1 pixel TPZ upscale renders YUV wrongly, and with a fractional
++	 * start it repeats the extra pixel fetched beyond the source, so use
++	 * PPF for those.
++	 */
++	for (int i = 0; i < 2; i++) {
++		if (vc4_state->x_scaling[i] == VC4_SCALING_TPZ &&
++		    (vc4_state->crtc_w << 16) > vc4_state->src_w[i] &&
++		    (vc4_state->is_yuv || (vc4_state->src_x & 0xffff)))
++			vc4_state->x_scaling[i] = VC4_SCALING_PPF;
++		if (vc4_state->y_scaling[i] == VC4_SCALING_TPZ &&
++		    (vc4_state->crtc_h << 16) > vc4_state->src_h[i] &&
++		    (vc4_state->is_yuv || (vc4_state->src_y & 0xffff)))
++			vc4_state->y_scaling[i] = VC4_SCALING_PPF;
++	}
++
+ 	return 0;
+ }
+ 

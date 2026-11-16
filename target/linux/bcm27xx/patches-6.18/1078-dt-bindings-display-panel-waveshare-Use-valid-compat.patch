@@ -1,0 +1,37 @@
+From 6881c3c5202572fef3a18bfaab107390dc73a09d Mon Sep 17 00:00:00 2001
+From: Yu Dukai <646689853@qq.com>
+Date: Wed, 21 Oct 2026 12:10:58 +0800
+Subject: [PATCH] dt-bindings: display: panel: waveshare: Use valid compatible
+ strings
+
+A compatible string takes the form "vendor,model" and may only contain a
+single comma, so "waveshare,9.0-dsi-touch-b,4lane" and the other 4-lane
+entries are not valid. Replace them with the "-4lane" suffix already used
+by the 8.0" and 10.1" a variants.
+
+The missing Waveshare 10.1-DSI-TOUCH-E entry is added at the same time.
+
+Signed-off-by: Yu Dukai <646689853@qq.com>
+---
+ .../bindings/display/panel/waveshare,dsi-touch.yaml        | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/Documentation/devicetree/bindings/display/panel/waveshare,dsi-touch.yaml
++++ b/Documentation/devicetree/bindings/display/panel/waveshare,dsi-touch.yaml
+@@ -31,12 +31,13 @@ properties:
+           - waveshare,8.0-dsi-touch-a-4lane
+           - waveshare,8.8-dsi-touch-a
+           - waveshare,9.0-dsi-touch-b
+-          - waveshare,9.0-dsi-touch-b,4lane
++          - waveshare,9.0-dsi-touch-b-4lane
+           - waveshare,10.1-dsi-touch-a
+           - waveshare,10.1-dsi-touch-a-4lane
+           - waveshare,10.1-dsi-touch-b
+-          - waveshare,10.1-dsi-touch-b,4lane
+-          - waveshare,12.3-dsi-touch-a,4lane
++          - waveshare,10.1-dsi-touch-b-4lane
++          - waveshare,10.1-dsi-touch-e-4lane
++          - waveshare,12.3-dsi-touch-a-4lane
+ 
+   reg:
+     description: DSI virtual channel

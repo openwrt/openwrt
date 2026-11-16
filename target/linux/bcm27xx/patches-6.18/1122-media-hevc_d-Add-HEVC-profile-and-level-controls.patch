@@ -1,0 +1,44 @@
+From 43dd0bc0a134baa514faf647732f6303549e3190 Mon Sep 17 00:00:00 2001
+From: John Cox <jc@kynesim.co.uk>
+Date: Tue, 20 Oct 2026 13:26:07 +0100
+Subject: [PATCH] media/hevc_d: Add HEVC profile and level controls
+
+Add controls to indicate supported profiles and levels, copied
+from Hantro.
+Also whitespace fix to the ctrl table
+
+Signed-off-by: John Cox <jc@kynesim.co.uk>
+---
+ .../media/platform/raspberrypi/hevc_dec/hevc_d.c   | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
++++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
+@@ -46,7 +46,7 @@ static const struct v4l2_ctrl_config hev
+ 		.id	= V4L2_CID_STATELESS_HEVC_PPS,
+ 		.ops	= &hevc_d_hevc_pps_ctrl_ops,
+ 	}, {
+-		.id = V4L2_CID_STATELESS_HEVC_SCALING_MATRIX,
++		.id	= V4L2_CID_STATELESS_HEVC_SCALING_MATRIX,
+ 	}, {
+ 		.id	= V4L2_CID_STATELESS_HEVC_DECODE_PARAMS,
+ 	}, {
+@@ -66,7 +66,17 @@ static const struct v4l2_ctrl_config hev
+ 		.min	= V4L2_STATELESS_HEVC_START_CODE_NONE,
+ 		.max	= V4L2_STATELESS_HEVC_START_CODE_ANNEX_B,
+ 		.def	= V4L2_STATELESS_HEVC_START_CODE_NONE,
+-	},
++	}, {
++		.id	= V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
++		.min	= V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
++		.max	= V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10,
++		.def	= V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
++	}, {
++		.id	= V4L2_CID_MPEG_VIDEO_HEVC_LEVEL,
++		.min	= V4L2_MPEG_VIDEO_HEVC_LEVEL_1,
++		.max	= V4L2_MPEG_VIDEO_HEVC_LEVEL_5_1,
++		.def	= V4L2_MPEG_VIDEO_HEVC_LEVEL_4_1,
++	}
+ };
+ 
+ void *hevc_d_find_control_data(struct hevc_d_ctx *ctx, u32 id)

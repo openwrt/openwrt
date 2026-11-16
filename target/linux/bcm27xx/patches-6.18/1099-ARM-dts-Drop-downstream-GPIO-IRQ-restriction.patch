@@ -1,0 +1,40 @@
+From aeadd6ed6be07f1350627dcd0fb14393f5abde56 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Fri, 23 Oct 2026 11:06:18 +0100
+Subject: [PATCH] ARM: dts: Drop downstream GPIO IRQ restriction
+
+The downstream dtsi files for BCM283x and BCM2711 have only ever
+declared 2 interrupts - those for bank 0 and bank 1 - whereas the
+upstream sources declare all 4 0 banks 0-2 and the "any bank" interrupt.
+
+Drop that restriction, as we can see no reason for it.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ arch/arm/boot/dts/broadcom/bcm270x.dtsi        | 2 --
+ arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi | 3 ---
+ 2 files changed, 5 deletions(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm270x.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm270x.dtsi
+@@ -187,8 +187,6 @@
+ };
+ 
+ &gpio {
+-	interrupts = <2 17>, <2 18>;
+-
+ 	dpi_18bit_cpadhi_gpio0: dpi_18bit_cpadhi_gpio0 {
+ 		brcm,pins = <0 1 2 3 4 5 6 7 8 9
+ 			     12 13 14 15 16 17
+--- a/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi
+@@ -219,9 +219,6 @@
+ };
+ 
+ &gpio {
+-	interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>,
+-		     <GIC_SPI 114 IRQ_TYPE_LEVEL_HIGH>;
+-
+ 	spi0_pins: spi0_pins {
+ 		brcm,pins = <9 10 11>;
+ 		brcm,function = <BCM2835_FSEL_ALT0>;

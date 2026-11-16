@@ -1,0 +1,51 @@
+From ccae069bb483b1f95ac659386b808b269ad988bf Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Tue, 29 Sep 2026 15:22:13 +0100
+Subject: [PATCH] misc: rp1-pio: Minor cyclic DMA error path fixes
+
+1. Set dma->cyclic earlier so it is available to rp1_pio_sm_dma_free in
+   the error path.
+
+2. Set an error code in the case that the cyclic preparation fails.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/misc/rp1-pio.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/misc/rp1-pio.c
++++ b/drivers/misc/rp1-pio.c
+@@ -1101,7 +1101,7 @@ static int rp1_pio_sm_config_xfer_intern
+ 
+ 	if (cyclic) {
+ 		dma->buf_size = buf_size * buf_count;
+-		dma->buf_count = buf_count;
++		dma->buf_count = 0;
+ 		/* Round up the allocations */
+ 		buf_size = ROUND_UP(dma->buf_size, PAGE_SIZE);
+ 
+@@ -1116,6 +1116,8 @@ static int rp1_pio_sm_config_xfer_intern
+ 		}
+ 		sg_init_table(&dbi->sgl, 1);
+ 		sg_dma_address(&dbi->sgl) = dbi->dma_addr;
++		dma->buf_count = buf_count;
++		dma->cyclic = cyclic;
+ 	} else {
+ 		dma->buf_size = buf_size;
+ 		/* Round up the allocations */
+@@ -1185,6 +1187,7 @@ static int rp1_pio_sm_config_xfer_intern
+ 					       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 		if (!desc) {
+ 			dev_err(dev, "DMA preparation failed\n");
++			ret = -EIO;
+ 			goto err_dma_free;
+ 		}
+ 
+@@ -1196,7 +1199,6 @@ static int rp1_pio_sm_config_xfer_intern
+ 		if (ret < 0)
+ 			goto err_dma_free;
+ 
+-		dma->cyclic = cyclic;
+ 		dma_async_issue_pending(dma->chan);
+ 	}
+ 	return 0;

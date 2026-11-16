@@ -1,0 +1,46 @@
+From 691e5e3a15cc6134a562fd602e02ed94170c5d8b Mon Sep 17 00:00:00 2001
+From: Hans Verkuil <hverkuil+cisco@kernel.org>
+Date: Tue, 6 Oct 2026 11:27:01 +0200
+Subject: [PATCH] misc: rp1-pio: add RP1_PIO_CYCLIC_MIN_BUF_SIZE
+
+Set the minimum DMA buf_size to RP1_PIO_CYCLIC_MIN_BUF_SIZE.
+This ensures that a single period is larger than the FIFO + burst,
+which avoids some corner cases.
+
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/misc/rp1-pio.c         | 9 ++++++++-
+ include/uapi/misc/rp1_pio_if.h | 1 +
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+--- a/drivers/misc/rp1-pio.c
++++ b/drivers/misc/rp1-pio.c
+@@ -1071,10 +1071,17 @@ static int rp1_pio_sm_config_xfer_intern
+ 		return -EINVAL;
+ 	if (cyclic) {
+ 		/*
++		 * RP1_PIO_CYCLIC_MIN_BUF_SIZE is > FIFO + burst + margin,
++		 * which ensures that you can't fit a period of data in just
++		 * the FIFO + burst, which might cause weird behavior.
++		 */
++		if (buf_size < RP1_PIO_CYCLIC_MIN_BUF_SIZE)
++			return -EINVAL;
++		/*
+ 		 * Cyclic DMA is currently not supported for TO_SM, and
+ 		 * needs at least two real buffers to cycle through.
+ 		 */
+-		if (tx || !buf_size || buf_count < 2)
++		if (tx || buf_count < 2)
+ 			return -EINVAL;
+ 	}
+ 
+--- a/include/uapi/misc/rp1_pio_if.h
++++ b/include/uapi/misc/rp1_pio_if.h
+@@ -188,6 +188,7 @@ struct rp1_pio_sm_config_xfer32_args {
+ #define RP1_PIO_SM_CONFIG_XFER_FL_DMA_FORCE_HEAVY  2
+ #define RP1_PIO_SM_CONFIG_XFER_FL_DMA_FORCE_LIGHT  3
+ 
++#define RP1_PIO_CYCLIC_MIN_BUF_SIZE 128
+ #define RP1_PIO_SM_CONFIG_XFER_FL_DMA_CYCLE (1 << 2)
+ 
+ struct rp1_pio_sm_config_xfer_v2_args {

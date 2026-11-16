@@ -1,0 +1,25 @@
+From 1f086f080eb9215c4d8d7223a5e7d7340293ba6c Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 16:47:52 +0000
+Subject: [PATCH] drm/vc4: Multiply the chroma pitch by the line skip
+
+When skipping lines for a large vertical downscale, the luma pitch was
+multiplied by vdownsample but the chroma pitch of planar formats was
+divided by it, so chroma was read from the wrong lines.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -1820,7 +1820,7 @@ static int vc4_plane_mode_set(struct drm
+ 		if (hvs_format != HVS_PIXEL_FORMAT_H264 &&
+ 		    hvs_format != HVS_PIXEL_FORMAT_YCBCR_10BIT)
+ 			vc4_dlist_write(vc4_state,
+-					VC4_SET_FIELD(fb->pitches[i] /
++					VC4_SET_FIELD(fb->pitches[i] *
+ 							 vc4_state->vdownsample,
+ 						      SCALER_SRC_PITCH));
+ 		else

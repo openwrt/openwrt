@@ -1,0 +1,123 @@
+From d96ff255fbb2e5695f4e34a801a231658f7faaea Mon Sep 17 00:00:00 2001
+From: Steffen Dirkwinkel <s.dirkwinkel@beckhoff.com>
+Date: Sat, 7 Nov 2026 14:55:04 +0100
+Subject: [PATCH] net: macb: rotate unreaped TX frames behind the ring base on
+ link-up
+
+Start the link-up rotation in gem_shuffle_tx_one_ring() at the first
+frame that still has to be sent instead of at tx_tail, and schedule the
+TX NAPI poll once transmit is enabled again.
+
+macb_mac_link_down() masks TCOMP before disabling transmit. A frame
+completed in that window keeps the used bit on its first descriptor and
+is never reaped. The rotation moves it to index 0, where the controller
+starts after link-up, reads the used bit and stops; macb_tx_restart()
+then keeps writing TSTART onto the same descriptor, an interrupt storm
+that on PREEMPT_RT ends in RCU stalls.
+
+Keeping the completed frames behind the ring base leaves tx_tail on
+them for NAPI to reap. Reaping in link-down instead would have to wait
+for NAPI there, which deadlocks against macb_close() and the PM
+callbacks disabling it.
+
+Fixes: 881a0263d502 ("net: macb: Shuffle the tx ring before enabling tx")
+Cc: stable@vger.kernel.org
+Link: https://lore.kernel.org/netdev/20261022-std-macb-v14-send-v1-4-9187bc545bf6@beckhoff.com/
+Assisted-by: LLM
+Signed-off-by: Steffen Dirkwinkel <s.dirkwinkel@beckhoff.com>
+[nb: context adjusted for 6.18, the NCR write is not under bp->lock there]
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 43 +++++++++++++++++-------
+ 1 file changed, 31 insertions(+), 12 deletions(-)
+
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -829,7 +829,7 @@ static void macb_mac_link_down(struct ph
+ /* Use juggling algorithm to left rotate tx ring and tx skb array */
+ static void gem_shuffle_tx_one_ring(struct macb_queue *queue)
+ {
+-	unsigned int head, tail, count, ring_size, desc_size;
++	unsigned int head, tail, count, ring_size, desc_size, start, done;
+ 	struct macb_tx_skb tx_skb, *skb_curr, *skb_next;
+ 	struct macb_dma_desc *desc_curr, *desc_next;
+ 	unsigned int i, cycles, shift, curr, next;
+@@ -848,8 +848,19 @@ static void gem_shuffle_tx_one_ring(stru
+ 	ring_size = bp->tx_ring_size;
+ 	count = CIRC_CNT(head, tail, ring_size);
+ 
+-	if (!(tail % ring_size))
+-		goto unlock;
++	/* Frames completed while link-down had TCOMP masked are still
++	 * unreaped and their used bit would stop the controller at the ring
++	 * base, so rotate the first frame still to be sent there instead.
++	 */
++	rmb();
++	for (start = tail; start != head &&
++	     (macb_tx_desc(queue, start)->ctrl & MACB_BIT(TX_USED)); start++)
++		while (start + 1 != head && !macb_tx_skb(queue, start)->skb)
++			start++;
++	done = start - tail;
++
++	if (!(start % ring_size))
++		goto reset_hw_ptr;
+ 
+ 	if (!count) {
+ 		queue->tx_head = 0;
+@@ -857,7 +868,7 @@ static void gem_shuffle_tx_one_ring(stru
+ 		goto reset_hw_ptr;
+ 	}
+ 
+-	shift = tail % ring_size;
++	shift = start % ring_size;
+ 	cycles = gcd(ring_size, shift);
+ 
+ 	for (i = 0; i < cycles; i++) {
+@@ -897,24 +908,23 @@ static void gem_shuffle_tx_one_ring(stru
+ 		       sizeof(struct macb_tx_skb));
+ 	}
+ 
+-	queue->tx_head = count;
+-	queue->tx_tail = 0;
++	queue->tx_tail = done ? ring_size - done : 0;
++	queue->tx_head = queue->tx_tail + count;
+ 
+ 	/* Make descriptor updates visible to hardware */
+ 	wmb();
+ 
+ reset_hw_ptr:
+-	/* tx_tail was reset to the ring base, so TBQP must be reprogrammed
+-	 * to match; otherwise it keeps pointing at a stale descriptor. Safe
+-	 * to write directly here as TX is still disabled (called from
+-	 * macb_mac_link_up() before TE is set).
++	/* The first frame to be sent is now at the ring base, so TBQP must
++	 * be reprogrammed to match; otherwise it keeps pointing at a stale
++	 * descriptor. Safe to write directly here as TX is still disabled
++	 * (called from macb_mac_link_up() before TE is set).
+ 	 */
+ 	queue_writel(queue, TBQP, lower_32_bits(queue->tx_ring_dma));
+-unlock:
+ 	spin_unlock_irqrestore(&queue->tx_ptr_lock, flags);
+ }
+ 
+-/* Rotate the queue so that the tail is at index 0 */
++/* Rotate the queue so that the first frame to be sent is at index 0 */
+ static void gem_shuffle_tx_rings(struct macb *bp)
+ {
+ 	struct macb_queue *queue;
+@@ -987,6 +997,15 @@ static void macb_mac_link_up(struct phyl
+ 
+ 	macb_writel(bp, NCR, ctrl | MACB_BIT(RE) | MACB_BIT(TE));
+ 
++	if (!(bp->caps & MACB_CAPS_MACB_IS_EMAC)) {
++		/* Reap the frames completed while link-down had TCOMP masked */
++		local_bh_disable();
++		for (q = 0, queue = bp->queues; q < bp->num_queues; ++q, ++queue)
++			if (READ_ONCE(queue->tx_tail) != READ_ONCE(queue->tx_head))
++				napi_schedule(&queue->napi_tx);
++		local_bh_enable();
++	}
++
+ 	netif_tx_wake_all_queues(ndev);
+ }
+ 

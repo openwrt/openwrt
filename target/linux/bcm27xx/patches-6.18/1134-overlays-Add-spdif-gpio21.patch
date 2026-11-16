@@ -1,0 +1,121 @@
+From 7c5c5c17ba7c887b5c7f6f00b7fdc7152311beaa Mon Sep 17 00:00:00 2001
+From: ehb <2213942+ehb@users.noreply.github.com>
+Date: Tue, 10 Nov 2026 21:06:20 +0100
+Subject: [PATCH] overlays: Add spdif-gpio21
+
+Add an overlay that turns the I2S block into a sound card for an S/PDIF
+transmitter on GPIO21 (PCM_DOUT), without a transceiver chip: the generic
+linux,spdif-dit codec on a simple-audio-card, the Pi as bit and frame
+clock producer, 2 x 32-bit slots per frame, and a pin group for GPIO21
+alone, so GPIOs 18-20 stay free. Userspace supplies the biphase-mark
+coded line signal as S32_LE at twice the audio rate.
+
+The pin group uses the legacy brcm,pins/brcm,function properties, which
+the RP1 pin driver maps as well (GPIO21 ALT0 to i2s0), so the same
+overlay should also serve the Pi 5.
+
+Assisted-by: claude-code:claude-opus-5-5
+Signed-off-by: ehb <2213942+ehb@users.noreply.github.com>
+---
+ arch/arm/boot/dts/overlays/Makefile           |  1 +
+ arch/arm/boot/dts/overlays/README             | 12 ++++
+ .../dts/overlays/spdif-gpio21-overlay.dts     | 62 +++++++++++++++++++
+ 3 files changed, 75 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/spdif-gpio21-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -287,6 +287,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
+ 	smi.dtbo \
+ 	smi-dev.dtbo \
+ 	smi-nand.dtbo \
++	spdif-gpio21.dtbo \
+ 	spi-gpio35-39.dtbo \
+ 	spi-gpio40-45.dtbo \
+ 	spi-rtc.dtbo \
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -5115,6 +5115,18 @@ Load:   dtoverlay=smi-nand
+ Params: <None>
+ 
+ 
++Name:   spdif-gpio21
++Info:   Sound card that drives an S/PDIF transmitter (TOSLINK module or coaxial
++        driver) directly from GPIO21 (PCM_DOUT, 40-pin header pin 40), without
++        a transceiver chip. The I2S block is the bit and frame clock producer
++        and sends 2 x 32-bit slots per frame; userspace has to supply the
++        biphase-mark coded S/PDIF line signal as S32_LE at twice the audio
++        sample rate (e.g. through an ALSA plugin) - plain PCM does not produce
++        audio. Only GPIO21 is claimed, GPIOs 18-20 stay free.
++Load:   dtoverlay=spdif-gpio21
++Params: <None>
++
++
+ Name:   spi-gpio35-39
+ Info:   Move SPI function block to GPIO 35 to 39
+ Load:   dtoverlay=spi-gpio35-39
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spdif-gpio21-overlay.dts
+@@ -0,0 +1,62 @@
++// SPDX-License-Identifier: GPL-2.0
++// S/PDIF transmitter on GPIO21 (PCM_DOUT) without a transceiver: the I2S block is the clock
++// producer; software supplies the biphase-mark coded bitstream. Only GPIO21 is claimed.
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835";
++
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			spdif_gpio21_pins: spdif_gpio21_pins {
++				brcm,pins = <21>;
++				brcm,function = <4>; /* ALT0: PCM_DOUT, on RP1 i2s0 */
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&i2s_clk_producer>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&spdif_gpio21_pins>;
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target-path = "/";
++		__overlay__ {
++			spdif_gpio21_codec: spdif-gpio21-codec {
++				compatible = "linux,spdif-dit";
++				#sound-dai-cells = <0>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@3 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "simple-audio-card";
++			status = "okay";
++
++			simple-audio-card,name = "spdif-gpio21";
++			simple-audio-card,format = "i2s";
++			simple-audio-card,bitclock-master = <&dailink0_cpu>;
++			simple-audio-card,frame-master = <&dailink0_cpu>;
++
++			dailink0_cpu: simple-audio-card,cpu {
++				sound-dai = <&i2s_clk_producer>;
++				dai-tdm-slot-num = <2>;
++				dai-tdm-slot-width = <32>;
++			};
++
++			simple-audio-card,codec {
++				sound-dai = <&spdif_gpio21_codec>;
++			};
++		};
++	};
++};

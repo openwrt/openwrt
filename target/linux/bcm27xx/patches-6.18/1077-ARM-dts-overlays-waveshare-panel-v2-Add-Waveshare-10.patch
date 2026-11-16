@@ -1,0 +1,37 @@
+From 936ee9cc42d2f1cf737cbbdb6c6851622f30b9d9 Mon Sep 17 00:00:00 2001
+From: Yu Dukai <646689853@qq.com>
+Date: Thu, 15 Oct 2026 20:31:18 +0800
+Subject: [PATCH] ARM: dts: overlays: waveshare-panel-v2: Add Waveshare
+ 10.1-DSI-TOUCH-E
+
+Add an overlay option for the Waveshare 10.1-DSI-TOUCH-E panel and
+touchscreen.
+
+The 10_1_inch_e_4lane option selects the four-lane 1200x1920 panel.
+
+Signed-off-by: Yu Dukai <646689853@qq.com>
+---
+ arch/arm/boot/dts/overlays/README                                | 1 +
+ .../boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -6304,6 +6304,7 @@ Params: 3_4_inch_c              3.4" 800
+         10_1_inch_a_4lane       10.1" 800x1280 4lane
+         10_1_inch_b             10.1" 720x1280 2lane
+         10_1_inch_b_4lane       10.1" 720x1280 4lane
++        10_1_inch_e_4lane       10.1" 1200x1920 4lane
+         12_3_inch_a_4lane       12.3" 720x1920 4lane
+         disable_touch           Disable the touch controller
+         invx                    Touchscreen inverted x axis
+--- a/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
+@@ -104,6 +104,7 @@
+ 			      <&touch>, "touchscreen-inverted-y";
+ 		10_1_inch_b_4lane = <&dsi_panel>, "compatible=waveshare,10.1-dsi-touch-b,4lane",
+ 				    <&touch>, "touchscreen-inverted-y";
++		10_1_inch_e_4lane = <&dsi_panel>, "compatible=waveshare,10.1-dsi-touch-e,4lane";
+ 		12_3_inch_a_4lane = <&dsi_panel>, "compatible=waveshare,12.3-dsi-touch-a,4lane",
+ 				    <&touch>, "touchscreen-swapped-x-y",
+ 				    <&touch>, "touchscreen-inverted-y";

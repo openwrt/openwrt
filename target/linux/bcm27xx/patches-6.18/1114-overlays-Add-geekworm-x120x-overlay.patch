@@ -1,0 +1,101 @@
+From d8cf67b24ba95c8354af968124a775474eb3cd92 Mon Sep 17 00:00:00 2001
+From: Hugo Karlsson <huggek@klattorp.se>
+Date: Sun, 8 Nov 2026 14:02:32 +0100
+Subject: [PATCH] overlays: Add geekworm-x120x overlay
+
+The Geekworm X120x UPS boards for the Raspberry Pi 5 are currently set
+up with two separate overlays:
+
+  dtoverlay=i2c-sensor,max17040
+  dtoverlay=gpio-charger,gpio=6,...
+
+Nothing tells the fuel gauge that the charger supplies it, so the
+battery cannot report whether it is charging. Add one overlay that
+creates both nodes and links them with power-supplies.
+
+The overlay and this description were written with help from Claude
+Code (claude-opus-5-5) and tested on a Raspberry Pi 5 with an X1202.
+
+Signed-off-by: Hugo Karlsson <huggek@klattorp.se>
+---
+ arch/arm/boot/dts/overlays/Makefile           |  1 +
+ arch/arm/boot/dts/overlays/README             |  9 ++++
+ .../dts/overlays/geekworm-x120x-overlay.dts   | 44 +++++++++++++++++++
+ 3 files changed, 54 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/geekworm-x120x-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -75,6 +75,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
+ 	fe-pi-audio.dtbo \
+ 	fsm-demo.dtbo \
+ 	gc9a01.dtbo \
++	geekworm-x120x.dtbo \
+ 	ghost-amp.dtbo \
+ 	goodix.dtbo \
+ 	googlevoicehat-soundcard.dtbo \
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -1561,6 +1561,15 @@ Params: speed                   Display
+         debug                   Debug output level {0-7}
+ 
+ 
++Name:   geekworm-x120x
++Info:   Geekworm X120x UPS boards for the Raspberry Pi 5, such as the X1202
++        and X1206. Adds the MAX17040-compatible fuel gauge at I2C address
++        0x36 and a gpio-charger for the GPIO that reports input power, and
++        links the two so the battery can report whether it is charging.
++Load:   dtoverlay=geekworm-x120x,<param>=<val>
++Params: gpio                    GPIO that reports input power (default 6)
++
++
+ Name:   ghost-amp
+ Info:   An overlay for the Ghost amplifier.
+ Load:   dtoverlay=ghost-amp,<param>=<val>
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/geekworm-x120x-overlay.dts
+@@ -0,0 +1,44 @@
++// SPDX-License-Identifier: GPL-2.0-only
++// Definitions for Geekworm X120x UPS boards such as the X1202 and X1206:
++// a MAX17040-compatible fuel gauge on I2C plus a GPIO that reports input
++// power, linked so the battery knows its charger.
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	compatible = "brcm,bcm2712";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			x120x_charger: charger {
++				compatible = "gpio-charger";
++				gpios = <&gpio 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
++				charger-type = "mains";
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&i2c_arm>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			x120x_battery: fuel-gauge@36 {
++				compatible = "maxim,max17040";
++				reg = <0x36>;
++				power-supplies = <&x120x_charger>;
++				status = "okay";
++			};
++		};
++	};
++
++	__overrides__ {
++		gpio = <&x120x_charger>,"gpios:4";
++	};
++};

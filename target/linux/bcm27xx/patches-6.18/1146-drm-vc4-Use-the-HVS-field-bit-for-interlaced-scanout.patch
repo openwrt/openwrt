@@ -1,0 +1,72 @@
+From aa4df0e78a0ddf0271de46ea915b54700f145e21 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 16 Nov 2026 15:51:40 +0000
+Subject: [PATCH] drm/vc4: Use the HVS field bit for interlaced scanout
+ position
+
+vc4_crtc_get_scanout_position() adds half a line to hpos on one of the
+two fields of an interlaced mode, and picks that field from the parity
+of the HVS frame counter. The frame counter is free running and is not
+cleared when the channel is reset, so its parity has no fixed relation
+to the field being output. Depending on the history of the channel the
+correction lands on the wrong field, and the vblank timestamps then
+alternate by two lines.
+
+The HVS status register already read in this function reports the
+active field: SCALER6_DISPX_STATUS_OFIELD on BCM2712, and bit 27 of
+SCALER_DISPSTATX on earlier generations. Use it instead. The correction
+applies when the bit is clear.
+
+Measured as the median change between consecutive vblank timestamp
+intervals over 200 fields, with 1080i60, 1080i50, 480i and 576i on
+HDMI, and NTSC and PAL on Pi 4 composite:
+
+  - frame counter parity: 0 or 2 lines, depending on the modeset
+    (Pi 5 and Pi 4; Pi 3 happened to be right in every run)
+  - field bit, set: 2 lines on Pi 3, Pi 4 and Pi 5
+  - field bit, clear: 0-2 us on Pi 3, Pi 4 and Pi 5 in every run
+
+Fixes: e538092cb15c ("drm/vc4: Enable precise vblank timestamping for interlaced modes.")
+Fixes: 7687a12153d3 ("drm/vc4: hvs: Add support for BCM2712 HVS")
+Link: https://github.com/raspberrypi/linux/issues/7757
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 14 ++++++++++++--
+ drivers/gpu/drm/vc4/vc4_regs.h |  1 +
+ 2 files changed, 13 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -153,10 +153,20 @@ static bool vc4_crtc_get_scanout_positio
+ 	*hpos = 0;
+ 
+ 	if (mode->flags & DRM_MODE_FLAG_INTERLACE) {
++		bool field;
++
+ 		*vpos /= 2;
+ 
+-		/* Use hpos to correct for field offset in interlaced mode. */
+-		if (vc4_hvs_get_fifo_frame_count(hvs, channel) % 2)
++		if (vc4->gen >= VC4_GEN_6_C)
++			field = val & SCALER6_DISPX_STATUS_OFIELD;
++		else
++			field = val & SCALER_DISPSTATX_FIELD;
++
++		/*
++		 * Use hpos to correct for field offset in interlaced mode.
++		 * The offset applies when the field bit is clear.
++		 */
++		if (!field)
+ 			*hpos += mode->crtc_htotal / 2;
+ 	}
+ 
+--- a/drivers/gpu/drm/vc4/vc4_regs.h
++++ b/drivers/gpu/drm/vc4/vc4_regs.h
+@@ -421,6 +421,7 @@
+ # define SCALER_DISPSTATX_MODE_EOF		3
+ # define SCALER_DISPSTATX_FULL			BIT(29)
+ # define SCALER_DISPSTATX_EMPTY			BIT(28)
++# define SCALER_DISPSTATX_FIELD			BIT(27)
+ # define SCALER_DISPSTATX_LINE_MASK		VC4_MASK(11, 0)
+ # define SCALER_DISPSTATX_LINE_SHIFT		0
+ 

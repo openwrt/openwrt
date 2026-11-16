@@ -1,0 +1,56 @@
+From 186121f19d473be1dc81814a4080f0928caad19e Mon Sep 17 00:00:00 2001
+From: John Cox <jc@kynesim.co.uk>
+Date: Mon, 19 Oct 2026 18:18:52 +0100
+Subject: [PATCH] media/hevc_d: Relax restriction on OUTPUT S_FMT if buffers
+ alloced
+
+There is no requirement to reject S_FMT if buffers are allocated and
+Chrome changes the format having alloced OUTPUT buffers. Relax so we
+only reject if streaming.
+
+Remove the linkage between setting OUTPUT and invalidating CAPTURE,
+it was never required and allowing later OUTPUT changes makes it
+unsafe. Stop default dst format changing once buffers are allocated.
+
+Signed-off-by: John Cox <jc@kynesim.co.uk>
+---
+ .../platform/raspberrypi/hevc_dec/hevc_d_video.c      | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+--- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
++++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
+@@ -316,11 +316,15 @@ static int hevc_d_enum_fmt_vid_cap(struc
+ 
+ /*
+  * get dst format - sets it to default if otherwise unset
+- * returns a pointer to the struct as a convienience
++ * default is not updated whilst CAPTURE buffers exist as they were sized
++ * from it
++ * returns a pointer to the struct as a convenience
+  */
+ static struct v4l2_pix_format_mplane *get_dst_fmt(struct hevc_d_ctx *const ctx)
+ {
+-	if (!ctx->dst_fmt_set)
++	struct vb2_queue *vq = v4l2_m2m_get_dst_vq(ctx->fh.m2m_ctx);
++
++	if (!ctx->dst_fmt_set && !vb2_is_busy(vq))
+ 		ctx->dst_fmt = hevc_d_hevc_default_dst_fmt(ctx);
+ 	return &ctx->dst_fmt;
+ }
+@@ -405,7 +409,7 @@ static int hevc_d_s_fmt_vid_out(struct f
+ 	int ret;
+ 
+ 	vq = v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type);
+-	if (vb2_is_busy(vq))
++	if (vb2_is_streaming(vq))
+ 		return -EBUSY;
+ 
+ 	ret = hevc_d_try_fmt_vid_out(file, priv, f);
+@@ -413,7 +417,6 @@ static int hevc_d_s_fmt_vid_out(struct f
+ 		return ret;
+ 
+ 	ctx->src_fmt = f->fmt.pix_mp;
+-	ctx->dst_fmt_set = 0;  /* Setting src invalidates dst */
+ 
+ 	/* Propagate colorspace information to capture. */
+ 	copy_color(&ctx->dst_fmt, &f->fmt.pix_mp);

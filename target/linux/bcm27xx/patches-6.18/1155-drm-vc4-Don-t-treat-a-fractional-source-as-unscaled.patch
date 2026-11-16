@@ -1,0 +1,44 @@
+From 069d5c6c0b5696c427aec8c3b92f45ec51628d6f Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 16:47:51 +0000
+Subject: [PATCH] drm/vc4: Don't treat a fractional source as unscaled
+
+vc4_get_scaling_mode() returned VC4_SCALING_NONE whenever the integer
+part of the source size matched the destination, and ignored the source
+position. With a fractional source position or size, the mode_set
+functions fetch an extra pixel at each partial end, and without scaling
+those were all output, so the plane was drawn up to 2 pixels wider and
+taller than its CRTC rectangle.
+
+Only report no scaling for an exact match, and use PPF when the source
+starts part way into a pixel.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -328,7 +328,7 @@ static const struct hvs_format *vc4_get_
+ 
+ static enum vc4_scaling_mode vc4_get_scaling_mode(u32 src, u32 dst)
+ {
+-	if (dst == src >> 16)
++	if (dst << 16 == src)
+ 		return VC4_SCALING_NONE;
+ 
+ 	if (src <= (1 << 16))
+@@ -614,6 +614,12 @@ static int vc4_plane_setup_clipping_and_
+ 	vc4_state->y_scaling[0] = vc4_get_scaling_mode(vc4_state->src_h[0],
+ 						       vc4_state->crtc_h);
+ 
++	/* A fractional start fetches an extra pixel, which needs scaling out */
++	if (vc4_state->x_scaling[0] == VC4_SCALING_NONE && (vc4_state->src_x & 0xffff))
++		vc4_state->x_scaling[0] = VC4_SCALING_PPF;
++	if (vc4_state->y_scaling[0] == VC4_SCALING_NONE && (vc4_state->src_y & 0xffff))
++		vc4_state->y_scaling[0] = VC4_SCALING_PPF;
++
+ 	vc4_state->is_unity = (vc4_state->x_scaling[0] == VC4_SCALING_NONE &&
+ 			       vc4_state->y_scaling[0] == VC4_SCALING_NONE);
+ 

@@ -1,0 +1,45 @@
+From fc91bf882691e52d09436c2819831dc4ba61900e Mon Sep 17 00:00:00 2001
+From: Yu Dukai <646689853@qq.com>
+Date: Wed, 30 Sep 2026 10:20:27 +0800
+Subject: [PATCH] dts: overlays: vc4-kms-dsi-waveshare-panel: Add 10.1inch E
+ variants
+
+Add the 10_1_inchE_4lane and 10_1_inchE_2lane overlay parameters
+matching the new panel driver compatible strings
+(waveshare,10.1inch-e-4lane-panel / waveshare,10.1inch-e-2lane-panel)
+for the 10.1inch DSI LCD (E): 1920x1200 at 60fps over 4 DSI lanes or
+at 30fps over 2 DSI lanes, keeping only the default landscape
+orientation.
+
+Signed-off-by: Yu Dukai <646689853@qq.com>
+---
+ arch/arm/boot/dts/overlays/README                           | 2 ++
+ .../dts/overlays/vc4-kms-dsi-waveshare-panel-overlay.dts    | 6 ++++++
+ 2 files changed, 8 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -6269,6 +6269,8 @@ Params: 2_8_inch                2.8" 480
+         11_9_inch               11.9" 320x1480
+         13_3_inch_4lane         13.3" 1920x1080 4lane
+         13_3_inch_2lane         13.3" 1920x1080 2lane
++        10_1_inchE_4lane        10.1" E 1920x1200 60fps 4lane
++        10_1_inchE_2lane        10.1" E 1920x1200 30fps 2lane
+         i2c1                    Use i2c-1 with jumper wires from GPIOs 2&3
+         disable_touch           Disable the touch controller
+         rotation                Set the panel orientation property
+--- a/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-overlay.dts
+@@ -136,6 +136,12 @@
+ 		7_0_inchH = <&panel>, "compatible=waveshare,7.0inch-h-panel",
+ 				  <&touch>, "touchscreen-swapped-x-y?",
+ 				  <&touch>, "touchscreen-inverted-x?";
++		10_1_inchE_4lane = <&panel>, "compatible=waveshare,10.1inch-e-4lane-panel",
++				  <&touch>, "touchscreen-swapped-x-y?",
++				  <&touch>, "touchscreen-inverted-x?";
++		10_1_inchE_2lane = <&panel>, "compatible=waveshare,10.1inch-e-2lane-panel",
++				  <&touch>, "touchscreen-swapped-x-y?",
++				  <&touch>, "touchscreen-inverted-x?";
+ 		i2c1 = <&i2c_frag>, "target:0=",<&i2c1>,
+ 		       <0>, "-3-4+5";
+ 		disable_touch = <&touch>, "status=disabled";

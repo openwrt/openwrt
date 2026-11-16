@@ -1,0 +1,29 @@
+From 76b377707c02a9bba2d30b7f4bb48a87cf7a70f9 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Thu, 15 Oct 2026 11:39:07 +0100
+Subject: [PATCH] media: i2c: ov5647: Grab [HV]FLIP controls when streaming
+
+The HFLIP and VFLIP controls change the pixel format, so
+can not be changed whilst streaming.
+
+Grab those controls when starting streaming, and release
+them when stopping.
+
+Fixes: 743550826ba5 ("media: i2c: ov5647: Support HFLIP and VFLIP")
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/media/i2c/ov5647.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/media/i2c/ov5647.c
++++ b/drivers/media/i2c/ov5647.c
+@@ -816,6 +816,9 @@ static int ov5647_s_stream(struct v4l2_s
+ 		pm_runtime_put(&client->dev);
+ 	}
+ 
++	__v4l2_ctrl_grab(sensor->vflip, enable);
++	__v4l2_ctrl_grab(sensor->hflip, enable);
++
+ 	mutex_unlock(&sensor->lock);
+ 
+ 	return 0;

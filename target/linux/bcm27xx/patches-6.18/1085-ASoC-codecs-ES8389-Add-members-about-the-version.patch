@@ -1,0 +1,49 @@
+From 2930949cba15876d29856221f01a17598ffad290 Mon Sep 17 00:00:00 2001
+From: Zhang Yi <zhangyi@everest-semi.com>
+Date: Mon, 5 Jan 2026 17:15:47 +0800
+Subject: [PATCH] ASoC: codecs: ES8389: Add members about the version
+
+commit e5077facc770a9348d653dd9f1dbafb747a87e38 upstream.
+
+Execute different configurations based on version number
+in order to support different versions of es8389.
+
+Signed-off-by: Zhang Yi <zhangyi@everest-semi.com>
+Link: https://patch.msgid.link/20260105091548.4196-5-zhangyi@everest-semi.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/codecs/es8389.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/sound/soc/codecs/es8389.c
++++ b/sound/soc/codecs/es8389.c
+@@ -38,6 +38,7 @@ struct	es8389_private {
+ 
+ 	u8 mclk_src;
+ 	u8 vddd;
++	int version;
+ 	enum snd_soc_bias_level bias_level;
+ };
+ 
+@@ -681,6 +682,10 @@ static int es8389_mute(struct snd_soc_da
+ 		}
+ 
+ 		if (direction == SNDRV_PCM_STREAM_PLAYBACK) {
++			if (!es8389->version) {
++				regmap_write(es8389->regmap, ES8389_DAC_RESET, 0X00);
++				usleep_range(70000, 72000);
++			}
+ 			regmap_update_bits(es8389->regmap, ES8389_DAC_FORMAT_MUTE,
+ 						0x03, 0x00);
+ 		} else {
+@@ -730,7 +735,10 @@ static struct snd_soc_dai_driver es8389_
+ static void es8389_init(struct snd_soc_component *component)
+ {
+ 	struct es8389_private *es8389 = snd_soc_component_get_drvdata(component);
++	unsigned int reg;
+ 
++	regmap_read(es8389->regmap, ES8389_MAX_REGISTER, &reg);
++	es8389->version = reg;
+ 	regmap_write(es8389->regmap, ES8389_ISO_CTL, 0x00);
+ 	regmap_write(es8389->regmap, ES8389_RESET, 0x7E);
+ 	regmap_write(es8389->regmap, ES8389_ISO_CTL, 0x38);

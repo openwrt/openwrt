@@ -1,0 +1,56 @@
+From 5d64d1ea73716526ed9c0ed184a9cb5f6042e32c Mon Sep 17 00:00:00 2001
+From: Awss Al-Mubarak <awss@awssalmubarak.com>
+Date: Sat, 17 Oct 2026 19:47:40 +0100
+Subject: [PATCH] fbcon: Don't overrun the fullscreen logo palette
+
+The colour table in fb_set_logo_from_file() holds 224 colours. Past
+that, new colours aren't stored, but current_rows is still
+incremented for every pixel whose colour isn't in the table. Later
+searches then read past the end of the table on the stack, and
+fb_set_logo_RGB_palette() writes current_rows entries into a palette
+that only has room for 224. KASAN reports both for a logo with 225
+colours, and with 300 colours the search runs off the stack.
+
+Only count the colours that are stored, and print the overflow
+message when a colour had to be clipped. Clipped colours still map to
+the first entry. The message no longer appears for a logo with
+exactly 224 colours.
+
+Fixes: 19e0758ee533 ("Fullscreen Splash Images")
+Signed-off-by: Awss Al-Mubarak <awss@awssalmubarak.com>
+---
+ drivers/video/fbdev/core/fb_logo.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/video/fbdev/core/fb_logo.c
++++ b/drivers/video/fbdev/core/fb_logo.c
+@@ -354,7 +354,7 @@ static int fb_set_logo_from_file(struct
+ 	struct image_palette image_palette;
+ 	const char *current_ptr, *end_ptr;
+ 	long width = 0, height = 0;
+-	bool top_to_bottom;
++	bool top_to_bottom, clipped = false;
+ 	u8 B, G, R;
+ 	u8 entry[3];
+ 	ssize_t len;
+@@ -444,8 +444,10 @@ static int fb_set_logo_from_file(struct
+ 						image_palette.colors[current_rows][k] =
+ 								entry[k];
+ 					palette_index = current_rows;
++					current_rows++;
++				} else {
++					clipped = true;
+ 				}
+-				current_rows++;
+ 			}
+ 			actual_row = top_to_bottom ? i : (height - 1 - i);
+ 
+@@ -455,7 +457,7 @@ static int fb_set_logo_from_file(struct
+ 		current_ptr += skip_x * 3 * 2;
+ 	}
+ 
+-	if (current_rows >= 224)
++	if (clipped)
+ 		pr_err("Palette overflow. Entries clipped\n");
+ 
+ 	// Set logo palette

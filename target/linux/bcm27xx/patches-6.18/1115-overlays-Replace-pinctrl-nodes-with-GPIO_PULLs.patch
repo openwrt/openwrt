@@ -1,0 +1,549 @@
+From 2dd09405644471652fa15ff93c2c27c384cf6135 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 9 Nov 2026 09:31:45 +0000
+Subject: [PATCH] overlays: Replace pinctrl nodes with GPIO_PULLs
+
+There are cases where a pinctrl node has been used to declare an input,
+the only reason for which is to enable or change the pull bias on the
+pin. This can be simplified using GPIO_PULL_UP, GPIO_PULL_DOWN or
+GPIO_PULL_DISABLE in the flags field.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ .../crystalfontz-cfa050_pi_m-overlay.dts      | 24 ++++---------
+ arch/arm/boot/dts/overlays/dht11-overlay.dts  | 21 +++--------
+ arch/arm/boot/dts/overlays/draws-overlay.dts  | 10 +-----
+ .../boot/dts/overlays/rootmaster-overlay.dts  | 14 +-------
+ .../overlays/sunfounder-pironman5-overlay.dts | 21 +++--------
+ .../boot/dts/overlays/tinylcd35-overlay.dts   | 35 +++++++------------
+ .../vc4-kms-dsi-edatec-panel-070c-overlay.dts | 20 +++--------
+ .../vc4-kms-dsi-edatec-panel-101c-overlay.dts | 22 +++---------
+ .../arm/boot/dts/overlays/w1-gpio-overlay.dts | 21 +++--------
+ .../boot/dts/overlays/w1-gpio-pi5-overlay.dts |  2 +-
+ .../dts/overlays/w1-gpio-pullup-overlay.dts   | 25 ++++---------
+ .../overlays/w1-gpio-pullup-pi5-overlay.dts   |  2 +-
+ 12 files changed, 49 insertions(+), 168 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/crystalfontz-cfa050_pi_m-overlay.dts
++++ b/arch/arm/boot/dts/overlays/crystalfontz-cfa050_pi_m-overlay.dts
+@@ -5,6 +5,9 @@
+  */
+ /dts-v1/;
+ /plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++
+ /{
+ // RaspberryPi CM4
+ 	compatible = "brcm,bcm2835";
+@@ -88,19 +91,8 @@
+ 			};
+ 		};
+ 	};
+-// rPI GPIO INPUT FOR TOUCH IC IRQ
+-	fragment@4 {
+-		target = <&gpio>;
+-		__dormant__ {
+-			gt928intpins: gt928intpins {
+-				brcm,pins = <26>; //gpio pin
+-				brcm,function = <0>; //input
+-				brcm,pull = <2>; //2=pull-up
+-			};
+-		};
+-	};
+ // GT928 TOUCH CONTROLLER IC
+-	frag5: fragment@5 {
++	frag4: fragment@4 {
+ 		target = <&i2c_csi_dsi>;
+ 		__dormant__ {
+ 			#address-cells = <1>;
+@@ -109,11 +101,9 @@
+ 			gt928: gt928@5d {
+ 				compatible = "goodix,gt928";
+ 				reg = <0x5d>;
+-				pinctrl-names = "default";
+-				pinctrl-0 = <&gt928intpins>;
+ 				interrupt-parent = <&gpio>;
+ 				interrupts = <26 2>; //gpio 26, 2=high-to-low trigger
+-				irq-gpios = <&gpio 26 0>; //gpio 26, 0=active-high
++				irq-gpios = <&gpio 26 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+ 				reset-gpios = <&pcf8574a 1 0>;
+ 				touchscreen-inverted-x;
+ 				touchscreen-inverted-y;
+@@ -123,11 +113,11 @@
+ //OVERLAY OPTIONS
+ 	__overrides__ {
+ 		//enables captouch
+-		captouch = <0>,"+4+5";
++		captouch = <0>,"+4";
+ 		//changes options to support CM5 (default is CM4)
+ 		cm5 = <&frag0>, "target:0=",<&i2c_csi_dsi0>,
+ 			<&frag1>, "target:0=",<&i2c_csi_dsi0>,
+ 			<&frag2>, "target:0=",<&i2c_csi_dsi0>,
+-			<&frag5>, "target:0=",<&i2c_csi_dsi0>;
++			<&frag4>, "target:0=",<&i2c_csi_dsi0>;
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/dht11-overlay.dts
++++ b/arch/arm/boot/dts/overlays/dht11-overlay.dts
+@@ -4,6 +4,8 @@
+ /dts-v1/;
+ /plugin/;
+ 
++#include <dt-bindings/gpio/gpio.h>
++
+ / {
+ 	compatible = "brcm,bcm2835";
+ 
+@@ -12,9 +14,7 @@
+ 		__overlay__ {
+ 			dht11: dht11@4 {
+ 				compatible = "dht11";
+-				pinctrl-names = "default";
+-				pinctrl-0 = <&dht11_pins>;
+-				gpios = <&gpio 4 0>;
++				gpios = <&gpio 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DISABLE)>;
+ 				status = "okay";
+ 				#io-channel-cells = <1>;
+ 			};
+@@ -27,21 +27,8 @@
+ 		};
+ 	};
+ 
+-	fragment@1 {
+-		target = <&gpio>;
+-		__overlay__ {
+-			dht11_pins: dht11_pins@4 {
+-				brcm,pins = <4>;
+-				brcm,function = <0>; // in
+-				brcm,pull = <0>; // off
+-			};
+-		};
+-	};
+-
+ 	__overrides__ {
+-		gpiopin = <&dht11_pins>,"brcm,pins:0",
+-			<&dht11_pins>, "reg:0",
+-			<&dht11>,"gpios:4",
++		gpiopin = <&dht11>,"gpios:4",
+ 			<&dht11>,"reg:0",
+ 			<&iio>,"reg:0";
+ 	};
+--- a/arch/arm/boot/dts/overlays/draws-overlay.dts
++++ b/arch/arm/boot/dts/overlays/draws-overlay.dts
+@@ -41,9 +41,7 @@
+ 
+             pps: pps {
+                 compatible = "pps-gpio";
+-                pinctrl-names = "default";
+-                pinctrl-0 = <&pps_pins>;
+-                gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
++                gpios = <&gpio 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_DISABLE)>;
+                 status = "okay";
+             };
+ 
+@@ -183,12 +181,6 @@
+                 brcm,function = <0>;
+                 brcm,pull = <2>;
+             };
+-
+-            pps_pins: pps_pins {
+-                brcm,pins = <7>;
+-                brcm,function = <0>;
+-                brcm,pull = <0>;
+-            };
+         };
+     };
+ 
+--- a/arch/arm/boot/dts/overlays/rootmaster-overlay.dts
++++ b/arch/arm/boot/dts/overlays/rootmaster-overlay.dts
+@@ -57,21 +57,9 @@
+ 		__overlay__ {
+ 			onewire@4 {
+ 				compatible = "w1-gpio";
+-				pinctrl-names = "default";
+-				pinctrl-0 = <&w1_pins>;
+-				gpios = <&gpio 4 0>;
++				gpios = <&gpio 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DISABLE)>;
+ 				status = "okay";
+ 			};
+ 		};
+ 	};
+-	fragment@5 {
+-		target = <&gpio>;
+-		__overlay__ {
+-			w1_pins: w1_pins@4 {
+-				brcm,pins = <4>;
+-				brcm,function = <0>;
+-				brcm,pull = <0>;
+-			};
+-		};
+-	};
+ };
+--- a/arch/arm/boot/dts/overlays/sunfounder-pironman5-overlay.dts
++++ b/arch/arm/boot/dts/overlays/sunfounder-pironman5-overlay.dts
+@@ -1,6 +1,8 @@
+ /dts-v1/;
+ /plugin/;
+ 
++#include <dt-bindings/gpio/gpio.h>
++
+ / {
+ 	compatible = "brcm,bcm2835";
+ 
+@@ -21,11 +23,8 @@
+ 		__overlay__ {
+ 			gpio_ir: ir-receiver@d {
+ 				compatible = "gpio-ir-receiver";
+-				pinctrl-names = "default";
+-				pinctrl-0 = <&gpio_ir_pins>;
+ 
+-				// pin number, high or low
+-				gpios = <&gpio 13 1>;
++				gpios = <&gpio 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+ 
+ 				// parameter for keymap name
+ 				linux,rc-map-name = "rc-rc6-mce";
+@@ -34,22 +33,10 @@
+ 			};
+ 		};
+ 	};
+-	fragment@3 {
+-		target = <&gpio>;
+-		__overlay__ {
+-			gpio_ir_pins: gpio_ir_pins@d {
+-				brcm,pins = <13>;
+-				brcm,function = <0>;
+-				brcm,pull = <2>;
+-			};
+-		};
+-	};
+ 	__overrides__ {
+ 		ir = <&gpio_ir>,"status";
+ 		ir_pins =
+ 			<&gpio_ir>,"gpios:4",
+-			<&gpio_ir>,"reg:0",
+-			<&gpio_ir_pins>,"brcm,pins:0",
+-			<&gpio_ir_pins>,"reg:0";
++			<&gpio_ir>,"reg:0";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/tinylcd35-overlay.dts
++++ b/arch/arm/boot/dts/overlays/tinylcd35-overlay.dts
+@@ -23,6 +23,8 @@
+ /dts-v1/;
+ /plugin/;
+ 
++#include <dt-bindings/gpio/gpio.h>
++
+ / {
+ 	compatible = "brcm,bcm2835";
+ 
+@@ -48,17 +50,6 @@
+ 	};
+ 
+ 	fragment@3 {
+-		target = <&gpio>;
+-		__overlay__ {
+-			keypad_pins: keypad_pins {
+-				brcm,pins = <4 17 22 23 27>;
+-				brcm,function = <0>; /* in */
+-				brcm,pull = <1>; /* down */
+-			};
+-		};
+-	};
+-
+-	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			/* needed to avoid dtc warning */
+@@ -118,7 +109,7 @@
+ 
+ 	/*  RTC    */
+ 
+-	fragment@5 {
++	fragment@4 {
+ 		target = <&i2c1>;
+ 		__dormant__ {
+ 			#address-cells = <1>;
+@@ -134,7 +125,7 @@
+ 		};
+ 	};
+ 
+-	fragment@6 {
++	fragment@5 {
+ 		target = <&i2c1>;
+ 		__dormant__ {
+ 			#address-cells = <1>;
+@@ -154,40 +145,38 @@
+ 	 * Values for input event code is found under the
+ 	 * 'Keys and buttons' heading in include/uapi/linux/input.h
+ 	 */
+-	fragment@7 {
++	fragment@6 {
+ 		target-path = "/soc";
+ 		__overlay__ {
+ 			keypad: keypad {
+ 				compatible = "gpio-keys";
+-				pinctrl-names = "default";
+-				pinctrl-0 = <&keypad_pins>;
+ 				status = "disabled";
+ 				autorepeat;
+ 
+ 				button@17 {
+ 					label = "GPIO KEY_UP";
+ 					linux,code = <103>;
+-					gpios = <&gpio 17 0>;
++					gpios = <&gpio 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+ 				};
+ 				button@22 {
+ 					label = "GPIO KEY_DOWN";
+ 					linux,code = <108>;
+-					gpios = <&gpio 22 0>;
++					gpios = <&gpio 22 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+ 				};
+ 				button@27 {
+ 					label = "GPIO KEY_LEFT";
+ 					linux,code = <105>;
+-					gpios = <&gpio 27 0>;
++					gpios = <&gpio 27 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+ 				};
+ 				button@23 {
+ 					label = "GPIO KEY_RIGHT";
+ 					linux,code = <106>;
+-					gpios = <&gpio 23 0>;
++					gpios = <&gpio 23 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+ 				};
+ 				button@4 {
+ 					label = "GPIO KEY_ENTER";
+ 					linux,code = <28>;
+-					gpios = <&gpio 4 0>;
++					gpios = <&gpio 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+ 				};
+ 			};
+ 		};
+@@ -202,8 +191,8 @@
+ 		touchgpio =  <&tinylcd35_ts>,"interrupts:0",
+ 			     <&tinylcd35_ts>,"pendown-gpio:4";
+ 		xohms =      <&tinylcd35_ts>,"ti,x-plate-ohms;0";
+-		rtc-pcf =    <0>,"=5";
+-		rtc-ds =     <0>,"=6";
++		rtc-pcf =    <0>,"=4";
++		rtc-ds =     <0>,"=5";
+ 		keypad =     <&keypad>,"status";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/vc4-kms-dsi-edatec-panel-070c-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-edatec-panel-070c-overlay.dts
+@@ -1,6 +1,8 @@
+ /dts-v1/;
+ /plugin/;
+ 
++#include <dt-bindings/gpio/gpio.h>
++
+ / {
+ 	compatible = "brcm,bcm2835";
+ 
+@@ -23,13 +25,11 @@
+ 			gt911: gt911@14 {
+ 				compatible = "goodix,gt911";
+ 				reg = <0x14>;
+-				pinctrl-names = "default";
+-				pinctrl-0 = <&gt911_pins>;
+ 
+ 				reset-gpios = <&reg_display 3 0>;
+ 				interrupt-parent = <&gpio>;
+ 				interrupts = <16 2>;
+-				irq-gpios = <&gpio 16 0>;
++				irq-gpios = <&gpio 16 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+ 			};
+ 		};
+ 	};
+@@ -97,23 +97,11 @@
+ 		};
+ 	};
+ 
+-	fragment@5 {
+-		target = <&gpio>;
+-		__overlay__ {
+-			gt911_pins: gt911_pins {
+-				brcm,pins = <16>;
+-				brcm,function = <0>;
+-				brcm,pull = <2>;
+-			};
+-		};
+-	};
+-
+ 	__overrides__ {
+ 		i2c1 = <&i2c_frag>, "target:0=",<&i2c1>,
+ 			   <0>,"-2-3+4";
+ 		i2c4 = <&i2c_frag>, "target:0=",<&i2c_csi_dsi0>;
+-		interrupt = <&gt911_pins>,"brcm,pins:0",
+-				    <&gt911>,"interrupts:0",
++		interrupt = <&gt911>,"interrupts:0",
+ 				    <&gt911>,"irq-gpios:4";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/vc4-kms-dsi-edatec-panel-101c-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-edatec-panel-101c-overlay.dts
+@@ -65,18 +65,7 @@
+ 		};
+ 	};
+ 
+-	fragment@4 {
+-		target = <&gpio>;
+-		__overlay__ {
+-			gt928_pins: gt928_pins {
+-				brcm,pins = <16>;
+-				brcm,function = <0>;
+-				brcm,pull = <2>;
+-			};
+-		};
+-	};
+-
+-	i2c_frag: fragment@5 {
++	i2c_frag: fragment@4 {
+ 		target = <&i2c_csi_dsi>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -93,23 +82,20 @@
+ 			gt928:gt928@14 {
+ 				compatible = "goodix,gt928";
+ 				reg = <0x14>;
+-				pinctrl-names = "default";
+-				pinctrl-0 = <&gt928_pins>;
+ 
+ 				reset-gpios = <&reg_display 3 GPIO_ACTIVE_HIGH>;
+ 				interrupt-parent = <&gpio>;
+ 				interrupts = <16 2>;
+-				irq-gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
++				irq-gpios = <&gpio 16 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+ 			};
+ 		};
+ 	};
+ 
+ 	__overrides__ {
+ 		i2c1 = <&i2c_frag>, "target:0=",<&i2c1>,
+-			   <0>, "-3-4+5";
++			   <0>, "-3+4";
+ 		i2c4 = <&i2c_frag>, "target:0=",<&i2c_csi_dsi0>;
+-		interrupt = <&gt928_pins>, "brcm,pins:0",
+-				    <&gt928>, "interrupts:0",
++		interrupt = <&gt928>, "interrupts:0",
+ 				    <&gt928>, "irq-gpios:4";
+ 		rotation = <&ili9881c>, "rotation:0";
+ 	};
+--- a/arch/arm/boot/dts/overlays/w1-gpio-overlay.dts
++++ b/arch/arm/boot/dts/overlays/w1-gpio-overlay.dts
+@@ -2,6 +2,8 @@
+ /dts-v1/;
+ /plugin/;
+ 
++#include <dt-bindings/gpio/gpio.h>
++
+ / {
+ 	compatible = "brcm,bcm2835";
+ 
+@@ -11,30 +13,15 @@
+ 
+ 			w1: onewire@0 {
+ 				compatible = "w1-gpio";
+-				pinctrl-names = "default";
+-				pinctrl-0 = <&w1_pins>;
+-				gpios = <&gpio 4 0>;
++				gpios = <&gpio 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DISABLE)>;
+ 				status = "okay";
+ 			};
+ 		};
+ 	};
+ 
+-	fragment@1 {
+-		target = <&gpio>;
+-		__overlay__ {
+-			w1_pins: w1_pins@0 {
+-				brcm,pins = <4>;
+-				brcm,function = <0>; // in (initially)
+-				brcm,pull = <0>; // off
+-			};
+-		};
+-	};
+-
+ 	__overrides__ {
+ 		gpiopin =       <&w1>,"gpios:4",
+-				<&w1>,"reg:0",
+-				<&w1_pins>,"brcm,pins:0",
+-				<&w1_pins>,"reg:0";
++				<&w1>,"reg:0";
+ 		pullup;		// Silently ignore unneeded parameter
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/w1-gpio-pi5-overlay.dts
++++ b/arch/arm/boot/dts/overlays/w1-gpio-pi5-overlay.dts
+@@ -3,7 +3,7 @@
+ / {
+ 	compatible = "brcm,bcm2712";
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&w1>;
+ 		__overlay__ {
+ 			raspberrypi,delay-needs-poll;
+--- a/arch/arm/boot/dts/overlays/w1-gpio-pullup-overlay.dts
++++ b/arch/arm/boot/dts/overlays/w1-gpio-pullup-overlay.dts
+@@ -2,6 +2,8 @@
+ /dts-v1/;
+ /plugin/;
+ 
++#include <dt-bindings/gpio/gpio.h>
++
+ / {
+ 	compatible = "brcm,bcm2835";
+ 
+@@ -11,32 +13,17 @@
+ 
+ 			w1: onewire@0 {
+ 				compatible = "w1-gpio";
+-				pinctrl-names = "default";
+-				pinctrl-0 = <&w1_pins>;
+-				gpios = <&gpio 4 0>, <&gpio 5 1>;
++				gpios = <&gpio 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DISABLE)>,
++					<&gpio 5 (GPIO_ACTIVE_LOW | GPIO_PULL_DISABLE)>;
+ 				status = "okay";
+ 			};
+ 		};
+ 	};
+ 
+-	fragment@1 {
+-		target = <&gpio>;
+-		__overlay__ {
+-			w1_pins: w1_pins@0 {
+-				brcm,pins = <4 5>;
+-				brcm,function = <0 1>; // in out
+-				brcm,pull = <0 0>; // off off
+-			};
+-		};
+-	};
+-
+ 	__overrides__ {
+ 		gpiopin =       <&w1>,"gpios:4",
+-				<&w1>,"reg:0",
+-				<&w1_pins>,"brcm,pins:0",
+-				<&w1_pins>,"reg:0";
+-		extpullup =     <&w1>,"gpios:16",
+-				<&w1_pins>,"brcm,pins:4";
++				<&w1>,"reg:0";
++		extpullup =     <&w1>,"gpios:16";
+ 		pullup;		// Silently ignore unneeded parameter
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/w1-gpio-pullup-pi5-overlay.dts
++++ b/arch/arm/boot/dts/overlays/w1-gpio-pullup-pi5-overlay.dts
+@@ -3,7 +3,7 @@
+ / {
+ 	compatible = "brcm,bcm2712";
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&w1>;
+ 		__overlay__ {
+ 			raspberrypi,delay-needs-poll;

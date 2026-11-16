@@ -1,0 +1,26 @@
+From fee384e026c6c4a201b01b8120590d3ba918cd10 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 16:47:51 +0000
+Subject: [PATCH] drm/vc4: hvs6: Round up the LBM width of subsampled channels
+
+vc4_lbm_channel_size() divided the width by the horizontal subsampling,
+rounding down. A 1 pixel wide YUV source got no LBM at all, and odd
+widths, such as 33 pixels upscaled, got a line too short, either of which
+corrupts the next plane's LBM.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -895,7 +895,7 @@ static unsigned int vc4_lbm_channel_size
+ 		width = state->crtc_w;
+ 	else
+ 		width = min(src_w, state->crtc_w);
+-	width = round_up(width / info->hsub, 4);
++	width = round_up(DIV_ROUND_UP(width, info->hsub), 4);
+ 
+ 	wpc = vc4_lbm_words_per_component(state, channel);
+ 	if (!wpc)

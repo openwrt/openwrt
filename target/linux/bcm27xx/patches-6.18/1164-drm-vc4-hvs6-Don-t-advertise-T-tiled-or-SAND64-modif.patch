@@ -1,0 +1,31 @@
+From 7f362e542ddec3ac101f248ca4ca6f301556fa07 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 16:47:52 +0000
+Subject: [PATCH] drm/vc4: hvs6: Don't advertise T-tiled or SAND64 modifiers
+
+vc6_plane_mode_set() only handles linear, SAND128 and SAND256 buffers,
+and rejects anything else, but the planes advertised T-tiled and SAND64
+too. A client using them got a framebuffer that every commit rejected.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -2759,6 +2759,14 @@ static bool vc4_format_mod_supported(str
+ 				     uint32_t format,
+ 				     uint64_t modifier)
+ {
++	struct vc4_dev *vc4 = to_vc4_dev(plane->dev);
++
++	/* vc6_plane_mode_set() only handles linear, SAND128 and SAND256 */
++	if (vc4->gen >= VC4_GEN_6_C &&
++	    (modifier == DRM_FORMAT_MOD_BROADCOM_VC4_T_TILED ||
++	     fourcc_mod_broadcom_mod(modifier) == DRM_FORMAT_MOD_BROADCOM_SAND64))
++		return false;
++
+ 	/* Support T_TILING for RGB formats only. */
+ 	switch (format) {
+ 	case DRM_FORMAT_XRGB8888:

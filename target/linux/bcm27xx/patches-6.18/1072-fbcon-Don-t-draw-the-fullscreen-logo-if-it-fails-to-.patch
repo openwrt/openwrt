@@ -1,0 +1,107 @@
+From 64dae084c9feb0c7aeda5415cc725aa016f8c15a Mon Sep 17 00:00:00 2001
+From: Awss Al-Mubarak <awss@awssalmubarak.com>
+Date: Sat, 17 Oct 2026 19:47:39 +0100
+Subject: [PATCH] fbcon: Don't draw the fullscreen logo if it fails to load
+
+fb_set_logo_from_file() returns void and leaves the caller's
+struct fb_image untouched when the logo file is missing or can't be
+parsed. fb_show_logo_line() then reads image.data[0] and draws from
+uninitialised stack memory, which oopses while the framebuffer is
+registered and panics the boot. A TGA header with a width or height
+of 0 does the same, because kmalloc_array() returns ZERO_SIZE_PTR,
+which passes the NULL check.
+
+When the file does load, the pixel buffer is freed before
+fb_set_logo_from_file() returns, so the logo is drawn from freed
+memory. With init_on_free=1 it comes out black.
+
+Return an error from fb_set_logo_from_file() and skip drawing when
+it fails, reject a zero width or height, and free the pixel buffer
+once the logo has been drawn.
+
+Fixes: 19e0758ee533 ("Fullscreen Splash Images")
+Link: https://github.com/raspberrypi/linux/issues/7086
+Signed-off-by: Awss Al-Mubarak <awss@awssalmubarak.com>
+---
+ drivers/video/fbdev/core/fb_logo.c | 27 ++++++++++++++++++++-------
+ 1 file changed, 20 insertions(+), 7 deletions(-)
+
+--- a/drivers/video/fbdev/core/fb_logo.c
++++ b/drivers/video/fbdev/core/fb_logo.c
+@@ -344,8 +344,8 @@ static bool fb_palette_contains_entry(st
+ 	return false; // No duplicate found
+ }
+ 
+-static void fb_set_logo_from_file(struct fb_info *info, const char *filepath,
+-				   struct fb_image *image, u32 *palette)
++static int fb_set_logo_from_file(struct fb_info *info, const char *filepath,
++				 struct fb_image *image, u32 *palette)
+ {
+ 	int current_rows = 0, palette_index = 0, actual_row, skip_x = 0, skip_y = 0, ret;
+ 	unsigned char *read_logo = NULL, *header;
+@@ -366,6 +366,7 @@ static void fb_set_logo_from_file(struct
+ 	}
+ 	len = fw->size;
+ 	file_content = fw->data;
++	ret = -EINVAL;
+ 
+ 	if (!len) {
+ 		pr_err("Error: logo TGA file is empty. Not drawing fullscreen logo.\n");
+@@ -391,14 +392,18 @@ static void fb_set_logo_from_file(struct
+ 		       header[2], header[16]);
+ 		goto cleanup;
+ 	}
++	if (!width || !height) {
++		pr_err("Invalid logo file: TGA image is %ldx%ld\n", width, height);
++		goto cleanup;
++	}
+ 	// Skip header + ID field
+ 	current_ptr = file_content + 18 + header[0];
+ 
+ 	read_logo = kmalloc_array(width, height, GFP_KERNEL);
+-	if (!read_logo)
++	if (!read_logo) {
++		ret = -ENOMEM;
+ 		goto cleanup;
+-
+-	image->data = read_logo;
++	}
+ 
+ 	// TGA pixels are stored bottom-to-top by default, unless bit 5 of
+ 	// image_descriptor is set
+@@ -473,9 +478,14 @@ static void fb_set_logo_from_file(struct
+ 	if (image->width < info->var.xres)
+ 		image->dx = (info->var.xres - image->width) / 2;
+ 
++	image->data = read_logo;
++	release_firmware(fw);
++	return 0;
++
+ cleanup:
+ 	kfree(read_logo);
+ 	release_firmware(fw);
++	return ret;
+ }
+ 
+ 
+@@ -493,8 +503,9 @@ static int fb_show_logo_line(struct fb_i
+ 		return 0;
+ 
+ 	if (fullscreen_logo_enabled) {
+-		fb_set_logo_from_file(info, fullscreen_logo_path,
+-			&image, palette);
++		if (fb_set_logo_from_file(info, fullscreen_logo_path,
++					  &image, palette))
++			return 0;
+ 	} else {
+ 		image.depth = 8;
+ 		image.data = logo->data;
+@@ -580,6 +591,8 @@ static int fb_show_logo_line(struct fb_i
+ 	kfree(palette);
+ 	if (saved_pseudo_palette != NULL)
+ 		info->pseudo_palette = saved_pseudo_palette;
++	if (fullscreen_logo_enabled)
++		kfree(image.data);
+ 	kfree(logo_new);
+ 	kfree(logo_rotate);
+ 	return image.dy + logo->height;
