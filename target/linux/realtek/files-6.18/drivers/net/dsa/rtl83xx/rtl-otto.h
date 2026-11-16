@@ -95,6 +95,9 @@ struct rtldsa_red {
 	struct tc_red_qopt_offload_params params;
 	bool child;
 	bool offloaded;
+	u64 tx_bytes;
+	u64 tx_packets;
+	u64 drops;
 };
 
 struct rtldsa_port {
@@ -117,6 +120,8 @@ struct rtldsa_port {
 	struct rtldsa_red queue_red[MAX_PRIOS];
 	struct rtldsa_red queue_red_prev[MAX_PRIOS];
 	u32 red_cfg[MAX_PRIOS];
+	u64 red_drops[MAX_PRIOS];
+	u16 red_drops_hw[MAX_PRIOS];
 	unsigned long cached_flags;
 	u64 pm;
 	u16 pvid;
@@ -512,6 +517,7 @@ struct rtldsa_config {
 				bool strict);
 	int (*red_set)(struct otto_dsa_priv *priv, int port,
 		       const struct tc_red_qopt_offload_params **p);
+	void (*red_drops_update)(struct otto_dsa_priv *priv, int port);
 	int (*egress_shaper_set)(struct otto_dsa_priv *priv, int port, int queue,
 				 u64 rate_bytes_ps, u32 burst);
 	void (*qos_init)(struct otto_dsa_priv *priv);
@@ -581,6 +587,7 @@ struct otto_dsa_priv {
 
 	/** @red_cfg: RED setting of each queue, shared by all ports in @red_ports */
 	u32 red_cfg[MAX_PRIOS];
+	struct delayed_work red_work;
 	struct workqueue_struct *wq;
 	bool eee_enabled;
 	unsigned long mc_group_bm[MAX_MC_GROUPS >> 5];

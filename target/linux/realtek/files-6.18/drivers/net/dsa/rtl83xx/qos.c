@@ -90,6 +90,10 @@
 #define RTL930X_SWRED_RATE_SCALE		1023
 #define RTL930X_SWRED_DROP_PRECEDENCES		3
 #define RTL930X_SWRED_QUEUES			12
+#define RTL930X_STAT_PORT_E_DROP_CNTR0(port, queue) \
+						(0xB9A4 + ((port) << 5) + ((queue) << 2))
+#define RTL930X_STAT_PORT_E_DROP_CNTR1(port, queue) \
+						(0xBCA4 + ((port) - 24) * 48 + ((queue) << 2))
 
 #define DSCP_MAP_MAX 64
 
@@ -600,6 +604,30 @@ static u32 otto_qos_930x_red_tail_drop(struct otto_dsa_priv *priv, int queue)
 	return FIELD_PREP(RTL930X_SWRED_MAX_MASK, thr) | FIELD_PREP(RTL930X_SWRED_MIN_MASK, thr);
 }
 
+static void otto_qos_930x_red_read_drops(struct otto_dsa_priv *priv, int port, bool add)
+{
+	struct rtldsa_port *pp = &priv->ports[port];
+	u32 val;
+
+	for (int queue = 0; queue < MAX_PRIOS; queue++) {
+		u32 reg = port < 24 ? RTL930X_STAT_PORT_E_DROP_CNTR0(port, queue) :
+				      RTL930X_STAT_PORT_E_DROP_CNTR1(port, queue);
+
+		if (regmap_read(priv->map, reg, &val))
+			continue;
+
+		if (add)
+			pp->red_drops[queue] += (u16)(val - pp->red_drops_hw[queue]);
+		pp->red_drops_hw[queue] = val;
+	}
+}
+
+void otto_qos_930x_red_drops_update(struct otto_dsa_priv *priv, int port)
+{
+	if (priv->red_ports & BIT_ULL(port))
+		otto_qos_930x_red_read_drops(priv, port, true);
+}
+
 static int otto_qos_930x_red_apply(struct otto_dsa_priv *priv, int port)
 {
 	u32 *wanted = priv->ports[port].red_cfg;
@@ -633,6 +661,8 @@ static int otto_qos_930x_red_apply(struct otto_dsa_priv *priv, int port)
 	regmap_clear_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
 			  RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
 	regmap_set_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
+	if (!(priv->red_ports & BIT_ULL(port)))
+		otto_qos_930x_red_read_drops(priv, port, false);
 	priv->red_ports |= BIT_ULL(port);
 
 	return 0;

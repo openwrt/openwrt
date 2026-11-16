@@ -391,6 +391,22 @@ static const struct rhashtable_params tc_ht_params = {
 	.automatic_shrinking = true,
 };
 
+#define OTTO_TC_RED_POLL_INTERVAL	msecs_to_jiffies(50)
+
+static void otto_tc_red_poll(struct work_struct *work)
+{
+	struct otto_dsa_priv *priv = container_of(to_delayed_work(work),
+						  struct otto_dsa_priv, red_work);
+
+	guard(mutex)(&priv->reg_mutex);
+
+	for (int port = 0; port < priv->r->cpu_port; port++)
+		priv->r->red_drops_update(priv, port);
+
+	if (priv->red_ports)
+		queue_delayed_work(priv->wq, &priv->red_work, OTTO_TC_RED_POLL_INTERVAL);
+}
+
 int otto_tc_init(struct otto_dsa_priv *priv)
 {
 	int err;
@@ -403,6 +419,7 @@ int otto_tc_init(struct otto_dsa_priv *priv)
 		return err;
 
 	mutex_init(&priv->tc_flow_lock);
+	INIT_DELAYED_WORK(&priv->red_work, otto_tc_red_poll);
 	priv->tc_initialized = true;
 
 	return 0;
@@ -450,6 +467,8 @@ void otto_tc_cleanup(struct otto_dsa_priv *priv)
 {
 	if (!priv->tc_initialized)
 		return;
+
+	cancel_delayed_work_sync(&priv->red_work);
 
 	/* Hold tc_flow_lock like the add/del/stats callbacks do: any
 	 * callback that slipped in before teardown must finish before the
@@ -1039,6 +1058,47 @@ int otto_tc_cls_flower_stats(struct dsa_switch *ds, int port,
 	return ret;
 }
 
+static void otto_tc_red_stats(struct otto_dsa_priv *priv, int port, int queue,
+			      struct rtldsa_red *red, struct tc_qopt_offload_stats *stats)
+{
+	struct net_device *user = dsa_to_port(priv->ds, port)->user;
+	u64 drops = 0, bytes = red->tx_bytes, packets = red->tx_packets;
+	struct rtldsa_port *pp = &priv->ports[port];
+	struct rtnl_link_stats64 hw, sw;
+	struct Qdisc *root;
+
+	priv->r->red_drops_update(priv, port);
+	for (int q = 0; q < MAX_PRIOS; q++)
+		if (queue < 0 || q == queue)
+			drops += pp->red_drops[q];
+
+	if (queue < 0) {
+		otto_stats_get64(priv->ds, port, &hw);
+		dev_get_tstats64(user, &sw);
+		bytes = hw.tx_bytes - sw.tx_bytes;
+		packets = hw.tx_packets - sw.tx_packets;
+	}
+
+	if (stats) {
+		if ((s64)(bytes - red->tx_bytes) < 0 || (s64)(packets - red->tx_packets) < 0) {
+			bytes = red->tx_bytes;
+			packets = red->tx_packets;
+		}
+
+		/* the kernel updates these counters under the lock of the root qdisc */
+		root = rtnl_dereference(netdev_get_tx_queue(user, 0)->qdisc_sleeping);
+		spin_lock_bh(qdisc_lock(root));
+		stats->qstats->drops += drops - red->drops;
+		stats->qstats->overlimits += drops - red->drops;
+		_bstats_update(stats->bstats, bytes - red->tx_bytes, packets - red->tx_packets);
+		spin_unlock_bh(qdisc_lock(root));
+	}
+
+	red->drops = drops;
+	red->tx_bytes = bytes;
+	red->tx_packets = packets;
+}
+
 static bool otto_tc_red_usable(const struct rtldsa_red *red)
 {
 	return red->handle && !red->params.is_ecn && !red->child &&
@@ -1064,9 +1124,21 @@ static void otto_tc_red_apply(struct otto_dsa_priv *priv, int port, bool queues)
 
 	ret = priv->r->red_set(priv, port, params);
 
+	if (root && !ret && !pp->red.offloaded)
+		otto_tc_red_stats(priv, port, -1, &pp->red, NULL);
 	pp->red.offloaded = root && !ret;
-	for (int queue = 0; queue < MAX_PRIOS; queue++)
-		pp->queue_red[queue].offloaded = !root && params[queue] && !ret;
+
+	for (int queue = 0; queue < MAX_PRIOS; queue++) {
+		struct rtldsa_red *red = &pp->queue_red[queue];
+		bool offloaded = !root && params[queue] && !ret;
+
+		if (offloaded && !red->offloaded)
+			otto_tc_red_stats(priv, port, queue, red, NULL);
+		red->offloaded = offloaded;
+	}
+
+	if (priv->red_ports)
+		queue_delayed_work(priv->wq, &priv->red_work, OTTO_TC_RED_POLL_INTERVAL);
 }
 
 static bool otto_tc_ets_offloaded(struct rtldsa_port *pp)
@@ -1211,8 +1283,10 @@ static int otto_tc_setup_qdisc_red(struct otto_dsa_priv *priv, int port,
 
 	switch (qopt->command) {
 	case TC_RED_REPLACE:
-		if (red->handle != qopt->handle)
+		if (red->handle != qopt->handle) {
 			*prev = *red;
+			red->offloaded = false;
+		}
 		if (red->handle != qopt->handle || qopt->set.limit)
 			red->child = false;
 		red->handle = qopt->handle;
@@ -1229,6 +1303,12 @@ static int otto_tc_setup_qdisc_red(struct otto_dsa_priv *priv, int port,
 		prev->handle = 0;
 		break;
 	case TC_RED_STATS:
+		scoped_guard(mutex, &priv->reg_mutex) {
+			if (red->handle != qopt->handle || !red->offloaded)
+				return -EOPNOTSUPP;
+			otto_tc_red_stats(priv, port, queue, red, &qopt->stats);
+		}
+		return 0;
 	case TC_RED_XSTATS:
 		if (red->handle != qopt->handle || !(priv->red_ports & BIT_ULL(port)))
 			return -EOPNOTSUPP;
