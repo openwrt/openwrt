@@ -59,7 +59,10 @@ static void rteth_839x_create_tx_header(struct rteth_frag *frag, unsigned int po
 	frag->cpu_tag[1] |= BIT(7);
 	frag->cpu_tag[2] = BIT(4); /* AS_DPM flag */
 	frag->cpu_tag[3] = frag->cpu_tag[4] = frag->cpu_tag[5] = 0;
-	/* h->cpu_tag[1] |= BIT(1) | BIT(0); */ /* Bypass filter 1/2 */
+	/* BP_FLTR2: pass the egress STP and VLAN checks as on RTL838x, so a
+	 * LAG member kept blocking still sends LACPDUs
+	 */
+	frag->cpu_tag[1] |= BIT(0);
 	if (port >= 32) {
 		port -= 32;
 		frag->cpu_tag[2] |= (BIT(port) >> 16) & 0xf;
