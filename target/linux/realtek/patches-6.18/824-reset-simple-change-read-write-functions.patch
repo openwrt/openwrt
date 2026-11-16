@@ -1,0 +1,26 @@
+--- a/drivers/reset/reset-simple.c
++++ b/drivers/reset/reset-simple.c
+@@ -39,12 +39,12 @@ static int reset_simple_update(struct re
+ 
+ 	spin_lock_irqsave(&data->lock, flags);
+ 
+-	reg = readl(data->membase + (bank * reg_width));
++	reg = __raw_readl(data->membase + (bank * reg_width));
+ 	if (assert ^ data->active_low)
+ 		reg |= BIT(offset);
+ 	else
+ 		reg &= ~BIT(offset);
+-	writel(reg, data->membase + (bank * reg_width));
++	__raw_writel(reg, data->membase + (bank * reg_width));
+ 
+ 	spin_unlock_irqrestore(&data->lock, flags);
+ 
+@@ -90,7 +90,7 @@ static int reset_simple_status(struct re
+ 	int offset = id % (reg_width * BITS_PER_BYTE);
+ 	u32 reg;
+ 
+-	reg = readl(data->membase + (bank * reg_width));
++	reg = __raw_readl(data->membase + (bank * reg_width));
+ 
+ 	return !(reg & BIT(offset)) ^ !data->status_active_low;
+ }

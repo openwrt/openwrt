@@ -4,7 +4,7 @@
  # Phy drivers for Realtek platforms
  #
  
--if ARCH_REALTEK || COMPILE_TEST
+-if ARCH_REALTEK || MACH_REALTEK_RTL || COMPILE_TEST
 +if ARCH_REALTEK || (MACH_REALTEK_RTL && RTL960X) || COMPILE_TEST
  
  config PHY_RTK_RTD_USB2PHY
@@ -13,7 +13,7 @@
  	  DWC3 USB IP. This driver will do the PHY initialization
  	  of the parameters.
  
--endif # ARCH_REALTEK || COMPILE_TEST
+-endif # ARCH_REALTEK || MACH_REALTEK_RTL || COMPILE_TEST
 +config PHY_RTK_PCIEPHY
 +	tristate "Realtek PCIE PHY Transceiver Driver"
 +	depends on OF
