@@ -52,6 +52,7 @@ load_led() {
 	local delayoff
 	local interval
 	local brightness
+	local rate_threshold
 
 	config_get sysfs $1 sysfs
 	config_get name $1 name "$sysfs"
@@ -69,6 +70,11 @@ load_led() {
 	config_get gpio $1 gpio "0"
 	config_get_bool inverted $1 inverted "0"
 	config_get brightness $1 brightness
+	# Default to byte-rate mode (KiB/s) so traffic a switch forwards in
+	# hardware shows up; a board can override per LED, and '0' restores the
+	# classic per-packet blink. The write below is guarded by the attribute
+	# existing, so kernels without the netdev rate mode are unaffected.
+	config_get rate_threshold $1 rate_threshold "64"
 
 	[ "$2" ] && [ "$sysfs" != "$2" ] && return
 
@@ -132,6 +138,10 @@ load_led() {
 						echo 1 > /sys/class/leds/${sysfs}/$m
 				done
 				echo $interval > /sys/class/leds/${sysfs}/interval 2>/dev/null
+				if [ -n "$rate_threshold" ] && \
+				   [ -e /sys/class/leds/${sysfs}/rate_threshold ]; then
+					echo $rate_threshold > /sys/class/leds/${sysfs}/rate_threshold 2>/dev/null
+				fi
 			}
 			;;
 
