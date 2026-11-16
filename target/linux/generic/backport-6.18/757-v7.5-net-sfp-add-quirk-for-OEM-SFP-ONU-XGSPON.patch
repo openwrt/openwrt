@@ -1,0 +1,35 @@
+From ed04b202027249e2769420893220f54a56e0c59a Mon Sep 17 00:00:00 2001
+From: Romit Sagu <romit@romitsagu.com>
+Date: Fri, 6 Nov 2026 22:18:29 +0000
+Subject: net: sfp: add quirk for OEM SFP+ONU-XGSPON
+
+This XGS-PON ONU stick (vendor OEM, part SFP+ONU-XGSPON)
+needs the same handling as other Potron-based modules. Without it,
+the module fails to connect and the kernal shows these errors:
+sfp sfp1: module transmit fault indicated
+sfp sfp1: module persistently indicates fault, disabling
+
+This module requires TX_FAULT/LOS behaviour and boot delay tuning.
+Add a quirk using the existing sfp_fixup_potron.
+
+Signed-off-by: Romit Sagu <romit@romitsagu.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20261106221836.3445-1-romit@romitsagu.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/sfp.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -624,6 +624,10 @@ static const struct sfp_quirk sfp_quirks
+ 	SFP_QUIRK_F("OEM", "RTSFP-10", sfp_fixup_rollball_cc),
+ 	SFP_QUIRK_F("OEM", "RTSFP-10G", sfp_fixup_rollball_cc),
+ 
++	// OEM SFP+ONU-XGSPON is a XGS-PON ONT stick with broken TX_FAULT and
++	// LOS indicators and slow startup, just like potron.
++	SFP_QUIRK_F("OEM", "SFP+ONU-XGSPON", sfp_fixup_potron),
++
+ 	// OEM XGSPONST2001 is an XGS-PON ONT stick with broken TX_FAULT and
+ 	// LOS indicators and slow startup, just like potron. On cold
+ 	// power-up the EEPROM vendor PN field reads back with non-printable

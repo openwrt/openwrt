@@ -1,0 +1,54 @@
+From 807644a16854a435bedba7a1b15bdd7c4c2e9655 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 21 Oct 2026 01:24:08 +0000
+Subject: [PATCH] arm: pass sub-word complex arguments to big-endian closures
+ in place
+
+On big-endian ARM, an integer argument narrower than 4 bytes is in the
+low-order end of its register or stack slot, at offset 4 - size, which
+the closure argument code now takes into account for everything except
+structs.  Complex values are composite types like structs, though, and
+are passed as if loaded from memory with LDR, at offset 0: GCC passes a
+_Complex char in the upper half of r0.
+
+Exclude complex types from the adjustment as well.
+
+complex_int_small failed on ixp4xx (xscale, big-endian) under qemu-user
+when a closure read a _Complex signed char argument.
+
+Fixes: 2b53369681cc ("arm: fix big-endian sub-word argument offsets in closures")
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/arm/ffi.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/src/arm/ffi.c
++++ b/src/arm/ffi.c
+@@ -480,7 +480,7 @@ ffi_prep_incoming_args_SYSV (ffi_cif *ci
+ 
+       argp = ffi_align (ty, argp);
+ #ifdef __ARMEB__
+-      if (z < 4 && ty->type != FFI_TYPE_STRUCT)
++      if (z < 4 && ty->type != FFI_TYPE_STRUCT && ty->type != FFI_TYPE_COMPLEX)
+ 	avalue[i] = (void *) (argp + 4 - z);
+       else
+ #endif
+@@ -533,7 +533,7 @@ ffi_prep_incoming_args_VFP (ffi_cif *cif
+ 	    {
+ 	      /* Because we're little endian, this is what it turns into.  */
+ #ifdef __ARMEB__
+-	      if (z < 4 && ty->type != FFI_TYPE_STRUCT)
++	      if (z < 4 && ty->type != FFI_TYPE_STRUCT && ty->type != FFI_TYPE_COMPLEX)
+ 		avalue[i] = (void *) (tregp + 4 - z);
+ 	      else
+ #endif
+@@ -560,7 +560,7 @@ ffi_prep_incoming_args_VFP (ffi_cif *cif
+       stack_used = 1;
+       argp = ffi_align (ty, argp);
+ #ifdef __ARMEB__
+-      if (z < 4 && ty->type != FFI_TYPE_STRUCT)
++      if (z < 4 && ty->type != FFI_TYPE_STRUCT && ty->type != FFI_TYPE_COMPLEX)
+ 	avalue[i] = (void *) (argp + 4 - z);
+       else
+ #endif

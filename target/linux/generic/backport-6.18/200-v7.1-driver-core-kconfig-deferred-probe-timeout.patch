@@ -1,0 +1,68 @@
+From 56e3ee721b33bdc4ce0765d370983aa4384f8a59 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <johannes.goede@oss.qualcomm.com>
+Date: Sat, 14 Mar 2026 09:49:16 +0100
+Subject: [PATCH] driver core: Make deferred_probe_timeout default a Kconfig
+ option
+
+Code using driver_deferred_probe_check_state() differs from most
+EPROBE_DEFER handling in the kernel. Where other EPROBE_DEFER handling
+(e.g. clks, gpios and regulators) waits indefinitely for suppliers to
+show up, code using driver_deferred_probe_check_state() will fail
+after the deferred_probe_timeout.
+
+This is a problem for generic distro kernels which want to support many
+boards using a single kernel build. These kernels want as much drivers to
+be modular as possible. The initrd also should be as small as possible,
+so the initrd will *not* have drivers not needing to get the rootfs.
+
+Combine this with waiting for a full-disk encryption password in
+the initrd and it is pretty much guaranteed that the default 10s timeout
+will be hit, causing probe() failures when drivers on the rootfs happen
+to get modprobe-d before other rootfs modules providing their suppliers.
+
+Make the default timeout configurable from Kconfig to allow distro kernel
+configs where many of the supplier drivers are modules to set the default
+through Kconfig.
+
+Reviewed-by: Saravana Kannan <saravanak@kernel.org>
+Signed-off-by: Hans de Goede <johannes.goede@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260314084916.10868-1-johannes.goede@oss.qualcomm.com
+Signed-off-by: Danilo Krummrich <dakr@kernel.org>
+---
+ drivers/base/Kconfig | 9 +++++++++
+ drivers/base/dd.c    | 6 +-----
+ 2 files changed, 10 insertions(+), 5 deletions(-)
+
+--- a/drivers/base/Kconfig
++++ b/drivers/base/Kconfig
+@@ -73,6 +73,15 @@ config DEVTMPFS_SAFE
+ 	  with the PROT_EXEC flag. This can break, for example, non-KMS
+ 	  video drivers.
+ 
++config DRIVER_DEFERRED_PROBE_TIMEOUT
++	int "Default value for deferred_probe_timeout"
++	default 0 if !MODULES
++	default 10 if MODULES
++	help
++	  Set the default value for the deferred_probe_timeout kernel parameter.
++	  See Documentation/admin-guide/kernel-parameters.txt for a description
++	  of the deferred_probe_timeout kernel parameter.
++
+ config STANDALONE
+ 	bool "Select only drivers that don't need compile-time external firmware"
+ 	default y
+--- a/drivers/base/dd.c
++++ b/drivers/base/dd.c
+@@ -257,11 +257,7 @@ static int deferred_devs_show(struct seq
+ }
+ DEFINE_SHOW_ATTRIBUTE(deferred_devs);
+ 
+-#ifdef CONFIG_MODULES
+-static int driver_deferred_probe_timeout = 10;
+-#else
+-static int driver_deferred_probe_timeout;
+-#endif
++static int driver_deferred_probe_timeout = CONFIG_DRIVER_DEFERRED_PROBE_TIMEOUT;
+ 
+ static int __init deferred_probe_timeout_setup(char *str)
+ {

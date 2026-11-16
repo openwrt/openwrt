@@ -1,0 +1,216 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include <asm/mach-rtl-otto/mach-rtl-otto.h>
+#include <linux/etherdevice.h>
+#include <linux/iopoll.h>
+#include <linux/regmap.h>
+#include <net/nexthop.h>
+
+#include "lag.h"
+#include "l2.h"
+#include "l3.h"
+#include "pie.h"
+#include "qos.h"
+#include "mirror.h"
+#include "mac.h"
+#include "rtl-otto.h"
+#include "stats.h"
+#include "vlan.h"
+#include "stp.h"
+
+/* 802.1X */
+#define RTL838X_RMA_BPDU_FLD_PMSK		(0x4348)
+
+#define RTL838X_SPCL_TRAP_EAPOL_CTRL		(0x6988)
+#define RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x6998)
+#define RTL838X_VLAN_PORT_AFT			(0x3A00)
+
+/* Switch interrupts */
+#define RTL838X_IMR_GLB				(0x1100)
+#define RTL838X_IMR_PORT_LINK_STS_CHG		(0x1104)
+#define RTL838X_ISR_GLB_SRC			(0x1148)
+#define RTL838X_ISR_PORT_LINK_STS_CHG		(0x114C)
+
+#define RTL838X_RMA_BPDU_CTRL			(0x4330)
+
+#define RTL838X_RMA_PTP_CTRL			(0x4338)
+
+#define RTL838X_RMA_LLDP_CTRL			(0x4340)
+
+static u32 rtl838x_read_debug_reg(struct otto_dsa_priv *priv, u32 reg)
+{
+	u32 val;
+
+	if (regmap_read(priv->map, reg, &val))
+		return 0;
+	return val;
+}
+
+void rtldsa_838x_print_matrix(struct otto_dsa_priv *priv)
+{
+	for (int i = 0; i < 28; i += 8)
+		pr_debug("> %8x %8x %8x %8x %8x %8x %8x %8x\n",
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 0)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 1)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 2)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 3)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 4)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 5)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 6)),
+			 rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(i + 7)));
+	pr_debug("CPU_PORT> %8x\n", rtl838x_read_debug_reg(priv, RTL838X_PORT_ISO_CTRL(28)));
+}
+
+static inline int rtl838x_port_iso_ctrl(int p)
+{
+	return RTL838X_PORT_ISO_CTRL(p);
+}
+
+static void rtl838x_traffic_set(struct otto_dsa_priv *priv, int source, u64 dest_matrix)
+{
+	regmap_write(priv->map, rtl838x_port_iso_ctrl(source), (u32)dest_matrix);
+}
+
+static void rtl838x_traffic_enable(struct otto_dsa_priv *priv, int source, int dest)
+{
+	regmap_write_bits(priv->map, rtl838x_port_iso_ctrl(source), BIT(dest), BIT(dest));
+}
+
+static void rtl838x_traffic_disable(struct otto_dsa_priv *priv, int source, int dest)
+{
+	regmap_write_bits(priv->map, rtl838x_port_iso_ctrl(source), BIT(dest), 0);
+}
+
+static void rtl838x_set_receive_management_action(struct otto_dsa_priv *priv,
+						int port, rma_ctrl_t type,
+						action_type_t action)
+{
+	switch (type) {
+	case BPDU:
+		regmap_write_bits(priv->map, RTL838X_RMA_BPDU_CTRL + ((port >> 4) << 2),
+				  GENMASK(1, 0) << ((port & 0xf) << 1),
+				  (u32)(action & 0x3) << ((port & 0xf) << 1));
+		break;
+	case PTP:
+		regmap_write_bits(priv->map, RTL838X_RMA_PTP_CTRL + ((port >> 4) << 2),
+				  GENMASK(1, 0) << ((port & 0xf) << 1),
+				  (u32)(action & 0x3) << ((port & 0xf) << 1));
+		break;
+	case LLDP:
+		regmap_write_bits(priv->map, RTL838X_RMA_LLDP_CTRL + ((port >> 4) << 2),
+				  GENMASK(1, 0) << ((port & 0xf) << 1),
+				  (u32)(action & 0x3) << ((port & 0xf) << 1));
+		break;
+	default:
+		break;
+	}
+}
+
+const struct rtldsa_config rtldsa_838x_cfg = {
+	.switch_ops = &rtldsa_83xx_switch_ops,
+	.phylink_mac_ops = &otto_mac_83xx_phylink_ops,
+	.stp_init = otto_stp_838x_init,
+	.l2_bucket_size = 4,
+	.n_mst = 64,
+	.num_lag_ids = 8,
+	.cpu_port = RTL838X_CPU_PORT,
+	.fib_entries = 8192,
+	.l2_uc_tbl = RTL8380_TBL_L2_UC,
+	.l2_cam_tbl = RTL8380_TBL_L2_CAM_UC,
+	.stat_port_rst = RTL838X_STAT_PORT_RST,
+	.stat_rst = RTL838X_STAT_RST,
+	.stat_init = otto_stats_838x_init,
+	.stat_port_std_mib = RTL838X_STAT_PORT_STD_MIB,
+	.mib_desc = &otto_stats_838x_mib_desc,
+	.drop_desc = &otto_stats_838x_drop_desc,
+	.stat_counters_lock = otto_stats_counters_lock_register,
+	.stat_counters_unlock = otto_stats_counters_unlock_register,
+	.stat_update_counters_atomically = otto_stats_update_counters_atomically,
+	.stat_counter_poll_interval = OTTO_STATS_COUNTERS_POLL_INTERVAL,
+	.port_iso_ctrl = rtl838x_port_iso_ctrl,
+	.traffic_enable = rtl838x_traffic_enable,
+	.traffic_disable = rtl838x_traffic_disable,
+	.traffic_set = rtl838x_traffic_set,
+	.l2_ctrl_1 = RTL838X_L2_CTRL_1,
+	.high_res_l2_age = true,
+	.self_mac_trap_ctrl = RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL,
+	.l2_port_aging_out = RTL838X_L2_PORT_AGING_OUT,
+	.set_ageing_time = otto_l2_838x_set_ageing_time,
+	.isr_glb_src = RTL838X_ISR_GLB_SRC,
+	.isr_port_link_sts_chg = RTL838X_ISR_PORT_LINK_STS_CHG,
+	.imr_port_link_sts_chg = RTL838X_IMR_PORT_LINK_STS_CHG,
+	.imr_glb = RTL838X_IMR_GLB,
+	.n_counters = 128,
+	.n_pie_blocks = 12,
+	.pie_cls_flower = true,
+	.port_ignore = 0x1f,
+	.vlan_tables_read = otto_vlan_838x_tables_read,
+	.vlan_set_tagged = otto_vlan_838x_set_tagged,
+	.vlan_set_untagged = otto_vlan_838x_set_untagged,
+	.mac_force_mode = {
+		.force_en_mask = RTL83XX_FORCE_EN,
+		.link_up_mask = RTL83XX_FORCE_LINK_EN,
+		.duplex_mask = RTL838X_DUPLEX_MODE,
+		.speed_mask = RTL838X_SPEED_MASK,
+		.tx_pause_mask = RTL838X_TX_PAUSE_EN,
+		.rx_pause_mask = RTL838X_RX_PAUSE_EN,
+	},
+	.mac_force_mode_ctrl = otto_mac_838x_force_mode_ctrl,
+	.mac_link_sts = RTL838X_MAC_LINK_STS,
+	.vlan_profile_get = otto_vlan_838x_profile_get,
+	.vlan_profile_dump = otto_vlan_838x_profile_dump,
+	.vlan_profile_setup = otto_vlan_838x_profile_setup,
+	.vlan_port_aft = RTL838X_VLAN_PORT_AFT,
+	.vlan_fwd_on_inner = otto_vlan_838x_port_forward_on_inner,
+	.vlan_set_igr_filter = otto_vlan_838x_set_igr_filter,
+	.vlan_set_egr_filter = otto_vlan_838x_set_egr_filter,
+	.enable_learning = otto_l2_838x_enable_learning,
+	.set_l2_new_sa_trap = otto_l2_838x_set_port_new_sa_trap,
+	.enable_flood = otto_l2_838x_enable_flood,
+	.enable_mcast_flood = otto_l2_838x_enable_mcast_flood,
+	.enable_bcast_flood = otto_l2_838x_enable_bcast_flood,
+	.set_static_move_action = otto_l2_838x_set_static_move_action,
+	.stp_get = otto_stp_838x_get,
+	.stp_set = otto_stp_838x_set,
+	.mac_port_ctrl = otto_mac_838x_port_ctrl,
+	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 | MAC_1000FD,
+	.mac_max_len_ctrl = RTL838X_MAC_MAX_LEN_CTRL,
+	.mac_max_len_ctrl_dup = RTL838X_MAC_MAX_LEN_CTRL_DUP,
+	.max_frame = RTL838X_MAX_FRAME,
+	.l2_port_new_salrn = otto_l2_838x_port_new_salrn,
+	.get_mirror_config = otto_mirror_838x_get_config,
+	.print_matrix = rtldsa_838x_print_matrix,
+	.read_l2_entry_using_hash = otto_l2_838x_read_entry_using_hash,
+	.write_l2_entry_using_hash = otto_l2_838x_write_entry_using_hash,
+	.read_cam = otto_l2_838x_read_cam,
+	.write_cam = otto_l2_838x_write_cam,
+	.vlan_port_keep_tag_set = otto_vlan_838x_port_keep_tag_set,
+	.vlan_port_qinq_set = otto_vlan_838x_port_qinq_set,
+	.vlan_port_pvidmode_set = otto_vlan_838x_port_pvid_mode_set,
+	.vlan_port_pvid_set = otto_vlan_838x_port_pvid_set,
+	.fast_age = otto_l2_838x_fast_age,
+	.trk_mbr_ctr = otto_lag_838x_trk_mbr_ctr,
+	.rma_bpdu_fld_pmask = RTL838X_RMA_BPDU_FLD_PMSK,
+	.spcl_trap_eapol_ctrl = RTL838X_SPCL_TRAP_EAPOL_CTRL,
+	.init_eee = otto_mac_838x_init_eee,
+	.set_mac_eee = otto_mac_838x_set_eee,
+	.l2_hash_seed = otto_l2_838x_hash_seed,
+	.l2_hash_key = otto_l2_838x_hash_key,
+	.read_mcast_pmask = otto_l2_838x_read_mcast_pmask,
+	.write_mcast_pmask = otto_l2_838x_write_mcast_pmask,
+	.pie_init = otto_pie_838x_init,
+	.pie_rule_read = otto_pie_838x_rule_read,
+	.pie_rule_write = otto_pie_838x_rule_write,
+	.pie_rule_add = otto_pie_838x_rule_add,
+	.pie_rule_rm = otto_pie_838x_rule_rm,
+	.l2_learning_setup = otto_l2_838x_learning_setup,
+	.packet_cntr_read = otto_stats_838x_packet_cntr_read,
+	.packet_cntr_clear = otto_stats_838x_packet_cntr_clear,
+	.set_receive_management_action = rtl838x_set_receive_management_action,
+	.get_egress_rate = otto_qos_838x_get_egress_rate,
+	.set_egress_rate = otto_qos_838x_set_egress_rate,
+	.qos_init = otto_qos_838x_init,
+	.lag_set_distribution_algorithm = otto_lag_838x_set_distribution_algorithm,
+	.lag_set_port_members = otto_lag_83xx_set_port_members,
+	.lag_setup_algomask = otto_lag_83xx_setup_algomask,
+};

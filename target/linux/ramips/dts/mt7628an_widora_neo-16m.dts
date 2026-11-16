@@ -1,0 +1,10 @@
+#include "mt7628an_widora_neo.dtsi"
+
+/ {
+	compatible = "widora,neo-16m", "widora,neo", "mediatek,mt7628an-soc";
+	model = "Widora-NEO (16M)";
+};
+
+&firmware {
+	reg = <0x50000 0xfb0000>;
+};

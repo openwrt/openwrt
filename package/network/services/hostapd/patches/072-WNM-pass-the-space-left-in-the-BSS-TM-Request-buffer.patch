@@ -1,0 +1,47 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:36:29 +0200
+Subject: [PATCH] WNM: Pass the space left in the BSS TM Request buffer to mbo_add_ie()
+
+wnm_send_bss_tm_req() passes buf + sizeof(buf) - pos as the space left
+for the MBO element. buf is a pointer, so the difference is negative and
+converts to a size_t near SIZE_MAX. The length check in mbo_add_ie()
+thus never fails.
+
+Pass the space that is left in the allocation. No write went past the
+buffer, because the frame without the Neighbor Report elements and the
+MBO attributes takes at most 305 of the 1000 octets that the allocation
+adds for it.
+
+Fixes: c0e2a172a768 ("hostapd: Add MBO IE to BSS Transition Management Request frame")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/wnm_ap.c
++++ b/src/ap/wnm_ap.c
+@@ -963,6 +963,7 @@ int wnm_send_bss_tm_req(struct hostapd_d
+ 			const u8 *mbo_attrs, size_t mbo_len)
+ {
+ 	u8 *buf, *pos;
++	size_t buf_len;
+ 	struct ieee80211_mgmt *mgmt;
+ 	size_t url_len;
+ 	const u8 *own_addr = wnm_ap_get_own_addr(hapd, sta);
+@@ -972,7 +973,8 @@ int wnm_send_bss_tm_req(struct hostapd_d
+ 		   " req_mode=0x%x disassoc_timer=%d valid_int=0x%x dialog_token=%u",
+ 		   MAC2STR(sta->addr), req_mode, disassoc_timer, valid_int,
+ 		   dialog_token);
+-	buf = os_zalloc(1000 + nei_rep_len + mbo_len);
++	buf_len = 1000 + nei_rep_len + mbo_len;
++	buf = os_zalloc(buf_len);
+ 	if (buf == NULL)
+ 		return -1;
+ 	mgmt = (struct ieee80211_mgmt *) buf;
+@@ -1016,7 +1018,7 @@ int wnm_send_bss_tm_req(struct hostapd_d
+ 	}
+ 
+ 	if (mbo_len > 0) {
+-		pos += mbo_add_ie(pos, buf + sizeof(buf) - pos, mbo_attrs,
++		pos += mbo_add_ie(pos, buf + buf_len - pos, mbo_attrs,
+ 				  mbo_len);
+ 	}
+ 

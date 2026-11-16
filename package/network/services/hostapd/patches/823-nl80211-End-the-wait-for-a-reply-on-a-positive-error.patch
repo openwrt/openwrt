@@ -1,0 +1,40 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 23 Oct 2026 22:00:00 +0200
+Subject: [PATCH] nl80211: End the wait for a reply on a positive error
+
+send_and_recv_glb() reads replies while err.err is positive, and
+error_handler() copies the error of an NLMSG_ERROR message to err.err
+unchanged. A kernel answer with a positive error value therefore counts
+as no answer: the acknowledgement of the request was read, no other
+message follows, and nl_recvmsgs() blocks in recvmsg() for ever. The
+event loop stops, and with it every control and ubus interface.
+
+On mt7996 the station request (NL80211_CMD_NEW_STATION or SET_STATION)
+of add_associated_sta() was answered with error 65539, apparently a
+firmware status that the driver returned as a positive value. hostapd then stopped in the middle of an association.
+
+The value is invalid, but the answer to the request has arrived, so the
+wait must end. Take a positive error as -EPROTO and log the raw value
+with the message type and command, so that the request fails and the
+driver defect stays visible.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -384,6 +384,15 @@ static int error_handler(struct sockaddr
+ 	int rem;
+ 
+ 	err_args->err = err->error;
++	if (err_args->err > 0) {
++		/* send_and_recv_glb() waits for a reply while err is positive */
++		wpa_printf(MSG_ERROR,
++			   "nl80211: kernel answered message type %u command %u with invalid error %d",
++			   orig_nlh->nlmsg_type,
++			   ((struct genlmsghdr *) nlmsg_data(orig_nlh))->cmd,
++			   err->error);
++		err_args->err = -EPROTO;
++	}
+ 	if (err_args->err_info)
+ 		err_args->err_info->link_id = -1;
+ 

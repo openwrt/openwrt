@@ -1,0 +1,242 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "qding,qc202", "mediatek,mt7628an-soc";
+	model = "Qding QC202";
+
+	aliases {
+		led-boot = &led_status_1;
+		led-failsafe = &led_status_1;
+		led-running = &led_status_1;
+		led-upgrade = &led_status_1;
+		label-mac-device = &wmac;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-indicator-green {
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+		};
+
+		led-indicator-red {
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_INDICATOR;
+		};
+
+		led_status_1: led-status-1 {
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function-enumerator = <1>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		led-status-2 {
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function-enumerator = <2>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	beeper {
+		compatible = "gpio-beeper";
+		gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		// When device is disassembled, GPIO will be activated
+		disassemble {
+			gpio-export,name = "disassemble";
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		cc2541-boot {
+			gpio-export,name = "cc2541-boot";
+			gpio-export,output = <0>;
+			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
+		};
+
+		cc2541-reset {
+			gpio-export,name = "cc2541-reset";
+			gpio-export,output = <0>;
+			gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
+		};
+
+		cc2541-clk {
+			gpio-export,name = "cc2541-clk";
+			gpio-export,output = <0>;
+			gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
+		};
+
+		cc2541-data {
+			gpio-export,name = "cc2541-data";
+			gpio-export,direction_may_change;
+			gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
+		};
+
+		/*
+		   When "OPEN THE DOOR" button is pressed
+		   GPIO will be activated via the KEY signal cable
+		*/
+		key {
+			gpio-export,name = "key";
+			gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
+		};
+
+		// Activate GPIO to control the relay to open the door
+		relay {
+			gpio-export,name = "relay";
+			gpio-export,output = <0>;
+			gpios = <&gpio 42 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	matrix-keypad {
+		compatible = "gpio-matrix-keypad";
+		debounce-delay-ms = <10>;
+		col-scan-delay-us = <10>;
+		gpio-activelow;
+		wakeup-source;
+
+		row-gpios = <&gpio 20 GPIO_ACTIVE_LOW
+			     &gpio 21 GPIO_ACTIVE_LOW
+			     &gpio 19 GPIO_ACTIVE_LOW>;
+
+		col-gpios = <&gpio 24 GPIO_ACTIVE_LOW
+			     &gpio 25 GPIO_ACTIVE_LOW
+			     &gpio 22 GPIO_ACTIVE_LOW
+			     &gpio 23 GPIO_ACTIVE_LOW>;
+
+		linux,keymap = <MATRIX_KEY(0, 0, KEY_1)
+				MATRIX_KEY(1, 0, KEY_2)
+				MATRIX_KEY(2, 0, KEY_3)
+				MATRIX_KEY(0, 1, KEY_4)
+				MATRIX_KEY(1, 1, KEY_5)
+				MATRIX_KEY(2, 1, KEY_6)
+				MATRIX_KEY(0, 2, KEY_7)
+				MATRIX_KEY(1, 2, KEY_8)
+				MATRIX_KEY(2, 2, KEY_9)
+				MATRIX_KEY(0, 3, KEY_BACK)
+				MATRIX_KEY(1, 3, KEY_0)
+				MATRIX_KEY(2, 3, KEY_ENTER)>;
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2s", "gpio", "spis", "pwm1", "uart2", "sdmode", "refclk", "p1led_an", "p0led_an", "wled_an";
+		function = "gpio";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0x7b0000>;
+			};
+		};
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_4 (-1)>;
+	nvmem-cell-names = "mac-address";
+};
+
+&esw {
+	mediatek,portmap = <0x3f>;
+	mediatek,portdisable = <0x3e>;
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&i2c {
+	status = "okay";
+
+	rfid@28 {
+		compatible = "mfrc522";
+		reg = <0x28>;
+	};
+
+	rtc@68 {
+		compatible = "dallas,ds1339";
+		reg = <0x68>;
+	};
+};
+
+&uart1 {
+	status = "okay";
+};

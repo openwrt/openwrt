@@ -1,0 +1,43 @@
+From 8b5a447d6a042fb91d3ace69bbffaa74cb39b41e Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 10 Nov 2026 15:51:31 +0000
+Subject: [PATCH] drm/rockchip: vop2: Mask POST_BUF_EMPTY until the next flush
+
+For as long as a video port underflows, the POST_BUF_EMPTY status is
+raised again as soon as vop2_isr() clears it. On RK3568 driving
+3840x2160@60, enabling a 4K AFBC cluster window on a running video port
+makes the handler run about 165000 times per second, more often than
+the mode has lines, until the next frame is committed, which can take
+more than a second. Each of the rate-limited error messages also costs
+about 0.7 ms on the serial console in hard interrupt context.
+
+Disable the interrupt when it fires and enable it again, with its
+status cleared, in vop2_crtc_atomic_flush() once the next configuration
+is committed. An underflow is then reported once per committed
+configuration.
+
+Fixes: 604be85547ce ("drm/rockchip: Add VOP2 driver")
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/gpu/drm/rockchip/rockchip_drm_vop2.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/gpu/drm/rockchip/rockchip_drm_vop2.c
++++ b/drivers/gpu/drm/rockchip/rockchip_drm_vop2.c
+@@ -1862,6 +1862,8 @@ static void vop2_crtc_atomic_flush(struc
+ 
+ 	vop2_cfg_done(vp);
+ 
++	vop2_crtc_enable_irq(vp, VP_INT_POST_BUF_EMPTY);
++
+ 	spin_lock_irq(&crtc->dev->event_lock);
+ 
+ 	if (crtc->state->event) {
+@@ -2249,6 +2251,7 @@ static irqreturn_t vop2_isr(int irq, voi
+ 			}
+ 
+ 			if (irqs & VP_INT_POST_BUF_EMPTY) {
++				vop2_crtc_disable_irq(vp, VP_INT_POST_BUF_EMPTY);
+ 				drm_err_ratelimited(vop2->drm,
+ 						    "POST_BUF_EMPTY irq err at vp%d\n",
+ 						    vp->id);

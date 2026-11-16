@@ -1,0 +1,122 @@
+#include <dt-bindings/leds/common.h>
+
+#include "mt7628an_tplink_8m.dtsi"
+
+/ {
+	compatible = "tplink,archer-c20-v4", "mediatek,mt7628an-soc";
+	model = "TP-Link Archer C20 v4";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_orange {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan5g {
+			label = "green:wlan5g";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wlan2g {
+			label = "green:wlan2g";
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
+};
+
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_factory_f100 (-2)>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_f100 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
+};
+
+&state_default {
+	gpio {
+		groups = "i2s", "gpio", "refclk", "p0led_an", "p1led_an", "p2led_an", "p3led_an", "p4led_an", "wdt";
+		function = "gpio";
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&eeprom_factory_28000>, <&macaddr_factory_f100 (-1)>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};

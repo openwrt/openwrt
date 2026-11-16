@@ -1,0 +1,30 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Tue, 9 Jun 2026 20:12:13 +0800
+Subject: [PATCH] arm: dts: mediatek: exclude some unnecessary dtbs from build
+
+This can help avoid building dtc tools.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/arm/dts/Makefile | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -1114,15 +1114,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+ 	mt7987a-rfb.dtb \
+ 	mt7987a-sd-rfb.dtb \
+ 	mt7988-rfb.dtb \
+-	mt7988-sd-rfb.dtb \
+-	mt8183-pumpkin.dtb \
+-	mt8371-genio-520-evk.dtb \
+-	mt8371-genio-520-evk-ufs.dtb \
+-	mt8391-genio-720-evk.dtb \
+-	mt8391-genio-720-evk-ufs.dtb \
+-	mt8512-bm1-emmc.dtb \
+-	mt8516-pumpkin.dtb \
+-	mt8518-ap1-emmc.dtb
++	mt7988-sd-rfb.dtb
+ 
+ dtb-$(CONFIG_ARCH_NPCM7xx) += nuvoton-npcm750-evb.dtb
+ dtb-$(CONFIG_ARCH_NPCM8XX) += nuvoton-npcm845-evb.dtb

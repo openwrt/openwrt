@@ -1,0 +1,138 @@
+From 51cb94182e75c5a485feb7fc5ca788b434a99bc8 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@tuxon.dev>
+Date: Fri, 18 Sep 2026 17:34:14 +0200
+Subject: [PATCH 100/105] mmc: sdhci-of-at91: disable selectively clocks on pm
+ runtime
+
+SAMA7G5's SDMMC run-time clock disabling is not supported.
+Add support to avoid this scenario for SAMA7G5.
+
+[Amended with a fix from Romain Sioen below this line]
+
+Sama7 boards are impacted by an unbalanced prepare/unprepare
+and enable/disable clock management in sdhci driver due to
+the lack of support for SDMMC clock runtime disabling,
+managed instead by the PMC driver.
+
+Add conditions in the preset function to manage clock
+depending on if the board support runtime clock disabling
+and if we come from the probing or restoring procedure.
+
+Add boolean start_clks variable to manage condition
+in preset function.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@tuxon.dev>
+Co-developed-by: Romain Sioen <romain.sioen@microchip.com>
+Signed-off-by: Romain Sioen <romain.sioen@microchip.com>
+Signed-off-by: Aubin Constans <aubin.constans@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 36 ++++++++++++++++++++++++--------
+ 1 file changed, 27 insertions(+), 9 deletions(-)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -39,6 +39,7 @@ struct sdhci_at91_soc_data {
+ 	const struct sdhci_pltfm_data *pdata;
+ 	bool baseclk_is_generated_internally;
+ 	unsigned int divider_for_baseclk;
++	bool pm_runtime_disable_clks;
+ };
+ 
+ struct sdhci_at91_priv {
+@@ -149,12 +150,14 @@ static const struct sdhci_pltfm_data sdh
+ static const struct sdhci_at91_soc_data soc_data_sama5d2 = {
+ 	.pdata = &sdhci_sama5d2_pdata,
+ 	.baseclk_is_generated_internally = false,
++	.pm_runtime_disable_clks = true,
+ };
+ 
+ static const struct sdhci_at91_soc_data soc_data_sam9x60 = {
+ 	.pdata = &sdhci_sama5d2_pdata,
+ 	.baseclk_is_generated_internally = true,
+ 	.divider_for_baseclk = 2,
++	.pm_runtime_disable_clks = true,
+ };
+ 
+ static const struct of_device_id sdhci_at91_dt_match[] = {
+@@ -164,7 +167,7 @@ static const struct of_device_id sdhci_a
+ };
+ MODULE_DEVICE_TABLE(of, sdhci_at91_dt_match);
+ 
+-static int sdhci_at91_set_clks_presets(struct device *dev)
++static int sdhci_at91_set_clks_presets(struct device *dev, bool start_clks)
+ {
+ 	struct sdhci_host *host = dev_get_drvdata(dev);
+ 	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
+@@ -174,7 +177,14 @@ static int sdhci_at91_set_clks_presets(s
+ 	unsigned int			gck_rate, clk_base_rate;
+ 	unsigned int			preset_div;
+ 
+-	clk_prepare_enable(priv->hclock);
++	/*
++	 * Manage clock prepare/enable procedure depending on if the board
++	 * support runtime clock disabling and if we come from the probing
++	 * or restoring procedure (for backup+self refresh).
++	 */
++	if (start_clks)
++		clk_prepare_enable(priv->hclock);
++
+ 	caps0 = readl(host->ioaddr + SDHCI_CAPABILITIES);
+ 	caps1 = readl(host->ioaddr + SDHCI_CAPABILITIES_1);
+ 
+@@ -223,8 +233,11 @@ static int sdhci_at91_set_clks_presets(s
+ 	writew(SDHCI_AT91_PRESET_COMMON_CONF | preset_div,
+ 	       host->ioaddr + SDHCI_PRESET_FOR_DDR50);
+ 
+-	clk_prepare_enable(priv->mainck);
+-	clk_prepare_enable(priv->gck);
++	/* Same clock management as for hclock */
++	if (start_clks) {
++		clk_prepare_enable(priv->mainck);
++		clk_prepare_enable(priv->gck);
++	}
+ 
+ 	return 0;
+ }
+@@ -254,9 +267,11 @@ static int sdhci_at91_runtime_suspend(st
+ 	if (host->tuning_mode != SDHCI_TUNING_MODE_3)
+ 		mmc_retune_needed(host->mmc);
+ 
+-	clk_disable_unprepare(priv->gck);
+-	clk_disable_unprepare(priv->hclock);
+-	clk_disable_unprepare(priv->mainck);
++	if (priv->soc_data->pm_runtime_disable_clks) {
++		clk_disable_unprepare(priv->gck);
++		clk_disable_unprepare(priv->hclock);
++		clk_disable_unprepare(priv->mainck);
++	}
+ 
+ 	return 0;
+ }
+@@ -269,7 +284,7 @@ static int sdhci_at91_runtime_resume(str
+ 	int ret;
+ 
+ 	if (priv->restore_needed) {
+-		ret = sdhci_at91_set_clks_presets(dev);
++		ret = sdhci_at91_set_clks_presets(dev, priv->soc_data->pm_runtime_disable_clks);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -277,6 +292,9 @@ static int sdhci_at91_runtime_resume(str
+ 		goto out;
+ 	}
+ 
++	if (!priv->soc_data->pm_runtime_disable_clks)
++		goto out;
++
+ 	ret = clk_prepare_enable(priv->mainck);
+ 	if (ret) {
+ 		dev_err(dev, "can't enable mainck\n");
+@@ -344,7 +362,7 @@ static int sdhci_at91_probe(struct platf
+ 		return dev_err_probe(&pdev->dev, PTR_ERR(priv->gck),
+ 				     "failed to get multclk\n");
+ 
+-	ret = sdhci_at91_set_clks_presets(&pdev->dev);
++	ret = sdhci_at91_set_clks_presets(&pdev->dev, true);
+ 	if (ret)
+ 		return ret;
+ 

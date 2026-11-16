@@ -1,0 +1,32 @@
+From 81f76ce22345f3bd74df3813b041c3b0a0b7a4fc Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Tue, 25 Aug 2026 15:33:25 +0400
+Subject: [PATCH 159/160] arm64: dts: qcom: ipq5018: Add Super-Speed UNIPHY to
+ USB node
+
+Add the USB3 UNIPHY to the USB controller node for USB3 support.
+In addition, switch to the pipe clock supplied by the USB3 UNIPHY
+instead of the UTMI clock.
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -627,10 +627,8 @@
+ 
+ 			resets = <&gcc GCC_USB0_BCR>;
+ 
+-			phys = <&usbphy0>;
+-			phy-names = "usb2-phy";
+-
+-			qcom,select-utmi-as-pipe-clk;
++			phys = <&usbphy0>, <&usbphy1>;
++			phy-names = "usb2-phy", "usb3-phy";
+ 
+ 			tx-fifo-resize;
+ 			snps,is-utmi-l1-suspend;

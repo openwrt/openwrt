@@ -1,0 +1,231 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 14:00:00 +0200
+Subject: [PATCH] wifi: nl80211: add a client to SCS and MSCS descriptors
+
+An AP that serves a 4-address peer, such as the backhaul station of a
+Multi-AP Agent, sends the traffic of every host behind that peer to it.
+Wi-Fi EasyMesh 6.0, 20.2.4 requires the Agent to identify the downlink
+flows of such a host by the destination and source addresses of the
+MSDU, not by the transmitter and receiver addresses.
+NL80211_CMD_SET_SCS and NL80211_CMD_SET_MSCS only name the peer, so a
+rule applies to every host behind it, and the MSCS of one host replaces
+that of another.
+
+Add an optional client address to the SCS and the MSCS descriptor.
+Requests without it keep their meaning.
+
+The client does not scope the SCSID. The SCSIDs of a peer stay one
+space, and the layer that configures the descriptors of the hosts
+behind a peer assigns them. The Agent ignores the SCSID of a Controller
+rule and identifies the rule by its QMID (20.2.4), so it assigns one in
+any case. A device that keeps per stream state by SCSID can then rely on
+it.
+
+An MSCS has no identifier, so add a flag for an MSCS that the AP
+configures on behalf of the network, for example for a Multi-AP
+Controller, rather than at the request of the peer. EasyMesh 20.2.5
+gives an MSCS that the station requested precedence over one that the
+Controller activated, so an MSCS is identified by its client and the
+flag. A request for which the peer has no room returns -ENOSPC, which is
+answered with INSUFFICIENT_TCLAS_PROCESSING_RESOURCES, as for an SCS
+descriptor.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -4287,6 +4287,10 @@ bool cfg80211_flow_key_build(const struc
+  * @id: SCSID, 1 to 255
+  * @up: user priority to assign to a matching MSDU
+  * @qos_char_len: length of @qos_char
++ * @client: the host behind a 4-address peer that the descriptor applies
++ *	to, matched against the destination address of an MSDU. All zero
++ *	for every MSDU sent to the peer. The client does not scope @id,
++ *	which names one descriptor among all descriptors of the peer.
+  * @n_tclas: number of entries in @tclas
+  * @tclas: the classifier
+  */
+@@ -4297,6 +4301,7 @@ struct cfg80211_scs_desc {
+ 	u8 id;
+ 	u8 up;
+ 	u16 qos_char_len;
++	u8 client[ETH_ALEN];
+ 	u8 n_tclas;
+ 	struct cfg80211_tclas tclas[] __counted_by(n_tclas);
+ };
+@@ -4318,6 +4323,11 @@ struct cfg80211_scs_result {
+  * @up_limit: ceiling for the assigned user priority, 0 to 7
+  * @stream_timeout: minimum lifetime of a learned value, in TUs
+  * @fields: classifier parameters, a bitmap of &enum cfg80211_flow_field
++ * @client: the host behind a 4-address peer whose flows are mirrored. All
++ *	zero for the flows of the peer itself.
++ * @configured: the AP configured the MSCS on behalf of the network, not at
++ *	the request of the peer. An MSCS is identified by @client and
++ *	@configured together.
+  */
+ struct cfg80211_mscs_desc {
+ 	enum nl80211_scs_req_type req_type;
+@@ -4325,6 +4335,8 @@ struct cfg80211_mscs_desc {
+ 	u8 up_limit;
+ 	u32 stream_timeout;
+ 	u32 fields;
++	u8 client[ETH_ALEN];
++	bool configured;
+ };
+ 
+ /**
+@@ -5437,7 +5449,9 @@ struct mgmt_frame_regs {
+  *	a status code in the result entry of the same index. A declined add
+  *	or change leaves the previous classification of that SCSID in force.
+  *	A negative return fails the request as a whole.
+- * @set_mscs: Install, change or remove the MSCS of one peer.
++ * @set_mscs: Install, change or remove an MSCS of one peer. -ENOSPC, for a
++ *	peer that holds no room for another MSCS, is answered with a status
++ *	code.
+  *
+  * @set_ap_chanwidth: Set the AP (including P2P GO) mode channel width for the
+  *	given interface This is used e.g. for dynamic HT 20/40 MHz channel width
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -636,6 +636,7 @@ nl80211_scs_desc_policy[NL80211_SCS_DESC
+ 	[NL80211_SCS_DESC_ATTR_TCLAS] = { .type = NLA_BINARY },
+ 	[NL80211_SCS_DESC_ATTR_QOS_CHAR] = { .type = NLA_BINARY },
+ 	[NL80211_SCS_DESC_ATTR_STATUS] = { .type = NLA_REJECT },
++	[NL80211_SCS_DESC_ATTR_CLIENT] = NLA_POLICY_ETH_ADDR,
+ };
+ 
+ static const struct nla_policy
+@@ -646,6 +647,8 @@ nl80211_mscs_desc_policy[NL80211_MSCS_DE
+ 	[NL80211_MSCS_DESC_ATTR_UP_LIMIT] = NLA_POLICY_MAX(NLA_U8, 7),
+ 	[NL80211_MSCS_DESC_ATTR_STREAM_TIMEOUT] = { .type = NLA_U32 },
+ 	[NL80211_MSCS_DESC_ATTR_TCLAS_MASK] = { .type = NLA_BINARY },
++	[NL80211_MSCS_DESC_ATTR_CLIENT] = NLA_POLICY_ETH_ADDR,
++	[NL80211_MSCS_DESC_ATTR_CONFIGURED] = { .type = NLA_FLAG },
+ };
+ 
+ static const struct nla_policy
+@@ -18338,6 +18341,23 @@ static u16 nl80211_scs_status(int err)
+ 	}
+ }
+ 
++/* The client is a host behind the peer, which a frame can be addressed to */
++static int nl80211_parse_stream_client(struct nlattr *attr, u8 *client,
++				       struct genl_info *info)
++{
++	if (!attr)
++		return 0;
++
++	if (!is_valid_ether_addr(nla_data(attr))) {
++		GENL_SET_ERR_MSG(info, "client is not a unicast address");
++		return -EINVAL;
++	}
++
++	ether_addr_copy(client, nla_data(attr));
++
++	return 0;
++}
++
+ static void nl80211_free_scs_desc(struct cfg80211_scs_desc **desc,
+ 				  unsigned int n)
+ {
+@@ -18359,6 +18379,7 @@ nl80211_parse_scs_desc(struct nlattr *at
+ 	const struct ieee80211_qos_char_elem *qos_char = NULL;
+ 	struct nlattr *qos_attr, *tclas_attr;
+ 	struct cfg80211_scs_desc *desc;
++	u8 client[ETH_ALEN] = {};
+ 	bool wants_up = true;
+ 	int n_tclas = 0;
+ 	bool remove;
+@@ -18376,6 +18397,11 @@ nl80211_parse_scs_desc(struct nlattr *at
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
++	err = nl80211_parse_stream_client(tb[NL80211_SCS_DESC_ATTR_CLIENT],
++					  client, info);
++	if (err)
++		return ERR_PTR(err);
++
+ 	remove = nla_get_u8(tb[NL80211_SCS_DESC_ATTR_REQ_TYPE]) ==
+ 		 NL80211_SCS_REQ_REMOVE;
+ 
+@@ -18412,6 +18438,7 @@ nl80211_parse_scs_desc(struct nlattr *at
+ 	desc->id = nla_get_u8(tb[NL80211_SCS_DESC_ATTR_ID]);
+ 	desc->req_type = nla_get_u8(tb[NL80211_SCS_DESC_ATTR_REQ_TYPE]);
+ 	desc->up = nla_get_u8_default(tb[NL80211_SCS_DESC_ATTR_UP], 0);
++	ether_addr_copy(desc->client, client);
+ 	desc->n_tclas = n_tclas;
+ 
+ 	if (!err && tclas_attr) {
+@@ -18639,6 +18666,12 @@ static int nl80211_set_mscs(struct sk_bu
+ 		return -EINVAL;
+ 	}
+ 
++	err = nl80211_parse_stream_client(tb[NL80211_MSCS_DESC_ATTR_CLIENT],
++					  desc.client, info);
++	if (err)
++		return err;
++
++	desc.configured = nla_get_flag(tb[NL80211_MSCS_DESC_ATTR_CONFIGURED]);
+ 	desc.req_type = nla_get_u8(tb[NL80211_MSCS_DESC_ATTR_REQ_TYPE]);
+ 	remove = desc.req_type == NL80211_SCS_REQ_REMOVE;
+ 
+@@ -18673,6 +18706,11 @@ static int nl80211_set_mscs(struct sk_bu
+ 
+ 	err = rdev_set_mscs(rdev, dev,
+ 			    nla_data(info->attrs[NL80211_ATTR_MAC]), &desc);
++	if (err == -ENOSPC) {
++		status = nl80211_scs_status(err);
++		goto reply;
++	}
++
+ 	if (err)
+ 		return err;
+ 
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -6259,6 +6259,12 @@ enum nl80211_scs_req_type {
+  * @NL80211_SCS_DESC_ATTR_QOS_CHAR: the whole QoS Characteristics element
+  *	(binary), header included, as received over the air
+  * @NL80211_SCS_DESC_ATTR_STATUS: IEEE status code (u16), kernel to userspace
++ * @NL80211_SCS_DESC_ATTR_CLIENT: MAC address of a host behind a 4-address
++ *	peer (6 octets). The descriptor then applies only to MSDUs with that
++ *	destination address. Without it, the descriptor applies to every MSDU
++ *	sent to the peer. The client does not scope the SCSID: userspace
++ *	assigns each descriptor of the peer an SCSID of its own, also one
++ *	for a host behind it or one that a Multi-AP Controller configures.
+  *
+  * @__NL80211_SCS_DESC_ATTR_AFTER_LAST: internal use
+  * @NL80211_SCS_DESC_ATTR_MAX: highest attribute
+@@ -6271,6 +6277,7 @@ enum nl80211_scs_desc_attr {
+ 	NL80211_SCS_DESC_ATTR_TCLAS,
+ 	NL80211_SCS_DESC_ATTR_QOS_CHAR,
+ 	NL80211_SCS_DESC_ATTR_STATUS,
++	NL80211_SCS_DESC_ATTR_CLIENT,
+ 
+ 	__NL80211_SCS_DESC_ATTR_AFTER_LAST,
+ 	NL80211_SCS_DESC_ATTR_MAX = __NL80211_SCS_DESC_ATTR_AFTER_LAST - 1
+@@ -6291,6 +6298,15 @@ enum nl80211_scs_desc_attr {
+  * @NL80211_MSCS_DESC_ATTR_TCLAS_MASK: one or more TCLAS Mask elements
+  *	(binary), as received over the air. Required for add and change,
+  *	rejected for remove.
++ * @NL80211_MSCS_DESC_ATTR_CLIENT: MAC address of a host behind a 4-address
++ *	peer (6 octets). The AP then learns from uplink MSDUs with that source
++ *	address and applies the result to downlink MSDUs with that
++ *	destination address. Without it, the peer's own address is used.
++ * @NL80211_MSCS_DESC_ATTR_CONFIGURED: flag, the AP configures the MSCS on
++ *	behalf of the network, for example for a Multi-AP Controller, not at
++ *	the request of the peer. An MSCS is identified by its client and this
++ *	flag together, also in a removal. Where both apply to an MSDU, the
++ *	MSCS that the peer requested takes precedence.
+  *
+  * @__NL80211_MSCS_DESC_ATTR_AFTER_LAST: internal use
+  * @NL80211_MSCS_DESC_ATTR_MAX: highest attribute
+@@ -6302,6 +6318,8 @@ enum nl80211_mscs_desc_attr {
+ 	NL80211_MSCS_DESC_ATTR_UP_LIMIT,
+ 	NL80211_MSCS_DESC_ATTR_STREAM_TIMEOUT,
+ 	NL80211_MSCS_DESC_ATTR_TCLAS_MASK,
++	NL80211_MSCS_DESC_ATTR_CLIENT,
++	NL80211_MSCS_DESC_ATTR_CONFIGURED,
+ 
+ 	__NL80211_MSCS_DESC_ATTR_AFTER_LAST,
+ 	NL80211_MSCS_DESC_ATTR_MAX = __NL80211_MSCS_DESC_ATTR_AFTER_LAST - 1

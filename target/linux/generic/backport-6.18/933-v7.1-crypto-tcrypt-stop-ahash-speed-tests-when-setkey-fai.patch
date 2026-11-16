@@ -1,0 +1,36 @@
+From 03170b8f84354f1649a757e57c2130e1de237f5d Mon Sep 17 00:00:00 2001
+From: Saeed Mirzamohammadi <saeed.mirzamohammadi@oracle.com>
+Date: Mon, 2 Mar 2026 16:06:40 -0800
+Subject: [PATCH] crypto: tcrypt - stop ahash speed tests when setkey fails
+
+The async hash speed path ignores the return code from
+crypto_ahash_setkey().  If the caller picks an unsupported key length,
+the transform keeps whatever key state it already has and the speed test
+still runs, producing misleading numbers, hence bail out of the loop when
+setkey fails.
+
+Signed-off-by: Saeed Mirzamohammadi <saeed.mirzamohammadi@oracle.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ crypto/tcrypt.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/crypto/tcrypt.c
++++ b/crypto/tcrypt.c
+@@ -911,8 +911,14 @@ static void test_ahash_speed_common(cons
+ 			break;
+ 		}
+ 
+-		if (klen)
+-			crypto_ahash_setkey(tfm, tvmem[0], klen);
++		if (klen) {
++			ret = crypto_ahash_setkey(tfm, tvmem[0], klen);
++			if (ret) {
++				pr_err("setkey() failed flags=%x: %d\n",
++				       crypto_ahash_get_flags(tfm), ret);
++				break;
++			}
++		}
+ 
+ 		pr_info("test%3u "
+ 			"(%5u byte blocks,%5u bytes per update,%4u updates): ",

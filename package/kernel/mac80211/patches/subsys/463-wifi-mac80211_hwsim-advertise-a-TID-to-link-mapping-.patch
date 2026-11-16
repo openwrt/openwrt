@@ -1,0 +1,473 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 09:30:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: advertise a TID-to-link mapping of an
+ AP MLD
+
+mac80211_hwsim implements no adv_ttlm_request() operation and declares
+neither NL80211_EXT_FEATURE_AP_ADV_TTLM nor
+NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE. nl80211_adv_ttlm_request() thus
+rejects a request with -EOPNOTSUPP, and hostapd cannot advertise a
+TID-to-link mapping (IEEE 802.11be-2024 35.3.7.2.4) on a simulated AP
+MLD.
+
+Implement the operations for the MLO radios. The mapping is established
+at the first DTIM Beacon frame of a link in the mapping at or after the
+switch time, or at the next TBTT of that link while it has sent no DTIM
+Beacon frame. The Mapping Switch Time field holds 0xffff TUs from a
+Beacon frame at most, so where that TBTT lies later than 0xffff TUs
+after the request, the mapping is established at the TBTT before it.
+All links share the TSF of the radio, so each link reports the same
+Mapping Switch Time. The Beacon frames of a nontransmitted BSSID come
+from its transmitted BSSID, and mac80211 updates the element of a
+nontransmitted BSSID in none, so a request for an AP MLD with a
+nontransmitted BSSID is refused.
+
+While the mapping is established, a frame that mac80211 sends without a
+link goes on a link in the mapping. A non-AP MLD with no setup link in
+the mapping keeps all its links, since an advertised mapping applies to
+the setup links only. Beacon frames carry the remaining Expected
+Duration from their TBTT, and the mapping ends at the first TBTT at or
+after its end. User space removes the element only after the end event,
+so until then the element carries an Expected Duration of 0.
+
+Declare NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE, which the request
+needs. mac80211 ends the Critical Update flag after the DTIM Beacon
+frame from ieee80211_beacon_get(), but it sees no DTIM Beacon frame of
+an EMA template. It also counts the DTIM down only in a Beacon frame
+that is no template, so the DTIM Count of an EMA template does not
+change. For an EMA Beacon frame, hwsim thus takes the DTIM from the
+TSF, as ieee80211_recalc_dtim() does, and ends the flag at a DTIM.
+
+hwsim passes the remaining Expected Duration to mac80211 before it gets
+the Beacon frame, because a change after ieee80211_beacon_get()
+invalidates the MIC of a protected Beacon frame.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -236,6 +236,22 @@ static const struct ieee80211_regdomain
+ 	&hwsim_world_regdom_custom_04,
+ };
+ 
++/* advertised TID-to-link mapping of an AP MLD (IEEE 802.11be-2024 35.3.7.2.4) */
++struct hwsim_adv_ttlm {
++	spinlock_t lock;
++	u64 cookie;
++	u16 links;
++	u16 disabled_links;
++	u32 duration;
++	u64 switch_tsf;
++	u64 end_tsf;
++	bool established;
++	bool ended;
++	u16 dtim_valid;
++	u8 dtim_period[IEEE80211_MLD_MAX_NUM_LINKS];
++	u64 dtim_tsf[IEEE80211_MLD_MAX_NUM_LINKS];
++};
++
+ struct hwsim_vif_priv {
+ 	u32 magic;
+ 	u32 skip_beacons[IEEE80211_MLD_MAX_NUM_LINKS];
+@@ -243,6 +259,7 @@ struct hwsim_vif_priv {
+ 	bool assoc;
+ 	bool bcn_en;
+ 	u16 aid;
++	struct hwsim_adv_ttlm adv_ttlm;
+ };
+ 
+ #define HWSIM_VIF_MAGIC	0x69537748
+@@ -2307,6 +2324,8 @@ mac80211_hwsim_select_tx_link(struct mac
+ 			      struct ieee80211_link_sta **link_sta)
+ {
+ 	struct hwsim_sta_priv *sp = (void *)sta->drv_priv;
++	struct hwsim_vif_priv *vp = (void *)vif->drv_priv;
++	u16 disabled;
+ 	int i;
+ 
+ 	if (!ieee80211_vif_is_mld(vif))
+@@ -2317,6 +2336,14 @@ mac80211_hwsim_select_tx_link(struct mac
+ 	if (WARN_ON_ONCE(!sta || !sta->valid_links))
+ 		return &vif->bss_conf;
+ 
++	/* A non-AP MLD applies an advertised mapping only to its setup links
++	 * (IEEE 802.11be-2024 35.3.7.2.4), so one without a setup link in the
++	 * mapping keeps all of them.
++	 */
++	disabled = READ_ONCE(vp->adv_ttlm.disabled_links);
++	if (!(sta->valid_links & ~disabled))
++		disabled = 0;
++
+ 	for (i = 0; i < ARRAY_SIZE(vif->link_conf); i++) {
+ 		struct ieee80211_bss_conf *bss_conf;
+ 		unsigned int link_id;
+@@ -2327,6 +2354,9 @@ mac80211_hwsim_select_tx_link(struct mac
+ 		if (!(vif->active_links & BIT(link_id)))
+ 			continue;
+ 
++		if (disabled & BIT(link_id))
++			continue;
++
+ 		if (!(sp->active_links_rx & BIT(link_id)))
+ 			continue;
+ 
+@@ -2771,11 +2801,16 @@ static void mac80211_hwsim_stop(struct i
+ static int mac80211_hwsim_add_interface(struct ieee80211_hw *hw,
+ 					struct ieee80211_vif *vif)
+ {
++	struct hwsim_vif_priv *vp = (void *)vif->drv_priv;
++
+ 	wiphy_dbg(hw->wiphy, "%s (type=%d mac_addr=%pM)\n",
+ 		  __func__, ieee80211_vif_type_p2p(vif),
+ 		  vif->addr);
+ 	hwsim_set_magic(vif);
+ 
++	memset(&vp->adv_ttlm, 0, sizeof(vp->adv_ttlm));
++	spin_lock_init(&vp->adv_ttlm.lock);
++
+ 	if (vif->type != NL80211_IFTYPE_MONITOR)
+ 		mac80211_hwsim_config_mac_nl(hw, vif->addr, true);
+ 
+@@ -2858,6 +2893,121 @@ void mac80211_hwsim_tx_frame(struct ieee
+ 	dev_kfree_skb(skb);
+ }
+ 
++static u64 hwsim_tbtt_at_or_after(u64 tsf, u64 bcn_int)
++{
++	u64 rem;
++
++	div64_u64_rem(tsf, bcn_int, &rem);
++
++	return rem ? tsf + bcn_int - rem : tsf;
++}
++
++static void hwsim_adv_ttlm_clear(struct hwsim_adv_ttlm *ttlm)
++{
++	ttlm->cookie = 0;
++	ttlm->established = false;
++	ttlm->ended = true;
++	WRITE_ONCE(ttlm->disabled_links, 0);
++}
++
++static const struct element *hwsim_beacon_tim(struct sk_buff *skb)
++{
++	size_t hdr_len = offsetof(struct ieee80211_mgmt, u.beacon.variable);
++	struct ieee80211_mgmt *mgmt = (void *)skb->data;
++
++	if (skb->len < hdr_len)
++		return NULL;
++
++	return cfg80211_find_elem(WLAN_EID_TIM, mgmt->u.beacon.variable,
++				  skb->len - hdr_len);
++}
++
++/* mac80211 counts the DTIM down only in a Beacon frame that is no template,
++ * so the DTIM of an EMA Beacon frame follows from the TSF, as in
++ * ieee80211_recalc_dtim().
++ */
++static bool hwsim_tbtt_is_dtim(u64 tbtt, u64 bcn_int, u8 dtim_period)
++{
++	u64 n;
++
++	if (!bcn_int || dtim_period <= 1)
++		return true;
++
++	n = div64_u64(tbtt, bcn_int);
++
++	return !do_div(n, dtim_period);
++}
++
++static void hwsim_adv_ttlm_dtim_set(struct ieee80211_vif *vif,
++				    unsigned int link_id, u64 tbtt,
++				    u8 dtim_period)
++{
++	struct hwsim_vif_priv *vp = (void *)vif->drv_priv;
++	struct hwsim_adv_ttlm *ttlm = &vp->adv_ttlm;
++
++	if (vif->type != NL80211_IFTYPE_AP)
++		return;
++
++	spin_lock_bh(&ttlm->lock);
++	ttlm->dtim_valid |= BIT(link_id);
++	ttlm->dtim_tsf[link_id] = tbtt;
++	ttlm->dtim_period[link_id] = dtim_period;
++	spin_unlock_bh(&ttlm->lock);
++}
++
++/* The Beacon frames of the established mapping carry the remaining duration
++ * from their TBTT in the Expected Duration field (9.4.2.324).
++ */
++static void mac80211_hwsim_adv_ttlm_tbtt(struct mac80211_hwsim_data *data,
++					 struct ieee80211_vif *vif,
++					 unsigned int link_id, u64 tbtt)
++{
++	struct hwsim_vif_priv *vp = (void *)vif->drv_priv;
++	struct hwsim_adv_ttlm *ttlm = &vp->adv_ttlm;
++	struct cfg80211_adv_ttlm_event event = {};
++	s32 duration = -1;
++
++	spin_lock_bh(&ttlm->lock);
++
++	if (!ttlm->cookie)
++		goto ended;
++
++	if (!ttlm->established && tbtt >= ttlm->switch_tsf) {
++		ttlm->established = true;
++		/* 0xffffff TUs overflow an unsigned long of 32 bits in us */
++		ttlm->end_tsf = tbtt + (u64)ttlm->duration * 1024;
++		WRITE_ONCE(ttlm->disabled_links,
++			   vif->valid_links & ~ttlm->links);
++		event.cmd = NL80211_CMD_ADV_TTLM_ESTABLISHED;
++		event.cookie = ttlm->cookie;
++		event.tbtt_boottime =
++			ktime_to_ns(mac80211_hwsim_tsf_to_boottime(data, tbtt));
++	} else if (ttlm->established && tbtt >= ttlm->end_tsf) {
++		event.cmd = NL80211_CMD_ADV_TTLM_ENDED;
++		event.cookie = ttlm->cookie;
++		hwsim_adv_ttlm_clear(ttlm);
++	}
++
++	if (ttlm->established)
++		duration = min_t(u64, ttlm->duration,
++				 DIV_ROUND_CLOSEST_ULL(ttlm->end_tsf - tbtt,
++						       1024));
++
++ended:
++	/* user space removes the element of an ended mapping only after the
++	 * event, so the Beacon frames until then hold it with no duration left
++	 */
++	if (ttlm->ended)
++		duration = 0;
++
++	spin_unlock_bh(&ttlm->lock);
++
++	ieee80211_adv_ttlm_duration_set(vif, link_id, duration);
++
++	if (event.cookie)
++		ieee80211_adv_ttlm_notify(vif, &event, GFP_ATOMIC);
++}
++
+ static void __mac80211_hwsim_beacon_tx(struct ieee80211_bss_conf *link_conf,
+ 				       struct mac80211_hwsim_data *data,
+ 				       struct ieee80211_hw *hw,
+@@ -2894,6 +3044,7 @@ static void mac80211_hwsim_beacon_tx(voi
+ 			     link_data[link_id]);
+ 	struct ieee80211_hw *hw = data->hw;
+ 	struct sk_buff *skb;
++	u64 tbtt = 0;
+ 
+ 	hwsim_check_magic(vif);
+ 
+@@ -2911,25 +3062,54 @@ static void mac80211_hwsim_beacon_tx(voi
+ 	if (tx_bss_conf && tx_bss_conf != link_conf)
+ 		return;
+ 
++	/* the beacon timer fires at the TBTT of the beacon */
++	if (link_data->beacon_int) {
++		u64 rem;
++
++		tbtt = mac80211_hwsim_get_tsf(hw, NULL);
++		div64_u64_rem(tbtt, link_data->beacon_int, &rem);
++		tbtt -= rem;
++	}
++
++	if (vif->type == NL80211_IFTYPE_AP)
++		mac80211_hwsim_adv_ttlm_tbtt(data, vif, link_id, tbtt);
++
+ 	if (link_conf->ema_ap) {
+ 		struct ieee80211_ema_beacons *ema;
++		bool dtim;
+ 		u8 i = 0;
+ 
+ 		ema = ieee80211_beacon_get_template_ema_list(hw, vif, link_id);
+ 		if (!ema || !ema->cnt)
+ 			return;
+ 
++		dtim = hwsim_tbtt_is_dtim(tbtt, link_data->beacon_int,
++					  link_conf->dtim_period);
++		if (dtim)
++			hwsim_adv_ttlm_dtim_set(vif, link_id, tbtt,
++						link_conf->dtim_period);
++
+ 		for (i = 0; i < ema->cnt; i++) {
++			skb = ema->bcn[i].skb;
++			if (dtim && ema->bcn[i].offs.crit_update_id)
++				ieee80211_crit_update_done(vif, link_id,
++					ema->bcn[i].offs.crit_update_id);
+ 			__mac80211_hwsim_beacon_tx(link_conf, data, hw, vif,
+-						   ema->bcn[i].skb);
++						   skb);
+ 			ema->bcn[i].skb = NULL; /* Already freed */
+ 		}
+ 		ieee80211_beacon_free_ema_list(ema);
+ 	} else {
++		const struct element *tim;
++
+ 		skb = ieee80211_beacon_get(hw, vif, link_id);
+ 		if (!skb)
+ 			return;
+ 
++		tim = hwsim_beacon_tim(skb);
++		if (tim && tim->datalen >= 2 && !tim->data[0])
++			hwsim_adv_ttlm_dtim_set(vif, link_id, tbtt,
++						tim->data[1]);
+ 		__mac80211_hwsim_beacon_tx(link_conf, data, hw, vif, skb);
+ 	}
+ 
+@@ -3551,6 +3731,135 @@ mac80211_hwsim_can_neg_ttlm(struct ieee8
+ 	return NEG_TTLM_RES_ACCEPT;
+ }
+ 
++/* The TBTT of a DTIM Beacon frame of a link in the mapping, at or after
++ * @switch_time TUs from now (IEEE 802.11be-2024 35.3.7.2.4). A link whose
++ * DTIM Beacon frame was not sent yet gives its next TBTT. The Mapping Switch
++ * Time field holds 0xffff TUs from a Beacon frame at most, so a later TBTT
++ * gives way to the one before it.
++ */
++static int hwsim_adv_ttlm_switch_tsf(struct mac80211_hwsim_data *data,
++				     struct hwsim_adv_ttlm *ttlm, u16 links,
++				     u32 switch_time, u64 *switch_tsf)
++{
++	u64 now = mac80211_hwsim_get_tsf(data->hw, NULL);
++	u64 target = now + ieee80211_tu_to_usec(switch_time);
++	u64 limit = now + ieee80211_tu_to_usec(0xffff);
++	unsigned long map = links;
++	unsigned int link_id;
++
++	for_each_set_bit(link_id, &map, IEEE80211_MLD_MAX_NUM_LINKS) {
++		u64 bcn_int = data->link_data[link_id].beacon_int;
++		u64 dtim_tsf, step, tsf;
++		bool valid;
++
++		if (!bcn_int)
++			continue;
++
++		spin_lock_bh(&ttlm->lock);
++		valid = ttlm->dtim_valid & BIT(link_id);
++		dtim_tsf = ttlm->dtim_tsf[link_id];
++		step = bcn_int * max_t(u8, ttlm->dtim_period[link_id], 1);
++		spin_unlock_bh(&ttlm->lock);
++
++		if (!valid) {
++			step = bcn_int;
++			tsf = hwsim_tbtt_at_or_after(target, bcn_int);
++		} else if (dtim_tsf >= target) {
++			tsf = dtim_tsf;
++		} else {
++			tsf = dtim_tsf + DIV64_U64_ROUND_UP(target - dtim_tsf,
++							    step) * step;
++		}
++
++		if (tsf > limit) {
++			if (tsf - step <= now)
++				return -ERANGE;
++			tsf -= step;
++		}
++
++		*switch_tsf = tsf;
++		return 0;
++	}
++
++	return -ENOLINK;
++}
++
++static int
++mac80211_hwsim_adv_ttlm_request(struct ieee80211_hw *hw,
++				struct ieee80211_vif *vif,
++				struct cfg80211_adv_ttlm_params *params)
++{
++	struct hwsim_vif_priv *vp = (void *)vif->drv_priv;
++	struct cfg80211_adv_ttlm_event event = {
++		.cmd = NL80211_CMD_ADV_TTLM_STARTED,
++		.cookie = params->cookie,
++	};
++	struct hwsim_adv_ttlm *ttlm = &vp->adv_ttlm;
++	unsigned long valid_links = vif->valid_links;
++	struct mac80211_hwsim_data *data = hw->priv;
++	struct ieee80211_bss_conf *link_conf;
++	unsigned int link_id;
++	u64 switch_tsf;
++	int ret;
++
++	/* hwsim counts the mapping at the Beacon frames of a transmitted BSSID,
++	 * and mac80211 updates the element of a nontransmitted BSSID in none
++	 */
++	for_each_set_bit(link_id, &valid_links, IEEE80211_MLD_MAX_NUM_LINKS) {
++		link_conf = link_conf_dereference_protected(vif, link_id);
++		if (link_conf && link_conf->nontransmitted)
++			return -EOPNOTSUPP;
++	}
++
++	ret = hwsim_adv_ttlm_switch_tsf(data, ttlm, params->links,
++					params->switch_time, &switch_tsf);
++	if (ret)
++		return ret;
++
++	spin_lock_bh(&ttlm->lock);
++	if (ttlm->cookie) {
++		spin_unlock_bh(&ttlm->lock);
++		return -EBUSY;
++	}
++	ttlm->cookie = params->cookie;
++	ttlm->links = params->links;
++	ttlm->duration = params->duration;
++	ttlm->switch_tsf = switch_tsf;
++	ttlm->established = false;
++	ttlm->ended = false;
++	spin_unlock_bh(&ttlm->lock);
++
++	/* one TSF serves all links of the radio */
++	event.switch_tsf = (switch_tsf >> 10) & 0xffff;
++	for_each_set_bit(link_id, &valid_links, IEEE80211_MLD_MAX_NUM_LINKS) {
++		u64 bcn_int = data->link_data[link_id].beacon_int;
++
++		event.link_id = link_id;
++		event.tbtt_boottime = 0;
++		if (bcn_int)
++			event.tbtt_boottime =
++				ktime_to_ns(mac80211_hwsim_tsf_to_boottime(data,
++					hwsim_tbtt_at_or_after(switch_tsf,
++							       bcn_int)));
++		ieee80211_adv_ttlm_notify(vif, &event, GFP_KERNEL);
++	}
++
++	return 0;
++}
++
++static void
++mac80211_hwsim_adv_ttlm_cancel(struct ieee80211_hw *hw,
++			       struct ieee80211_vif *vif, u64 cookie)
++{
++	struct hwsim_vif_priv *vp = (void *)vif->drv_priv;
++	struct hwsim_adv_ttlm *ttlm = &vp->adv_ttlm;
++
++	spin_lock_bh(&ttlm->lock);
++	if (ttlm->cookie == cookie)
++		hwsim_adv_ttlm_clear(ttlm);
++	spin_unlock_bh(&ttlm->lock);
++}
++
+ #ifdef CPTCFG_NL80211_TESTMODE
+ /*
+  * This section contains example code for using netlink
+@@ -4971,6 +5280,8 @@ static const struct ieee80211_ops mac802
+ 	.link_sta_statistics = mac80211_hwsim_link_sta_statistics,
+ 	.sta_state = mac80211_hwsim_sta_state,
+ 	.can_neg_ttlm = mac80211_hwsim_can_neg_ttlm,
++	.adv_ttlm_request = mac80211_hwsim_adv_ttlm_request,
++	.adv_ttlm_cancel = mac80211_hwsim_adv_ttlm_cancel,
+ };
+ 
+ struct hwsim_new_radio_params {
+@@ -6774,6 +7085,11 @@ static int mac80211_hwsim_new_radio(stru
+ 		hw->wiphy->iftype_ext_capab = mac80211_hwsim_iftypes_ext_capa;
+ 		hw->wiphy->num_iftype_ext_capab =
+ 			ARRAY_SIZE(mac80211_hwsim_iftypes_ext_capa);
++
++		wiphy_ext_feature_set(hw->wiphy,
++				      NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE);
++		wiphy_ext_feature_set(hw->wiphy,
++				      NL80211_EXT_FEATURE_AP_ADV_TTLM);
+ 	} else {
+ 		ieee80211_hw_set(hw, HOST_BROADCAST_PS_BUFFERING);
+ 		ieee80211_hw_set(hw, PS_NULLFUNC_STACK);

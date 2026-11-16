@@ -1,0 +1,59 @@
+From 1a7bcf5324c8e2de6512eca5b028b6b283181d3f Mon Sep 17 00:00:00 2001
+From: Miaoqing Pan <miaoqing.pan@oss.qualcomm.com>
+Date: Thu, 6 Aug 2026 18:13:30 +0800
+Subject: [PATCH] wifi: ath11k: fix NULL dereference in ahb remove when QMI
+ init incomplete
+
+On WCN6750, if QMI messages never arrive (for example when qrtr_smd
+is not ready), WLAN initialization stops before the device is fully
+registered. In this case ATH11K_FLAG_QMI_FAIL is not set because no
+QMI event handler is executed.
+
+When the driver is removed, ath11k_ahb_remove() still calls
+ath11k_core_deinit(), which eventually triggers
+ath11k_ce_cleanup_pipes() on uninitialized CE pipes and results in a
+NULL pointer dereference in ath11k_hal_srng_access_begin():
+
+  ath11k_hal_srng_access_begin+0x14/0x68 [ath11k]
+  ath11k_ce_cleanup_pipes+0x184/0x190 [ath11k]
+  ath11k_pcic_stop+0x24/0x38 [ath11k]
+  ath11k_core_deinit+0xfc/0x1c0 [ath11k]
+  ath11k_ahb_remove+0x38/0xa0 [ath11k_ahb]
+
+Fix this by invoking ath11k_ahb_remove_prepare() before the state
+check and skipping ath11k_core_deinit() if ATH11K_FLAG_REGISTERED
+is not set, core initialization did not complete and CE pipes may
+remain uninitialized, making ath11k_core_deinit() unsafe.
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.2.0.c2-00204-QCAMSLSWPLZ-1
+
+Fixes: 00402f49d26f ("ath11k: Add support for WCN6750 device")
+Signed-off-by: Miaoqing Pan <miaoqing.pan@oss.qualcomm.com>
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260806101331.484063-3-miaoqing.pan@oss.qualcomm.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -1265,14 +1265,15 @@ static void ath11k_ahb_remove(struct pla
+ {
+ 	struct ath11k_base *ab = platform_get_drvdata(pdev);
+ 
+-	if (test_bit(ATH11K_FLAG_QMI_FAIL, &ab->dev_flags)) {
++	ath11k_ahb_remove_prepare(ab);
++
++	if (!test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags)) {
+ 		ath11k_ahb_power_down(ab, false);
+ 		ath11k_debugfs_soc_destroy(ab);
+ 		ath11k_qmi_deinit_service(ab);
+ 		goto qmi_fail;
+ 	}
+ 
+-	ath11k_ahb_remove_prepare(ab);
+ 	ath11k_core_deinit(ab);
+ 
+ qmi_fail:

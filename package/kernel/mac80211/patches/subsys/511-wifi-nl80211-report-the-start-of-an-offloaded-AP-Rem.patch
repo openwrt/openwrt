@@ -1,0 +1,248 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 14 Nov 2026 18:40:00 +0100
+Subject: [PATCH] wifi: nl80211: report the start of an offloaded AP Removal
+ Timer
+
+A device that counts the AP Removal Timer can apply another count than
+the beacon that announced the removal. A device that times the removal
+in whole seconds puts the count of that time on air and removes the
+link at it. User space then times its own steps of the removal, such as
+the stop of the link and the end of its fallback wait, from a count that
+the stations do not see.
+
+Add NL80211_CMD_AP_REMOVAL_TIMER_STARTED, with which the driver reports
+for each removed link the count that the device puts on air and the TSF
+of the TBTT of the removal. The event also carries the CLOCK_BOOTTIME of
+that TBTT where the driver knows it, since user space cannot read the
+TSF. It can be sent from any context, like the events of an advertised
+TID-to-link mapping.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -11144,6 +11144,41 @@ cfg80211_6ghz_power_type(u8 control, u32
+ void cfg80211_links_removed(struct net_device *dev, u16 link_mask);
+ 
+ /**
++ * struct cfg80211_ap_removal_timer_event - start of an AP Removal Timer
++ *
++ * Used with cfg80211_ap_removal_timer_started().
++ *
++ * @link_id: link ID of the removed affiliated AP
++ * @count: AP Removal Timer in the first Beacon frame of the removal, which
++ *	is the number of TBTTs of the link up to its removal
++ * @tsf: TSF of the link at the TBTT of its removal
++ * @tbtt_boottime: CLOCK_BOOTTIME in ns of the TBTT of the removal, 0 if not
++ *	known
++ */
++struct cfg80211_ap_removal_timer_event {
++	unsigned int link_id;
++	u16 count;
++	u64 tsf;
++	u64 tbtt_boottime;
++};
++
++/**
++ * cfg80211_ap_removal_timer_started - notify that an AP Removal Timer started
++ * @dev: network device of the AP MLD
++ * @event: the removal of the link
++ * @gfp: allocation flags
++ *
++ * A driver with %NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD calls this
++ * once for each removed link when it starts to count the AP Removal Timer
++ * that a beacon of the AP MLD announces, with the count and the TBTT that
++ * it applies. These can differ from the count of the beacon. This function
++ * can be called from any context.
++ */
++void cfg80211_ap_removal_timer_started(struct net_device *dev,
++				       const struct cfg80211_ap_removal_timer_event *event,
++				       gfp_t gfp);
++
++/**
+  * cfg80211_crit_update_done - notify that the Critical Update flag is clear
+  * @dev: network device of the AP
+  * @link_id: link ID of the AP link, 0 for an AP that is not an AP MLD
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1526,6 +1526,15 @@
+  *	parameters are in %NL80211_ATTR_MSCS_DESCRIPTOR. The reply carries
+  *	the status code in %NL80211_ATTR_STATUS_CODE.
+  *
++ * @NL80211_CMD_AP_REMOVAL_TIMER_STARTED: Notify user space that the driver
++ *	started to count the AP Removal Timer of an affiliated AP of an AP MLD,
++ *	see %NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD. Sent on the AP
++ *	interface once for each removed link, with %NL80211_ATTR_MLO_LINK_ID,
++ *	%NL80211_ATTR_AP_REMOVAL_COUNT, %NL80211_ATTR_AP_REMOVAL_TSF and, if the
++ *	driver knows it, %NL80211_ATTR_AP_REMOVAL_TBTT_BOOTTIME. The count is
++ *	the one the device puts on air, which can differ from the count of the
++ *	beacon that announced the removal.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1817,6 +1826,8 @@ enum nl80211_commands {
+ 	NL80211_CMD_SET_SCS,
+ 	NL80211_CMD_SET_MSCS,
+ 
++	NL80211_CMD_AP_REMOVAL_TIMER_STARTED,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+@@ -3338,6 +3349,15 @@ enum nl80211_commands {
+  * @NL80211_ATTR_MSCS_DESCRIPTOR: Nested set of &enum nl80211_mscs_desc_attr
+  *	attributes. Used with %NL80211_CMD_SET_MSCS.
+  *
++ * @NL80211_ATTR_AP_REMOVAL_COUNT: u16 AP Removal Timer that the first Beacon
++ *	frame of the removal of the link of %NL80211_ATTR_MLO_LINK_ID carries,
++ *	which is the number of TBTTs of the link up to its removal (IEEE
++ *	802.11be-2024, 35.3.6.3), see %NL80211_CMD_AP_REMOVAL_TIMER_STARTED.
++ * @NL80211_ATTR_AP_REMOVAL_TSF: u64 TSF of the link of
++ *	%NL80211_ATTR_MLO_LINK_ID at the TBTT of its removal.
++ * @NL80211_ATTR_AP_REMOVAL_TBTT_BOOTTIME: u64 time of the TBTT of the removal
++ *	of the link of %NL80211_ATTR_MLO_LINK_ID, in ns of %CLOCK_BOOTTIME.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3955,6 +3975,10 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_SCS_DESCRIPTORS,
+ 	NL80211_ATTR_MSCS_DESCRIPTOR,
+ 
++	NL80211_ATTR_AP_REMOVAL_COUNT,
++	NL80211_ATTR_AP_REMOVAL_TSF,
++	NL80211_ATTR_AP_REMOVAL_TBTT_BOOTTIME,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -7417,14 +7441,15 @@ enum nl80211_feature_flags {
+  * @NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD: The driver counts the AP
+  *	Removal Timer of an affiliated AP that a Reconfiguration Multi-Link
+  *	element in the beacon of an AP MLD link announces (IEEE 802.11be-2024,
+- *	35.3.6.3), in the Beacon frames of every link that carries the element,
+- *	and reports its expiry with %NL80211_CMD_LINKS_REMOVED on the AP
+- *	interface. Until the expiry, a beacon update, the start of a link, a
+- *	channel switch and a colour change of the AP MLD can fail with
+- *	-EBUSY, so user space sets the beacons of the links that stay again
+- *	after the event. The expiry comes before the TBTT at
+- *	which the timer reaches 0, and the removed links keep running until
+- *	user space stops them.
++ *	35.3.6.3), in the Beacon frames of every link that carries the element.
++ *	On the AP interface, it reports the count and the TBTT of the removal
++ *	that it applies with %NL80211_CMD_AP_REMOVAL_TIMER_STARTED at the
++ *	start, and the expiry with %NL80211_CMD_LINKS_REMOVED. Until the
++ *	expiry, a beacon update, the start of a link, a channel switch and a
++ *	colour change of the AP MLD can fail with -EBUSY, so user space sets
++ *	the beacons of the links that stay again after the event. The expiry
++ *	comes before the TBTT at which the timer reaches 0, and the removed
++ *	links keep running until user space stops them.
+  * @NL80211_EXT_FEATURE_AP_NEG_TTLM: The driver applies the TID-to-link
+  *	mapping that an AP MLD negotiated with an associated non-AP MLD
+  *	(IEEE 802.11be-2024, 35.3.7.2.3), set with
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -1141,6 +1141,9 @@ static const struct nla_policy nl80211_p
+ 		NLA_POLICY_NESTED_ARRAY(nl80211_scs_desc_policy),
+ 	[NL80211_ATTR_MSCS_DESCRIPTOR] =
+ 		NLA_POLICY_NESTED(nl80211_mscs_desc_policy),
++	[NL80211_ATTR_AP_REMOVAL_COUNT] = { .type = NLA_U16 },
++	[NL80211_ATTR_AP_REMOVAL_TSF] = { .type = NLA_U64 },
++	[NL80211_ATTR_AP_REMOVAL_TBTT_BOOTTIME] = { .type = NLA_U64 },
+ };
+ 
+ /* policy for the key attributes */
+@@ -22116,6 +22119,59 @@ void cfg80211_links_removed(struct net_d
+ }
+ EXPORT_SYMBOL(cfg80211_links_removed);
+ 
++void cfg80211_ap_removal_timer_started(struct net_device *dev,
++				       const struct cfg80211_ap_removal_timer_event *event,
++				       gfp_t gfp)
++{
++	struct wireless_dev *wdev = dev->ieee80211_ptr;
++	struct wiphy *wiphy = wdev->wiphy;
++	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
++	struct sk_buff *msg;
++	void *hdr;
++
++	trace_cfg80211_ap_removal_timer_started(dev, event);
++
++	if (WARN_ON(wdev->iftype != NL80211_IFTYPE_AP ||
++		    !wiphy_ext_feature_isset(wiphy,
++				NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD) ||
++		    !(wdev->valid_links & BIT(event->link_id))))
++		return;
++
++	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, gfp);
++	if (!msg)
++		return;
++
++	hdr = nl80211hdr_put(msg, 0, 0, 0,
++			     NL80211_CMD_AP_REMOVAL_TIMER_STARTED);
++	if (!hdr)
++		goto nla_put_failure;
++
++	if (nla_put_u32(msg, NL80211_ATTR_WIPHY, rdev->wiphy_idx) ||
++	    nla_put_u32(msg, NL80211_ATTR_IFINDEX, dev->ifindex) ||
++	    nla_put_u64_64bit(msg, NL80211_ATTR_WDEV, wdev_id(wdev),
++			      NL80211_ATTR_PAD) ||
++	    nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID, event->link_id) ||
++	    nla_put_u16(msg, NL80211_ATTR_AP_REMOVAL_COUNT, event->count) ||
++	    nla_put_u64_64bit(msg, NL80211_ATTR_AP_REMOVAL_TSF, event->tsf,
++			      NL80211_ATTR_PAD))
++		goto nla_put_failure;
++
++	if (event->tbtt_boottime &&
++	    nla_put_u64_64bit(msg, NL80211_ATTR_AP_REMOVAL_TBTT_BOOTTIME,
++			      event->tbtt_boottime, NL80211_ATTR_PAD))
++		goto nla_put_failure;
++
++	genlmsg_end(msg, hdr);
++
++	genlmsg_multicast_netns(&nl80211_fam, wiphy_net(wiphy), msg, 0,
++				NL80211_MCGRP_MLME, gfp);
++	return;
++
++ nla_put_failure:
++	nlmsg_free(msg);
++}
++EXPORT_SYMBOL(cfg80211_ap_removal_timer_started);
++
+ void cfg80211_crit_update_done(struct net_device *dev, unsigned int link_id,
+ 			       u32 crit_update_id)
+ {
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -4359,6 +4359,30 @@ TRACE_EVENT(cfg80211_links_removed,
+ 		  __entry->link_mask)
+ );
+ 
++TRACE_EVENT(cfg80211_ap_removal_timer_started,
++	TP_PROTO(struct net_device *netdev,
++		 const struct cfg80211_ap_removal_timer_event *event),
++	TP_ARGS(netdev, event),
++	TP_STRUCT__entry(
++		NETDEV_ENTRY
++		__field(unsigned int, link_id)
++		__field(u16, count)
++		__field(u64, tsf)
++		__field(u64, tbtt_boottime)
++	),
++	TP_fast_assign(
++		NETDEV_ASSIGN;
++		__entry->link_id = event->link_id;
++		__entry->count = event->count;
++		__entry->tsf = event->tsf;
++		__entry->tbtt_boottime = event->tbtt_boottime;
++	),
++	TP_printk(NETDEV_PR_FMT
++		  ", link_id:%u, count:%u, tsf:%llu, tbtt_boottime:%llu",
++		  NETDEV_PR_ARG, __entry->link_id, __entry->count,
++		  __entry->tsf, __entry->tbtt_boottime)
++);
++
+ TRACE_EVENT(cfg80211_crit_update_done,
+ 	TP_PROTO(struct net_device *netdev, unsigned int link_id,
+ 		 u32 crit_update_id),

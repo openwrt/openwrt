@@ -1,0 +1,98 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 1 Nov 2026 00:32:06 +0100
+Subject: [PATCH] wifi: mac80211: send a tagged EAPOL on the control port
+
+A Multi-AP backhaul with a Primary VLAN sends EAPOL frames with a
+C-Tag. ieee80211_tx_control_port() rejects any ethertype but the
+control port protocol and pre-authentication, so user space cannot
+send that form.
+
+Accept 0x8100 where the inner type is the control port protocol, and
+treat the frame as a port control frame in every other respect: it
+passes a closed port, keeps its priority and its TX status, and a
+4-address station sends it in a 3-address frame. skb->protocol holds
+the inner type, which the drivers and the status path read, so the
+slow path needs only the header type replaced. The fast path reads the
+type from the frame and has to leave such a frame alone. Document the
+tagged form of the request at NL80211_CMD_CONTROL_PORT_FRAME.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2827,6 +2827,9 @@ static struct sk_buff *ieee80211_build_h
+ 	/* convert Ethernet header to proper 802.11 header (based on
+ 	 * operation mode) */
+ 	ethertype = (skb->data[12] << 8) | skb->data[13];
++	/* a port control frame with a C-Tag keeps the form of an untagged one */
++	if (ctrl_flags & IEEE80211_TX_CTRL_PORT_CTRL_PROTO)
++		ethertype = be16_to_cpu(skb->protocol);
+ 	fc = cpu_to_le16(IEEE80211_FTYPE_DATA | IEEE80211_STYPE_DATA);
+ 
+ 	if (!ieee80211_vif_is_mld(&sdata->vif))
+@@ -3972,7 +3975,8 @@ static bool ieee80211_xmit_fast(struct i
+ 	u8 tid = IEEE80211_NUM_TIDS;
+ 
+ 	/* control port protocol needs a lot of special handling */
+-	if (cpu_to_be16(ethertype) == sdata->control_port_protocol)
++	if (cpu_to_be16(ethertype) == sdata->control_port_protocol ||
++	    skb->protocol == sdata->control_port_protocol)
+ 		return false;
+ 
+ 	/* only RFC 1042 SNAP */
+@@ -6838,6 +6842,7 @@ int ieee80211_tx_control_port(struct wip
+ 	struct sta_info *sta;
+ 	struct sk_buff *skb;
+ 	struct ethhdr *ehdr;
++	bool port_control;
+ 	u32 ctrl_flags = 0;
+ 	u32 flags = 0;
+ 	int err;
+@@ -6845,14 +6850,19 @@ int ieee80211_tx_control_port(struct wip
+ 	/* mutex lock is only needed for incrementing the cookie counter */
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
++	/* Multi-AP Traffic Separation tags EAPOL on a backhaul link */
++	port_control = proto == sdata->control_port_protocol ||
++		       (proto == cpu_to_be16(ETH_P_8021Q) && len >= VLAN_HLEN &&
++			get_unaligned((const __be16 *)(buf + 2)) ==
++			sdata->control_port_protocol);
++
+ 	/* Only accept CONTROL_PORT_PROTOCOL configured in CONNECT/ASSOCIATE
+ 	 * or Pre-Authentication
+ 	 */
+-	if (proto != sdata->control_port_protocol &&
+-	    proto != cpu_to_be16(ETH_P_PREAUTH))
++	if (!port_control && proto != cpu_to_be16(ETH_P_PREAUTH))
+ 		return -EINVAL;
+ 
+-	if (proto == sdata->control_port_protocol)
++	if (port_control)
+ 		ctrl_flags |= IEEE80211_TX_CTRL_PORT_CTRL_PROTO |
+ 			      IEEE80211_TX_CTRL_SKIP_MPATH_LOOKUP;
+ 
+@@ -6901,7 +6911,7 @@ int ieee80211_tx_control_port(struct wip
+ 	ehdr->h_proto = proto;
+ 
+ 	skb->dev = dev;
+-	skb->protocol = proto;
++	skb->protocol = port_control ? sdata->control_port_protocol : proto;
+ 	skb_reset_network_header(skb);
+ 	skb_reset_mac_header(skb);
+ 
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1165,9 +1165,10 @@
+  *	%NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT and %NL80211_ATTR_MAC are added
+  *	indicating the protocol type of the received frame; whether the frame
+  *	was received unencrypted and the MAC address of the peer respectively.
+- *	A received control port frame with a C-Tag (Multi-AP Traffic
+- *	Separation) has the protocol type 0x8100, and its frame starts with the
+- *	TCI and the inner protocol type, the control port protocol.
++ *	A control port frame with a C-Tag (Multi-AP Traffic Separation), in a
++ *	request or in an event, has the protocol type 0x8100, and its frame
++ *	starts with the TCI and the inner protocol type, the control port
++ *	protocol.
+  *
+  * @NL80211_CMD_RELOAD_REGDB: Request that the regdb firmware file is reloaded.
+  *

@@ -1,0 +1,11 @@
+--- a/src/common/drv_dsl_cpe_os_linux.c
++++ b/src/common/drv_dsl_cpe_os_linux.c
+@@ -414,7 +414,7 @@ int DSL_DRV_ErrorToOS(DSL_Error_t nError
+ DSL_void_t* DSL_DRV_VMalloc(
+    DSL_DRV_size_t    nSize)
+ {
+-   return __vmalloc((unsigned long)nSize, GFP_KERNEL, PAGE_KERNEL);
++   return __vmalloc((unsigned long)nSize, GFP_KERNEL);
+    /*   return vmalloc(nSize);*/
+ }
+ 

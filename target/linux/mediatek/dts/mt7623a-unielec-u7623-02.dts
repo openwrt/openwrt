@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+/*
+ * Copyright 2018 Kristian Evensen <kristian.evensen@gmail.com>
+ */
+
+/dts-v1/;
+#include "mt7623a-unielec-u7623-02.dtsi"
+
+/ {
+	model = "UniElec U7623-02 eMMC";
+	compatible = "unielec,u7623-02", "mediatek,mt7623";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon=uart8250,mmio32,0x11004000 root=/dev/fit0 rootwait";
+		rootdisk = <&emmc_rootdisk>;
+	};
+};
+
+&mmc0 {
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+			partitions {
+				emmc_rootdisk: block-partition-env {
+					partno = <3>;
+				};
+			};
+		};
+	};
+};

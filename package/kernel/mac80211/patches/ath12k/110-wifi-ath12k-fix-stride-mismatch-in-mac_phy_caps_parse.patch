@@ -1,0 +1,55 @@
+From 4c6eb712a91fa079be6f9f1419c96e0ad2227081 Mon Sep 17 00:00:00 2001
+From: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+Date: Tue, 28 Jul 2026 18:05:28 -0700
+Subject: [PATCH] wifi: ath12k: fix stride mismatch in mac_phy_caps_parse()
+
+Currently, in ath12k_wmi_mac_phy_caps_parse(), kzalloc() sizes the
+mac_phy_caps buffer as tot_phy_id * len, where len is clamped to
+min(firmware_len, sizeof(struct ath12k_wmi_mac_phy_caps_params)). The
+subsequent memcpy() destination advances by sizeof(full struct) per slot
+via C pointer arithmetic, not by the clamped len. When firmware sends
+short TLVs, the second and later slots are written past the end of the
+allocation.
+
+The reader in ath12k_pull_mac_phy_cap_svc_ready_ext() also indexes the
+buffer with full-struct pointer arithmetic, so the allocation must match
+that stride.
+
+Fix by using kzalloc_objs(), which derives the element size from the
+pointer type, making allocation size and pointer stride provably
+consistent regardless of what len the firmware provides.
+
+Tested-on: WCN7850 hw2.0 PCI WLAN.HMT.1.1.c7-00108-QCAHMTSWPL_V1.0_V2.0_SILICONZ_UPSTREAM-3
+
+Fixes: d889913205cf ("wifi: ath12k: driver for Qualcomm Wi-Fi 7 devices")
+Assisted-by: Claude:claude-sonnet-4-6
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260728-mac_phy_caps_parse-stride-mismatch-v1-1-27a9c1a3fbd0@oss.qualcomm.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath12k/wmi.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath12k/wmi.c
++++ b/drivers/net/wireless/ath/ath12k/wmi.c
+@@ -4754,14 +4754,16 @@ static int ath12k_wmi_mac_phy_caps_parse
+ 	if (svc_rdy_ext->n_mac_phy_caps >= svc_rdy_ext->tot_phy_id)
+ 		return -ENOBUFS;
+ 
+-	len = min_t(u16, len, sizeof(struct ath12k_wmi_mac_phy_caps_params));
+ 	if (!svc_rdy_ext->n_mac_phy_caps) {
+-		svc_rdy_ext->mac_phy_caps = kzalloc((svc_rdy_ext->tot_phy_id) * len,
+-						    GFP_ATOMIC);
++		svc_rdy_ext->mac_phy_caps =
++			kzalloc_objs(*svc_rdy_ext->mac_phy_caps,
++				     svc_rdy_ext->tot_phy_id,
++				     GFP_ATOMIC);
+ 		if (!svc_rdy_ext->mac_phy_caps)
+ 			return -ENOMEM;
+ 	}
+ 
++	len = min_t(u16, len, sizeof(struct ath12k_wmi_mac_phy_caps_params));
+ 	memcpy(svc_rdy_ext->mac_phy_caps + svc_rdy_ext->n_mac_phy_caps, ptr, len);
+ 	svc_rdy_ext->n_mac_phy_caps++;
+ 	return 0;

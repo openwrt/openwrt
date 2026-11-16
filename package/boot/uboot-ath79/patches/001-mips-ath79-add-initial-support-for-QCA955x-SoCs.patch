@@ -1,0 +1,1020 @@
+From 7c59f0fe98eb20db8dfbf4d3c67d6043a9efe116 Mon Sep 17 00:00:00 2001
+From: INAGAKI Hiroshi <musashino.open@gmail.com>
+Date: Sat, 22 Jun 2024 20:45:31 +0900
+Subject: [PATCH 1/2] mips: ath79: add initial support for QCA955x SoCs
+
+---
+ arch/mips/dts/qca955x.dtsi                    |  70 +++++
+ arch/mips/mach-ath79/Kconfig                  |   9 +
+ arch/mips/mach-ath79/Makefile                 |   1 +
+ .../mach-ath79/include/mach/ar71xx_regs.h     |  63 ++++
+ arch/mips/mach-ath79/include/mach/ath79.h     |   3 +
+ arch/mips/mach-ath79/qca955x/Makefile         |   5 +
+ arch/mips/mach-ath79/qca955x/clk.c            | 286 ++++++++++++++++++
+ arch/mips/mach-ath79/qca955x/cpu.c            |   7 +
+ arch/mips/mach-ath79/qca955x/ddr.c            | 222 ++++++++++++++
+ .../mips/mach-ath79/qca955x/qca955x-ddr-tap.S | 191 ++++++++++++
+ 10 files changed, 857 insertions(+)
+ create mode 100644 arch/mips/dts/qca955x.dtsi
+ create mode 100644 arch/mips/mach-ath79/qca955x/Makefile
+ create mode 100644 arch/mips/mach-ath79/qca955x/clk.c
+ create mode 100644 arch/mips/mach-ath79/qca955x/cpu.c
+ create mode 100644 arch/mips/mach-ath79/qca955x/ddr.c
+ create mode 100644 arch/mips/mach-ath79/qca955x/qca955x-ddr-tap.S
+
+diff --git a/arch/mips/dts/qca955x.dtsi b/arch/mips/dts/qca955x.dtsi
+new file mode 100644
+index 0000000000..93bc659743
+--- /dev/null
++++ b/arch/mips/dts/qca955x.dtsi
+@@ -0,0 +1,70 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
++ */
++
++#include "skeleton.dtsi"
++
++/ {
++	compatible = "qca,qca955x";
++
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu@0 {
++			device_type = "cpu";
++			compatible = "mips,mips74Kc";
++			reg = <0>;
++		};
++	};
++
++	clocks {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		xtal: xtal {
++			#clock-cells = <0>;
++			compatible = "fixed-clock";
++			clock-output-names = "xtal";
++		};
++	};
++
++	ahb {
++		compatible = "simple-bus";
++		ranges;
++
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		apb {
++			compatible = "simple-bus";
++			ranges;
++
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			uart0: uart@18020000 {
++				compatible = "ns16550";
++				reg = <0x18020000 0x20>;
++				reg-shift = <2>;
++
++				status = "disabled";
++			};
++		};
++
++		spi0: spi@1f000000 {
++			compatible = "qca,ar7100-spi";
++			reg = <0x1f000000 0x10>;
++
++			status = "disabled";
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++	};
++};
+diff --git a/arch/mips/mach-ath79/Kconfig b/arch/mips/mach-ath79/Kconfig
+index 2fa628568a..21ac4b9f95 100644
+--- a/arch/mips/mach-ath79/Kconfig
++++ b/arch/mips/mach-ath79/Kconfig
+@@ -34,6 +34,15 @@ config SOC_QCA953X
+ 	help
+ 	  This supports QCA/Atheros qca953x family SOCs.
+ 
++config SOC_QCA955X
++	bool
++	select MIPS_TUNE_74KC
++	select SUPPORT_BIG_ENDIAN
++	select SUPPORTS_CPU_MIPS32_R1
++	select SUPPORTS_CPU_MIPS32_R2
++	help
++	  This supports QCA/Atheros qca955x family SOCs.
++
+ config SOC_QCA956X
+ 	bool
+ 	select MIPS_TUNE_74KC
+diff --git a/arch/mips/mach-ath79/Makefile b/arch/mips/mach-ath79/Makefile
+index fbd40c02be..cd8c1f0334 100644
+--- a/arch/mips/mach-ath79/Makefile
++++ b/arch/mips/mach-ath79/Makefile
+@@ -7,4 +7,5 @@ obj-y += dram.o
+ obj-$(CONFIG_SOC_AR933X)	+= ar933x/
+ obj-$(CONFIG_SOC_AR934X)	+= ar934x/
+ obj-$(CONFIG_SOC_QCA953X)	+= qca953x/
++obj-$(CONFIG_SOC_QCA955X)	+= qca955x/
+ obj-$(CONFIG_SOC_QCA956X)	+= qca956x/
+diff --git a/arch/mips/mach-ath79/include/mach/ar71xx_regs.h b/arch/mips/mach-ath79/include/mach/ar71xx_regs.h
+index 5888f6eb28..1e4860ec9c 100644
+--- a/arch/mips/mach-ath79/include/mach/ar71xx_regs.h
++++ b/arch/mips/mach-ath79/include/mach/ar71xx_regs.h
+@@ -174,11 +174,17 @@
+ #define QCA955X_WMAC_BASE \
+ 	(AR71XX_APB_BASE + 0x00100000)
+ #define QCA955X_WMAC_SIZE				0x20000
++#define QCA955X_RTC_BASE \
++	(AR71XX_APB_BASE + 0x00107000)
++#define QCA955X_RTC_SIZE				0x1000
+ #define QCA955X_EHCI0_BASE				0x1b000000
+ #define QCA955X_EHCI1_BASE				0x1b400000
+ #define QCA955X_EHCI_SIZE				0x1000
+ #define QCA955X_NFC_BASE				0x1b800200
+ #define QCA955X_NFC_SIZE				0xb8
++#define QCA955X_SRIF_BASE \
++	(AR71XX_APB_BASE + 0x00116000)
++#define QCA955X_SRIF_SIZE				0x1000
+ 
+ #define QCA956X_PCI_MEM_BASE1				0x12000000
+ #define QCA956X_PCI_MEM_SIZE				0x02000000
+@@ -285,6 +291,17 @@
+ #define QCA953X_DDR_REG_CTL_CONF			0x108
+ #define QCA953X_DDR_REG_CONFIG3				0x15c
+ 
++#define QCA955X_DDR_REG_TAP_CTRL2			0x24
++#define QCA955X_DDR_REG_TAP_CTRL3			0x28
++#define QCA955X_DDR_REG_DDR2_CONFIG			0xb8
++#define QCA955X_DDR_REG_DDR2_EMR2			0xbc
++#define QCA955X_DDR_REG_DDR2_EMR3			0xc0
++#define QCA955X_DDR_REG_BURST				0xc4
++#define QCA955X_DDR_REG_BURST2				0xc8
++#define QCA955X_DDR_REG_TIMEOUT_MAX			0xcc
++#define QCA955X_DDR_REG_CTL_CONF			0x108
++#define QCA955X_DDR_REG_CONFIG3				0x15c
++
+ #define QCA956X_DDR_REG_TAP_CTRL2			0x24
+ #define QCA956X_DDR_REG_TAP_CTRL3			0x28
+ #define QCA956X_DDR_REG_DDR2_CONFIG			0xb8
+@@ -500,6 +517,8 @@
+ #define QCA955X_PLL_DDR_CONFIG_REG			0x04
+ #define QCA955X_PLL_CLK_CTRL_REG			0x08
+ #define QCA955X_PLL_ETH_XMII_CONTROL_REG		0x28
++#define QCA955X_PLL_DDR_DIT_FRAC_REG			0x40
++#define QCA955X_PLL_CPU_DIT_FRAC_REG			0x44
+ #define QCA955X_PLL_ETH_SGMII_CONTROL_REG		0x48
+ 
+ #define QCA955X_PLL_CPU_CONFIG_NFRAC_SHIFT		0
+@@ -508,8 +527,11 @@
+ #define QCA955X_PLL_CPU_CONFIG_NINT_MASK		0x3f
+ #define QCA955X_PLL_CPU_CONFIG_REFDIV_SHIFT		12
+ #define QCA955X_PLL_CPU_CONFIG_REFDIV_MASK		0x1f
++#define QCA955X_PLL_CPU_CONFIG_RANGE_SHIFT		17
++#define QCA955X_PLL_CPU_CONFIG_RANGE_MASK		0x3
+ #define QCA955X_PLL_CPU_CONFIG_OUTDIV_SHIFT		19
+ #define QCA955X_PLL_CPU_CONFIG_OUTDIV_MASK		0x3
++#define QCA955X_PLL_CPU_CONFIG_PLLPWD			BIT(30)
+ 
+ #define QCA955X_PLL_DDR_CONFIG_NFRAC_SHIFT		0
+ #define QCA955X_PLL_DDR_CONFIG_NFRAC_MASK		0x3ff
+@@ -517,8 +539,11 @@
+ #define QCA955X_PLL_DDR_CONFIG_NINT_MASK		0x3f
+ #define QCA955X_PLL_DDR_CONFIG_REFDIV_SHIFT		16
+ #define QCA955X_PLL_DDR_CONFIG_REFDIV_MASK		0x1f
++#define QCA955X_PLL_DDR_CONFIG_RANGE_SHIFT		21
++#define QCA955X_PLL_DDR_CONFIG_RANGE_MASK		0x3
+ #define QCA955X_PLL_DDR_CONFIG_OUTDIV_SHIFT		23
+ #define QCA955X_PLL_DDR_CONFIG_OUTDIV_MASK		0x7
++#define QCA955X_PLL_DDR_CONFIG_PLLPWD			BIT(30)
+ 
+ #define QCA955X_PLL_CLK_CTRL_CPU_PLL_BYPASS		BIT(2)
+ #define QCA955X_PLL_CLK_CTRL_DDR_PLL_BYPASS		BIT(3)
+@@ -533,6 +558,24 @@
+ #define QCA955X_PLL_CLK_CTRL_DDRCLK_FROM_DDRPLL		BIT(21)
+ #define QCA955X_PLL_CLK_CTRL_AHBCLK_FROM_DDRPLL		BIT(24)
+ 
++#define QCA955X_PLL_DDR_DIT_NFRAC_MAX_SHIFT		0
++#define QCA955X_PLL_DDR_DIT_NFRAC_MAX_MASK		0x3ff
++#define QCA955X_PLL_DDR_DIT_NFRAC_MIN_SHIFT		10
++#define QCA955X_PLL_DDR_DIT_NFRAC_MIN_MASK		0x3ff
++#define QCA955X_PLL_DDR_DIT_NFRAC_STEP_SHIFT		20
++#define QCA955X_PLL_DDR_DIT_NFRAC_STEP_MASK		0x7f
++#define QCA955X_PLL_DDR_DIT_UPD_CNT_SHIFT		27
++#define QCA955X_PLL_DDR_DIT_UPD_CNT_MASK		0xf
++
++#define QCA955X_PLL_CPU_DIT_NFRAC_MAX_SHIFT		0
++#define QCA955X_PLL_CPU_DIT_NFRAC_MAX_MASK		0x3f
++#define QCA955X_PLL_CPU_DIT_NFRAC_MIN_SHIFT		6
++#define QCA955X_PLL_CPU_DIT_NFRAC_MIN_MASK		0x3f
++#define QCA955X_PLL_CPU_DIT_NFRAC_STEP_SHIFT		12
++#define QCA955X_PLL_CPU_DIT_NFRAC_STEP_MASK		0x3f
++#define QCA955X_PLL_CPU_DIT_UPD_CNT_SHIFT		18
++#define QCA955X_PLL_CPU_DIT_UPD_CNT_MASK		0x3f
++
+ #define QCA956X_PLL_CPU_CONFIG_REG			0x00
+ #define QCA956X_PLL_CPU_CONFIG1_REG			0x04
+ #define QCA956X_PLL_DDR_CONFIG_REG			0x08
+@@ -1027,6 +1070,7 @@
+ #define QCA955X_GPIO_REG_OUT_FUNC3			0x38
+ #define QCA955X_GPIO_REG_OUT_FUNC4			0x3c
+ #define QCA955X_GPIO_REG_OUT_FUNC5			0x40
++#define QCA955X_GPIO_REG_IN_ENABLE0			0x44
+ #define QCA955X_GPIO_REG_FUNC				0x6c
+ 
+ #define QCA956X_GPIO_REG_OUT_FUNC0			0x2c
+@@ -1220,6 +1264,25 @@
+ #define QCA953X_SRIF_DPLL2_OUTDIV_SHIFT			13
+ #define QCA953X_SRIF_DPLL2_OUTDIV_MASK			0x7
+ 
++#define QCA955X_SRIF_BB_DPLL1_REG			0x180
++#define QCA955X_SRIF_BB_DPLL2_REG			0x184
++#define QCA955X_SRIF_BB_DPLL3_REG			0x188
++
++#define QCA955X_SRIF_CPU_DPLL1_REG			0xf00
++#define QCA955X_SRIF_CPU_DPLL2_REG			0xf04
++#define QCA955X_SRIF_CPU_DPLL3_REG			0xf08
++
++#define QCA955X_SRIF_DDR_DPLL1_REG			0xec0
++#define QCA955X_SRIF_DDR_DPLL2_REG			0xec4
++#define QCA955X_SRIF_DDR_DPLL3_REG			0xec8
++
++#define QCA955X_SRIF_PCIE_DPLL1_REG			0xc80
++#define QCA955X_SRIF_PCIE_DPLL2_REG			0xc84
++#define QCA955X_SRIF_PCIE_DPLL3_REG			0xc88
++
++#define QCA955X_SRIF_PMU1_REG				0xcc0
++#define QCA955X_SRIF_PMU2_REG				0xcc4
++
+ #define QCA956X_SRIF_BB_DPLL1_REG			0x180
+ #define QCA956X_SRIF_BB_DPLL2_REG			0x184
+ #define QCA956X_SRIF_BB_DPLL3_REG			0x188
+diff --git a/arch/mips/mach-ath79/include/mach/ath79.h b/arch/mips/mach-ath79/include/mach/ath79.h
+index 2eda38885e..445cb2711b 100644
+--- a/arch/mips/mach-ath79/include/mach/ath79.h
++++ b/arch/mips/mach-ath79/include/mach/ath79.h
+@@ -148,6 +148,9 @@ int ath79_usb_reset(void);
+ void ar934x_pll_init(const u16 cpu_mhz, const u16 ddr_mhz, const u16 ahb_mhz);
+ void ar934x_ddr_init(const u16 cpu_mhz, const u16 ddr_mhz, const u16 ahb_mhz);
+ 
++void qca955x_pll_init(void);
++void qca955x_ddr_init(void);
++
+ void qca956x_pll_init(void);
+ void qca956x_ddr_init(void);
+ #endif /* __ASM_MACH_ATH79_H */
+diff --git a/arch/mips/mach-ath79/qca955x/Makefile b/arch/mips/mach-ath79/qca955x/Makefile
+new file mode 100644
+index 0000000000..a405f9a12d
+--- /dev/null
++++ b/arch/mips/mach-ath79/qca955x/Makefile
+@@ -0,0 +1,5 @@
++# SPDX-License-Identifier: GPL-2.0+
++
++obj-y += cpu.o
++obj-y += clk.o
++obj-y += ddr.o qca955x-ddr-tap.o
+diff --git a/arch/mips/mach-ath79/qca955x/clk.c b/arch/mips/mach-ath79/qca955x/clk.c
+new file mode 100644
+index 0000000000..20c93de163
+--- /dev/null
++++ b/arch/mips/mach-ath79/qca955x/clk.c
+@@ -0,0 +1,286 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
++ *
++ * based on QCA956x support and QSDK
++ */
++
++#include <clock_legacy.h>
++#include <log.h>
++#include <asm/global_data.h>
++#include <asm/io.h>
++#include <asm/addrspace.h>
++#include <asm/types.h>
++#include <linux/bitfield.h>
++#include <linux/bitops.h>
++#include <mach/ar71xx_regs.h>
++#include <mach/ath79.h>
++#include <wait_bit.h>
++
++#define QCA955X_PLL_CPU_CONFIG_OUTDIV_FMASK		\
++		QCA955X_PLL_CPU_CONFIG_OUTDIV_MASK	\
++		<< QCA955X_PLL_CPU_CONFIG_OUTDIV_SHIFT
++#define QCA955X_PLL_CPU_CONFIG_RANGE_FMASK		\
++		QCA955X_PLL_CPU_CONFIG_RANGE_MASK	\
++		<< QCA955X_PLL_CPU_CONFIG_RANGE_SHIFT
++#define QCA955X_PLL_CPU_CONFIG_REFDIV_FMASK		\
++		QCA955X_PLL_CPU_CONFIG_REFDIV_MASK	\
++		<< QCA955X_PLL_CPU_CONFIG_REFDIV_SHIFT
++#define QCA955X_PLL_CPU_CONFIG_NINT_FMASK		\
++		QCA955X_PLL_CPU_CONFIG_NINT_MASK	\
++		<< QCA955X_PLL_CPU_CONFIG_NINT_SHIFT
++#define QCA955X_PLL_CPU_CONFIG_NFRAC_FMASK		\
++		QCA955X_PLL_CPU_CONFIG_NFRAC_MASK	\
++		<< QCA955X_PLL_CPU_CONFIG_NFRAC_SHIFT
++
++#define QCA955X_PLL_DDR_CONFIG_OUTDIV_FMASK		\
++		QCA955X_PLL_DDR_CONFIG_OUTDIV_MASK	\
++		<< QCA955X_PLL_DDR_CONFIG_OUTDIV_SHIFT
++#define QCA955X_PLL_DDR_CONFIG_RANGE_FMASK		\
++		QCA955X_PLL_DDR_CONFIG_RANGE_MASK	\
++		<< QCA955X_PLL_DDR_CONFIG_RANGE_SHIFT
++#define QCA955X_PLL_DDR_CONFIG_REFDIV_FMASK		\
++		QCA955X_PLL_DDR_CONFIG_REFDIV_MASK	\
++		<< QCA955X_PLL_DDR_CONFIG_REFDIV_SHIFT
++#define QCA955X_PLL_DDR_CONFIG_NINT_FMASK		\
++		QCA955X_PLL_DDR_CONFIG_NINT_MASK	\
++		<< QCA955X_PLL_DDR_CONFIG_NINT_SHIFT
++#define QCA955X_PLL_DDR_CONFIG_NFRAC_FMASK		\
++		QCA955X_PLL_DDR_CONFIG_NFRAC_MASK	\
++		<< QCA955X_PLL_DDR_CONFIG_NFRAC_SHIFT
++
++#define QCA955X_PLL_CLK_CTRL_AHB_POST_DIV_FMASK		\
++		QCA955X_PLL_CLK_CTRL_AHB_POST_DIV_MASK	\
++		<< QCA955X_PLL_CLK_CTRL_AHB_POST_DIV_SHIFT
++#define QCA955X_PLL_CLK_CTRL_DDR_POST_DIV_FMASK		\
++		QCA955X_PLL_CLK_CTRL_DDR_POST_DIV_MASK	\
++		<< QCA955X_PLL_CLK_CTRL_DDR_POST_DIV_SHIFT
++#define QCA955X_PLL_CLK_CTRL_CPU_POST_DIV_FMASK		\
++		QCA955X_PLL_CLK_CTRL_CPU_POST_DIV_MASK	\
++		<< QCA955X_PLL_CLK_CTRL_CPU_POST_DIV_SHIFT
++
++#define QCA955X_PLL_DDR_DIT_UPD_CNT_FMASK		\
++		QCA955X_PLL_DDR_DIT_UPD_CNT_MASK	\
++		<< QCA955X_PLL_DDR_DIT_UPD_CNT_SHIFT
++#define QCA955X_PLL_DDR_DIT_NFRAC_STEP_FMASK		\
++		QCA955X_PLL_DDR_DIT_NFRAC_STEP_MASK	\
++		<< QCA955X_PLL_DDR_DIT_NFRAC_STEP_SHIFT
++#define QCA955X_PLL_DDR_DIT_NFRAC_MIN_FMASK		\
++		QCA955X_PLL_DDR_DIT_NFRAC_MIN_MASK	\
++		<< QCA955X_PLL_DDR_DIT_NFRAC_MIN_SHIFT
++#define QCA955X_PLL_DDR_DIT_NFRAC_MAX_FMASK		\
++		QCA955X_PLL_DDR_DIT_NFRAC_MAX_MASK	\
++		<< QCA955X_PLL_DDR_DIT_NFRAC_MAX_SHIFT
++
++#define QCA955X_PLL_CPU_DIT_UPD_CNT_FMASK		\
++		QCA955X_PLL_CPU_DIT_UPD_CNT_MASK	\
++		<< QCA955X_PLL_CPU_DIT_UPD_CNT_SHIFT
++#define QCA955X_PLL_CPU_DIT_NFRAC_STEP_FMASK		\
++		QCA955X_PLL_CPU_DIT_NFRAC_STEP_MASK	\
++		<< QCA955X_PLL_CPU_DIT_NFRAC_STEP_SHIFT
++#define QCA955X_PLL_CPU_DIT_NFRAC_MIN_FMASK		\
++		QCA955X_PLL_CPU_DIT_NFRAC_MIN_MASK	\
++		<< QCA955X_PLL_CPU_DIT_NFRAC_MIN_SHIFT
++#define QCA955X_PLL_CPU_DIT_NFRAC_MAX_FMASK		\
++		QCA955X_PLL_CPU_DIT_NFRAC_MAX_MASK	\
++		<< QCA955X_PLL_CPU_DIT_NFRAC_MAX_SHIFT
++
++#define PLL_SRIF_DPLL2_KI_MASK				GENMASK(29, 26)
++#define PLL_SRIF_DPLL2_KD_MASK				GENMASK(25, 19)
++#define PLL_SRIF_DPLL2_PLL_PWD_MASK			BIT(16)
++#define PLL_SRIF_DPLL2_DELTA_MASK			GENMASK(12, 7)
++
++#define PLL_SRIF_DPLL2_DEFAULT		\
++		FIELD_PREP(PLL_SRIF_DPLL2_KI_MASK, 0x4) | \
++		FIELD_PREP(PLL_SRIF_DPLL2_KD_MASK, 0x60) | \
++		FIELD_PREP(PLL_SRIF_DPLL2_PLL_PWD_MASK, 0x1) | \
++		FIELD_PREP(PLL_SRIF_DPLL2_DELTA_MASK, 0x1e)
++
++DECLARE_GLOBAL_DATA_PTR;
++
++static u32 qca955x_get_xtal(void)
++{
++	u32 val;
++
++	val = ath79_get_bootstrap();
++	if (val & QCA955X_BOOTSTRAP_REF_CLK_40)
++		return 40000000;
++	else
++		return 25000000;
++}
++
++int get_serial_clock(void)
++{
++	return qca955x_get_xtal();
++}
++
++void qca955x_pll_init(void)
++{
++	void __iomem *srif_regs = map_physmem(QCA955X_SRIF_BASE,
++					      QCA955X_SRIF_SIZE, MAP_NOCACHE);
++	void __iomem *pll_regs = map_physmem(AR71XX_PLL_BASE,
++					     AR71XX_PLL_SIZE, MAP_NOCACHE);
++
++	/* 10.33.2 Baseband DPLL2 */
++	writel(PLL_SRIF_DPLL2_DEFAULT,
++	       srif_regs + QCA955X_SRIF_BB_DPLL2_REG);
++
++	/* 10.33.2 PCIE DPLL2 */
++	writel(PLL_SRIF_DPLL2_DEFAULT,
++	       srif_regs + QCA955X_SRIF_PCIE_DPLL2_REG);
++
++	/* 10.33.2 DDR DPLL2 */
++	writel(PLL_SRIF_DPLL2_DEFAULT,
++	       srif_regs + QCA955X_SRIF_DDR_DPLL2_REG);
++
++	/* 10.33.2 CPU DPLL2 */
++	writel(PLL_SRIF_DPLL2_DEFAULT,
++	       srif_regs + QCA955X_SRIF_CPU_DPLL2_REG);
++
++	/* pll_bypass_set */
++	setbits_be32(pll_regs + QCA955X_PLL_CLK_CTRL_REG,
++		     QCA955X_PLL_CLK_CTRL_CPU_PLL_BYPASS);
++	setbits_be32(pll_regs + QCA955X_PLL_CLK_CTRL_REG,
++		     QCA955X_PLL_CLK_CTRL_DDR_PLL_BYPASS);
++	setbits_be32(pll_regs + QCA955X_PLL_CLK_CTRL_REG,
++		     QCA955X_PLL_CLK_CTRL_AHB_PLL_BYPASS);
++
++	/* init_cpu_pll (720_600_240) */
++	writel(QCA955X_PLL_CPU_CONFIG_PLLPWD |
++	       FIELD_PREP(QCA955X_PLL_CPU_CONFIG_OUTDIV_FMASK, 0x0) |
++	       FIELD_PREP(QCA955X_PLL_CPU_CONFIG_RANGE_FMASK, 0x1) |
++	       FIELD_PREP(QCA955X_PLL_CPU_CONFIG_REFDIV_FMASK, 0x1) |
++	       FIELD_PREP(QCA955X_PLL_CPU_CONFIG_NINT_FMASK, 0x12),
++	       pll_regs + QCA955X_PLL_CPU_CONFIG_REG);
++
++	/* init_ddr_pll (720_600_240) */
++	writel(QCA955X_PLL_DDR_CONFIG_PLLPWD |
++	       FIELD_PREP(QCA955X_PLL_DDR_CONFIG_OUTDIV_FMASK, 0x0) |
++	       FIELD_PREP(QCA955X_PLL_DDR_CONFIG_RANGE_FMASK, 0x1) |
++	       FIELD_PREP(QCA955X_PLL_DDR_CONFIG_REFDIV_FMASK, 0x1) |
++	       FIELD_PREP(QCA955X_PLL_DDR_CONFIG_NINT_FMASK, 0xf),
++	       pll_regs + QCA955X_PLL_DDR_CONFIG_REG);
++
++	/* init_ahb_pll (720_600_240) */
++	writel(/* use CPU PLL for AHB (0) */
++	       /* use DDR PLL for DDR (0) */
++	       /* use CPU PLL for CPU (0) */
++	       FIELD_PREP(QCA955X_PLL_CLK_CTRL_AHB_POST_DIV_FMASK, 0x2) |
++	       FIELD_PREP(QCA955X_PLL_CLK_CTRL_DDR_POST_DIV_FMASK, 0x0) |
++	       FIELD_PREP(QCA955X_PLL_CLK_CTRL_CPU_POST_DIV_FMASK, 0x0) |
++	       QCA955X_PLL_CLK_CTRL_AHB_PLL_BYPASS |
++	       QCA955X_PLL_CLK_CTRL_DDR_PLL_BYPASS |
++	       QCA955X_PLL_CLK_CTRL_CPU_PLL_BYPASS,
++	       pll_regs + QCA955X_PLL_CLK_CTRL_REG);
++
++	/* pll_pwd_unset */
++	clrbits_be32(pll_regs + QCA955X_PLL_CPU_CONFIG_REG,
++		     QCA955X_PLL_CPU_CONFIG_PLLPWD);
++	clrbits_be32(pll_regs + QCA955X_PLL_DDR_CONFIG_REG,
++		     QCA955X_PLL_DDR_CONFIG_PLLPWD);
++
++	/* outdiv_unset */
++	clrbits_be32(pll_regs + QCA955X_PLL_CPU_CONFIG_REG,
++		     QCA955X_PLL_CPU_CONFIG_OUTDIV_FMASK);
++	clrbits_be32(pll_regs + QCA955X_PLL_DDR_CONFIG_REG,
++		     QCA955X_PLL_DDR_CONFIG_OUTDIV_FMASK);
++
++	/* pll_bypass_unset */
++	clrbits_be32(pll_regs + QCA955X_PLL_CLK_CTRL_REG,
++		     QCA955X_PLL_CLK_CTRL_CPU_PLL_BYPASS);
++	clrbits_be32(pll_regs + QCA955X_PLL_CLK_CTRL_REG,
++		     QCA955X_PLL_CLK_CTRL_DDR_PLL_BYPASS);
++	clrbits_be32(pll_regs + QCA955X_PLL_CLK_CTRL_REG,
++		     QCA955X_PLL_CLK_CTRL_AHB_PLL_BYPASS);
++
++	/* ddr_pll_dither_unset */
++	writel(FIELD_PREP(QCA955X_PLL_DDR_DIT_UPD_CNT_FMASK, 0xf) |
++	       FIELD_PREP(QCA955X_PLL_DDR_DIT_NFRAC_STEP_FMASK, 0x1) |
++	       FIELD_PREP(QCA955X_PLL_DDR_DIT_NFRAC_MIN_FMASK, 0x0) |
++	       FIELD_PREP(QCA955X_PLL_DDR_DIT_NFRAC_MAX_FMASK, 0x3ff),
++	       pll_regs + QCA955X_PLL_DDR_DIT_FRAC_REG);
++
++	/* cpu_pll_dither_unset */
++	writel(FIELD_PREP(QCA955X_PLL_CPU_DIT_UPD_CNT_FMASK, 0xf) |
++	       FIELD_PREP(QCA955X_PLL_CPU_DIT_NFRAC_STEP_FMASK, 0x1) |
++	       FIELD_PREP(QCA955X_PLL_CPU_DIT_NFRAC_MIN_FMASK, 0x0) |
++	       FIELD_PREP(QCA955X_PLL_CPU_DIT_NFRAC_MAX_FMASK, 0x3f),
++	       pll_regs + QCA955X_PLL_CPU_DIT_FRAC_REG);
++}
++
++int get_clocks(void)
++{
++	void __iomem *regs;
++	u32 pll, cpu_pll, ddr_pll, clk_ctrl;
++	u32 cpu_clk, ddr_clk, ahb_clk;
++	u32 outdiv, refdiv, nint, nfrac, postdiv;
++	u32 xtal = qca955x_get_xtal();
++
++	regs = map_physmem(AR71XX_PLL_BASE, AR71XX_PLL_SIZE,
++			   MAP_NOCACHE);
++	pll = readl(regs + QCA955X_PLL_CPU_CONFIG_REG);
++	outdiv = FIELD_GET(QCA955X_PLL_CPU_CONFIG_OUTDIV_FMASK, pll);
++	refdiv = FIELD_GET(QCA955X_PLL_CPU_CONFIG_REFDIV_FMASK, pll);
++	nint   = FIELD_GET(QCA955X_PLL_CPU_CONFIG_NINT_FMASK, pll);
++	nfrac  = FIELD_GET(QCA955X_PLL_CPU_CONFIG_NFRAC_FMASK, pll);
++
++	cpu_pll = (xtal * (nint + (nfrac >> 9))) / (refdiv * (1 << outdiv));
++
++	pll = readl(regs + QCA955X_PLL_DDR_CONFIG_REG);
++	outdiv = FIELD_GET(QCA955X_PLL_DDR_CONFIG_OUTDIV_FMASK, pll);
++	refdiv = FIELD_GET(QCA955X_PLL_DDR_CONFIG_REFDIV_FMASK, pll);
++	nint   = FIELD_GET(QCA955X_PLL_DDR_CONFIG_NINT_FMASK, pll);
++	nfrac  = FIELD_GET(QCA955X_PLL_DDR_CONFIG_NFRAC_FMASK, pll);
++
++	ddr_pll = (xtal * (nint + (nfrac >> 9))) / (refdiv * (1 << outdiv));
++
++	clk_ctrl = readl(regs + QCA955X_PLL_CLK_CTRL_REG);
++
++	postdiv = FIELD_GET(QCA955X_PLL_CLK_CTRL_CPU_POST_DIV_FMASK, clk_ctrl);
++	if (clk_ctrl & QCA955X_PLL_CLK_CTRL_CPU_PLL_BYPASS)
++		cpu_clk = xtal;
++	else if (clk_ctrl & QCA955X_PLL_CLK_CTRL_CPUCLK_FROM_CPUPLL)
++		cpu_clk = ddr_pll / (postdiv + 1);
++	else
++		cpu_clk = cpu_pll / (postdiv + 1);
++
++	postdiv = FIELD_GET(QCA955X_PLL_CLK_CTRL_DDR_POST_DIV_FMASK, clk_ctrl);
++	if (clk_ctrl & QCA955X_PLL_CLK_CTRL_DDR_PLL_BYPASS)
++		ddr_clk = xtal;
++	else if (clk_ctrl & QCA955X_PLL_CLK_CTRL_DDRCLK_FROM_DDRPLL)
++		ddr_clk = cpu_pll / (postdiv + 1);
++	else
++		ddr_clk = ddr_pll / (postdiv + 1);
++
++	postdiv = FIELD_GET(QCA955X_PLL_CLK_CTRL_AHB_POST_DIV_FMASK, clk_ctrl);
++	if (clk_ctrl & QCA955X_PLL_CLK_CTRL_AHB_PLL_BYPASS)
++		ahb_clk = xtal;
++	else if (clk_ctrl & QCA955X_PLL_CLK_CTRL_AHBCLK_FROM_DDRPLL)
++		ahb_clk = ddr_pll;
++	else
++		ahb_clk = cpu_pll;
++	ahb_clk /= (postdiv + 1);
++
++	gd->cpu_clk = cpu_clk;
++	gd->mem_clk = ddr_clk;
++	gd->bus_clk = ahb_clk;
++
++	debug("cpu_clk=%u, ddr_clk=%u, bus_clk=%u\n",
++	      cpu_clk, ddr_clk, ahb_clk);
++
++	return 0;
++}
++
++ulong get_bus_freq(ulong dummy)
++{
++	if (!gd->bus_clk)
++		get_clocks();
++	return gd->bus_clk;
++}
++
++ulong get_ddr_freq(ulong dummy)
++{
++	if (!gd->mem_clk)
++		get_clocks();
++	return gd->mem_clk;
++}
+diff --git a/arch/mips/mach-ath79/qca955x/cpu.c b/arch/mips/mach-ath79/qca955x/cpu.c
+new file mode 100644
+index 0000000000..9405871444
+--- /dev/null
++++ b/arch/mips/mach-ath79/qca955x/cpu.c
+@@ -0,0 +1,7 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
++ */
++
++/* The lowlevel_init() is not needed on QCA955X */
++void lowlevel_init(void) {}
+diff --git a/arch/mips/mach-ath79/qca955x/ddr.c b/arch/mips/mach-ath79/qca955x/ddr.c
+new file mode 100644
+index 0000000000..654a410d95
+--- /dev/null
++++ b/arch/mips/mach-ath79/qca955x/ddr.c
+@@ -0,0 +1,222 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
++ *
++ * Based on QCA956x support and QSDK
++ */
++
++#include <asm/global_data.h>
++#include <asm/io.h>
++#include <asm/addrspace.h>
++#include <asm/types.h>
++#include <linux/bitfield.h>
++#include <linux/bitops.h>
++#include <linux/delay.h>
++#include <mach/ar71xx_regs.h>
++#include <mach/ath79.h>
++
++#define DDR_CONFIG_CAS_LATENCY_MSB_MASK		BIT(31)
++#define DDR_CONFIG_OPEN_PAGE_MASK		BIT(30)
++#define DDR_CONFIG_CAS_LATENCY_MASK		GENMASK(29, 27)
++#define DDR_CONFIG_TMRD_MASK			GENMASK(26, 23)
++#define DDR_CONFIG_TRFC_MASK			GENMASK(22, 17)
++#define DDR_CONFIG_TRRD_MASK			GENMASK(16, 13)
++#define DDR_CONFIG_TRP_MASK			GENMASK(12, 9)
++#define DDR_CONFIG_TRCD_MASK			GENMASK(8, 5)
++#define DDR_CONFIG_TRAS_MASK			GENMASK(4, 0)
++
++#define DDR_CONFIG2_HALF_WIDTH_LOW_MASK		BIT(31)
++#define DDR_CONFIG2_SWAP_A26_A27_MASK		BIT(30)
++#define DDR_CONFIG2_GATE_OPEN_LATENCY_MASK	GENMASK(29, 26)
++#define DDR_CONFIG2_TWTR_MASK			GENMASK(25, 21)
++#define DDR_CONFIG2_TRTP_MASK			GENMASK(20, 17)
++#define DDR_CONFIG2_TRTW_MASK			GENMASK(16, 12)
++#define DDR_CONFIG2_TWR_MASK			GENMASK(11, 8)
++#define DDR_CONFIG2_CKE_MASK			BIT(7)
++#define DDR_CONFIG2_CNTL_OE_EN_MASK		BIT(5)
++#define DDR_CONFIG2_BURST_LENGTH_MASK		GENMASK(3, 0)
++
++#define DDR_CTL_CONFIG_SRAM_TSEL_MASK		GENMASK(31, 30)
++#define DDR_CTL_CONFIG_GE0_SRAM_SYNC_MASK	BIT(20)
++#define DDR_CTL_CONFIG_GE1_SRAM_SYNC_MASK	BIT(19)
++#define DDR_CTL_CONFIG_USB_SRAM_SYNC_MASK	BIT(18)
++#define DDR_CTL_CONFIG_PCIE_SRAM_SYNC_MASK	BIT(17)
++#define DDR_CTL_CONFIG_WMAC_SRAM_SYNC_MASK	BIT(16)
++#define DDR_CTL_CONFIG_MISC_SRC1_SRAM_SYNC_MASK	BIT(15)
++#define DDR_CTL_CONFIG_MISC_SRC2_SRAM_SYNC_MASK	BIT(14)
++#define DDR_CTL_CONFIG_PAD_DDR2_SEL_MASK	BIT(6)
++#define DDR_CTL_CONFIG_CPU_DDR_SYNC_MASK	BIT(2)
++#define DDR_CTL_CONFIG_HALF_WIDTH_MASK		BIT(1)
++
++#define RST_BOOTSTRAP_DDR_WIDTH_MASK		BIT(3)
++
++#define PMU2_PGM_MASK				BIT(21)
++#define PMU2_LDO_TUNE_MASK			GENMASK(20, 19)
++
++/*
++* DDR2                      DDR1
++* 0x40c3   25MHz            0x4186   25Mhz
++* 0x4138   40MHz            0x4270   40Mhz
++*/
++#define CFG_DDR2_REFRESH_VAL 0x4138
++
++#define CFG_DDR2_CONFIG_VAL	\
++		DDR_CONFIG_CAS_LATENCY_MSB_MASK | DDR_CONFIG_OPEN_PAGE_MASK | \
++		FIELD_PREP(DDR_CONFIG_CAS_LATENCY_MASK, 0x4) | \
++		FIELD_PREP(DDR_CONFIG_TMRD_MASK, 0xf) | \
++		FIELD_PREP(DDR_CONFIG_TRFC_MASK, 0x15) | \
++		FIELD_PREP(DDR_CONFIG_TRRD_MASK, 0x7) | \
++		FIELD_PREP(DDR_CONFIG_TRP_MASK, 0x9) | \
++		FIELD_PREP(DDR_CONFIG_TRCD_MASK, 0x9) | \
++		FIELD_PREP(DDR_CONFIG_TRAS_MASK, 0x1b)
++
++#define CFG_DDR2_CONFIG2_VAL	\
++		DDR_CONFIG2_HALF_WIDTH_LOW_MASK | /* SWAP_A26_A27 is off */ \
++		FIELD_PREP(DDR_CONFIG2_GATE_OPEN_LATENCY_MASK, 0xb) | \
++		FIELD_PREP(DDR_CONFIG2_TWTR_MASK, 0x15) | \
++		FIELD_PREP(DDR_CONFIG2_TRTP_MASK, 0x9) | \
++		FIELD_PREP(DDR_CONFIG2_TRTW_MASK, 0xe) | \
++		FIELD_PREP(DDR_CONFIG2_TWR_MASK, 0x1) | \
++		DDR_CONFIG2_CKE_MASK | DDR_CONFIG2_CNTL_OE_EN_MASK | \
++		FIELD_PREP(DDR_CONFIG2_BURST_LENGTH_MASK, 0x8)
++
++#define CFG_DDR2_CONFIG3_VAL			0x0000000a
++#define CFG_DDR2_EXT_MODE_VAL1			0x782
++#define CFG_DDR2_EXT_MODE_VAL2			0x402
++#define CFG_DDR2_MODE_VAL_INIT			0x153
++#define CFG_DDR2_MODE_VAL			0x53
++#define CFG_DDR2_TAP_VAL			0x10
++#define CFG_DDR2_EN_TWL_VAL			0x00001e7d
++#define CFG_DDR2_RD_DATA_THIS_CYCLE_VAL_16	0xffff
++#define CFG_DDR2_RD_DATA_THIS_CYCLE_VAL_32	0xff
++
++#define CFG_DDR_CTL_CONFIG	\
++		FIELD_PREP(DDR_CTL_CONFIG_SRAM_TSEL_MASK, 0x1) | \
++		DDR_CTL_CONFIG_GE0_SRAM_SYNC_MASK | \
++		DDR_CTL_CONFIG_GE1_SRAM_SYNC_MASK | \
++		DDR_CTL_CONFIG_USB_SRAM_SYNC_MASK | \
++		DDR_CTL_CONFIG_PCIE_SRAM_SYNC_MASK | \
++		DDR_CTL_CONFIG_WMAC_SRAM_SYNC_MASK | \
++		DDR_CTL_CONFIG_MISC_SRC1_SRAM_SYNC_MASK | \
++		DDR_CTL_CONFIG_MISC_SRC2_SRAM_SYNC_MASK | \
++		DDR_CTL_CONFIG_PAD_DDR2_SEL_MASK /* for DDR2 */
++		/* CPU_DDR_SYNC is off (CPU clk != DDR clk) */
++
++DECLARE_GLOBAL_DATA_PTR;
++
++void qca955x_ddr_init(void)
++{
++	u32 cycle_val = CFG_DDR2_RD_DATA_THIS_CYCLE_VAL_32;
++	u32 ctl_config = CFG_DDR_CTL_CONFIG;
++	void __iomem *ddr_regs = map_physmem(AR71XX_DDR_CTRL_BASE, AR71XX_DDR_CTRL_SIZE,
++			       MAP_NOCACHE);
++	void __iomem *srif_regs = map_physmem(QCA955X_SRIF_BASE, QCA955X_SRIF_SIZE,
++			       MAP_NOCACHE);
++
++	/* 16bit */
++	if (!(ath79_get_bootstrap() & RST_BOOTSTRAP_DDR_WIDTH_MASK))
++	{
++		ctl_config |= DDR_CTL_CONFIG_HALF_WIDTH_MASK;
++		cycle_val = CFG_DDR2_RD_DATA_THIS_CYCLE_VAL_16;
++	}
++
++	writel(0x10, ddr_regs + AR71XX_DDR_REG_CONTROL);
++	udelay(10);
++
++	writel(0x20, ddr_regs + AR71XX_DDR_REG_CONTROL);
++	udelay(10);
++
++	writel(ctl_config, ddr_regs + QCA955X_DDR_REG_CTL_CONF);
++	udelay(10);
++
++	writel(cycle_val, ddr_regs + AR71XX_DDR_REG_RD_CYCLE);
++	udelay(100);
++
++	writel(0x74444444, ddr_regs + QCA955X_DDR_REG_BURST);
++	udelay(100);
++
++	writel(0x44444444, ddr_regs + QCA955X_DDR_REG_BURST2);
++	udelay(100);
++
++	writel(0xfffff, ddr_regs + QCA955X_DDR_REG_TIMEOUT_MAX);
++	udelay(100);
++
++	writel(CFG_DDR2_CONFIG_VAL, ddr_regs + AR71XX_DDR_REG_CONFIG);
++	udelay(100);
++
++	writel(CFG_DDR2_CONFIG2_VAL, ddr_regs + AR71XX_DDR_REG_CONFIG2);
++	udelay(100);
++
++	writel(CFG_DDR2_CONFIG3_VAL, ddr_regs + QCA955X_DDR_REG_CONFIG3);
++	udelay(100);
++
++	writel(CFG_DDR2_EN_TWL_VAL, ddr_regs + QCA955X_DDR_REG_DDR2_CONFIG);
++	udelay(100);
++
++	writel(CFG_DDR2_CONFIG2_VAL | 0x80,
++		ddr_regs + AR71XX_DDR_REG_CONFIG2);	/* CKE Enable */
++	udelay(100);
++
++	writel(0x8, ddr_regs + AR71XX_DDR_REG_CONTROL);	/* Precharge */
++	udelay(10);
++
++	writel(0x10, ddr_regs + AR71XX_DDR_REG_CONTROL);	/* EMR2 */
++	udelay(10);
++
++	writel(0x20, ddr_regs + AR71XX_DDR_REG_CONTROL);	/* EMR3 */
++	udelay(10);
++
++	/* EMR DLL enable, Reduced Driver Impedance control, Differential DQS disabled */
++	writel(CFG_DDR2_EXT_MODE_VAL2, ddr_regs + AR71XX_DDR_REG_EMR);
++	udelay(100);
++
++	writel(0x2, ddr_regs + AR71XX_DDR_REG_CONTROL); /* EMR write */
++	udelay(10);
++
++	writel(CFG_DDR2_MODE_VAL_INIT, ddr_regs + AR71XX_DDR_REG_MODE);
++	udelay(1000);
++
++	writel(0x1, ddr_regs + AR71XX_DDR_REG_CONTROL);	/* MR Write */
++	udelay(10);
++
++	writel(0x8, ddr_regs + AR71XX_DDR_REG_CONTROL);	/* Precharge */
++	udelay(10);
++
++	writel(0x4, ddr_regs + AR71XX_DDR_REG_CONTROL);	/* Auto Refresh */
++	udelay(10);
++
++	writel(0x4, ddr_regs + AR71XX_DDR_REG_CONTROL);	/* Auto Refresh */
++	udelay(10);
++
++	/* Issue MRS to remove DLL out-of-reset */
++	writel(CFG_DDR2_MODE_VAL, ddr_regs + AR71XX_DDR_REG_MODE);
++	udelay(100);
++
++	writel(0x1, ddr_regs + AR71XX_DDR_REG_CONTROL); /* MR write */
++	udelay(100);
++
++	writel(CFG_DDR2_EXT_MODE_VAL1, ddr_regs + AR71XX_DDR_REG_EMR);
++	udelay(100);
++
++	writel(0x2, ddr_regs + AR71XX_DDR_REG_CONTROL); /* EMR write */
++	udelay(100);
++
++	writel(CFG_DDR2_EXT_MODE_VAL2, ddr_regs + AR71XX_DDR_REG_EMR);
++	udelay(100);
++
++	writel(0x2, ddr_regs + AR71XX_DDR_REG_CONTROL); /* EMR write */
++	udelay(100);
++
++	writel(CFG_DDR2_REFRESH_VAL, ddr_regs + AR71XX_DDR_REG_REFRESH);
++	udelay(100);
++
++	writel(CFG_DDR2_TAP_VAL, ddr_regs + AR71XX_DDR_REG_TAP_CTRL0);
++	writel(CFG_DDR2_TAP_VAL, ddr_regs + AR71XX_DDR_REG_TAP_CTRL1);
++	writel(CFG_DDR2_TAP_VAL, ddr_regs + QCA955X_DDR_REG_TAP_CTRL2);
++	writel(CFG_DDR2_TAP_VAL, ddr_regs + QCA955X_DDR_REG_TAP_CTRL3);
++
++	writel(0x633c8176, srif_regs + QCA955X_SRIF_PMU1_REG);
++	/* Set DDR2 Voltage to 1.8 volts */
++	writel(PMU2_PGM_MASK | FIELD_PREP(PMU2_LDO_TUNE_MASK, 0x3),
++	       srif_regs + QCA955X_SRIF_PMU2_REG);
++}
+diff --git a/arch/mips/mach-ath79/qca955x/qca955x-ddr-tap.S b/arch/mips/mach-ath79/qca955x/qca955x-ddr-tap.S
+new file mode 100644
+index 0000000000..1c117a5b69
+--- /dev/null
++++ b/arch/mips/mach-ath79/qca955x/qca955x-ddr-tap.S
+@@ -0,0 +1,191 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
++ *
++ * Based on QSDK
++ */
++
++#include <config.h>
++#include <asm/asm.h>
++#include <asm/regdef.h>
++#include <asm/mipsregs.h>
++#include <asm/addrspace.h>
++#include <mach/ar71xx_regs.h>
++
++	.set noreorder
++
++LEAF(ddr_tap_tuning)
++	li	a0, 0xbd007f00
++	sw	zero, 0x0(a0)		/* Place where the tap values are saved and used for SWEEP */
++	sw	zero, 0x4(a0)		/* Place where the number of passing taps are saved. */
++	sw	zero, 0x14(a0)		/* Place where the last pass tap value is stored */
++	li	a1, 0xaa55aa55		/* Indicates that the First pass tap value is not found */
++	sw	a1, 0x10(a0)		/* Place where the First pass tap value is stored */
++	 nop
++
++	li	a0, CKSEG1ADDR(AR71XX_RESET_BASE)
++	lw	a1, 0x1c(a0)		/* Reading the RST_RESET_ADDRESS */
++	li	a2, 0x08000000		/* Setting the RST_RESET_RTC_RESET */
++	or	a1, a1, a2
++	sw	a1, 0x1c(a0)
++
++	li	a3, 0xffffffff
++	xor	a2, a2, a3
++	and	a1, a1, a2
++	sw	a1, 0x1c(a0)		/* Taking the RTC out of RESET */
++	 nop
++
++	li	a0, CKSEG1ADDR(QCA955X_RTC_BASE)
++	li	a1, 0x1
++	sw	a1, 0x0040(a0)		/* RTC_SYNC_RESET_ADDRESS */
++
++	li	a2, 0x2
++
++_poll_for_RTC_ON:
++	lw	a1, 0x0044(a0)		/* RTC_SYNC_STATUS_ADDRESS */
++	and	a1, a2, a1
++	bne	a1, a2, _poll_for_RTC_ON
++	 nop
++
++_CHANGE_TAPS:
++	li	t0, 0xbd007f00		/* Read the current value of the TAP for programming */
++	lw	t1, 0x0(t0)
++	li	t2, 0x00000000
++	or	t3, t1, t2
++
++	li	t0, CKSEG1ADDR(AR71XX_DDR_CTRL_BASE)
++	sw	t3, 0x1c(t0)		/* TAP_CONTROL_0_ADDRESS */
++	sw	t3, 0x20(t0)		/* TAP_CONTROL_1_ADDRESS */
++	sw	t3, 0x24(t0)		/* TAP_CONTROL_2_ADDRESS */
++	sw	t3, 0x28(t0)		/* TAP_CONTROL_3_ADDRESS */
++
++	li	t1, 0x00000010		/* Running the test 8 times */
++	sw	t1, 0x0068(t0)		/* PERF_COMP_ADDR_1_ADDRESS */
++
++	li	t1, 0xfa5de83f		/* 4 Row Address Bits, 4 Column Address Bits, 2 BA bits */
++	sw	t1, 0x002c(t0)		/* PERF_MASK_ADDR_0_ADDRESS */
++
++	li	t1, 0x545fc332
++	sw	t1, 0x0070(t0)		/* PERF_COMP_AHB_GE0_1_ADDRESS */
++
++	li	t1, 0xaba03ccd
++	sw	t1, 0x0040(t0)		/* PERF_COMP_AHB_GE1_0_ADDRESS */
++
++	li	t1, 0x545fc332
++	sw	t1, 0x0078(t0)		/* PERF_COMP_AHB_GE1_1_ADDRESS */
++
++	li	t1, 0xaba03ccd
++	sw	t1, 0x0034(t0)		/* PERF_MASK_AHB_GE0_0_ADDRESS */
++
++	li	t1, 0x545fc332
++	sw	t1, 0x006c(t0)		/* PERF_MASK_AHB_GE0_1_ADDRESS */
++
++	li	t1, 0xaba03ccd
++	sw	t1, 0x003c(t0)		/* PERF_MASK_AHB_GE1_0_ADDRESS */
++
++	li	t1, 0x545fc332
++	sw	t1, 0x0074(t0)		/* PERF_MASK_AHB_GE1_1_ADDRESS */
++
++	li	t1, 0xaba03ccd
++	sw	t1, 0x0038(t0)		/* PERF_COMP_AHB_GE0_0_ADDRESS */
++
++	li	t1, 0x00000001
++	sw	t1, 0x011c(t0)		/* DDR_BIST_ADDRESS */
++
++	li	t2, 0x1
++
++_bist_done_poll:
++	lw	t1, 0x0120(t0)		/* DDR_BIST_STATUS_ADDRESS */
++	and	t1, t1, t2
++	bne	t1, t2, _bist_done_poll
++	 nop
++
++	lw	t1, 0x0120(t0)		/* DDR_BIST_STATUS_ADDRESS */
++	li	t4, 0x000001fe
++	and	t2, t1, t4
++	srl	t2, t2, 0x1		/* no. of Pass Runs */
++
++	li	t5, 0x00000000
++	sw	t5, 0x011c(t0)		/* DDR_BIST_ADDRESS	- Stop the DDR BIST test */
++
++	li	t5, 0x0001fe00
++	and	t5, t5, t1
++	bnez	t5, _iterate_tap	/* This is a redundant compare but nevertheless - Comparing the FAILS */
++	 nop
++
++	lw	t1, 0x0068(t0)		/* PERF_COMP_ADDR_1_ADDRESS */
++	li	t3, 0x000001fe
++	and	t3, t3, t1
++	srl	t3, t3, 0x1		/* No. of runs in the config register. */
++	bne	t3, t2, _iterate_tap
++	 nop
++
++pass_tap:
++	li	t0, 0xbd007f00
++	lw	t1, 0x4(t0)
++	addiu	t1, t1, 0x1
++	sw	t1, 0x4(t0)
++
++	li	t0, 0xbd007f10
++	lw	t1, 0x0(t0)
++	li	t2, 0xaa55aa55
++	beq	t1, t2, _first_pass
++	 nop
++
++	li	t0, 0xbd007f00
++	lw	t1, 0x0(t0)
++	li	t0, 0xbd007f10
++	sw	t1, 0x4(t0)
++	 nop
++	b	_iterate_tap
++	 nop
++
++_first_pass:
++	li	t0, 0xbd007f00
++	lw	t1, 0x0(t0)
++	li	t0, 0xbd007f10
++	sw	t1, 0x0(t0)
++	sw	t1, 0x4(t0)
++	 nop
++
++_iterate_tap:
++	li	t0, 0xbd007f00
++	lw	t1, 0x0(t0)
++	li	t2, 0x3f
++	beq	t1, t2, _STOP_TEST
++	 nop
++	addiu	t1, t1, 0x1
++	sw	t1, 0x0(t0)
++	 nop
++	b	_CHANGE_TAPS
++	 nop
++
++_STOP_TEST:
++	li	t0, 0xbd007f00
++	lw	t1, 0x4(t0)
++	bnez	t1, _load_center_tap
++	 nop
++	li	t3, 0x8			/* Default Tap to be used */
++	b	_load_tap_into_reg
++	 nop
++
++_load_center_tap:
++	li	t0, 0xbd007f10
++	lw	t1, 0x0(t0)
++	lw	t2, 0x4(t0)
++	add	t3, t1, t2
++	srl	t3, t3, 0x1
++	li	t4, 0x3f
++	and	t3, t3, t4
++
++_load_tap_into_reg:
++	li	t0, CKSEG1ADDR(AR71XX_DDR_CTRL_BASE)
++	sw	t3, 0x1c(t0)		/* TAP_CONTROL_0_ADDRESS */
++	sw	t3, 0x20(t0)		/* TAP_CONTROL_1_ADDRESS */
++	sw	t3, 0x24(t0)		/* TAP_CONTROL_2_ADDRESS */
++	sw	t3, 0x28(t0)		/* TAP_CONTROL_3_ADDRESS */
++
++	 nop
++	jr ra
++	 nop
++	END(ddr_tap_tuning)
+-- 
+2.43.0
+

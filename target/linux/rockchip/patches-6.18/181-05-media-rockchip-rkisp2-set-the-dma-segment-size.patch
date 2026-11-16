@@ -1,0 +1,44 @@
+From fdf715a05203a1a1f94addd5613601e97121e72e Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 12:46:01 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Set the DMA segment size
+
+The video nodes import dmabufs through videobuf2-dma-contig, which
+requires the mapped scatterlist to be contiguous in the device address
+space. The legacy ARM IOMMU DMA operations map an imported buffer in
+chunks of the device's maximum segment size, 64 KiB by default, each
+with its own IOVA allocation, so a buffer that another queue exported
+from the same ISP maps contiguously or not depending on the IOVA
+allocation history.
+
+Raise the maximum segment size to the DMA mask so that an imported
+buffer is mapped as one contiguous range, as the other Rockchip media
+drivers do.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-dev.c
+@@ -22,6 +22,7 @@
+ #include <linux/pm_runtime.h>
+ #include <media/v4l2-fwnode.h>
+ #include <media/v4l2-mc.h>
++#include <media/videobuf2-dma-contig.h>
+ 
+ #include "rkisp2-common.h"
+ 
+@@ -247,6 +248,10 @@ static int rkisp2_probe(struct platform_
+ 	if (ret)
+ 		return ret;
+ 
++	ret = vb2_dma_contig_set_max_seg_size(dev, DMA_BIT_MASK(32));
++	if (ret)
++		return ret;
++
+ 	mutex_init(&rkisp2->stream_lock);
+ 
+ 	rkisp2->base_addr = devm_platform_ioremap_resource(pdev, 0);

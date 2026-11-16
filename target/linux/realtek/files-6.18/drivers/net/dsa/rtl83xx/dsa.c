@@ -1,0 +1,836 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include <net/dsa.h>
+#include <linux/bitops.h>
+#include <linux/etherdevice.h>
+#include <linux/if_bridge.h>
+#include <linux/if_vlan.h>
+#include <linux/regmap.h>
+#include <asm/mach-rtl-otto/mach-rtl-otto.h>
+
+#include "fdb.h"
+#include "lag.h"
+#include "mirror.h"
+#include "mac.h"
+#include "l2.h"
+#include "qos.h"
+#include "rtl-otto.h"
+#include "stats.h"
+#include "tc.h"
+#include "vlan.h"
+#include "stp.h"
+
+static const u8 ipv4_ll_mcast_addr_base[ETH_ALEN] = {
+	0x01, 0x00, 0x5e, 0x00, 0x00, 0x00
+};
+
+static const u8 ipv4_ll_mcast_addr_mask[ETH_ALEN] = {
+	0xff, 0xff, 0xff, 0xff, 0xff, 0x00
+};
+
+static const u8 ipv6_all_hosts_mcast_addr_base[ETH_ALEN] = {
+	0x33, 0x33, 0x00, 0x00, 0x00, 0x01
+};
+
+static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] = {
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
+
+/* DSA callbacks */
+
+static enum dsa_tag_protocol rtldsa_get_tag_protocol(struct dsa_switch *ds,
+						     int port,
+						     enum dsa_tag_protocol mprot)
+{
+	/* The switch does not tag the frames, instead internally the header
+	 * structure for each packet is tagged accordingly.
+	 */
+	return DSA_TAG_PROTO_RTL_OTTO;
+}
+
+static void rtldsa_83xx_mc_pmasks_setup(struct otto_dsa_priv *priv)
+{
+	/* RTL8380 and RTL8390 use an index into the portmask table to set the
+	 * unknown multicast portmask, setup a default at a safe location
+	 * On RTL93XX, the portmask is directly set in the profile,
+	 * see e.g. rtl9300_vlan_profile_setup
+	 */
+	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, ~0);
+}
+
+static void rtldsa_setup_bpdu_traps(struct otto_dsa_priv *priv)
+{
+	for (int i = 0; i < priv->r->cpu_port; i++)
+		priv->r->set_receive_management_action(priv, i, BPDU, TRAP2CPU);
+}
+
+static void rtldsa_setup_lldp_traps(struct otto_dsa_priv *priv)
+{
+	for (int i = 0; i < priv->r->cpu_port; i++)
+		priv->r->set_receive_management_action(priv, i, LLDP, TRAP2CPU);
+}
+
+static void rtldsa_setup_eapol_traps(struct otto_dsa_priv *priv)
+{
+	for (int i = 0; i < priv->r->cpu_port; i++)
+		priv->r->set_receive_management_action(priv, i, EAPOL, TRAP2CPU);
+}
+
+static void rtldsa_port_set_salrn(struct otto_dsa_priv *priv,
+				  int port, bool enable)
+{
+	int shift = SALRN_PORT_SHIFT(port);
+	int val = enable ? SALRN_MODE_HARDWARE : SALRN_MODE_DISABLED;
+
+	regmap_write_bits(priv->map, priv->r->l2_port_new_salrn(port),
+			  SALRN_MODE_MASK << shift, val << shift);
+}
+
+static int rtldsa_83xx_setup(struct dsa_switch *ds)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	int err;
+
+	pr_debug("%s called\n", __func__);
+
+	for (int i = 0; i < ds->num_ports; i++)
+		priv->ports[i].enable = false;
+	priv->ports[priv->r->cpu_port].enable = true;
+
+	/* Configure ports so they are disabled by default, but once enabled
+	 * they will work in isolated mode (only traffic between port and CPU).
+	 */
+	for (int i = 0; i < priv->r->cpu_port; i++) {
+		if (priv->ports[i].phy || priv->ports[i].has_pcs) {
+			priv->ports[i].pm = BIT_ULL(priv->r->cpu_port);
+			priv->r->traffic_set(priv, i, BIT_ULL(i));
+		}
+	}
+	priv->r->traffic_set(priv, priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
+
+	/* For standalone ports, forward packets even if a static fdb
+	 * entry for the source address exists on another port.
+	 */
+	if (priv->r->set_static_move_action) {
+		for (int i = 0; i <= priv->r->cpu_port; i++)
+			priv->r->set_static_move_action(priv, i, true);
+	}
+
+	priv->r->print_matrix(priv);
+	otto_stats_init(priv);
+	otto_stats_init_counters(priv);
+
+	rtldsa_83xx_mc_pmasks_setup(priv);
+	otto_vlan_setup(priv);
+
+	rtldsa_setup_bpdu_traps(priv);
+	rtldsa_setup_lldp_traps(priv);
+
+	ds->configure_vlan_while_not_filtering = true;
+
+	priv->r->l2_learning_setup(priv);
+
+	rtldsa_port_set_salrn(priv, priv->r->cpu_port, false);
+	ds->assisted_learning_on_cpu_port = true;
+
+	/* Make sure all frames sent to the switch's MAC are trapped to the CPU-port
+	 *  0: FWD, 1: DROP, 2: TRAP2CPU
+	 */
+	regmap_write(priv->map, priv->r->self_mac_trap_ctrl, 0x2);
+
+	priv->r->pie_init(priv);
+
+	if (priv->r->pie_cls_flower) {
+		err = otto_tc_init(priv);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+
+static int rtldsa_93xx_setup(struct dsa_switch *ds)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	int err;
+
+	pr_info("%s called\n", __func__);
+
+	/* Disable all ports except CPU port */
+	for (int i = 0; i < ds->num_ports; i++)
+		priv->ports[i].enable = false;
+	priv->ports[priv->r->cpu_port].enable = true;
+
+	/* Configure ports so they are disabled by default, but once enabled
+	 * they will work in isolated mode (only traffic between port and CPU).
+	 */
+	for (int i = 0; i < priv->r->cpu_port; i++) {
+		if (priv->ports[i].phy || priv->ports[i].has_pcs) {
+			priv->ports[i].pm = BIT_ULL(priv->r->cpu_port);
+			priv->r->traffic_set(priv, i, BIT_ULL(i));
+		}
+	}
+	priv->r->traffic_set(priv, priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
+	priv->r->print_matrix(priv);
+
+	otto_stats_init(priv);
+	otto_stats_init_counters(priv);
+
+	otto_vlan_setup(priv);
+
+	rtldsa_setup_bpdu_traps(priv);
+	rtldsa_setup_lldp_traps(priv);
+	rtldsa_setup_eapol_traps(priv);
+
+	ds->configure_vlan_while_not_filtering = true;
+
+	priv->r->l2_learning_setup(priv);
+
+	rtldsa_port_set_salrn(priv, priv->r->cpu_port, false);
+	ds->assisted_learning_on_cpu_port = true;
+
+	priv->r->pie_init(priv);
+
+	if (priv->r->pie_cls_flower) {
+		err = otto_tc_init(priv);
+		if (err)
+			return err;
+	}
+
+	priv->r->led_init(priv);
+
+	otto_qos_setup(ds);
+
+	return 0;
+}
+
+static int rtldsa_mc_group_alloc(struct otto_dsa_priv *priv, int port)
+{
+	int mc_group = find_first_zero_bit(priv->mc_group_bm, MAX_MC_GROUPS - 1);
+	u64 portmask;
+
+	if (mc_group >= MAX_MC_GROUPS - 1)
+		return -1;
+
+	set_bit(mc_group, priv->mc_group_bm);
+	portmask = BIT_ULL(port);
+	priv->r->write_mcast_pmask(mc_group, portmask);
+
+	return mc_group;
+}
+
+static u64 rtldsa_mc_group_add_port(struct otto_dsa_priv *priv, int mc_group, int port)
+{
+	u64 portmask = priv->r->read_mcast_pmask(mc_group);
+
+	pr_debug("%s: %d\n", __func__, port);
+
+	portmask |= BIT_ULL(port);
+	priv->r->write_mcast_pmask(mc_group, portmask);
+
+	return portmask;
+}
+
+static u64 rtldsa_mc_group_del_port(struct otto_dsa_priv *priv, int mc_group, int port)
+{
+	u64 portmask = priv->r->read_mcast_pmask(mc_group);
+
+	pr_debug("%s: %d\n", __func__, port);
+
+	portmask &= ~BIT_ULL(port);
+	priv->r->write_mcast_pmask(mc_group, portmask);
+	if (!portmask)
+		clear_bit(mc_group, priv->mc_group_bm);
+
+	return portmask;
+}
+
+static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device *phydev)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	pr_debug("%s: %x %d", __func__, (u32)priv, port);
+	priv->ports[port].enable = true;
+
+	if (priv->ports[port].qinq)
+		priv->r->vlan_port_qinq_set(priv, port, true);
+	else
+		priv->r->vlan_port_keep_tag_set(priv, port, 0, 1);
+
+	if (dsa_is_cpu_port(ds, port))
+		return 0;
+
+	/* add port to switch mask of CPU_PORT */
+	priv->r->traffic_enable(priv, priv->r->cpu_port, port);
+
+	/* add all other ports in the same bridge to switch mask of port */
+	priv->r->traffic_set(priv, port, priv->ports[port].pm);
+
+	return 0;
+}
+
+static void rtldsa_port_disable(struct dsa_switch *ds, int port)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	pr_debug("%s %x: %d", __func__, (u32)priv, port);
+	/* you can only disable user ports */
+	if (!dsa_is_user_port(ds, port))
+		return;
+
+	/* BUG: This does not work on RTL931X */
+	/* remove port from switch mask of CPU_PORT */
+	priv->r->traffic_disable(priv, priv->r->cpu_port, port);
+
+	/* remove all other ports from switch mask of port */
+	priv->r->traffic_set(priv, port, 0);
+
+	priv->ports[port].enable = false;
+}
+
+static int rtldsa_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	return priv->r->set_ageing_time(priv, msec);
+}
+
+static void rtldsa_update_port_member(struct otto_dsa_priv *priv, int port,
+				      const struct net_device *bridge_dev, bool join)
+				      __must_hold(&priv->reg_mutex)
+{
+	struct dsa_port *dp = dsa_to_port(priv->ds, port);
+	struct rtldsa_port *p = &priv->ports[port];
+	struct dsa_port *cpu_dp = dp->cpu_dp;
+	u64 port_mask = BIT_ULL(cpu_dp->index);
+	struct rtldsa_port *other_p;
+	struct dsa_port *other_dp;
+	int other_port;
+	bool isolated;
+
+	dsa_switch_for_each_user_port(other_dp, priv->ds) {
+		other_port = other_dp->index;
+		other_p = &priv->ports[other_port];
+
+		if (dp == other_dp)
+			continue;
+
+		if (!dsa_port_offloads_bridge_dev(other_dp, bridge_dev))
+			continue;
+
+		isolated = p->isolated && other_p->isolated;
+
+		if (join && !isolated) {
+			port_mask |= BIT_ULL(other_port);
+			other_p->pm |= BIT_ULL(port);
+		} else {
+			other_p->pm &= ~BIT_ULL(port);
+		}
+
+		if (other_p->enable)
+			priv->r->traffic_set(priv, other_port, other_p->pm);
+	}
+
+	p->pm = port_mask;
+
+	if (p->enable)
+		priv->r->traffic_set(priv, port, port_mask);
+}
+
+static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_bridge bridge,
+				   bool *tx_fwd_offload, struct netlink_ext_ack *extack)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	u16 proto = ETH_P_8021Q;
+
+	pr_debug("%s %x: %d", __func__, (u32)priv, port);
+
+	br_vlan_get_proto(bridge.dev, &proto);
+	if (proto != ETH_P_8021Q && (proto != ETH_P_8021AD || !priv->r->vlan_port_qinq_set)) {
+		NL_SET_ERR_MSG_MOD(extack, "802.1ad bridges are not supported");
+		return -EINVAL;
+	}
+
+	/* reset to default flags for new net_bridge_port */
+	priv->ports[port].isolated = false;
+	priv->ports[port].cached_flags = 0;
+
+	mutex_lock(&priv->reg_mutex);
+
+	if (proto == ETH_P_8021AD) {
+		priv->r->vlan_port_qinq_set(priv, port, true);
+		priv->ports[port].qinq = true;
+	}
+
+	priv->ports[port].bridged = true;
+	otto_vlan_port_untagged_set(priv, port);
+
+	rtldsa_update_port_member(priv, port, bridge.dev, true);
+
+	if (priv->r->set_static_move_action)
+		priv->r->set_static_move_action(priv, port, false);
+
+	/* Set to disabled in all MSTs, common code will take care of CIST */
+	otto_stp_port_non_cist_states_set(priv, port, BR_STATE_DISABLED);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	pr_debug("%s %x: %d", __func__, (u32)priv, port);
+
+	mutex_lock(&priv->reg_mutex);
+
+	rtldsa_update_port_member(priv, port, bridge.dev, false);
+
+	if (priv->ports[port].qinq) {
+		priv->r->vlan_port_qinq_set(priv, port, false);
+		priv->ports[port].qinq = false;
+	}
+
+	priv->ports[port].bridged = false;
+	otto_vlan_port_untagged_set(priv, port);
+
+	if (priv->r->set_static_move_action)
+		priv->r->set_static_move_action(priv, port, true);
+
+	/* Set to forwarding in all MSTs, common code will take care of CIST */
+	otto_stp_port_non_cist_states_set(priv, port, BR_STATE_FORWARDING);
+
+	mutex_unlock(&priv->reg_mutex);
+}
+
+static int rtldsa_port_vlan_protocol(struct dsa_switch *ds, int port, u16 proto,
+				     struct netlink_ext_ack *extack)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (proto == (priv->ports[port].qinq ? ETH_P_8021AD : ETH_P_8021Q))
+		return 0;
+
+	NL_SET_ERR_MSG_MOD(extack, "VLAN protocol can't be changed on a bridge with switch ports");
+	return -EINVAL;
+}
+
+void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->fast_age)
+		return;
+
+	mutex_lock(&priv->reg_mutex);
+	priv->r->fast_age(priv, port, -1);
+	mutex_unlock(&priv->reg_mutex);
+}
+
+static void rtldsa_setup_l2_mc_entry(struct otto_l2_entry *e, int vid, u64 mac, int mc_group)
+{
+	memset(e, 0, sizeof(*e));
+
+	e->type = L2_MULTICAST;
+	e->valid = true;
+
+	e->mc_portmask_index = mc_group;
+
+	e->rvid = e->vid = vid;
+	e->is_ip_mc = e->is_ipv6_mc = false;
+	u64_to_ether_addr(mac, e->mac);
+}
+
+static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)
+{
+	/*
+	 * RFC4541, section 2.1.2.2 + section 3:
+	 * Unsnoopable address ranges must always be flooded.
+	 *
+	 * mapped MAC for 224.0.0.x -> 01:00:5e:00:00:xx
+	 * mapped MAC for ff02::1 -> 33:33:00:00:00:01
+	 */
+	if (ether_addr_equal_masked(addr, ipv4_ll_mcast_addr_base,
+				    ipv4_ll_mcast_addr_mask) ||
+	    ether_addr_equal_masked(addr, ipv6_all_hosts_mcast_addr_base,
+				    ipv6_all_hosts_mcast_addr_mask))
+		return true;
+
+	return false;
+}
+
+static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
+				    const struct switchdev_obj_port_mdb *mdb,
+				    const struct dsa_db db)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	u64 mac = ether_addr_to_u64(mdb->addr);
+	struct otto_l2_entry e;
+	int err = 0, idx;
+	int vid = mdb->vid;
+	u64 seed = priv->r->l2_hash_seed(mac, vid);
+	int mc_group;
+
+	pr_debug("In %s port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
+
+	if (priv->lag_non_primary & BIT_ULL(port)) {
+		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
+		return -EINVAL;
+	}
+
+	if (rtldsa_mac_is_unsnoop(mdb->addr)) {
+		dev_dbg(priv->dev,
+			"%s: %pM might belong to an unsnoopable IP. ignore\n",
+			__func__, mdb->addr);
+		return -EADDRNOTAVAIL;
+	}
+
+	mutex_lock(&priv->reg_mutex);
+
+	idx = otto_l2_find_hash_entry(priv, seed, false, &e);
+
+	/* Found an existing or empty entry */
+	if (idx >= 0) {
+		if (e.valid) {
+			pr_debug("Found an existing entry %016llx, mc_group %d\n",
+				 ether_addr_to_u64(e.mac), e.mc_portmask_index);
+			rtldsa_mc_group_add_port(priv, e.mc_portmask_index, port);
+		} else {
+			pr_debug("New entry for seed %016llx\n", seed);
+			mc_group = rtldsa_mc_group_alloc(priv, port);
+			if (mc_group < 0) {
+				err = -ENOTSUPP;
+				goto out;
+			}
+			rtldsa_setup_l2_mc_entry(&e, vid, mac, mc_group);
+			priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
+		}
+		goto out;
+	}
+
+	/* Hash buckets full, try CAM */
+	idx = otto_l2_find_cam_entry(priv, seed, false, &e);
+
+	if (idx >= 0) {
+		if (e.valid) {
+			pr_debug("Found existing CAM entry %016llx, mc_group %d\n",
+				 ether_addr_to_u64(e.mac), e.mc_portmask_index);
+			rtldsa_mc_group_add_port(priv, e.mc_portmask_index, port);
+		} else {
+			pr_debug("New entry\n");
+			mc_group = rtldsa_mc_group_alloc(priv, port);
+			if (mc_group < 0) {
+				err = -ENOTSUPP;
+				goto out;
+			}
+			rtldsa_setup_l2_mc_entry(&e, vid, mac, mc_group);
+			priv->r->write_cam(idx, &e);
+		}
+		goto out;
+	}
+
+	err = -ENOTSUPP;
+
+out:
+	mutex_unlock(&priv->reg_mutex);
+	if (err)
+		dev_err(ds->dev, "failed to add MDB entry\n");
+
+	return err;
+}
+static int rtldsa_93xx_port_mdb_add(struct dsa_switch *ds, int port,
+				    const struct switchdev_obj_port_mdb *mdb,
+				    const struct dsa_db db)
+{
+	return -EOPNOTSUPP;
+}
+
+static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
+			       const struct switchdev_obj_port_mdb *mdb,
+			       const struct dsa_db db)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	u64 mac = ether_addr_to_u64(mdb->addr);
+	struct otto_l2_entry e;
+	int err = 0, idx;
+	int vid = mdb->vid;
+	u64 seed = priv->r->l2_hash_seed(mac, vid);
+	u64 portmask;
+
+	pr_debug("In %s, port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
+
+	if (priv->lag_non_primary & BIT_ULL(port)) {
+		pr_info("%s: %d is lag slave. ignore\n", __func__, port);
+		return 0;
+	}
+
+	if (rtldsa_mac_is_unsnoop(mdb->addr)) {
+		dev_dbg(priv->dev,
+			"%s: %pM might belong to an unsnoopable IP. ignore\n",
+			__func__, mdb->addr);
+		return 0;
+	}
+
+	mutex_lock(&priv->reg_mutex);
+
+	idx = otto_l2_find_hash_entry(priv, seed, true, &e);
+
+	if (idx >= 0) {
+		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
+		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
+		if (!portmask) {
+			e.valid = false;
+			priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
+		}
+		goto out;
+	}
+
+	/* Check CAM for spillover from hash buckets */
+	idx = otto_l2_find_cam_entry(priv, seed, true, &e);
+
+	if (idx >= 0) {
+		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
+		if (!portmask) {
+			e.valid = false;
+			priv->r->write_cam(idx, &e);
+		}
+		goto out;
+	}
+	/* TODO: Re-enable with a newer kernel: err = -ENOENT; */
+
+out:
+	mutex_unlock(&priv->reg_mutex);
+
+	return err;
+}
+
+static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
+					struct switchdev_brport_flags flags,
+					struct netlink_ext_ack *extack)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	unsigned long features = BR_ISOLATED | BR_PORT_LOCKED;
+
+	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
+	if (priv->r->enable_learning)
+		features |= BR_LEARNING;
+
+	if (priv->r->enable_flood)
+		features |= BR_FLOOD;
+
+	if (priv->r->enable_mcast_flood)
+		features |= BR_MCAST_FLOOD;
+	if (priv->r->enable_bcast_flood)
+		features |= BR_BCAST_FLOOD;
+	if (flags.mask & ~(features))
+		return -EINVAL;
+
+	return 0;
+}
+
+/* dsa_port_fast_age() is DSA internal, repeat its bridge notification here. */
+static void rtldsa_port_fast_age_notify(struct dsa_port *dp)
+{
+	struct net_device *brport_dev = dsa_port_to_bridge_port(dp);
+	struct switchdev_notifier_fdb_info info = {
+		.vid = 0, /* all VLANs */
+	};
+
+	rtldsa_port_fast_age(dp->ds, dp->index);
+
+	if (!brport_dev)
+		return;
+
+	call_switchdev_notifiers(SWITCHDEV_FDB_FLUSH_TO_BRIDGE, brport_dev,
+				 &info.info, NULL);
+}
+
+static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
+				    struct switchdev_brport_flags flags,
+				    struct netlink_ext_ack *extack)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	unsigned long cached_flags;
+
+	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
+
+	priv->ports[port].cached_flags &= ~flags.mask;
+	priv->ports[port].cached_flags |= flags.val & flags.mask;
+
+	cached_flags = priv->ports[port].cached_flags;
+
+	if (cached_flags & BR_PORT_LOCKED) {
+		/* A locked port must not learn addresses on its own, and the
+		 * entries it learned before are no longer authorized.
+		 */
+		rtldsa_port_set_salrn(priv, port, false);
+
+		if (flags.mask & BR_PORT_LOCKED)
+			rtldsa_port_fast_age_notify(dp);
+	} else {
+		rtldsa_port_set_salrn(priv, port, !!(cached_flags & BR_LEARNING));
+	}
+
+	if (priv->r->enable_flood)
+		priv->r->enable_flood(priv, port, !!(cached_flags & BR_FLOOD));
+
+	/* Trap frames with an unknown source address on a locked port to the
+	 * CPU, so that an authenticator can inspect them and add an FDB entry.
+	 */
+	priv->r->set_l2_new_sa_trap(priv, port, !!(cached_flags & BR_PORT_LOCKED));
+
+	if (priv->r->enable_learning)
+		priv->r->enable_learning(priv, port, !!(cached_flags & BR_LEARNING));
+
+	if (priv->r->enable_mcast_flood)
+		priv->r->enable_mcast_flood(priv, port, !!(cached_flags & BR_MCAST_FLOOD));
+
+	if (priv->r->enable_bcast_flood)
+		priv->r->enable_bcast_flood(priv, port, !!(cached_flags & BR_BCAST_FLOOD));
+
+	if (flags.mask & BR_ISOLATED) {
+		struct net_device *bridge_dev = dsa_port_bridge_dev_get(dp);
+
+		priv->ports[port].isolated = !!(cached_flags & BR_ISOLATED);
+
+		mutex_lock(&priv->reg_mutex);
+		rtldsa_update_port_member(priv, port, bridge_dev, true);
+		mutex_unlock(&priv->reg_mutex);
+	}
+
+	return 0;
+}
+
+const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
+	.get_tag_protocol	= rtldsa_get_tag_protocol,
+	.setup			= rtldsa_83xx_setup,
+
+	.phylink_get_caps	= otto_mac_phylink_get_caps,
+
+	.get_strings		= otto_stats_get_strings,
+	.get_ethtool_stats	= otto_stats_get_ethtool,
+	.get_sset_count		= otto_stats_get_sset_count,
+	.get_eth_phy_stats	= otto_stats_get_eth_phy,
+	.get_eth_mac_stats	= otto_stats_get_eth_mac,
+	.get_eth_ctrl_stats	= otto_stats_get_eth_ctrl,
+	.get_rmon_stats		= otto_stats_get_rmon,
+	.get_stats64		= otto_stats_get64,
+	.get_pause_stats	= otto_stats_get_pause,
+
+	.port_enable		= rtldsa_port_enable,
+	.port_disable		= rtldsa_port_disable,
+
+	.port_change_mtu	= otto_mac_port_change_mtu,
+	.port_max_mtu		= otto_mac_port_max_mtu,
+
+	.support_eee		= otto_mac_support_eee,
+	.set_mac_eee		= otto_mac_set_eee,
+
+	.set_ageing_time	= rtldsa_set_ageing_time,
+	.port_bridge_join	= rtldsa_port_bridge_join,
+	.port_bridge_leave	= rtldsa_port_bridge_leave,
+	.port_stp_state_set	= otto_stp_port_state_set,
+	.port_fast_age		= rtldsa_port_fast_age,
+	.port_mst_state_set	= otto_stp_port_mst_state_set,
+
+	.port_vlan_filtering	= otto_vlan_port_filtering,
+	.port_vlan_protocol	= rtldsa_port_vlan_protocol,
+	.port_vlan_add		= otto_vlan_port_add,
+	.port_vlan_del		= otto_vlan_port_del,
+	.port_vlan_fast_age	= otto_vlan_port_fast_age,
+	.vlan_msti_set		= otto_vlan_msti_set,
+
+	.port_fdb_add		= otto_fdb_port_add,
+	.port_fdb_del		= otto_fdb_port_del,
+	.port_fdb_dump		= otto_fdb_port_dump,
+
+	.port_mdb_add		= rtldsa_83xx_port_mdb_add,
+	.port_mdb_del		= rtldsa_port_mdb_del,
+
+	.port_mirror_add	= otto_mirror_port_add,
+	.port_mirror_del	= otto_mirror_port_del,
+
+	.port_lag_change	= otto_lag_port_change,
+	.port_lag_join		= otto_lag_port_join,
+	.port_lag_leave		= otto_lag_port_leave,
+
+	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
+	.port_bridge_flags	= rtldsa_port_bridge_flags,
+
+	.cls_flower_add		= otto_tc_cls_flower_add,
+	.cls_flower_del		= otto_tc_cls_flower_del,
+	.cls_flower_stats	= otto_tc_cls_flower_stats,
+};
+
+const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
+	.get_tag_protocol	= rtldsa_get_tag_protocol,
+	.setup			= rtldsa_93xx_setup,
+
+	.phylink_get_caps	= otto_mac_phylink_get_caps,
+
+	.get_strings		= otto_stats_get_strings,
+	.get_ethtool_stats	= otto_stats_get_ethtool,
+	.get_sset_count		= otto_stats_get_sset_count,
+	.get_eth_phy_stats	= otto_stats_get_eth_phy,
+	.get_eth_mac_stats	= otto_stats_get_eth_mac,
+	.get_eth_ctrl_stats	= otto_stats_get_eth_ctrl,
+	.get_rmon_stats		= otto_stats_get_rmon,
+	.get_stats64		= otto_stats_get64,
+	.get_pause_stats	= otto_stats_get_pause,
+
+	.port_enable		= rtldsa_port_enable,
+	.port_disable		= rtldsa_port_disable,
+
+	.port_change_mtu	= otto_mac_port_change_mtu,
+	.port_max_mtu		= otto_mac_port_max_mtu,
+
+	.support_eee		= otto_mac_support_eee,
+	.set_mac_eee		= otto_mac_set_eee,
+
+	.set_ageing_time	= rtldsa_set_ageing_time,
+	.port_bridge_join	= rtldsa_port_bridge_join,
+	.port_bridge_leave	= rtldsa_port_bridge_leave,
+	.port_stp_state_set	= otto_stp_port_state_set,
+	.port_fast_age		= rtldsa_port_fast_age,
+	.port_mst_state_set	= otto_stp_port_mst_state_set,
+
+	.port_vlan_filtering	= otto_vlan_port_filtering,
+	.port_vlan_protocol	= rtldsa_port_vlan_protocol,
+	.port_vlan_add		= otto_vlan_port_add,
+	.port_vlan_del		= otto_vlan_port_del,
+	.port_vlan_fast_age	= otto_vlan_port_fast_age,
+	.vlan_msti_set		= otto_vlan_msti_set,
+
+	.port_fdb_add		= otto_fdb_port_add,
+	.port_fdb_del		= otto_fdb_port_del,
+	.port_fdb_dump		= otto_fdb_port_dump,
+
+	.port_mdb_add		= rtldsa_93xx_port_mdb_add,
+	.port_mdb_del		= rtldsa_port_mdb_del,
+
+	.port_mirror_add	= otto_mirror_port_add,
+	.port_mirror_del	= otto_mirror_port_del,
+
+	.port_lag_change	= otto_lag_port_change,
+	.port_lag_join		= otto_lag_port_join,
+	.port_lag_leave		= otto_lag_port_leave,
+
+	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
+	.port_bridge_flags	= rtldsa_port_bridge_flags,
+
+	.port_setup_tc		= otto_tc_port_setup_tc,
+	.cls_flower_add		= otto_tc_cls_flower_add,
+	.cls_flower_del		= otto_tc_cls_flower_del,
+	.cls_flower_stats	= otto_tc_cls_flower_stats,
+
+	.port_get_default_prio	= otto_qos_port_get_default_prio,
+	.port_set_default_prio	= otto_qos_port_set_default_prio,
+	.port_get_dscp_prio	= otto_qos_port_get_dscp_prio,
+	.port_add_dscp_prio	= otto_qos_port_add_dscp_prio,
+	.port_del_dscp_prio	= otto_qos_port_del_dscp_prio,
+	.port_get_apptrust	= otto_qos_port_get_apptrust,
+	.port_set_apptrust	= otto_qos_port_set_apptrust,
+};

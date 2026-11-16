@@ -1,0 +1,78 @@
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+include $(TOPDIR)/rules.mk
+
+PKG_VERSION:=2026.04
+PKG_HASH:=ac7c04b8b7004923b00a4e5d6699c5df4d21233bac9fda690d8cfbc209fff2fd
+
+include $(INCLUDE_DIR)/kernel.mk
+include $(INCLUDE_DIR)/u-boot.mk
+include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
+
+define U-Boot/Default
+  BUILD_TARGET:=zynq
+  BUILD_SUBTARGET:=generic
+  UBOOT_IMAGE:=spl/boot.bin u-boot.img
+  UBOOT_CONFIG:=zynq_$(1)
+  UENV:=default
+  HIDDEN:=1
+endef
+
+define U-Boot/zc702
+  NAME:=Xilinx ZC702 Dev Board
+  BUILD_DEVICES:=xlnx_zynq-zc702
+  UBOOT_CONFIG:=xilinx_zynq_virt
+endef
+
+define U-Boot/antminer-s9
+  NAME:=Bitmain Antminer S9 control board
+  BUILD_DEVICES:=bitmain_zynq-antminer-s9
+  UBOOT_CONFIG:=bitmain_antminer_s9
+endef
+
+define U-Boot/zed
+  NAME:=Avnet Digilent ZedBoard Dev Board
+  BUILD_DEVICES:=avnet_zynq-zed
+  UBOOT_CONFIG:=xilinx_zynq_virt
+endef
+
+define U-Boot/zybo
+  NAME:=Digilent Zybo Dev Board
+  BUILD_DEVICES:=digilent_zynq-zybo
+  UBOOT_CONFIG:=xilinx_zynq_virt
+endef
+
+define U-Boot/zybo_z7
+  NAME:=Digilent Zybo Z7 board
+  BUILD_DEVICES:=digilent_zynq-zybo-z7
+  UBOOT_CONFIG:=xilinx_zynq_virt
+endef
+
+UBOOT_TARGETS := \
+        antminer-s9 \
+	zc702 \
+	zed \
+	zybo \
+	zybo_z7
+
+# mkeficapsule host tool is disabled
+# due to a host-side GnuTLS dependency
+UBOOT_CUSTOMIZE_CONFIG := --disable TOOLS_MKEFICAPSULE
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(CP) $(PKG_BUILD_DIR)/spl/boot.bin $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.bin
+	$(CP) $(PKG_BUILD_DIR)/u-boot.img $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-u-boot.img
+	$(CP) ./files/uEnv-$(UENV).txt $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-uEnv.txt
+endef
+
+define Package/u-boot/install/default
+endef
+
+$(eval $(call BuildPackage/U-Boot))

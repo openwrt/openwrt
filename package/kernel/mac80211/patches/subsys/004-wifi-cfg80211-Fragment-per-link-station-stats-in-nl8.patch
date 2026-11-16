@@ -1,0 +1,358 @@
+From dd21d1844aa096216e1be551d1ae5e57c27c837c Mon Sep 17 00:00:00 2001
+From: P Praneesh <praneesh.p@oss.qualcomm.com>
+Date: Sun, 14 Jun 2026 10:47:34 +0530
+Subject: [PATCH 4/5] wifi: cfg80211: Fragment per-link station stats in
+ nl80211_dump_station()
+
+In MLO scenarios, stations may have multiple links, each with distinct
+statistics. When userspace tools like iw or hostapd request station dumps,
+attempting to pack all per-link stats into a single netlink message can
+easily exceed the default 4KB buffer limit, especially when more than two
+links are active. This results in -EMSGSIZE errors and incomplete data
+delivery.
+
+To address this, fragment per-link station statistics across multiple
+netlink messages to ensure reliable delivery of complete MLO station
+information. Extend the stateful context with a two-phase dump mechanism:
+phase 0 (AGGREGATED) sends combined MLO-level statistics and phase 1
+(PER_LINK) sends individual per-link statistics for each active link.
+
+The dump loop is structured to produce exactly one netlink message per
+iteration, with a common header (ifindex, wdev, mac, generation) built
+once and phase-specific payload added via a switch statement. This keeps
+header construction in one place and makes the EMSGSIZE bail-out uniform.
+
+Add a new request flag attribute, NL80211_ATTR_STA_DUMP_LINK_STATS
+(NLA_FLAG), for NL80211_CMD_GET_STATION dump. Userspace can set this
+flag to request per-link station statistics for MLO stations.
+
+Extract this flag during the first dump invocation by passing an attrbuf
+to nl80211_prepare_wdev_dump(); use __free(kfree) to avoid scattered
+manual kfree() calls. Cache the boolean in the dump context to avoid
+repeated parsing on subsequent invocations.
+
+Per-link messages carry a single NL80211_ATTR_MLO_LINKS nest with the
+link ID, link-specific MAC, and per-link NL80211_ATTR_STA_INFO payload.
+The link-specific validity (is_valid_ether_addr) and null pointer guard
+are checked in nl80211_put_link_station_payload() before any message
+construction begins.
+
+Also fix all nla_nest_start_noflag() calls in nl80211_fill_link_station()
+for nested attribute types (STA_INFO, BSS_PARAM, TID_STATS, per-tid) to
+use nla_nest_start() so the NLA_F_NESTED flag is set correctly.
+
+Propagate the actual return value from nl80211_put_sta_info_common() in
+the AGGREGATED phase rather than returning skb->len. Returning skb->len
+signals netlink to re-invoke the dump with the same sta_idx, causing an
+infinite loop when the aggregated payload is too large to fit; returning
+the real error code (-EMSGSIZE or otherwise) terminates the dump cleanly.
+
+Backward compatibility is seamlessly preserved for non-MLO stations.
+
+Signed-off-by: P Praneesh <praneesh.p@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260614051739.3979947-5-praneesh.p@oss.qualcomm.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ include/uapi/linux/nl80211.h |  19 ++++
+ net/wireless/nl80211.c       | 172 ++++++++++++++++++++++++++++-------
+ 2 files changed, 158 insertions(+), 33 deletions(-)
+
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -3165,6 +3165,23 @@ enum nl80211_commands {
+  * @NL80211_ATTR_NPCA_PRIMARY_FREQ: NPCA primary channel (u32)
+  * @NL80211_ATTR_NPCA_PUNCT_BITMAP: NPCA puncturing bitmap (u32)
+  *
++ * @NL80211_ATTR_STA_DUMP_LINK_STATS: Request flag for %NL80211_CMD_GET_STATION
++ *	(dump mode only). When set on an MLD station, the dump produces two
++ *	%NL80211_CMD_NEW_STATION messages per station per dump call:
++ *
++ *	1. An aggregated-stats message whose top-level %NL80211_ATTR_STA_INFO
++ *	   contains MLO-combined statistics (same content as a dump without
++ *	   this flag).
++ *
++ *	2. For each active link, a per-link message containing
++ *	   %NL80211_ATTR_MLO_LINKS with a single link entry. Each entry holds
++ *	   %NL80211_ATTR_MLO_LINK_ID, the link-specific %NL80211_ATTR_MAC,
++ *	   and %NL80211_ATTR_STA_INFO with per-link statistics (see
++ *	   &enum nl80211_sta_info).
++ *
++ *	The aggregated message always precedes the per-link messages for the
++ *	same station within a dump sequence.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3763,6 +3780,8 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_NPCA_PRIMARY_FREQ,
+ 	NL80211_ATTR_NPCA_PUNCT_BITMAP,
+ 
++	NL80211_ATTR_STA_DUMP_LINK_STATS,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -1095,6 +1095,7 @@ static const struct nla_policy nl80211_p
+ 	[NL80211_ATTR_NPCA_PRIMARY_FREQ] = { .type = NLA_U32 },
+ 	[NL80211_ATTR_NPCA_PUNCT_BITMAP] =
+ 		NLA_POLICY_FULL_RANGE(NLA_U32, &nl80211_punct_bitmap_range),
++	[NL80211_ATTR_STA_DUMP_LINK_STATS] = { .type = NLA_FLAG },
+ };
+ 
+ /* policy for the key attributes */
+@@ -7882,7 +7883,7 @@ static int nl80211_fill_link_station(str
+ 		goto nla_put_failure;					\
+ 	} while (0)
+ 
+-	link_sinfoattr = nla_nest_start_noflag(msg, NL80211_ATTR_STA_INFO);
++	link_sinfoattr = nla_nest_start(msg, NL80211_ATTR_STA_INFO);
+ 	if (!link_sinfoattr)
+ 		goto nla_put_failure;
+ 
+@@ -7948,8 +7949,8 @@ static int nl80211_fill_link_station(str
+ 	PUT_LINK_SINFO(BEACON_LOSS, beacon_loss_count, u32);
+ 
+ 	if (link_sinfo->filled & BIT_ULL(NL80211_STA_INFO_BSS_PARAM)) {
+-		bss_param = nla_nest_start_noflag(msg,
+-						  NL80211_STA_INFO_BSS_PARAM);
++		bss_param = nla_nest_start(msg,
++					   NL80211_STA_INFO_BSS_PARAM);
+ 		if (!bss_param)
+ 			goto nla_put_failure;
+ 
+@@ -7991,8 +7992,7 @@ static int nl80211_fill_link_station(str
+ 		struct nlattr *tidsattr;
+ 		int tid;
+ 
+-		tidsattr = nla_nest_start_noflag(msg,
+-						 NL80211_STA_INFO_TID_STATS);
++		tidsattr = nla_nest_start(msg, NL80211_STA_INFO_TID_STATS);
+ 		if (!tidsattr)
+ 			goto nla_put_failure;
+ 
+@@ -8005,7 +8005,7 @@ static int nl80211_fill_link_station(str
+ 			if (!tidstats->filled)
+ 				continue;
+ 
+-			tidattr = nla_nest_start_noflag(msg, tid + 1);
++			tidattr = nla_nest_start(msg, tid + 1);
+ 			if (!tidattr)
+ 				goto nla_put_failure;
+ 
+@@ -8476,21 +8476,74 @@ static void cfg80211_sta_set_mld_sinfo(s
+ 	sinfo->filled &= ~BIT_ULL(NL80211_STA_INFO_CHAIN_SIGNAL_AVG);
+ }
+ 
++enum nl80211_dump_station_phase {
++	NL80211_DUMP_STA_PHASE_AGGREGATED = 0,
++	NL80211_DUMP_STA_PHASE_PER_LINK   = 1,
++};
++
+ struct nl80211_dump_station_ctx {
+ 	int sta_idx;
++	int link_idx;
++	enum nl80211_dump_station_phase phase;
++	bool dump_link_stats;
+ 	u8 mac_addr[ETH_ALEN];
+ 	struct station_info sinfo;
+ };
+ 
++static int nl80211_put_link_station_payload(struct sk_buff *msg,
++					    struct cfg80211_registered_device *rdev,
++					    struct station_info *sinfo,
++					    int link_idx)
++{
++	struct link_station_info *link_sinfo = sinfo->links[link_idx];
++	struct nlattr *links, *link;
++
++	if (WARN_ON_ONCE(!link_sinfo))
++		return -ENOENT;
++
++	if (!is_valid_ether_addr(link_sinfo->addr))
++		return -EADDRNOTAVAIL;
++
++	links = nla_nest_start(msg, NL80211_ATTR_MLO_LINKS);
++	if (!links)
++		return -EMSGSIZE;
++
++	link = nla_nest_start(msg, link_idx + 1);
++	if (!link)
++		goto nla_put_failure;
++
++	if (nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID, link_idx) ||
++	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, link_sinfo->addr))
++		goto nla_put_failure;
++
++	if (nl80211_fill_link_station(msg, rdev, link_sinfo))
++		goto nla_put_failure;
++
++	nla_nest_end(msg, link);
++	nla_nest_end(msg, links);
++	return 0;
++
++nla_put_failure:
++	nla_nest_cancel(msg, links);
++	return -EMSGSIZE;
++}
++
+ static int nl80211_dump_station(struct sk_buff *skb,
+ 				struct netlink_callback *cb)
+ {
+ 	struct cfg80211_registered_device *rdev;
+ 	struct wireless_dev *wdev;
+ 	struct nl80211_dump_station_ctx *ctx = (void *)cb->args[2];
++	struct nlattr **attrbuf __free(kfree) = NULL;
+ 	int err;
+ 
+-	err = nl80211_prepare_wdev_dump(cb, &rdev, &wdev, NULL);
++	if (!ctx) {
++		attrbuf = kzalloc_objs(*attrbuf, NUM_NL80211_ATTR);
++		if (!attrbuf)
++			return -ENOMEM;
++	}
++
++	err = nl80211_prepare_wdev_dump(cb, &rdev, &wdev, attrbuf);
+ 	if (err)
+ 		return err;
+ 	/* nl80211_prepare_wdev_dump acquired it in the successful case */
+@@ -8502,6 +8555,9 @@ static int nl80211_dump_station(struct s
+ 			err = -ENOMEM;
+ 			goto out_err;
+ 		}
++		ctx->phase = NL80211_DUMP_STA_PHASE_AGGREGATED;
++		ctx->dump_link_stats =
++			!!attrbuf[NL80211_ATTR_STA_DUMP_LINK_STATS];
+ 		cb->args[2] = (long)ctx;
+ 	}
+ 
+@@ -8517,34 +8573,53 @@ static int nl80211_dump_station(struct s
+ 
+ 	while (true) {
+ 		void *hdr;
++		int ret;
+ 
+-		memset(&ctx->sinfo, 0, sizeof(ctx->sinfo));
+-		for (int i = 0; i < IEEE80211_MLD_MAX_NUM_LINKS; i++) {
+-			ctx->sinfo.links[i] =
+-				kzalloc_obj(*ctx->sinfo.links[0]);
+-			if (!ctx->sinfo.links[i]) {
+-				err = -ENOMEM;
++		/* AGGREGATED phase: fetch sinfo from driver once per station */
++		if (ctx->phase == NL80211_DUMP_STA_PHASE_AGGREGATED) {
++			memset(&ctx->sinfo, 0, sizeof(ctx->sinfo));
++			for (int i = 0; i < IEEE80211_MLD_MAX_NUM_LINKS; i++) {
++				ctx->sinfo.links[i] =
++					kzalloc_obj(*ctx->sinfo.links[0]);
++				if (!ctx->sinfo.links[i]) {
++					err = -ENOMEM;
++					goto out_err_release;
++				}
++			}
++
++			err = rdev_dump_station(rdev, wdev, ctx->sta_idx,
++						ctx->mac_addr, &ctx->sinfo);
++			if (err == -ENOENT) {
++				err = skb->len;
+ 				goto out_err_release;
+ 			}
+-		}
++			if (err)
++				goto out_err_release;
+ 
+-		err = rdev_dump_station(rdev, wdev, ctx->sta_idx,
+-					ctx->mac_addr, &ctx->sinfo);
+-		if (err == -ENOENT) {
+-			err = skb->len;
+-			goto out_err_release;
++			if (ctx->sinfo.valid_links)
++				cfg80211_sta_set_mld_sinfo(&ctx->sinfo);
++		} else {
++			/* PER_LINK phase: advance to next valid link */
++			while (ctx->link_idx < IEEE80211_MLD_MAX_NUM_LINKS &&
++			       !(ctx->sinfo.valid_links & BIT(ctx->link_idx)))
++				ctx->link_idx++;
++
++			if (ctx->link_idx >= IEEE80211_MLD_MAX_NUM_LINKS) {
++				cfg80211_sinfo_release_content(&ctx->sinfo);
++				ctx->sta_idx++;
++				ctx->phase = NL80211_DUMP_STA_PHASE_AGGREGATED;
++				continue;
++			}
+ 		}
+-		if (err)
+-			goto out_err_release;
+-
+-		if (ctx->sinfo.valid_links)
+-			cfg80211_sta_set_mld_sinfo(&ctx->sinfo);
+ 
++		/* Build common header for both phases */
+ 		hdr = nl80211hdr_put(skb, NETLINK_CB(cb->skb).portid,
+ 				     cb->nlh->nlmsg_seq, NLM_F_MULTI,
+ 				     NL80211_CMD_NEW_STATION);
+ 		if (!hdr) {
+ 			err = skb->len;
++			if (ctx->phase == NL80211_DUMP_STA_PHASE_PER_LINK)
++				goto out_err;
+ 			goto out_err_release;
+ 		}
+ 
+@@ -8558,18 +8633,49 @@ static int nl80211_dump_station(struct s
+ 				ctx->sinfo.generation)) {
+ 			genlmsg_cancel(skb, hdr);
+ 			err = skb->len;
++			if (ctx->phase == NL80211_DUMP_STA_PHASE_PER_LINK)
++				goto out_err;
+ 			goto out_err_release;
+ 		}
+ 
+-		if (nl80211_put_sta_info_common(skb, rdev, &ctx->sinfo)) {
+-			genlmsg_cancel(skb, hdr);
+-			err = skb->len;
+-			goto out_err_release;
+-		}
++		switch (ctx->phase) {
++		case NL80211_DUMP_STA_PHASE_AGGREGATED:
++			ret = nl80211_put_sta_info_common(skb, rdev, &ctx->sinfo);
++			if (ret) {
++				genlmsg_cancel(skb, hdr);
++				err = ret;
++				goto out_err_release;
++			}
++			genlmsg_end(skb, hdr);
++
++			if (ctx->dump_link_stats && ctx->sinfo.valid_links) {
++				ctx->phase = NL80211_DUMP_STA_PHASE_PER_LINK;
++				ctx->link_idx = 0;
++			} else {
++				cfg80211_sinfo_release_content(&ctx->sinfo);
++				ctx->sta_idx++;
++			}
++			break;
+ 
+-		genlmsg_end(skb, hdr);
+-		cfg80211_sinfo_release_content(&ctx->sinfo);
+-		ctx->sta_idx++;
++		case NL80211_DUMP_STA_PHASE_PER_LINK:
++			ret = nl80211_put_link_station_payload(skb, rdev,
++							       &ctx->sinfo,
++							       ctx->link_idx);
++			if (ret == -EMSGSIZE) {
++				genlmsg_cancel(skb, hdr);
++				err = skb->len;
++				goto out_err;
++			}
++			if (ret) {
++				/* skip invalid link, do not abort the dump */
++				genlmsg_cancel(skb, hdr);
++				ctx->link_idx++;
++				continue;
++			}
++			genlmsg_end(skb, hdr);
++			ctx->link_idx++;
++			break;
++		}
+ 	}
+ 
+ out_err_release:

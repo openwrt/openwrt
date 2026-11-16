@@ -1,0 +1,38 @@
+From: Robert Marko <robimarko@gmail.com>
+Subject: [PATCH] Make build timestamps reproducible
+
+Use SOURCE_DATE_EPOCH to generate the build banner and U-Boot timestamps
+when it is set.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ Makefile | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+--- a/Makefile
++++ b/Makefile
+@@ -25,7 +25,12 @@ ifndef ARUBA_MAKE_VERBOSE
+ MAKEFLAGS += --no-print-directory -s
+ endif
+ 
+-TSTAMP:=$(shell date +'%Y-%m-%d at %H:%M:%S')
++APBOOT_DATE:=date
++ifneq ($(SOURCE_DATE_EPOCH),)
++APBOOT_DATE:=date --utc --date="@$(SOURCE_DATE_EPOCH)"
++endif
++
++TSTAMP:=$(shell $(APBOOT_DATE) +'%Y-%m-%d at %H:%M:%S')
+ 
+ # NOTE
+ # NOTE THIS VERSION INFORMATION IS ONLY USED BY DEFAULT; SEE include/[ac]pboot_ver.mk
+@@ -383,8 +388,8 @@ $(SUBDIRS):
+ 		$(MAKE) -C $@ all
+ 
+ timestamp_h:
+-		@LC_ALL=C date +'#define U_BOOT_DATE "%b %d %C%y"' > include/timestamp.h
+-		@LC_ALL=C date +'#define U_BOOT_TIME "%T"' >> include/timestamp.h
++		@LC_ALL=C $(APBOOT_DATE) +'#define U_BOOT_DATE "%b %d %C%y"' > include/timestamp.h
++		@LC_ALL=C $(APBOOT_DATE) +'#define U_BOOT_TIME "%T"' >> include/timestamp.h
+ 
+ $(obj)lib/asm-offsets.s:	\
+ 	$(src)lib/asm-offsets.c include/configs/${CONFIG_FILE}.h \

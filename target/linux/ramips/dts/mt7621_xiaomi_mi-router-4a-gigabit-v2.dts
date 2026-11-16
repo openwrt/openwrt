@@ -1,0 +1,93 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "mt7621_xiaomi_mi-router-4a-common.dtsi"
+
+/ {
+	compatible = "xiaomi,mi-router-4a-gigabit-v2", "mediatek,mt7621-soc";
+	model = "Xiaomi Mi Router 4A Gigabit Edition v2";
+
+	aliases {
+		label-mac-device = &wan;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_blue: status_blue {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_yellow: status_yellow {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_blue {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_yellow {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+/* override EEPROM size to 0x4da8 for MT7613 */
+&eeprom_factory_8000 {
+	reg = <0x8000 0x4da8>;
+};
+
+&partitions {
+	partition@180000 {
+		// size changed against to the common dtsi
+		reg = <0x180000 0xe70000>;
+	};
+
+	partition@ff0000 {
+		label = "Config";
+		reg = <0xff0000 0x10000>;
+		read-only;
+	};
+};
+
+&wifi0 {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+	ieee80211-freq-limit = <2400000 2500000>;
+};
+
+&wifi1 {
+	nvmem-cells = <&eeprom_factory_8000>;
+	nvmem-cell-names = "eeprom";
+	ieee80211-freq-limit = <5000000 6000000>;
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		wan: port@3 {
+			status = "okay";
+			label = "wan";
+			nvmem-cells = <&macaddr_factory_e006>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};

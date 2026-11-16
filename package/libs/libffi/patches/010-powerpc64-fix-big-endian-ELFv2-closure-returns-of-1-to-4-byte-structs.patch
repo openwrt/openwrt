@@ -1,0 +1,110 @@
+From 93ab6af85e78bb98e331692875193145645c58fd Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 20 Oct 2026 23:37:11 +0000
+Subject: [PATCH] powerpc64: fix big-endian ELFv2 closure returns of 1- to
+ 4-byte structs
+
+ELFv2 returns a struct of up to 8 bytes right-justified in r3.  The
+closure function stores it at the start of the return value area, in
+its normal memory layout, so on big-endian the closure assembly has to
+load the struct from offset 0 and shift it right.  That is what
+PPC64_LD_STRUCT_5/6/7 do, but structs of 1, 2 and 4 bytes use the jump
+table entries for integer return values, which load from the end of the
+doubleword where an integer widened to ffi_arg is.  PPC64_LD_STRUCT_3
+loads from offset 4 and shifts by the contents of r8.
+
+The integer entries were introduced for structs when the closure return
+handling moved from assembly to C, replacing the old shift of the first
+doubleword by 8 - size bytes.  Restore that behaviour with entries for
+1-, 2- and 4-byte structs on big-endian, which alias the integer entries
+on little-endian as before, and make PPC64_LD_STRUCT_3 load and shift
+the doubleword like the others.
+
+This fixes cls_1_1byte, cls_2byte, cls_3_1byte, cls_3byte1, cls_3byte2,
+cls_4_1byte, cls_4byte, single_entry_structs1 and single_entry_structs3,
+and the struct-returning callbacks in libffi.bhaible/test-callback, on
+big-endian ELFv2 (musl powerpc64, e5500 under qemu-user).
+
+Fixes: 840add3b6a1c ("Add conditional target support for __int128 (#951)")
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/powerpc/ffi_linux64.c     |  6 +++---
+ src/powerpc/ffi_powerpc.h     |  6 ++++++
+ src/powerpc/linux64_closure.S | 19 +++++++++++++++++--
+ 3 files changed, 26 insertions(+), 5 deletions(-)
+
+--- a/src/powerpc/ffi_linux64.c
++++ b/src/powerpc/ffi_linux64.c
+@@ -1649,13 +1649,13 @@ ffi_closure_helper_LINUX64 (ffi_cif *cif
+ 		case 0:
+ 		  return PPC_LD_NONE;
+ 		case 1:
+-		  return PPC_LD_U8;
++		  return PPC64_LD_STRUCT_1;
+ 		case 2:
+-		  return PPC_LD_U16;
++		  return PPC64_LD_STRUCT_2;
+ 		case 3:
+ 		  return PPC64_LD_STRUCT_3;
+ 		case 4:
+-		  return PPC_LD_U32;
++		  return PPC64_LD_STRUCT_4;
+ 		case 5:
+ 		  return PPC64_LD_STRUCT_5;
+ 		case 6:
+--- a/src/powerpc/ffi_powerpc.h
++++ b/src/powerpc/ffi_powerpc.h
+@@ -84,11 +84,17 @@
+ #define PPC64_LD_STRUCT_5	PPC_LD_I64
+ #define PPC64_LD_STRUCT_6	PPC_LD_I64
+ #define PPC64_LD_STRUCT_7	PPC_LD_I64
++#define PPC64_LD_STRUCT_1	PPC_LD_U8
++#define PPC64_LD_STRUCT_2	PPC_LD_U16
++#define PPC64_LD_STRUCT_4	PPC_LD_U32
+ #else
+ #define PPC64_LD_STRUCT_3	16
+ #define PPC64_LD_STRUCT_5	17
+ #define PPC64_LD_STRUCT_6	18
+ #define PPC64_LD_STRUCT_7	19
++#define PPC64_LD_STRUCT_1	20
++#define PPC64_LD_STRUCT_2	21
++#define PPC64_LD_STRUCT_4	22
+ #endif
+ 
+ #endif /* POWERPC64 */
+--- a/src/powerpc/linux64_closure.S
++++ b/src/powerpc/linux64_closure.S
+@@ -342,8 +342,8 @@ E PPC64_LD_DOUBLE_HOMOG
+ 
+ #ifndef __LITTLE_ENDIAN__
+ E PPC64_LD_STRUCT_3
+-	lwz %r3, RETVAL+4(%r1)
+-	srd %r3, %r3, 8
++	ld %r3, RETVAL+0(%r1)
++	srdi %r3, %r3, 40
+ 	epilogue
+ 
+ E PPC64_LD_STRUCT_5
+@@ -360,6 +360,21 @@ E PPC64_LD_STRUCT_7
+ 	ld %r3, RETVAL+0(%r1)
+ 	srdi %r3, %r3, 8
+ 	epilogue
++
++E PPC64_LD_STRUCT_1
++	ld %r3, RETVAL+0(%r1)
++	srdi %r3, %r3, 56
++	epilogue
++
++E PPC64_LD_STRUCT_2
++	ld %r3, RETVAL+0(%r1)
++	srdi %r3, %r3, 48
++	epilogue
++
++E PPC64_LD_STRUCT_4
++	ld %r3, RETVAL+0(%r1)
++	srdi %r3, %r3, 32
++	epilogue
+ #endif
+ 
+ .Lmoredouble:

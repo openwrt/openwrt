@@ -1,0 +1,111 @@
+From fc2513c6ae9513d10c12e522b69be610f7e49910 Mon Sep 17 00:00:00 2001
+From: Lech Perczak <lech.perczak@gmail.com>
+Date: Wed, 27 May 2026 12:19:12 +0200
+Subject: [PATCH] ARM: dts: imx7d-pico-pi: add OV5645 camera support
+
+Add OV5645 camera device node and enable relevant components in the
+video capture data path, so output stream can be captured, and the
+camera itself can be controlled over I2C bus.
+
+This is roughly based on descriptions found in downstream kernel tree [1],
+adapted to match upstream bindings.
+
+Link: https://github.com/technexion-android/kernel_imx/blob/ce8fd74abf518dac0a09e8dcb37f3496f6375124/arch/arm/boot/dts/imx7d-pico.dtsi#L874 [1]
+
+Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+
+[Backport to 6.12]
+Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
+---
+ arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts | 66 +++++++++++++++++++++
+ 1 file changed, 66 insertions(+)
+
+--- a/arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts
+@@ -31,6 +31,13 @@
+ 		};
+ 	};
+ 
++	reg_1p5v: regulator-1p5v {
++		compatible = "regulator-fixed";
++		regulator-name = "1P5V";
++		regulator-min-microvolt = <1500000>;
++		regulator-max-microvolt = <1500000>;
++	};
++
+ 	sound {
+ 		compatible = "simple-audio-card";
+ 		simple-audio-card,name = "imx7-sgtl5000";
+@@ -71,6 +78,33 @@
+ 		touchscreen-size-x = <800>;
+ 		touchscreen-size-y = <480>;
+ 	};
++
++	camera@3c {
++		compatible = "ovti,ov5645";
++		reg = <0x3c>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_camera>;
++
++		clocks = <&clks IMX7D_CLKO1_ROOT_DIV>;
++		clock-names = "xclk";
++		clock-frequency = <24000000>;
++
++		enable-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
++		reset-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
++
++		vdda-supply = <&reg_2p5v>;
++		vdddo-supply = <&reg_vref_1v8>;
++		vddd-supply = <&reg_1p5v>;
++
++		port {
++			ov5645_to_mipi_csi2: endpoint {
++				remote-endpoint = <&mipi_csi2_in>;
++				clock-lanes = <0>;
++				data-lanes = <1 2>;
++			};
++		};
++	};
+ };
+ 
+ &usdhc1 {
+@@ -105,5 +139,37 @@
+ 			MX7D_PAD_EPDC_DATA13__GPIO2_IO13	0x14
+ 		>;
+ 	};
++};
++
++&iomuxc_lpsr {
++	pinctrl_camera: cameragrp {
++		fsl,pins = <
++			MX7D_PAD_LPSR_GPIO1_IO04__GPIO1_IO4	0x15
++			MX7D_PAD_LPSR_GPIO1_IO05__GPIO1_IO5	0x15
++			MX7D_PAD_LPSR_GPIO1_IO02__CCM_CLKO1	0x7d
++		>;
++	};
++};
++
++&csi {
++	status = "okay";
++};
++
++&mipi_csi {
++	status = "okay";
++
++	ports {
++		port@0 {
++			reg = <0>;
++
++			mipi_csi2_in: endpoint {
++				remote-endpoint = <&ov5645_to_mipi_csi2>;
++				data-lanes = <1 2>;
++			};
++		};
++	};
++};
+ 
++&video_mux {
++	status = "okay";
+ };

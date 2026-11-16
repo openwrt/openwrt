@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+huawei,hg253s-v2)
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
+	;;
+netgear,dgnd3700-v2)
+	ucidef_set_led_usbport "usb1" "USB1" "green:usb1" "usb1-port1" "usb2-port1"
+	ucidef_set_led_usbport "usb2" "USB2" "green:usb2" "usb1-port2" "usb2-port2"
+	;;
+esac
+
+board_config_flush
+
+exit 0

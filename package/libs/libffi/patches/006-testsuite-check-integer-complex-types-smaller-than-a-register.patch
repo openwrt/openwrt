@@ -1,0 +1,194 @@
+From 6452020c205cb88eca00a1865619e64860da5ed0 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 20 Oct 2026 23:48:34 +0000
+Subject: [PATCH] testsuite: check integer complex types smaller than a
+ register
+
+complex_int.c defines a _Complex unsigned char type but only uses
+_Complex int, so nothing tests complex values that fit into a single
+register or stack slot.  Several targets pass and return those
+differently from the larger complex types, e.g. right-justified within
+the register.
+
+Add complex_int_small, which passes and returns _Complex signed char and
+_Complex short through ffi_call and through closures, both in registers
+and, after eight ints, on the stack.
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ testsuite/Makefile.am                        |   2 +-
+ testsuite/libffi.complex/complex_int_small.c | 157 +++++++++++++++++++
+ 2 files changed, 158 insertions(+), 1 deletion(-)
+ create mode 100644 testsuite/libffi.complex/complex_int_small.c
+
+--- a/testsuite/Makefile.am
++++ b/testsuite/Makefile.am
+@@ -83,7 +83,7 @@ EXTRA_DIST = config/default.exp emscript
+ 	libffi.complex/cls_complex_va_double.c libffi.complex/cls_complex_va_float.c libffi.complex/cls_complex_va_longdouble.c \
+ 	libffi.complex/complex.exp libffi.complex/complex.inc libffi.complex/complex_defs_double.inc \
+ 	libffi.complex/complex_defs_float.inc libffi.complex/complex_defs_longdouble.inc libffi.complex/complex_double.c \
+-	libffi.complex/complex_float.c libffi.complex/complex_i128.c libffi.complex/complex_int.c libffi.complex/complex_longdouble.c \
++	libffi.complex/complex_float.c libffi.complex/complex_i128.c libffi.complex/complex_int.c libffi.complex/complex_int_small.c libffi.complex/complex_longdouble.c \
+ 	libffi.complex/complex_longdouble_abi.c libffi.complex/complex_regs.inc libffi.complex/complex_regs_double.c \
+ 	libffi.complex/complex_regs_float.c libffi.complex/complex_regs_longdouble.c \
+ 	libffi.complex/ffitest.h libffi.complex/many_complex.inc libffi.complex/many_complex_double.c \
+--- /dev/null
++++ b/testsuite/libffi.complex/complex_int_small.c
+@@ -0,0 +1,157 @@
++/* Area:	ffi_call, closure_call
++   Purpose:	Check integer complex types smaller than a register.
++   Limitations:	none.
++   PR:		none.  */
++
++/* { dg-do run } */
++
++#include "ffitest.h"
++#include <complex.h>
++
++/* _Complex signed char and _Complex short are passed and returned in a
++   single register or stack slot on most targets, which for complex values
++   is a different code path from the larger types.  The last function
++   passes both after eight ints, so that they go to the stack on targets
++   with eight argument registers.  */
++
++#define FFI_COMPLEX_TYPEDEF(name, type, ffitype)	     \
++  static ffi_type *ffi_elements_complex_##name [2] = {	     \
++    (ffi_type *)(&ffitype), NULL			     \
++  };							     \
++  struct struct_align_complex_##name {			     \
++    char c;						     \
++    _Complex type x;					     \
++  };							     \
++  static ffi_type ffi_type_complex_##name = {		     \
++    sizeof(_Complex type),				     \
++    offsetof(struct struct_align_complex_##name, x),	     \
++    FFI_TYPE_COMPLEX,					     \
++    (ffi_type **)ffi_elements_complex_##name		     \
++  }
++
++FFI_COMPLEX_TYPEDEF(schar, signed char, ffi_type_schar);
++FFI_COMPLEX_TYPEDEF(sshort, short, ffi_type_sshort);
++
++typedef _Complex signed char cc;
++typedef _Complex short cs;
++
++static cc
++f_cc (cc a, int k)
++{
++  __real__ a = __real__ a * k;
++  __imag__ a = __imag__ a - k;
++  return a;
++}
++
++static cs
++f_cs (cs a, int k)
++{
++  __real__ a = __real__ a * k;
++  __imag__ a = __imag__ a - k;
++  return a;
++}
++
++static cs
++f_stack (int i1, int i2, int i3, int i4, int i5, int i6, int i7, int i8,
++	 cc a, cs b)
++{
++  __real__ b = __real__ b + __real__ a + i1 + i2 + i3 + i4;
++  __imag__ b = __imag__ b + __imag__ a + i5 + i6 + i7 + i8;
++  return b;
++}
++
++static void
++cls_cc (ffi_cif *cif __UNUSED__, void *resp, void **args,
++	void *userdata __UNUSED__)
++{
++  *(cc *) resp = f_cc (*(cc *) args[0], *(int *) args[1]);
++}
++
++static void
++cls_cs (ffi_cif *cif __UNUSED__, void *resp, void **args,
++	void *userdata __UNUSED__)
++{
++  *(cs *) resp = f_cs (*(cs *) args[0], *(int *) args[1]);
++}
++
++static void
++cls_stack (ffi_cif *cif __UNUSED__, void *resp, void **args,
++	   void *userdata __UNUSED__)
++{
++  *(cs *) resp = f_stack (*(int *) args[0], *(int *) args[1],
++			  *(int *) args[2], *(int *) args[3],
++			  *(int *) args[4], *(int *) args[5],
++			  *(int *) args[6], *(int *) args[7],
++			  *(cc *) args[8], *(cs *) args[9]);
++}
++
++int
++main (void)
++{
++  ffi_cif cif;
++  ffi_type *types[10];
++  void *values[10];
++  ffi_closure *pcl;
++  void *code;
++  int ints[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
++  cc a, ra;
++  cs b, rb;
++  int k = 3, i;
++
++  pcl = ffi_closure_alloc (sizeof (ffi_closure), &code);
++  CHECK (pcl != NULL);
++
++  __real__ a = 5;
++  __imag__ a = -7;
++  __real__ b = 300;
++  __imag__ b = -400;
++
++  types[0] = &ffi_type_complex_schar;
++  types[1] = &ffi_type_sint;
++  values[0] = &a;
++  values[1] = &k;
++  CHECK (ffi_prep_cif (&cif, FFI_DEFAULT_ABI, 2, &ffi_type_complex_schar,
++		       types) == FFI_OK);
++  ffi_call (&cif, FFI_FN (f_cc), &ra, values);
++  printf ("cc: %d,%di\n", (int) __real__ ra, (int) __imag__ ra);
++  CHECK (__real__ ra == 15 && __imag__ ra == -10);
++  CHECK (ffi_prep_closure_loc (pcl, &cif, cls_cc, NULL, code) == FFI_OK);
++  ra = ((cc (*)(cc, int)) code) (a, k);
++  printf ("closure cc: %d,%di\n", (int) __real__ ra, (int) __imag__ ra);
++  CHECK (__real__ ra == 15 && __imag__ ra == -10);
++
++  types[0] = &ffi_type_complex_sshort;
++  values[0] = &b;
++  CHECK (ffi_prep_cif (&cif, FFI_DEFAULT_ABI, 2, &ffi_type_complex_sshort,
++		       types) == FFI_OK);
++  ffi_call (&cif, FFI_FN (f_cs), &rb, values);
++  printf ("cs: %d,%di\n", (int) __real__ rb, (int) __imag__ rb);
++  CHECK (__real__ rb == 900 && __imag__ rb == -403);
++  CHECK (ffi_prep_closure_loc (pcl, &cif, cls_cs, NULL, code) == FFI_OK);
++  rb = ((cs (*)(cs, int)) code) (b, k);
++  printf ("closure cs: %d,%di\n", (int) __real__ rb, (int) __imag__ rb);
++  CHECK (__real__ rb == 900 && __imag__ rb == -403);
++
++  for (i = 0; i < 8; i++)
++    {
++      types[i] = &ffi_type_sint;
++      values[i] = &ints[i];
++    }
++  types[8] = &ffi_type_complex_schar;
++  values[8] = &a;
++  types[9] = &ffi_type_complex_sshort;
++  values[9] = &b;
++  CHECK (ffi_prep_cif (&cif, FFI_DEFAULT_ABI, 10, &ffi_type_complex_sshort,
++		       types) == FFI_OK);
++  ffi_call (&cif, FFI_FN (f_stack), &rb, values);
++  printf ("stack: %d,%di\n", (int) __real__ rb, (int) __imag__ rb);
++  CHECK (__real__ rb == 315 && __imag__ rb == -381);
++  CHECK (ffi_prep_closure_loc (pcl, &cif, cls_stack, NULL, code) == FFI_OK);
++  rb = ((cs (*)(int, int, int, int, int, int, int, int, cc, cs)) code)
++    (1, 2, 3, 4, 5, 6, 7, 8, a, b);
++  printf ("closure stack: %d,%di\n", (int) __real__ rb, (int) __imag__ rb);
++  CHECK (__real__ rb == 315 && __imag__ rb == -381);
++
++  ffi_closure_free (pcl);
++  exit (0);
++}

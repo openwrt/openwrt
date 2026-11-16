@@ -1,0 +1,44 @@
+#!/bin/sh
+
+ifup_all=
+
+if_call() {
+	local interface="$1"
+	for mode in $modes; do
+		ubus call network.interface $mode "{ \"interface\" : \"$interface\" }"
+	done
+}
+
+case "$0" in
+	*ifdown) modes=down;;
+	*ifup)
+		modes="down up"
+	;;
+	*) echo "Invalid command: $0";;
+esac
+
+while :; do
+	case "$1" in
+		-a)
+			ifup_all=1
+			shift
+		;;
+		*)
+			break
+		;;
+	esac
+done
+
+[ "$modes" = "down up" ] && ubus call network reload
+if [ -n "$ifup_all" ]; then
+	for interface in $(ubus -S list 'network.interface.*'); do
+		if_call "${interface##network.interface.}"
+	done
+	exit
+else
+	ubus -S list "network.interface.$1" > /dev/null || {
+		echo "Interface $1 not found"
+		exit
+	}
+	if_call "$1"
+fi

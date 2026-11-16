@@ -1,0 +1,32 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 30 Oct 2026 12:00:00 +0100
+Subject: [PATCH 3/3] net: ethernet: mtk_wed: handle a failed init_rx_buf
+
+mtk_wed_rx_buffer_alloc() ignores the return value of init_rx_buf.
+mt76_wed_init_rx_buf() releases all rx tokens and returns -ENOMEM if an
+allocation fails. mtk_wed_rx_buffer_hw_init() then gives the rx buffer
+manager rx_npkt descriptors with no valid buffer.
+
+Free the descriptors and return the error, so that mtk_wed_start()
+returns before it starts the device, as for the other allocation
+failures.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -854,7 +854,13 @@ mtk_wed_rx_buffer_alloc(struct mtk_wed_d
+ 
+ 	dev->rx_buf_ring.desc = desc;
+ 	dev->rx_buf_ring.desc_phys = desc_phys;
+-	dev->wlan.init_rx_buf(dev, dev->wlan.rx_npkt);
++	if (dev->wlan.init_rx_buf(dev, dev->wlan.rx_npkt)) {
++		dma_free_coherent(dev->hw->dev,
++				  dev->wlan.rx_nbuf * sizeof(*desc),
++				  desc, desc_phys);
++		dev->rx_buf_ring.desc = NULL;
++		return -ENOMEM;
++	}
+ 
+ 	return mtk_wed_hwrro_buffer_alloc(dev);
+ }

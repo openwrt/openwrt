@@ -1,0 +1,43 @@
+From bf6cab8a2b1153ba02e30047cf24525c6172e46b Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 19 Oct 2026 23:19:38 +0100
+Subject: [PATCH 3/3] ARM: dts: rockchip: Add the RV1126 NPU power domain
+
+Describe the NPU power domain with its four transition clocks and QoS
+registers. This lets genpd manage the domain and power it off when
+unused.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -334,6 +334,11 @@
+ 		reg = <0xfe8c0000 0x20>;
+ 	};
+ 
++	qos_npu: qos@fe850000 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe850000 0x20>;
++	};
++
+ 	qos_emmc: qos@fe860000 {
+ 		compatible = "rockchip,rv1126-qos", "syscon";
+ 		reg = <0xfe860000 0x20>;
+@@ -441,6 +446,14 @@
+ 				#power-domain-cells = <0>;
+ 			};
+ 
++			power-domain@RV1126_PD_NPU {
++				reg = <RV1126_PD_NPU>;
++				clocks = <&cru ACLK_NPU>, <&cru HCLK_NPU>,
++					 <&cru PCLK_PDNPU>, <&cru CLK_CORE_NPU>;
++				pm_qos = <&qos_npu>;
++				#power-domain-cells = <0>;
++			};
++
+ 			power-domain@RV1126_PD_NVM {
+ 				reg = <RV1126_PD_NVM>;
+ 				clocks = <&cru HCLK_EMMC>,

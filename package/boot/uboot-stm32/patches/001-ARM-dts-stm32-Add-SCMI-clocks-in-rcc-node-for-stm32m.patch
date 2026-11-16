@@ -1,0 +1,57 @@
+From 7795c5ec6a608a104cf41331cbd387d39f7f6f49 Mon Sep 17 00:00:00 2001
+From: Patrice Chotard <patrice.chotard@foss.st.com>
+Date: Fri, 16 Jan 2026 19:57:26 +0100
+Subject: [PATCH] ARM: dts: stm32: Add SCMI clocks in rcc node for
+ stm32mp131.dtsi
+
+Add SCMI clocks. These clocks are used as parent clocks and are
+referenced by their rcc's node position in clk-stm32mp13.c
+
+Fixes: fdb1bffe2827 ("clk: scmi: Postpone clock name resolution")
+Reviewed-by: Patrick Delaunay <patrick.delaunay@foss.st.com>
+Signed-off-by: Patrice Chotard <patrice.chotard@foss.st.com>
+---
+ arch/arm/dts/stm32mp13-u-boot.dtsi | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/arch/arm/dts/stm32mp13-u-boot.dtsi b/arch/arm/dts/stm32mp13-u-boot.dtsi
+index ad63d5027b2..623c796cc79 100644
+--- a/arch/arm/dts/stm32mp13-u-boot.dtsi
++++ b/arch/arm/dts/stm32mp13-u-boot.dtsi
+@@ -186,6 +186,33 @@
+ };
+ 
+ &rcc {
++	clocks = <&scmi_clk CK_SCMI_HSE>,
++		 <&scmi_clk CK_SCMI_HSI>,
++		 <&scmi_clk CK_SCMI_CSI>,
++		 <&scmi_clk CK_SCMI_LSE>,
++		 <&scmi_clk CK_SCMI_LSI>,
++		 <&scmi_clk CK_SCMI_HSE_DIV2>,
++		 <&scmi_clk CK_SCMI_PLL2_Q>,
++		 <&scmi_clk CK_SCMI_PLL2_R>,
++		 <&scmi_clk CK_SCMI_PLL3_P>,
++		 <&scmi_clk CK_SCMI_PLL3_Q>,
++		 <&scmi_clk CK_SCMI_PLL3_R>,
++		 <&scmi_clk CK_SCMI_PLL4_P>,
++		 <&scmi_clk CK_SCMI_PLL4_Q>,
++		 <&scmi_clk CK_SCMI_PLL4_R>,
++		 <&scmi_clk CK_SCMI_MPU>,
++		 <&scmi_clk CK_SCMI_AXI>,
++		 <&scmi_clk CK_SCMI_MLAHB>,
++		 <&scmi_clk CK_SCMI_CKPER>,
++		 <&scmi_clk CK_SCMI_PCLK1>,
++		 <&scmi_clk CK_SCMI_PCLK2>,
++		 <&scmi_clk CK_SCMI_PCLK3>,
++		 <&scmi_clk CK_SCMI_PCLK4>,
++		 <&scmi_clk CK_SCMI_PCLK5>,
++		 <&scmi_clk CK_SCMI_PCLK6>,
++		 <&scmi_clk CK_SCMI_CKTIMG1>,
++		 <&scmi_clk CK_SCMI_CKTIMG2>,
++		 <&scmi_clk CK_SCMI_CKTIMG3>;
+ 	bootph-all;
+ };
+ 
+-- 
+2.51.0
+

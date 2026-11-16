@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aleksei Sviridkin <f@lex.la>
+Date: Tue, 22 Sep 2026 18:30:18 +0300
+Subject: [PATCH] arm: mediatek: allow a board to carry the arm64 kernel image header
+
+When I brought U-Boot up on a Keenetic KN-1012, an MT7981 consumer
+router, its stock loader started nothing I offered it but an arm64
+kernel image, so U-Boot has to be chainloaded as one and needs that
+image header in front of it. U-Boot links at 0x41e00000 there and the
+header carries a text_offset of 0x80000, the value the board was brought
+up with, which puts the base that offset is measured from at 0x41d80000;
+an offset base equal to TEXT_BASE gives a zero offset.
+
+Neither LINUX_KERNEL_IMAGE_HEADER nor LNX_KRNL_IMG_TEXT_OFFSET_BASE has
+a prompt, so no defconfig reaches either. Prompting one of them in
+arch/arm/Kconfig would change a symbol every arm64 platform shares for
+the sake of one board, and giving the offset base a default of TEXT_BASE
+there would hand every platform that selects the header and forgets its
+own value a silent zero offset. A board that needs the header is
+expected to select it and supply the value itself, so both the prompt
+and the value stay inside the platform that wants them.
+
+MediaTek has nowhere else to put them. Three of the eight platforms
+carrying the offset base today do it from a board Kconfig; MediaTek has
+no board Kconfig at all, and a SoC target is no substitute:
+TARGET_MT7981, MT7986 and MT7987 carry three defconfigs each and
+TARGET_MT7988 two, so a value written under one of them is one value for
+every board on that SoC, with nowhere left to override it. The defconfig
+is the only per-board file Kconfig reads on MediaTek, so that is where
+the value has to be reachable from: a platform bool that selects the
+header, and the offset base redeclared under it with a prompt and
+default TEXT_BASE, a default only a board that turns the bool on can
+reach and whose help text says it gives a zero offset. No board here
+sets them: the one this comes from is supported out of tree and is not
+on its way in.
+
+Not taken upstream, kept local:
+https://lore.kernel.org/u-boot/20260923225350.1645617-1-f@lex.la/
+
+Assisted-by: LLM
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+---
+--- a/arch/arm/mach-mediatek/Kconfig
++++ b/arch/arm/mach-mediatek/Kconfig
+@@ -173,6 +173,23 @@ config MTK_MEM_MAP_MMIO_SIZE
+ 	help
+ 		Target-specific MMIO region size in mem_map.
+ 
++config MTK_KERNEL_IMAGE_HEADER
++	bool "Prepend an arm64 Linux kernel image header"
++	select LINUX_KERNEL_IMAGE_HEADER
++	help
++	  Build U-Boot with the arm64 Linux kernel image header in front of
++	  it, so that a vendor bootloader that only starts a Linux kernel
++	  image starts U-Boot as its payload.
++
++config LNX_KRNL_IMG_TEXT_OFFSET_BASE
++	hex "Address the image header's text offset is measured from"
++	depends on MTK_KERNEL_IMAGE_HEADER
++	default TEXT_BASE
++	help
++	  The header's text_offset field is CONFIG_TEXT_BASE minus this value.
++	  Set it so that the difference is the text offset the vendor
++	  bootloader expects; the default gives a zero offset.
++
+ endif
+ 
+ config SYS_BOARD

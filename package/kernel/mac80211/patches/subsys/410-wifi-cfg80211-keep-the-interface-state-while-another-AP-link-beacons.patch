@@ -1,0 +1,50 @@
+From ce8ef1122015eea58c300485a330320985a27a19 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 29 Sep 2026 07:41:25 +0200
+Subject: [PATCH] wifi: cfg80211: keep the interface state while another AP
+ link beacons
+
+Since stop_ap works per link, ___cfg80211_stop_ap() stops one link of
+an AP MLD, but clears state that belongs to the interface: the
+connection owner, the SSID and the QoS map. The other links keep
+beaconing with an empty SSID in NL80211_CMD_GET_INTERFACE and no DSCP
+to user priority map, until the next START_AP on some link sets them
+again.
+
+Clear them only when no link of the interface beacons any more.
+
+This changes what userspace sees. nl80211_start_ap() refuses, with
+-EINVAL, a link whose SSID differs from the one the interface holds
+("require identical SSID for MLO"). With the SSID kept, a START_AP that
+changes the SSID of one link while another link beacons with the old
+one now fails, where it succeeded before. Userspace has to stop all
+links of the interface before it starts them with a new SSID, which is
+what an SSID shared by an AP MLD needs.
+
+Fixes: 7b0a0e3c3a88 ("wifi: cfg80211: do some rework towards MLO link APIs")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ net/wireless/ap.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+--- a/net/wireless/ap.c
++++ b/net/wireless/ap.c
+@@ -35,12 +35,15 @@ static int ___cfg80211_stop_ap(struct cf
+ 
+ 	err = rdev_stop_ap(rdev, dev, link_id);
+ 	if (!err) {
+-		wdev->conn_owner_nlportid = 0;
+ 		wdev->links[link_id].ap.beacon_interval = 0;
+ 		memset(&wdev->links[link_id].ap.chandef, 0,
+ 		       sizeof(wdev->links[link_id].ap.chandef));
+-		wdev->u.ap.ssid_len = 0;
+-		rdev_set_qos_map(rdev, dev, NULL);
++
++		if (!cfg80211_beaconing_iface_active(wdev)) {
++			wdev->conn_owner_nlportid = 0;
++			wdev->u.ap.ssid_len = 0;
++			rdev_set_qos_map(rdev, dev, NULL);
++		}
+ 		if (notify)
+ 			nl80211_send_ap_stopped(wdev, link_id);
+ 

@@ -1,0 +1,43 @@
+From ff5a2a7acec1bcd0921f986c8fd1c0285ed97b50 Mon Sep 17 00:00:00 2001
+From: Thomas Fourier <fourier.thomas@gmail.com>
+Date: Thu, 15 Oct 2026 16:01:09 +0200
+Subject: [PATCH] net: ethernet: mtk_wed: Fix dma_unmap_single() size
+
+In mtk_wed_wo_queue_refill(), the entry->buf is DMA mapped with length
+q->buf_size which saved in entry->len. However, in mtk_wed_wo_dequeue(),
+the same buffer is DMA unmapped with length buf_len which is set to
+SKB_WITH_OVERHEAD(q->buf_size).
+
+Change the size to q->buf_size.
+
+This was discovered with static analysis and was only compile-tested.
+
+Cc: stable+noautosel@kernel.org # LLM report + LLM fix, untested
+Fixes: 799684448e3e ("net: ethernet: mtk_wed: introduce wed wo support")
+Signed-off-by: Thomas Fourier <fourier.thomas@gmail.com>
+Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20261015140110.41988-2-fourier.thomas@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/mediatek/mtk_wed_wo.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_wed_wo.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed_wo.c
+@@ -99,7 +99,6 @@ static void *
+ mtk_wed_wo_dequeue(struct mtk_wed_wo *wo, struct mtk_wed_wo_queue *q, u32 *len,
+ 		   bool flush)
+ {
+-	int buf_len = SKB_WITH_OVERHEAD(q->buf_size);
+ 	int index = (q->tail + 1) % q->n_desc;
+ 	struct mtk_wed_wo_queue_entry *entry;
+ 	struct mtk_wed_wo_queue_desc *desc;
+@@ -123,7 +122,7 @@ mtk_wed_wo_dequeue(struct mtk_wed_wo *wo
+ 		*len = FIELD_GET(MTK_WED_WO_CTL_SD_LEN0,
+ 				 le32_to_cpu(READ_ONCE(desc->ctrl)));
+ 	if (buf)
+-		dma_unmap_single(wo->hw->dev, entry->addr, buf_len,
++		dma_unmap_single(wo->hw->dev, entry->addr, q->buf_size,
+ 				 DMA_FROM_DEVICE);
+ 	entry->buf = NULL;
+ 

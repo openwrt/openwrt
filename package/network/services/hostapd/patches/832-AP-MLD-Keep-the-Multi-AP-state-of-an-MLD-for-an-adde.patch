@@ -1,0 +1,112 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 00:51:00 +0200
+Subject: [PATCH] AP MLD: Keep the Multi-AP state of an MLD for an added link
+ profile without the element
+
+hostapd checks the per-STA profile of a link that a Link Reconfiguration
+Request adds on its own, as IEEE Std 802.11be-2024, 35.3.6.4 defines it:
+a complete profile with no inheritance. A Multi-AP backhaul STA MLD that
+omits the Multi-AP element there, which wpa_supplicant did up to now,
+is refused with status 12 on a backhaul-only BSS. On a BSS that is
+fronthaul and backhaul, check_multi_ap() clears WLAN_STA_MULTI_AP of the
+new link STA, which the link STA copied from the origin STA of the MLD.
+If that link STA is the last one freed, its free leaves the AP_VLAN of
+the MLD.
+
+For interoperability with such stations, accept a profile that 35.3.6.4
+calls incomplete: where a link addition profile has no Multi-AP element
+and the origin STA holds WLAN_STA_MULTI_AP, check the link against the
+element of the association, as inheritance from the association would
+give it. The STA keeps the Multi-AP profile of that element, and the
+added link STA copies it from the origin STA. So the
+multi_ap_client_disallow setting of the added link's BSS still applies.
+A profile with the element is checked as before, and an MLD that did not
+associate as a Multi-AP backhaul STA is still refused on a backhaul-only
+BSS. Upstream main 741d70dd8e32 checks the profile alone.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -5052,7 +5052,8 @@ static u16 check_wmm(struct hostapd_data
+ }
+ 
+ static u16 check_multi_ap(struct hostapd_data *hapd, struct sta_info *sta,
+-			  const u8 *multi_ap_ie, size_t multi_ap_len)
++			  const u8 *multi_ap_ie, size_t multi_ap_len,
++			  bool mld_backhaul_sta)
+ {
+ 	struct multi_ap_params multi_ap;
+ 	u16 status;
+@@ -5062,7 +5063,16 @@ static u16 check_multi_ap(struct hostapd
+ 	if (!hapd->conf->multi_ap)
+ 		return WLAN_STATUS_SUCCESS;
+ 
+-	if (!multi_ap_ie) {
++	if (multi_ap_ie) {
++		status = check_multi_ap_ie(multi_ap_ie + 4, multi_ap_len - 4,
++					   &multi_ap);
++		if (status != WLAN_STATUS_SUCCESS)
++			return status;
++	} else if (mld_backhaul_sta) {
++		os_memset(&multi_ap, 0, sizeof(multi_ap));
++		multi_ap.capability = MULTI_AP_BACKHAUL_STA;
++		multi_ap.profile = sta->multi_ap_profile;
++	} else {
+ 		if (!(hapd->conf->multi_ap & FRONTHAUL_BSS)) {
+ 			hostapd_logger(hapd, sta->addr,
+ 				       HOSTAPD_MODULE_IEEE80211,
+@@ -5074,11 +5084,6 @@ static u16 check_multi_ap(struct hostapd
+ 		return WLAN_STATUS_SUCCESS;
+ 	}
+ 
+-	status = check_multi_ap_ie(multi_ap_ie + 4, multi_ap_len - 4,
+-				   &multi_ap);
+-	if (status != WLAN_STATUS_SUCCESS)
+-		return status;
+-
+ 	if (multi_ap.capability && multi_ap.capability != MULTI_AP_BACKHAUL_STA)
+ 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
+ 			       HOSTAPD_LEVEL_INFO,
+@@ -5122,6 +5127,7 @@ static u16 check_multi_ap(struct hostapd
+ 			       "Backhaul STA tries to associate with fronthaul-only BSS");
+ 
+ 	sta->flags |= WLAN_STA_MULTI_AP;
++	sta->multi_ap_profile = multi_ap.profile;
+ 	return WLAN_STATUS_SUCCESS;
+ }
+ 
+@@ -5599,7 +5605,14 @@ static int __check_assoc_ies(struct host
+ 	if (resp != WLAN_STATUS_SUCCESS)
+ 		goto out;
+ 
+-	resp = check_multi_ap(hapd, sta, elems->multi_ap, elems->multi_ap_len);
++	/* IEEE Std 802.11be-2024, 35.3.6.4 asks for the complete profile, with
++	 * no inheritance, in a link addition, so also for the Multi-AP element
++	 * that an association carries outside the Basic Multi-Link element.
++	 * Some stations omit it there; check the link against the element of
++	 * the association of a backhaul STA MLD then. */
++	resp = check_multi_ap(hapd, sta, elems->multi_ap, elems->multi_ap_len,
++			      type == LINK_PARSE_RECONF &&
++			      (sta->flags & WLAN_STA_MULTI_AP));
+ 	if (resp != WLAN_STATUS_SUCCESS)
+ 		goto out;
+ 
+@@ -6608,6 +6621,7 @@ int ieee80211_ml_process_link(struct hos
+ 	}
+ 
+ 	sta->flags |= origin_sta->flags | WLAN_STA_ASSOC_REQ_OK;
++	sta->multi_ap_profile = origin_sta->multi_ap_profile;
+ 	sta->mld_assoc_link_id = origin_sta->mld_assoc_link_id;
+ 	ap_sta_set_mld(sta, true);
+ 	sta->auth_alg = origin_sta->auth_alg;
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -114,6 +114,7 @@ struct sta_info {
+ 	u8 supported_rates[WLAN_SUPP_RATES_MAX];
+ 	int supported_rates_len;
+ 	u8 qosinfo; /* Valid when WLAN_STA_WMM is set */
++	u8 multi_ap_profile; /* Valid when WLAN_STA_MULTI_AP is set */
+   u32 bandwidth[2];
+ #ifdef CONFIG_ENC_ASSOC
+ 	bool epp_sta; /* Indicates if the station is an EPP peer */

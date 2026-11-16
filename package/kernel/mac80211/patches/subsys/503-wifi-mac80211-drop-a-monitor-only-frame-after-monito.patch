@@ -1,0 +1,35 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 5 Nov 2026 17:49:15 +0100
+Subject: [PATCH] wifi: mac80211: drop a monitor-only frame after monitor delivery
+
+With a monitor up, ieee80211_rx_monitor() consumes a frame that
+should_drop_frame() rejects only where exactly one monitor takes it.
+Two or more monitors get a copy, and a monitor that does not take the
+frame gets nothing. In both cases the function returns the original
+frame, and __ieee80211_rx_handle_packet() processes it, since it reads
+none of the flags that should_drop_frame() tests. A frame with
+RX_FLAG_ONLY_MONITOR, for example one that the driver marked for a
+failed PN check or an ICV error, thus reaches the stack.
+
+Free such a frame after the monitors received it, like the branch for
+no monitor does, so that the number of monitors does not decide whether
+a frame goes on to the RX path.
+
+Fixes: 127f60bfa98f ("mac80211: rewrite monitor mode delivery logic")
+Fixes: f92e0cf19ae0 ("wifi: mac80211: filter on monitor interfaces based on configured channel")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -979,6 +979,11 @@ ieee80211_rx_monitor(struct ieee80211_lo
+ 	if (!origskb)
+ 		return NULL;
+ 
++	if (only_monitor) {
++		dev_kfree_skb(origskb);
++		return NULL;
++	}
++
+ 	return ieee80211_clean_skb(origskb, present_fcs_len, rtap_space);
+ }
+ 

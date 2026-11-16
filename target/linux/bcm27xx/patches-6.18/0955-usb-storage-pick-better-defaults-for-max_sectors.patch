@@ -1,0 +1,45 @@
+From 7d26c1e1d4174c42ccc813087b4a9b4423b5559d Mon Sep 17 00:00:00 2001
+From: Jonathan Bell <jonathan@raspberrypi.com>
+Date: Wed, 26 Aug 2026 14:10:10 +0100
+Subject: [PATCH] usb-storage: pick better defaults for max_sectors
+
+Apply the higher USB3 limit to USB3 devices connected to USB2 ports,
+detectable through the existence of a SuperSpeed companion descriptor.
+
+For 16K page platforms, use 192 in preference to 240 as this breaks
+transfers on a 64-sector boundary instead of 32. Middle-of-the-range
+devices show a modest sequential speed increase with 64s alignment.
+
+Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
+---
+ drivers/usb/storage/scsiglue.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+--- a/drivers/usb/storage/scsiglue.c
++++ b/drivers/usb/storage/scsiglue.c
+@@ -111,7 +111,8 @@ static int sdev_configure(struct scsi_de
+ 		 * let the queue segment size sort out the real limit.
+ 		 */
+ 		lim->max_hw_sectors = 0x7FFFFF;
+-	} else if (us->pusb_dev->speed >= USB_SPEED_SUPER) {
++	} else if (us->pusb_dev->speed >= USB_SPEED_SUPER ||
++		   (us->pusb_dev->bos && us->pusb_dev->bos->ss_cap)) {
+ 		/*
+ 		 * USB3 devices will be limited to 2048 sectors. This gives us
+ 		 * better throughput on most devices.
+@@ -120,6 +121,15 @@ static int sdev_configure(struct scsi_de
+ 	}
+ 
+ 	/*
++	 * The default of 240 sectors on 16K page platforms causes decomposition
++	 * of transfers into lengths of 224 sectors aligned to 32 sectors.
++	 * Middle-of-the-range devices show a modest sequential speed increase
++	 * with 192 sectors (64s alignment).
++	 */
++	if (lim->max_hw_sectors == 240 && PAGE_SIZE == SZ_16K)
++		lim->max_hw_sectors = 192;
++
++	/*
+ 	 * The max_hw_sectors should be up to maximum size of a mapping for
+ 	 * the device. Otherwise, a DMA API might fail on swiotlb environment.
+ 	 */

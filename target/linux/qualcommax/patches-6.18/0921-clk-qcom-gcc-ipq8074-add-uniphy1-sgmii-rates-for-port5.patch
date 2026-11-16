@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Chris Busch <chrisb@toroidalsoftware.com>
+Subject: [PATCH] clk: qcom: gcc-ipq8074: add uniphy1 SGMII rates for port5
+
+Port 5 can be fed from uniphy0 or uniphy1. Every port5 entry naming
+uniphy1 assumes it runs at 312.5 MHz, which is 2500BASE-X. In SGMII the
+uniphy runs at 125 MHz, and the only divide-by-one entry names uniphy0,
+so a board wiring port5 to uniphy1 has no valid parent at 1 Gbps or
+100 Mbps. Receive data is then sampled against a source that is not
+running, which shows up as CRC and length errors with no good frames,
+while transmit is unaffected because it is timed by the MAC.
+
+Port 6 already covers both uniphy2 rates. Add the matching uniphy1
+entries to port5. The uniphy0 entries stay last, so boards that drive
+port5 from uniphy0 are unaffected.
+
+Signed-off-by: Chris Busch <chrisb@toroidalsoftware.com>
+---
+--- a/drivers/clk/qcom/gcc-ipq8074.c
++++ b/drivers/clk/qcom/gcc-ipq8074.c
+@@ -1678,11 +1678,13 @@ static struct clk_regmap_div nss_port4_t
+ };
+ 
+ static const struct freq_conf ftbl_nss_port5_rx_clk_src_25[] = {
++	C(P_UNIPHY1_RX, 5, 0, 0),
+ 	C(P_UNIPHY1_RX, 12.5, 0, 0),
+ 	C(P_UNIPHY0_RX, 5, 0, 0),
+ };
+ 
+ static const struct freq_conf ftbl_nss_port5_rx_clk_src_125[] = {
++	C(P_UNIPHY1_RX, 1, 0, 0),
+ 	C(P_UNIPHY1_RX, 2.5, 0, 0),
+ 	C(P_UNIPHY0_RX, 1, 0, 0),
+ };
+@@ -1748,11 +1750,13 @@ static struct clk_regmap_div nss_port5_r
+ };
+ 
+ static const struct freq_conf ftbl_nss_port5_tx_clk_src_25[] = {
++	C(P_UNIPHY1_TX, 5, 0, 0),
+ 	C(P_UNIPHY1_TX, 12.5, 0, 0),
+ 	C(P_UNIPHY0_TX, 5, 0, 0),
+ };
+ 
+ static const struct freq_conf ftbl_nss_port5_tx_clk_src_125[] = {
++	C(P_UNIPHY1_TX, 1, 0, 0),
+ 	C(P_UNIPHY1_TX, 2.5, 0, 0),
+ 	C(P_UNIPHY0_TX, 1, 0, 0),
+ };

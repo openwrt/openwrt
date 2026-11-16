@@ -1,0 +1,26 @@
+From 4ac14f7118806544821d6d53161fc9808cb33f33 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 4 Nov 2026 11:33:56 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Fix the gamma segments selection
+
+The gamma out handler tests the mode field for the 48-segment value,
+so the 48-segment bit follows the equidistant mode and the segments
+field of the block has no effect. Test the segments field.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkisp2/rkisp2-params.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
+@@ -340,7 +340,7 @@ static void rkisp2_params_goc(struct rki
+ 
+ 	if (arg->mode == RKISP2_ISP_GOC_MODE_EQUIDISTANT)
+ 		control = ISP3X_GAMMA_OUT_CTRL_MODE_EQUIDISTANT;
+-	if (arg->mode == RKISP2_ISP_GOC_SEGMENTS_48)
++	if (arg->segments == RKISP2_ISP_GOC_SEGMENTS_48)
+ 		control |= ISP3X_GAMMA_OUT_CTRL_SEGMENTS_48;
+ 	control |= ISP3X_GAMMA_OUT_CTRL_EN;
+ 	rkisp2_write(params->rkisp2, ISP3X_GAMMA_OUT_CTRL, control);

@@ -1,0 +1,49 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 14 Oct 2026 18:00:00 -0700
+Subject: [PATCH] net: dsa: tag_brcm: use the regular tag on other BCM58xx CPU
+ ports
+
+Port 8 of BCM58xx has the flow accelerator in front of it and needs the
+prepended Broadcom tag, so b53 picks brcm-prepend for that switch. Its
+port 7, connected to another AMAC, uses the regular tag after the source
+address, and a switch tree can only have one tagging protocol.
+
+Let brcm-prepend use the regular tag layout on any CPU port other than
+8, so that a BCM58xx switch can use both.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/net/dsa/tag_brcm.c
++++ b/net/dsa/tag_brcm.c
+@@ -372,9 +372,18 @@ MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROT
+ #endif /* CONFIG_NET_DSA_TAG_BRCM_LEGACY_FCS */
+ 
+ #if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM_PREPEND)
++/* Only port 8 of BCM58xx, which has the flow accelerator in front of it,
++ * uses the prepended tag. Another CPU port of the same switch uses the
++ * regular one.
++ */
+ static struct sk_buff *brcm_tag_xmit_prepend(struct sk_buff *skb,
+ 					     struct net_device *dev)
+ {
++#if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM)
++	if (dsa_user_to_port(dev)->cpu_dp->index != 8)
++		return brcm_tag_xmit(skb, dev);
++#endif
++
+ 	/* tag is prepended to the packet */
+ 	return brcm_tag_xmit_ll(skb, dev, 0);
+ }
+@@ -382,6 +391,11 @@ static struct sk_buff *brcm_tag_xmit_pre
+ static struct sk_buff *brcm_tag_rcv_prepend(struct sk_buff *skb,
+ 					    struct net_device *dev)
+ {
++#if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM)
++	if (dev->dsa_ptr->index != 8)
++		return brcm_tag_rcv(skb, dev);
++#endif
++
+ 	/* tag is prepended to the packet */
+ 	return brcm_tag_rcv_ll(skb, dev, ETH_HLEN);
+ }

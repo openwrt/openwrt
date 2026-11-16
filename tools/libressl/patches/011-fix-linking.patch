@@ -1,0 +1,30 @@
+--- a/libcrypto.pc.in
++++ b/libcrypto.pc.in
+@@ -23,6 +23,5 @@ includedir=@includedir@
+ Name: LibreSSL-libcrypto
+ Description: LibreSSL cryptography library
+ Version: @VERSION@
+-Libs: -L${libdir} -lcrypto
+-Libs.private: @LIBS@ @PLATFORM_LDADD@
++Libs: -L${libdir} -lcrypto @LIBS@ @PLATFORM_LDADD@
+ Cflags: -I${includedir}
+--- a/libssl.pc.in
++++ b/libssl.pc.in
+@@ -23,6 +23,6 @@ includedir=@includedir@
+ Name: LibreSSL-libssl
+ Description: Secure Sockets Layer and cryptography libraries
+ Version: @VERSION@
+-Requires.private: libcrypto
++Requires: libcrypto
+ Libs: -L${libdir} -lssl
+ Cflags: -I${includedir}
+--- a/libtls.pc.in
++++ b/libtls.pc.in
+@@ -23,6 +23,5 @@ includedir=@includedir@
+ Name: LibreSSL-libtls
+ Description: Secure communications using the TLS socket protocol.
+ Version: @VERSION@
+-Libs: -L${libdir} -ltls
+-Libs.private: @LIBS@ @PLATFORM_LDADD@ -lssl -lcrypto
++Libs: -L${libdir} -ltls @LIBS@ @PLATFORM_LDADD@ -lssl -lcrypto
+ Cflags: -I${includedir}

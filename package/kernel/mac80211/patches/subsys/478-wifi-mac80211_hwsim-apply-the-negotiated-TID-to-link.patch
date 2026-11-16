@@ -1,0 +1,188 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 06:00:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: apply the negotiated TID-to-link mapping
+ of a station
+
+The AP interface type of mac80211_hwsim declares TID-To-Link Mapping
+Negotiation Support, but mac80211_hwsim_select_tx_link() picks a link
+of a non-AP MLD without regard to a negotiated mapping.
+
+Keep the downlink mapping of each TID of a station, and the links to
+which a TID maps in either direction. A link to which no TID maps is
+disabled for all frames, Management and Control frames included (IEEE
+802.11be-2024 35.3.7.2.1), so no frame to the station goes on it. A QoS
+Data or BlockAckReq frame goes only on a link that the downlink mapping
+of its TID gives. All of this applies within the links that an
+advertised mapping leaves enabled. Declare
+NL80211_EXT_FEATURE_AP_NEG_TTLM.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_i.h
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_i.h
+@@ -37,6 +37,13 @@ struct hwsim_sta_priv {
+ 	unsigned int last_link;
+ 	u16 active_links_rx;
+ 
++	/* negotiated downlink links of each TID, 0 for the default mapping */
++	u16 neg_ttlm_dlink[IEEE80211_TTLM_NUM_TIDS];
++	/* links that a TID maps to in either direction, 0 for the default
++	 * mapping
++	 */
++	u16 neg_ttlm_links;
++
+ 	/* mac80211 books TX on the default link only */
+ 	struct hwsim_link_tx_stats link_tx[IEEE80211_MLD_MAX_NUM_LINKS];
+ 	u16 link_tx_valid;
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -2316,16 +2316,63 @@ static bool mac80211_hwsim_tx_frame_no_n
+ 	return ack;
+ }
+ 
++/* The TID of a QoS Data or a BlockAckReq frame, or -1 */
++static int hwsim_frame_tid(struct sk_buff *skb)
++{
++	struct ieee80211_hdr *hdr = (void *)skb->data;
++	struct ieee80211_bar *bar = (void *)skb->data;
++
++	if (ieee80211_is_data_qos(hdr->frame_control))
++		return ieee80211_get_tid(hdr);
++
++	if (ieee80211_is_back_req(hdr->frame_control) &&
++	    skb->len >= sizeof(*bar))
++		return le16_get_bits(bar->control,
++				     IEEE80211_BAR_CTRL_TID_INFO_MASK);
++
++	return -1;
++}
++
++/* The links of @sta on which the AP MLD can send it a frame of @tid, or
++ * with @tid -1, any frame. A link to which no TID maps in either direction
++ * is disabled for all frames (IEEE 802.11be-2024 35.3.7.2.1).
++ */
++static u16 hwsim_sta_tx_links(struct ieee80211_vif *vif,
++			      struct ieee80211_sta *sta, int tid)
++{
++	struct hwsim_sta_priv *sp = (void *)sta->drv_priv;
++	struct hwsim_vif_priv *vp = (void *)vif->drv_priv;
++	u16 links = sta->valid_links & sp->active_links_rx;
++	u16 disabled, mapped, dlink = 0;
++
++	/* A non-AP MLD applies an advertised mapping only to its setup links
++	 * (IEEE 802.11be-2024 35.3.7.2.4), so one without a setup link in the
++	 * mapping keeps all of them.
++	 */
++	disabled = READ_ONCE(vp->adv_ttlm.disabled_links);
++	if (sta->valid_links & ~disabled)
++		links &= ~disabled;
++
++	if (tid >= 0)
++		dlink = READ_ONCE(sp->neg_ttlm_dlink[tid %
++						     IEEE80211_TTLM_NUM_TIDS]);
++	mapped = dlink ?: READ_ONCE(sp->neg_ttlm_links);
++	if (mapped & sta->valid_links)
++		links &= mapped;
++
++	return links;
++}
++
+ static struct ieee80211_bss_conf *
+ mac80211_hwsim_select_tx_link(struct mac80211_hwsim_data *data,
+ 			      struct ieee80211_vif *vif,
+ 			      struct ieee80211_sta *sta,
+-			      struct ieee80211_hdr *hdr,
++			      struct sk_buff *skb,
+ 			      struct ieee80211_link_sta **link_sta)
+ {
++	struct ieee80211_hdr *hdr = (void *)skb->data;
+ 	struct hwsim_sta_priv *sp = (void *)sta->drv_priv;
+-	struct hwsim_vif_priv *vp = (void *)vif->drv_priv;
+-	u16 disabled;
++	u16 links;
+ 	int i;
+ 
+ 	if (!ieee80211_vif_is_mld(vif))
+@@ -2336,13 +2383,7 @@ mac80211_hwsim_select_tx_link(struct mac
+ 	if (WARN_ON_ONCE(!sta || !sta->valid_links))
+ 		return &vif->bss_conf;
+ 
+-	/* A non-AP MLD applies an advertised mapping only to its setup links
+-	 * (IEEE 802.11be-2024 35.3.7.2.4), so one without a setup link in the
+-	 * mapping keeps all of them.
+-	 */
+-	disabled = READ_ONCE(vp->adv_ttlm.disabled_links);
+-	if (!(sta->valid_links & ~disabled))
+-		disabled = 0;
++	links = hwsim_sta_tx_links(vif, sta, hwsim_frame_tid(skb));
+ 
+ 	for (i = 0; i < ARRAY_SIZE(vif->link_conf); i++) {
+ 		struct ieee80211_bss_conf *bss_conf;
+@@ -2351,13 +2392,7 @@ mac80211_hwsim_select_tx_link(struct mac
+ 		/* round-robin the available link IDs */
+ 		link_id = (sp->last_link + i + 1) % ARRAY_SIZE(vif->link_conf);
+ 
+-		if (!(vif->active_links & BIT(link_id)))
+-			continue;
+-
+-		if (disabled & BIT(link_id))
+-			continue;
+-
+-		if (!(sp->active_links_rx & BIT(link_id)))
++		if (!(vif->active_links & links & BIT(link_id)))
+ 			continue;
+ 
+ 		*link_sta = rcu_dereference(sta->link[link_id]);
+@@ -2621,7 +2656,7 @@ static void mac80211_hwsim_tx(struct iee
+ 				link_sta = rcu_dereference(sta->link[link]);
+ 		} else {
+ 			bss_conf = mac80211_hwsim_select_tx_link(data, vif, sta,
+-								 hdr, &link_sta);
++								 skb, &link_sta);
+ 		}
+ 
+ 		if (link_sta) {
+@@ -3860,6 +3895,26 @@ mac80211_hwsim_adv_ttlm_cancel(struct ie
+ 	spin_unlock_bh(&ttlm->lock);
+ }
+ 
++static int
++mac80211_hwsim_set_sta_ttlm(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++			    struct ieee80211_sta *sta,
++			    const struct ieee80211_neg_ttlm *ttlm)
++{
++	struct hwsim_sta_priv *sp = (void *)sta->drv_priv;
++	u16 links = 0;
++	int tid;
++
++	for (tid = 0; tid < IEEE80211_TTLM_NUM_TIDS; tid++) {
++		WRITE_ONCE(sp->neg_ttlm_dlink[tid],
++			   ttlm->valid ? ttlm->downlink[tid] : 0);
++		if (ttlm->valid)
++			links |= ttlm->downlink[tid] | ttlm->uplink[tid];
++	}
++	WRITE_ONCE(sp->neg_ttlm_links, links);
++
++	return 0;
++}
++
+ #ifdef CPTCFG_NL80211_TESTMODE
+ /*
+  * This section contains example code for using netlink
+@@ -5282,6 +5337,7 @@ static const struct ieee80211_ops mac802
+ 	.can_neg_ttlm = mac80211_hwsim_can_neg_ttlm,
+ 	.adv_ttlm_request = mac80211_hwsim_adv_ttlm_request,
+ 	.adv_ttlm_cancel = mac80211_hwsim_adv_ttlm_cancel,
++	.set_sta_ttlm = mac80211_hwsim_set_sta_ttlm,
+ };
+ 
+ struct hwsim_new_radio_params {
+@@ -7090,6 +7146,8 @@ static int mac80211_hwsim_new_radio(stru
+ 				      NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE);
+ 		wiphy_ext_feature_set(hw->wiphy,
+ 				      NL80211_EXT_FEATURE_AP_ADV_TTLM);
++		wiphy_ext_feature_set(hw->wiphy,
++				      NL80211_EXT_FEATURE_AP_NEG_TTLM);
+ 	} else {
+ 		ieee80211_hw_set(hw, HOST_BROADCAST_PS_BUFFERING);
+ 		ieee80211_hw_set(hw, PS_NULLFUNC_STACK);

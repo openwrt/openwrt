@@ -1,0 +1,104 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 31 Oct 2026 19:24:34 +0100
+Subject: [PATCH] nl80211: take a tagged EAPOL from the control port
+
+A Multi-AP backhaul with a Primary VLAN sends EAPOL frames with a
+C-Tag, and the receiver must take both forms. The kernel reports such
+a frame with ethertype 0x8100 and with the tag at the start of the
+data, which nl80211_control_port_frame() rejects as an unexpected
+ethertype.
+
+Remove the tag where the inner type is EAPOL. Both hostapd and
+wpa_supplicant then parse the frame as an untagged one, whatever VLAN ID
+it names. Report the tag on EVENT_EAPOL_RX, so that a station can answer
+in the form of the frame it received.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/drivers/driver.h               | 10 +++++++++-
+ src/drivers/driver_nl80211_event.c | 21 ++++++++++++++++++++-
+ 2 files changed, 29 insertions(+), 2 deletions(-)
+
+diff --git a/src/drivers/driver.h b/src/drivers/driver.h
+index ba20b3e4c2f4..b7d4ee9efd49 100644
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -7524,6 +7524,12 @@ union wpa_event_data {
+ 		size_t data_len;
+ 		enum frame_encryption encrypted;
+ 		int link_id;
++
++		/**
++		 * vlan_tci - TCI of the frame's C-Tag, or -1 for an untagged
++		 * frame
++		 */
++		int vlan_tci;
+ 	} eapol_rx;
+ 
+ 	/**
+@@ -8100,13 +8106,14 @@ static inline void drv_event_eapol_rx(void *ctx, const u8 *src, const u8 *data,
+ 	event.eapol_rx.data_len = data_len;
+ 	event.eapol_rx.encrypted = FRAME_ENCRYPTION_UNKNOWN;
+ 	event.eapol_rx.link_id = -1;
++	event.eapol_rx.vlan_tci = -1;
+ 	wpa_supplicant_event(ctx, EVENT_EAPOL_RX, &event);
+ }
+ 
+ static inline void drv_event_eapol_rx2(void *ctx, const u8 *src, const u8 *data,
+ 				       size_t data_len,
+ 				       enum frame_encryption encrypted,
+-				       int link_id)
++				       int link_id, int vlan_tci)
+ {
+ 	union wpa_event_data event;
+ 	os_memset(&event, 0, sizeof(event));
+@@ -8115,6 +8122,7 @@ static inline void drv_event_eapol_rx2(void *ctx, const u8 *src, const u8 *data,
+ 	event.eapol_rx.data_len = data_len;
+ 	event.eapol_rx.encrypted = encrypted;
+ 	event.eapol_rx.link_id = link_id;
++	event.eapol_rx.vlan_tci = vlan_tci;
+ 	wpa_supplicant_event(ctx, EVENT_EAPOL_RX, &event);
+ }
+ 
+diff --git a/src/drivers/driver_nl80211_event.c b/src/drivers/driver_nl80211_event.c
+index afec6b795402..7b9542fc8161 100644
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -4197,9 +4197,13 @@ static void nl80211_sta_opmode_change_event(struct wpa_driver_nl80211_data *drv,
+ }
+ 
+ 
++#define VLAN_TAG_LEN 4
++
+ static void nl80211_control_port_frame(struct i802_bss *bss, struct nlattr **tb)
+ {
+ 	u8 *src_addr;
++	u8 *frame;
++	size_t frame_len;
+ 	u16 ethertype;
+ 	enum frame_encryption encrypted;
+ 	int link_id;
+@@ -4229,7 +4233,22 @@ static void nl80211_control_port_frame(struct i802_bss *bss, struct nlattr **tb)
+ 		drv_event_eapol_rx2(bss->ctx, src_addr,
+ 				    nla_data(tb[NL80211_ATTR_FRAME]),
+ 				    nla_len(tb[NL80211_ATTR_FRAME]),
+-				    encrypted, link_id);
++				    encrypted, link_id, -1);
++		break;
++	case ETH_P_8021Q:
++		frame = nla_data(tb[NL80211_ATTR_FRAME]);
++		frame_len = nla_len(tb[NL80211_ATTR_FRAME]);
++		if (frame_len < VLAN_TAG_LEN ||
++		    WPA_GET_BE16(frame + 2) != ETH_P_PAE) {
++			wpa_printf(MSG_INFO,
++				   "nl80211: Unexpected tagged frame from "
++				   MACSTR " over control port",
++				   MAC2STR(src_addr));
++			break;
++		}
++		drv_event_eapol_rx2(bss->ctx, src_addr, frame + VLAN_TAG_LEN,
++				    frame_len - VLAN_TAG_LEN, encrypted,
++				    link_id, WPA_GET_BE16(frame));
+ 		break;
+ 	default:
+ 		wpa_printf(MSG_INFO,

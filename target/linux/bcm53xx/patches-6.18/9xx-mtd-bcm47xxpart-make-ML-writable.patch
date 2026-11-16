@@ -1,0 +1,38 @@
+--- a/drivers/mtd/parsers/bcm47xxpart.c	2026-11-16 00:19:45.639818586 +0000
++++ b/drivers/mtd/parsers/bcm47xxpart.c	2026-11-16 00:35:51.010696584 +0000
+@@ -153,7 +153,7 @@
+ 		 */
+ 		if (buf[0x100 / 4] == BOARD_DATA_MAGIC) {
+ 			bcm47xxpart_add_part(&parts[curr_part++], "board_data",
+-					     offset, MTD_WRITEABLE);
++					     offset, 0);
+ 			continue;
+ 		}
+ 
+@@ -168,7 +168,7 @@
+ 		if (buf[0x000 / 4] == POT_MAGIC1 &&
+ 		    (buf[0x004 / 4] & 0xFFFF) == POT_MAGIC2) {
+ 			bcm47xxpart_add_part(&parts[curr_part++], "POT", offset,
+-					     MTD_WRITEABLE);
++					     0);
+ 			continue;
+ 		}
+ 
+@@ -176,7 +176,7 @@
+ 		if (buf[0x010 / 4] == ML_MAGIC1 &&
+ 		    buf[0x014 / 4] == ML_MAGIC2) {
+ 			bcm47xxpart_add_part(&parts[curr_part++], "ML", offset,
+-					     MTD_WRITEABLE);
++					     0);
+ 			continue;
+ 		}
+ 
+@@ -254,7 +254,7 @@
+ 		/* Some devices (ex. WNDR3700v3) don't have a standard 'MPFR' */
+ 		if (buf[0x000 / 4] == BOARD_DATA_MAGIC2) {
+ 			bcm47xxpart_add_part(&parts[curr_part++], "board_data",
+-					     offset, MTD_WRITEABLE);
++					     offset, 0);
+ 			continue;
+ 		}
+ 	}

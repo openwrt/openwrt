@@ -1,0 +1,13 @@
+. /lib/functions.sh
+
+case "$(board_name)" in
+	bananapi,bpi-r3)
+	compat_version="$(uci get system.@system[0].compat_version)"
+	if [ "${compat_version%%.*}" = "1" ] && [ "${compat_version##*.}" -le 1 ]; then
+		uci set system.@system[0].compat_version="1.2"
+		uci commit system
+	fi
+	;;
+esac
+
+exit 0

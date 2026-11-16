@@ -1,0 +1,35 @@
+From 7cc96c412df5b3aeb01bf65361035a3c5cee428d Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <error27@gmail.com>
+Date: Wed, 20 May 2026 09:00:23 +0300
+Subject: [PATCH 3/4] iommu/vsi: Use list_for_each_entry()
+
+Smatch complains about the NULL check on "iommu" because list_entry()
+can't be NULL.  Clean up this code by using list_for_each_entry().
+
+Signed-off-by: Dan Carpenter <error27@gmail.com>
+Reviewed-by: Benjamin Gaignard <benjamin.gaignard@collabora.com>
+Signed-off-by: Joerg Roedel <joerg.roedel@amd.com>
+---
+ drivers/iommu/vsi-iommu.c | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
+
+--- a/drivers/iommu/vsi-iommu.c
++++ b/drivers/iommu/vsi-iommu.c
+@@ -366,15 +366,9 @@ static int vsi_iommu_map_iova(struct vsi
+ static void vsi_iommu_flush_tlb(struct iommu_domain *domain)
+ {
+ 	struct vsi_iommu_domain *vsi_domain = to_vsi_domain(domain);
+-	struct list_head *pos;
+-
+-	list_for_each(pos, &vsi_domain->iommus) {
+-		struct vsi_iommu *iommu;
+-
+-		iommu = list_entry(pos, struct vsi_iommu, node);
+-		if (!iommu)
+-			continue;
++	struct vsi_iommu *iommu;
+ 
++	list_for_each_entry(iommu, &vsi_domain->iommus, node) {
+ 		if (pm_runtime_get(iommu->dev) < 0)
+ 			continue;
+ 

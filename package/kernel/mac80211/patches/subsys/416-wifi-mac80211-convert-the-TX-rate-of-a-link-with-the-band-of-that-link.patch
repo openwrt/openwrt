@@ -1,0 +1,97 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 1 Oct 2026 20:43:40 +0200
+Subject: [PATCH] wifi: mac80211: convert the TX rate of a link with the band
+ of that link
+
+sta_set_link_sinfo() converts the last TX rate of a link with
+sta_set_rate_info_tx(), which takes the band of a legacy rate from
+ieee80211_get_sband(). That function warns on an MLD interface, and the
+band it returns is not the band of the link.
+
+Split the conversion into ieee80211_tx_rate_to_rate_info(), which takes
+the band from the caller. sta_set_link_sinfo() passes the band of the
+channel context of the link. sta_set_rate_info_tx() passes the band of
+the interface, as before.
+
+mac80211 books the last TX rate of an MLO station on the default link,
+from the TX status of a frame on any link, so a legacy index can lie
+beyond the bitrate table of the link's band. The conversion checks the
+index against the table.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ net/mac80211/cfg.c      | 20 +++++++++++++-------
+ net/mac80211/sta_info.c |  5 +++--
+ net/mac80211/sta_info.h |  3 +++
+ 3 files changed, 19 insertions(+), 9 deletions(-)
+
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -964,9 +964,9 @@ static int ieee80211_config_default_beac
+ 	return 0;
+ }
+ 
+-void sta_set_rate_info_tx(struct sta_info *sta,
+-			  const struct ieee80211_tx_rate *rate,
+-			  struct rate_info *rinfo)
++void ieee80211_tx_rate_to_rate_info(struct ieee80211_supported_band *sband,
++				    const struct ieee80211_tx_rate *rate,
++				    struct rate_info *rinfo)
+ {
+ 	rinfo->flags = 0;
+ 	if (rate->flags & IEEE80211_TX_RC_MCS) {
+@@ -977,11 +977,9 @@ void sta_set_rate_info_tx(struct sta_inf
+ 		rinfo->mcs = ieee80211_rate_get_vht_mcs(rate);
+ 		rinfo->nss = ieee80211_rate_get_vht_nss(rate);
+ 	} else {
+-		struct ieee80211_supported_band *sband;
+-
+-		sband = ieee80211_get_sband(sta->sdata);
+ 		WARN_ON_ONCE(sband && !sband->bitrates);
+-		if (sband && sband->bitrates)
++		if (sband && sband->bitrates && rate->idx >= 0 &&
++		    rate->idx < sband->n_bitrates)
+ 			rinfo->legacy = sband->bitrates[rate->idx].bitrate;
+ 	}
+ 	if (rate->flags & IEEE80211_TX_RC_40_MHZ_WIDTH)
+@@ -996,6 +994,14 @@ void sta_set_rate_info_tx(struct sta_inf
+ 		rinfo->flags |= RATE_INFO_FLAGS_SHORT_GI;
+ }
+ 
++void sta_set_rate_info_tx(struct sta_info *sta,
++			  const struct ieee80211_tx_rate *rate,
++			  struct rate_info *rinfo)
++{
++	ieee80211_tx_rate_to_rate_info(ieee80211_get_sband(sta->sdata), rate,
++				       rinfo);
++}
++
+ static int ieee80211_dump_station(struct wiphy *wiphy, struct wireless_dev *wdev,
+ 				  int idx, u8 *mac, struct station_info *sinfo)
+ {
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -3009,8 +3009,9 @@ static void sta_set_link_sinfo(struct st
+ 
+ 	if (!(link_sinfo->filled & BIT_ULL(NL80211_STA_INFO_TX_BITRATE)) &&
+ 	    ieee80211_rate_valid(&link_sta_info->tx_stats.last_rate)) {
+-		sta_set_rate_info_tx(sta, &link_sta_info->tx_stats.last_rate,
+-				     &link_sinfo->txrate);
++		ieee80211_tx_rate_to_rate_info(ieee80211_get_link_sband(link),
++					       &link_sta_info->tx_stats.last_rate,
++					       &link_sinfo->txrate);
+ 		link_sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_BITRATE);
+ 	}
+ 
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -984,6 +984,9 @@ static inline int sta_info_flush(struct
+ 	return __sta_info_flush(sdata, false, link_id, NULL);
+ }
+ 
++void ieee80211_tx_rate_to_rate_info(struct ieee80211_supported_band *sband,
++				    const struct ieee80211_tx_rate *rate,
++				    struct rate_info *rinfo);
+ void sta_set_rate_info_tx(struct sta_info *sta,
+ 			  const struct ieee80211_tx_rate *rate,
+ 			  struct rate_info *rinfo);

@@ -1,0 +1,19 @@
+name: Coverity scan build
+
+on:
+  schedule:
+    - cron: '30 2 * * 6'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  coverity_build:
+    name: Coverity x86/64 build
+    secrets:
+      coverity_api_token: ${{ secrets.COVERITY_API_TOKEN }}
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+    uses: openwrt/actions-shared-workflows/.github/workflows/coverity.yml@main

@@ -1,0 +1,23 @@
+From a627a7847ffa50eefedfe8cf842522a2c12e36c4 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 16 Oct 2026 23:04:00 +0100
+Subject: [PATCH] Fix off-by-one bounds check in DHCPv6 FQDN option.
+
+Thanks to Lucas Celant <lcelant@redhat.com> for spotting this.
+
+CVE-2026-93009 may apply.
+---
+ src/rfc3315.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/rfc3315.c
++++ b/src/rfc3315.c
+@@ -502,7 +502,7 @@ static int dhcp6_no_relay(struct state *
+  
+        state->fqdn_flags &= ~0x04;
+ 
+-       if (len != 0 && len < 255)
++       if (len >= 1 && len < 255)
+ 	 {
+ 	   unsigned char *pp, *op = opt6_ptr(opt, 1);
+ 	   char *pq = daemon->dhcp_buff;

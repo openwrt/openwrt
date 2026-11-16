@@ -1,0 +1,109 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 02:40:00 +0200
+Subject: [PATCH] wifi: mac80211: send MLO group frames only on links with a
+ running AP
+
+ieee80211_mlo_multicast_tx() sends a copy of each group addressed frame
+on every link in vif.active_links. ieee80211_stop_ap() for one link of
+an AP MLD keeps that link in active_links until the link itself goes,
+so the copy for the stopped link reaches a driver without a channel
+context for it. mac80211_hwsim warns:
+
+  TX w/o channel - queue = 0
+  WARNING: drivers/net/wireless/virtual/mac80211_hwsim_main.c:2623 at mac80211_hwsim_tx+0x7d4/0xbd0
+  Call Trace:
+   ieee80211_hwsim_wake_tx_queue+0x44/0x90
+   ieee80211_queue_skb+0x1c5/0x370
+   ieee80211_tx+0xd2/0x140
+   __ieee80211_subif_start_xmit+0x1cf/0x3f0
+   ieee80211_mlo_multicast_tx+0x7b/0xe0
+   ieee80211_subif_start_xmit+0xc4/0x180
+
+Reachable whenever user space stops one link of an AP MLD and removes
+the link later, as OpenWrt's hostapd does for an AP removal
+(IEEE 802.11be-2024 35.3.6.3): it stops the link at the removal TBTT.
+
+Send the copies only on links whose AP has a beacon, taken from the AP
+interface so that an AP VLAN follows the links of its AP. With no such
+link, drop the frame. A copy can wait in the TXQ of the interface while
+the AP of its link stops, so ieee80211_tx_dequeue() drops such a copy
+as well.
+
+Fixes: 963d0e8d08d9 ("wifi: mac80211: optionally implement MLO multicast TX")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -4042,6 +4042,32 @@ static bool ieee80211_drop_unauth_port(s
+ 	return true;
+ }
+ 
++/* a stopped link of an AP MLD stays in active_links until the link goes */
++static bool ieee80211_ap_link_running(struct ieee80211_sub_if_data *sdata,
++				      unsigned int link_id)
++{
++	struct ieee80211_sub_if_data *ap = container_of(sdata->bss,
++					   struct ieee80211_sub_if_data, u.ap);
++	struct ieee80211_link_data *link = rcu_dereference(ap->link[link_id]);
++
++	return link && rcu_access_pointer(link->u.ap.beacon);
++}
++
++/* the AP of the link of a group addressed frame can stop after the enqueue */
++static bool ieee80211_tx_link_stopped(struct ieee80211_sub_if_data *sdata,
++				      struct ieee80211_tx_info *info)
++{
++	unsigned int link_id = u32_get_bits(info->control.flags,
++					    IEEE80211_TX_CTRL_MLO_LINK);
++
++	if (link_id == IEEE80211_LINK_UNSPECIFIED ||
++	    (sdata->vif.type != NL80211_IFTYPE_AP &&
++	     sdata->vif.type != NL80211_IFTYPE_AP_VLAN))
++		return false;
++
++	return !ieee80211_ap_link_running(sdata, link_id);
++}
++
+ struct sk_buff *ieee80211_tx_dequeue(struct ieee80211_hw *hw,
+ 				     struct ieee80211_txq *txq)
+ {
+@@ -4106,6 +4132,11 @@ begin:
+ 	tx.skb = skb;
+ 	tx.sdata = vif_to_sdata(info->control.vif);
+ 
++	if (!txq->sta && ieee80211_tx_link_stopped(tx.sdata, info)) {
++		ieee80211_free_txskb(&local->hw, skb);
++		goto begin;
++	}
++
+ 	if (txq->sta) {
+ 		tx.sta = container_of(txq->sta, struct sta_info, sta);
+ 
+@@ -4723,11 +4754,26 @@ static void ieee80211_mlo_multicast_tx_o
+ 	__ieee80211_subif_start_xmit(out, sdata->dev, 0, ctrl_flags, NULL);
+ }
+ 
++static u16 ieee80211_mlo_multicast_links(struct ieee80211_sub_if_data *sdata)
++{
++	unsigned long active = sdata->vif.active_links;
++	unsigned int link_id;
++	u16 links = 0;
++
++	rcu_read_lock();
++	for_each_set_bit(link_id, &active, IEEE80211_MLD_MAX_NUM_LINKS)
++		if (ieee80211_ap_link_running(sdata, link_id))
++			links |= BIT(link_id);
++	rcu_read_unlock();
++
++	return links;
++}
++
+ static void ieee80211_mlo_multicast_tx(struct net_device *dev,
+ 				       struct sk_buff *skb)
+ {
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+-	unsigned long links = sdata->vif.active_links;
++	unsigned long links = ieee80211_mlo_multicast_links(sdata);
+ 	unsigned int link;
+ 	u32 ctrl_flags = IEEE80211_TX_CTRL_MCAST_MLO_FIRST_TX;
+ 

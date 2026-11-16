@@ -1,0 +1,40 @@
+From c218ce4f98eccf5a40de64c559c52d61e9cc78ee Mon Sep 17 00:00:00 2001
+From: Pavan Bobba <opensource206@gmail.com>
+Date: Tue, 28 Oct 2025 11:56:23 +0530
+Subject: [PATCH] media: v4l2-ctrls: set AV1 sequence flags for testing
+
+Initialize additional AV1 sequence parameters in std_init_compound()
+to make the default AV1 sequence control compatible with compliance
+and userspace testing tools.
+
+Specifically, set:
+ - enable both SUBSAMPLING_X and SUBSAMPLING_Y flags
+
+These defaults help ensure that V4L2_CID_AV1_SEQUENCE behaves
+consistently during validation and v4l2-compliance tests.
+
+Signed-off-by: Pavan Bobba <opensource206@gmail.com>
+Reviewed-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+[hverkuil: align everything a bit better]
+[hverkuil: replaced Pavan's comment with comment suggested by Nicolas]
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/v4l2-core/v4l2-ctrls-core.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/media/v4l2-core/v4l2-ctrls-core.c
++++ b/drivers/media/v4l2-core/v4l2-ctrls-core.c
+@@ -160,7 +160,13 @@ static void std_init_compound(const stru
+ 		break;
+ 	case V4L2_CTRL_TYPE_AV1_SEQUENCE:
+ 		p_av1_sequence = p;
++		/*
++		 * The initial profile is 0 which only allows YUV 420 subsampled
++		 * data. Set the subsampling flags accordingly.
++		 */
+ 		p_av1_sequence->bit_depth = 8;
++		p_av1_sequence->flags |= V4L2_AV1_SEQUENCE_FLAG_SUBSAMPLING_X |
++					 V4L2_AV1_SEQUENCE_FLAG_SUBSAMPLING_Y;
+ 		break;
+ 	case V4L2_CTRL_TYPE_FWHT_PARAMS:
+ 		p_fwht_params = p;

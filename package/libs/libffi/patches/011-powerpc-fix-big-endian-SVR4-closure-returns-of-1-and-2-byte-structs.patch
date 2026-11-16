@@ -1,0 +1,86 @@
+From ba994921506147dfeb2f38ad4d2874a5bd6e4f09 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 20 Oct 2026 23:37:11 +0000
+Subject: [PATCH] powerpc: fix big-endian SVR4 closure returns of 1- and 2-byte
+ structs
+
+With FFI_SYSV_STRUCT_RET a struct of up to 8 bytes is returned in r3/r4,
+right-justified if smaller than 4 bytes.  The closure function stores it
+at the start of the return value area, but closures returning a 1- or
+2-byte struct use the PPC_LD_U8 and PPC_LD_U16 jump table entries, which
+on big-endian load from offset 3 and 2, where an integer widened to
+ffi_arg is.
+
+Before the closure return handling moved from assembly to C, these
+structs were loaded from offset 0.  Add PPC32_SYSV_LD_STRUCT_1 and
+PPC32_SYSV_LD_STRUCT_2 entries that do so again on big-endian, and alias
+them to the integer entries on little-endian.  PPC32_SYSV_LD_STRUCT_7
+now branches to .Lstruct567 instead of falling through into it, so that
+the new entries follow it in the table.
+
+FFI_SYSV_STRUCT_RET is not the default on Linux, so the testsuite does
+not cover it.  Verified by building cls_1_1byte, cls_2byte and the other
+small struct closure tests with -msvr4-struct-return -D__SVR4_STRUCT_RETURN
+for 8548 and 464fp under qemu-user: cls_1_1byte and cls_2byte abort
+without this change and pass with it, the others pass either way.
+
+Fixes: 840add3b6a1c ("Add conditional target support for __int128 (#951)")
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/powerpc/ffi_powerpc.h |  4 ++++
+ src/powerpc/ffi_sysv.c    |  4 ++--
+ src/powerpc/ppc_closure.S | 10 +++++++++-
+ 3 files changed, 15 insertions(+), 3 deletions(-)
+
+--- a/src/powerpc/ffi_powerpc.h
++++ b/src/powerpc/ffi_powerpc.h
+@@ -60,11 +60,15 @@
+ #define PPC32_SYSV_LD_STRUCT_5	PPC32_LD_R3R4
+ #define PPC32_SYSV_LD_STRUCT_6	PPC32_LD_R3R4
+ #define PPC32_SYSV_LD_STRUCT_7	PPC32_LD_R3R4
++#define PPC32_SYSV_LD_STRUCT_1	PPC_LD_U8
++#define PPC32_SYSV_LD_STRUCT_2	PPC_LD_U16
+ #else
+ #define PPC32_SYSV_LD_STRUCT_3	11
+ #define PPC32_SYSV_LD_STRUCT_5	12
+ #define PPC32_SYSV_LD_STRUCT_6	13
+ #define PPC32_SYSV_LD_STRUCT_7	14
++#define PPC32_SYSV_LD_STRUCT_1	15
++#define PPC32_SYSV_LD_STRUCT_2	16
+ #endif
+ 
+ #else /* POWERPC64 */
+--- a/src/powerpc/ffi_sysv.c
++++ b/src/powerpc/ffi_sysv.c
+@@ -960,9 +960,9 @@ ffi_closure_helper_SYSV (ffi_cif *cif,
+ 	switch (size)
+ 	  {
+ 	  case 1:
+-	    return PPC_LD_U8;
++	    return PPC32_SYSV_LD_STRUCT_1;
+ 	  case 2:
+-	    return PPC_LD_U16;
++	    return PPC32_SYSV_LD_STRUCT_2;
+ 	  case 3:
+ 	    return PPC32_SYSV_LD_STRUCT_3;
+ 	  case 4:
+--- a/src/powerpc/ppc_closure.S
++++ b/src/powerpc/ppc_closure.S
+@@ -228,7 +228,15 @@ E PPC32_SYSV_LD_STRUCT_7
+ 	lwz %r3,112+0(%r1)
+ 	lwz %r4,112+4(%r1)
+ 	li %r5,8
+-	nop
++	b .Lstruct567
++
++E PPC32_SYSV_LD_STRUCT_1
++	lbz %r3,112+0(%r1)
++	epilogue
++
++E PPC32_SYSV_LD_STRUCT_2
++	lhz %r3,112+0(%r1)
++	epilogue
+ 
+ .Lstruct567:
+ 	subfic %r6,%r5,32

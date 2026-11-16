@@ -1,0 +1,114 @@
+--- a/src/drv_tapi_cid.c
++++ b/src/drv_tapi_cid.c
+@@ -1424,6 +1424,8 @@ static IFX_int32_t cid_lookup_transparen
+ 
+          cidfsk_set_tx_time (pTxData, &pConfData->TapiCidFskConf);
+ 
++         fallthrough;
++
+       case IFX_TAPI_CID_GEN_TYPE_DTMF:
+          memcpy (pTxData->cidBuf[IFX_TAPI_CID_GEN_TYPE_DTMF].pBuf,
+             pMessage[0].transparent.data, pMessage[0].transparent.len);
+@@ -1497,6 +1499,7 @@ static IFX_int32_t cid_prepare_data(TAPI
+          break;
+       case IFX_TAPI_CID_STD_KPN_DTMF:
+          /*lint -fallthrough*/
++         fallthrough;
+       case IFX_TAPI_CID_STD_KPN_DTMF_FSK:
+          if (IFX_TAPI_CID_HM_ONHOOK == pTxData->txHookMode)
+          {
+@@ -1506,6 +1509,7 @@ static IFX_int32_t cid_prepare_data(TAPI
+          }
+          /* KPN CID Type 2 (off-hook) always using FSK */
+          /*lint -fallthrough*/
++         fallthrough;
+       default:
+          pTxData->cidGenType = IFX_TAPI_CID_GEN_TYPE_FSK;
+          break;
+@@ -1532,6 +1536,7 @@ static IFX_int32_t cid_prepare_data(TAPI
+                break;
+ 
+             /*lint -fallthrough*/
++            fallthrough;
+          case IFX_TAPI_CID_GEN_TYPE_FSK:
+ 
+             if (IFX_TAPI_CID_STD_NTT == pConfData->nStandard)
+@@ -2036,6 +2041,7 @@ static FSM_STATUS_t cid_fsm_alert_exec(T
+          }
+          pTxData->nCidSubState++;
+          /*lint -fallthrough*/
++         fallthrough;
+       case 1:
+          if (pConfData->OSIoffhook && pConfData->nSAStone)
+          {
+@@ -2052,6 +2058,7 @@ static FSM_STATUS_t cid_fsm_alert_exec(T
+          }
+          pTxData->nCidSubState++;
+          /*lint -fallthrough*/
++         fallthrough;
+       case 2:
+          if (pConfData->nSAStone)
+          {
+@@ -2069,6 +2076,7 @@ static FSM_STATUS_t cid_fsm_alert_exec(T
+          }
+          pTxData->nCidSubState++;
+          /*lint -fallthrough*/
++         fallthrough;
+       default:
+          /* Play CAS tone on data channel, use unprotected function, protection
+             is done around cid_fsm_alert_exec */
+@@ -3458,6 +3466,7 @@ IFX_int32_t TAPI_Phone_CID_Stop_Tx(TAPI_
+          }
+          /* deliberately fall through */
+          /*lint -fallthrough*/
++         fallthrough;
+       case TAPI_CID_STATE_ACK:
+          /* deactivate the DTMF override - last two params are ignored */
+          if (ptr_chk(pDrvCtx->SIG.DTMFD_Override, ""))
+@@ -3469,6 +3478,7 @@ IFX_int32_t TAPI_Phone_CID_Stop_Tx(TAPI_
+          }
+          /* deliberately fall through */
+          /*lint -fallthrough*/
++         fallthrough;
+       case TAPI_CID_STATE_SENDING:
+          TAPI_Stop_Timer (pTxData->CidTimerID);
+          break;
+@@ -4066,6 +4076,7 @@ IFX_int32_t TAPI_Phone_Get_CidRxData (TA
+       /* If the fifo is not empty take the data from the fifo first. */
+       /* deliberately fallthrough to default case */
+       /*lint -fallthrough*/
++      fallthrough;
+    default:
+       /* Allow readout of data in all other states not handled above.
+          When there is no data in the fifo TAPI_statusErr is returned. */
+--- a/src/drv_tapi_dial.c
++++ b/src/drv_tapi_dial.c
+@@ -319,6 +319,8 @@ static IFX_void_t ifx_tapi_dial_OnTimer(
+          /* NOTE: the "break" statement has been intentionally omitted */
+          /*lint -fallthrough */
+ 
++         fallthrough;
++
+       case TAPI_HOOK_STATE_DIAL_L_VAL:
+          /* digit_l_min expires: onhook has lasted long enough to be a
+             certain low pulse (not noise). The next state is the overlap with
+--- a/src/drv_tapi_event.c
++++ b/src/drv_tapi_event.c
+@@ -1545,6 +1545,7 @@ IFX_int32_t IFX_TAPI_Event_Dispatch_Proc
+                   /**\todo put in device fifo */
+                   pEvent->ch = IFX_TAPI_DEVICE_CH_NUMBER;
+                   /*lint -fallthrough */
++                  fallthrough;
+                case  IFX_TAPI_ERRSRC_LL_CH:
+                   pEvent->data.value |= IFX_TAPI_ERRSRC_LL;
+                   break;
+--- a/src/drv_tapi_ioctl.c
++++ b/src/drv_tapi_ioctl.c
+@@ -1552,6 +1552,7 @@ static IFX_int32_t  TAPI_IoctlCh (IFX_TA
+       /* Dial Services */
+          ret = TAPI_statusNotSupported;
+          /*lint -fallthrough*/
++         fallthrough;
+       default:
+          bHandled = IFX_FALSE;
+          break;

@@ -1,0 +1,60 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 14:00:01 +0200
+Subject: [PATCH] wifi: cfg80211: match SCS descriptors on their client address
+
+An SCS descriptor can name a client behind a 4-address peer, but
+cfg80211_scs_evaluate() matches it against every MSDU sent to the peer.
+The descriptor of one host thus classifies the flows of every other
+host behind the same peer.
+
+Only match a descriptor with a client against an MSDU whose destination
+address equals it. The client is not a classifier parameter and does
+not count towards the granularity of a descriptor.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/wireless/scs.c
++++ b/net/wireless/scs.c
+@@ -833,6 +833,22 @@ static bool scs_desc_match(const struct
+ 	return any;
+ }
+ 
++/* The client is not a classifier parameter, so it does not add to the count */
++static bool scs_desc_client_match(const struct cfg80211_scs_desc *desc,
++				  const struct cfg80211_flow_info *info,
++				  bool *undecided)
++{
++	if (is_zero_ether_addr(desc->client))
++		return true;
++
++	if (!(info->present & FLOW_F(ETH_DA))) {
++		*undecided = true;
++		return false;
++	}
++
++	return ether_addr_equal(desc->client, info->key.da);
++}
++
+ static u16 scs_desc_param_count(const struct cfg80211_scs_desc *desc)
+ {
+ 	unsigned int i;
+@@ -862,7 +878,8 @@ static u16 scs_desc_param_count(const st
+  * @verdict: receives the result
+  *
+  * When several descriptors match, the one with the most classifier parameters
+- * wins. An equal count keeps the first.
++ * wins. An equal count keeps the first. A descriptor with a client only
++ * matches an MSDU addressed to that client.
+  */
+ void cfg80211_scs_evaluate(struct cfg80211_scs_desc * const *desc, u8 n_desc,
+ 			   const struct cfg80211_flow_info *info,
+@@ -877,7 +894,8 @@ void cfg80211_scs_evaluate(struct cfg802
+ 		bool undecided = false;
+ 		u16 count;
+ 
+-		if (!scs_desc_match(desc[i], info, &undecided)) {
++		if (!scs_desc_client_match(desc[i], info, &undecided) ||
++		    !scs_desc_match(desc[i], info, &undecided)) {
+ 			/* A missing parameter only matters without a match */
+ 			verdict->undecided |= undecided;
+ 			continue;

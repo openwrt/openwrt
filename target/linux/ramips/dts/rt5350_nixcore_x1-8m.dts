@@ -1,0 +1,10 @@
+#include "rt5350_nixcore_x1.dtsi"
+
+/ {
+	compatible = "nixcore,x1-8m", "nixcore,x1", "ralink,rt5350-soc";
+	model = "NixcoreX1 (8M)";
+};
+
+&firmware {
+	reg = <0x50000 0x7b0000>;
+};

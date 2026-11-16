@@ -1,0 +1,85 @@
+From: Pietro Ameruoso <p.ameruoso@live.it>
+Date: Tue, 18 Aug 2026 00:00:00 +0200
+Subject: [PATCH] net: phy: as21xxx: report multi-gigabit link partner abilities
+
+as21xxx_read_status() only decodes the link partner advertisement from the
+C22 registers mapped into the AN MMD, which stop at 1000BASE-T. On a link
+negotiated at 2.5G ethtool therefore reports:
+
+  Link partner advertised link modes: 10baseT/Half 10baseT/Full
+                                      100baseT/Half 100baseT/Full
+                                      1000baseT/Full
+  Speed: 2500Mb/s
+
+The multi-gigabit abilities are available in the C45 10GBASE-T AN status
+register (7.33), which reads 0xd5e1 in the case above: LP2_5G and LP5G set,
+LP10G clear, exactly matching the link partner. LOCOK however stays clear,
+as the firmware drives autonegotiation on its own and does not maintain the
+standard AN bookkeeping. The 10GBASE-T AN control register (7.32) shows the
+same, it reads back without any of the ADV2_5G, ADV5G or ADV10G bits even
+though those speeds are advertised.
+
+OpenWrt's pending patch 713 changes
+mii_10gbt_stat_mod_linkmode_lpa_t() to discard the whole word unless both
+LOCOK and REMOK are set. Decode the three ability bits directly to avoid
+that OpenWrt-specific gating. Clear them together with the C22 ones while
+autonegotiation is still running.
+
+Signed-off-by: Pietro Ameruoso <p.ameruoso@live.it>
+---
+--- a/drivers/net/phy/as21xxx.c
++++ b/drivers/net/phy/as21xxx.c
+@@ -781,6 +781,34 @@ static int as21xxx_read_c22_lpa(struct p
+ 	return 0;
+ }
+ 
++/* The mapped C22 registers stop at 1000BASE-T, the multi-gigabit abilities of
++ * the link partner are only reported in the C45 10GBASE-T AN status register.
++ * The firmware runs autonegotiation on its own and leaves LOCOK clear there,
++ * so decode the ability bits directly instead of using
++ * mii_10gbt_stat_mod_linkmode_lpa_t(), which under OpenWrt's pending patch
++ * 713 discards the whole word unless both LOCOK and REMOK are set.
++ */
++static int as21xxx_read_ng_lpa(struct phy_device *phydev)
++{
++	int lpa;
++
++	lpa = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_10GBT_STAT);
++	if (lpa < 0)
++		return lpa;
++
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
++			 phydev->lp_advertising,
++			 lpa & MDIO_AN_10GBT_STAT_LP2_5G);
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
++			 phydev->lp_advertising,
++			 lpa & MDIO_AN_10GBT_STAT_LP5G);
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT,
++			 phydev->lp_advertising,
++			 lpa & MDIO_AN_10GBT_STAT_LP10G);
++
++	return 0;
++}
++
+ static int as21xxx_read_status(struct phy_device *phydev)
+ {
+ 	int bmcr, old_link = phydev->link;
+@@ -805,12 +833,18 @@ static int as21xxx_read_status(struct ph
+ 			mii_stat1000_mod_linkmode_lpa_t(phydev->lp_advertising,
+ 							0);
+ 			mii_lpa_mod_linkmode_lpa_t(phydev->lp_advertising, 0);
++			mii_10gbt_stat_mod_linkmode_lpa_t(phydev->lp_advertising,
++							  0);
+ 			return 0;
+ 		}
+ 
+ 		ret = as21xxx_read_c22_lpa(phydev);
+ 		if (ret)
+ 			return ret;
++
++		ret = as21xxx_read_ng_lpa(phydev);
++		if (ret)
++			return ret;
+ 	} else {
+ 		linkmode_zero(phydev->lp_advertising);
+ 	}

@@ -1,0 +1,210 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 13:38:14 +0200
+Subject: [PATCH] hostapd: report SCS and MSCS requests on ubus and apply disallow
+ lists
+
+EasyMesh 6.1 section 20.2.4 has a Multi-AP Agent report to its
+Controller each MSCS or SCS request that it accepted with Request Type
+Add or Change and each request with Request Type Remove, with the
+descriptor element of the request, and each rule that it removed
+itself, with a descriptor element of Request Type Remove. It declines
+the MSCS and SCS requests of a station of the Disallowed STA Lists of
+the Controller's QoS Management Policy with REQUEST_DECLINED.
+
+- Report each such descriptor with hostapd_ubus_notify_robust_av(): the
+  SCS Descriptor element or the MSCS Descriptor element as received, its
+  status code, and whether hostapd removed the rule itself. An MSCS of a
+  (Re)Association Request counts as a request.
+- Decline every request of a station that
+  hostapd_ubus_robust_av_disallowed() lists, an MSCS of a
+  (Re)Association Request included.
+- The streams of a station end with its driver entry. Report each SCSID
+  and the MSCS that the station held as removed when hostapd removes the
+  station from the driver, and the MSCS that DEL_MSCS removes.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -160,6 +160,7 @@ int hostapd_drv_set_secure_ranging_ctx(s
+ 
+ 
+ #include "drivers/driver.h"
++#include "scs.h"
+ 
+ int hostapd_drv_wnm_oper(struct hostapd_data *hapd,
+ 			 enum wnm_oper oper, const u8 *peer,
+@@ -211,6 +212,10 @@ static inline int hostapd_drv_get_inact_
+ static inline int hostapd_drv_sta_remove(struct hostapd_data *hapd,
+ 					 const u8 *addr)
+ {
++#ifdef CONFIG_ROBUST_AV
++	/* The driver drops the SCS and MSCS streams of the station with it */
++	hostapd_robust_av_sta_removed(hapd, addr);
++#endif /* CONFIG_ROBUST_AV */
+ 	if (!hapd->driver || !hapd->driver->sta_remove || !hapd->drv_priv)
+ 		return 0;
+ 	return hapd->driver->sta_remove(hapd->drv_priv, addr);
+--- a/src/ap/scs.c
++++ b/src/ap/scs.c
+@@ -50,6 +50,52 @@ bool hostapd_is_robust_av_scs_disabled(s
+ }
+ 
+ 
++/*
++ * EasyMesh 6.1, 20.2.4: a Multi-AP Agent reports each request that it
++ * accepted with Request Type Add or Change, and each request with Request
++ * Type Remove, to its Controller.
++ */
++static void robust_av_notify(struct hostapd_data *hapd, struct sta_info *sta,
++			     enum hostapd_robust_av_kind kind, u8 req_type,
++			     const u8 *elem, size_t elem_len, u16 status)
++{
++	if (req_type != SCS_REQ_REMOVE && status != WLAN_STATUS_SUCCESS)
++		return;
++
++	hostapd_ubus_notify_robust_av(hapd, sta, kind, elem, elem_len,
++				      status, false);
++}
++
++
++/* A rule that hostapd removed itself, reported as a Remove descriptor */
++static void robust_av_notify_removed(struct hostapd_data *hapd,
++				     struct sta_info *sta,
++				     enum hostapd_robust_av_kind kind, u8 scsid)
++{
++	u8 elem[2 + MSCS_DESCRIPTOR_FIXED_LEN];
++	size_t len;
++
++	os_memset(elem, 0, sizeof(elem));
++	if (kind == HOSTAPD_ROBUST_AV_SCS) {
++		elem[0] = WLAN_EID_SCS_DESCRIPTOR;
++		elem[1] = 2;
++		elem[2] = scsid;
++		elem[3] = SCS_REQ_REMOVE;
++		len = 4;
++	} else {
++		elem[0] = WLAN_EID_EXTENSION;
++		elem[1] = MSCS_DESCRIPTOR_FIXED_LEN;
++		elem[2] = WLAN_EID_EXT_MSCS_DESCRIPTOR;
++		elem[3] = SCS_REQ_REMOVE;
++		len = sizeof(elem);
++	}
++
++	hostapd_ubus_notify_robust_av(hapd, sta, kind, elem, len,
++				      WLAN_STATUS_TCLAS_PROCESSING_TERMINATED,
++				      true);
++}
++
++
+ static bool scs_id_active(struct sta_info *sta, u8 scsid)
+ {
+ 	return sta->scs_active[scsid / 8] & BIT(scsid % 8);
+@@ -109,6 +155,13 @@ static u16 hostapd_process_scs_descripto
+ 		goto out;
+ 	}
+ 
++	if (hostapd_ubus_robust_av_disallowed(hapd, HOSTAPD_ROBUST_AV_SCS,
++					      sta->addr)) {
++		wpa_printf(MSG_DEBUG, "SCS: " MACSTR " is disallowed",
++			   MAC2STR(sta->addr));
++		goto out;
++	}
++
+ 	active = scs_id_active(sta, desc.id);
+ 
+ 	switch (desc.req_type) {
+@@ -210,6 +263,13 @@ static u16 hostapd_set_mscs(struct hosta
+ 	desc.up_limit = elem[3] & 0x07;
+ 	desc.stream_timeout = WPA_GET_LE32(&elem[4]);
+ 
++	if (hostapd_ubus_robust_av_disallowed(hapd, HOSTAPD_ROBUST_AV_MSCS,
++					      sta->addr)) {
++		wpa_printf(MSG_DEBUG, "MSCS: " MACSTR " is disallowed",
++			   MAC2STR(sta->addr));
++		goto out;
++	}
++
+ 	switch (desc.req_type) {
+ 	case SCS_REQ_ADD:
+ 	case SCS_REQ_CHANGE:
+@@ -297,6 +357,9 @@ static void hostapd_handle_mscs_req(stru
+ 	}
+ 
+ 	status = hostapd_set_mscs(hapd, sta, &elem[2], elem[1]);
++	if (elem[1] >= MSCS_DESCRIPTOR_FIXED_LEN)
++		robust_av_notify(hapd, sta, HOSTAPD_ROBUST_AV_MSCS, elem[3],
++				 elem, 2 + elem[1], status);
+ 
+ out:
+ 	send_mscs_response(hapd, da, body[2], status);
+@@ -326,12 +389,40 @@ int hostapd_del_mscs(struct hostapd_data
+ 
+ 	sta->mscs_active = false;
+ 	send_mscs_response(hapd, sta->addr, 0, status);
++	robust_av_notify_removed(hapd, sta, HOSTAPD_ROBUST_AV_MSCS, 0);
+ 
+ 	return 0;
+ }
+ 
+ 
+ /*
++ * The driver dropped the streams of a station with its entry: report each
++ * stream of the station as removed (EasyMesh 6.1, 20.2.4).
++ */
++void hostapd_robust_av_sta_removed(struct hostapd_data *hapd, const u8 *addr)
++{
++	struct sta_info *sta;
++	unsigned int id;
++
++	sta = ap_get_sta(hapd, addr);
++	if (!sta || hostapd_sta_is_link_sta(hapd, sta))
++		return;
++
++	for (id = 1; id < 256; id++) {
++		if (!scs_id_active(sta, id))
++			continue;
++		scs_id_set(sta, id, false);
++		robust_av_notify_removed(hapd, sta, HOSTAPD_ROBUST_AV_SCS, id);
++	}
++
++	if (sta->mscs_active) {
++		sta->mscs_active = false;
++		robust_av_notify_removed(hapd, sta, HOSTAPD_ROBUST_AV_MSCS, 0);
++	}
++}
++
++
++/*
+  * The MSCS Descriptor element of a (Re)Association Request: the response
+  * carries the outcome in the MSCS Status subelement of an MSCS Descriptor
+  * element (IEEE Std 802.11-2024, 11.25.3).
+@@ -349,6 +440,9 @@ u8 * hostapd_eid_mscs_assoc(struct hosta
+ 
+ 	sta = robust_av_sta(&hapd, sta);
+ 	status = hostapd_set_mscs(hapd, sta, &req[2], req[1]);
++	if (req[1] >= MSCS_DESCRIPTOR_FIXED_LEN)
++		robust_av_notify(hapd, sta, HOSTAPD_ROBUST_AV_MSCS, req[3], req,
++				 2 + req[1], status);
+ 
+ 	*pos++ = WLAN_EID_EXTENSION;
+ 	*pos++ = MSCS_DESCRIPTOR_FIXED_LEN + 4;
+@@ -416,6 +510,9 @@ static void hostapd_handle_scs_req(struc
+ 		}
+ 
+ 		status = hostapd_process_scs_descriptor(hapd, sta, elem);
++		robust_av_notify(hapd, sta, HOSTAPD_ROBUST_AV_SCS,
++				 elem->data[1], (const u8 *) elem,
++				 2 + elem->datalen, status);
+ 		wpabuf_put_u8(duples, elem->data[0]);
+ 		wpabuf_put_le16(duples, status);
+ 		count++;
+--- a/src/ap/scs.h
++++ b/src/ap/scs.h
+@@ -15,5 +15,6 @@ u8 * hostapd_eid_mscs_assoc(struct hosta
+ 			    const u8 *ies, size_t ies_len, u8 *eid);
+ int hostapd_del_mscs(struct hostapd_data *hapd, const u8 *addr);
+ bool hostapd_is_robust_av_scs_disabled(struct hostapd_data *hapd);
++void hostapd_robust_av_sta_removed(struct hostapd_data *hapd, const u8 *addr);
+ 
+ #endif /* SCS_H */

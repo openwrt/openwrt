@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_dlink_dir_nand_128m.dtsi"
+
+/ {
+	compatible = "dlink,dir-2640-a1", "mediatek,mt7621-soc";
+	model = "D-Link DIR-2640 A1";
+};
+
+&leds {
+	led-4 {
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_WHITE>;
+		function-enumerator = <2>;
+		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		trigger-sources = <&ehci_port2>;
+		linux,default-trigger = "usbport";
+	};
+
+	led-5 {
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_WHITE>;
+		function-enumerator = <3>;
+		gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		trigger-sources = <&xhci_ehci_port1>;
+		linux,default-trigger = "usbport";
+	};
+};

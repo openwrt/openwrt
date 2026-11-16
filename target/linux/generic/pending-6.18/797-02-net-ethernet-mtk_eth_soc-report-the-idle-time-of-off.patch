@@ -1,0 +1,194 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 13 Oct 2026 12:04:02 +0200
+Subject: [PATCH] net: ethernet: mtk_eth_soc: report the idle time of offloaded
+ flows
+
+A learned MSCS entry in mac80211 expires when no uplink frame reaches
+it for the stream timeout, which is the case as soon as the uplink is
+offloaded. Add a callback that returns how long ago the PPE last hit
+an entry of a station that matches a flow, so that the wireless driver
+can keep a learned entry alive while the hardware forwards the flow.
+The PPE keeps a timestamp per entry, which the flow statistics already
+report.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -1578,6 +1578,8 @@ int mtk_eth_setup_tc(struct net_device *
+ 		     void *type_data);
+ void mtk_flow_offload_unbind_wcid(struct mtk_eth *eth, int wed_index, u16 wcid,
+ 				  struct mtk_flow_match *match);
++int mtk_flow_offload_idle_wcid(struct mtk_eth *eth, int wed_index, u16 wcid,
++			       const struct mtk_flow_match *match);
+ int mtk_flow_offload_cmd(struct mtk_eth *eth, struct flow_cls_offload *cls,
+ 			 int ppe_index);
+ void mtk_flow_offload_cleanup(struct mtk_eth *eth, struct list_head *list);
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
+@@ -1112,6 +1112,52 @@ out:
+ 	spin_unlock_bh(&ppe_lock);
+ }
+ 
++/* Seconds since the hardware last hit a matching entry, negative when none */
++int mtk_foe_entry_flow_idle(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
++			    bool rx, const struct mtk_flow_match *match)
++{
++	struct mtk_foe_entry foe = {}, *hwe;
++	struct mtk_flow_entry *cur;
++	int idle = -ENOENT;
++	int len;
++
++	spin_lock_bh(&ppe_lock);
++
++	if (entry->type == MTK_FLOW_TYPE_L2) {
++		hlist_for_each_entry(cur, &entry->l2_flows, l2_list) {
++			int cur_idle;
++
++			if (!mtk_foe_subflow_match(ppe, cur, rx, match))
++				continue;
++
++			hwe = mtk_foe_get_entry(ppe, cur->hash);
++			cur_idle = __mtk_foe_entry_idle_time(ppe,
++							     READ_ONCE(hwe->ib1));
++			if (idle < 0 || cur_idle < idle)
++				idle = cur_idle;
++		}
++		goto out;
++	}
++
++	if (entry->hash == 0xffff)
++		goto out;
++
++	hwe = mtk_foe_get_entry(ppe, entry->hash);
++	len = mtk_flow_entry_match_len(ppe->eth, &entry->data);
++	memcpy(&foe, hwe, len);
++	if (FIELD_GET(MTK_FOE_IB1_STATE, foe.ib1) != MTK_FOE_STATE_BIND ||
++	    !mtk_flow_entry_match(ppe->eth, entry, &foe, len) ||
++	    !mtk_foe_entry_flow_match(ppe, &entry->data, rx, false, match))
++		goto out;
++
++	idle = __mtk_foe_entry_idle_time(ppe, foe.ib1);
++
++out:
++	spin_unlock_bh(&ppe_lock);
++
++	return idle;
++}
++
+ int mtk_ppe_prepare_reset(struct mtk_ppe *ppe)
+ {
+ 	if (!ppe)
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.h
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.h
+@@ -423,6 +423,8 @@ int mtk_foe_entry_commit(struct mtk_ppe
+ void mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
+ void mtk_foe_entry_unbind(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+ 			  bool rx, const struct mtk_flow_match *match);
++int mtk_foe_entry_flow_idle(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
++			    bool rx, const struct mtk_flow_match *match);
+ int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index);
+ void mtk_foe_entry_get_stats(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+ 			     int *idle);
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -705,6 +705,36 @@ void mtk_flow_offload_unbind_wcid(struct
+ 				   mtk_flow_entry_unbind_cb, match);
+ }
+ 
++struct mtk_flow_idle {
++	const struct mtk_flow_match *match;
++	int idle;
++};
++
++static void
++mtk_flow_entry_idle_cb(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
++		       bool rx, void *arg)
++{
++	struct mtk_flow_idle *data = arg;
++	int idle = mtk_foe_entry_flow_idle(ppe, entry, rx, data->match);
++
++	if (idle >= 0 && (data->idle < 0 || idle < data->idle))
++		data->idle = idle;
++}
++
++int mtk_flow_offload_idle_wcid(struct mtk_eth *eth, int wed_index, u16 wcid,
++			       const struct mtk_flow_match *match)
++{
++	struct mtk_flow_idle data = {
++		.match = match,
++		.idle = -ENOENT,
++	};
++
++	mtk_flow_offload_walk_wcid(eth, wed_index, wcid,
++				   mtk_flow_entry_idle_cb, &data);
++
++	return data.idle;
++}
++
+ static int
+ mtk_eth_setup_tc_block_cb(enum tc_setup_type type, void *type_data, void *cb_priv)
+ {
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -2029,6 +2029,21 @@ mtk_wed_flow_flush(struct mtk_wed_device
+ 	mtk_flow_offload_unbind_wcid(dev->hw->eth, dev->hw->index, wcid, &m);
+ }
+ 
++static int
++mtk_wed_flow_idle(struct mtk_wed_device *dev, u16 wcid,
++		  bool (*match)(const struct cfg80211_flow_info *info,
++				bool rx, void *arg),
++		  void *arg)
++{
++	struct mtk_flow_match m = {
++		.fn = match,
++		.arg = arg,
++	};
++
++	return mtk_flow_offload_idle_wcid(dev->hw->eth, dev->hw->index, wcid,
++					  &m);
++}
++
+ static void
+ mtk_wed_configure_irq(struct mtk_wed_device *dev, u32 irq_mask)
+ {
+@@ -2867,6 +2882,7 @@ void mtk_wed_add_hw(struct device_node *
+ 		.msdu_pg_rx_ring_setup = mtk_wed_msdu_pg_rx_ring_setup,
+ 		.ind_rx_ring_setup = mtk_wed_ind_rx_ring_setup,
+ 		.flow_flush = mtk_wed_flow_flush,
++		.flow_idle = mtk_wed_flow_idle,
+ 	};
+ 	struct device_node *eth_np = eth->dev->of_node;
+ 	struct platform_device *pdev;
+--- a/include/linux/soc/mediatek/mtk_wed.h
++++ b/include/linux/soc/mediatek/mtk_wed.h
+@@ -233,6 +233,10 @@ struct mtk_wed_ops {
+ 			   bool (*match)(const struct cfg80211_flow_info *info,
+ 					 bool rx, void *arg),
+ 			   void *arg);
++	int (*flow_idle)(struct mtk_wed_device *dev, u16 wcid,
++			 bool (*match)(const struct cfg80211_flow_info *info,
++				       bool rx, void *arg),
++			 void *arg);
+ };
+ 
+ extern const struct mtk_wed_ops __rcu *mtk_soc_wed_ops;
+@@ -314,6 +318,8 @@ static inline bool mtk_wed_is_amsdu_supp
+ 	(_dev)->ops->ind_rx_ring_setup(_dev, _regs)
+ #define mtk_wed_device_flow_flush(_dev, _wcid, _match, _arg) \
+ 	(_dev)->ops->flow_flush(_dev, _wcid, _match, _arg)
++#define mtk_wed_device_flow_idle(_dev, _wcid, _match, _arg) \
++	(_dev)->ops->flow_idle(_dev, _wcid, _match, _arg)
+ 
+ #else
+ static inline bool mtk_wed_device_active(struct mtk_wed_device *dev)
+@@ -341,6 +347,8 @@ static inline bool mtk_wed_device_active
+ #define mtk_wed_device_ind_rx_ring_setup(_dev, _regs) -ENODEV
+ #define mtk_wed_device_flow_flush(_dev, _wcid, _match, _arg) \
+ 	do { (void)(_match); (void)(_arg); } while (0)
++#define mtk_wed_device_flow_idle(_dev, _wcid, _match, _arg) \
++	({ (void)(_match); (void)(_arg); -ENODEV; })
+ #endif
+ 
+ #endif

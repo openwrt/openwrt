@@ -1,0 +1,12 @@
+--- a/src/drv_tapi_ioctl.c
++++ b/src/drv_tapi_ioctl.c
+@@ -702,7 +702,8 @@ static IFX_int32_t TAPI_IoctlDev (IFX_TA
+ 
+                if (ret == TAPI_statusOk || ret == 1)
+                {
+-                  copy_to_user ((IFX_void_t*)ioarg, p_tmp, sizeof(IFX_TAPI_CAP_t));
++                  if (copy_to_user ((IFX_void_t*)ioarg, p_tmp, sizeof(IFX_TAPI_CAP_t)))
++                     ret = TAPI_statusErrKernCpy;
+                }
+             }
+             TAPI_OS_Free (p_tmp);

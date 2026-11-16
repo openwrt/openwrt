@@ -1,0 +1,49 @@
+From d55f1e8c37381a77790ec05bba026ad388195894 Mon Sep 17 00:00:00 2001
+From: Jonathan Bell <jonathan@raspberrypi.com>
+Date: Fri, 21 Aug 2026 16:11:27 +0100
+Subject: [PATCH] DT: rp1: remove dwc3 parkmode-disable-hs quirk
+
+This quirk has a negative impact on most USB mass-storage devices.
+
+The description of the feature in the databook is conflated with a case
+where parkmode performs badly with specific devices, but doesn't assign
+importance to this statement:
+
+"When park mode is disabled, pipelining of multiple packets is disabled
+and instead one packet at a time is requested by the scheduler."
+
+Removing the pipelining causes inter-transaction latency of the order of
+4us when a single HS bulk endpoint is being serviced. This drops USB
+mass-storage sequential performance by 20%.
+
+RP1 has separate bus instances for each USB2 port, so the multi-device
+case that theoretically suffers is even less likely to occur.
+
+In https://github.com/raspberrypi/linux/pull/5892
+this feature was disabled at the recommendation of Synopsys, not
+through a requirement to fix an interop bug with a device in the field.
+So turn "park mode" back on for HS.
+
+Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
+---
+ arch/arm64/boot/dts/broadcom/rp1.dtsi | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/broadcom/rp1.dtsi
++++ b/arch/arm64/boot/dts/broadcom/rp1.dtsi
+@@ -1126,7 +1126,6 @@
+ 			snps,dis_rxdet_inp3_quirk;
+ 			snps,enhanced-nak-fs-quirk;
+ 			snps,parkmode-disable-ss-quirk;
+-			snps,parkmode-disable-hs-quirk;
+ 			snps,parkmode-disable-fsls-quirk;
+ 			snps,tx-max-burst = /bits/ 8 <8>;
+ 			snps,tx-thr-num-pkt = /bits/ 8 <2>;
+@@ -1143,7 +1142,6 @@
+ 			snps,dis_rxdet_inp3_quirk;
+ 			snps,enhanced-nak-fs-quirk;
+ 			snps,parkmode-disable-ss-quirk;
+-			snps,parkmode-disable-hs-quirk;
+ 			snps,parkmode-disable-fsls-quirk;
+ 			snps,tx-max-burst = /bits/ 8 <8>;
+ 			snps,tx-thr-num-pkt = /bits/ 8 <2>;
