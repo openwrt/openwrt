@@ -297,7 +297,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  	return 0;
  }
  EXPORT_SYMBOL(b53_enable_port);
-@@ -2644,6 +2857,8 @@ static int b53_change_tag_protocol(struc
+@@ -2650,6 +2863,8 @@ static int b53_change_tag_protocol(struc
  	dsa_switch_for_each_cpu_port(cpu_dp, ds)
  		b53_brcm_hdr_setup(ds, cpu_dp->index);
  
@@ -306,7 +306,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  	return 0;
  }
  
-@@ -2815,6 +3030,7 @@ static const struct dsa_switch_ops b53_s
+@@ -2821,6 +3036,7 @@ static const struct dsa_switch_ops b53_s
  	.get_tag_protocol	= b53_get_tag_protocol,
  	.change_tag_protocol	= b53_change_tag_protocol,
  	.preferred_default_local_cpu_port = b53_preferred_default_local_cpu_port,
