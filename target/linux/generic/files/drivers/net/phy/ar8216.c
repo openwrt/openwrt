@@ -2924,6 +2924,22 @@ static int __init ar8216_init(void)
 {
 	int ret;
 
+	/*
+	 * Built into the kernel this driver registers before the generic PHY
+	 * drivers and keeps the switch PHYs away from them, which is what
+	 * boards whose MAC is not a phylib client need.  Boards that drive
+	 * the same switch through DSA have to keep those PHYs for the DSA
+	 * driver, so stay out of the way when the device tree describes one.
+	 */
+	if (of_find_compatible_node(NULL, NULL, "qca,ar9331-switch") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8327") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8328") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8334") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8337")) {
+		pr_info("ar8xxx: DSA switch in the device tree, not registering\n");
+		return -ENODEV;
+	}
+
 	ret = phy_drivers_register(ar8xxx_phy_driver,
 				   ARRAY_SIZE(ar8xxx_phy_driver),
 				   THIS_MODULE);
