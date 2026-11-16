@@ -51,6 +51,14 @@ ifneq ($(CONFIG_B43_FW_4_178),)
   PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
   PKG_B43_FWV4_HASH:=32f6ad98facbb9045646fdc8b54bb03086d204153253f9c65d0234a5d90ae53f
 else
+ifneq ($(CONFIG_B43_FW_6_30),)
+  PKG_B43_FWV4_NAME:=broadcom-wl
+  PKG_B43_FWV4_VERSION:=6.30.163.46
+  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).wl_apsta.o
+  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
+  PKG_B43_FWV4_SOURCE_URL:=@SF/b43-firmware
+  PKG_B43_FWV4_HASH:=a07c3b6b277833c7dbe61daa511f908cd66c5e2763eb7a0859abc36cd9335c2d
+else
 ifneq ($(CONFIG_B43_FW_5_100_138),)
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=5.100.138
@@ -65,6 +73,7 @@ else
   PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
   PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
   PKG_B43_FWV4_HASH:=a9f4e276a4d8d3a1cd0f2eb87080ae89b77f0a7140f06d4e9e2135fc44fdd533
+endif
 endif
 endif
 endif
@@ -93,7 +102,7 @@ define KernelPackage/b43
   	CONFIG_HW_RANDOM=y
   # Depend on PCI_SUPPORT to make sure we can select kmod-bcma or kmod-ssb
   DEPENDS += \
-	@PCI_SUPPORT +kmod-mac80211 +kmod-lib-cordic \
+	@PCI_SUPPORT +kmod-mac80211 +kmod-lib-cordic +b43-firmware \
 	$(if $(CONFIG_PACKAGE_B43_USE_SSB),+kmod-ssb) \
 	$(if $(CONFIG_PACKAGE_B43_USE_BCMA),+kmod-bcma)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/broadcom/b43/b43.ko
@@ -101,26 +110,25 @@ define KernelPackage/b43
   MENU:=1
 endef
 
-define KernelPackage/b43/config
+define Package/b43-firmware
+  SECTION:=firmware
+  CATEGORY:=Firmware
+  TITLE:=Broadcom 43xx firmware (b43, b43-next)
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/b43/firmware
+  MENU:=1
+endef
 
-config PACKAGE_B43_USE_SSB
-	select PACKAGE_kmod-ssb
-	tristate
-	depends on !TARGET_bcm47xx
-	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
-	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_SSB
+define Package/b43-firmware/description
+ The b43 firmware, cut from a Broadcom driver with b43-fwcutter, for
+ kmod-b43 and kmod-b43-next.
+endef
 
-config PACKAGE_B43_USE_BCMA
-	select PACKAGE_kmod-bcma
-	tristate
-	depends on !TARGET_bcm47xx && !TARGET_bcm53xx
-	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
-	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA
-
-  if PACKAGE_kmod-b43
+define Package/b43-firmware/config
+  if PACKAGE_b43-firmware
 
 	choice
 		prompt "b43 firmware version"
+		default B43_FW_6_30 if PACKAGE_kmod-b43-next
 		default B43_FW_5_100_138
 		help
 		  This option allows you to select the version of the b43 firmware.
@@ -155,6 +163,12 @@ config PACKAGE_B43_USE_BCMA
 
 		  If unsure, select the this firmware.
 
+	config B43_FW_6_30
+		bool "Firmware 784.2 from driver 6.30.163.46"
+		help
+		  The firmware with the microcode of the AC-PHY cores (core
+		  revision 42: BCM4352, BCM4360), which b43-next drives.
+
 	config B43_OPENFIRMWARE
 		bool "Open FirmWare for WiFi networks"
 		help
@@ -173,6 +187,7 @@ config PACKAGE_B43_USE_BCMA
 	config B43_FW_SQUASH
 		bool "Remove unnecessary firmware files"
 		depends on !B43_OPENFIRMWARE
+		default n if PACKAGE_kmod-b43-next
 		default y
 		help
 		  This options allows you to remove unnecessary b43 firmware files
@@ -186,6 +201,7 @@ config PACKAGE_B43_USE_BCMA
 		depends on B43_FW_SQUASH
 		default "5,6,7,8,9,10,11,13,15" if TARGET_bcm47xx_legacy
 		default "16,28,29,30" if TARGET_bcm47xx_mips74k
+		default "16,28,29,30,42" if PACKAGE_kmod-b43-next
 		default "5,6,7,8,9,10,11,13,15,16,28,29,30"
 		help
 		  This is a comma separated list of core revision numbers.
@@ -201,6 +217,7 @@ config PACKAGE_B43_USE_BCMA
 		depends on B43_FW_SQUASH
 		default "G,N,LP" if TARGET_bcm47xx_legacy
 		default "N,HT" if TARGET_bcm47xx_mips74k
+		default "N,HT,AC" if PACKAGE_kmod-b43-next
 		default "G,N,LP,HT"
 		help
 		  This is a comma separated list of PHY types:
@@ -219,6 +236,27 @@ config PACKAGE_B43_USE_BCMA
 
 		  Example (keep files for G-PHY and N-PHY):
 		    G,N
+
+  endif
+endef
+
+define KernelPackage/b43/config
+
+config PACKAGE_B43_USE_SSB
+	select PACKAGE_kmod-ssb
+	tristate
+	depends on !TARGET_bcm47xx
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_SSB
+
+config PACKAGE_B43_USE_BCMA
+	select PACKAGE_kmod-bcma
+	tristate
+	depends on !TARGET_bcm47xx && !TARGET_bcm53xx
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA
+
+  if PACKAGE_kmod-b43
 
 	choice
 		prompt "Supported buses"
@@ -449,7 +487,7 @@ define KernelPackage/brcmfmac/config
 endef
 
 
-define KernelPackage/b43/install
+define Package/b43-firmware/install
 	rm -rf $(1)/lib/firmware/
 ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
 	tar xzf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
