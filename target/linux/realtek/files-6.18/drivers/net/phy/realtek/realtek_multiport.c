@@ -44,10 +44,6 @@
 #define RTL821X_MEDIA_PAGE_FIBRE	3
 #define RTL821X_MEDIA_PAGE_INTERNAL	8
 
-#define RTL821X_JOIN_FIRST		0
-#define RTL821X_JOIN_LAST		1
-#define RTL821X_JOIN_OTHER		2
-
 #define RTL8214FC_MEDIA_COPPER		BIT(11)
 
 #define PHY_ID_RTL8214C			0x001cc942
@@ -65,28 +61,23 @@
 
 struct rtl821x_shared_priv {
 	int base_addr;
-	int ports;
 };
 
 static int rtl821x_package_join(struct phy_device *phydev, int ports)
 {
 	struct rtl821x_shared_priv *shared_priv;
 	int base_addr = phydev->mdio.addr & ~(ports - 1);
+	int ret;
 
-	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr,
-			      sizeof(struct rtl821x_shared_priv));
+	ret = devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr,
+				    sizeof(struct rtl821x_shared_priv));
+	if (ret)
+		return ret;
 
 	shared_priv = phy_package_get_priv(phydev);
 	shared_priv->base_addr = base_addr;
-	shared_priv->ports++;
 
-	if (shared_priv->ports == 1)
-		return RTL821X_JOIN_FIRST;
-
-	if (shared_priv->ports == ports)
-		return RTL821X_JOIN_LAST;
-
-	return RTL821X_JOIN_OTHER;
+	return 0;
 }
 
 static inline struct phy_device *get_package_phy(struct phy_device *phydev, int port)
@@ -446,16 +437,12 @@ static const struct sfp_upstream_ops rtl8214fc_sfp_ops = {
 
 static int rtl8214c_phy_probe(struct phy_device *phydev)
 {
-	rtl821x_package_join(phydev, 4);
-
-	return 0;
+	return rtl821x_package_join(phydev, 4);
 }
 
 static int rtl8218x_phy_probe(struct phy_device *phydev)
 {
-	rtl821x_package_join(phydev, 8);
-
-	return 0;
+	return rtl821x_package_join(phydev, 8);
 }
 
 static int rtl821x_config_init(struct phy_device *phydev)
@@ -636,7 +623,9 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 	static int regs[] = {16, 19, 20, 21};
 	int ret;
 
-	rtl821x_package_join(phydev, 4);
+	ret = rtl821x_package_join(phydev, 4);
+	if (ret)
+		return ret;
 
 	/*
 	 * Normally phy_probe() only initializes PHY structures and setup is run in
