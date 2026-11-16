@@ -65,6 +65,7 @@
 
 #define RTPCS_931X_CPU_PORT			56
 #define RTPCS_931X_SERDES_CNT			14
+#define RTPCS_931X_MUX_CHANNELS			4
 #define RTPCS_931X_MAC_LINK_DUP_STS		0x0ef0
 #define RTPCS_931X_MAC_LINK_SPD_STS		0x0ed0
 #define RTPCS_931X_MAC_LINK_STS			0x0ec0
@@ -115,6 +116,57 @@
 #define RTPCS_931X_MAC_GROUP5_CTRL		(0x13b0)
 #define RTPCS_931X_MAC_GROUP6_7_CTRL		(0x13b4)
 #define RTPCS_931X_MAC_GROUP8_11_CTRL		(0x13b8)
+#define RTPCS_931X_SERDES_MUX_CTRL_0		0x13bc
+#define  RTPCS_931X_P4_GMII_SEL			GENMASK(5, 4)
+#define   RTPCS_931X_P4_GMII_SEL_SDS2_CH2 \
+	FIELD_PREP_CONST(RTPCS_931X_P4_GMII_SEL, 2)
+#define  RTPCS_931X_P5_GMII_SEL			GENMASK(7, 6)
+#define   RTPCS_931X_P5_GMII_SEL_SDS2_CH3 \
+	FIELD_PREP_CONST(RTPCS_931X_P5_GMII_SEL, 2)
+#define  RTPCS_931X_P12_GMII_SEL			GENMASK(15, 14)
+#define   RTPCS_931X_P12_GMII_SEL_SDS3_CH2 \
+	FIELD_PREP_CONST(RTPCS_931X_P12_GMII_SEL, 2)
+#define  RTPCS_931X_P13_GMII_SEL			GENMASK(17, 16)
+#define   RTPCS_931X_P13_GMII_SEL_SDS3_CH3 \
+	FIELD_PREP_CONST(RTPCS_931X_P13_GMII_SEL, 2)
+#define  RTPCS_931X_P20_GMII_SEL_SDS4_CH2		BIT(20)
+#define  RTPCS_931X_P21_GMII_SEL_SDS4_CH3		BIT(21)
+#define  RTPCS_931X_P28_GMII_SEL_SDS5_CH2		BIT(22)
+#define  RTPCS_931X_P29_GMII_SEL_SDS5_CH3		BIT(23)
+#define  RTPCS_931X_P36_GMII_SEL_SDS6_CH2		BIT(24)
+#define  RTPCS_931X_P37_GMII_SEL_SDS6_CH3		BIT(25)
+#define  RTPCS_931X_P42_GMII_SEL_SDS9_CH0		BIT(26)
+#define  RTPCS_931X_P43_GMII_SEL_SDS9_CH1		BIT(27)
+#define  RTPCS_931X_P44_GMII_SEL_SDS7_CH2		BIT(28)
+#define  RTPCS_931X_P45_GMII_SEL_SDS7_CH3		BIT(29)
+#define  RTPCS_931X_P46_GMII_SEL_SDS9_CH2		BIT(30)
+#define  RTPCS_931X_P47_GMII_SEL_SDS9_CH3		BIT(31)
+
+#define RTPCS_931X_SERDES_MUX_CTRL_1		0x13c0
+#define  RTPCS_931X_SERDES_MUX_CTRL_1_FIELDS	GENMASK(21, 0)
+#define  RTPCS_931X_P50_GMII_SEL_SDS8_CH2		BIT(0)
+#define  RTPCS_931X_SDS2_CH2_GMII_SEL		GENMASK(4, 3)
+#define   RTPCS_931X_SDS2_CH2_GMII_SEL_MAC4 \
+	FIELD_PREP_CONST(RTPCS_931X_SDS2_CH2_GMII_SEL, 2)
+#define  RTPCS_931X_SDS2_CH3_GMII_SEL		GENMASK(6, 5)
+#define   RTPCS_931X_SDS2_CH3_GMII_SEL_MAC5 \
+	FIELD_PREP_CONST(RTPCS_931X_SDS2_CH3_GMII_SEL, 2)
+#define  RTPCS_931X_SDS3_CH2_GMII_SEL		GENMASK(10, 9)
+#define   RTPCS_931X_SDS3_CH2_GMII_SEL_MAC12 \
+	FIELD_PREP_CONST(RTPCS_931X_SDS3_CH2_GMII_SEL, 2)
+#define  RTPCS_931X_SDS3_CH3_GMII_SEL		GENMASK(12, 11)
+#define   RTPCS_931X_SDS3_CH3_GMII_SEL_MAC13 \
+	FIELD_PREP_CONST(RTPCS_931X_SDS3_CH3_GMII_SEL, 2)
+#define  RTPCS_931X_SDS4_CH2_GMII_SEL_MAC20		BIT(13)
+#define  RTPCS_931X_SDS4_CH3_GMII_SEL_MAC21		BIT(14)
+#define  RTPCS_931X_SDS5_CH2_GMII_SEL_MAC28		BIT(15)
+#define  RTPCS_931X_SDS5_CH3_GMII_SEL_MAC29		BIT(16)
+#define  RTPCS_931X_SDS6_CH2_GMII_SEL_MAC36		BIT(17)
+#define  RTPCS_931X_SDS6_CH3_GMII_SEL_MAC37		BIT(18)
+#define  RTPCS_931X_SDS7_CH2_GMII_SEL_MAC44		BIT(19)
+#define  RTPCS_931X_SDS7_CH3_GMII_SEL_MAC45		BIT(20)
+#define  RTPCS_931X_SDS9_CH0_GMII_SEL_MAC42		BIT(21)
+
 #define RTPCS_931X_SERDES_MODE_CTRL		(0x13cc)
 #define RTPCS_931X_SDS_USXGMII_SUBMODE		(0x13e8)
 #define RTPCS_931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
@@ -4585,6 +4637,84 @@ static int rtpcs_931x_init_mac_groups(struct rtpcs_ctrl *ctrl)
 	return 0;
 }
 
+struct rtpcs_931x_mux_config {
+	u64 ports;
+	u32 mux0;
+	u32 mux1;
+};
+
+static const struct rtpcs_931x_mux_config rtpcs_931x_qxgmii_mux[] = {
+	[2] = {
+		.ports = BIT_ULL(4) | BIT_ULL(5),
+		.mux0 = RTPCS_931X_P4_GMII_SEL_SDS2_CH2 | RTPCS_931X_P5_GMII_SEL_SDS2_CH3,
+		.mux1 = RTPCS_931X_SDS2_CH2_GMII_SEL_MAC4 | RTPCS_931X_SDS2_CH3_GMII_SEL_MAC5,
+	},
+	[3] = {
+		.ports = BIT_ULL(12) | BIT_ULL(13),
+		.mux0 = RTPCS_931X_P12_GMII_SEL_SDS3_CH2 | RTPCS_931X_P13_GMII_SEL_SDS3_CH3,
+		.mux1 = RTPCS_931X_SDS3_CH2_GMII_SEL_MAC12 | RTPCS_931X_SDS3_CH3_GMII_SEL_MAC13,
+	},
+	[4] = {
+		.ports = BIT_ULL(20) | BIT_ULL(21),
+		.mux0 = RTPCS_931X_P20_GMII_SEL_SDS4_CH2 | RTPCS_931X_P21_GMII_SEL_SDS4_CH3,
+		.mux1 = RTPCS_931X_SDS4_CH2_GMII_SEL_MAC20 | RTPCS_931X_SDS4_CH3_GMII_SEL_MAC21,
+	},
+	[5] = {
+		.ports = BIT_ULL(28) | BIT_ULL(29),
+		.mux0 = RTPCS_931X_P28_GMII_SEL_SDS5_CH2 | RTPCS_931X_P29_GMII_SEL_SDS5_CH3,
+		.mux1 = RTPCS_931X_SDS5_CH2_GMII_SEL_MAC28 | RTPCS_931X_SDS5_CH3_GMII_SEL_MAC29,
+	},
+	[6] = {
+		.ports = BIT_ULL(36) | BIT_ULL(37),
+		.mux0 = RTPCS_931X_P36_GMII_SEL_SDS6_CH2 | RTPCS_931X_P37_GMII_SEL_SDS6_CH3,
+		.mux1 = RTPCS_931X_SDS6_CH2_GMII_SEL_MAC36 | RTPCS_931X_SDS6_CH3_GMII_SEL_MAC37,
+	},
+	[7] = {
+		.ports = BIT_ULL(44) | BIT_ULL(45),
+		.mux0 = RTPCS_931X_P44_GMII_SEL_SDS7_CH2 | RTPCS_931X_P45_GMII_SEL_SDS7_CH3,
+		.mux1 = RTPCS_931X_SDS7_CH2_GMII_SEL_MAC44 | RTPCS_931X_SDS7_CH3_GMII_SEL_MAC45,
+	},
+	[8] = {
+		.ports = BIT_ULL(50),
+		.mux1 = RTPCS_931X_P50_GMII_SEL_SDS8_CH2,
+	},
+	[9] = {
+		.ports = BIT_ULL(42) | BIT_ULL(43) | BIT_ULL(46) | BIT_ULL(47),
+		.mux0 = RTPCS_931X_P42_GMII_SEL_SDS9_CH0 | RTPCS_931X_P43_GMII_SEL_SDS9_CH1 |
+			RTPCS_931X_P46_GMII_SEL_SDS9_CH2 | RTPCS_931X_P47_GMII_SEL_SDS9_CH3,
+		.mux1 = RTPCS_931X_SDS9_CH0_GMII_SEL_MAC42,
+	},
+};
+
+static int rtpcs_931x_init_mux(struct rtpcs_ctrl *ctrl)
+{
+	u32 mux0 = 0, mux1 = 0;
+	int ret;
+
+	for (int i = 2; i < ARRAY_SIZE(rtpcs_931x_qxgmii_mux); i++) {
+		const struct rtpcs_931x_mux_config *config = &rtpcs_931x_qxgmii_mux[i];
+
+		for (int j = 0; j < RTPCS_931X_MUX_CHANNELS; j++) {
+			int port = ctrl->serdes[i].link_port[j];
+
+			if (port < 0 || port >= RTPCS_931X_CPU_PORT ||
+			    !(config->ports & BIT_ULL(port)))
+				continue;
+
+			mux0 |= config->mux0;
+			mux1 |= config->mux1;
+			break;
+		}
+	}
+
+	ret = regmap_write(ctrl->map, RTPCS_931X_SERDES_MUX_CTRL_0, mux0);
+	if (ret)
+		return ret;
+
+	return regmap_update_bits(ctrl->map, RTPCS_931X_SERDES_MUX_CTRL_1,
+				  RTPCS_931X_SERDES_MUX_CTRL_1_FIELDS, mux1);
+}
+
 static int rtpcs_931x_sds_probe(struct rtpcs_serdes *sds)
 {
 	u32 base = RTPCS_931X_SERDES_MODE_CTRL + 4 * (sds->id >> 2);
@@ -4640,6 +4770,10 @@ static int rtpcs_931x_init(struct rtpcs_ctrl *ctrl)
 	int ret;
 
 	ret = rtpcs_931x_init_mac_groups(ctrl);
+	if (ret < 0)
+		return ret;
+
+	ret = rtpcs_931x_init_mux(ctrl);
 	if (ret < 0)
 		return ret;
 
