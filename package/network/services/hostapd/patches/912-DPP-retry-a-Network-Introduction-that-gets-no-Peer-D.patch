@@ -1,0 +1,270 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 04 Nov 2026 06:07:56 +0100
+Subject: [PATCH] DPP: retry a Network Introduction that gets no Peer Discovery
+ Response
+
+wpas_dpp_check_connect() sends a Peer Discovery Request and ends the
+connection attempt; only a Response with status OK starts the next one.
+A Request that the AP does not answer, for example while its BSS is down
+for a moment, left the station unassociated until something outside
+asked it to connect again. A Response that refuses the introduction left
+it the same way.
+
+Wait DPP_INTRO_RESPONSE_WAIT_MS (2500 ms, the longest wait on the channel
+plus a margin) for the Response. With none, report DPP-INTRO fail=timeout
+and handle the attempt as a failed connection to that BSS
+(wpas_connection_failed()): the BSS goes on the ignore list and a new
+scan follows with the delays of consecutive failures. A Response that
+refuses the introduction takes the same path. A Response with another
+Transaction ID is dropped and the wait goes on (DPP 3.0 6.6.2).
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/wpa_supplicant/dpp_supplicant.c
++++ b/wpa_supplicant/dpp_supplicant.c
+@@ -69,6 +69,11 @@ static const u8 broadcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  * a single transaction in progress at any point in time. */
+ static const u8 TRANSACTION_ID = 1;
+ 
++/* The Peer Discovery Request waits at most 2000 ms on the channel, so this
++ * covers a Response at the end of that wait. */
++#define DPP_INTRO_RESPONSE_WAIT_MS 2500
++static void wpas_dpp_intro_timeout(void *eloop_ctx, void *timeout_ctx);
++
+ 
+ /**
+  * wpas_dpp_qr_code - Parse and add DPP bootstrapping info from a QR Code
+@@ -2798,6 +2803,50 @@ static void wpas_dpp_pmksa_cache_add(struct wpa_supplicant *wpa_s,
+ }
+ 
+ 
++static void wpas_dpp_intro_failed(struct wpa_supplicant *wpa_s)
++{
++	u8 bssid[ETH_ALEN];
++
++	eloop_cancel_timeout(wpas_dpp_intro_timeout, wpa_s, NULL);
++	if (is_zero_ether_addr(wpa_s->dpp_intro_bssid))
++		return;
++	os_memcpy(bssid, wpa_s->dpp_intro_bssid, ETH_ALEN);
++	os_memset(wpa_s->dpp_intro_bssid, 0, ETH_ALEN);
++	wpas_connection_failed(wpa_s, bssid, NULL);
++}
++
++
++static void wpas_dpp_intro_timeout(void *eloop_ctx, void *timeout_ctx)
++{
++	struct wpa_supplicant *wpa_s = eloop_ctx;
++
++	if (is_zero_ether_addr(wpa_s->dpp_intro_bssid))
++		return;
++	/* Another connection attempt replaced the introduction. */
++	if (wpa_s->wpa_state >= WPA_AUTHENTICATING) {
++		os_memset(wpa_s->dpp_intro_bssid, 0, ETH_ALEN);
++		return;
++	}
++	wpa_printf(MSG_DEBUG, "DPP: No Peer Discovery Response from " MACSTR,
++		   MAC2STR(wpa_s->dpp_intro_bssid));
++	wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_INTRO "peer=" MACSTR " fail=timeout",
++		MAC2STR(wpa_s->dpp_intro_bssid));
++	wpas_dpp_intro_failed(wpa_s);
++}
++
++
++static void wpas_dpp_intro_wait(struct wpa_supplicant *wpa_s, const u8 *bssid,
++				struct wpa_ssid *ssid)
++{
++	os_memcpy(wpa_s->dpp_intro_bssid, bssid, ETH_ALEN);
++	wpa_s->dpp_intro_network = ssid;
++	eloop_cancel_timeout(wpas_dpp_intro_timeout, wpa_s, NULL);
++	eloop_register_timeout(DPP_INTRO_RESPONSE_WAIT_MS / 1000,
++			       (DPP_INTRO_RESPONSE_WAIT_MS % 1000) * 1000,
++			       wpas_dpp_intro_timeout, wpa_s, NULL);
++}
++
++
+ static void wpas_dpp_rx_peer_disc_resp(struct wpa_supplicant *wpa_s,
+ 				       const u8 *src,
+ 				       const u8 *buf, size_t len)
+@@ -2858,13 +2907,14 @@ static void wpas_dpp_rx_peer_disc_resp(struct wpa_supplicant *wpa_s,
+ 			" fail=transaction_id_mismatch", MAC2STR(src));
+ 		goto fail;
+ 	}
++	eloop_cancel_timeout(wpas_dpp_intro_timeout, wpa_s, NULL);
+ 
+ 	status = dpp_get_attr(buf, len, DPP_ATTR_STATUS, &status_len);
+ 	if (!status || status_len != 1) {
+ 		wpa_printf(MSG_DEBUG, "DPP: Peer did not include Status");
+ 		wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_INTRO "peer=" MACSTR
+ 			" fail=missing_status", MAC2STR(src));
+-		goto fail;
++		goto refused;
+ 	}
+ 	if (status[0] != DPP_STATUS_OK) {
+ 		wpa_printf(MSG_DEBUG,
+@@ -2875,7 +2925,7 @@ static void wpas_dpp_rx_peer_disc_resp(struct wpa_supplicant *wpa_s,
+ #ifdef CONFIG_DPP2
+ 		wpas_dpp_send_conn_status_result(wpa_s, status[0]);
+ #endif /* CONFIG_DPP2 */
+-		goto fail;
++		goto refused;
+ 	}
+ 
+ 	connector = dpp_get_attr(buf, len, DPP_ATTR_CONNECTOR, &connector_len);
+@@ -2884,7 +2934,7 @@ static void wpas_dpp_rx_peer_disc_resp(struct wpa_supplicant *wpa_s,
+ 			   "DPP: Peer did not include its Connector");
+ 		wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_INTRO "peer=" MACSTR
+ 			" fail=missing_connector", MAC2STR(src));
+-		goto fail;
++		goto refused;
+ 	}
+ 
+ 	res = dpp_peer_intro(&intro, ssid->dpp_connector,
+@@ -2901,12 +2951,12 @@ static void wpas_dpp_rx_peer_disc_resp(struct wpa_supplicant *wpa_s,
+ #ifdef CONFIG_DPP2
+ 		wpas_dpp_send_conn_status_result(wpa_s, res);
+ #endif /* CONFIG_DPP2 */
+-		goto fail;
++		goto refused;
+ 	}
+ 
+ 	entry = os_zalloc(sizeof(*entry));
+ 	if (!entry)
+-		goto fail;
++		goto refused;
+ 	os_memcpy(entry->aa, src, ETH_ALEN);
+ 	os_memcpy(entry->spa, wpa_s->own_addr, ETH_ALEN);
+ 	os_memcpy(entry->pmkid, intro.pmkid, PMKID_LEN);
+@@ -2925,7 +2975,7 @@ static void wpas_dpp_rx_peer_disc_resp(struct wpa_supplicant *wpa_s,
+ 			   "DPP: Protocol version mismatch (Connector: %d Attribute: %d",
+ 			   intro.peer_version, peer_version);
+ 		wpas_dpp_send_conn_status_result(wpa_s, DPP_STATUS_NO_MATCH);
+-		goto fail;
++		goto refused;
+ 	}
+ #endif /* CONFIG_DPP3 */
+ 	entry->dpp_pfs = peer_version >= 2;
+@@ -2951,6 +3001,9 @@ static void wpas_dpp_rx_peer_disc_resp(struct wpa_supplicant *wpa_s,
+ 		wpa_supplicant_cancel_sched_scan(wpa_s);
+ 		wpa_supplicant_req_scan(wpa_s, 0, 0);
+ 	}
++	goto fail;
++refused:
++	wpas_dpp_intro_failed(wpa_s);
+ fail:
+ 	dpp_peer_intro_deinit(&intro);
+ }
+@@ -4020,6 +4073,7 @@ wpas_dpp_rx_priv_peer_intro_notify(struct wpa_supplicant *wpa_s,
+ 			" fail=transaction_id_mismatch", MAC2STR(src));
+ 		goto fail;
+ 	}
++	eloop_cancel_timeout(wpas_dpp_intro_timeout, wpa_s, NULL);
+ 
+ 	connector = dpp_get_attr(buf, len, DPP_ATTR_CONNECTOR, &connector_len);
+ 	if (!connector) {
+@@ -4027,7 +4081,7 @@ wpas_dpp_rx_priv_peer_intro_notify(struct wpa_supplicant *wpa_s,
+ 			   "DPP: Peer did not include its Connector");
+ 		wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_INTRO "peer=" MACSTR
+ 			" fail=missing_connector", MAC2STR(src));
+-		goto fail;
++		goto refused;
+ 	}
+ 
+ 	version = dpp_get_attr(buf, len, DPP_ATTR_PROTOCOL_VERSION,
+@@ -4037,7 +4091,7 @@ wpas_dpp_rx_priv_peer_intro_notify(struct wpa_supplicant *wpa_s,
+ 			   "DPP: Peer did not include valid Version");
+ 		wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_INTRO "peer=" MACSTR
+ 			" fail=missing_version", MAC2STR(src));
+-		goto fail;
++		goto refused;
+ 	}
+ 
+ 	res = dpp_peer_intro(&intro, ssid->dpp_connector,
+@@ -4052,7 +4106,7 @@ wpas_dpp_rx_priv_peer_intro_notify(struct wpa_supplicant *wpa_s,
+ 		wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_INTRO "peer=" MACSTR
+ 			" fail=peer_connector_validation_failed", MAC2STR(src));
+ 		wpas_dpp_send_conn_status_result(wpa_s, res);
+-		goto fail;
++		goto refused;
+ 	}
+ 
+ 	peer_version = version[0];
+@@ -4062,13 +4116,13 @@ wpas_dpp_rx_priv_peer_intro_notify(struct wpa_supplicant *wpa_s,
+ 			   "DPP: Protocol version mismatch (Connector: %d Attribute: %d",
+ 			   intro.peer_version, peer_version);
+ 		wpas_dpp_send_conn_status_result(wpa_s, DPP_STATUS_NO_MATCH);
+-		goto fail;
++		goto refused;
+ 	}
+ 	wpa_s->dpp_intro_peer_version = peer_version;
+ 
+ 	entry = os_zalloc(sizeof(*entry));
+ 	if (!entry)
+-		goto fail;
++		goto refused;
+ 	entry->dpp_pfs = peer_version >= 2;
+ 	os_memcpy(entry->aa, src, ETH_ALEN);
+ 	os_memcpy(entry->spa, wpa_s->own_addr, ETH_ALEN);
+@@ -4086,7 +4140,7 @@ wpas_dpp_rx_priv_peer_intro_notify(struct wpa_supplicant *wpa_s,
+ 	if (wpas_dpp_send_private_peer_intro_update(wpa_s, &intro, ssid, src,
+ 						    freq) < 0) {
+ 		os_free(entry);
+-		goto fail;
++		goto refused;
+ 	}
+ 
+ 	os_get_reltime(&rnow);
+@@ -4097,7 +4151,9 @@ wpas_dpp_rx_priv_peer_intro_notify(struct wpa_supplicant *wpa_s,
+ 
+ 	/* Association will be initiated from TX status handler for the Private
+ 	 * Peer Intro Update: wpas_dpp_tx_priv_intro_status() */
+-
++	goto fail;
++refused:
++	wpas_dpp_intro_failed(wpa_s);
+ fail:
+ 	dpp_peer_intro_deinit(&intro);
+ }
+@@ -4548,7 +4604,6 @@ static int wpas_dpp_start_private_peer_intro(struct wpa_supplicant *wpa_s,
+ 
+ 	wpa_hexdump_buf(MSG_MSGDUMP, "DPP: Private Peer Intro Query", msg);
+ 
+-	/* TODO: Timeout on AP response */
+ 	wait_time = wpa_s->max_remain_on_chan;
+ 	if (wait_time > 2000)
+ 		wait_time = 2000;
+@@ -4562,8 +4617,7 @@ static int wpas_dpp_start_private_peer_intro(struct wpa_supplicant *wpa_s,
+ 
+ 	/* Request this connection attempt to terminate - new one will be
+ 	 * started when network introduction protocol completes */
+-	os_memcpy(wpa_s->dpp_intro_bssid, bss->bssid, ETH_ALEN);
+-	wpa_s->dpp_intro_network = ssid;
++	wpas_dpp_intro_wait(wpa_s, bss->bssid, ssid);
+ 	return 1;
+ }
+ #endif /* CONFIG_DPP3 */
+@@ -4746,7 +4800,6 @@ skip_connector:
+ skip_proto_ver:
+ #endif /* CONFIG_TESTING_OPTIONS */
+ 
+-	/* TODO: Timeout on AP response */
+ 	wait_time = wpa_s->max_remain_on_chan;
+ 	if (wait_time > 2000)
+ 		wait_time = 2000;
+@@ -4760,8 +4813,7 @@ skip_proto_ver:
+ 
+ 	/* Request this connection attempt to terminate - new one will be
+ 	 * started when network introduction protocol completes */
+-	os_memcpy(wpa_s->dpp_intro_bssid, bss->bssid, ETH_ALEN);
+-	wpa_s->dpp_intro_network = ssid;
++	wpas_dpp_intro_wait(wpa_s, bss->bssid, ssid);
+ 	return 1;
+ }
+ 
+@@ -4960,6 +5012,7 @@ void wpas_dpp_deinit(struct wpa_supplicant *wpa_s)
+ 	wpa_s->dpp_groups_override = NULL;
+ 	wpa_s->dpp_ignore_netaccesskey_mismatch = 0;
+ #endif /* CONFIG_TESTING_OPTIONS */
++	eloop_cancel_timeout(wpas_dpp_intro_timeout, wpa_s, NULL);
+ 	if (!wpa_s->dpp)
+ 		return;
+ 	eloop_cancel_timeout(wpas_dpp_pkex_retry_timeout, wpa_s, NULL);

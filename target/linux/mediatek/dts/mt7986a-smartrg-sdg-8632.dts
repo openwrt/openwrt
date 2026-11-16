@@ -1,0 +1,38 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2022 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ */
+
+#include "mt7986a-smartrg-bonanza-peak.dtsi"
+
+/ {
+	model = "SmartRG SDG-8632";
+	compatible = "smartrg,sdg-8632", "mediatek,mt7986a";
+};
+
+&gmac0 {
+	phy-handle = <&phy5>;
+
+	label = "lan";
+};
+
+&gmac1 {
+	phy-handle = <&phy6>;
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&radio0 {
+	ieee80211-freq-limit = <5170000 5835000>;
+};
+
+&wifi {
+	ieee80211-freq-limit = <2400000 2500000>, <5945000 7125000>;
+};

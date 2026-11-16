@@ -1,0 +1,88 @@
+From 2e307d86f465e280b7e30be2041400ca12e5fc7d Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linusw@kernel.org>
+Date: Thu, 3 Sep 2026 23:17:39 +0200
+Subject: [PATCH 2/6] usb: ehci: add port reset hooks
+
+Some EHCI implementations need controller-specific sequencing around
+port reset.
+
+Add optional hooks for reset preparation and completion. Controllers
+without the hooks retain the existing behavior.
+
+Gate the callbacks behind the hidden USB_EHCI_PORT_RESET_HOOKS option
+so controllers using standard reset sequencing incur no extra state or
+runtime checks.
+
+Suggested-by: Alan Stern <stern@rowland.harvard.edu>
+Suggested-by: Daniel Palmer <daniel@thingy.jp>
+Assisted-by: LLM
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+Link: https://patch.msgid.link/20260903-gemini-usb-fotg2-v3-2-dd92ecf5675b@kernel.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/host/Kconfig    |  4 ++++
+ drivers/usb/host/ehci-hub.c | 16 ++++++++++++++++
+ drivers/usb/host/ehci.h     |  6 ++++++
+ 3 files changed, 26 insertions(+)
+
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -209,6 +209,10 @@ config USB_EHCI_DEVIANT_PORT_STATUS_REG
+ 	bool
+ 	# Used for hosts with a deviant port status register location
+ 
++config USB_EHCI_PORT_RESET_HOOKS
++	bool
++	# Used for hosts with controller-specific port reset sequencing
++
+ config XPS_USB_HCD_XILINX
+ 	bool "Use Xilinx usb host EHCI controller core"
+ 	depends on (PPC32 || MICROBLAZE)
+--- a/drivers/usb/host/ehci-hub.c
++++ b/drivers/usb/host/ehci-hub.c
+@@ -963,6 +963,13 @@ int ehci_hub_control(
+ 			/* see what we found out */
+ 			temp = check_reset_complete (ehci, wIndex, status_reg,
+ 					ehci_readl(ehci, status_reg));
++#ifdef CONFIG_USB_EHCI_PORT_RESET_HOOKS
++			if (ehci->post_port_reset) {
++				retval = ehci->post_port_reset(ehci, wIndex);
++				if (retval)
++					goto error_exit;
++			}
++#endif
+ 		}
+ 
+ 		/* transfer dedicated ports to the companion hc */
+@@ -1121,7 +1128,16 @@ int ehci_hub_control(
+ 				 */
+ 				if (ehci_has_fsl_hs_errata(ehci))
+ 					temp |= (1 << PORTSC_FSL_PFSC);
++
++#ifdef CONFIG_USB_EHCI_PORT_RESET_HOOKS
++				if (ehci->pre_port_reset) {
++					retval = ehci->pre_port_reset(ehci, wIndex);
++					if (retval)
++						goto error_exit;
++				}
++#endif
+ 			}
++
+ 			ehci_writel(ehci, temp, status_reg);
+ 			break;
+ 
+--- a/drivers/usb/host/ehci.h
++++ b/drivers/usb/host/ehci.h
+@@ -126,6 +126,12 @@ struct ehci_hcd {			/* one per controlle
+ #ifdef CONFIG_USB_EHCI_DEVIANT_PORT_STATUS_REG
+ 	u32 __iomem		*port_status;
+ #endif
++#ifdef CONFIG_USB_EHCI_PORT_RESET_HOOKS
++	int			(*pre_port_reset)(struct ehci_hcd *ehci,
++						  unsigned int port);
++	int			(*post_port_reset)(struct ehci_hcd *ehci,
++						   unsigned int port);
++#endif
+ 
+ 	__u32			hcs_params;	/* cached register copy */
+ 	spinlock_t		lock;

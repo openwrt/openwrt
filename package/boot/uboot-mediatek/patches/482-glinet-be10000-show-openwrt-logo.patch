@@ -1,0 +1,293 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] mt7987: show the OpenWrt logo on the GL.iNet BE10000
+
+BL2 draws the logo and leaves the panel running. Redraw it from U-Boot,
+so the screen tracks the boot instead of holding one picture until
+Linux.
+
+--- a/arch/arm/dts/mt7987a-glinet-gl-be10000-u-boot.dtsi
++++ b/arch/arm/dts/mt7987a-glinet-gl-be10000-u-boot.dtsi
+@@ -31,11 +31,79 @@
+ 	};
+ };
+ 
++/* bootph-all throughout: the framebuffer is reserved before relocation */
++&spi1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi1_pins>;
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++	bootph-all;
++	must_tx;
++	enhance_timing;
++	dma_ext;
++	ipm_design;
++	support_quad;
++	tick_dly = <2>;
++	sample_sel = <0>;
++
++	display@0 {
++		compatible = "sitronix,st7789p3";
++		reg = <0>;
++		spi-max-frequency = <52000000>;
++		spi-cpol;
++		spi-cpha;
++		bootph-all;
++
++		/* BL2 drew the splash and left the controller running */
++		skip-init;
++
++		rotation = <270>;
++
++		dc-gpios = <&pio 22 GPIO_ACTIVE_HIGH>;
++		reset-gpios = <&pio 10 GPIO_ACTIVE_HIGH>;
++		backlight = <&backlight>;
++	};
++};
++
++&pwm {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pwm2_pins>;
++	status = "okay";
++	bootph-all;
++};
++
++/ {
++	backlight: backlight {
++		compatible = "pwm-backlight";
++		pwms = <&pwm 2 50000>;
++		brightness-levels = <0 16 32 48 64 80 96 112 128 144 160 176 192 208 224 255>;
++		default-brightness-level = <12>;
++		bootph-all;
++	};
++};
++
+ /*
+  * pio 0 is the MDIO bus reset, active low. mtk_eth only releases it on the
+  * switch code path, which this board does not take, so hog it high.
+  */
+ &pio {
++	bootph-all;
++
++	spi1_pins: spi1-pins {
++		mux {
++			function = "spi";
++			groups = "spi1_1";
++		};
++	};
++
++	pwm2_pins: pwm2-pins {
++		mux {
++			function = "pwm";
++			groups = "pwm2_0";
++		};
++	};
++
+ 	mdio-reset-hog {
+ 		gpio-hog;
+ 		gpios = <0 GPIO_ACTIVE_HIGH>;
+--- /dev/null
++++ b/board/mediatek/common/panel_logo.c
+@@ -0,0 +1,115 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2026 OpenWrt.org
++ *
++ * Draws the OpenWrt logo and the stage name on an ST7789P3 front panel. The
++ * boards that carry one share the picture, the text position and the panel
++ * geometry, so only the calls into here belong in a board file.
++ */
++
++#include <bootm.h>
++#include <dm.h>
++#include <image.h>
++#include <mapmem.h>
++#include <splash.h>
++#include <version.h>
++#include <video.h>
++#include <video_console.h>
++#include <linux/libfdt.h>
++
++#include "panel_logo.h"
++
++/* openwrt_logo.bmp, incbin'd by the .bmp.o rule in Makefile.lib-u-boot */
++extern u8 __splash_openwrt_logo_begin[];
++
++/*
++ * Only claimed when the panel actually came up under us. A static property
++ * would be a promise that U-Boot ran, which is false for netboot or recovery,
++ * and the panel is write-only so the kernel cannot check for itself.
++ */
++void fdt_mark_panel_initialised(void *blob)
++{
++	struct udevice *vid;
++	int node;
++
++	vid = uclass_try_first_device(UCLASS_VIDEO);
++	if (!vid || !device_active(vid))
++		return;
++
++	node = fdt_node_offset_by_compatible(blob, -1, "panel-mipi-dbi-spi");
++	if (node < 0)
++		return;
++
++	if (fdt_setprop_empty(blob, node, "bootloader-initialized"))
++		printf("cannot mark the panel as initialised\n");
++}
++
++/*
++ * The first scanline clear of the centred 280x83 logo, rounded up to the 8x16
++ * font cell. scripts/gen-boot-logos.py in the OpenWrt tree puts the BL2 text
++ * band at the same y with the same glyphs, so changing CONFIG_VIDEO_FONT_* here
++ * needs the BL2 blob regenerated too.
++ */
++#define PANEL_TEXT_Y		176
++
++static void panel_text(struct udevice *vid, const char *text)
++{
++	struct video_priv *vid_priv = dev_get_uclass_priv(vid);
++	struct vidconsole_priv *cons;
++	struct udevice *con;
++	int len = strlen(text);
++	int max, x;
++
++	if (uclass_first_device_err(UCLASS_VIDEO_CONSOLE, &con))
++		return;
++
++	cons = dev_get_uclass_priv(con);
++	max = vid_priv->xsize / cons->x_charsize;
++	x = len < max ? (vid_priv->xsize - len * cons->x_charsize) / 2 : 0;
++
++	vidconsole_set_cursor_pos(con, x, PANEL_TEXT_Y);
++	vidconsole_put_stringn(con, text, max);
++}
++
++/*
++ * Order matters. video_sync() runs the driver blit before it looks at its own
++ * rate limit, and CONFIG_CYCLIC is off here, so every call puts a whole 320x240
++ * frame on the wire, which is 24 ms the eye can see. video_fill_part() and
++ * vidconsole_put_stringn() only touch the framebuffer. video_bmp_display() ends
++ * in video_sync(), so it goes last and its sync is the only blit of the frame.
++ *
++ * NO_FB_CLEAR keeps the BL2 picture on the panel through probe, so nothing has
++ * painted the framebuffer and the background is laid down here.
++ */
++static void panel_draw(const char *text)
++{
++	struct video_priv *priv;
++	struct udevice *vid;
++
++	if (uclass_first_device_err(UCLASS_VIDEO, &vid))
++		return;
++
++	priv = dev_get_uclass_priv(vid);
++	video_fill_part(vid, 0, 0, priv->xsize, priv->ysize, priv->colour_bg);
++
++	panel_text(vid, text);
++	video_bmp_display(vid, map_to_sysmem(__splash_openwrt_logo_begin),
++			  BMP_ALIGN_CENTER, BMP_ALIGN_CENTER, true);
++}
++
++void board_show_logo(void)
++{
++	panel_draw(PLAIN_VERSION);
++}
++
++/* The panel keeps this picture until Linux hands over to whatever draws next */
++void board_preboot_os(void)
++{
++	char *desc;
++
++	if (!images.fit_hdr_os ||
++	    fit_get_desc(images.fit_hdr_os, images.fit_noffset_os, &desc))
++		desc = "Booting Linux";
++
++	panel_draw(desc);
++}
+--- /dev/null
++++ b/board/mediatek/common/panel_logo.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2026 OpenWrt.org
++ */
++
++#ifndef _MEDIATEK_PANEL_LOGO_H
++#define _MEDIATEK_PANEL_LOGO_H
++
++#if IS_ENABLED(CONFIG_VIDEO_ST7789P3)
++void board_show_logo(void);
++void fdt_mark_panel_initialised(void *blob);
++#else
++static inline void board_show_logo(void) { }
++static inline void fdt_mark_panel_initialised(void *blob) { }
++#endif
++
++#endif /* _MEDIATEK_PANEL_LOGO_H */
+--- a/board/mediatek/mt7987/Makefile
++++ b/board/mediatek/mt7987/Makefile
+@@ -2,3 +2,5 @@
+ 
+ obj-y	+= mt7987_rfb.o
+ obj-$(CONFIG_PHY_MEDIATEK_2P5GE)	+= i2p5ge_fw.o
++obj-$(CONFIG_VIDEO_ST7789P3)		+= ../common/panel_logo.o		\
++					   ../common/openwrt_logo.bmp.o
+--- a/board/mediatek/mt7987/mt7987_rfb.c
++++ b/board/mediatek/mt7987/mt7987_rfb.c
+@@ -14,6 +14,8 @@
+ #include <linux/delay.h>
+ #include <linux/libfdt.h>
+ 
++#include "../common/panel_logo.h"
++
+ #ifndef CONFIG_RESET_BUTTON_LABEL
+ #define CONFIG_RESET_BUTTON_LABEL "reset"
+ #endif
+@@ -38,6 +40,9 @@ int board_late_init(void)
+ 		}
+ 	}
+ 	env_relocate();
++
++	board_show_logo();
++
+ 	return 0;
+ }
+ 
+@@ -72,6 +77,8 @@ int mtk_ft_system_setup(void *blob, stru
+ 		;;
+ 	}
+ 
++	fdt_mark_panel_initialised(blob);
++
+ 	chosen = fdt_path_offset(blob, "/chosen");
+ 	if (chosen <= 0)
+ 		return 0;
+--- a/configs/mt7987a_glinet_gl-be10000_defconfig
++++ b/configs/mt7987a_glinet_gl-be10000_defconfig
+@@ -43,6 +43,7 @@ CONFIG_CMD_STRINGS=y
+ CONFIG_CMD_CPU=y
+ CONFIG_CMD_DM=y
+ CONFIG_CMD_GPIO=y
++CONFIG_CMD_BMP=y
+ CONFIG_CMD_MDIO=y
+ CONFIG_CMD_MII=y
+ CONFIG_CMD_NET=y
+@@ -116,6 +117,16 @@ CONFIG_PINCONF=y
+ CONFIG_PINCTRL_MT7987=y
+ CONFIG_POWER_DOMAIN=y
+ CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_DM_PWM=y
++CONFIG_PWM_MTK=y
++CONFIG_VIDEO=y
++CONFIG_VIDEO_ST7789P3=y
++CONFIG_NO_FB_CLEAR=y
++CONFIG_BACKLIGHT=y
++CONFIG_BACKLIGHT_PWM=y
++# CONFIG_VIDEO_LOGO is not set
++# CONFIG_CYCLIC is not set
++# CONFIG_SYS_WHITE_ON_BLACK is not set
+ CONFIG_DM_REGULATOR=y
+ CONFIG_DM_REGULATOR_FIXED=y
+ CONFIG_DM_REGULATOR_GPIO=y

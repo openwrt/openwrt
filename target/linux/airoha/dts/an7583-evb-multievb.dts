@@ -1,0 +1,255 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "an7583.dtsi"
+
+/ {
+	model = "Airoha AN7583 Evaluation Board";
+	compatible = "airoha,an7583-evb", "airoha,an7583", "airoha,en7583";
+
+	aliases {
+		serial0 = &uart1;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x2 0x00000000>;
+	};
+};
+
+&an7583_pinctrl {
+	gpio-ranges = <&an7583_pinctrl 0 2 53>;
+
+	mdio0_pins: mdio0-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
+		conf {
+			pins = "mdio_0";
+			output-high;
+		};
+	};
+
+	spi_pins: spi-pins {
+		mux {
+			function = "spi";
+			groups = "spi";
+		};
+	};
+
+	mmc_pins: mmc-pins {
+		mux {
+			function = "emmc";
+			groups = "emmc";
+		};
+	};
+
+	pcie0_rst_pins: pcie0-rst-pins {
+		conf {
+			pins = "pcie_reset0";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pcie1_rst_pins: pcie1-rst-pins {
+		conf {
+			pins = "pcie_reset1";
+			drive-open-drain = <1>;
+		};
+	};
+
+	gswp1_led0_pins: gswp1-led0-pins {
+		mux {
+			function = "phy1_led0";
+			pins = "gpio1";
+		};
+	};
+
+	gswp2_led0_pins: gswp2-led0-pins {
+		mux {
+			function = "phy2_led0";
+			pins = "gpio2";
+		};
+	};
+
+	gswp3_led0_pins: gswp3-led0-pins {
+		mux {
+			function = "phy3_led0";
+			pins = "gpio3";
+		};
+	};
+
+	gswp4_led0_pins: gswp4-led0-pins {
+		mux {
+			function = "phy4_led0";
+			pins = "gpio4";
+		};
+	};
+};
+
+&snfi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_pins>;
+	status = "disabled";
+};
+
+&spi_nand {
+	status = "disabled";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		bl2@0 {
+			label = "bl2";
+			reg = <0x0 0x20000>;
+		};
+
+		ubi@20000 {
+			label = "ubi";
+			reg = <0x20000 0x0>;
+		};
+	};
+};
+
+&mmc0 {
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&mmc_pins>;
+	pinctrl-1 = <&mmc_pins>;
+	status = "disabled";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			bootloader@0 {
+				label = "bootloader";
+				reg = <0x00000000 0x00080000>;
+			};
+
+			tclinux@80000 {
+				label = "tclinux";
+				reg = <0x00080000 0x02800000>;
+			};
+
+			tclinux_slave@2880000 {
+				label = "tclinux_slave";
+				reg = <0x02880000 0x02800000>;
+			};
+
+			rootfs_data@5080000 {
+				label = "rootfs_data";
+				reg = <0x5080000 0x00800000>;
+			};
+		};
+
+		block {
+			compatible = "block-device";
+			partitions {
+				block-partition-factory {
+					partname = "art";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_factory_0: eeprom@0 {
+							reg = <0x40000 0x1e00>;
+						};
+
+						mac_factory_2c0000: mac@2c0000 {
+							reg = <0x2c0000 0x6>;
+						};
+
+						pon_mac_factory_2c0006: pon_mac@2c0006 {
+							reg = <0x2c0006 0x6>;
+						};
+
+						onu_type_factory_2e0000: onu_type@2e0000 {
+							reg = <0x2e0000 0x10>;
+						};
+
+						board_config_factory_2e0010: board_config@2e0010 {
+							reg = <0x2e0010 0x8>;
+						};
+					};
+				};
+			};
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&mdio_0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio0_pins>;
+};
+
+&npu {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port1 {
+	status = "okay";
+	label = "lan1";
+};
+
+&gsw_phy1 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp1_led0_pins>;
+	status = "okay";
+};
+
+&gsw_phy2 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp2_led0_pins>;
+	status = "okay";
+};
+
+&gsw_phy3 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp3_led0_pins>;
+	status = "okay";
+};
+
+&gsw_phy4 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp4_led0_pins>;
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+	active-low;
+};

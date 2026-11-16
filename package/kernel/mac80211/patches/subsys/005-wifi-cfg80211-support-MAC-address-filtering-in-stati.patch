@@ -1,0 +1,113 @@
+From f9202a374ec34e767185cf44f44ed2fbdf6bf053 Mon Sep 17 00:00:00 2001
+From: P Praneesh <praneesh.p@oss.qualcomm.com>
+Date: Sun, 14 Jun 2026 10:47:35 +0530
+Subject: [PATCH 5/5] wifi: cfg80211: support MAC address filtering in station
+ dump for link stats
+
+Currently, when userspace requests station information with
+link statistics using NL80211_CMD_GET_STATION with the
+NL80211_ATTR_STA_DUMP_LINK_STATS flag, the kernel uses the .doit callback
+(nl80211_get_station) which sends a single netlink message. For MLO
+stations with multiple links, the link statistics can be large and may
+exceed the maximum netlink message size, causing the operation to fail
+with -EMSGSIZE.
+
+The .dumpit callback (nl80211_dump_station) already supports
+fragmentation across multiple netlink messages, making it suitable
+for handling large link statistics. However, it currently iterates over
+all stations on the interface, which is inefficient when userspace only
+wants information about a specific station.
+
+Add support for MAC address filtering in nl80211_dump_station to allow
+userspace to request fragmented link statistics for a specific station.
+When NL80211_ATTR_MAC is present in a dump request, cache the MAC address
+in the dump context and use rdev_get_station() to retrieve information for
+only that station, instead of iterating over all stations with
+rdev_dump_station().
+
+This allows userspace tools (like iw) to use NL80211_CMD_GET_STATION with
+NLM_F_DUMP flag to retrieve complete link statistics for a specific
+station across multiple netlink messages, avoiding the message size
+limitation.
+
+Signed-off-by: P Praneesh <praneesh.p@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260614051739.3979947-6-praneesh.p@oss.qualcomm.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/wireless/nl80211.c | 41 +++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 37 insertions(+), 4 deletions(-)
+
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -8486,6 +8486,8 @@ struct nl80211_dump_station_ctx {
+ 	int link_idx;
+ 	enum nl80211_dump_station_phase phase;
+ 	bool dump_link_stats;
++	bool filter_mac;
++	u8 filter_mac_addr[ETH_ALEN];
+ 	u8 mac_addr[ETH_ALEN];
+ 	struct station_info sinfo;
+ };
+@@ -8555,10 +8557,22 @@ static int nl80211_dump_station(struct s
+ 			err = -ENOMEM;
+ 			goto out_err;
+ 		}
++		cb->args[2] = (long)ctx;
+ 		ctx->phase = NL80211_DUMP_STA_PHASE_AGGREGATED;
+ 		ctx->dump_link_stats =
+ 			!!attrbuf[NL80211_ATTR_STA_DUMP_LINK_STATS];
+-		cb->args[2] = (long)ctx;
++		if (attrbuf[NL80211_ATTR_MAC]) {
++			const u8 *mac = nla_data(attrbuf[NL80211_ATTR_MAC]);
++
++			if (!is_valid_ether_addr(mac)) {
++				kfree(ctx);
++				cb->args[2] = 0;
++				err = -EINVAL;
++				goto out_err;
++			}
++			ctx->filter_mac = true;
++			memcpy(ctx->filter_mac_addr, mac, ETH_ALEN);
++		}
+ 	}
+ 
+ 	if (!wdev->netdev && wdev->iftype != NL80211_IFTYPE_NAN) {
+@@ -8566,7 +8580,12 @@ static int nl80211_dump_station(struct s
+ 		goto out_err;
+ 	}
+ 
+-	if (!rdev->ops->dump_station) {
++	if (ctx->filter_mac) {
++		if (!rdev->ops->get_station) {
++			err = -EOPNOTSUPP;
++			goto out_err;
++		}
++	} else if (!rdev->ops->dump_station) {
+ 		err = -EOPNOTSUPP;
+ 		goto out_err;
+ 	}
+@@ -8587,8 +8606,22 @@ static int nl80211_dump_station(struct s
+ 				}
+ 			}
+ 
+-			err = rdev_dump_station(rdev, wdev, ctx->sta_idx,
+-						ctx->mac_addr, &ctx->sinfo);
++			if (ctx->filter_mac) {
++				if (ctx->sta_idx > 0) {
++					err = skb->len;
++					goto out_err_release;
++				}
++				err = rdev_get_station(rdev, wdev,
++						       ctx->filter_mac_addr,
++						       &ctx->sinfo);
++				if (!err)
++					memcpy(ctx->mac_addr,
++					       ctx->filter_mac_addr, ETH_ALEN);
++			} else {
++				err = rdev_dump_station(rdev, wdev, ctx->sta_idx,
++							ctx->mac_addr,
++							&ctx->sinfo);
++			}
+ 			if (err == -ENOENT) {
+ 				err = skb->len;
+ 				goto out_err_release;

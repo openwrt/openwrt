@@ -1,0 +1,20 @@
+#!/bin/sh /etc/rc.common
+
+# The LED init script resets the DSL LED to its configured trigger. The DSL
+# modem can start before it, so show the state of the line again afterwards.
+START=97
+
+STATUS_FILE=/var/run/dsl_interface_status
+
+start() {
+	local status=""
+
+	# dsl_notify.sh writes the state before it updates the LED, so show it
+	# again if an event came in meanwhile
+	while [ -r "$STATUS_FILE" ] && [ "$(cat "$STATUS_FILE")" != "$status" ]; do
+		status="$(cat "$STATUS_FILE")"
+		DSL_NOTIFICATION_TYPE="DSL_INTERFACE_STATUS" \
+		DSL_INTERFACE_STATUS="$status" \
+			/bin/sh /etc/hotplug.d/dsl/led_dsl.sh
+	done
+}

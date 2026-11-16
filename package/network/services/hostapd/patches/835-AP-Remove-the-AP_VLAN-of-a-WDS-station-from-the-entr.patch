@@ -1,0 +1,88 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 03:30:00 +0200
+Subject: [PATCH] AP: Remove the AP_VLAN of a WDS station from the entry that
+ created it
+
+ap_free_sta() removes the AP_VLAN of a station whose entry holds
+WLAN_STA_WDS, or WLAN_STA_MULTI_AP on a backhaul BSS with wds_sta. These
+flags describe the entry, not the AP_VLAN, and the AP_VLAN can outlive
+the entry state they come from:
+
+- A new authentication keeps the entry and its AP_VLAN for the next
+  association. If that association is refused, check_multi_ap() has
+  cleared WLAN_STA_MULTI_AP, so the free of the entry leaves the
+  AP_VLAN. This also holds for a station that is no MLD.
+- On an AP MLD, only the link station that received the 4-address frame
+  holds WLAN_STA_WDS. If it is freed while another link station stays,
+  no link station removes the AP_VLAN of a plain WDS non-AP MLD.
+- With the rule of hostap commit 7561cfa1ea9a ("WDS: Interface removal
+  in MLO cases"), a link station removes the AP_VLAN where no other
+  link BSS of the AP MLD has an entry for the address. An
+  entry of a new authentication counts as such an entry. The station of
+  a link BSS that left the AP MLD is not found by the others, so the
+  removal of the association link removes the AP_VLAN twice: once from
+  the link station that sees no partner, and again from the station of
+  the removed link BSS when it is freed.
+
+Mark the entry on which hostapd created or enabled again the AP_VLAN,
+and remove the AP_VLAN only from that entry. The mark is set also where
+hostapd_set_wds_sta() fails, because the driver can create the AP_VLAN
+and then fail to add it to the bridge or to move the station to it.
+Where the marked link station of a non-AP MLD is freed and another link
+station of the MLD stays, the mark passes to that station. A link BSS
+that left the AP MLD still reaches the remaining links through
+hapd->mld. Upstream main 741d70dd8e32 decides by the flags as before.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -9164,6 +9164,7 @@ skip_update:
+ 			   MAC2STR(sta->addr), sta->aid);
+ 		ret = hostapd_set_wds_sta(hapd, ifname_wds, sta->addr,
+ 					  sta->aid, 1);
++		sta->wds_vlan = 1;
+ 		if (!ret)
+ 			hostapd_set_wds_encryption(hapd, sta, ifname_wds);
+ 	}
+@@ -9534,6 +9535,7 @@ void ieee802_11_rx_from_unknown(struct h
+ 			sta->flags |= WLAN_STA_WDS;
+ 			ret = hostapd_set_wds_sta(hapd, ifname_wds,
+ 						  sta->addr, sta->aid, 1);
++			sta->wds_vlan = 1;
+ 			if (!ret)
+ 				hostapd_set_wds_encryption(hapd, sta,
+ 							   ifname_wds);
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -402,11 +402,7 @@ void ap_free_sta(struct hostapd_data *ha
+ 	ap_sta_set_authorized(hapd, sta, 0);
+ 	hostapd_set_sta_flags(hapd, sta);
+ 
+-	if ((sta->flags & WLAN_STA_WDS) ||
+-	    (sta->flags & WLAN_STA_MULTI_AP &&
+-	     (hapd->conf->multi_ap & BACKHAUL_BSS) &&
+-	     hapd->conf->wds_sta &&
+-	     !(sta->flags & WLAN_STA_WPS))) {
++	if (sta->wds_vlan) {
+ #ifdef CONFIG_IEEE80211BE
+ 		if (ap_sta_is_mld(hapd, sta)) {
+ 			struct hostapd_data *phapd;
+@@ -418,6 +414,7 @@ void ap_free_sta(struct hostapd_data *ha
+ 
+ 				psta = ap_get_sta(phapd, sta->addr);
+ 				if (psta) {
++					psta->wds_vlan = 1;
+ 					remove = false;
+ 					break;
+ 				}
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -166,6 +166,7 @@ struct sta_info {
+ 	unsigned int ecsa_supported:1;
+ 	unsigned int added_unassoc:1;
+ 	unsigned int pending_wds_enable:1;
++	unsigned int wds_vlan:1; /* owns the AP_VLAN of the station */
+ 	unsigned int power_capab:1;
+ 	unsigned int agreed_to_steer:1;
+ 	unsigned int hs20_t_c_filtering:1;

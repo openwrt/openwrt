@@ -1,0 +1,137 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+Date: Fri, 25 Sep 2026 09:00:00 +0900
+Subject: [PATCH] arm64: dts: qcom: ipq9574: add the ath11k resource node
+
+Describe the IPQ9574-family WLAN register window and named interrupts
+observed on the Linksys LN6001. Connect the AHB device to the WCSS
+remote processor using the upstream ath11k binding.
+
+Keep the node disabled for board-specific enablement. The interrupt
+list has no watchdog entry and includes transmit-completion ring 4,
+so it must use the separate IPQ9574 binding rather than the IPQ6018
+interrupt layout.
+
+Link: https://lists.infradead.org/pipermail/ath11k/2026-January/008112.html
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+---
+--- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+@@ -963,6 +963,117 @@
+ 			};
+ 		};
+ 
++		wifi0: wifi@c000000 {
++			compatible = "qcom,ipq9574-wifi";
++			reg = <0x0c000000 0x01000000>;
++			interrupts = <GIC_SPI 320 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 319 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 318 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 316 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 315 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 314 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 311 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 310 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 411 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 410 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 40 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 39 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 302 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 301 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 37 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 36 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 296 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 295 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 294 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 293 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 292 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 291 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 290 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 289 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 288 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 239 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 236 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 235 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 234 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 233 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 232 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 231 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 230 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 229 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 228 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 224 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 223 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 203 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 183 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 180 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 179 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 178 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 177 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 176 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 163 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 160 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 414 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 159 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 158 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 157 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 156 IRQ_TYPE_EDGE_RISING>;
++			interrupt-names = "misc-pulse1",
++					  "misc-latch",
++					  "sw-exception",
++					  "ce0",
++					  "ce1",
++					  "ce2",
++					  "ce3",
++					  "ce4",
++					  "ce5",
++					  "ce6",
++					  "ce7",
++					  "ce8",
++					  "ce9",
++					  "ce10",
++					  "ce11",
++					  "host2wbm-desc-feed",
++					  "host2reo-re-injection",
++					  "host2reo-command",
++					  "host2rxdma-monitor-ring3",
++					  "host2rxdma-monitor-ring2",
++					  "host2rxdma-monitor-ring1",
++					  "reo2ost-exception",
++					  "wbm2host-rx-release",
++					  "reo2host-status",
++					  "reo2host-destination-ring4",
++					  "reo2host-destination-ring3",
++					  "reo2host-destination-ring2",
++					  "reo2host-destination-ring1",
++					  "rxdma2host-monitor-destination-mac3",
++					  "rxdma2host-monitor-destination-mac2",
++					  "rxdma2host-monitor-destination-mac1",
++					  "ppdu-end-interrupts-mac3",
++					  "ppdu-end-interrupts-mac2",
++					  "ppdu-end-interrupts-mac1",
++					  "rxdma2host-monitor-status-ring-mac3",
++					  "rxdma2host-monitor-status-ring-mac2",
++					  "rxdma2host-monitor-status-ring-mac1",
++					  "host2rxdma-host-buf-ring-mac3",
++					  "host2rxdma-host-buf-ring-mac2",
++					  "host2rxdma-host-buf-ring-mac1",
++					  "rxdma2host-destination-ring-mac3",
++					  "rxdma2host-destination-ring-mac2",
++					  "rxdma2host-destination-ring-mac1",
++					  "host2tcl-input-ring4",
++					  "host2tcl-input-ring3",
++					  "host2tcl-input-ring2",
++					  "host2tcl-input-ring1",
++					  "wbm2host-tx-completions-ring4",
++					  "wbm2host-tx-completions-ring3",
++					  "wbm2host-tx-completions-ring2",
++					  "wbm2host-tx-completions-ring1",
++					  "tcl2host-status-ring";
++			qcom,rproc = <&q6v5_wcss>;
++			status = "disabled";
++		};
++
+ 		q6v5_wcss: remoteproc@cd00000 {
+ 			compatible = "qcom,ipq9574-wcss-sec-pil";
+ 			reg = <0x0cd00000 0x10000>;

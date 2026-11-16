@@ -1,0 +1,163 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 13:10:00 +0200
+Subject: [PATCH] AP MLD: Refuse an association while a requested link is not
+ started
+
+A link of an AP MLD joins the AP MLD in hostapd_driver_init(), before
+hostapd_setup_bss() starts it. While the link waits for an HT scan, ACS
+or a DFS CAC, it has no wpa_auth. hostapd_mld_validate_assoc_info()
+accepts such a link in an ML (Re)Association Request, and
+ieee80211_ml_process_link() then adds a link station on it.
+wpa_auth_sta_init() dereferences the NULL wpa_auth of the link, and
+hostapd crashes. The other links advertise only started links, so a
+non-AP MLD sends such a request with scan results from before a restart
+of the link.
+
+Refuse the whole association temporarily while a requested link is not
+started, so that the non-AP MLD gets all links when it comes back after
+the association comeback time. Keep the ML information of the station
+for the per-link profiles of the response. Also keep the unassociated
+STA entry in the driver, since the station comes back without a new
+authentication and its link stations need that entry.
+
+Without a pending SA Query, hostapd_eid_assoc_comeback_time() computes
+the comeback time from a stale sa_query_start, and the result is
+usually 1 TU. Use assoc_sa_query_max_timeout in that case.
+
+Also skip a link BSS without wpa_auth in
+hostapd_wpa_auth_get_ml_key_info(). A Link Reconfiguration Request that
+adds a link that is not started otherwise makes it pass the NULL
+pointer to wpa_auth_ml_get_key_info().
+
+Fixes: 5f5db9366cde ("AP: MLO: Process Multi-Link element from (Re)Association Request frame")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1174,15 +1174,16 @@ const u8 * hostapd_process_ml_auth(struc
+ }
+ 
+ 
+-static int hostapd_mld_validate_assoc_info(struct hostapd_data *hapd,
++static u16 hostapd_mld_validate_assoc_info(struct hostapd_data *hapd,
+ 					   struct sta_info *sta)
+ {
+ 	u8 link_id;
+ 	struct mld_info *info = &sta->mld_info;
++	u16 status = WLAN_STATUS_SUCCESS;
+ 
+ 	if (!ap_sta_is_mld(hapd, sta)) {
+ 		wpa_printf(MSG_DEBUG, "MLD: Not a non-AP MLD");
+-		return 0;
++		return WLAN_STATUS_SUCCESS;
+ 	}
+ 
+ 	/*
+@@ -1204,14 +1205,22 @@ static int hostapd_mld_validate_assoc_in
+ 		if (!other_hapd) {
+ 			wpa_printf(MSG_DEBUG, "MLD: Invalid link ID=%u",
+ 				   link_id);
+-			return -1;
++			return WLAN_STATUS_UNSPECIFIED_FAILURE;
++		}
++
++		/* A link that waits for an HT scan, ACS or a DFS CAC has no
++		 * wpa_auth yet and cannot take a link station. */
++		if (!other_hapd->started) {
++			wpa_printf(MSG_DEBUG, "MLD: Link ID=%u not started",
++				   link_id);
++			status = WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY;
+ 		}
+ 
+ 		os_memcpy(info->links[link_id].local_addr, other_hapd->own_addr,
+ 			  ETH_ALEN);
+ 	}
+ 
+-	return 0;
++	return status;
+ }
+ 
+ 
+@@ -1284,6 +1293,7 @@ u16 hostapd_process_ml_assoc_req(struct
+ 	struct mld_info *info = &sta->mld_info;
+ 	const u8 *pos, *end;
+ 	int ret = -1;
++	u16 status = WLAN_STATUS_SUCCESS;
+ 	u16 ml_control;
+ 	const u8 *ml_end;
+ 	u8 saved_peer_addr[ETH_ALEN];
+@@ -1559,7 +1569,10 @@ u16 hostapd_process_ml_assoc_req(struct
+ 		link_info->valid = true;
+ 	}
+ 
+-	ret = hostapd_mld_validate_assoc_info(hapd, sta);
++	status = hostapd_mld_validate_assoc_info(hapd, sta);
++	if (status == WLAN_STATUS_SUCCESS ||
++	    status == WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY)
++		ret = 0;
+ out:
+ 	wpabuf_free(mlbuf);
+ 	if (ret) {
+@@ -1568,7 +1581,7 @@ out:
+ 		return WLAN_STATUS_UNSPECIFIED_FAILURE;
+ 	}
+ 
+-	return WLAN_STATUS_SUCCESS;
++	return status;
+ }
+ 
+ 
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -40,6 +40,12 @@ u8 * hostapd_eid_assoc_comeback_time(str
+ 	struct os_reltime now, passed;
+ 	u8 type = WLAN_TIMEOUT_ASSOC_COMEBACK;
+ 
++	/* sa_query_start is valid only while an SA Query is pending */
++	if (!sta->sa_query_count) {
++		timeout = hapd->conf->assoc_sa_query_max_timeout;
++		goto out;
++	}
++
+ 	os_get_reltime(&now);
+ 	os_reltime_sub(&now, &sta->sa_query_start, &passed);
+ 	tu = (passed.sec * 1000000 + passed.usec) / 1024;
+@@ -50,6 +56,7 @@ u8 * hostapd_eid_assoc_comeback_time(str
+ 	if (timeout < hapd->conf->assoc_sa_query_max_timeout)
+ 		timeout++; /* add some extra time for local timers */
+ 
++out:
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	if (hapd->conf->test_assoc_comeback_type != -1)
+ 		type = hapd->conf->test_assoc_comeback_type;
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
+@@ -1766,7 +1766,8 @@ static int hostapd_wpa_auth_get_ml_key_i
+ 		}
+ 
+ 		for_each_mld_link(bss, hapd) {
+-			if (bss == hapd || bss->mld_link_id != link_id)
++			if (bss == hapd || bss->mld_link_id != link_id ||
++			    !bss->wpa_auth)
+ 				continue;
+ 
+ 			wpa_auth_ml_get_key_info(bss->wpa_auth,
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -7939,10 +7939,14 @@ static void handle_assoc(struct hostapd_
+ 	/*
+ 	 * Remove the station in case transmission of a success response fails
+ 	 * (the STA was added associated to the driver) or if the station was
+-	 * previously added unassociated.
++	 * previously added unassociated. Keep a station that is rejected
++	 * temporarily, since it comes back without a new authentication and a
++	 * non-AP MLD then needs the STA entry for its link stations.
+ 	 */
+ 	if (sta && ((reply_res != WLAN_STATUS_SUCCESS &&
+-		     resp == WLAN_STATUS_SUCCESS) || sta->added_unassoc)) {
++		     resp == WLAN_STATUS_SUCCESS) ||
++		    (sta->added_unassoc &&
++		     resp != WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY))) {
+ 		hostapd_drv_sta_remove(hapd, sta->addr);
+ 		sta->added_unassoc = 0;
+ 	}

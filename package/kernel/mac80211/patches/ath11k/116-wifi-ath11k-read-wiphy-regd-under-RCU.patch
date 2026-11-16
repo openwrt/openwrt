@@ -1,0 +1,30 @@
+From 170404d5e976ee94a6c683a87af1a9fd56a4b668 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Tue, 6 Oct 2026 12:04:15 +0200
+Subject: [PATCH] wifi: ath11k: read wiphy regd under RCU
+
+Part of the RTNL removal here means the notifier will no
+longer hold the RTNL, so rcu_dereference_rtnl() can't be
+used any more. Use an RCU critical section which works
+either way, we don't have access to the cfg80211_mutex
+in the drivers.
+
+Link: https://patch.msgid.link/20261006120655.2959e1a05eb0.I92dbc5e611309de4ea3bc11fefea609a5f2d0af4@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ drivers/net/wireless/ath/ath11k/reg.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/reg.c
++++ b/drivers/net/wireless/ath/ath11k/reg.c
+@@ -33,7 +33,9 @@ static bool ath11k_regdom_changes(struct
+ {
+ 	const struct ieee80211_regdomain *regd;
+ 
+-	regd = rcu_dereference_rtnl(ar->hw->wiphy->regd);
++	guard(rcu)();
++
++	regd = get_wiphy_regdom(ar->hw->wiphy);
+ 	/* This can happen during wiphy registration where the previous
+ 	 * user request is received before we update the regd received
+ 	 * from firmware.

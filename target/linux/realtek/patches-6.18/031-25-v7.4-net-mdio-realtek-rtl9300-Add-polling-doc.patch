@@ -1,0 +1,101 @@
+From 1c86cd6937165b8ea702d8931d09f1df238c2a44 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Mon, 31 Aug 2026 16:34:28 +0200
+Subject: net: mdio: realtek-rtl9300: Add polling documentation
+
+Add a detailed explanation how the hardware polling unit in the
+Realtek Otto switches works. This simplifies developing future
+patches and reviewing them.
+
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260831143439.2404484-3-markus.stockhausen@gmx.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/mdio/mdio-realtek-rtl9300.c | 75 +++++++++++++++++++++++++++++++++
+ 1 file changed, 75 insertions(+)
+
+--- a/drivers/net/mdio/mdio-realtek-rtl9300.c
++++ b/drivers/net/mdio/mdio-realtek-rtl9300.c
+@@ -35,6 +35,81 @@
+  *
+  * The driver works out the mapping based on the MDIO bus described in device tree and phandles on
+  * the ethernet-ports property.
++ *
++ * The devices have a hardware polling unit that runs in the background without any CPU load. It
++ * constantly scans the MDIO bus and the attached PHYs and updates the MAC status registers.
++ *
++ * How does the polling work?
++ *
++ * Each device has a SMI_POLL_CTRL register. A per-port bitmask decides if the hardware polling of
++ * the associated bus/address is active or not. The hardware runs a tight loop over this and for
++ * each set polling bit it issues a status check for the PHY. Attaching a logic analyzer to the
++ * MDIO bus of an RTL8380 and RTL8393 gives the following commands (in kernel notation):
++ *
++ *	RTL8380				RTL8393
++ *	---------------------------	---------------------------
++ *	phy_write(phy, 31, 0x0);	phy_read(phy, 0);
++ *	phy_write(phy, 13, 0x7);	phy_read(phy, 1);
++ *	phy_write(phy, 14, 0x3c);	phy_read(phy, 4);
++ *	phy_write(phy, 13, 0x8007);	phy_read(phy, 5);
++ *	phy_read(phy, 14);		phy_read(phy, 6);
++ *	phy_write(phy, 13, 0x7);	phy_read(phy, 9);
++ *	phy_write(phy, 14, 0x3d);	phy_read(phy, 10);
++ *	phy_write(phy, 13, 0x8007);	phy_read(phy, 15);
++ *	phy_read(phy, 14);		phy_write(phy, 13, 0x7);
++ *	phy_read(phy, 9);		phy_write(phy, 14, 0x3c);
++ *	phy_read(phy, 10);		phy_write(phy, 13, 0x4007);
++ *	phy_read(phy, 15);		phy_read(phy, 14);
++ *	phy_read(phy, 0);		phy_write(phy, 13, 0x7);
++ *	phy_read(phy, 1);		phy_write(phy, 14, 0x3d);
++ *	phy_read(phy, 4);		phy_write(phy, 13, 0x4007);
++ *	phy_read(phy, 5);		phy_read(phy, 14);
++ *	phy_read(phy, 6);
++ *
++ * After one PHY status is read, the polling engine goes over to the next PHY. If one bus is fully
++ * scanned it switches over to the next bus. Basically the polling system is always busy and the
++ * MAC state is updated in real-time.
++ *
++ * This is a glimpse look at the complexity of the polling and leaves out the C45 case and the MAC
++ * register update logic afterwards. Important to note:
++ *
++ * - 100 MBit downshifts (broken cables) are identified and propagated to the MAC correctly
++ * - Access to MDIO_AN_EEE_ADV and MDIO_AN_EEE_LPABLE works via C45 over C22.
++ * - It is unclear if these sequences change for different PHYs.
++ * - Access to Realtek reserved register 26 (link speed) has not yet been seen.
++ *
++ * How does MDIO access from kernel work?
++ *
++ * When issuing MDIO accesses via an MMIO based interface the final write to the command register
++ * sets a "run command now" bit. Between two polling sequences for different PHYs the hardware
++ * checks if a user command needs to run and sends it onto the bus. Afterwards it simply continues
++ * its polling work. Inspecting the command sequence for a paged write on the logic analyzer gives:
++ *
++ *	RTL8380				RTL8393
++ *	---------------------------	---------------------------
++ *	phy_write(phy, 31, page);	phy_write(phy, 31, page);
++ *	phy_write(phy, reg, value);	phy_write(phy, reg, value);
++ *					phy_write(phy, 31, 0);
++ *
++ * What does this mean?
++ *
++ * There are slight differences in polling and PHY access between the models but the challenge
++ * stays the same. On the one hand that greatly simplifies the MAC layer, on the other hand it
++ * has some implications for the kernel PHY subsystem.
++ *
++ * - Without the polling and a proper MAC status, some of the link handling features do not work.
++ *   Especially an unpopulated MAC_LINK_STS register cancels operations to other MAC registers.
++ * - The Realtek page register 31 is magically modified in the background so that polling will
++ *   read the right data. On the RTL838x polling simply resets it to zero. Other devices seem
++ *   to track the page access "magically" in the background.
++ * - A C45 over C22 kernel access sequence is most likely to fail because chances are high that
++ *   the polling engine overwrites registers 13/14 in between.
++ * - PHY firmware loading can have issues. Especially if a PHY is designed to expect a clean
++ *   sequence of registers and values without deviation.
++ * - An access to one PHY will need to wait for the next free slot of the polling engine.
++ *
++ * Conclusion: The Realtek MDIO bus driver PHY access must know and handle any interference that
++ * arises from the above described hardware polling.
+  */
+ 
+ #include <linux/bitfield.h>

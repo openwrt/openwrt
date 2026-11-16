@@ -1,0 +1,52 @@
+From c26cdd1c7d655ae8a833165b242e0987f3683a42 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Mon, 3 Aug 2026 14:08:04 +0400
+Subject: [PATCH 157/160] dt-bindings: usb: qcom,snps-dwc3: Add clocks for USB3
+ on Qualcomm IPQ5018
+
+Add aux and lfps clocks in Qualcomm IPQ5018. These clocks are required
+only for USB Super-Speed support.
+
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ .../bindings/usb/qcom,snps-dwc3.yaml          | 21 ++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/usb/qcom,snps-dwc3.yaml
++++ b/Documentation/devicetree/bindings/usb/qcom,snps-dwc3.yaml
+@@ -183,6 +183,26 @@ allOf:
+         compatible:
+           contains:
+             enum:
++              - qcom,ipq5018-dwc3
++    then:
++      properties:
++        clocks:
++          minItems: 6
++          maxItems: 6
++        clock-names:
++          items:
++            - const: core
++            - const: iface
++            - const: sleep
++            - const: mock_utmi
++            - const: aux
++            - const: lfps
++
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
+               - qcom,ipq8064-dwc3
+     then:
+       properties:
+@@ -271,7 +291,6 @@ allOf:
+         compatible:
+           contains:
+             enum:
+-              - qcom,ipq5018-dwc3
+               - qcom,msm8994-dwc3
+               - qcom,qcs404-dwc3
+     then:

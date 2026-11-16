@@ -1,0 +1,103 @@
+From 53abc30358fcd57f057f22c37d42c85b47f35f69 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 13:09:26 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Read the 3A status at frame end
+
+The 3A statistics blocks raise their interrupts when their measurement
+of a frame completes, which is before the frame end interrupt at which
+the driver collects the statistics and clears them. The 3A interrupts
+share the ISP interrupt line, so the line stays asserted from the first
+measurement to the frame end with nothing in the ISP interrupt status
+to handle, which the kernel counts as unhandled interrupts: about 1400
+per frame on the RV1126, enough for the spurious interrupt detection to
+disable the line after a few hundred frames.
+
+Collect the statistics from the raw 3A status at frame end and leave
+the 3A interrupts masked.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkisp2/rkisp2-params.c | 10 ----------
+ drivers/media/platform/rockchip/rkisp2/rkisp2-stats.c  |  2 +-
+ 2 files changed, 1 insertion(+), 11 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
+@@ -592,7 +592,6 @@ static void rkisp2_params_ae_lite(struct
+ 	if (block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) {
+ 		rkisp2_param_clear_bits(params, ISP_RAWAE_LITE_CTRL,
+ 					ISP3X_RAWAE_LITE_EN);
+-		rkisp2_param_clear_bits(params, ISP_ISP3A_IMSC, ISP2X_3A_RAWAE_CH0);
+ 		return;
+ 	}
+ 
+@@ -616,8 +615,6 @@ static void rkisp2_params_ae_lite(struct
+ 
+ 	rkisp2_param_set_bits(params, ISP_RAWAE_LITE_CTRL,
+ 			      control);
+-	/* TODO figure out CH1 and CH2 */
+-	rkisp2_param_set_bits(params, ISP_ISP3A_IMSC, ISP2X_3A_RAWAE_CH0);
+ }
+ 
+ static void rkisp2_params_hist_lite(struct rkisp2_params *params,
+@@ -629,7 +626,6 @@ static void rkisp2_params_hist_lite(stru
+ 
+ 	if (block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) {
+ 		rkisp2_param_clear_bits(params, ISP_RAWHIST_LITE_BASE, ISP_RAWHIST_CTRL_EN);
+-		rkisp2_param_clear_bits(params, ISP_ISP3A_IMSC, ISP2X_3A_RAWHIST_CH0);
+ 		return;
+ 	}
+ 
+@@ -666,8 +662,6 @@ static void rkisp2_params_hist_lite(stru
+ 		  ISP_RAWHIST_CTRL_WATERLINE(arg->waterline) |
+ 		  ISP_RAWHIST_CTRL_DATA_SEL(arg->data_sel);
+ 	rkisp2_write(params->rkisp2, ISP_RAWHIST_LITE_CTRL, control);
+-	// I think you can choose the channels in VI_ISP_PATH
+-	rkisp2_param_set_bits(params, ISP_ISP3A_IMSC, ISP2X_3A_RAWHIST_CH0);
+ }
+ 
+ static void rkisp2_params_hist_big(struct rkisp2_params *params,
+@@ -696,7 +690,6 @@ static void rkisp2_params_hist_big(struc
+ 
+ 	if (block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) {
+ 		rkisp2_param_clear_bits(params, ctrl, ISP_RAWHIST_CTRL_EN);
+-		rkisp2_param_clear_bits(params, ISP_ISP3A_IMSC, ISP2X_3A_RAWHIST_BIG);
+ 		return;
+ 	}
+ 
+@@ -738,7 +731,6 @@ static void rkisp2_params_hist_big(struc
+ 		  ISP_RAWHIST_CTRL_DATA_SEL(arg->data_sel) |
+ 		  (arg->window_num & ISP_RAWHIST_BIG_CTRL_WND_MASK);
+ 	rkisp2_write(params->rkisp2, ctrl, control);
+-	rkisp2_param_set_bits(params, ISP_ISP3A_IMSC, ISP2X_3A_RAWHIST_BIG);
+ }
+ 
+ static void rkisp2_params_awb_meas(struct rkisp2_params *params,
+@@ -752,7 +744,6 @@ static void rkisp2_params_awb_meas(struc
+ 	if (block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) {
+ 		rkisp2_param_clear_bits(params, ISP3X_RAWAWB_CTRL,
+ 					ISP3X_RAWAWB_CTRL_EN);
+-		rkisp2_param_clear_bits(params, ISP_ISP3A_IMSC, ISP2X_3A_RAWAWB);
+ 		rkisp2_param_clear_bits(params, ISP21_RAWAWB_BLK_CTRL, 0x1);
+ 		return;
+ 	}
+@@ -790,7 +781,6 @@ static void rkisp2_params_awb_meas(struc
+ 
+ 	control |= ISP3X_RAWAWB_CTRL_EN;
+ 	rkisp2_write(params->rkisp2, ISP3X_RAWAWB_CTRL, control);
+-	rkisp2_param_set_bits(params, ISP_ISP3A_IMSC, ISP2X_3A_RAWAWB);
+ }
+ 
+ static void rkisp2_params_configure(struct rkisp2_params *params,
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-stats.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-stats.c
+@@ -429,7 +429,7 @@ static void rkisp2_stats_send_measuremen
+ irqreturn_t rkisp2_stats_isr_eof(struct rkisp2_stats *stats)
+ {
+ 	struct rkisp2_device *rkisp2 = stats->rkisp2;
+-	u32 status = rkisp2_read(rkisp2, ISP_ISP3A_MIS);
++	u32 status = rkisp2_read(rkisp2, ISP_ISP3A_RIS);
+ 
+ 	spin_lock(&stats->lock);
+ 	rkisp2_stats_send_measurement_3a(stats, status);

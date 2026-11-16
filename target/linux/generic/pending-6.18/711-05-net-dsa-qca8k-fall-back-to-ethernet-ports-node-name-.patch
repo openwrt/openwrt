@@ -1,0 +1,30 @@
+From a4918445f34b80589a76cc047dd7d907b28b37ce Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 27 Jun 2026 14:50:13 -0700
+Subject: [PATCH] net: dsa: qca8k: fall back to ethernet-ports node name for
+ LEDs
+
+The device tree binding allows both "ports" and "ethernet-ports" as
+the container node name.  Try "ethernet-ports" when "ports" is absent
+so that newer DTBs with the preferred name work.
+
+This matches the handling already present in qca8k-8xxx.c
+
+Assisted-by: opencode:big-pickle
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/dsa/qca/qca8k-leds.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/dsa/qca/qca8k-leds.c
++++ b/drivers/net/dsa/qca/qca8k-leds.c
+@@ -457,6 +457,9 @@ qca8k_setup_led_ctrl(struct qca8k_priv *
+ 	int ret;
+ 
+ 	ports = device_get_named_child_node(priv->dev, "ports");
++	if (!ports)
++		ports = device_get_named_child_node(priv->dev, "ethernet-ports");
++
+ 	if (!ports) {
+ 		dev_info(priv->dev, "No ports node specified in device tree!");
+ 		return 0;

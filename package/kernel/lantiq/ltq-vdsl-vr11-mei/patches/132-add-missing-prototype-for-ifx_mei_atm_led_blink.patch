@@ -1,0 +1,24 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Wed, 7 May 2025 21:57:39 +0800
+Subject: [PATCH] add missing prototype for ifx_mei_atm_led_blink()
+
+Fix build warning on 6.12 kernel:
+/home/db/owrt/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-ipq40xx_generic/dsl_cpe_mei-ugw_8.5.2.10/src/drv_mei_cpe_api_atm_ptm_intern.c:658:5: error: no previous prototype for 'ifx_mei_atm_led_blink' [-Werror=missing-prototypes]
+  658 | int ifx_mei_atm_led_blink(void)
+      |     ^~~~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ src/drv_mei_cpe_api_atm_ptm_intern.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/src/drv_mei_cpe_api_atm_ptm_intern.h
++++ b/src/drv_mei_cpe_api_atm_ptm_intern.h
+@@ -91,6 +91,7 @@ extern IFX_int32_t MEI_InternalLineTCMod
+                               IFX_int8_t nInstance,
+                               IFX_boolean_t bPowerUp,
+                               IFX_boolean_t bKillMEIControlThread);
++int ifx_mei_atm_led_blink(void);
+ 
+ #ifdef PPA_SUPPORTS_CALLBACKS
+ extern int ppa_callback_set(e_ltq_mei_cb_type type, void *func);

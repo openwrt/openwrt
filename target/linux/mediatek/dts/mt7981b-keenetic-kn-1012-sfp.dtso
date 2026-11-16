@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+/dts-v1/;
+/plugin/;
+
+&switch_port5 {
+	managed = "in-band-status";
+	sfp = <&sfp1>;
+	status = "okay";
+};
+
+&sfp1mux {
+	gpio-export,output = <0>;
+};
+
+&sfp1led {
+	gpio-export,output = <0>;
+};

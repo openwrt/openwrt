@@ -1,0 +1,936 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 11 Oct 2026 20:00:00 +0200
+Subject: [PATCH] AP MLD: advertise a TID-to-link mapping
+
+Depends on 608-AP-MLD-end-the-Critical-Update-flag-at-the-DTIM-Beac.patch
+and on the mac80211 patches that add NL80211_CMD_ADV_TTLM_REQUEST and
+NL80211_EXT_FEATURE_AP_ADV_TTLM.
+
+hostapd has no way to advertise a TID-to-link mapping of an AP MLD
+(IEEE 802.11be-2024, 35.3.7.2.4). Only CONFIG_TESTING_OPTIONS adds a
+TID-To-Link Mapping element, without the Mapping Switch Time and the
+Expected Duration fields that an advertised mapping needs.
+
+Add hostapd_adv_ttlm_request(), which asks a driver that declares
+NL80211_EXT_FEATURE_AP_ADV_TTLM and
+NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE to map all TIDs to a subset of
+the links of the AP MLD for a duration. The driver times the switch and
+the end and reports each step with the cookie of the request, so that
+hostapd ignores the events of an earlier mapping. Once the driver
+reports the start on a link, the Beacon and Probe Response frames of
+that link carry the element with the Mapping Switch Time of the link
+and the full Expected Duration. Once the mapping is established, the
+element drops the Mapping Switch Time and carries the remaining
+Expected Duration, and the Reduced Neighbor Report sets the Disabled
+Link Indication of each disabled link. At the end the element leaves
+the frames.
+
+(Re)Association Response frames carry the element only once the mapping
+is established, as only Beacon and Probe Response frames carry the
+Mapping Switch Time field (9.4.2.324). The remaining Expected Duration
+counts from the TBTT of a Beacon frame and from the most recent TBTT for
+other frames. hostapd sees no TBTT, so it takes the CLOCK_BOOTTIME of the
+establishment and of a TBTT of each link from the events of the driver.
+Without them, the TBTTs count from the event of the establishment.
+
+An affiliated AP that becomes disabled or enabled through the mapping
+sets the Critical Update flag (35.3.10). Start a critical update on each
+link at both steps; the driver ends it at the DTIM Beacon. A request
+fails if a link is a nontransmitted BSSID, whose flag the driver does
+not end. The BSS Parameters Change Count stays: 9.4.2.169.2 increments
+it for the critical updates of 11.2.3.14 alone, which name no
+advertised mapping. Notify ubus of the establishment and of the end.
+
+Without a given switch time, the mapping is established two DTIM
+intervals after the request, so that each associated non-AP MLD in
+power save receives a DTIM Beacon with the element before the switch.
+The switch time is at most 0xffff TUs, the range of the Mapping Switch
+Time field.
+
+cfg80211 ends the mapping when a link of the AP MLD stops, so hostapd
+ends it as well when it stops a link, and updates the frames of the
+other links. Both a mapping and a link removal change the links of the
+AP MLD, so hostapd rejects a link removal while a mapping is requested
+or established, and a request while a link removal runs.
+
+The length of the element covers the largest element while a mapping
+is advertised, since its presence depends on the frame subtype and on
+the time of the write.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -590,6 +590,17 @@ int hostapd_if_link_remove(struct hostap
+ 	return hapd->driver->link_remove(hapd->drv_priv, type, ifname,
+ 					 hapd->mld_link_id);
+ }
++
++
++int hostapd_drv_adv_ttlm_request(struct hostapd_data *hapd, u16 links,
++				 u32 switch_time, u32 duration, u64 *cookie)
++{
++	if (!hapd->driver || !hapd->drv_priv || !hapd->driver->adv_ttlm_request)
++		return -EOPNOTSUPP;
++
++	return hapd->driver->adv_ttlm_request(hapd->drv_priv, links,
++					      switch_time, duration, cookie);
++}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -65,6 +65,8 @@ int hostapd_if_remove(struct hostapd_dat
+ int hostapd_if_link_remove(struct hostapd_data *hapd,
+ 			   enum wpa_driver_if_type type,
+ 			   const char *ifname, u8 link_id);
++int hostapd_drv_adv_ttlm_request(struct hostapd_data *hapd, u16 links,
++				 u32 switch_time, u32 duration, u64 *cookie);
+ int hostapd_set_ieee8021x(struct hostapd_data *hapd,
+ 			  struct wpa_bss_params *params);
+ int hostapd_get_seqnum(const char *ifname, struct hostapd_data *hapd,
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -3039,6 +3039,9 @@ void hostapd_wpa_event(void *ctx, enum w
+ 		hostapd_crit_update_done(hapd, data->crit_update_done.link_id,
+ 					 data->crit_update_done.id);
+ 		break;
++	case EVENT_ADV_TTLM:
++		hostapd_adv_ttlm_event(hapd, &data->adv_ttlm);
++		break;
+ #endif /* CONFIG_IEEE80211BE */
+ 	default:
+ 		wpa_printf(MSG_DEBUG, "Unknown event %d", event);
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -802,6 +802,10 @@ int hostapd_link_remove(struct hostapd_d
+ 	if (hostapd_link_remove_pending(hapd))
+ 		return 0;
+ 
++	/* The links of an advertised TTLM stay until it ends */
++	if (hapd->mld->adv_ttlm_state != HOSTAPD_ADV_TTLM_NONE)
++		return -1;
++
+ 	if (hapd->csa_in_progress)
+ 		return -1;
+ 
+@@ -860,6 +864,243 @@ void hostapd_crit_update_done(struct hos
+ 		ieee802_11_set_beacon(hapd);
+ }
+ 
++
++static void hostapd_adv_ttlm_clear(struct hostapd_data *hapd)
++{
++	struct hostapd_data *link_bss;
++
++	hapd->mld->adv_ttlm_state = HOSTAPD_ADV_TTLM_NONE;
++	hapd->mld->adv_ttlm_cookie = 0;
++	for_each_mld_link(link_bss, hapd) {
++		link_bss->adv_ttlm_started = false;
++		link_bss->adv_ttlm_tbtt_valid = false;
++	}
++}
++
++
++static s64 hostapd_reltime_us(const struct os_reltime *t)
++{
++	return t->sec * 1000000LL + t->usec;
++}
++
++
++static void hostapd_reltime_ago(struct os_reltime *t, s64 age_us)
++{
++	s64 us;
++
++	os_get_reltime(t);
++	us = hostapd_reltime_us(t) - age_us;
++	t->sec = us / 1000000;
++	t->usec = us % 1000000;
++}
++
++
++int hostapd_adv_ttlm_request(struct hostapd_data *hapd, u16 links,
++			     u32 switch_time, u32 duration)
++{
++	struct hostapd_data *link_bss;
++	u16 valid_links = 0;
++	int ret;
++
++	if (!hapd->conf->mld_ap || !hapd->mld ||
++	    !(hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_AP_ADV_TTLM))
++		return -EOPNOTSUPP;
++
++	if (hapd->mld->adv_ttlm_state != HOSTAPD_ADV_TTLM_NONE)
++		return -EBUSY;
++
++	for_each_mld_link(link_bss, hapd) {
++		/* Each link that the mapping disables or enables sets the
++		 * Critical Update flag (IEEE Std 802.11be-2024, 35.3.10) */
++		if (!hostapd_crit_update_offload(link_bss))
++			return -EOPNOTSUPP;
++
++		if (hostapd_link_remove_pending(link_bss))
++			return -EBUSY;
++
++		valid_links |= BIT(link_bss->mld_link_id);
++	}
++
++	/* Two DTIM intervals hold a DTIM Beacon, which an associated non-AP
++	 * MLD in power save receives before the switch
++	 * (IEEE Std 802.11be-2024, 35.3.7.2.4) */
++	if (!switch_time)
++		switch_time = 2 * hapd->conf->dtim_period *
++			hapd->iconf->beacon_int;
++
++	/* The Mapping Switch Time field holds bits 10 to 25 of the TSF */
++	if (!links || (links & ~valid_links) || links == valid_links ||
++	    switch_time > 0xffff || !duration || duration > 0xffffff)
++		return -EINVAL;
++
++	hostapd_adv_ttlm_clear(hapd);
++	hapd->mld->adv_ttlm_links = links;
++	hapd->mld->adv_ttlm_duration = duration;
++	hapd->mld->adv_ttlm_state = HOSTAPD_ADV_TTLM_REQUESTED;
++
++	wpa_printf(MSG_DEBUG,
++		   "MLD: Advertised TTLM request links=0x%x switch_time=%u duration=%u",
++		   links, switch_time, duration);
++
++	ret = hostapd_drv_adv_ttlm_request(hapd, links, switch_time, duration,
++					   &hapd->mld->adv_ttlm_cookie);
++	if (ret)
++		hostapd_adv_ttlm_clear(hapd);
++
++	return ret;
++}
++
++
++/* The Expected Duration field: constant until the mapping is established,
++ * then the time that remains from the most recent TBTT. Only Beacon and Probe
++ * Response frames carry the Mapping Switch Time field of a mapping that is
++ * not yet established (IEEE Std 802.11be-2024, 9.4.2.324). */
++u32 hostapd_adv_ttlm_duration(struct hostapd_data *hapd, u16 stype)
++{
++	struct hostapd_mld *mld = hapd->mld;
++	s64 beacon_us, tbtt_us, end_us, tbtts;
++	struct os_reltime now;
++
++	if (!hapd->conf->mld_ap || !mld)
++		return 0;
++
++	if (mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_REQUESTED) {
++		if (stype != WLAN_FC_STYPE_BEACON &&
++		    stype != WLAN_FC_STYPE_PROBE_RESP)
++			return 0;
++
++		return hapd->adv_ttlm_started ? mld->adv_ttlm_duration : 0;
++	}
++
++	if (mld->adv_ttlm_state != HOSTAPD_ADV_TTLM_ESTABLISHED)
++		return 0;
++
++	/* The TBTTs of the link follow the one that the driver reported, or
++	 * else the establishment */
++	tbtt_us = hostapd_reltime_us(hapd->adv_ttlm_tbtt_valid ?
++				     &hapd->adv_ttlm_tbtt :
++				     &mld->adv_ttlm_established);
++	beacon_us = TU_TO_USEC(hapd->iconf->beacon_int);
++	os_get_reltime(&now);
++	tbtts = hostapd_reltime_us(&now) - tbtt_us;
++	tbtts = tbtts >= 0 ? tbtts / beacon_us :
++		-((-tbtts + beacon_us - 1) / beacon_us);
++
++	/* A Beacon frame counts from its own TBTT, the next one */
++	if (stype == WLAN_FC_STYPE_BEACON)
++		tbtts++;
++
++	tbtt_us += tbtts * beacon_us;
++	end_us = hostapd_reltime_us(&mld->adv_ttlm_established) +
++		TU_TO_USEC((s64) mld->adv_ttlm_duration);
++	if (tbtt_us >= end_us)
++		return 0;
++
++	return MIN((end_us - tbtt_us + 512) / 1024, mld->adv_ttlm_duration);
++}
++
++
++bool hostapd_adv_ttlm_link_disabled(struct hostapd_data *hapd)
++{
++	struct hostapd_mld *mld = hapd->mld;
++
++	return hapd->conf->mld_ap && mld &&
++		mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_ESTABLISHED &&
++		!(mld->adv_ttlm_links & BIT(hapd->mld_link_id));
++}
++
++
++/* An affiliated AP that a new advertised TTLM disables or enables is a
++ * critical update (IEEE Std 802.11be-2024, 35.3.10) */
++static void hostapd_adv_ttlm_update(struct hostapd_data *hapd,
++				    bool links_changed)
++{
++	if (links_changed)
++		hostapd_mld_crit_update_start(hapd);
++	hostapd_mld_beacons_update(hapd);
++	hostapd_ubus_notify_adv_ttlm(hapd);
++}
++
++
++/* cfg80211 ends the mapping when a link of the AP MLD stops */
++static void hostapd_adv_ttlm_stop(struct hostapd_data *hapd)
++{
++	bool links_changed;
++
++	if (!hapd->conf->mld_ap || !hapd->mld ||
++	    hapd->mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_NONE)
++		return;
++
++	wpa_printf(MSG_DEBUG, "MLD: Advertised TTLM ended, link_id=%u stopped",
++		   hapd->mld_link_id);
++
++	links_changed =
++		hapd->mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_ESTABLISHED;
++	hostapd_adv_ttlm_clear(hapd);
++	hostapd_adv_ttlm_update(hapd, links_changed);
++}
++
++
++static void hostapd_adv_ttlm_started(struct hostapd_data *hapd,
++				     struct adv_ttlm *adv_ttlm)
++{
++	hapd = hostapd_mld_get_link_bss(hapd, adv_ttlm->link_id);
++	if (!hapd)
++		return;
++
++	hapd->adv_ttlm_started = true;
++	hapd->adv_ttlm_switch_tsf = adv_ttlm->switch_tsf;
++	hapd->adv_ttlm_tbtt_valid = adv_ttlm->tbtt_valid;
++	if (adv_ttlm->tbtt_valid)
++		hostapd_reltime_ago(&hapd->adv_ttlm_tbtt,
++				    adv_ttlm->tbtt_age_us);
++	if (hapd->started && hapd->beacon_set_done)
++		ieee802_11_set_beacon(hapd);
++}
++
++
++void hostapd_adv_ttlm_event(struct hostapd_data *hapd,
++			    struct adv_ttlm *adv_ttlm)
++{
++	struct hostapd_mld *mld = hapd->mld;
++	bool links_changed;
++
++	if (!hapd->conf->mld_ap || !mld ||
++	    mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_NONE ||
++	    adv_ttlm->cookie != mld->adv_ttlm_cookie)
++		return;
++
++	links_changed = adv_ttlm->step == ADV_TTLM_ESTABLISHED ||
++		mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_ESTABLISHED;
++
++	switch (adv_ttlm->step) {
++	case ADV_TTLM_STARTED:
++		if (mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_REQUESTED)
++			hostapd_adv_ttlm_started(hapd, adv_ttlm);
++		return;
++	case ADV_TTLM_ESTABLISHED:
++		if (mld->adv_ttlm_state != HOSTAPD_ADV_TTLM_REQUESTED)
++			return;
++
++		if (adv_ttlm->tbtt_valid)
++			hostapd_reltime_ago(&mld->adv_ttlm_established,
++					    adv_ttlm->tbtt_age_us);
++		else
++			os_get_reltime(&mld->adv_ttlm_established);
++		mld->adv_ttlm_state = HOSTAPD_ADV_TTLM_ESTABLISHED;
++		break;
++	case ADV_TTLM_ENDED:
++		hostapd_adv_ttlm_clear(hapd);
++		break;
++	}
++
++	wpa_printf(MSG_DEBUG, "MLD: Advertised TTLM %s, links=0x%x",
++		   mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_NONE ?
++		   "ended" : "established", mld->adv_ttlm_links);
++
++	hostapd_adv_ttlm_update(hapd, links_changed);
++}
++
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+@@ -902,6 +1143,10 @@ void hostapd_free_hapd_data(struct hosta
+ 	hapd->owe_trans_ssid_len = 0;
+ #endif /* CONFIG_OWE */
+ 
++#ifdef CONFIG_IEEE80211BE
++	hostapd_adv_ttlm_stop(hapd);
++#endif /* CONFIG_IEEE80211BE */
++
+ 	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
+ 	hostapd_ucode_free_bss(hapd);
+ 	hostapd_ubus_free_bss(hapd);
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -558,6 +558,12 @@ struct hostapd_data {
+ 	/* Critical Update flag set until EVENT_CRIT_UPDATE_DONE */
+ 	bool eht_mld_crit_update;
+ 	u32 eht_mld_crit_update_id;
++	/* Mapping Switch Time field of the advertised TTLM on this link, and a
++	 * TBTT of the link that the driver reported */
++	bool adv_ttlm_started;
++	u16 adv_ttlm_switch_tsf;
++	bool adv_ttlm_tbtt_valid;
++	struct os_reltime adv_ttlm_tbtt;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ #ifdef CONFIG_NAN_USD
+@@ -602,6 +608,17 @@ struct hostapd_mld {
+ 	struct hostapd_data *fbss;
+ 	struct dl_list links; /* List head of all affiliated links */
+ 
++	/* Advertised TID-to-link mapping (IEEE Std 802.11be-2024, 35.3.7.2.4) */
++	enum {
++		HOSTAPD_ADV_TTLM_NONE,
++		HOSTAPD_ADV_TTLM_REQUESTED,
++		HOSTAPD_ADV_TTLM_ESTABLISHED,
++	} adv_ttlm_state;
++	u16 adv_ttlm_links;
++	u32 adv_ttlm_duration; /* in TUs */
++	struct os_reltime adv_ttlm_established;
++	u64 adv_ttlm_cookie;
++
+ 	int ctrl_sock;
+ 	struct dl_list ctrl_dst;
+ 	char *ctrl_interface; /* Directory for UNIX domain sockets */
+@@ -1004,6 +1021,12 @@ struct hostapd_data * hostapd_mld_get_li
+ int hostapd_link_remove(struct hostapd_data *hapd, u32 count);
+ bool hostapd_link_remove_critical_update(struct hostapd_data *hapd);
+ void hostapd_crit_update_done(struct hostapd_data *hapd, int link_id, u32 id);
++int hostapd_adv_ttlm_request(struct hostapd_data *hapd, u16 links,
++			     u32 switch_time, u32 duration);
++void hostapd_adv_ttlm_event(struct hostapd_data *hapd,
++			    struct adv_ttlm *adv_ttlm);
++bool hostapd_adv_ttlm_link_disabled(struct hostapd_data *hapd);
++u32 hostapd_adv_ttlm_duration(struct hostapd_data *hapd, u16 stype);
+ u64 hostapd_link_remove_expiry_ms(struct hostapd_data *hapd);
+ u64 hostapd_link_remove_ms(struct hostapd_data *hapd);
+ void hostapd_mld_beacons_update(struct hostapd_data *hapd);
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -7031,7 +7031,9 @@ rsnxe_done:
+ 		p = hostapd_eid_eht_capab(hapd, p, IEEE80211_MODE_AP);
+ 		p = hostapd_eid_eht_operation(hapd, p);
+ 		if (ap_sta_is_mld(hapd, sta))
+-			p = hostapd_eid_eht_ml_tid_to_link_map(hapd, p);
++			p = hostapd_eid_eht_ml_tid_to_link_map(
++				hapd, p, reassoc ? WLAN_FC_STYPE_REASSOC_RESP :
++				WLAN_FC_STYPE_ASSOC_RESP);
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+@@ -10346,6 +10348,9 @@ static bool hostapd_eid_rnr_bss(struct h
+ 			(MAX_NUM_MLD_LINKS | 0xF0);
+ 		/* BPCC (Bit 3 to Bit 0) */
+ 		*eid = match_idx < 255 ? ((param_ch & 0xF0) >> 4) : 0x0F;
++		/* IEEE Std 802.11be-2024, 35.3.7.2.4 */
++		if (hostapd_adv_ttlm_link_disabled(bss))
++			*eid |= RNR_TBTT_INFO_MLD_PARAM2_LINK_DISABLED;
+ #ifdef CONFIG_TESTING_OPTIONS
+ 		if (bss->conf->mld_indicate_disabled)
+ 			*eid |= RNR_TBTT_INFO_MLD_PARAM2_LINK_DISABLED;
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -2832,11 +2832,62 @@ void ieee802_11_rx_protected_eht_action(
+ }
+ 
+ 
++/* IEEE Std 802.11be-2024, 9.4.2.324 and 35.3.7.2.4 */
++static u8 * hostapd_eid_adv_ttlm(struct hostapd_data *hapd, u8 *eid,
++				 u32 duration)
++{
++	u16 links = hapd->mld->adv_ttlm_links;
++	bool one_octet = !(links & 0xff00);
++	u8 *pos = eid, *len, control;
++	int i;
++
++	control = EHT_TID_TO_LINK_MAP_DIRECTION_BOTH |
++		EHT_TID_TO_LINK_MAP_EXPECT_DUR_PRESENT;
++	if (hapd->mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_REQUESTED)
++		control |= EHT_TID_TO_LINK_MAP_SWITCH_TIME_PRESENT;
++	if (one_octet)
++		control |= EHT_TID_TO_LINK_MAP_LINK_MAPPING_SIZE;
++
++	*pos++ = WLAN_EID_EXTENSION;
++	len = pos++;
++	*pos++ = WLAN_EID_EXT_TID_TO_LINK_MAPPING;
++	*pos++ = control;
++	*pos++ = 0xff; /* link mapping presence bitmap */
++
++	if (control & EHT_TID_TO_LINK_MAP_SWITCH_TIME_PRESENT) {
++		WPA_PUT_LE16(pos, hapd->adv_ttlm_switch_tsf);
++		pos += 2;
++	}
++
++	WPA_PUT_LE24(pos, duration);
++	pos += 3;
++
++	for (i = 0; i < 8; i++) {
++		if (one_octet) {
++			*pos++ = links;
++			continue;
++		}
++
++		WPA_PUT_LE16(pos, links);
++		pos += 2;
++	}
++
++	*len = pos - len - 1;
++
++	return pos;
++}
++
++
+ size_t hostapd_eid_eht_ml_tid_to_link_map_len(struct hostapd_data *hapd)
+ {
+ 	if (!hapd->conf->mld_ap)
+ 		return 0;
+ 
++	/* Control, Mapping Switch Time, Expected Duration, 8 link mappings.
++	 * Whether the element is present depends on the frame and the time. */
++	if (hapd->mld && hapd->mld->adv_ttlm_state != HOSTAPD_ADV_TTLM_NONE)
++		return 3 + 2 + 2 + 3 + 8 * 2;
++
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	/*
+ 	 * Allocate enough space for mld_indicate_disabled. i.e.:
+@@ -2850,7 +2901,8 @@ size_t hostapd_eid_eht_ml_tid_to_link_ma
+ }
+ 
+ 
+-u8 * hostapd_eid_eht_ml_tid_to_link_map(struct hostapd_data *hapd, u8 *eid)
++u8 * hostapd_eid_eht_ml_tid_to_link_map(struct hostapd_data *hapd, u8 *eid,
++				       u16 stype)
+ {
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	struct hostapd_data *other_hapd;
+@@ -2858,10 +2910,15 @@ u8 * hostapd_eid_eht_ml_tid_to_link_map(
+ 	u16 ttlm = 0;
+ #endif /* CONFIG_TESTING_OPTIONS */
+ 	u8 *pos = eid;
++	u32 duration;
+ 
+ 	if (!hapd->conf->mld_ap)
+ 		return eid;
+ 
++	duration = hostapd_adv_ttlm_duration(hapd, stype);
++	if (duration)
++		return hostapd_eid_adv_ttlm(hapd, eid, duration);
++
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	for_each_mld_link(other_hapd, hapd) {
+ 		if (other_hapd->conf->mld_indicate_disabled)
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -2590,6 +2590,9 @@ struct wpa_driver_capa {
+ /** Driver ends the Critical Update flag of an AP link after the DTIM Beacon
+  * and reports it with EVENT_CRIT_UPDATE_DONE, see crit_update_id */
+ #define WPA_DRIVER_FLAGS2_BEACON_CRIT_UPDATE	0x0000004000000000ULL
++/** Driver advertises a TID-to-link mapping of an AP MLD and reports its steps
++ * with EVENT_ADV_TTLM */
++#define WPA_DRIVER_FLAGS2_AP_ADV_TTLM		0x0000008000000000ULL
+ 	u64 flags2;
+ 
+ #define FULL_AP_CLIENT_STATE_SUPP(drv_flags) \
+@@ -5751,6 +5754,18 @@ struct wpa_driver_ops {
+ 			   const char *ifname, u8 link_id);
+ 
+ 	/**
++	 * adv_ttlm_request - Advertise a TID-to-link mapping of an AP MLD
++	 * @priv: Private driver interface data
++	 * @links: Bitmap of the link IDs to which all TIDs map
++	 * @switch_time: TUs from the request to the establishment
++	 * @duration: TUs that the mapping lasts once established
++	 * @cookie: Buffer for the cookie of the mapping, which its events carry
++	 * Returns: 0 on success, negative errno on failure
++	 */
++	int (*adv_ttlm_request)(void *priv, u16 links, u32 switch_time,
++				u32 duration, u64 *cookie);
++
++	/**
+ 	 * is_drv_shared - Check whether the driver interface is shared
+ 	 * @priv: Private driver interface data from init()
+ 	 * @link_id: Link ID to match
+@@ -6718,6 +6733,13 @@ enum wpa_event_type {
+ 	 * Described in wpa_event_data.crit_update_done.
+ 	 */
+ 	EVENT_CRIT_UPDATE_DONE,
++
++	/**
++	 * EVENT_ADV_TTLM - A step of an advertised TID-to-link mapping
++	 *
++	 * Described in wpa_event_data.adv_ttlm.
++	 */
++	EVENT_ADV_TTLM,
+ };
+ 
+ 
+@@ -7698,6 +7720,32 @@ union wpa_event_data {
+ 	} crit_update_done;
+ 
+ 	/**
++	 * struct adv_ttlm - Data for EVENT_ADV_TTLM
++	 * @step: Started, established or ended
++	 * @link_id: Link ID of the AP link, with ADV_TTLM_STARTED only
++	 * @switch_tsf: Mapping Switch Time field of the link, with
++	 *	ADV_TTLM_STARTED only
++	 * @cookie: Cookie of the mapping, from adv_ttlm_request()
++	 * @tbtt_valid: Whether @tbtt_age_us is set
++	 * @tbtt_age_us: Microseconds since the TBTT that the driver reported,
++	 *	negative for a TBTT to come: with ADV_TTLM_STARTED the first TBTT
++	 *	of the link at or after the establishment, with
++	 *	ADV_TTLM_ESTABLISHED the TBTT of the establishment
++	 */
++	struct adv_ttlm {
++		enum adv_ttlm_step {
++			ADV_TTLM_STARTED,
++			ADV_TTLM_ESTABLISHED,
++			ADV_TTLM_ENDED,
++		} step;
++		int link_id;
++		u16 switch_tsf;
++		u64 cookie;
++		bool tbtt_valid;
++		s64 tbtt_age_us;
++	} adv_ttlm;
++
++	/**
+ 	 * struct pasn_auth - Data for EVENT_PASN_AUTH
+ 	 */
+ 	struct pasn_auth pasn_auth;
+--- a/src/drivers/driver_common.c
++++ b/src/drivers/driver_common.c
+@@ -111,6 +111,7 @@ const char * event_to_string(enum wpa_ev
+ 	E2S(PEER_MEASUREMENT_RESULT);
+ 	E2S(PEER_MEASUREMENT_COMPLETE);
+ 	E2S(CRIT_UPDATE_DONE);
++	E2S(ADV_TTLM);
+ 	}
+ 
+ 	return "UNKNOWN";
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -11927,6 +11927,34 @@ static int driver_nl80211_if_remove(void
+ 
+ #ifdef CONFIG_IEEE80211BE
+ 
++static int nl80211_adv_ttlm_request(void *priv, u16 links, u32 switch_time,
++				    u32 duration, u64 *cookie)
++{
++	struct i802_bss *bss = priv;
++	struct nl_msg *msg;
++	int ret;
++
++	msg = nl80211_bss_msg(bss, 0, NL80211_CMD_ADV_TTLM_REQUEST);
++	if (!msg ||
++	    nla_put_u16(msg, NL80211_ATTR_MLO_ADV_TTLM_LINKS, links) ||
++	    nla_put_u32(msg, NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME,
++			switch_time) ||
++	    nla_put_u32(msg, NL80211_ATTR_MLO_ADV_TTLM_DURATION, duration)) {
++		nlmsg_free(msg);
++		return -ENOBUFS;
++	}
++
++	*cookie = 0;
++	ret = send_and_recv_resp(bss->drv, msg, cookie_handler, cookie);
++	if (ret)
++		wpa_printf(MSG_DEBUG,
++			   "nl80211: Advertised TTLM request failed: ret=%d (%s)",
++			   ret, strerror(-ret));
++
++	return ret;
++}
++
++
+ static int driver_nl80211_link_remove(void *priv, enum wpa_driver_if_type type,
+ 				      const char *ifname, u8 link_id)
+ {
+@@ -17025,6 +17053,7 @@ const struct wpa_driver_ops wpa_driver_n
+ 	.link_add = nl80211_link_add,
+ #ifdef CONFIG_IEEE80211BE
+ 	.link_remove = driver_nl80211_link_remove,
++	.adv_ttlm_request = nl80211_adv_ttlm_request,
+ 	.is_drv_shared = nl80211_is_drv_shared,
+ 	.link_sta_remove = wpa_driver_nl80211_link_sta_remove,
+ 	.can_share_drv = wpa_driver_nl80211_can_share_drv,
+--- a/src/drivers/driver_nl80211_capa.c
++++ b/src/drivers/driver_nl80211_capa.c
+@@ -610,6 +610,9 @@ static void wiphy_info_ext_feature_flags
+ 			      NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE))
+ 		capa->flags2 |= WPA_DRIVER_FLAGS2_BEACON_CRIT_UPDATE;
+ 	if (ext_feature_isset(ext_features, len,
++			      NL80211_EXT_FEATURE_AP_ADV_TTLM))
++		capa->flags2 |= WPA_DRIVER_FLAGS2_AP_ADV_TTLM;
++	if (ext_feature_isset(ext_features, len,
+ 			      NL80211_EXT_FEATURE_SCHED_SCAN_RELATIVE_RSSI))
+ 		capa->flags |= WPA_DRIVER_FLAGS_SCHED_SCAN_RELATIVE_RSSI;
+ 	if (ext_feature_isset(ext_features, len,
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -9,6 +9,7 @@
+  */
+ 
+ #include "includes.h"
++#include <time.h>
+ #include <netlink/genl/genl.h>
+ 
+ #include "utils/common.h"
+@@ -200,6 +201,10 @@ static const char * nl80211_command_to_s
+ 	C2S(NL80211_CMD_START_PD)
+ 	C2S(NL80211_CMD_STOP_PD)
+ 	C2S(NL80211_CMD_CRIT_UPDATE_DONE)
++	C2S(NL80211_CMD_ADV_TTLM_REQUEST)
++	C2S(NL80211_CMD_ADV_TTLM_STARTED)
++	C2S(NL80211_CMD_ADV_TTLM_ESTABLISHED)
++	C2S(NL80211_CMD_ADV_TTLM_ENDED)
+ 	C2S(__NL80211_CMD_AFTER_LAST)
+ 	}
+ #undef C2S
+@@ -4860,6 +4865,71 @@ static void nl80211_crit_update_done_eve
+ }
+ 
+ 
++/* The driver reports CLOCK_BOOTTIME, which os_get_reltime() need not use */
++static bool nl80211_adv_ttlm_tbtt_age(struct nlattr *attr, s64 *age_us)
++{
++	struct timespec ts;
++	u64 now;
++
++#ifndef CLOCK_BOOTTIME
++#define CLOCK_BOOTTIME 7
++#endif
++	if (!attr || clock_gettime(CLOCK_BOOTTIME, &ts))
++		return false;
++
++	now = (u64) ts.tv_sec * 1000000000 + ts.tv_nsec;
++	*age_us = (s64) (now - nla_get_u64(attr)) / 1000;
++	return true;
++}
++
++
++static void nl80211_adv_ttlm_event(struct i802_bss *bss, int cmd,
++				   struct nlattr *tb[])
++{
++	union wpa_event_data data;
++
++	if (!tb[NL80211_ATTR_COOKIE])
++		return;
++
++	os_memset(&data, 0, sizeof(data));
++	data.adv_ttlm.link_id = NL80211_DRV_LINK_ID_NA;
++	data.adv_ttlm.cookie = nla_get_u64(tb[NL80211_ATTR_COOKIE]);
++	data.adv_ttlm.tbtt_valid =
++		nl80211_adv_ttlm_tbtt_age(
++			tb[NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME],
++			&data.adv_ttlm.tbtt_age_us);
++
++	switch (cmd) {
++	case NL80211_CMD_ADV_TTLM_STARTED:
++		if (!tb[NL80211_ATTR_MLO_LINK_ID] ||
++		    !tb[NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF])
++			return;
++		data.adv_ttlm.step = ADV_TTLM_STARTED;
++		data.adv_ttlm.link_id = nla_get_u8(tb[NL80211_ATTR_MLO_LINK_ID]);
++		data.adv_ttlm.switch_tsf =
++			nla_get_u16(tb[NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF]);
++		if (!nl80211_link_valid(bss->valid_links,
++					data.adv_ttlm.link_id))
++			return;
++		break;
++	case NL80211_CMD_ADV_TTLM_ESTABLISHED:
++		data.adv_ttlm.step = ADV_TTLM_ESTABLISHED;
++		break;
++	default:
++		data.adv_ttlm.step = ADV_TTLM_ENDED;
++		break;
++	}
++
++	wpa_printf(MSG_DEBUG,
++		   "nl80211: Advertised TTLM step %d - Link ID %d switch %u cookie 0x%llx",
++		   data.adv_ttlm.step, data.adv_ttlm.link_id,
++		   data.adv_ttlm.switch_tsf,
++		   (unsigned long long) data.adv_ttlm.cookie);
++
++	wpa_supplicant_event(bss->ctx, EVENT_ADV_TTLM, &data);
++}
++
++
+ static void do_process_drv_event(struct i802_bss *bss, int cmd,
+ 				 struct nlattr **tb)
+ {
+@@ -5135,6 +5205,11 @@ static void do_process_drv_event(struct
+ 	case NL80211_CMD_CRIT_UPDATE_DONE:
+ 		nl80211_crit_update_done_event(bss, tb);
+ 		break;
++	case NL80211_CMD_ADV_TTLM_STARTED:
++	case NL80211_CMD_ADV_TTLM_ESTABLISHED:
++	case NL80211_CMD_ADV_TTLM_ENDED:
++		nl80211_adv_ttlm_event(bss, cmd, tb);
++		break;
+ 	case NL80211_CMD_ASSOC_MLO_RECONF:
+ 		mlme_event_link_addition(bss, nla_data(frame), nla_len(frame));
+ 		break;
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -985,7 +985,8 @@ static u8 * hostapd_probe_resp_fill_elem
+ 		pos = hostapd_eid_eht_operation(hapd, pos);
+ 
+ 		if (hapd->conf->mld_ap)
+-			pos = hostapd_eid_eht_ml_tid_to_link_map(hapd, pos);
++			pos = hostapd_eid_eht_ml_tid_to_link_map(
++				hapd, pos, WLAN_FC_STYPE_PROBE_RESP);
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+@@ -2516,8 +2517,8 @@ int ieee802_11_build_ap_params(struct ho
+ 						IEEE80211_MODE_AP);
+ 		tailpos = hostapd_eid_eht_operation(hapd, tailpos);
+ 		if (hapd->conf->mld_ap)
+-			tailpos = hostapd_eid_eht_ml_tid_to_link_map(hapd,
+-								     tailpos);
++			tailpos = hostapd_eid_eht_ml_tid_to_link_map(
++				hapd, tailpos, WLAN_FC_STYPE_BEACON);
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -330,7 +330,8 @@ void hostapd_link_reconf_resp_tx_status(
+ 					size_t len, int ok);
+ 
+ size_t hostapd_eid_eht_ml_tid_to_link_map_len(struct hostapd_data *hapd);
+-u8 * hostapd_eid_eht_ml_tid_to_link_map(struct hostapd_data *hapd, u8 *eid);
++u8 * hostapd_eid_eht_ml_tid_to_link_map(struct hostapd_data *hapd, u8 *eid,
++				       u16 stype);
+ 
+ void ieee80211_send_eap_req(struct hostapd_data *hapd, struct sta_info *sta,
+ 			    u8 type, u16 auth_transaction, u16 status,
+--- a/src/drivers/nl80211_copy.h
++++ b/src/drivers/nl80211_copy.h
+@@ -1465,6 +1465,42 @@
+  *	the critical update has an ID. See
+  *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
+  *
++ * @NL80211_CMD_ADV_TTLM_REQUEST: Advertise a TID-to-link mapping of an AP
++ *	MLD (IEEE 802.11be-2024, 35.3.7.2.4) that maps all TIDs, in both
++ *	directions, to the links of %NL80211_ATTR_MLO_ADV_TTLM_LINKS. Each of
++ *	these links must beacon, and at least one link of the AP MLD must be
++ *	outside the mapping. The mapping is established
++ *	%NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME TUs after the request, at the
++ *	TBTT the driver picks, and lasts %NL80211_ATTR_MLO_ADV_TTLM_DURATION
++ *	TUs. The driver disables the other links while it is established and
++ *	returns to the default mapping at the end. User space adds the
++ *	TID-To-Link Mapping element to the Beacon and Probe Response frames of
++ *	each link. Once the mapping is established, the driver finds the
++ *	element without the Mapping Switch Time field in the beacon tail that
++ *	it gets and counts its Expected Duration field down in each Beacon
++ *	frame. The reply carries %NL80211_ATTR_COOKIE, which each event of the
++ *	mapping carries as well. A request while a mapping is requested or
++ *	established fails with -EBUSY. If a link of the AP MLD stops before
++ *	the end, cfg80211 cancels the mapping in the driver, sends
++ *	%NL80211_CMD_ADV_TTLM_ENDED and drops the later events of the driver
++ *	for that mapping. See %NL80211_EXT_FEATURE_AP_ADV_TTLM.
++ * @NL80211_CMD_ADV_TTLM_STARTED: Notify user space that the driver scheduled
++ *	the requested mapping. Sent for each link of the AP MLD, with
++ *	%NL80211_ATTR_MLO_LINK_ID and %NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF,
++ *	and %NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME of the first TBTT of the
++ *	link at or after the establishment if the driver knows it.
++ * @NL80211_CMD_ADV_TTLM_ESTABLISHED: Notify user space that the advertised
++ *	mapping is established. The Mapping Switch Time field leaves the
++ *	element, and the links outside the mapping are disabled. The event
++ *	carries %NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME of the TBTT at which
++ *	the mapping was established if the driver knows it, so that user
++ *	space can compute the remaining Expected Duration from the most
++ *	recent TBTT (IEEE 802.11be-2024, 9.4.2.324).
++ * @NL80211_CMD_ADV_TTLM_ENDED: Notify user space that the advertised mapping
++ *	ended. User space removes the element; all links are enabled again.
++ *	The events of an advertised mapping carry %NL80211_ATTR_WIPHY,
++ *	%NL80211_ATTR_IFINDEX, %NL80211_ATTR_WDEV and %NL80211_ATTR_COOKIE.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1748,6 +1784,11 @@ enum nl80211_commands {
+ 	NL80211_CMD_UPDATE_BEACON,
+ 	NL80211_CMD_CRIT_UPDATE_DONE,
+ 
++	NL80211_CMD_ADV_TTLM_REQUEST,
++	NL80211_CMD_ADV_TTLM_STARTED,
++	NL80211_CMD_ADV_TTLM_ESTABLISHED,
++	NL80211_CMD_ADV_TTLM_ENDED,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+@@ -3246,6 +3287,23 @@ enum nl80211_commands {
+  *	%NL80211_CMD_CRIT_UPDATE_DONE. See
+  *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
+  *
++ * @NL80211_ATTR_MLO_ADV_TTLM_LINKS: u16 bitmap of the link IDs to which an
++ *	advertised TID-to-link mapping maps all TIDs, see
++ *	%NL80211_CMD_ADV_TTLM_REQUEST.
++ * @NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME: u32 time in TUs from the request to
++ *	the establishment of an advertised TID-to-link mapping, at most 0xffff,
++ *	the range of the Mapping Switch Time field (IEEE 802.11be-2024,
++ *	9.4.2.324).
++ * @NL80211_ATTR_MLO_ADV_TTLM_DURATION: u32 time in TUs that an advertised
++ *	TID-to-link mapping lasts once established, at most 0xffffff, the range
++ *	of the Expected Duration field (IEEE 802.11be-2024, 9.4.2.324).
++ * @NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF: u16 Mapping Switch Time field for
++ *	the link of %NL80211_ATTR_MLO_LINK_ID: bits 10 to 25 of that link's TSF
++ *	at the establishment of the mapping (IEEE 802.11be-2024, 9.4.2.324).
++ * @NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME: u64 time of a TBTT of an
++ *	advertised TID-to-link mapping, in ns of %CLOCK_BOOTTIME, see
++ *	%NL80211_CMD_ADV_TTLM_STARTED and %NL80211_CMD_ADV_TTLM_ESTABLISHED.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3854,6 +3912,12 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_ASSOC_PROTECTED_TWT,
+ 	NL80211_ATTR_CRIT_UPDATE_ID,
+ 
++	NL80211_ATTR_MLO_ADV_TTLM_LINKS,
++	NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TIME,
++	NL80211_ATTR_MLO_ADV_TTLM_DURATION,
++	NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF,
++	NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -7201,6 +7265,16 @@ enum nl80211_feature_flags {
+  *	ID of the current critical update. The driver does not track the flag
+  *	of a nontransmitted BSSID and reports no event for it.
+  *
++ * @NL80211_EXT_FEATURE_AP_ADV_TTLM: The driver advertises a TID-to-link
++ *	mapping of an AP MLD with %NL80211_CMD_ADV_TTLM_REQUEST: it times the
++ *	switch and the end, disables the links outside the mapping while it is
++ *	established, counts the Expected Duration field of the TID-To-Link
++ *	Mapping element in the Beacon frames down, and reports each step with
++ *	%NL80211_CMD_ADV_TTLM_STARTED, %NL80211_CMD_ADV_TTLM_ESTABLISHED and
++ *	%NL80211_CMD_ADV_TTLM_ENDED. A link that the mapping disables or
++ *	enables is a critical update (35.3.10), so the request also needs
++ *	%NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE.
++ *
+  * @NUM_NL80211_EXT_FEATURES: number of extended features.
+  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
+  */
+@@ -7286,6 +7360,7 @@ enum nl80211_ext_feature_index {
+ 	NL80211_EXT_FEATURE_FAST_ROAM_OFFLOAD,
+ 	NL80211_EXT_FEATURE_UPDATE_BEACON,
+ 	NL80211_EXT_FEATURE_BEACON_CRIT_UPDATE,
++	NL80211_EXT_FEATURE_AP_ADV_TTLM,
+ 
+ 	/* add new features before the definition below */
+ 	NUM_NL80211_EXT_FEATURES,

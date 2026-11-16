@@ -1,0 +1,65 @@
+From a68cd578c6bb42841506719f5f372ebfdebc575f Mon Sep 17 00:00:00 2001
+From: Anthony Green <green@moxielogic.com>
+Date: Tue, 27 Oct 2026 07:45:22 -0400
+Subject: [PATCH] testsuite: use register-sized complex return storage
+
+---
+ testsuite/libffi.complex/complex_int_small.c | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
+
+--- a/testsuite/libffi.complex/complex_int_small.c
++++ b/testsuite/libffi.complex/complex_int_small.c
+@@ -35,6 +35,15 @@ FFI_COMPLEX_TYPEDEF(sshort, short, ffi_t
+ typedef _Complex signed char cc;
+ typedef _Complex short cs;
+ 
++/* ffi_call requires its return storage to be at least register-sized and
++   suitably aligned, even when the declared return type is smaller.  */
++typedef union
++{
++  ffi_arg align;
++  cc cchar;
++  cs cshort;
++} complex_result;
++
+ static cc
+ f_cc (cc a, int k)
+ {
+@@ -96,6 +105,7 @@ main (void)
+   int ints[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+   cc a, ra;
+   cs b, rb;
++  complex_result result;
+   int k = 3, i;
+ 
+   pcl = ffi_closure_alloc (sizeof (ffi_closure), &code);
+@@ -112,7 +122,8 @@ main (void)
+   values[1] = &k;
+   CHECK (ffi_prep_cif (&cif, FFI_DEFAULT_ABI, 2, &ffi_type_complex_schar,
+ 		       types) == FFI_OK);
+-  ffi_call (&cif, FFI_FN (f_cc), &ra, values);
++  ffi_call (&cif, FFI_FN (f_cc), &result, values);
++  ra = result.cchar;
+   printf ("cc: %d,%di\n", (int) __real__ ra, (int) __imag__ ra);
+   CHECK (__real__ ra == 15 && __imag__ ra == -10);
+   CHECK (ffi_prep_closure_loc (pcl, &cif, cls_cc, NULL, code) == FFI_OK);
+@@ -124,7 +135,8 @@ main (void)
+   values[0] = &b;
+   CHECK (ffi_prep_cif (&cif, FFI_DEFAULT_ABI, 2, &ffi_type_complex_sshort,
+ 		       types) == FFI_OK);
+-  ffi_call (&cif, FFI_FN (f_cs), &rb, values);
++  ffi_call (&cif, FFI_FN (f_cs), &result, values);
++  rb = result.cshort;
+   printf ("cs: %d,%di\n", (int) __real__ rb, (int) __imag__ rb);
+   CHECK (__real__ rb == 900 && __imag__ rb == -403);
+   CHECK (ffi_prep_closure_loc (pcl, &cif, cls_cs, NULL, code) == FFI_OK);
+@@ -143,7 +155,8 @@ main (void)
+   values[9] = &b;
+   CHECK (ffi_prep_cif (&cif, FFI_DEFAULT_ABI, 10, &ffi_type_complex_sshort,
+ 		       types) == FFI_OK);
+-  ffi_call (&cif, FFI_FN (f_stack), &rb, values);
++  ffi_call (&cif, FFI_FN (f_stack), &result, values);
++  rb = result.cshort;
+   printf ("stack: %d,%di\n", (int) __real__ rb, (int) __imag__ rb);
+   CHECK (__real__ rb == 315 && __imag__ rb == -381);
+   CHECK (ffi_prep_closure_loc (pcl, &cif, cls_stack, NULL, code) == FFI_OK);

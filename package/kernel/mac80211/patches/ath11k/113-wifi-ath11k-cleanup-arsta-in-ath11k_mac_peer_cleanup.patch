@@ -1,0 +1,109 @@
+From 820b8cff81c796ba20573e04722ab62500713f97 Mon Sep 17 00:00:00 2001
+From: Nicolas Escande <nico.escande@gmail.com>
+Date: Fri, 31 Jul 2026 16:58:30 +0200
+Subject: [PATCH] wifi: ath11k: cleanup arsta in ath11k_mac_peer_cleanup_all()
+
+When mac80211 removes a sta, it calls .sta_state() which in turn calls
+ath11k_mac_station_remove(). In that function we clean up both peers &
+arsta related resources.
+
+But when the firmware crashes, ath11k calls ieee80211_restart_hw(), which
+assumes that all driver related resources are cleaned up beforehand. This
+cleanup is supposedly done by ath11k_mac_peer_cleanup_all() but does not
+in fact free arsta->rx_stats / tx_stats.
+
+Extract the arsta cleanup from ath11k_mac_station_remove() into a
+new ath11k_mac_station_cleanup() and call it from both there and
+ath11k_mac_peer_cleanup_all().
+
+This should handle kmemleaks reports like:
+	unreferenced object 0xffffff801ae66400 (size 1024):
+	  comm "hostapd", pid 1306, jiffies 4295011565
+	  hex dump (first 32 bytes):
+	    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	  backtrace (crc d61c08ec):
+	    kmemleak_alloc+0x3c/0x50
+	    __kmalloc_cache_noprof+0x2b0/0x3e0
+	    ath11k_mac_op_sta_state+0x1dc/0xb10
+	    drv_sta_state+0xac/0x6f8
+	    sta_info_insert_rcu+0x314/0x5e0
+	    sta_info_insert+0x14/0x38
+	    ieee80211_add_station+0x10c/0x1a0
+	    nl80211_new_station+0x3e8/0x680
+	    genl_family_rcv_msg_doit+0xc0/0x120
+	    genl_rcv_msg+0x1b4/0x258
+	    netlink_rcv_skb+0x4c/0x108
+	    genl_rcv+0x38/0x60
+	    netlink_unicast+0x190/0x278
+	    netlink_sendmsg+0x15c/0x370
+	    ____sys_sendmsg+0x120/0x290
+	    ___sys_sendmsg+0x70/0xa0
+
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.9.0.1-01977-QCAHKSWPL_SILICONZ-1
+
+Fixes: d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+Signed-off-by: Nicolas Escande <nico.escande@gmail.com>
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260731145830.769811-1-nico.escande@gmail.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 25 ++++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -873,6 +873,22 @@ static int ath11k_mac_set_kickout(struct
+ 	return 0;
+ }
+ 
++static void ath11k_mac_station_cleanup(struct ieee80211_sta *sta)
++{
++	struct ath11k_sta *arsta;
++
++	if (!sta)
++		return;
++
++	arsta = ath11k_sta_to_arsta(sta);
++
++	kfree(arsta->tx_stats);
++	arsta->tx_stats = NULL;
++
++	kfree(arsta->rx_stats);
++	arsta->rx_stats = NULL;
++}
++
+ void ath11k_mac_peer_cleanup_all(struct ath11k *ar)
+ {
+ 	struct ath11k_peer *peer, *tmp;
+@@ -885,6 +901,7 @@ void ath11k_mac_peer_cleanup_all(struct
+ 	list_for_each_entry_safe(peer, tmp, &ab->peers, list) {
+ 		ath11k_peer_rx_tid_cleanup(ar, peer);
+ 		ath11k_peer_rhash_delete(ab, peer);
++		ath11k_mac_station_cleanup(peer->sta);
+ 		list_del(&peer->list);
+ 		kfree(peer);
+ 	}
+@@ -9892,7 +9909,6 @@ static int ath11k_mac_station_remove(str
+ {
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+-	struct ath11k_sta *arsta = ath11k_sta_to_arsta(sta);
+ 	int ret;
+ 
+ 	if (ab->hw_params.vdev_start_delay &&
+@@ -9916,12 +9932,7 @@ static int ath11k_mac_station_remove(str
+ 			   sta->addr, arvif->vdev_id);
+ 
+ 	ath11k_mac_dec_num_stations(arvif, sta);
+-
+-	kfree(arsta->tx_stats);
+-	arsta->tx_stats = NULL;
+-
+-	kfree(arsta->rx_stats);
+-	arsta->rx_stats = NULL;
++	ath11k_mac_station_cleanup(sta);
+ 
+ 	return ret;
+ }

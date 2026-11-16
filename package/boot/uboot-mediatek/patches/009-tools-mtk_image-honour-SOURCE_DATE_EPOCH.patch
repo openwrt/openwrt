@@ -1,0 +1,26 @@
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] tools: mtk_image: honour SOURCE_DATE_EPOCH
+
+mtk_image_set_mt7621_header() reads the wall clock and writes it to the
+timestamp of the legacy image header. The MT7621 boot loader image
+therefore differs on every build.
+
+Use imagetool_get_source_date(), which the other image tools already use,
+and keep the wall clock as the fallback.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ tools/mtk_image.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/tools/mtk_image.c
++++ b/tools/mtk_image.c
+@@ -706,7 +706,7 @@ static void mtk_image_set_mt7621_header(
+ 	shdr->stage_size = cpu_to_be32(datasize);
+
+ 	image_set_magic(hdr, IH_MAGIC);
+-	image_set_time(hdr, time(NULL));
++	image_set_time(hdr, imagetool_get_source_date("mtk_image", time(NULL)));
+ 	image_set_size(hdr, datasize);
+ 	image_set_load(hdr, loadaddr);
+ 	image_set_ep(hdr, loadaddr);

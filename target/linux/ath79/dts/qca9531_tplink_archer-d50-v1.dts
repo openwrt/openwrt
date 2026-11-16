@@ -1,0 +1,211 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca953x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "tplink,archer-d50-v1", "qca,qca9531";
+	model = "TP-Link Archer D50 v1";
+
+	aliases {
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+		label-mac-device = &wmac;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan5g {
+			label = "white:wlan5g";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		qss {
+			label = "white:qss";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		usb {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&hub_port0>;
+			linux,default-trigger = "usbport";
+		};
+
+		internet {
+			label = "white:internet";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_system: system {
+			label = "white:system";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		rfkill {
+			label = "RFKILL button";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "WPS button";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x020000>;
+				read-only;
+			};
+
+			partition@20000 {
+				compatible = "tplink,firmware";
+				label = "firmware";
+				reg = <0x020000 0x7a0000>;
+			};
+
+			partition@7c0000 {
+				label = "config";
+				reg = <0x7c0000 0x010000>;
+				read-only;
+			};
+
+			partition@7d0000 {
+				label = "romfile";
+				reg = <0x7d0000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_romfile_f100: macaddr@f100 {
+						compatible = "mac-base";
+						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@7e0000 {
+				label = "rom";
+				reg = <0x7e0000 0x010000>;
+				read-only;
+			};
+
+			partition@7f0000 {
+				label = "art";
+				reg = <0x7f0000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy4>;
+
+	nvmem-cells = <&macaddr_romfile_f100 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&eth1 {
+	nvmem-cells = <&macaddr_romfile_f100 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_romfile_f100 0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <14>;
+		led-active-low;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_romfile_f100 2>;
+		nvmem-cell-names = "calibration", "mac-address";
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};

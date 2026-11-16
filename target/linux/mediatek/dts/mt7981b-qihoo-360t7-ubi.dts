@@ -1,0 +1,106 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7981b-qihoo-360t7-common.dtsi"
+
+/ {
+	compatible = "qihoo,360t7-ubi", "mediatek,mt7981";
+	model = "Qihoo 360T7 (UBI)";
+
+	aliases {
+		label-mac-device = &wan;
+	};
+};
+
+&gmac0 {
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_factory_8000 (0)>;
+};
+
+&partitions {
+	partition@100000 {
+		reg = <0x100000 0x7f00000>;
+		compatible = "linux,ubi";
+		label = "ubi";
+
+		volumes {
+			ubi_factory: ubi-volume-factory {
+				volname = "factory";
+			};
+
+			ubi-volume-fip {
+				volname = "fip";
+			};
+
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+
+			ubi_ubootenv: ubi-volume-ubootenv {
+				volname = "ubootenv";
+			};
+
+			ubi_ubootenv2: ubi-volume-ubootenv2 {
+				volname = "ubootenv2";
+			};
+		};
+	};
+};
+
+&ubi_factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom_factory_0: eeprom@0 {
+			reg = <0x0 0x1000>;
+		};
+
+		macaddr_factory_8000: macaddr@8000 {
+			compatible = "mac-base";
+			reg = <0x8000 0x6>;
+			#nvmem-cell-cells = <1>;
+		};
+	};
+};
+
+&ubi_ubootenv {
+	nvmem-layout {
+		compatible = "u-boot,env-redundant-bool";
+	};
+};
+
+&ubi_ubootenv2 {
+	nvmem-layout {
+		compatible = "u-boot,env-redundant-bool";
+	};
+};
+
+&wan {
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_factory_8000 (1)>;
+};
+
+&wifi {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+
+	band@0 {
+		reg = <0>;
+
+		nvmem-cells = <&macaddr_factory_8000 (2)>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+
+		nvmem-cells = <&macaddr_factory_8000 (3)>;
+		nvmem-cell-names = "mac-address";
+	};
+};

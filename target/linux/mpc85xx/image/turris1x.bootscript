@@ -1,0 +1,8 @@
+# for a mainline U-Boot with its default environment
+# Nothing feeds the MAX6370 under Linux, unstopped it resets the board.
+wdt dev watchdog@2
+wdt stop
+# no ubi.mtd, mount_root would take the rootfs_data of the NAND
+setenv bootargs "root=/dev/mmcblk0p2 rootfstype=squashfs rootwait console=ttyS0,115200"
+load ${devtype} ${devnum}:${distro_bootpart} ${kernel_addr_r} zImage
+bootm ${kernel_addr_r}

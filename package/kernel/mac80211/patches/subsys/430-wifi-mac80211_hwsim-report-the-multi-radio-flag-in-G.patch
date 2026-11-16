@@ -1,0 +1,26 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 14 Oct 2026 20:05:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: report the multi-radio flag in
+ GET_RADIO
+
+append_radio_msg() puts HWSIM_ATTR_MULTI_RADIO when the parameters of
+the radio have multi_radio set, but mac80211_hwsim_get_radio() never
+sets it. The new radio notification reports the flag, while
+HWSIM_CMD_GET_RADIO does not report it for a multi-radio wiphy.
+
+Report the flag when the wiphy has wiphy radios, which hwsim registers
+only for a multi-radio wiphy.
+
+Fixes: d2601e34a102 ("wifi: mac80211_hwsim: add support for multi-radio wiphy")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -7106,6 +7106,7 @@ static int mac80211_hwsim_get_radio(stru
+ 	param.nan_device = !!(data->hw->wiphy->interface_modes &
+ 					BIT(NL80211_IFTYPE_NAN));
+ 	param.use_chanctx = data->use_chanctx;
++	param.multi_radio = data->hw->wiphy->n_radio > 0;
+ 	param.regd = data->regd;
+ 	param.channels = data->channels;
+ 	param.hwname = wiphy_name(data->hw->wiphy);

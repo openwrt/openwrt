@@ -1,0 +1,48 @@
+From: Robert Marko <robimarko@gmail.com>
+Date: Mon, 26 Oct 2026 13:08:13 +0100
+Subject: [PATCH] dt-bindings: clocks: qcom,gcc-ipq8074: Allow CMN PLL bias clocks
+
+CMN PLL in IPQ8074 provides 2 fixed clocks to the GCC clock controller.
+In order to describe this in DTS, allow passing them as the inputs to GCC.
+
+This has a benefit that it avoids doing a global matching by name.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20261026120920.1667982-2-robimarko@gmail.com
+---
+Changes in v2:
+- Keep the existing four-clock form valid with minItems: 4.
+- Drop the _clk suffix from the new GCC input names.
+- Correct the NSS NoC bias clock description to 461.5 MHz.
+
+ .../devicetree/bindings/clock/qcom,gcc-ipq8074.yaml         | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/Documentation/devicetree/bindings/clock/qcom,gcc-ipq8074.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,gcc-ipq8074.yaml
+@@ -24,18 +24,24 @@ properties:
+     const: qcom,gcc-ipq8074
+ 
+   clocks:
++    minItems: 4
+     items:
+       - description: board XO clock
+       - description: sleep clock
+       - description: Gen3 QMP PCIe PHY PIPE clock
+       - description: Gen2 QMP PCIe PHY PIPE clock
++      - description: 300 MHz bias clock from CMN PLL
++      - description: 461.5 MHz NSS NoC bias clock from CMN PLL
+ 
+   clock-names:
++    minItems: 4
+     items:
+       - const: xo
+       - const: sleep_clk
+       - const: pcie0_pipe
+       - const: pcie1_pipe
++      - const: bias_pll_cc
++      - const: bias_pll_nss_noc
+ 
+ required:
+   - compatible

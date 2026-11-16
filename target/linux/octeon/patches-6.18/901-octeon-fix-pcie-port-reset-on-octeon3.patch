@@ -1,0 +1,300 @@
+FROM: Andrew LaMarche <andrewjlamarche@gmail.com>
+Date: Wed, 28 Oct 2026 00:00:00 -0400
+Subject: [PATCH] octeon: fix PCIe port reset on Octeon III
+
+arch/mips/pci/pcie-octeon.c was ported from the Cavium SDK cvmx-pcie.c,
+but the OCTEON_IS_OCTEON3() branches of the port reset sequence were
+dropped: __cvmx_pcie_rc_initialize_gen2() unconditionally pulses
+CIU_SOFT_PRST/CIU_SOFT_PRST1 and checks MIO_RST_CTLX. Those are Octeon II
+blocks; on Octeon III (CN7xxx) they are unclaimed -- reads return garbage
+and writes are silently dropped. The kernel therefore never resets the
+PEM port, never drives PERST# to the endpoint, and never clears a
+SOFT_PRST that the RST block has latched.
+
+On Octeon III the per-port reset logic lives in the RST block:
+RST_SOFT_PRSTX[n] requests a port reset and RST_CTLX[n] configures the
+reset behavior and reports status. RST_CTLX[PRST_LINK] controls whether
+a link-down or hot-reset from the endpoint asserts SOFT_PRST, and
+RST_CTLX[RST_LINK] whether it warm-resets the whole chip. If PRST_LINK
+is left set (it survives a soft reset, so whatever the bootloader or a
+previous warm boot left behind persists), an endpoint that resets its
+own PCIe link kills the PEM: SOFT_PRST latches, every PEM register then
+reads zero, the link never retrains, and the port stays dead until the
+next reboot. Observed on a CN7030 board with two QCA9984 wifi chips,
+whose driver (ath10k qca99x0) issues SOC_GLOBAL_RESET -- "put target,
+including PCIe, into reset" -- during probe:
+
+  ath10k_pci 0000:01:00.0: failed to receive initialized event from
+  target: 00000000
+  ath10k_pci 0000:01:00.0: failed to wait for target after cold reset:
+  -145
+
+Program RST_CTLX for root-complex operation (clear PRST_LINK/RST_LINK,
+drive PERST#, do not sample it, do not chain to a chip warm reset -- the
+same values the SDK programs in __setup_pem_reset()) and route the port
+reset pulse, the host-mode check and the rst_done wait through the RST
+block on Octeon III, mirroring the SDK. The Octeon II path is unchanged.
+
+Since the port reset now actually reaches the endpoint on Octeon III,
+also add the SDK's post-reset device boot allowance: PCIe endpoints
+that load firmware from a serial flash (such as the QCA99xx) can take
+up to 900ms after PERST# before they answer configuration requests,
+longer than the hardware cfg_rtry window covers.
+
+While there, fix the PEMX_BIST_STATUS2 read in gen2 init: the register
+does not exist on CN73XX/CN78XX, and on CN70XX it lives at block offset
+0x440, not 0x420 (0x420 is PEMX_ON on CN70XX). Reading the generic
+address on CN70XX reports pemon|pemoor as a bogus "BIST2 FAILED (0x3)"
+on every boot.
+
+Signed-off-by: Andrew LaMarche <andrewjlamarche@gmail.com>
+
+--- a/arch/mips/pci/pcie-octeon.c
++++ b/arch/mips/pci/pcie-octeon.c
+@@ -19,6 +19,7 @@
+ #include <asm/octeon/cvmx-pescx-defs.h>
+ #include <asm/octeon/cvmx-pexp-defs.h>
+ #include <asm/octeon/cvmx-pemx-defs.h>
++#include <asm/octeon/cvmx-rst-defs.h>
+ #include <asm/octeon/cvmx-dpi-defs.h>
+ #include <asm/octeon/cvmx-sli-defs.h>
+ #include <asm/octeon/cvmx-sriox-defs.h>
+@@ -1174,6 +1175,37 @@ static u64 octeon_pemx_bar1_index_addr(i
+ 	return CVMX_PEMX_BAR1_INDEXX(index, pcie_port);
+ }
+ 
++/*
++ * On Octeon III the per-port PCIe reset control lives in the RST block:
++ * RST_SOFT_PRSTX[n] requests a port reset and RST_CTLX[n] configures the
++ * reset behavior and reports status. The CIU_SOFT_PRST and MIO_RST_CTLX
++ * registers used on Octeon II do not exist on Octeon III: reads return
++ * garbage and writes are silently dropped.
++ */
++static int octeon_pcie_is_host_mode(int pcie_port)
++{
++	union cvmx_mio_rst_ctlx mio_rst_ctl;
++
++	if (OCTEON_IS_OCTEON3()) {
++		union cvmx_rst_ctlx rst_ctl;
++
++		rst_ctl.u64 = cvmx_read_csr(CVMX_RST_CTLX(pcie_port));
++		return rst_ctl.s.host_mode;
++	}
++
++	mio_rst_ctl.u64 = cvmx_read_csr(CVMX_MIO_RST_CTLX(pcie_port));
++	return mio_rst_ctl.s.host_mode;
++}
++
++/*
++ * PEMX_BIST_STATUS2 does not exist on all models: on CN70XX it is at block
++ * offset 0x440 (0x420 is PEMX_ON there) and on other Octeon III parts it is
++ * not present at all. See the model checks in the Cavium OCTEON-SDK
++ * cvmx-pemx-defs.h.
++ */
++#define CVMX_PEMX_BIST_STATUS2_CN70XX(block) \
++	(CVMX_ADD_IO_SEG(0x00011800C0000440ull) + ((block) & 3) * 0x1000000ull)
++
+ /**
+  * Initialize a PCIe gen 2 port for use in host(RC) mode. It doesn't enumerate
+  * the bus.
+@@ -1186,7 +1218,8 @@ static int __cvmx_pcie_rc_initialize_gen
+ {
+ 	int i;
+ 	union cvmx_ciu_soft_prst ciu_soft_prst;
+-	union cvmx_mio_rst_ctlx mio_rst_ctl;
++	union cvmx_rst_ctlx rst_ctl;
++	union cvmx_rst_soft_prstx soft_prst;
+ 	union cvmx_pemx_bar_ctl pemx_bar_ctl;
+ 	union cvmx_pemx_ctl_status pemx_ctl_status;
+ 	union cvmx_pemx_bist_status pemx_bist_status;
+@@ -1266,8 +1299,7 @@ static int __cvmx_pcie_rc_initialize_gen
+ #endif
+ 
+ 	/* Make sure we aren't trying to setup a target mode interface in host mode */
+-	mio_rst_ctl.u64 = cvmx_read_csr(CVMX_MIO_RST_CTLX(pcie_port));
+-	if (!mio_rst_ctl.s.host_mode) {
++	if (!octeon_pcie_is_host_mode(pcie_port)) {
+ 		pr_notice("PCIe: Port %d in endpoint mode.\n", pcie_port);
+ 		return -1;
+ 	}
+@@ -1291,33 +1323,76 @@ static int __cvmx_pcie_rc_initialize_gen
+ 		}
+ 	}
+ 	/* Bring the PCIe out of reset */
+-	if (pcie_port)
+-		ciu_soft_prst.u64 = cvmx_read_csr(CVMX_CIU_SOFT_PRST1);
+-	else
+-		ciu_soft_prst.u64 = cvmx_read_csr(CVMX_CIU_SOFT_PRST);
+-	/*
+-	 * After a chip reset the PCIe will also be in reset. If it
+-	 * isn't, most likely someone is trying to init it again
+-	 * without a proper PCIe reset
+-	 */
+-	if (ciu_soft_prst.s.soft_prst == 0) {
+-		/* Reset the port */
+-		ciu_soft_prst.s.soft_prst = 1;
++	if (OCTEON_IS_OCTEON3()) {
++		/*
++		 * Program the port for root-complex operation: drive
++		 * PERST# (rst_drv), do not sample it (rst_rcv), and make
++		 * sure a link-down or hot reset from the endpoint neither
++		 * latches SOFT_PRST (prst_link) nor warm-resets the chip
++		 * (rst_link). Endpoints such as the QCA99xx wifi chips
++		 * reset their own PCIe link during driver probe; if
++		 * prst_link is set the RST block asserts SOFT_PRST on the
++		 * resulting link-down and the PEM stays dead (every PEM
++		 * register reads back zero) until the next reboot. These
++		 * fields survive a soft reset, so whatever the bootloader
++		 * left behind must be fixed up here. Same values the
++		 * Cavium SDK programs via __setup_pem_reset().
++		 */
++		rst_ctl.u64 = cvmx_read_csr(CVMX_RST_CTLX(pcie_port));
++		rst_ctl.s.prst_link = 0;
++		rst_ctl.s.rst_link = 0;
++		rst_ctl.s.rst_drv = 1;
++		rst_ctl.s.rst_rcv = 0;
++		rst_ctl.s.rst_chip = 0;
++		cvmx_write_csr(CVMX_RST_CTLX(pcie_port), rst_ctl.u64);
++
++		/*
++		 * After a chip reset the PCIe will also be in reset. If
++		 * it isn't, most likely someone is trying to init it
++		 * again without a proper PCIe reset. Writing 0 also
++		 * clears a SOFT_PRST that was latched earlier.
++		 */
++		soft_prst.u64 = cvmx_read_csr(CVMX_RST_SOFT_PRSTX(pcie_port));
++		if (soft_prst.s.soft_prst == 0) {
++			/* Reset the port */
++			soft_prst.s.soft_prst = 1;
++			cvmx_write_csr(CVMX_RST_SOFT_PRSTX(pcie_port),
++				       soft_prst.u64);
++			/* Wait until pcie resets the port. */
++			udelay(2000);
++		}
++		soft_prst.u64 = cvmx_read_csr(CVMX_RST_SOFT_PRSTX(pcie_port));
++		soft_prst.s.soft_prst = 0;
++		cvmx_write_csr(CVMX_RST_SOFT_PRSTX(pcie_port), soft_prst.u64);
++	} else {
+ 		if (pcie_port)
+-			cvmx_write_csr(CVMX_CIU_SOFT_PRST1, ciu_soft_prst.u64);
++			ciu_soft_prst.u64 = cvmx_read_csr(CVMX_CIU_SOFT_PRST1);
+ 		else
++			ciu_soft_prst.u64 = cvmx_read_csr(CVMX_CIU_SOFT_PRST);
++		/*
++		 * After a chip reset the PCIe will also be in reset. If it
++		 * isn't, most likely someone is trying to init it again
++		 * without a proper PCIe reset
++		 */
++		if (ciu_soft_prst.s.soft_prst == 0) {
++			/* Reset the port */
++			ciu_soft_prst.s.soft_prst = 1;
++			if (pcie_port)
++				cvmx_write_csr(CVMX_CIU_SOFT_PRST1, ciu_soft_prst.u64);
++			else
++				cvmx_write_csr(CVMX_CIU_SOFT_PRST, ciu_soft_prst.u64);
++			/* Wait until pcie resets the ports. */
++			udelay(2000);
++		}
++		if (pcie_port) {
++			ciu_soft_prst.u64 = cvmx_read_csr(CVMX_CIU_SOFT_PRST1);
++			ciu_soft_prst.s.soft_prst = 0;
++			cvmx_write_csr(CVMX_CIU_SOFT_PRST1, ciu_soft_prst.u64);
++		} else {
++			ciu_soft_prst.u64 = cvmx_read_csr(CVMX_CIU_SOFT_PRST);
++			ciu_soft_prst.s.soft_prst = 0;
+ 			cvmx_write_csr(CVMX_CIU_SOFT_PRST, ciu_soft_prst.u64);
+-		/* Wait until pcie resets the ports. */
+-		udelay(2000);
+-	}
+-	if (pcie_port) {
+-		ciu_soft_prst.u64 = cvmx_read_csr(CVMX_CIU_SOFT_PRST1);
+-		ciu_soft_prst.s.soft_prst = 0;
+-		cvmx_write_csr(CVMX_CIU_SOFT_PRST1, ciu_soft_prst.u64);
+-	} else {
+-		ciu_soft_prst.u64 = cvmx_read_csr(CVMX_CIU_SOFT_PRST);
+-		ciu_soft_prst.s.soft_prst = 0;
+-		cvmx_write_csr(CVMX_CIU_SOFT_PRST, ciu_soft_prst.u64);
++		}
+ 	}
+ 
+ 	/* Wait for PCIe reset to complete */
+@@ -1328,7 +1403,16 @@ static int __cvmx_pcie_rc_initialize_gen
+ 	 * the board probably hasn't wired the clocks up and the
+ 	 * interface should be skipped.
+ 	 */
+-	if (CVMX_WAIT_FOR_FIELD64(CVMX_MIO_RST_CTLX(pcie_port), union cvmx_mio_rst_ctlx, rst_done, ==, 1, 10000)) {
++	if (OCTEON_IS_OCTEON3()) {
++		if (CVMX_WAIT_FOR_FIELD64(CVMX_RST_CTLX(pcie_port),
++					  union cvmx_rst_ctlx, rst_done,
++					  ==, 1, 10000)) {
++			pr_notice("PCIe: Port %d stuck in reset, skipping.\n", pcie_port);
++			return -1;
++		}
++	} else if (CVMX_WAIT_FOR_FIELD64(CVMX_MIO_RST_CTLX(pcie_port),
++					 union cvmx_mio_rst_ctlx, rst_done,
++					 ==, 1, 10000)) {
+ 		pr_notice("PCIe: Port %d stuck in reset, skipping.\n", pcie_port);
+ 		return -1;
+ 	}
+@@ -1337,7 +1421,17 @@ static int __cvmx_pcie_rc_initialize_gen
+ 	pemx_bist_status.u64 = cvmx_read_csr(CVMX_PEMX_BIST_STATUS(pcie_port));
+ 	if (pemx_bist_status.u64)
+ 		pr_notice("PCIe: BIST FAILED for port %d (0x%016llx)\n", pcie_port, CAST64(pemx_bist_status.u64));
+-	pemx_bist_status2.u64 = cvmx_read_csr(CVMX_PEMX_BIST_STATUS2(pcie_port));
++	/*
++	 * BIST_STATUS2 only exists on Octeon II and CN70XX, and CN70XX maps
++	 * it at 0x440 instead of 0x420 (0x420 is PEMX_ON there, so reading
++	 * it reports a bogus "BIST2 FAILED (0x3)" on every boot).
++	 */
++	if (OCTEON_IS_MODEL(OCTEON_CN70XX))
++		pemx_bist_status2.u64 = cvmx_read_csr(CVMX_PEMX_BIST_STATUS2_CN70XX(pcie_port));
++	else if (OCTEON_IS_OCTEON3())
++		pemx_bist_status2.u64 = 0;
++	else
++		pemx_bist_status2.u64 = cvmx_read_csr(CVMX_PEMX_BIST_STATUS2(pcie_port));
+ 	/* Errata PCIE-14766 may cause the lower 6 bits to be randomly set on CN63XXp1 */
+ 	if (OCTEON_IS_MODEL(OCTEON_CN63XX_PASS1_X))
+ 		pemx_bist_status2.u64 &= ~0x3full;
+@@ -1463,6 +1557,20 @@ static int __cvmx_pcie_rc_initialize_gen
+ 	pemx_ctl_status.s.cfg_rtry = 250 * 5000000 / 0x10000;
+ 	cvmx_write_csr(CVMX_PEMX_CTL_STATUS(pcie_port), pemx_ctl_status.u64);
+ 
++	if (OCTEON_IS_OCTEON3()) {
++		/*
++		 * The PERST# issued above restarts the endpoint's own boot
++		 * sequence. PCIe devices may need up to 900ms after reset
++		 * before they answer configuration requests (the hardware
++		 * cfg_rtry window alone is not enough for devices that
++		 * boot firmware from a serial flash, e.g. QCA99xx). The
++		 * SDK waits 900ms here; 800ms plus the 100ms that
++		 * octeon_pcie_setup() sleeps before registering the bus
++		 * gives the same total.
++		 */
++		msleep(800);
++	}
++
+ 	/* Display the link status */
+ 	pciercx_cfg032.u32 = cvmx_pcie_cfgx_read(pcie_port, CVMX_PCIERCX_CFG032(pcie_port));
+ 	pr_notice("PCIe: Port %d link active, %d lanes, speed gen%d\n", pcie_port, pciercx_cfg032.s.nlw, pciercx_cfg032.s.ls);
+@@ -1945,9 +2053,7 @@ static int __init octeon_pcie_setup(void
+ 		host_mode = npei_ctl_status.s.host_mode;
+ 		octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_PCIE;
+ 	} else {
+-		union cvmx_mio_rst_ctlx mio_rst_ctl;
+-		mio_rst_ctl.u64 = cvmx_read_csr(CVMX_MIO_RST_CTLX(0));
+-		host_mode = mio_rst_ctl.s.host_mode;
++		host_mode = octeon_pcie_is_host_mode(0);
+ 		octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_PCIE2;
+ 	}
+ 
+@@ -2019,9 +2125,7 @@ static int __init octeon_pcie_setup(void
+ 				host_mode = 0;
+ 		}
+ 	} else {
+-		union cvmx_mio_rst_ctlx mio_rst_ctl;
+-		mio_rst_ctl.u64 = cvmx_read_csr(CVMX_MIO_RST_CTLX(1));
+-		host_mode = mio_rst_ctl.s.host_mode;
++		host_mode = octeon_pcie_is_host_mode(1);
+ 	}
+ 
+ 	if (host_mode) {

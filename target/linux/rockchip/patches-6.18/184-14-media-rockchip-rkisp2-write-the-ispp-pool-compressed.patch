@@ -1,0 +1,310 @@
+From 9a0d8763b8d259001cffe8db520ad69d3b8f6816 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 5 Nov 2026 00:44:00 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Write the ISPP pool compressed
+
+The ISPP pipe writes uncompressed 4:2:2 frames with the mainpath MI, so
+the ISPP moves about 17 MiB per 4K frame per stage. Its TNR then takes
+70 ms a frame, and TNR followed by NR cannot keep up with 30 fps.
+
+Support the FBC pool mode of the vendor driver: the MPFBC encoder
+writes the frame compressed, a 16-aligned header followed by the
+payload, in 4:2:0 or 4:2:2, and signals its own frame end. The MI
+cannot write 4:2:0 itself, so plain 4:2:0 is refused. The ISPP passes
+the allocated pool buffer sizes and the identity mapping of the pool
+covers exactly those; a mapping sized for a 4:2:2 frame overlaps the
+neighbouring buffers once they are smaller.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/ispp/stream.c |  2 +
+ .../platform/rockchip/rkisp2/rkisp2-capture.c |  7 +-
+ .../platform/rockchip/rkisp2/rkisp2-common.h  |  2 +-
+ .../platform/rockchip/rkisp2/rkisp2-isp.c     | 99 ++++++++++++++-----
+ .../linux/platform_data/media/rkisp2-toispp.h | 11 +++
+ 5 files changed, 94 insertions(+), 27 deletions(-)
+
+--- a/drivers/media/platform/rockchip/ispp/stream.c
++++ b/drivers/media/platform/rockchip/ispp/stream.c
+@@ -1648,6 +1648,8 @@ static int start_isp(struct rkispp_devic
+ 	cfg.buf_num = RKISPP_BUF_POOL_MAX;
+ 	cfg.width = w;
+ 	cfg.height = h;
++	cfg.pic_size = vdev->pool[0].pic.size;
++	cfg.gain_size = vdev->pool[0].gain.size;
+ 	for (i = 0; i < RKISPP_BUF_POOL_MAX; i++) {
+ 		cfg.buf[i].pic = vdev->pool[i].pic.dma_addr;
+ 		cfg.buf[i].gain = vdev->pool[i].gain.dma_addr;
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
+@@ -731,15 +731,16 @@ irqreturn_t rkisp2_capture_isr(int irq,
+ 	if (!status)
+ 		return IRQ_NONE;
+ 
++	if (status & MI_MPFBC_FRAME && rkisp2->isp.ispp.active)
++		rkisp2_ispp_pipe_mi_done(&rkisp2->isp);
++
+ 	for (i = 0; i < 2; ++i) {
+ 		struct rkisp2_capture *cap = &rkisp2->capture_devs[i];
+ 
+ 		if (!(status & RKISP2_CIF_MI_FRAME(cap)))
+ 			continue;
+ 		if (cap->id == RKISP2_MAINPATH && rkisp2->isp.ispp.active) {
+-			rkisp2->isp.ispp.mi_frames++;
+-			wake_up(&rkisp2->isp.ispp.done);
+-			rkisp2_ispp_pipe_frame_end(&rkisp2->isp);
++			rkisp2_ispp_pipe_mi_done(&rkisp2->isp);
+ 			continue;
+ 		}
+ 		if (!cap->is_stopping) {
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-common.h
+@@ -690,7 +690,7 @@ bool rkisp2_vicap_available(struct rkisp
+ bool rkisp2_isp_dma_linked(struct rkisp2_isp *isp);
+ void rkisp2_ispp_pipe_iommu_map(struct rkisp2_isp *isp);
+ void rkisp2_ispp_pipe_vstart(struct rkisp2_isp *isp);
+-void rkisp2_ispp_pipe_frame_end(struct rkisp2_isp *isp);
++void rkisp2_ispp_pipe_mi_done(struct rkisp2_isp *isp);
+ int rkisp2_vicap_start(struct rkisp2_device *rkisp2,
+ 		       const struct v4l2_mbus_framefmt *fmt);
+ void rkisp2_vicap_drain(struct rkisp2_device *rkisp2);
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
+@@ -789,17 +789,33 @@ static bool rkisp2_ispp_pipe_quick(struc
+ 	return isp->ispp.cfg.work_mode & RKISP2_ISPP_WORK_QUICK;
+ }
+ 
++static bool rkisp2_ispp_pipe_fbc(struct rkisp2_isp *isp)
++{
++	return isp->ispp.cfg.work_mode & RKISP2_ISPP_WORK_FBC;
++}
++
+ static void rkisp2_ispp_pipe_base_set(struct rkisp2_isp *isp, unsigned int idx)
+ {
+ 	struct rkisp2_device *rkisp2 = isp->rkisp2;
+ 	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
++	phys_addr_t pic = cfg->buf[idx].pic_phys;
+ 	u32 plane = cfg->width * cfg->height;
++	u32 head;
+ 
+-	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_Y_BASE_AD_INIT,
+-		     cfg->buf[idx].pic_phys);
+-	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CB_BASE_AD_INIT,
+-		     cfg->buf[idx].pic_phys + plane);
+ 	rkisp2_write(rkisp2, MI_GAIN_WR_BASE, cfg->buf[idx].gain_phys);
++	if (rkisp2_ispp_pipe_fbc(isp)) {
++		head = RKISP2_ISPP_FBC_HEAD_SIZE(cfg->width, cfg->height);
++		rkisp2_write(rkisp2, ISP_MPFBC_HEAD_PTR, pic);
++		rkisp2_write(rkisp2, ISP_MPFBC_PAYL_PTR, pic + head);
++		return;
++	}
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_Y_BASE_AD_INIT, pic);
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CB_BASE_AD_INIT, pic + plane);
++}
++
++static u32 rkisp2_ispp_pipe_mi_irq(struct rkisp2_isp *isp)
++{
++	return rkisp2_ispp_pipe_fbc(isp) ? MI_MPFBC_FRAME : RKISP2_CIF_MI_MP_FE;
+ }
+ 
+ void rkisp2_ispp_pipe_vstart(struct rkisp2_isp *isp)
+@@ -823,7 +839,7 @@ void rkisp2_ispp_pipe_vstart(struct rkis
+ 	spin_unlock_irqrestore(&isp->ispp.lock, flags);
+ }
+ 
+-void rkisp2_ispp_pipe_frame_end(struct rkisp2_isp *isp)
++static void rkisp2_ispp_pipe_frame_end(struct rkisp2_isp *isp)
+ {
+ 	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
+ 	unsigned long flags;
+@@ -845,6 +861,14 @@ void rkisp2_ispp_pipe_frame_end(struct r
+ 				ktime_get_ns());
+ }
+ 
++/* a pool frame is written, by the mainpath MI or the MPFBC encoder */
++void rkisp2_ispp_pipe_mi_done(struct rkisp2_isp *isp)
++{
++	isp->ispp.mi_frames++;
++	wake_up(&isp->ispp.done);
++	rkisp2_ispp_pipe_frame_end(isp);
++}
++
+ static void rkisp2_ispp_pipe_put(struct rkisp2_isp *isp, unsigned int idx)
+ {
+ 	unsigned long flags;
+@@ -855,13 +879,13 @@ static void rkisp2_ispp_pipe_put(struct
+ 	spin_unlock_irqrestore(&isp->ispp.lock, flags);
+ }
+ 
+-static void rkisp2_ispp_pipe_mi_reload(struct rkisp2_isp *isp)
++/* semi-planar 4:2:2 into the pool, contiguous lines of a 16 px multiple */
++static void rkisp2_ispp_pipe_mp_config(struct rkisp2_isp *isp)
+ {
+ 	struct rkisp2_device *rkisp2 = isp->rkisp2;
+ 	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
+-	u32 plane, mi_ctrl, val;
++	u32 plane, mi_ctrl;
+ 
+-	/* semi-planar 4:2:2 into the pool, contiguous lines of a 16 px multiple */
+ 	plane = cfg->width * cfg->height;
+ 	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_Y_SIZE_INIT, plane);
+ 	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CB_SIZE_INIT, plane);
+@@ -870,8 +894,6 @@ static void rkisp2_ispp_pipe_mi_reload(s
+ 	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CB_OFFS_CNT_INIT, 0);
+ 	rkisp2_write(rkisp2, RKISP2_CIF_MI_MP_CR_OFFS_CNT_INIT, 0);
+ 
+-	rkisp2_ispp_pipe_base_set(isp, 0);
+-
+ 	mi_ctrl = rkisp2_read(rkisp2, RKISP2_CIF_MI_CTRL);
+ 	mi_ctrl &= ~RKISP2_MI_CTRL_MP_FMT_MASK;
+ 	mi_ctrl &= ~GENMASK(17, 16);
+@@ -890,6 +912,39 @@ static void rkisp2_ispp_pipe_mi_reload(s
+ 		mi_ctrl |= RKISP2_CIF_MI_MP_PINGPONG_ENABLE;
+ 	}
+ 	rkisp2_write(rkisp2, RKISP2_CIF_MI_CTRL, mi_ctrl);
++	rkisp2_write(rkisp2, ISP_MPFBC_CTRL, SW_MPFBC_YUV_MODE(1));
++}
++
++/* the MPFBC encoder writes the pool instead of the mainpath MI */
++static void rkisp2_ispp_pipe_fbc_config(struct rkisp2_isp *isp)
++{
++	struct rkisp2_device *rkisp2 = isp->rkisp2;
++	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
++	bool yuv422 = cfg->work_mode & RKISP2_ISPP_WORK_422;
++	u32 mi_ctrl;
++
++	mi_ctrl = rkisp2_read(rkisp2, RKISP2_CIF_MI_CTRL);
++	mi_ctrl &= ~(RKISP2_MI_CTRL_MP_FMT_MASK | RKISP2_CIF_MI_CTRL_MP_ENABLE |
++		     GENMASK(17, 16));
++	rkisp2_write(rkisp2, RKISP2_CIF_MI_CTRL, mi_ctrl);
++
++	rkisp2_write(rkisp2, ISP_MPFBC_VIR_WIDTH, 0);
++	rkisp2_write(rkisp2, ISP_MPFBC_VIR_HEIGHT, ALIGN(cfg->height, 16));
++	rkisp2_write(rkisp2, ISP_MPFBC_CTRL,
++		     SW_MPFBC_YUV_MODE(yuv422) | SW_MPFBC_EN);
++}
++
++static void rkisp2_ispp_pipe_mi_reload(struct rkisp2_isp *isp)
++{
++	struct rkisp2_device *rkisp2 = isp->rkisp2;
++	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
++	u32 val;
++
++	rkisp2_ispp_pipe_base_set(isp, 0);
++	if (rkisp2_ispp_pipe_fbc(isp))
++		rkisp2_ispp_pipe_fbc_config(isp);
++	else
++		rkisp2_ispp_pipe_mp_config(isp);
+ 
+ 	/* gain map write path */
+ 	rkisp2_write(rkisp2, MI_GAIN_WR_SIZE,
+@@ -914,10 +969,9 @@ static void rkisp2_ispp_pipe_mi_reload(s
+ 	/* latched by the soft update the VICAP start does afterwards */
+ 	rkisp2_write(rkisp2, RKISP2_CIF_MI_INIT,
+ 		     RKISP2_CIF_MI_INIT_MP_OUTPUT_YUV422);
+-	rkisp2_write(rkisp2, ISP_MPFBC_CTRL, SW_MPFBC_YUV_MODE(1));
+ 	rkisp2_write(rkisp2, RKISP2_CIF_MI_IMSC,
+ 		     rkisp2_read(rkisp2, RKISP2_CIF_MI_IMSC) |
+-		     RKISP2_CIF_MI_MP_FE);
++			     rkisp2_ispp_pipe_mi_irq(isp));
+ }
+ 
+ static int rkisp2_ispp_pipe_start(struct rkisp2_isp *isp)
+@@ -926,8 +980,6 @@ static int rkisp2_ispp_pipe_start(struct
+ 	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
+ 	u32 val;
+ 
+-	if (!(cfg->work_mode & RKISP2_ISPP_WORK_422))
+-		return -EOPNOTSUPP;
+ 	if (!cfg->buf_num || cfg->buf_num > RKISP2_ISPP_BUF_MAX)
+ 		return -EINVAL;
+ 
+@@ -991,7 +1043,7 @@ static void rkisp2_ispp_pipe_stop(struct
+ 
+ 	rkisp2_write(rkisp2, RKISP2_CIF_MI_IMSC,
+ 		     rkisp2_read(rkisp2, RKISP2_CIF_MI_IMSC) &
+-		     ~RKISP2_CIF_MI_MP_FE);
++			     ~rkisp2_ispp_pipe_mi_irq(isp));
+ 
+ 	rkisp2_write(rkisp2, MI_WR_CTRL2,
+ 		     rkisp2_read(rkisp2, MI_WR_CTRL2) &
+@@ -1020,22 +1072,20 @@ void rkisp2_ispp_pipe_iommu_map(struct r
+ 	struct rkisp2_device *rkisp2 = isp->rkisp2;
+ 	const struct rkisp2_ispp_cfg *cfg = &isp->ispp.cfg;
+ 	struct iommu_domain *dom;
+-	size_t wh, pic_size, gain_size;
++	size_t pic_size, gain_size;
+ 	int i, ret;
+ 
+ 	if (!isp->ispp.active || isp->ispp.iommu)
+ 		return;
+ 
++	pic_size = PAGE_ALIGN(cfg->pic_size);
++	gain_size = PAGE_ALIGN(cfg->gain_size);
++
+ 	dom = iommu_get_domain_for_dev(rkisp2->dev);
+ 	if (!dom || !(dom->type & __IOMMU_DOMAIN_PAGING) ||
+ 	    !dom->ops || !dom->ops->map_pages)
+ 		return;
+ 
+-	wh = ALIGN(cfg->width, 16) * cfg->height;
+-	pic_size = PAGE_ALIGN(2 * wh);
+-	gain_size = PAGE_ALIGN(ALIGN(cfg->width, 64) *
+-			       ALIGN(cfg->height, 128) >> 4);
+-
+ 	for (i = 0; i < cfg->buf_num; i++) {
+ 		ret = iommu_map(dom, cfg->buf[i].pic_phys,
+ 				cfg->buf[i].pic_phys,
+@@ -1077,11 +1127,14 @@ static int rkisp2_ispp_set(struct rkisp2
+ 		return -EBUSY;
+ 	}
+ 
+-	if (!(cfg->work_mode & RKISP2_ISPP_WORK_422) ||
++	/* the MI writes 4:2:2 only, 4:2:0 comes from the MPFBC encoder */
++	if (!(cfg->work_mode & (RKISP2_ISPP_WORK_422 | RKISP2_ISPP_WORK_FBC)) ||
++	    (cfg->work_mode & RKISP2_ISPP_WORK_FBC &&
++	     cfg->work_mode & RKISP2_ISPP_WORK_QUICK) ||
+ 	    (!(cfg->work_mode & RKISP2_ISPP_WORK_QUICK) &&
+ 	     (!cfg->ops || !cfg->ops->frame)) ||
+ 	    !cfg->buf_num || cfg->buf_num > RKISP2_ISPP_BUF_MAX ||
+-	    !cfg->width || !cfg->height)
++	    !cfg->width || !cfg->height || !cfg->pic_size || !cfg->gain_size)
+ 		return -EINVAL;
+ 	for (i = 0; i < cfg->buf_num; i++)
+ 		if (!cfg->buf[i].pic || !cfg->buf[i].gain)
+--- a/include/linux/platform_data/media/rkisp2-toispp.h
++++ b/include/linux/platform_data/media/rkisp2-toispp.h
+@@ -16,14 +16,22 @@
+ #ifndef _RKISP2_TOISPP_H
+ #define _RKISP2_TOISPP_H
+ 
++#include <linux/align.h>
+ #include <linux/types.h>
+ 
+ #define RKISP2_ISPP_BUF_MAX 3
+ 
+ /* struct rkisp2_ispp_cfg::work_mode */
++#define RKISP2_ISPP_WORK_FBC BIT(0)
+ #define RKISP2_ISPP_WORK_422		BIT(1)
+ #define RKISP2_ISPP_WORK_QUICK		BIT(2)
+ 
++/*
++ * With RKISP2_ISPP_WORK_FBC a pool picture is compressed: a header of one
++ * byte per 16 pixels of the 16-aligned frame, then the payload.
++ */
++#define RKISP2_ISPP_FBC_HEAD_SIZE(w, h) (ALIGN(w, 16) * ALIGN(h, 16) >> 4)
++
+ struct rkisp2_ispp_pool_buf {
+ 	/* semi-planar YUV422 picture: the Y plane, then the UV plane */
+ 	dma_addr_t pic;
+@@ -56,6 +64,9 @@ struct rkisp2_ispp_cfg {
+ 	u8 buf_num;
+ 	u32 width;
+ 	u32 height;
++	/* the allocated sizes of every pool picture and gain buffer */
++	size_t pic_size;
++	size_t gain_size;
+ 	struct rkisp2_ispp_pool_buf buf[RKISP2_ISPP_BUF_MAX];
+ 	const struct rkisp2_ispp_ops *ops;
+ 	void *priv;

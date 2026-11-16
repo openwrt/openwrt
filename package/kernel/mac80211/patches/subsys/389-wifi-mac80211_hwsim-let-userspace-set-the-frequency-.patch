@@ -1,0 +1,683 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 19 Oct 2026 09:30:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: let userspace set the frequency ranges
+ of radios
+
+A multi-radio hwsim wiphy registers one wiphy radio per band, each with
+the frequency range of all channels of its band. Hardware often splits
+a band between radios, for example the 5 GHz band of a tri-band device
+into one radio for channels 36 to 64 and one for channel 100 and above.
+Userspace that handles such a device, for example by assigning a
+channel to each radio, cannot be tested on hwsim.
+
+Add the HWSIM_ATTR_RADIOS attribute to HWSIM_CMD_NEW_RADIO. It is a
+nested array of radios in the format of NL80211_ATTR_WIPHY_RADIOS: each
+entry holds one or more NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE attributes
+with a start and an end in kHz, and its position gives the radio index.
+Ranges must not overlap, since cfg80211_get_radio_idx_by_chan() takes
+the first radio that covers a channel, and each range must cover at
+least one channel. As in the ranges that drivers register, a range can
+extend past the channels of a band, for example 2400000 to 2500000 kHz.
+Channels outside all ranges are disabled. A strict driver hint
+(REGULATORY_STRICT_REG) takes the channel flags from the regulatory
+domain alone, so a regulatory notifier disables them again after each
+update. More than one radio requires HWSIM_ATTR_MULTI_RADIO. Without
+it, the single entry only limits the channels of the wiphy. The other
+radio attributes are refused: each radio keeps the interface combination
+that hwsim builds, and the antenna mask and the RTS threshold do not
+come from userspace.
+
+Without the attribute, a multi-radio wiphy keeps one radio per band.
+HWSIM_CMD_GET_RADIO and the new radio notification report the radios of
+a multi-radio wiphy, and the entry given for a single-radio wiphy, so
+that userspace can check that the kernel applied them.
+
+A channel stays enabled only if its 20 MHz (1 MHz for S1G) lies within
+a frequency range of one radio, the test that
+ieee80211_radio_freq_range_valid() applies.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_i.h
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_i.h
+@@ -66,8 +66,9 @@ struct mac80211_hwsim_data {
+ 	struct mac80211_hwsim_phy_data *phy_data;
+ 
+ 	struct ieee80211_iface_combination if_combination_radio;
+-	struct wiphy_radio_freq_range radio_range[NUM_NL80211_BANDS];
+-	struct wiphy_radio radio[NUM_NL80211_BANDS];
++	struct wiphy_radio_freq_range *radio_range;
++	struct wiphy_radio *radio;
++	int n_radio;
+ 
+ 	u32 ciphers[HWSIM_NUM_CIPHERS];
+ 
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -862,6 +862,22 @@ hwsim_pmsr_capa_policy[NL80211_PMSR_ATTR
+ 	[NL80211_PMSR_ATTR_PEERS] = { .type = NLA_REJECT }, // only for request.
+ };
+ 
++static const struct nla_policy
++hwsim_radio_freq_policy[NL80211_WIPHY_RADIO_FREQ_ATTR_MAX + 1] = {
++	[NL80211_WIPHY_RADIO_FREQ_ATTR_START] = { .type = NLA_U32 },
++	[NL80211_WIPHY_RADIO_FREQ_ATTR_END] = { .type = NLA_U32 },
++};
++
++static const struct nla_policy
++hwsim_radio_policy[NL80211_WIPHY_RADIO_ATTR_MAX + 1] = {
++	[NL80211_WIPHY_RADIO_ATTR_INDEX] = { .type = NLA_REJECT },
++	[NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE] =
++		NLA_POLICY_NESTED(hwsim_radio_freq_policy),
++	[NL80211_WIPHY_RADIO_ATTR_INTERFACE_COMBINATION] = { .type = NLA_REJECT },
++	[NL80211_WIPHY_RADIO_ATTR_ANTENNA_MASK] = { .type = NLA_REJECT },
++	[NL80211_WIPHY_RADIO_ATTR_RTS_THRESHOLD] = { .type = NLA_REJECT },
++};
++
+ static const struct nla_policy hwsim_genl_policy[HWSIM_ATTR_MAX + 1] = {
+ 	[HWSIM_ATTR_ADDR_RECEIVER] = NLA_POLICY_ETH_ADDR_COMPAT,
+ 	[HWSIM_ATTR_ADDR_TRANSMITTER] = NLA_POLICY_ETH_ADDR_COMPAT,
+@@ -895,6 +911,7 @@ static const struct nla_policy hwsim_gen
+ 	[HWSIM_ATTR_MULTI_RADIO] = { .type = NLA_FLAG },
+ 	[HWSIM_ATTR_SUPPORT_NAN_DEVICE] = { .type = NLA_FLAG },
+ 	[HWSIM_ATTR_SUPPORT_BACKGROUND_RADAR] = { .type = NLA_FLAG },
++	[HWSIM_ATTR_RADIOS] = NLA_POLICY_NESTED_ARRAY(hwsim_radio_policy),
+ };
+ 
+ #if IS_REACHABLE(CONFIG_VIRTIO)
+@@ -4370,6 +4387,8 @@ struct hwsim_new_radio_params {
+ 	const struct cfg80211_pmsr_capabilities *pmsr_capa;
+ 	bool nan_device;
+ 	bool background_radar;
++	const struct wiphy_radio *radio;
++	int n_radio;
+ };
+ 
+ static void hwsim_mcast_config_msg(struct sk_buff *mcast_skb,
+@@ -4383,6 +4402,42 @@ static void hwsim_mcast_config_msg(struc
+ 				  HWSIM_MCGRP_CONFIG, GFP_KERNEL);
+ }
+ 
++static int hwsim_radios_put(struct sk_buff *skb,
++			    const struct wiphy_radio *radio, int n_radio)
++{
++	const struct wiphy_radio_freq_range *range;
++	struct nlattr *radios, *entry, *freq;
++	int i, j;
++
++	radios = nla_nest_start(skb, HWSIM_ATTR_RADIOS);
++	if (!radios)
++		return -EMSGSIZE;
++
++	for (i = 0; i < n_radio; i++) {
++		entry = nla_nest_start(skb, i);
++		if (!entry)
++			return -EMSGSIZE;
++
++		for (j = 0; j < radio[i].n_freq_range; j++) {
++			range = &radio[i].freq_range[j];
++			freq = nla_nest_start(skb,
++					      NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE);
++			if (!freq ||
++			    nla_put_u32(skb, NL80211_WIPHY_RADIO_FREQ_ATTR_START,
++					range->start_freq) ||
++			    nla_put_u32(skb, NL80211_WIPHY_RADIO_FREQ_ATTR_END,
++					range->end_freq))
++				return -EMSGSIZE;
++			nla_nest_end(skb, freq);
++		}
++
++		nla_nest_end(skb, entry);
++	}
++
++	nla_nest_end(skb, radios);
++	return 0;
++}
++
+ static int append_radio_msg(struct sk_buff *skb, int id,
+ 			    struct hwsim_new_radio_params *param)
+ {
+@@ -4461,6 +4516,12 @@ static int append_radio_msg(struct sk_bu
+ 		if (ret < 0)
+ 			return ret;
+ 	}
++
++	if (param->n_radio) {
++		ret = hwsim_radios_put(skb, param->radio, param->n_radio);
++		if (ret < 0)
++			return ret;
++	}
+ 	return 0;
+ }
+ 
+@@ -5598,6 +5659,179 @@ static void mac80211_hwsim_sband_capab(s
+ 	}
+ }
+ 
++static void hwsim_channels_freq_range(const struct ieee80211_channel *channels,
++				      int n_channels,
++				      struct wiphy_radio_freq_range *range)
++{
++	range->start_freq = ieee80211_channel_to_khz(&channels[0]) - 10000;
++	range->end_freq = ieee80211_channel_to_khz(&channels[n_channels - 1]) +
++			  10000;
++}
++
++static void mac80211_hwsim_radios_free(struct mac80211_hwsim_data *data)
++{
++	kfree(data->radio);
++	kfree(data->radio_range);
++	data->radio = NULL;
++	data->radio_range = NULL;
++	data->n_radio = 0;
++}
++
++static int mac80211_hwsim_radios_alloc(struct mac80211_hwsim_data *data,
++				       int n_radio, int n_range)
++{
++	data->radio = kcalloc(n_radio, sizeof(*data->radio), GFP_KERNEL);
++	data->radio_range = kcalloc(n_range, sizeof(*data->radio_range),
++				    GFP_KERNEL);
++	if (!data->radio || !data->radio_range) {
++		mac80211_hwsim_radios_free(data);
++		return -ENOMEM;
++	}
++
++	data->n_radio = n_radio;
++	return 0;
++}
++
++static int mac80211_hwsim_radios_copy(struct mac80211_hwsim_data *data,
++				      const struct wiphy_radio *radio,
++				      int n_radio)
++{
++	struct wiphy_radio_freq_range *range;
++	int i, n_range = 0;
++	int err;
++
++	for (i = 0; i < n_radio; i++)
++		n_range += radio[i].n_freq_range;
++
++	err = mac80211_hwsim_radios_alloc(data, n_radio, n_range);
++	if (err)
++		return err;
++
++	range = data->radio_range;
++	for (i = 0; i < n_radio; i++) {
++		memcpy(range, radio[i].freq_range,
++		       radio[i].n_freq_range * sizeof(*range));
++		data->radio[i].freq_range = range;
++		data->radio[i].n_freq_range = radio[i].n_freq_range;
++		range += radio[i].n_freq_range;
++	}
++
++	return 0;
++}
++
++static int mac80211_hwsim_radios_band(struct mac80211_hwsim_data *data)
++{
++	struct ieee80211_supported_band *sband;
++	struct wiphy *wiphy = data->hw->wiphy;
++	enum nl80211_band band;
++	int i = 0, n_band = 0;
++	int err;
++
++	for (band = NL80211_BAND_2GHZ; band < NUM_NL80211_BANDS; band++) {
++		if (wiphy->bands[band])
++			n_band++;
++	}
++
++	err = mac80211_hwsim_radios_alloc(data, n_band, n_band);
++	if (err)
++		return err;
++
++	for (band = NL80211_BAND_2GHZ; band < NUM_NL80211_BANDS; band++) {
++		sband = wiphy->bands[band];
++		if (!sband)
++			continue;
++
++		hwsim_channels_freq_range(sband->channels, sband->n_channels,
++					  &data->radio_range[i]);
++		data->radio[i].freq_range = &data->radio_range[i];
++		data->radio[i].n_freq_range = 1;
++		i++;
++	}
++
++	return 0;
++}
++
++static bool hwsim_radio_covers_chan(const struct wiphy_radio *radio,
++				    const struct ieee80211_channel *chan)
++{
++	u32 width = MHZ_TO_KHZ(chan->band == NL80211_BAND_S1GHZ ? 1 : 20);
++
++	return ieee80211_radio_freq_range_valid(radio,
++						ieee80211_channel_to_khz(chan),
++						width);
++}
++
++static bool mac80211_hwsim_radios_cover(const struct mac80211_hwsim_data *data,
++					const struct ieee80211_channel *chan)
++{
++	int i;
++
++	for (i = 0; i < data->n_radio; i++) {
++		if (hwsim_radio_covers_chan(&data->radio[i], chan))
++			return true;
++	}
++
++	return false;
++}
++
++static void
++mac80211_hwsim_channels_uncovered_disable(struct mac80211_hwsim_data *data)
++{
++	struct ieee80211_supported_band *sband;
++	struct ieee80211_channel *chan;
++	enum nl80211_band band;
++	int i;
++
++	for (band = NL80211_BAND_2GHZ; band < NUM_NL80211_BANDS; band++) {
++		sband = data->hw->wiphy->bands[band];
++		if (!sband)
++			continue;
++
++		for (i = 0; i < sband->n_channels; i++) {
++			chan = &sband->channels[i];
++			if (mac80211_hwsim_radios_cover(data, chan))
++				continue;
++
++			chan->flags |= IEEE80211_CHAN_DISABLED;
++			chan->orig_flags |= IEEE80211_CHAN_DISABLED;
++		}
++	}
++}
++
++/* A strict driver hint takes the channel flags from the regulatory domain
++ * alone.
++ */
++static void mac80211_hwsim_reg_notifier(struct wiphy *wiphy,
++					struct regulatory_request *request)
++{
++	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
++
++	mac80211_hwsim_channels_uncovered_disable(hw->priv);
++}
++
++static int mac80211_hwsim_radios_init(struct mac80211_hwsim_data *data,
++				      const struct hwsim_new_radio_params *param)
++{
++	int err = 0;
++	int i;
++
++	if (param->n_radio)
++		err = mac80211_hwsim_radios_copy(data, param->radio,
++						 param->n_radio);
++	else if (param->multi_radio)
++		err = mac80211_hwsim_radios_band(data);
++	if (err || !data->n_radio)
++		return err;
++
++	for (i = 0; i < data->n_radio; i++) {
++		data->radio[i].iface_combinations = &data->if_combination_radio;
++		data->radio[i].n_iface_combinations = 1;
++	}
++
++	mac80211_hwsim_channels_uncovered_disable(data);
++	return 0;
++}
++
+ #ifdef CPTCFG_MAC80211_MESH
+ #define HWSIM_MESH_BIT BIT(NL80211_IFTYPE_MESH_POINT)
+ #else
+@@ -5659,7 +5893,6 @@ static int mac80211_hwsim_new_radio(stru
+ 	struct net *net;
+ 	int idx, i;
+ 	int n_limits = 0;
+-	int n_bands = 0;
+ 
+ 	if (WARN_ON(param->channels > 1 && !param->use_chanctx))
+ 		return -EINVAL;
+@@ -5964,9 +6197,6 @@ static int mac80211_hwsim_new_radio(stru
+ 
+ 	for (band = NL80211_BAND_2GHZ; band < NUM_NL80211_BANDS; band++) {
+ 		struct ieee80211_supported_band *sband = &data->bands[band];
+-		struct wiphy_radio_freq_range *radio_range;
+-		const struct ieee80211_channel *c;
+-		struct wiphy_radio *radio;
+ 
+ 		sband->band = band;
+ 
+@@ -6035,31 +6265,22 @@ static int mac80211_hwsim_new_radio(stru
+ 		mac80211_hwsim_sband_capab(sband);
+ 
+ 		hw->wiphy->bands[band] = sband;
++	}
+ 
+-		if (!param->multi_radio)
+-			continue;
++	err = mac80211_hwsim_radios_init(data, param);
++	if (err)
++		goto failed_hw;
+ 
+-		c = sband->channels;
+-		radio_range = &data->radio_range[n_bands];
+-		radio_range->start_freq = ieee80211_channel_to_khz(c) - 10000;
+-
+-		c += sband->n_channels - 1;
+-		radio_range->end_freq = ieee80211_channel_to_khz(c) + 10000;
+-
+-		radio = &data->radio[n_bands++];
+-		radio->freq_range = radio_range;
+-		radio->n_freq_range = 1;
+-		radio->iface_combinations = &data->if_combination_radio;
+-		radio->n_iface_combinations = 1;
+-	}
++	if (data->n_radio)
++		hw->wiphy->reg_notifier = mac80211_hwsim_reg_notifier;
+ 
+ 	if (param->multi_radio) {
+ 		hw->wiphy->radio = data->radio;
+-		hw->wiphy->n_radio = n_bands;
++		hw->wiphy->n_radio = data->n_radio;
+ 
+ 		memcpy(&data->if_combination_radio, &data->if_combination,
+ 		       sizeof(data->if_combination));
+-		data->if_combination.num_different_channels *= n_bands;
++		data->if_combination.num_different_channels *= data->n_radio;
+ 	}
+ 
+ 	if (data->use_chanctx)
+@@ -6165,6 +6386,8 @@ static int mac80211_hwsim_new_radio(stru
+ 	hwsim_radios_generation++;
+ 	spin_unlock_bh(&hwsim_radio_lock);
+ 
++	param->radio = data->radio;
++	param->n_radio = data->n_radio;
+ 	hwsim_mcast_new_radio(idx, info, param);
+ 
+ 	return idx;
+@@ -6177,6 +6400,7 @@ failed_hw:
+ failed_bind:
+ 	device_unregister(data->dev);
+ failed_drvdata:
++	mac80211_hwsim_radios_free(data);
+ 	ieee80211_free_hw(hw);
+ failed:
+ 	return err;
+@@ -6226,6 +6450,7 @@ static void mac80211_hwsim_del_radio(str
+ 	ieee80211_unregister_hw(data->hw);
+ 	device_release_driver(data->dev);
+ 	device_unregister(data->dev);
++	mac80211_hwsim_radios_free(data);
+ 	ieee80211_free_hw(data->hw);
+ }
+ 
+@@ -6263,6 +6488,8 @@ static int mac80211_hwsim_get_radio(stru
+ 	param.background_radar =
+ 		wiphy_ext_feature_isset(data->hw->wiphy,
+ 					NL80211_EXT_FEATURE_RADAR_BACKGROUND);
++	param.radio = data->radio;
++	param.n_radio = data->n_radio;
+ 
+ 	res = append_radio_msg(skb, data->idx, &param);
+ 	if (res < 0)
+@@ -6749,9 +6976,186 @@ static int parse_pmsr_capa(const struct
+ 	return 0;
+ }
+ 
++/* well below the 32 radios that the u32 radio masks of cfg80211 can hold */
++#define HWSIM_MAX_RADIOS		16
++#define HWSIM_MAX_RADIO_FREQ_RANGES	8
++
++static bool hwsim_freq_range_covers(const struct wiphy_radio_freq_range *range)
++{
++	static const struct {
++		const struct ieee80211_channel *channels;
++		int n_channels;
++	} bands[] = {
++		{ hwsim_channels_2ghz, ARRAY_SIZE(hwsim_channels_2ghz) },
++		{ hwsim_channels_5ghz, ARRAY_SIZE(hwsim_channels_5ghz) },
++		{ hwsim_channels_6ghz, ARRAY_SIZE(hwsim_channels_6ghz) },
++		{ hwsim_channels_s1g, ARRAY_SIZE(hwsim_channels_s1g) },
++	};
++	const struct wiphy_radio radio = {
++		.freq_range = range,
++		.n_freq_range = 1,
++	};
++	int i, j;
++
++	for (i = 0; i < ARRAY_SIZE(bands); i++) {
++		for (j = 0; j < bands[i].n_channels; j++) {
++			if (hwsim_radio_covers_chan(&radio,
++						    &bands[i].channels[j]))
++				return true;
++		}
++	}
++
++	return false;
++}
++
++static int hwsim_freq_range_parse(const struct nlattr *attr,
++				  struct wiphy_radio_freq_range *range,
++				  struct genl_info *info)
++{
++	struct nlattr *tb[NL80211_WIPHY_RADIO_FREQ_ATTR_MAX + 1];
++	int ret;
++
++	ret = nla_parse_nested(tb, NL80211_WIPHY_RADIO_FREQ_ATTR_MAX, attr,
++			       hwsim_radio_freq_policy, info->extack);
++	if (ret)
++		return ret;
++
++	if (NL_REQ_ATTR_CHECK(info->extack, attr, tb,
++			      NL80211_WIPHY_RADIO_FREQ_ATTR_START) ||
++	    NL_REQ_ATTR_CHECK(info->extack, attr, tb,
++			      NL80211_WIPHY_RADIO_FREQ_ATTR_END))
++		return -EINVAL;
++
++	range->start_freq = nla_get_u32(tb[NL80211_WIPHY_RADIO_FREQ_ATTR_START]);
++	range->end_freq = nla_get_u32(tb[NL80211_WIPHY_RADIO_FREQ_ATTR_END]);
++
++	if (range->start_freq >= range->end_freq) {
++		NL_SET_ERR_MSG_ATTR(info->extack, attr,
++				    "frequency range does not end after its start");
++		return -EINVAL;
++	}
++
++	if (!hwsim_freq_range_covers(range)) {
++		NL_SET_ERR_MSG_ATTR(info->extack, attr,
++				    "frequency range covers no channel");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int hwsim_radio_ranges_count(const struct nlattr *radios,
++				    struct genl_info *info, int *n_range)
++{
++	const struct nlattr *radio, *freq;
++	int rem, rem_freq, n, n_radio = 0;
++
++	*n_range = 0;
++	nla_for_each_nested(radio, radios, rem) {
++		n = 0;
++		nla_for_each_nested_type(freq,
++					 NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE,
++					 radio, rem_freq) {
++			n++;
++		}
++
++		if (!n || n > HWSIM_MAX_RADIO_FREQ_RANGES) {
++			NL_SET_ERR_MSG_ATTR(info->extack, radio,
++					    "radio needs 1 to 8 frequency ranges");
++			return -EINVAL;
++		}
++
++		*n_range += n;
++		n_radio++;
++	}
++
++	if (!n_radio || n_radio > HWSIM_MAX_RADIOS) {
++		NL_SET_ERR_MSG_ATTR(info->extack, radios,
++				    "radio count must be 1 to 16");
++		return -EINVAL;
++	}
++
++	return n_radio;
++}
++
++static bool hwsim_freq_ranges_overlap(const struct wiphy_radio_freq_range *range,
++				      int n_range)
++{
++	int i, j;
++
++	for (i = 0; i < n_range; i++) {
++		for (j = i + 1; j < n_range; j++) {
++			if (range[i].start_freq < range[j].end_freq &&
++			    range[j].start_freq < range[i].end_freq)
++				return true;
++		}
++	}
++
++	return false;
++}
++
++/*
++ * Returns the number of radios; on success, the caller frees *radio_out and
++ * *range_out, which holds the ranges of all radios.
++ */
++static int hwsim_radios_parse(const struct nlattr *radios,
++			      struct genl_info *info,
++			      struct wiphy_radio **radio_out,
++			      struct wiphy_radio_freq_range **range_out)
++{
++	struct wiphy_radio_freq_range *range, *next;
++	int rem, rem_freq, n_radio, n_range, i = 0;
++	const struct nlattr *radio, *freq;
++	struct wiphy_radio *out;
++	int ret;
++
++	n_radio = hwsim_radio_ranges_count(radios, info, &n_range);
++	if (n_radio < 0)
++		return n_radio;
++
++	out = kcalloc(n_radio, sizeof(*out), GFP_KERNEL);
++	range = kcalloc(n_range, sizeof(*range), GFP_KERNEL);
++	if (!out || !range) {
++		ret = -ENOMEM;
++		goto err;
++	}
++
++	next = range;
++	nla_for_each_nested(radio, radios, rem) {
++		out[i].freq_range = next;
++		nla_for_each_nested_type(freq,
++					 NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE,
++					 radio, rem_freq) {
++			ret = hwsim_freq_range_parse(freq, next++, info);
++			if (ret)
++				goto err;
++			out[i].n_freq_range++;
++		}
++		i++;
++	}
++
++	if (hwsim_freq_ranges_overlap(range, n_range)) {
++		NL_SET_ERR_MSG_ATTR(info->extack, radios,
++				    "frequency ranges overlap");
++		ret = -EINVAL;
++		goto err;
++	}
++
++	*radio_out = out;
++	*range_out = range;
++	return n_radio;
++
++err:
++	kfree(out);
++	kfree(range);
++	return ret;
++}
++
+ static int hwsim_new_radio_nl(struct sk_buff *msg, struct genl_info *info)
+ {
++	struct wiphy_radio_freq_range *radio_range = NULL;
+ 	struct hwsim_new_radio_params param = { 0 };
++	struct wiphy_radio *radio = NULL;
+ 	const char *hwname = NULL;
+ 	int ret;
+ 
+@@ -6886,6 +7290,24 @@ static int hwsim_new_radio_nl(struct sk_
+ 		param.hwname = hwname;
+ 	}
+ 
++	if (info->attrs[HWSIM_ATTR_RADIOS]) {
++		ret = hwsim_radios_parse(info->attrs[HWSIM_ATTR_RADIOS], info,
++					 &radio, &radio_range);
++		if (ret < 0)
++			goto out_free;
++
++		if (ret > 1 && !param.multi_radio) {
++			NL_SET_ERR_MSG_ATTR(info->extack,
++					    info->attrs[HWSIM_ATTR_RADIOS],
++					    "more than one radio requires multi-radio");
++			ret = -EINVAL;
++			goto out_free;
++		}
++
++		param.radio = radio;
++		param.n_radio = ret;
++	}
++
+ 	if (info->attrs[HWSIM_ATTR_PMSR_SUPPORT]) {
+ 		struct cfg80211_pmsr_capabilities *pmsr_capa;
+ 
+@@ -6906,6 +7328,8 @@ static int hwsim_new_radio_nl(struct sk_
+ out_free:
+ 	kfree(hwname);
+ 	kfree(param.pmsr_capa);
++	kfree(radio);
++	kfree(radio_range);
+ 	return ret;
+ }
+ 
+--- a/drivers/net/wireless/virtual/mac80211_hwsim.h
++++ b/drivers/net/wireless/virtual/mac80211_hwsim.h
+@@ -158,12 +158,25 @@ enum hwsim_commands {
+  * @HWSIM_ATTR_PMSR_RESULT: nested attributed used with %HWSIM_CMD_REPORT_PMSR
+  *	to provide peer measurement result (nl80211_peer_measurement_attrs)
+  * @HWSIM_ATTR_MULTI_RADIO: Register multiple wiphy radios (flag).
+- *	Adds one radio for each band. Number of supported channels will be set for
+- *	each radio instead of for the wiphy.
++ *	Adds one radio for each band, or the radios of %HWSIM_ATTR_RADIOS.
++ *	Number of supported channels will be set for each radio instead of for
++ *	the wiphy.
+  * @HWSIM_ATTR_SUPPORT_NAN_DEVICE: support NAN Device virtual interface (flag)
+  * @HWSIM_ATTR_SUPPORT_BACKGROUND_RADAR: background radar/CAC support (flag)
+  * @HWSIM_ATTR_NO_MONITOR: skip monitor report for this TX status, e.g. in case
+  *	the frame was never reported to any receiver (flag)
++ * @HWSIM_ATTR_RADIOS: nested array of wiphy radios, used with
++ *	%HWSIM_CMD_NEW_RADIO. Each entry holds one or more
++ *	%NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE attributes, each with
++ *	%NL80211_WIPHY_RADIO_FREQ_ATTR_START and %NL80211_WIPHY_RADIO_FREQ_ATTR_END
++ *	in kHz (&enum nl80211_wiphy_radio_attrs). The position of an entry is
++ *	the index of its radio. A range must cover at least one channel, and
++ *	ranges must not overlap. Channels outside all ranges are disabled,
++ *	also after a regulatory update. More than one entry requires
++ *	%HWSIM_ATTR_MULTI_RADIO; without it, the single entry only limits the
++ *	channels of the wiphy. %HWSIM_CMD_GET_RADIO and
++ *	the new radio notification report the radios of a multi-radio wiphy,
++ *	and the entry given for a single-radio wiphy.
+  * @__HWSIM_ATTR_MAX: enum limit
+  */
+ enum hwsim_attrs {
+@@ -200,6 +213,7 @@ enum hwsim_attrs {
+ 	HWSIM_ATTR_SUPPORT_NAN_DEVICE,
+ 	HWSIM_ATTR_SUPPORT_BACKGROUND_RADAR,
+ 	HWSIM_ATTR_NO_MONITOR,
++	HWSIM_ATTR_RADIOS,
+ 	__HWSIM_ATTR_MAX,
+ };
+ #define HWSIM_ATTR_MAX (__HWSIM_ATTR_MAX - 1)

@@ -1,0 +1,639 @@
+From ce2e32dafecd01406e606781f99cb925e767eade Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 28 Oct 2026 13:18:43 +0000
+Subject: [PATCH] media: rockchip: ispp: Add the FEC mem2mem node
+
+The FEC core of the ISPP remaps a picture through a fisheye and lens
+distortion correction mesh. Make it available outside the live
+pipeline as a stand-alone mem2mem video node that takes its requests,
+the pictures and the four mesh tables as dma-buf fds, through the
+rkispp_fec_in_out ioctl, behind its own Kconfig option.
+
+The core takes a single base address per picture plane and mesh table,
+so an imported buffer whose DMA mapping is not contiguous over the size
+the core accesses is refused. Physically scattered buffers map that way
+without the ISPP IOMMU, and also behind it when their chunks receive
+separate IOVA ranges.
+
+The core is shared with the pipeline: while the node waits for a
+result the FEC frame end interrupt belongs to it, otherwise the
+pipeline handler consumes it.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/ispp/Kconfig  |  11 +
+ drivers/media/platform/rockchip/ispp/Makefile |   1 +
+ drivers/media/platform/rockchip/ispp/fec.c    | 468 ++++++++++++++++++
+ drivers/media/platform/rockchip/ispp/fec.h    |  47 ++
+ drivers/media/platform/rockchip/ispp/hw.c     |  11 +
+ drivers/media/platform/rockchip/ispp/hw.h     |   2 +
+ 6 files changed, 540 insertions(+)
+ create mode 100644 drivers/media/platform/rockchip/ispp/fec.c
+ create mode 100644 drivers/media/platform/rockchip/ispp/fec.h
+
+--- a/drivers/media/platform/rockchip/ispp/Kconfig
++++ b/drivers/media/platform/rockchip/ispp/Kconfig
+@@ -21,3 +21,14 @@ config VIDEO_ROCKCHIP_ISPP
+ 
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called video-rkispp.
++
++config VIDEO_ROCKCHIP_ISPP_FEC
++	bool "ISPP lens distortion correction (FEC) mem2mem node"
++	depends on VIDEO_ROCKCHIP_ISPP
++	select V4L2_MEM2MEM_DEV
++	default n
++	help
++	  Enable the stand-alone FEC (fisheye and lens distortion
++	  correction) memory-to-memory node of the ISPP. The FEC core
++	  remaps a picture through a correction mesh and can be used on
++	  pictures held in memory, outside the live pipeline.
+--- a/drivers/media/platform/rockchip/ispp/Makefile
++++ b/drivers/media/platform/rockchip/ispp/Makefile
+@@ -10,5 +10,6 @@ video-rkispp-y := common.o \
+ 		  stream.o
+ 
+ video-rkispp-$(CONFIG_DEBUG_FS) += debug.o
++video-rkispp-$(CONFIG_VIDEO_ROCKCHIP_ISPP_FEC) += fec.o
+ 
+ obj-$(CONFIG_VIDEO_ROCKCHIP_ISPP) += video-rkispp.o
+--- /dev/null
++++ b/drivers/media/platform/rockchip/ispp/fec.c
+@@ -0,0 +1,468 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Rockchip ISPP stand-alone FEC (lens distortion correction) mem2mem node
++ *
++ * Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd.
++ */
++
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/dma-buf.h>
++#include <linux/dma-mapping.h>
++#include <linux/pm_runtime.h>
++#include <linux/media/rockchip/rkisp2-config.h>
++#include <media/v4l2-device.h>
++#include <media/v4l2-fh.h>
++#include <media/v4l2-mem2mem.h>
++#include <media/v4l2-ioctl.h>
++#include <media/videobuf2-v4l2.h>
++
++#include "common.h"
++#include "dev.h"
++#include "hw.h"
++#include "ispp.h"
++#include "regs.h"
++
++enum fec_dmabuf_id {
++	FEC_DMABUF_IN,
++	FEC_DMABUF_OUT,
++	FEC_DMABUF_XINT,
++	FEC_DMABUF_XFRA,
++	FEC_DMABUF_YINT,
++	FEC_DMABUF_YFRA,
++	FEC_DMABUF_NUM,
++};
++
++struct fec_dmabuf {
++	struct dma_buf_attachment *attach;
++	struct dma_buf *dbuf;
++	struct sg_table *sgt;
++	dma_addr_t addr;
++};
++
++static size_t fec_sgt_contiguous_size(struct sg_table *sgt)
++{
++	dma_addr_t expected = sg_dma_address(sgt->sgl);
++	struct scatterlist *s;
++	size_t size = 0;
++	unsigned int i;
++
++	for_each_sgtable_dma_sg(sgt, s, i) {
++		if (sg_dma_address(s) != expected)
++			break;
++		expected += sg_dma_len(s);
++		size += sg_dma_len(s);
++	}
++
++	return size;
++}
++
++static void fec_dmabuf_put(struct fec_dmabuf *buf)
++{
++	dma_buf_unmap_attachment_unlocked(buf->attach, buf->sgt,
++					  DMA_BIDIRECTIONAL);
++	dma_buf_detach(buf->dbuf, buf->attach);
++	dma_buf_put(buf->dbuf);
++}
++
++/* the engine takes one base address per buffer */
++static int fec_dmabuf_get(struct rkispp_fec_dev *fec, struct fec_dmabuf *buf,
++			  const char *name, int fd, size_t size)
++{
++	struct rkispp_device *dev = fec->dev;
++	size_t contig;
++	int ret;
++
++	buf->dbuf = dma_buf_get(fd);
++	if (IS_ERR(buf->dbuf)) {
++		v4l2_err(&dev->v4l2_dev, "invalid dmabuf fd %d for %s\n", fd,
++			 name);
++		return PTR_ERR(buf->dbuf);
++	}
++
++	if (buf->dbuf->size < size) {
++		v4l2_err(&dev->v4l2_dev, "%s size %zu < %zu\n", name,
++			 buf->dbuf->size, size);
++		ret = -EINVAL;
++		goto err_put;
++	}
++
++	buf->attach = dma_buf_attach(buf->dbuf, dev->hw_dev.dev);
++	if (IS_ERR(buf->attach)) {
++		ret = PTR_ERR(buf->attach);
++		goto err_put;
++	}
++
++	buf->sgt =
++		dma_buf_map_attachment_unlocked(buf->attach, DMA_BIDIRECTIONAL);
++	if (IS_ERR(buf->sgt)) {
++		ret = PTR_ERR(buf->sgt);
++		goto err_detach;
++	}
++
++	contig = fec_sgt_contiguous_size(buf->sgt);
++	if (contig < size) {
++		v4l2_err(&dev->v4l2_dev, "%s contiguous size %zu < %zu\n", name,
++			 contig, size);
++		ret = -EFAULT;
++		goto err_unmap;
++	}
++
++	buf->addr = sg_dma_address(buf->sgt->sgl);
++
++	return 0;
++
++err_unmap:
++	dma_buf_unmap_attachment_unlocked(buf->attach, buf->sgt,
++					  DMA_BIDIRECTIONAL);
++err_detach:
++	dma_buf_detach(buf->dbuf, buf->attach);
++err_put:
++	dma_buf_put(buf->dbuf);
++	return ret;
++}
++
++static int fec_dmabufs_get(struct rkispp_fec_dev *fec, struct fec_dmabuf *bufs,
++			   const struct rkispp_fec_in_out *buf,
++			   const size_t *sizes)
++{
++	const struct {
++		const char *name;
++		int fd;
++	} srcs[FEC_DMABUF_NUM] = {
++		[FEC_DMABUF_IN] = { "in picture", buf->in_pic_fd },
++		[FEC_DMABUF_OUT] = { "out picture", buf->out_pic_fd },
++		[FEC_DMABUF_XINT] = { "mesh xint", buf->mesh_xint_fd },
++		[FEC_DMABUF_XFRA] = { "mesh xfra", buf->mesh_xfra_fd },
++		[FEC_DMABUF_YINT] = { "mesh yint", buf->mesh_yint_fd },
++		[FEC_DMABUF_YFRA] = { "mesh yfra", buf->mesh_yfra_fd },
++	};
++	int ret;
++	int i;
++
++	for (i = 0; i < FEC_DMABUF_NUM; i++) {
++		ret = fec_dmabuf_get(fec, &bufs[i], srcs[i].name, srcs[i].fd,
++				     sizes[i]);
++		if (ret)
++			goto err_put;
++	}
++
++	return 0;
++
++err_put:
++	while (i--)
++		fec_dmabuf_put(&bufs[i]);
++	return ret;
++}
++
++static int fec_running(struct rkispp_fec_dev *fec,
++		       struct rkispp_fec_in_out *buf)
++{
++	struct fec_dmabuf bufs[FEC_DMABUF_NUM];
++	struct rkispp_device *dev = fec->dev;
++	struct rkispp_hw_dev *hw = &dev->hw_dev;
++	u32 in_fmt, out_fmt, in_mult = 1, out_mult = 1;
++	u32 w = buf->width, h = buf->height, density, mesh_size;
++	void __iomem *base = hw->base_addr;
++	size_t sizes[FEC_DMABUF_NUM];
++	u32 in_offs, out_offs, val;
++	int ret = -EINVAL;
++	int i;
++
++	v4l2_dbg(3, rkispp_debug, &dev->v4l2_dev,
++		 "%s enter %dx%d format(in:%c%c%c%c out:%c%c%c%c)\n", __func__,
++		 w, h, buf->in_fourcc, buf->in_fourcc >> 8,
++		 buf->in_fourcc >> 16, buf->in_fourcc >> 24, buf->out_fourcc,
++		 buf->out_fourcc >> 8, buf->out_fourcc >> 16,
++		 buf->out_fourcc >> 24);
++
++	if (clk_get_rate(hw->clks[0]) <= hw->core_clk_min)
++		clk_set_rate(hw->clks[0], hw->core_clk_max);
++
++	init_completion(&fec->cmpl);
++	density = w > RKISPP_FEC_DENSE_WIDTH_MAX ? SW_MESH_DENSITY : 0;
++	mesh_size = cal_fec_mesh(w, h, !!density);
++
++	switch (buf->in_fourcc) {
++	case V4L2_PIX_FMT_YUYV:
++		in_fmt = FMT_YC_SWAP | FMT_YUYV | FMT_YUV422;
++		in_mult = 2;
++		break;
++	case V4L2_PIX_FMT_UYVY:
++		in_fmt = FMT_YUYV | FMT_YUV422;
++		in_mult = 2;
++		break;
++	case V4L2_PIX_FMT_NV16:
++		in_fmt = FMT_YUV422;
++		break;
++	case V4L2_PIX_FMT_NV12:
++		in_fmt = FMT_YUV420;
++		break;
++	default:
++		v4l2_err(&dev->v4l2_dev, "no support in format:%c%c%c%c\n",
++			 buf->in_fourcc, buf->in_fourcc >> 8,
++			 buf->in_fourcc >> 16, buf->in_fourcc >> 24);
++		goto end;
++	}
++	in_offs = w * h;
++	sizes[FEC_DMABUF_IN] = (in_fmt & FMT_YUV422) ? w * h * 2 :
++						       w * h * 3 / 2;
++
++	switch (buf->out_fourcc) {
++	case V4L2_PIX_FMT_YUYV:
++		out_fmt = FMT_YC_SWAP | FMT_YUYV | FMT_YUV422;
++		out_mult = 2;
++		break;
++	case V4L2_PIX_FMT_UYVY:
++		out_fmt = FMT_YUYV | FMT_YUV422;
++		out_mult = 2;
++		break;
++	case V4L2_PIX_FMT_NV16:
++		out_fmt = FMT_YUV422;
++		break;
++	case V4L2_PIX_FMT_NV12:
++		out_fmt = FMT_YUV420;
++		break;
++	default:
++		v4l2_err(&dev->v4l2_dev, "no support out format:%c%c%c%c\n",
++			 buf->out_fourcc, buf->out_fourcc >> 8,
++			 buf->out_fourcc >> 16, buf->out_fourcc >> 24);
++		goto end;
++	}
++	sizes[FEC_DMABUF_OUT] = (out_fmt & FMT_YUV422) ? w * h * 2 :
++							 w * h * 3 / 2;
++	out_offs = w * h;
++	sizes[FEC_DMABUF_XINT] = mesh_size * 2;
++	sizes[FEC_DMABUF_XFRA] = mesh_size;
++	sizes[FEC_DMABUF_YINT] = mesh_size * 2;
++	sizes[FEC_DMABUF_YFRA] = mesh_size;
++
++	ret = fec_dmabufs_get(fec, bufs, buf, sizes);
++	if (ret)
++		goto end;
++
++	writel(bufs[FEC_DMABUF_IN].addr, base + RKISPP_FEC_RD_Y_BASE);
++	writel(bufs[FEC_DMABUF_IN].addr + in_offs,
++	       base + RKISPP_FEC_RD_UV_BASE);
++	writel(bufs[FEC_DMABUF_OUT].addr, base + RKISPP_FEC_WR_Y_BASE);
++	writel(bufs[FEC_DMABUF_OUT].addr + out_offs,
++	       base + RKISPP_FEC_WR_UV_BASE);
++	writel(bufs[FEC_DMABUF_XINT].addr, base + RKISPP_FEC_MESH_XINT_BASE);
++	writel(bufs[FEC_DMABUF_XFRA].addr, base + RKISPP_FEC_MESH_XFRA_BASE);
++	writel(bufs[FEC_DMABUF_YINT].addr, base + RKISPP_FEC_MESH_YINT_BASE);
++	writel(bufs[FEC_DMABUF_YFRA].addr, base + RKISPP_FEC_MESH_YFRA_BASE);
++
++	val = out_fmt << 4 | in_fmt;
++	writel(val, base + RKISPP_FEC_CTRL);
++	val = ALIGN(w * in_mult, 16) >> 2;
++	writel(val, base + RKISPP_FEC_RD_VIR_STRIDE);
++	val = ALIGN(w * out_mult, 16) >> 2;
++	writel(val, base + RKISPP_FEC_WR_VIR_STRIDE);
++	val = h << 16 | w;
++	writel(val, base + RKISPP_FEC_PIC_SIZE);
++	writel(mesh_size, base + RKISPP_FEC_MESH_SIZE);
++	val = SW_FEC_EN | density;
++	writel(val, base + RKISPP_FEC_CORE_CTRL);
++
++	writel(FEC_FORCE_UPD, base + RKISPP_CTRL_UPDATE);
++	v4l2_dbg(3, rkispp_debug, &dev->v4l2_dev,
++		 "0x%x:0x%x 0x%x:0x%x 0x%x:0x%x 0x%x:0x%x\n"
++		 "0x%x:0x%x 0x%x:0x%x 0x%x:0x%x 0x%x:0x%x\n"
++		 "0x%x:0x%x 0x%x:0x%x 0x%x:0x%x 0x%x:0x%x\n"
++		 "0x%x:0x%x 0x%x:0x%x\n",
++		 RKISPP_CTRL_SYS_STATUS, readl(base + RKISPP_CTRL_SYS_STATUS),
++		 RKISPP_FEC_CTRL, readl(base + RKISPP_FEC_CTRL),
++		 RKISPP_FEC_RD_VIR_STRIDE,
++		 readl(base + RKISPP_FEC_RD_VIR_STRIDE),
++		 RKISPP_FEC_WR_VIR_STRIDE,
++		 readl(base + RKISPP_FEC_WR_VIR_STRIDE), RKISPP_FEC_RD_Y_BASE,
++		 readl(base + RKISPP_FEC_RD_Y_BASE), RKISPP_FEC_RD_UV_BASE,
++		 readl(base + RKISPP_FEC_RD_UV_BASE), RKISPP_FEC_MESH_XINT_BASE,
++		 readl(base + RKISPP_FEC_MESH_XINT_BASE),
++		 RKISPP_FEC_MESH_XFRA_BASE,
++		 readl(base + RKISPP_FEC_MESH_XFRA_BASE),
++		 RKISPP_FEC_MESH_YINT_BASE,
++		 readl(base + RKISPP_FEC_MESH_YINT_BASE),
++		 RKISPP_FEC_MESH_YFRA_BASE,
++		 readl(base + RKISPP_FEC_MESH_YFRA_BASE), RKISPP_FEC_WR_Y_BASE,
++		 readl(base + RKISPP_FEC_WR_Y_BASE), RKISPP_FEC_WR_UV_BASE,
++		 readl(base + RKISPP_FEC_WR_UV_BASE), RKISPP_FEC_PIC_SIZE,
++		 readl(base + RKISPP_FEC_PIC_SIZE), RKISPP_FEC_MESH_SIZE,
++		 readl(base + RKISPP_FEC_MESH_SIZE));
++
++	/* claimed before the kick so the frame end reaches this node */
++	atomic_set(&fec->running, 1);
++	if (!hw->is_shutdown)
++		writel(FEC_ST, base + RKISPP_CTRL_STRT);
++
++	ret = wait_for_completion_timeout(&fec->cmpl, msecs_to_jiffies(300));
++	atomic_set(&fec->running, 0);
++	if (!ret) {
++		v4l2_err(&dev->v4l2_dev, "fec working timeout\n");
++		ret = -EAGAIN;
++	} else {
++		ret = 0;
++	}
++	writel(SW_FEC2DDR_DIS, base + RKISPP_FEC_CORE_CTRL);
++
++	for (i = FEC_DMABUF_NUM - 1; i >= 0; i--)
++		fec_dmabuf_put(&bufs[i]);
++end:
++	v4l2_dbg(3, rkispp_debug, &dev->v4l2_dev, "%s exit ret:%d\n", __func__,
++		 ret);
++	return ret;
++}
++
++static long fec_ioctl_default(struct file *file, void *fh, bool valid_prio,
++			      unsigned int cmd, void *arg)
++{
++	struct rkispp_fec_dev *fec = video_drvdata(file);
++	long ret = 0;
++
++	if (!arg)
++		return -EINVAL;
++
++	switch (cmd) {
++	case RKISPP_CMD_FEC_IN_OUT:
++		ret = fec_running(fec, arg);
++		break;
++	default:
++		ret = -EFAULT;
++	}
++
++	return ret;
++}
++
++static int fec_querycap(struct file *file, void *priv,
++			struct v4l2_capability *cap)
++{
++	struct video_device *vdev = video_devdata(file);
++
++	strscpy(cap->driver, DRIVER_NAME, sizeof(cap->driver));
++	strscpy(cap->card, vdev->name, sizeof(cap->card));
++	return 0;
++}
++
++static const struct v4l2_ioctl_ops fec_ioctl_ops = {
++	.vidioc_querycap = fec_querycap,
++	.vidioc_default = fec_ioctl_default,
++};
++
++static int fec_open(struct file *file)
++{
++	struct rkispp_fec_dev *fec = video_drvdata(file);
++	int ret;
++
++	ret = v4l2_fh_open(file);
++	if (ret)
++		return ret;
++
++	mutex_lock(&fec->dev->apilock);
++	ret = pm_runtime_get_sync(fec->dev->dev);
++	mutex_unlock(&fec->dev->apilock);
++	if (ret < 0) {
++		v4l2_err(&fec->dev->v4l2_dev, "power on failed %d\n", ret);
++		v4l2_fh_release(file);
++	}
++
++	return (ret > 0) ? 0 : ret;
++}
++
++static int fec_release(struct file *file)
++{
++	struct rkispp_fec_dev *fec = video_drvdata(file);
++
++	v4l2_fh_release(file);
++
++	mutex_lock(&fec->dev->apilock);
++	pm_runtime_put_sync(fec->dev->dev);
++	mutex_unlock(&fec->dev->apilock);
++
++	return 0;
++}
++
++static const struct v4l2_file_operations fec_fops = {
++	.owner = THIS_MODULE,
++	.open = fec_open,
++	.release = fec_release,
++	.poll = v4l2_m2m_fop_poll,
++	.unlocked_ioctl = video_ioctl2,
++	.mmap = v4l2_m2m_fop_mmap,
++};
++
++void rkispp_fec_irq(struct rkispp_device *dev)
++{
++	struct rkispp_fec_dev *fec = &dev->hw_dev.fec_dev;
++
++	if (!completion_done(&fec->cmpl))
++		complete(&fec->cmpl);
++}
++
++int rkispp_register_fec(struct rkispp_device *dev)
++{
++	struct rkispp_fec_dev *fec = &dev->hw_dev.fec_dev;
++	struct video_device *vfd;
++	int ret;
++
++	if (!IS_ENABLED(CONFIG_VIDEO_ROCKCHIP_ISPP_FEC))
++		return 0;
++
++	mutex_init(&fec->apilock);
++	init_completion(&fec->cmpl);
++	fec->dev = dev;
++
++	vfd = &fec->vfd;
++	strscpy(vfd->name, "rkispp_fec", sizeof(vfd->name));
++	vfd->vfl_dir = VFL_DIR_M2M;
++	vfd->device_caps = V4L2_CAP_VIDEO_M2M_MPLANE;
++	vfd->fops = &fec_fops;
++	vfd->ioctl_ops = &fec_ioctl_ops;
++	vfd->lock = &fec->apilock;
++	vfd->release = video_device_release_empty;
++	vfd->v4l2_dev = &dev->v4l2_dev;
++
++	ret = video_register_device(vfd, VFL_TYPE_VIDEO, -1);
++	if (ret) {
++		v4l2_err(&dev->v4l2_dev,
++			 "failed to register video device, ret=%d\n", ret);
++		return ret;
++	}
++
++	/* a mem2mem video device gets no entity from the media core */
++	vfd->entity.obj_type = MEDIA_ENTITY_TYPE_VIDEO_DEVICE;
++	vfd->entity.function = MEDIA_ENT_F_IO_V4L;
++	vfd->entity.name = vfd->name;
++	vfd->entity.info.dev.major = VIDEO_MAJOR;
++	vfd->entity.info.dev.minor = vfd->minor;
++	ret = media_entity_pads_init(&vfd->entity, 0, NULL);
++	if (ret) {
++		v4l2_err(&dev->v4l2_dev,
++			 "failed to init the fec entity, ret=%d\n", ret);
++		goto err_unreg_vdev;
++	}
++	ret = media_device_register_entity(dev->v4l2_dev.mdev, &vfd->entity);
++	if (ret) {
++		v4l2_err(&dev->v4l2_dev,
++			 "failed to register the fec entity, ret=%d\n", ret);
++		media_entity_cleanup(&vfd->entity);
++		goto err_unreg_vdev;
++	}
++
++	video_set_drvdata(vfd, fec);
++
++	return 0;
++
++err_unreg_vdev:
++	video_unregister_device(vfd);
++	return ret;
++}
++
++void rkispp_unregister_fec(struct rkispp_device *dev)
++{
++	if (!IS_ENABLED(CONFIG_VIDEO_ROCKCHIP_ISPP_FEC))
++		return;
++
++	media_device_unregister_entity(&dev->hw_dev.fec_dev.vfd.entity);
++	video_unregister_device(&dev->hw_dev.fec_dev.vfd);
++	media_entity_cleanup(&dev->hw_dev.fec_dev.vfd.entity);
++}
+--- /dev/null
++++ b/drivers/media/platform/rockchip/ispp/fec.h
+@@ -0,0 +1,47 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Rockchip ISPP stand-alone FEC (frame estimation) mem2mem node
++ *
++ * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
++ */
++
++#ifndef _RKISPP_FEC_H
++#define _RKISPP_FEC_H
++
++#include <linux/atomic.h>
++#include <linux/completion.h>
++#include <linux/mutex.h>
++#include <media/v4l2-dev.h>
++
++struct rkispp_device;
++
++struct rkispp_fec_dev {
++	struct rkispp_device *dev;
++	struct video_device vfd;
++	/* serialises the ioctls of the node */
++	struct mutex apilock;
++	struct completion cmpl;
++	/* FEC_INT belongs to this node while it waits for the shared core */
++	atomic_t running;
++};
++
++#if IS_ENABLED(CONFIG_VIDEO_ROCKCHIP_ISPP_FEC)
++int rkispp_register_fec(struct rkispp_device *dev);
++void rkispp_unregister_fec(struct rkispp_device *dev);
++void rkispp_fec_irq(struct rkispp_device *dev);
++#else
++static inline int rkispp_register_fec(struct rkispp_device *dev)
++{
++	return 0;
++}
++
++static inline void rkispp_unregister_fec(struct rkispp_device *dev)
++{
++}
++
++static inline void rkispp_fec_irq(struct rkispp_device *dev)
++{
++}
++#endif
++
++#endif
+--- a/drivers/media/platform/rockchip/ispp/hw.c
++++ b/drivers/media/platform/rockchip/ispp/hw.c
+@@ -17,6 +17,7 @@
+ 
+ #include "common.h"
+ #include "dev.h"
++#include "fec.h"
+ #include "hw.h"
+ #include "regs.h"
+ 
+@@ -111,6 +112,13 @@ static irqreturn_t rkispp_irq_hdl(int ir
+ 	writel(mis_val, base + RKISPP_CTRL_INT_CLR);
+ 	spin_unlock_irqrestore(&hw->irq_lock, flags);
+ 
++	/* the mem2mem node owns FEC_INT while it waits for the shared core */
++	if (IS_ENABLED(CONFIG_VIDEO_ROCKCHIP_ISPP_FEC) && (mis_val & FEC_INT) &&
++	    atomic_read(&ispp->hw_dev.fec_dev.running)) {
++		mis_val &= ~FEC_INT;
++		rkispp_fec_irq(ispp);
++	}
++
+ 	if (mis_val)
+ 		ispp->irq_hdl(mis_val, ispp);
+ 
+@@ -226,6 +234,8 @@ int rkispp_hw_init(struct rkispp_device
+ 	if (ret)
+ 		dev_dbg(device, "no reserved memory region\n");
+ 
++	rkispp_register_fec(dev);
++
+ 	pm_runtime_enable(device);
+ 
+ 	return 0;
+@@ -235,5 +245,6 @@ void rkispp_hw_exit(struct rkispp_device
+ {
+ 	struct device *device = dev->dev;
+ 
++	rkispp_unregister_fec(dev);
+ 	pm_runtime_disable(device);
+ }
+--- a/drivers/media/platform/rockchip/ispp/hw.h
++++ b/drivers/media/platform/rockchip/ispp/hw.h
+@@ -9,6 +9,7 @@
+ #define _RKISPP_HW_H
+ 
+ #include "common.h"
++#include "fec.h"
+ 
+ #define ISPP_MAX_BUS_CLK 3
+ 
+@@ -29,6 +30,7 @@ struct rkispp_hw_dev {
+ 	struct clk *clks[ISPP_MAX_BUS_CLK];
+ 	int clks_num;
+ 	struct rkispp_dummy_buffer dummy_buf;
++	struct rkispp_fec_dev fec_dev;
+ 	unsigned long core_clk_min;
+ 	unsigned long core_clk_max;
+ 	/* lock for irq */

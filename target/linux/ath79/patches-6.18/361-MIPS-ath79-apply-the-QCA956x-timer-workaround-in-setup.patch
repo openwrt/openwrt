@@ -1,0 +1,56 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] MIPS: ath79: apply the QCA956x timer workaround in setup
+
+qca956x_clocks_init() enables the MIPS timer interrupt in the misc
+interrupt controller, which QCA956x needs before the clocks are set
+up, or there are no jiffies. That has nothing to do with the clocks,
+and it ties the clock code to ath79_reset_base.
+
+Do it in plat_time_init() right before of_clk_init() instead, which
+runs the clock setup. The order is the same. TP9343 boards use the
+QCA956x PLL and took this path too, so check for both.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Assisted-by: LLM
+---
+--- a/arch/mips/ath79/clock.c
++++ b/arch/mips/ath79/clock.c
+@@ -527,16 +527,6 @@ static void __init qca956x_clocks_init(v
+ 	u32 cpu_pll, ddr_pll;
+ 	u32 bootstrap;
+ 
+-	/*
+-	 * QCA956x timer init workaround has to be applied right before setting
+-	 * up the clock. Else, there will be no jiffies
+-	 */
+-	u32 misc;
+-
+-	misc = ath79_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
+-	misc |= MISC_INT_MIPS_SI_TIMERINT_MASK;
+-	ath79_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE, misc);
+-
+ 	bootstrap = ath79_reset_rr(QCA956X_RESET_REG_BOOTSTRAP);
+ 	if (bootstrap &	QCA956X_BOOTSTRAP_REF_CLK_40)
+ 		ref_rate = 40 * 1000 * 1000;
+--- a/arch/mips/ath79/setup.c
++++ b/arch/mips/ath79/setup.c
+@@ -241,6 +241,19 @@ void __init plat_time_init(void)
+ 	struct clk *clk;
+ 	unsigned long cpu_clk_rate;
+ 
++	/*
++	 * QCA956x needs the MIPS timer interrupt enabled in the misc
++	 * interrupt controller before the clocks are set up, or there are
++	 * no jiffies.
++	 */
++	if (soc_is_qca956x() || soc_is_tp9343()) {
++		u32 misc;
++
++		misc = ath79_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
++		misc |= MISC_INT_MIPS_SI_TIMERINT_MASK;
++		ath79_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE, misc);
++	}
++
+ 	of_clk_init(NULL);
+ 
+ 	np = of_get_cpu_node(0, NULL);

@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 25 Oct 2025 19:59:58 +0200
+Subject: create_inode: Fix compilation again kernel < 5.12
+
+Copy the header definition from Linux kernel v5.12 to allow compilation
+against kernel headers from an kernel older than v5.12.
+
+struct fsverity_descriptor was already added in kernel 5.11, compiling
+against kernel 5.11 kernel headers could cause problems.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ misc/create_inode.c | 47 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+
+--- a/misc/create_inode.c
++++ b/misc/create_inode.c
+@@ -575,6 +575,53 @@ static inline off_t round_up(off_t n, of
+   return ((n - bias + (blksz - 1)) & ~(blksz - 1)) + bias;
+ }
+ 
++#ifndef FS_IOC_READ_VERITY_METADATA
++
++/*
++ * Struct containing a file's Merkle tree properties.  The fs-verity file digest
++ * is the hash of this struct.  A userspace program needs this struct only if it
++ * needs to compute fs-verity file digests itself, e.g. in order to sign files.
++ * It isn't needed just to enable fs-verity on a file.
++ *
++ * Note: when computing the file digest, 'sig_size' and 'signature' must be left
++ * zero and empty, respectively.  These fields are present only because some
++ * filesystems reuse this struct as part of their on-disk format.
++ */
++struct fsverity_descriptor {
++	__u8 version;		/* must be 1 */
++	__u8 hash_algorithm;	/* Merkle tree hash algorithm */
++	__u8 log_blocksize;	/* log2 of size of data and tree blocks */
++	__u8 salt_size;		/* size of salt in bytes; 0 if none */
++#ifdef __KERNEL__
++	__le32 sig_size;
++#else
++	__le32 __reserved_0x04;	/* must be 0 */
++#endif
++	__le64 data_size;	/* size of file the Merkle tree is built over */
++	__u8 root_hash[64];	/* Merkle tree root hash */
++	__u8 salt[32];		/* salt prepended to each hashed block */
++	__u8 __reserved[144];	/* must be 0's */
++#ifdef __KERNEL__
++	__u8 signature[];
++#endif
++};
++
++#define FS_VERITY_METADATA_TYPE_MERKLE_TREE	1
++#define FS_VERITY_METADATA_TYPE_DESCRIPTOR	2
++#define FS_VERITY_METADATA_TYPE_SIGNATURE	3
++
++struct fsverity_read_metadata_arg {
++	__u64 metadata_type;
++	__u64 offset;
++	__u64 length;
++	__u64 buf_ptr;
++	__u64 __reserved;
++};
++
++#define FS_IOC_READ_VERITY_METADATA \
++	_IOWR('f', 135, struct fsverity_read_metadata_arg)
++#endif
++
+ static errcode_t copy_fs_verity_data(ext2_file_t e2_file, ext2_off_t e2_offset,
+ 				     int fd, uint64_t metadata_type,
+ 				     __u32 *written)

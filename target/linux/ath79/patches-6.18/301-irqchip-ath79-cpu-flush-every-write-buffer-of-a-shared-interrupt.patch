@@ -1,0 +1,101 @@
+From e14609ac343ae6b659759d3e2c469a657d6b3048 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 5 Nov 2026 18:00:52 -0800
+Subject: [PATCH] irqchip/ath79-cpu: flush every write buffer of a shared
+ interrupt
+
+On AR934x and QCA953x, the WMAC and the PCIe root complex share CPU
+interrupt 2, but each writes to DDR through its own write buffer, and
+both have to be flushed before their handlers can see the data. The
+driver keeps one write buffer per interrupt, so the last one listed in
+the device tree wins.
+
+Keep a mask of write buffers per interrupt instead, and flush all of
+them. A flush is a few accesses to the DDR controller, which costs much
+less than splitting the interrupt by source, as OpenWrt does with a
+cascaded interrupt controller.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/irqchip/irq-ath79-cpu.c | 29 ++++++++++++++++++-----------
+ 1 file changed, 18 insertions(+), 11 deletions(-)
+
+--- a/drivers/irqchip/irq-ath79-cpu.c
++++ b/drivers/irqchip/irq-ath79-cpu.c
+@@ -10,6 +10,7 @@
+  *  Parts of this file are based on Atheros' 2.6.15/2.6.31 BSP
+  */
+ 
++#include <linux/bitops.h>
+ #include <linux/interrupt.h>
+ #include <linux/irqchip.h>
+ #include <linux/of.h>
+@@ -24,17 +25,17 @@
+  * Issue a flush in the handlers to ensure that the driver sees
+  * the update.
+  *
+- * This array map the interrupt lines to the DDR write buffer channels.
++ * This array maps the interrupt lines to a mask of the DDR write buffer
++ * channels to flush. A line shared by several devices, like the WMAC and
++ * the PCIe root complex on AR934x, flushes the channels of all of them.
+  */
+ 
+-static unsigned irq_wb_chan[8] = {
+-	-1, -1, -1, -1, -1, -1, -1, -1,
+-};
++static u32 irq_wb_chans[8];
+ 
+ asmlinkage void plat_irq_dispatch(void)
+ {
+-	unsigned long pending;
+-	int irq;
++	unsigned long pending, chans;
++	int irq, chan;
+ 
+ 	pending = read_c0_status() & read_c0_cause() & ST0_IM;
+ 
+@@ -46,8 +47,11 @@ asmlinkage void plat_irq_dispatch(void)
+ 	pending >>= CAUSEB_IP;
+ 	while (pending) {
+ 		irq = fls(pending) - 1;
+-		if (irq < ARRAY_SIZE(irq_wb_chan) && irq_wb_chan[irq] != -1)
+-			ath79_ddr_wb_flush(irq_wb_chan[irq]);
++		if (irq < ARRAY_SIZE(irq_wb_chans)) {
++			chans = irq_wb_chans[irq];
++			for_each_set_bit(chan, &chans, 32)
++				ath79_ddr_wb_flush(chan);
++		}
+ 		do_IRQ(MIPS_CPU_IRQ_BASE + irq);
+ 		pending &= ~BIT(irq);
+ 	}
+@@ -58,7 +62,7 @@ static int __init ar79_cpu_intc_of_init(
+ {
+ 	int err, i, count;
+ 
+-	/* Fill the irq_wb_chan table */
++	/* Fill the irq_wb_chans table */
+ 	count = of_count_phandle_with_args(
+ 		node, "qca,ddr-wb-channels", "#qca,ddr-wb-channel-cells");
+ 
+@@ -68,7 +72,7 @@ static int __init ar79_cpu_intc_of_init(
+ 
+ 		of_property_read_u32_index(
+ 			node, "qca,ddr-wb-channel-interrupts", i, &irq);
+-		if (irq >= ARRAY_SIZE(irq_wb_chan))
++		if (irq >= ARRAY_SIZE(irq_wb_chans))
+ 			continue;
+ 
+ 		err = of_parse_phandle_with_args(
+@@ -78,7 +82,10 @@ static int __init ar79_cpu_intc_of_init(
+ 		if (err)
+ 			return err;
+ 
+-		irq_wb_chan[irq] = args.args[0];
++		if (args.args[0] >= 32)
++			return -EINVAL;
++
++		irq_wb_chans[irq] |= BIT(args.args[0]);
+ 	}
+ 
+ 	return mips_cpu_irq_of_init(node, parent);

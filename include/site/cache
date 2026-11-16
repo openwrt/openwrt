@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# Points the autoconf result cache at the file that the build system keeps for
+# this package. Set CONFIGURE_CACHE_DIR to switch this on; see rules.mk.
+#
+# configure sources the site scripts before it loads the cache, so setting
+# cache_file here has the same effect as --cache-file, without a configure
+# argument that a hand written configure script would choke on.
+
+# Autoconf before 2.70 reads CONFIG_SITE as a single path name, so the site
+# script of the architecture cannot be a second word in it. Load it from here.
+if [ -n "$CONFIG_SITE_BASE" ] && [ -r "$CONFIG_SITE_BASE" ]; then
+	. "$CONFIG_SITE_BASE"
+fi
+
+if [ -n "$CONFIGURE_CACHE_FILE" ]; then
+	configure_cache_dir=${CONFIGURE_CACHE_FILE%/*}
+
+	mkdir -p "$configure_cache_dir" 2>/dev/null
+
+	# A change of the configure arguments gives a new file name. Drop the
+	# file of the previous arguments so that the directory holds one cache
+	# per package.
+	for configure_cache_stale in "$configure_cache_dir"/*.cache "$configure_cache_dir"/*.cache.sum; do
+		[ -f "$configure_cache_stale" ] || continue
+		[ "${configure_cache_stale%.sum}" = "$CONFIGURE_CACHE_FILE" ] || rm -f "$configure_cache_stale"
+	done
+
+	# An autoreconf run with a new autoconf, automake or libtool, or a new
+	# patch, gives a new configure script whose checks can mean something
+	# else under the same cache variable name.
+	configure_cache_sum=$(cksum < "${as_myself:-$0}")
+	if [ "$configure_cache_sum" != "$(cat "$CONFIGURE_CACHE_FILE.sum" 2>/dev/null)" ]; then
+		rm -f "$CONFIGURE_CACHE_FILE"
+		printf '%s\n' "$configure_cache_sum" > "$CONFIGURE_CACHE_FILE.sum"
+	fi
+
+	# configure aborts when a precious variable such as LIBS or CPP differs
+	# from the value in the cache, and it aborts again on every later run.
+	# Make the same comparison here and start from a cold cache instead.
+	if [ -f "$CONFIGURE_CACHE_FILE" ] && ! (
+		set -f
+		. "$CONFIGURE_CACHE_FILE"
+		for ac_var in $ac_precious_vars; do
+			eval "old_set=\$ac_cv_env_${ac_var}_set new_set=\$ac_env_${ac_var}_set"
+			[ "$old_set" = "$new_set" ] || exit 1
+			eval "set -- \$ac_cv_env_${ac_var}_value"
+			old_val=$*
+			eval "set -- \$ac_env_${ac_var}_value"
+			[ "$old_val" = "$*" ] || exit 1
+		done
+	); then
+		rm -f "$CONFIGURE_CACHE_FILE"
+	fi
+
+	# A cached program path outlives a wipe of staging_dir, so it can name a
+	# tool that is gone, or miss one that the build installed since. Drop
+	# those answers and let configure search PATH again. A search runs no
+	# compiler, and the compiler is where the time goes. The libtool and gmp
+	# answers hold the path of the staged sed and m4.
+	if [ -f "$CONFIGURE_CACHE_FILE" ]; then
+		grep -v -e '^[a-z]*_cv_path_' -e '^ac_cv_prog_' -e '^gmp_cv_prog_' \
+			-e '^lt_cv_sys_global_symbol_' -e '^lt_cv_truncate_bin=' \
+			-e '^ac_cv_AM_TEST_RUNNER_SHELL=' \
+			"$CONFIGURE_CACHE_FILE" > "$CONFIGURE_CACHE_FILE.tmp"
+		mv -f "$CONFIGURE_CACHE_FILE.tmp" "$CONFIGURE_CACHE_FILE"
+	fi
+
+	cache_file=$CONFIGURE_CACHE_FILE
+
+	# A configure script that runs further configure scripts must not hand
+	# this cache to them. Their checks run with different flags.
+	unset CONFIGURE_CACHE_FILE configure_cache_dir configure_cache_stale configure_cache_sum
+fi

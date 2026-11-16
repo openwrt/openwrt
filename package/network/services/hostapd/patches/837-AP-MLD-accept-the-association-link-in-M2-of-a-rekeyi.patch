@@ -1,0 +1,42 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 03:30:00 +0200
+Subject: [PATCH] AP MLD: accept the association link in M2 of a rekeying
+
+IEEE Std 802.11be-2024, 12.7.6.3 has message 2 of a rekeying carry an
+MLO Link KDE for each setup link. wpa_auth_validate_ml_kdes_m2()
+refused a KDE for the association link of the authenticator in every
+message 2 and ended the association with reason 2.
+
+wpa_supplicant leaves out only its own association link. Once the AP
+MLD moved the association to another link, after a Link
+Reconfiguration that deletes the association link
+(hostapd_link_reconf_resp_tx_status()), the KDE of the new association
+link was refused, and the first PTK rekey disconnected the non-AP MLD.
+836-AP-MLD-keep-the-association-of-a-non-AP-MLD-at-a-lin.patch
+moves the association in the same way at an AP removal of the link.
+
+In message 2 of a rekeying (a pairwise key is installed), accept the
+KDE of the association link where it names the address of that link,
+and do not count it among the affiliated links. In message 2 of the
+initial 4-way handshake, the KDE of the association link is still
+refused.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -3828,6 +3828,14 @@ static int wpa_auth_validate_ml_kdes_m2(
+ 			n_links++;
+ 			continue;
+ 		}
++
++		/* M2 of a rekeying names each setup link, the association link
++		 * included (IEEE Std 802.11be-2024, 12.7.6.3) */
++		if (i == sm->mld_assoc_link_id && sm->pairwise_set &&
++		    ether_addr_equal(sm->mld_links[i].peer_addr,
++				     kde->mlo_link[i] + 1))
++			continue;
++
+ 		if (!sm->mld_links[i].valid || i == sm->mld_assoc_link_id) {
+ 			wpa_printf(MSG_DEBUG,
+ 				   "RSN: MLD: Invalid link ID=%u", i);

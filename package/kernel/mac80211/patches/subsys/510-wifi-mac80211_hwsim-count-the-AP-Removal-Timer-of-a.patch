@@ -1,0 +1,115 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 14 Nov 2026 18:30:00 +0100
+Subject: [PATCH] wifi: mac80211_hwsim: count the AP Removal Timer of a link
+ without beacons
+
+mac80211_hwsim anchors the removal TBTT of a link at the first Beacon
+frame of that link that announces the removal, and reports the expiry
+from the Beacon frames of that link only. A removed link whose beacons
+stop during the countdown, for example after user space stopped its
+BSS, never gets its expiry, and one that stops before its first such
+Beacon frame never starts its timer. A device counts the timer from the
+template and reports the expiry from its own timer.
+
+Anchor the removal of a link without beacons at the Beacon frame of a
+link that announces it, and report its expiry at the TBTT of such a
+link.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -3306,14 +3306,17 @@ ended:
+ }
+ 
+ /* The removal TBTT of a link is anchored at its first Beacon frame that
+- * announces the removal, and a later template does not move it.
++ * announces the removal, or at that of a partner where the removed link sends
++ * none, and a later template does not move it. A link without Beacon frames
++ * has no beacon interval.
+  */
+ static void hwsim_ap_removal_timer_write(struct mac80211_hwsim_data *data,
+ 					 struct hwsim_ap_removal *rem,
+ 					 unsigned int link_id, u64 tbtt,
+-					 unsigned int removed, u8 *timer)
++					 unsigned int removed, u8 *timer,
++					 bool silent)
+ {
+-	u32 bcn_int = data->link_data[removed].beacon_int;
++	u32 bcn_int = data->link_data[silent ? link_id : removed].beacon_int;
+ 	u16 count = get_unaligned_le16(timer);
+ 	u64 left = 0;
+ 
+@@ -3321,7 +3324,7 @@ static void hwsim_ap_removal_timer_write
+ 		return;
+ 
+ 	if (!(rem->links & BIT(removed))) {
+-		if (removed != link_id || !count)
++		if ((removed != link_id && !silent) || !count)
+ 			return;
+ 
+ 		rem->links |= BIT(removed);
+@@ -3357,12 +3360,43 @@ static bool hwsim_ap_removal_link_tbtt(s
+ 	if (tbtt + bcn_int >= rem->tbtt[link_id] &&
+ 	    !(rem->expired & BIT(link_id))) {
+ 		rem->expired |= BIT(link_id);
+-		*expired = BIT(link_id);
++		*expired |= BIT(link_id);
+ 	}
+ 
+ 	return tbtt < rem->tbtt[link_id];
+ }
+ 
++static bool hwsim_ap_removal_silent(struct ieee80211_vif *vif,
++				    unsigned int link_id)
++{
++	struct ieee80211_bss_conf *conf;
++
++	conf = rcu_dereference(vif->link_conf[link_id]);
++	return conf && !conf->enable_beacon;
++}
++
++/* A removed link that sends no Beacon frames gets its expiry at the TBTT of a
++ * link that still announces the removal, as a device reports it from its own
++ * timer.
++ */
++static void hwsim_ap_removal_silent_tbtt(struct ieee80211_vif *vif,
++					 struct hwsim_ap_removal *rem,
++					 u16 announced, u64 tbtt, u32 bcn_int,
++					 u16 *expired)
++{
++	unsigned long links = rem->links & announced & ~rem->expired;
++	unsigned int removed;
++
++	for_each_set_bit(removed, &links, IEEE80211_MLD_MAX_NUM_LINKS) {
++		if (!hwsim_ap_removal_silent(vif, removed) ||
++		    tbtt + bcn_int < rem->tbtt[removed])
++			continue;
++
++		rem->expired |= BIT(removed);
++		*expired |= BIT(removed);
++	}
++}
++
+ static bool mac80211_hwsim_ap_removal_tbtt(struct mac80211_hwsim_data *data,
+ 					   struct ieee80211_vif *vif,
+ 					   unsigned int link_id, u64 tbtt,
+@@ -3417,13 +3451,17 @@ static bool mac80211_hwsim_ap_removal_tb
+ 
+ 			announced |= BIT(removed);
+ 			hwsim_ap_removal_timer_write(data, rem, link_id, tbtt,
+-						     removed, timer);
++						     removed, timer,
++						     hwsim_ap_removal_silent(vif, removed));
+ 		}
+ 	}
+ 
+ 	send = hwsim_ap_removal_link_tbtt(rem, link_id, tbtt,
+ 					  data->link_data[link_id].beacon_int,
+ 					  announced & BIT(link_id), expired);
++	hwsim_ap_removal_silent_tbtt(vif, rem, announced & ~BIT(link_id), tbtt,
++				     data->link_data[link_id].beacon_int,
++				     expired);
+ 
+ 	spin_unlock_bh(&rem->lock);
+ 

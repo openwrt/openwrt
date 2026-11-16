@@ -1,0 +1,209 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 31 Oct 2026 20:00:00 +0000
+Subject: [PATCH] MLD: drop the BSS entry of a link that the AP MLD removed
+
+wpas_link_reconfig() updates the links of a station after an AP MLD
+removed one of them and leaves the BSS entry of the removed link in
+place. cfg80211 keeps the BSS for up to 30 seconds after its
+last Beacon, so each scan result in that time updates the entry or adds
+it again. wpa_supplicant_need_to_roam() can then select the BSS, and the
+station leaves its association for an authentication that times out.
+
+Remove the entry. After a removal of the association link,
+wpa_supplicant_update_current_bss() moves current_bss to the new
+association link. If it finds no entry for that link, current_bss still
+names the removed link, so move it to the association link here. Skip a
+scan result of the removed BSSID that is older than the removal, as
+ignore_old_scan_res does for the scan trigger time. A link that returns
+on the same BSSID passes at its first new Beacon or Probe Response. The
+last Beacon of the link can come just after the station removed it, so
+count a result within half a second of the removal as older.
+
+The kernel reports a link that the station deleted with
+SETUP_LINK_RECONFIG in the same way. That BSS stays on air and a later
+add of the link needs its entry, so keep the entry of such a link.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/wpa_supplicant/bss.c
++++ b/wpa_supplicant/bss.c
+@@ -942,6 +942,83 @@ void wpa_bss_update_start(struct wpa_sup
+ }
+ 
+ 
++#define WPA_BSS_LINK_REMOVAL_MARGIN_MS 500
++
++static int wpa_bss_removed_link_get(struct wpa_supplicant *wpa_s,
++				    const u8 *bssid)
++{
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(wpa_s->removed_links); i++) {
++		if (ether_addr_equal(wpa_s->removed_links[i].bssid, bssid))
++			return i;
++	}
++
++	return -1;
++}
++
++
++/**
++ * wpa_bss_link_removed - Forget the BSS of a link that left the association
++ * @wpa_s: Pointer to wpa_supplicant data
++ * @bssid: BSSID of the removed link
++ *
++ * The driver keeps the BSS in its scan results for a while, so remember the
++ * time of the removal to tell these results from a new frame of the BSS.
++ */
++void wpa_bss_link_removed(struct wpa_supplicant *wpa_s, const u8 *bssid)
++{
++	struct wpa_bss *bss, *n;
++	int slot = wpa_bss_removed_link_get(wpa_s, bssid);
++	unsigned int i;
++
++	if (slot < 0) {
++		/* A free slot has the oldest time of all */
++		slot = 0;
++		for (i = 1; i < ARRAY_SIZE(wpa_s->removed_links); i++) {
++			if (os_reltime_before(&wpa_s->removed_links[i].time,
++					      &wpa_s->removed_links[slot].time))
++				slot = i;
++		}
++	}
++	os_memcpy(wpa_s->removed_links[slot].bssid, bssid, ETH_ALEN);
++	os_get_reltime(&wpa_s->removed_links[slot].time);
++	/* The last Beacon of the link can come just after the station removed
++	 * it. */
++	os_reltime_add_ms(&wpa_s->removed_links[slot].time,
++			  WPA_BSS_LINK_REMOVAL_MARGIN_MS);
++
++	dl_list_for_each_safe(bss, n, &wpa_s->bss, struct wpa_bss, list) {
++		if (ether_addr_equal(bss->bssid, bssid))
++			wpa_bss_remove(wpa_s, bss, "link removed");
++	}
++}
++
++
++static bool wpa_bss_removed_link_stale(struct wpa_supplicant *wpa_s,
++				       const struct wpa_scan_res *res,
++				       struct os_reltime *fetch_time)
++{
++	int slot = wpa_bss_removed_link_get(wpa_s, res->bssid);
++	struct os_reltime update;
++
++	if (slot < 0)
++		return false;
++
++	calculate_update_time(fetch_time, res->age, &update);
++	if (os_reltime_before(&update, &wpa_s->removed_links[slot].time)) {
++		wpa_dbg(wpa_s, MSG_DEBUG,
++			"BSS: Ignore driver BSS table entry of removed link "
++			MACSTR, MAC2STR(res->bssid));
++		return true;
++	}
++
++	os_memset(&wpa_s->removed_links[slot], 0,
++		  sizeof(wpa_s->removed_links[slot]));
++	return false;
++}
++
++
+ /**
+  * wpa_bss_update_scan_res - Update a BSS table entry based on a scan result
+  * @wpa_s: Pointer to wpa_supplicant data
+@@ -959,6 +1036,9 @@ void wpa_bss_update_scan_res(struct wpa_
+ 	const u8 *ssid, *p2p, *mesh;
+ 	struct wpa_bss *bss;
+ 
++	if (wpa_bss_removed_link_stale(wpa_s, res, fetch_time))
++		return;
++
+ 	if (wpa_s->conf->ignore_old_scan_res) {
+ 		struct os_reltime update;
+ 		calculate_update_time(fetch_time, res->age, &update);
+--- a/wpa_supplicant/bss.h
++++ b/wpa_supplicant/bss.h
+@@ -161,6 +161,7 @@ void wpa_bss_update_start(struct wpa_sup
+ void wpa_bss_update_scan_res(struct wpa_supplicant *wpa_s,
+ 			     struct wpa_scan_res *res,
+ 			     struct os_reltime *fetch_time);
++void wpa_bss_link_removed(struct wpa_supplicant *wpa_s, const u8 *bssid);
+ void wpa_bss_remove(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
+ 		    const char *reason);
+ void wpa_bss_update_end(struct wpa_supplicant *wpa_s, struct scan_info *info,
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
+@@ -12767,7 +12767,11 @@ wpa_supplicant_ctrl_iface_setup_link_rec
+ 		info.add_link_ies_len = len;
+ 	}
+ 
+-	return wpa_drv_setup_link_reconfig(wpa_s, &info);
++	if (wpa_drv_setup_link_reconfig(wpa_s, &info))
++		return -1;
++
++	wpa_s->requested_link_deletes |= info.delete_links;
++	return 0;
+ }
+ 
+ 
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -352,6 +352,7 @@ void wpas_reset_mlo_info(struct wpa_supp
+ 		return;
+ 
+ 	wpa_s->valid_links = 0;
++	wpa_s->requested_link_deletes = 0;
+ 	wpa_s->mlo_assoc_link_id = 0;
+ 	os_memset(wpa_s->ap_mld_addr, 0, ETH_ALEN);
+ 	for (i = 0; i < MAX_NUM_MLD_LINKS; i++)
+@@ -6754,8 +6755,24 @@ static void wpas_setup_link_reconfig(str
+ }
+ 
+ 
++static void wpas_removed_links_forget(struct wpa_supplicant *wpa_s, u16 removed)
++{
++	struct wpa_bss *assoc_bss = wpa_s->links[wpa_s->mlo_assoc_link_id].bss;
++	int i;
++
++	for_each_link(removed, i) {
++		if (wpa_s->current_bss &&
++		    ether_addr_equal(wpa_s->current_bss->bssid,
++				     wpa_s->links[i].bssid))
++			wpa_s->current_bss = assoc_bss;
++		wpa_bss_link_removed(wpa_s, wpa_s->links[i].bssid);
++	}
++}
++
++
+ static void wpas_link_reconfig(struct wpa_supplicant *wpa_s)
+ {
++	u16 old_links = wpa_s->valid_links;
+ 	u8 bssid[ETH_ALEN];
+ 
+ 	if (wpa_drv_get_bssid(wpa_s, bssid) < 0) {
+@@ -6791,6 +6808,11 @@ static void wpas_link_reconfig(struct wp
+ 	    wpa_s->links[wpa_s->mlo_assoc_link_id].freq)
+ 		wpa_s->assoc_freq = wpa_s->links[wpa_s->mlo_assoc_link_id].freq;
+ 
++	/* The BSS of a link the station deleted itself stays on air */
++	wpas_removed_links_forget(wpa_s, old_links & ~wpa_s->valid_links &
++				  ~wpa_s->requested_link_deletes);
++	wpa_s->requested_link_deletes = 0;
++
+ 	wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_LINK_RECONFIG "valid_links=0x%x",
+ 		wpa_s->valid_links);
+ }
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -818,6 +818,11 @@ struct wpa_supplicant {
+ 		unsigned int max_nss_tx:4;
+ 		enum chan_width channel_bandwidth;
+ 	} links[MAX_NUM_MLD_LINKS];
++	struct {
++		u8 bssid[ETH_ALEN];
++		struct os_reltime time;
++	} removed_links[MAX_NUM_MLD_LINKS];
++	u16 requested_link_deletes;
+ 	u8 *last_con_fail_realm;
+ 	size_t last_con_fail_realm_len;
+ 	bool sta_roaming_disabled;

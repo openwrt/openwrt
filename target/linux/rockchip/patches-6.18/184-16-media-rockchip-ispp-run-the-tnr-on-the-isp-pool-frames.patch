@@ -1,0 +1,352 @@
+From 84b4ae444e1ee986b425f84e6bdded98fc73ffe9 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 5 Nov 2026 00:44:00 +0000
+Subject: [PATCH] media: rockchip: ispp: Run the TNR on the ISP pool frames
+
+Outside the quick mode nothing starts the TNR: the pool frames go
+straight to the NR. The TNR registers are also restored with
+SW_TNR_1ST_FRM after every per-frame soft reset, and the TNR enable
+handler sets it again since the reset clears the enable bit it tests,
+so the TNR would never filter with its history. The module mask is
+taken before the first params buffer arrives, so a TNR enabled by it
+got no buffers, while a later params buffer could enable the TNR
+without any.
+
+Start the TNR on each pool frame, its output and history alternating
+between its two picture buffers, and feed the NR from the output at
+the TNR end. Request the first frame mode from the stream start, an
+enable or an error only. Take the TNR enable from the first params
+buffer, keep it off without buffers, and allow the 3to1 mode in the
+quick mode only, where the look-ahead frame exists.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/ispp/params.c |  20 +--
+ drivers/media/platform/rockchip/ispp/stream.c | 143 +++++++++++++++---
+ drivers/media/platform/rockchip/ispp/stream.h |   8 +
+ 3 files changed, 141 insertions(+), 30 deletions(-)
+
+--- a/drivers/media/platform/rockchip/ispp/params.c
++++ b/drivers/media/platform/rockchip/ispp/params.c
+@@ -69,7 +69,8 @@ static void rkispp_params_tnr(struct rki
+ 		return;
+ 
+ 	memcpy(&params_vdev->cur_params.tnr, arg, sizeof(*arg));
+-	three_to_one = arg->mode == RKISPP_TNR_MODE_3_TO_1;
++	three_to_one = (dev->stream_vdev.module_ens & ISPP_MODULE_TNR_3TO1) ==
++		       ISPP_MODULE_TNR_3TO1;
+ 	dev->stream_vdev.tnr.is_3to1 = three_to_one;
+ 
+ 	val = arg->opty_en << 2 | arg->optc_en << 3 | arg->gain_en << 4;
+@@ -204,24 +205,12 @@ static void rkispp_params_tnr(struct rki
+ 			three_to_one ? SW_TNR_MODE : 0);
+ }
+ 
+-static bool is_tnr_enable(struct rkispp_device *dev)
+-{
+-	u32 cur_en;
+-
+-	cur_en = rkispp_read(dev, RKISPP_TNR_CORE_CTRL);
+-	cur_en &= SW_TNR_EN;
+-
+-	return (!!cur_en);
+-}
+-
+ static void rkispp_params_tnr_enable(struct rkispp_device *dev, bool en,
+ 				     union rkispp_params_block block)
+ {
+ 	if (dev->inp != INP_ISP)
+ 		return;
+ 
+-	if (en && !is_tnr_enable(dev))
+-		rkispp_set_bits(dev, RKISPP_TNR_CTRL, 0, SW_TNR_1ST_FRM);
+ 	rkispp_set_bits(dev, RKISPP_TNR_CORE_CTRL, SW_TNR_EN, en);
+ }
+ 
+@@ -738,6 +727,11 @@ static void rkispp_params_apply(struct r
+ 	/* the FEC path is wired at the start, the running mask keeps it */
+ 	ens = rkispp_modules_effective(dev) & ~ISPP_MODULE_FEC;
+ 	ens |= stream_vdev->module_ens & ISPP_MODULE_FEC;
++	/* the TNR buffers are allocated at the start only */
++	if (!stream_vdev->tnr.is_but_init)
++		ens &= ~ISPP_MODULE_TNR_3TO1;
++	if (ens & ~stream_vdev->module_ens & ISPP_MODULE_TNR)
++		stream_vdev->tnr.first = true;
+ 	stream_vdev->module_ens = ens;
+ 
+ 	while (max_offset && block_offset < max_offset) {
+--- a/drivers/media/platform/rockchip/ispp/stream.c
++++ b/drivers/media/platform/rockchip/ispp/stream.c
+@@ -620,8 +620,8 @@ static void tnr_regs_config(struct rkisp
+ 	rkispp_write(dev, RKISPP_TNR_GAIN_WR_Y_BASE, val);
+ 
+ 	rkispp_write(dev, RKISPP_TNR_WR_VIR_STRIDE, g.stride >> 2);
+-	rkispp_set_bits(dev, RKISPP_TNR_CTRL, FMT_WR_MASK,
+-			g.fmt << 4 | SW_TNR_1ST_FRM);
++	rkispp_set_bits(dev, RKISPP_TNR_CTRL, FMT_WR_MASK | SW_TNR_1ST_FRM,
++			g.fmt << 4 | (vdev->tnr.first ? SW_TNR_1ST_FRM : 0));
+ 
+ 	rkispp_set_bits(dev, RKISPP_TNR_CTRL, FMT_RD_MASK, g.fmt);
+ 	rkispp_write(dev, RKISPP_TNR_CUR_VIR_STRIDE, g.rd_stride >> 2);
+@@ -647,6 +647,9 @@ static int config_tnr(struct rkispp_devi
+ 	vdev->tnr.is_end = true;
+ 	vdev->tnr.is_3to1 = ((vdev->module_ens & ISPP_MODULE_TNR_3TO1) ==
+ 			     ISPP_MODULE_TNR_3TO1);
++	vdev->tnr.cur_rd = NULL;
++	vdev->tnr.first = true;
++	vdev->tnr.out_iir = false;
+ 	if (!(vdev->module_ens & ISPP_MODULE_TNR))
+ 		return 0;
+ 
+@@ -972,6 +975,16 @@ free_tnr:
+ 	return ret;
+ }
+ 
++/* the quick mode feeds the TNR from the ISP, otherwise the kick does */
++static bool tnr_stage_on(struct rkispp_device *dev,
++			 const struct rkispp_ii_input *input)
++{
++	struct rkispp_stream_vdev *vdev = &dev->stream_vdev;
++
++	return input->from_pool && vdev->module_ens & ISPP_MODULE_TNR &&
++	       vdev->tnr.is_but_init && !(dev->isp_mode & ISP_ISPP_QUICK);
++}
++
+ /* the pipeline takes one II frame at a time */
+ static void rkispp_queue_dmabuf(struct rkispp_device *dev,
+ 				struct rkispp_ii_input *input)
+@@ -979,6 +992,7 @@ static void rkispp_queue_dmabuf(struct r
+ 	struct rkispp_stream_vdev *vdev = &dev->stream_vdev;
+ 	struct rkispp_ii_input *kick = NULL;
+ 	unsigned long lock_flags = 0;
++	u32 module;
+ 
+ 	spin_lock_irqsave(&vdev->ii_lock, lock_flags);
+ 	if (!input)
+@@ -998,8 +1012,10 @@ static void rkispp_queue_dmabuf(struct r
+ 	if (kick) {
+ 		vdev->is_idle = false;
+ 		rkispp_params_isr(dev);
+-		rkispp_module_work_event(dev, kick, NULL, ISPP_MODULE_NR,
+-					 false);
++		kick->tnr_out = NULL;
++		module = tnr_stage_on(dev, kick) ? ISPP_MODULE_TNR :
++						   ISPP_MODULE_NR;
++		rkispp_module_work_event(dev, kick, NULL, module, false);
+ 	}
+ 	spin_unlock_irqrestore(&vdev->ii_lock, lock_flags);
+ }
+@@ -1628,7 +1644,7 @@ static int start_isp(struct rkispp_devic
+ 	struct rkispp_stream_vdev *vdev = &dev->stream_vdev;
+ 	struct rkisp2_ispp_cfg cfg;
+ 	struct rkispp_stream *stream;
+-	u32 w, h;
++	u32 w, h, ens;
+ 	int ret, i;
+ 
+ 	if (dev->inp != INP_ISP || ispp_sdev->state)
+@@ -1652,6 +1668,10 @@ static int start_isp(struct rkispp_devic
+ 		v4l2_warn(&dev->v4l2_dev,
+ 			  "waiting on params stream on event timeout\n");
+ 
++	/* the first params buffer may enable the TNR ahead of the NR */
++	ens = rkispp_modules_effective(dev) & ISPP_MODULE_TNR_3TO1;
++	vdev->module_ens = (vdev->module_ens & ~ISPP_MODULE_TNR_3TO1) | ens;
++
+ 	ret = init_pool(dev, &w, &h);
+ 	if (ret < 0)
+ 		goto err;
+@@ -1719,6 +1739,9 @@ u32 rkispp_modules_effective(struct rkis
+ 		ens |= ISPP_MODULE_NR;
+ 	else
+ 		ens &= ~ISPP_MODULE_TNR_3TO1;
++	/* the 3to1 look-ahead frame comes only with the quick mode */
++	if (!(dev->isp_mode & ISP_ISPP_QUICK))
++		ens &= ~(ISPP_MODULE_TNR_3TO1 & ~ISPP_MODULE_TNR);
+ 	if (!rkispp_mesh_loaded(dev))
+ 		ens &= ~ISPP_MODULE_FEC;
+ 	return ens;
+@@ -2193,7 +2216,7 @@ static void restart_module(struct rkispp
+ 	}
+ 
+ 	if (monitor->restart_module & MONITOR_TNR && monitor->tnr.is_err) {
+-		rkispp_set_bits(dev, RKISPP_TNR_CTRL, 0, SW_TNR_1ST_FRM);
++		vdev->tnr.first = true;
+ 		monitor->tnr.is_err = false;
+ 	}
+ 	rkispp_soft_reset(&dev->hw_dev);
+@@ -2215,8 +2238,7 @@ static void restart_module(struct rkispp
+ 				nr_rd_release(dev, vdev->nr.cur_rd);
+ 				vdev->nr.cur_rd = NULL;
+ 			}
+-			rkispp_set_bits(dev, RKISPP_TNR_CTRL, 0,
+-					SW_TNR_1ST_FRM);
++			vdev->tnr.first = true;
+ 			vdev->nr.is_end = true;
+ 			monitor->nr.is_err = false;
+ 			monitor->is_restart = false;
+@@ -2407,6 +2429,92 @@ restart_unlock:
+ 	spin_unlock_irqrestore(&vdev->fec.buf_lock, lock_flags);
+ }
+ 
++/* the previous TNR output is the history of the next frame */
++static void tnr_work_event(struct rkispp_device *dev,
++			   struct rkispp_ii_input *input)
++{
++	struct rkispp_stream_vdev *vdev = &dev->stream_vdev;
++	struct rkispp_dummy_buffer *pic = &vdev->tnr.buf.wr[GROUP_BUF_PIC];
++	struct rkispp_dummy_buffer *gain = &vdev->tnr.buf.wr[GROUP_BUF_GAIN];
++	struct rkispp_isp_buf_pool *pool = &vdev->pool[input->pool_idx];
++	struct rkispp_dummy_buffer *iir = &vdev->tnr.buf.iir;
++	void __iomem *base = dev->hw_dev.base_addr;
++	struct rkispp_dummy_buffer *out, *hist;
++	u32 uv = vdev->tnr.uv_offset;
++
++	out = vdev->tnr.out_iir ? iir : pic;
++	hist = vdev->tnr.out_iir ? pic : iir;
++
++	rkispp_write(dev, RKISPP_TNR_CUR_Y_BASE, pool->pic.dma_addr);
++	rkispp_write(dev, RKISPP_TNR_CUR_UV_BASE, pool->pic.dma_addr + uv);
++	rkispp_write(dev, RKISPP_TNR_GAIN_CUR_Y_BASE, pool->gain.dma_addr);
++	rkispp_write(dev, RKISPP_TNR_IIR_Y_BASE, hist->dma_addr);
++	rkispp_write(dev, RKISPP_TNR_IIR_UV_BASE, hist->dma_addr + uv);
++	rkispp_write(dev, RKISPP_TNR_WR_Y_BASE, out->dma_addr);
++	rkispp_write(dev, RKISPP_TNR_WR_UV_BASE, out->dma_addr + uv);
++	rkispp_write(dev, RKISPP_TNR_GAIN_WR_Y_BASE, gain->dma_addr);
++	rkispp_set_bits(dev, RKISPP_TNR_CTRL, SW_TNR_1ST_FRM,
++			vdev->tnr.first ? SW_TNR_1ST_FRM : 0);
++	writel(TNR_FORCE_UPD, base + RKISPP_CTRL_UPDATE);
++
++	input->tnr_out = out;
++	vdev->tnr.cur_rd = input;
++	vdev->tnr.out_iir = !vdev->tnr.out_iir;
++
++	v4l2_dbg(3, rkispp_debug, &dev->v4l2_dev,
++		 "TNR start seq:%d | cur:0x%x iir:0x%x wr:0x%x\n",
++		 input->frame_id, rkispp_read(dev, RKISPP_TNR_CUR_Y_BASE),
++		 rkispp_read(dev, RKISPP_TNR_IIR_Y_BASE),
++		 rkispp_read(dev, RKISPP_TNR_WR_Y_BASE));
++
++	stage_start(dev, &vdev->tnr.dbg, &vdev->monitor.tnr, input->frame_id);
++	if (!dev->hw_dev.is_shutdown)
++		writel(TNR_ST, base + RKISPP_CTRL_STRT);
++}
++
++/* the TNR output goes on to the NR */
++static void tnr_frame_end(struct rkispp_device *dev)
++{
++	struct rkispp_stream_vdev *vdev = &dev->stream_vdev;
++	struct rkispp_ii_input *input = vdev->tnr.cur_rd;
++
++	vdev->tnr.first = false;
++	if (!input)
++		return;
++	vdev->tnr.cur_rd = NULL;
++	rkispp_module_work_event(dev, input, NULL, ISPP_MODULE_NR, true);
++}
++
++static void nr_rd_from_tnr(struct rkispp_device *dev,
++			   const struct rkispp_dummy_buffer *out)
++{
++	struct rkispp_stream_vdev *vdev = &dev->stream_vdev;
++
++	rkispp_write(dev, RKISPP_NR_ADDR_BASE_Y, out->dma_addr);
++	rkispp_write(dev, RKISPP_NR_ADDR_BASE_UV,
++		     out->dma_addr + vdev->nr.uv_offset);
++	rkispp_write(dev, RKISPP_NR_ADDR_BASE_GAIN,
++		     vdev->tnr.buf.wr[GROUP_BUF_GAIN].dma_addr);
++	rkispp_clear_bits(dev, RKISPP_NR_UVNR_CTRL_PARA, SW_UVNR_SD32_SELF_EN);
++	rkispp_set_bits(dev, RKISPP_CTRL_QUICK, 0, GLB_NR_SD32_TNR);
++}
++
++static void nr_rd_from_pool(struct rkispp_device *dev,
++			    const struct rkispp_isp_buf_pool *pool,
++			    bool is_quick)
++{
++	struct rkispp_stream_vdev *vdev = &dev->stream_vdev;
++
++	rkispp_write(dev, RKISPP_NR_ADDR_BASE_Y, pool->pic.dma_addr);
++	rkispp_write(dev, RKISPP_NR_ADDR_BASE_UV,
++		     pool->pic.dma_addr + vdev->nr.uv_offset);
++	rkispp_write(dev, RKISPP_NR_ADDR_BASE_GAIN, pool->gain.dma_addr);
++	if (is_quick)
++		return;
++	rkispp_set_bits(dev, RKISPP_NR_UVNR_CTRL_PARA, 0, SW_UVNR_SD32_SELF_EN);
++	rkispp_clear_bits(dev, RKISPP_CTRL_QUICK, GLB_NR_SD32_TNR);
++}
++
+ static void nr_work_event(struct rkispp_device *dev,
+ 			  struct rkispp_ii_input *buf_rd,
+ 			  struct rkispp_dummy_buffer *buf_wr, bool is_isr)
+@@ -2472,14 +2580,11 @@ static void nr_work_event(struct rkispp_
+ 		list_add_tail(&buf_wr->list, &vdev->nr.list_wr);
+ 
+ 	if (vdev->nr.cur_rd && vdev->nr.is_end) {
+-		if (vdev->nr.cur_rd->from_pool) {
++		if (vdev->nr.cur_rd->tnr_out) {
++			nr_rd_from_tnr(dev, vdev->nr.cur_rd->tnr_out);
++		} else if (vdev->nr.cur_rd->from_pool) {
+ 			pool = &vdev->pool[vdev->nr.cur_rd->pool_idx];
+-			val = pool->pic.dma_addr;
+-			rkispp_write(dev, RKISPP_NR_ADDR_BASE_Y, val);
+-			val += vdev->nr.uv_offset;
+-			rkispp_write(dev, RKISPP_NR_ADDR_BASE_UV, val);
+-			val = pool->gain.dma_addr;
+-			rkispp_write(dev, RKISPP_NR_ADDR_BASE_GAIN, val);
++			nr_rd_from_pool(dev, pool, is_quick);
+ 		} else if (vdev->nr.cur_rd->buf) {
+ 			inbuf = vdev->nr.cur_rd->buf;
+ 			val = inbuf->buff_addr[RKISPP_PLANE_Y];
+@@ -2571,7 +2676,9 @@ void rkispp_module_work_event(struct rki
+ 		return;
+ 
+ 	if (dev->ispp_sdev.state != ISPP_STOP) {
+-		if (module & ISPP_MODULE_NR)
++		if (module & ISPP_MODULE_TNR)
++			tnr_work_event(dev, buf_rd);
++		else if (module & ISPP_MODULE_NR)
+ 			nr_work_event(dev, buf_rd, buf_wr, is_isr);
+ 		else
+ 			fec_work_event(dev, buf_rd, is_isr);
+@@ -2634,9 +2741,11 @@ void rkispp_isr(u32 mis_val, struct rkis
+ 		rkispp_params_isr(dev);
+ 	}
+ 
+-	if (mis_val & TNR_INT)
++	if (mis_val & TNR_INT) {
+ 		if (rkispp_read(dev, RKISPP_TNR_CTRL) & SW_TNR_1ST_FRM)
+ 			rkispp_clear_bits(dev, RKISPP_TNR_CTRL, SW_TNR_1ST_FRM);
++		tnr_frame_end(dev);
++	}
+ 
+ 	rkispp_stats_isr(dev, mis_val);
+ 	rkispp_mesh_isr(dev, mis_val);
+--- a/drivers/media/platform/rockchip/ispp/stream.h
++++ b/drivers/media/platform/rockchip/ispp/stream.h
+@@ -103,6 +103,8 @@ struct rkispp_ii_input {
+ 	/* an isp pool buffer handed over by the isp, not an II buffer */
+ 	bool from_pool;
+ 	unsigned int pool_idx;
++	/* the TNR output of this frame, the NR input when set */
++	struct rkispp_dummy_buffer *tnr_out;
+ };
+ 
+ #define RKISPP_BUF_MAX 2
+@@ -119,10 +121,16 @@ struct tnr_module {
+ 		struct rkispp_dummy_buffer gain_kg;
+ 	} buf;
+ 	struct frame_debug_info dbg;
++	/* the pool frame in the TNR, outside the quick mode */
++	struct rkispp_ii_input *cur_rd;
+ 	u32 uv_offset;
+ 	bool is_end;
+ 	bool is_3to1;
+ 	bool is_but_init;
++	/* the next TNR frame has no history to filter with */
++	bool first;
++	/* outside the quick mode wr[GROUP_BUF_PIC] and iir swap per frame */
++	bool out_iir;
+ };
+ 
+ struct nr_module {

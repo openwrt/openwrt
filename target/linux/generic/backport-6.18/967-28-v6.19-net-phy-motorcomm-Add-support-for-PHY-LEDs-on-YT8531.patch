@@ -1,0 +1,31 @@
+From a8abe8e210c175b1d5a7e53df069e107b65c13cb Mon Sep 17 00:00:00 2001
+From: Tianling Shen <cnsztl@gmail.com>
+Date: Sun, 26 Oct 2025 21:36:52 +0800
+Subject: [PATCH] net: phy: motorcomm: Add support for PHY LEDs on YT8531
+
+The LED registers on YT8531 are exactly same as YT8521, so simply
+reuse yt8521_led_hw_* functions.
+
+Tested on OrangePi R1 Plus LTS and Zero3.
+
+Signed-off-by: Tianling Shen <cnsztl@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Reviewed-by: Jijie Shao<shaojijie@huawei.com>
+Link: https://patch.msgid.link/20251026133652.1288732-1-cnsztl@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/motorcomm.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/phy/motorcomm.c
++++ b/drivers/net/phy/motorcomm.c
+@@ -3051,6 +3051,9 @@ static struct phy_driver motorcomm_phy_d
+ 		.get_wol	= ytphy_get_wol,
+ 		.set_wol	= yt8531_set_wol,
+ 		.link_change_notify = yt8531_link_change_notify,
++		.led_hw_is_supported = yt8521_led_hw_is_supported,
++		.led_hw_control_set = yt8521_led_hw_control_set,
++		.led_hw_control_get = yt8521_led_hw_control_get,
+ 	},
+ 	{
+ 		PHY_ID_MATCH_EXACT(PHY_ID_YT8531S),

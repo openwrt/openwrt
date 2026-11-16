@@ -1,0 +1,472 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 13:27:36 +0200
+Subject: [PATCH] nl80211: install SCS and MSCS through NL80211_CMD_SET_SCS/SET_MSCS
+
+The kernel (mac80211 subsys patches 431 to 450) classifies the streams
+that a peer requested with SCS and MSCS. It takes the descriptors of an
+SCS Request and the MSCS Descriptor element with the classifier elements
+as received, and answers each with a status code.
+
+Copy the commands, the attributes and the nested descriptor enums into
+nl80211_copy.h, map NL80211_EXT_FEATURE_SCS and _MSCS to
+WPA_DRIVER_FLAGS2_SCS and _MSCS, and add the driver operations set_scs()
+and set_mscs(), which install, change or remove one SCS descriptor or the
+MSCS of a peer and return the status code of the kernel's reply.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -1191,6 +1191,26 @@ int hostapd_drv_set_qos_map(struct hosta
+ }
+ 
+ 
++int hostapd_drv_set_scs(struct hostapd_data *hapd, const u8 *addr,
++			const struct hostapd_scs_desc *desc, u16 *status)
++{
++	if (!hapd->driver || !hapd->driver->set_scs || !hapd->drv_priv ||
++	    !(hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_SCS))
++		return -EOPNOTSUPP;
++	return hapd->driver->set_scs(hapd->drv_priv, addr, desc, status);
++}
++
++
++int hostapd_drv_set_mscs(struct hostapd_data *hapd, const u8 *addr,
++			 const struct hostapd_mscs_desc *desc, u16 *status)
++{
++	if (!hapd->driver || !hapd->driver->set_mscs || !hapd->drv_priv ||
++	    !(hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_MSCS))
++		return -EOPNOTSUPP;
++	return hapd->driver->set_mscs(hapd->drv_priv, addr, desc, status);
++}
++
++
+ void hostapd_get_hw_mode_any_channels(struct hostapd_data *hapd,
+ 				      struct hostapd_hw_modes *mode,
+ 				      int acs_ch_list_all, bool allow_disabled,
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -165,6 +165,10 @@ int hostapd_drv_wnm_oper(struct hostapd_
+ 			 enum wnm_oper oper, const u8 *peer,
+ 			 u8 *buf, u16 *buf_len);
+ 
++int hostapd_drv_set_scs(struct hostapd_data *hapd, const u8 *addr,
++			const struct hostapd_scs_desc *desc, u16 *status);
++int hostapd_drv_set_mscs(struct hostapd_data *hapd, const u8 *addr,
++			 const struct hostapd_mscs_desc *desc, u16 *status);
+ int hostapd_drv_set_qos_map(struct hostapd_data *hapd, const u8 *qos_map_set,
+ 			    u8 qos_map_set_len);
+ 
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -826,6 +826,46 @@ enum wps_mode {
+ };
+ 
+ /**
++ * struct hostapd_scs_desc - One SCS Descriptor element of an SCS Request
++ * @id: SCSID
++ * @req_type: Request Type (enum scs_request_type)
++ * @up: User Priority of the Intra-Access Category Priority element, or -1
++ *	where the descriptor holds no such element
++ * @tclas: The TCLAS elements and the TCLAS Processing element as received,
++ *	or %NULL
++ * @tclas_len: Length of @tclas
++ * @qos_char: The QoS Characteristics element as received, or %NULL
++ * @qos_char_len: Length of @qos_char
++ */
++struct hostapd_scs_desc {
++	u8 id;
++	u8 req_type;
++	int up;
++	const u8 *tclas;
++	size_t tclas_len;
++	const u8 *qos_char;
++	size_t qos_char_len;
++};
++
++/**
++ * struct hostapd_mscs_desc - The MSCS Descriptor element of an MSCS request
++ * @req_type: Request Type (enum scs_request_type)
++ * @up_bitmap: User Priority Bitmap
++ * @up_limit: User Priority Limit
++ * @stream_timeout: Stream Timeout in TUs
++ * @tclas_mask: The TCLAS Mask elements as received, or %NULL for a removal
++ * @tclas_mask_len: Length of @tclas_mask
++ */
++struct hostapd_mscs_desc {
++	u8 req_type;
++	u8 up_bitmap;
++	u8 up_limit;
++	u32 stream_timeout;
++	const u8 *tclas_mask;
++	size_t tclas_mask_len;
++};
++
++/**
+  * struct hostapd_freq_params - Channel parameters
+  */
+ struct hostapd_freq_params {
+@@ -2597,6 +2637,10 @@ struct wpa_driver_capa {
+  * in the Beacon frames and reports its expiry with
+  * EVENT_AP_REMOVAL_TIMER_EXPIRED */
+ #define WPA_DRIVER_FLAGS2_AP_REMOVAL_TIMER_OFFLOAD	0x0000010000000000ULL
++/** Driver installs the SCS descriptors of a peer, see set_scs */
++#define WPA_DRIVER_FLAGS2_SCS			0x0000020000000000ULL
++/** Driver installs the MSCS of a peer, see set_mscs */
++#define WPA_DRIVER_FLAGS2_MSCS			0x0000040000000000ULL
+ 	u64 flags2;
+ 
+ #define FULL_AP_CLIENT_STATE_SUPP(drv_flags) \
+@@ -4844,6 +4888,30 @@ struct wpa_driver_ops {
+ 			   u8 qos_map_set_len);
+ 
+ 	/**
++	 * set_scs - Install, change or remove one SCS descriptor of a peer
++	 * @priv: Private driver interface data
++	 * @addr: Address of the peer, the MLD address of a non-AP MLD
++	 * @desc: The descriptor
++	 * @status: Buffer for the status code of the descriptor
++	 * Returns: 0 where the driver answered with @status, negative (<0) on
++	 * failure
++	 */
++	int (*set_scs)(void *priv, const u8 *addr,
++		       const struct hostapd_scs_desc *desc, u16 *status);
++
++	/**
++	 * set_mscs - Install, change or remove the MSCS of a peer
++	 * @priv: Private driver interface data
++	 * @addr: Address of the peer, the MLD address of a non-AP MLD
++	 * @desc: The parameters of the MSCS Descriptor element
++	 * @status: Buffer for the status code of the request
++	 * Returns: 0 where the driver answered with @status, negative (<0) on
++	 * failure
++	 */
++	int (*set_mscs)(void *priv, const u8 *addr,
++			const struct hostapd_mscs_desc *desc, u16 *status);
++
++	/**
+ 	 * br_add_ip_neigh - Add a neigh to the bridge ip neigh table
+ 	 * @priv: Private driver interface data
+ 	 * @version: IP version of the IP address, 4 or 6
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -12985,6 +12985,144 @@ static int nl80211_set_qos_map(void *pri
+ }
+ 
+ 
++struct nl80211_scs_status {
++	u8 id;
++	int status;
++};
++
++
++static int nl80211_set_scs_handler(struct nl_msg *msg, void *arg)
++{
++	struct nlattr *tb[NL80211_ATTR_MAX + 1];
++	struct nlattr *desc[NL80211_SCS_DESC_ATTR_MAX + 1];
++	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
++	struct nl80211_scs_status *res = arg;
++	struct nlattr *entry;
++	int rem;
++
++	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
++		  genlmsg_attrlen(gnlh, 0), NULL);
++	if (!tb[NL80211_ATTR_SCS_DESCRIPTORS])
++		return NL_SKIP;
++
++	nla_for_each_nested(entry, tb[NL80211_ATTR_SCS_DESCRIPTORS], rem) {
++		if (nla_parse_nested(desc, NL80211_SCS_DESC_ATTR_MAX, entry,
++				     NULL) ||
++		    !desc[NL80211_SCS_DESC_ATTR_ID] ||
++		    !desc[NL80211_SCS_DESC_ATTR_STATUS] ||
++		    nla_get_u8(desc[NL80211_SCS_DESC_ATTR_ID]) != res->id)
++			continue;
++
++		res->status = nla_get_u16(desc[NL80211_SCS_DESC_ATTR_STATUS]);
++		break;
++	}
++
++	return NL_SKIP;
++}
++
++
++static int nl80211_set_scs(void *priv, const u8 *addr,
++			   const struct hostapd_scs_desc *desc, u16 *status)
++{
++	struct i802_bss *bss = priv;
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++	struct nl80211_scs_status res = { .id = desc->id, .status = -1 };
++	struct nlattr *list, *entry;
++	struct nl_msg *msg;
++	int ret;
++
++	msg = nl80211_cmd_msg(bss, 0, NL80211_CMD_SET_SCS);
++	if (!msg ||
++	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, addr) ||
++	    !(list = nla_nest_start(msg, NL80211_ATTR_SCS_DESCRIPTORS)) ||
++	    !(entry = nla_nest_start(msg, 1)) ||
++	    nla_put_u8(msg, NL80211_SCS_DESC_ATTR_ID, desc->id) ||
++	    nla_put_u8(msg, NL80211_SCS_DESC_ATTR_REQ_TYPE, desc->req_type) ||
++	    (desc->up >= 0 &&
++	     nla_put_u8(msg, NL80211_SCS_DESC_ATTR_UP, desc->up)) ||
++	    (desc->tclas &&
++	     nla_put(msg, NL80211_SCS_DESC_ATTR_TCLAS, desc->tclas_len,
++		     desc->tclas)) ||
++	    (desc->qos_char &&
++	     nla_put(msg, NL80211_SCS_DESC_ATTR_QOS_CHAR, desc->qos_char_len,
++		     desc->qos_char))) {
++		nlmsg_free(msg);
++		return -ENOBUFS;
++	}
++	nla_nest_end(msg, entry);
++	nla_nest_end(msg, list);
++
++	ret = send_and_recv_resp(drv, msg, nl80211_set_scs_handler, &res);
++	if (ret) {
++		wpa_printf(MSG_DEBUG, "nl80211: SET_SCS failed: %d (%s)",
++			   ret, strerror(-ret));
++		return ret;
++	}
++	if (res.status < 0)
++		return -EINVAL;
++
++	*status = res.status;
++	return 0;
++}
++
++
++static int nl80211_set_mscs_handler(struct nl_msg *msg, void *arg)
++{
++	struct nlattr *tb[NL80211_ATTR_MAX + 1];
++	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
++	int *status = arg;
++
++	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
++		  genlmsg_attrlen(gnlh, 0), NULL);
++	if (tb[NL80211_ATTR_STATUS_CODE])
++		*status = nla_get_u16(tb[NL80211_ATTR_STATUS_CODE]);
++
++	return NL_SKIP;
++}
++
++
++static int nl80211_set_mscs(void *priv, const u8 *addr,
++			    const struct hostapd_mscs_desc *desc, u16 *status)
++{
++	struct i802_bss *bss = priv;
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++	struct nlattr *attr;
++	struct nl_msg *msg;
++	int res = -1;
++	int ret;
++
++	msg = nl80211_cmd_msg(bss, 0, NL80211_CMD_SET_MSCS);
++	if (!msg ||
++	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, addr) ||
++	    !(attr = nla_nest_start(msg, NL80211_ATTR_MSCS_DESCRIPTOR)) ||
++	    nla_put_u8(msg, NL80211_MSCS_DESC_ATTR_REQ_TYPE, desc->req_type) ||
++	    nla_put_u8(msg, NL80211_MSCS_DESC_ATTR_UP_BITMAP,
++		       desc->up_bitmap) ||
++	    nla_put_u8(msg, NL80211_MSCS_DESC_ATTR_UP_LIMIT, desc->up_limit) ||
++	    nla_put_u32(msg, NL80211_MSCS_DESC_ATTR_STREAM_TIMEOUT,
++			desc->stream_timeout) ||
++	    (desc->tclas_mask &&
++	     nla_put(msg, NL80211_MSCS_DESC_ATTR_TCLAS_MASK,
++		     desc->tclas_mask_len, desc->tclas_mask))) {
++		nlmsg_free(msg);
++		return -ENOBUFS;
++	}
++	nla_nest_end(msg, attr);
++
++	ret = send_and_recv_resp(drv, msg, nl80211_set_mscs_handler, &res);
++	if (ret) {
++		wpa_printf(MSG_DEBUG, "nl80211: SET_MSCS failed: %d (%s)",
++			   ret, strerror(-ret));
++		return ret;
++	}
++	if (res < 0)
++		return -EINVAL;
++
++	*status = res;
++	return 0;
++}
++
++
+ static int get_wowlan_handler(struct nl_msg *msg, void *arg)
+ {
+ 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+@@ -17037,6 +17175,8 @@ const struct wpa_driver_ops wpa_driver_n
+ #endif /* ANDROID */
+ 	.vendor_cmd = nl80211_vendor_cmd,
+ 	.set_qos_map = nl80211_set_qos_map,
++	.set_scs = nl80211_set_scs,
++	.set_mscs = nl80211_set_mscs,
+ 	.get_wowlan = nl80211_get_wowlan,
+ 	.set_wowlan = nl80211_set_wowlan,
+ 	.set_mac_addr = nl80211_set_mac_addr,
+--- a/src/drivers/driver_nl80211_capa.c
++++ b/src/drivers/driver_nl80211_capa.c
+@@ -615,6 +615,10 @@ static void wiphy_info_ext_feature_flags
+ 	if (ext_feature_isset(ext_features, len,
+ 			      NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD))
+ 		capa->flags2 |= WPA_DRIVER_FLAGS2_AP_REMOVAL_TIMER_OFFLOAD;
++	if (ext_feature_isset(ext_features, len, NL80211_EXT_FEATURE_SCS))
++		capa->flags2 |= WPA_DRIVER_FLAGS2_SCS;
++	if (ext_feature_isset(ext_features, len, NL80211_EXT_FEATURE_MSCS))
++		capa->flags2 |= WPA_DRIVER_FLAGS2_MSCS;
+ 	if (ext_feature_isset(ext_features, len,
+ 			      NL80211_EXT_FEATURE_SCHED_SCAN_RELATIVE_RSSI))
+ 		capa->flags |= WPA_DRIVER_FLAGS_SCHED_SCAN_RELATIVE_RSSI;
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -205,6 +205,8 @@ static const char * nl80211_command_to_s
+ 	C2S(NL80211_CMD_ADV_TTLM_STARTED)
+ 	C2S(NL80211_CMD_ADV_TTLM_ESTABLISHED)
+ 	C2S(NL80211_CMD_ADV_TTLM_ENDED)
++	C2S(NL80211_CMD_SET_SCS)
++	C2S(NL80211_CMD_SET_MSCS)
+ 	C2S(__NL80211_CMD_AFTER_LAST)
+ 	}
+ #undef C2S
+--- a/src/drivers/nl80211_copy.h
++++ b/src/drivers/nl80211_copy.h
+@@ -1505,6 +1505,18 @@
+  *	The events of an advertised mapping carry %NL80211_ATTR_WIPHY,
+  *	%NL80211_ATTR_IFINDEX, %NL80211_ATTR_WDEV and %NL80211_ATTR_COOKIE.
+  *
++ * @NL80211_CMD_SET_SCS: Add, change or remove stream classification service
++ *	descriptors of the peer given by %NL80211_ATTR_MAC, as requested in an
++ *	SCS Request frame. The descriptors are in
++ *	%NL80211_ATTR_SCS_DESCRIPTORS. The reply repeats the attribute with
++ *	the identifier and the status code of each descriptor. A declined
++ *	descriptor does not make the command fail.
++ * @NL80211_CMD_SET_MSCS: Install, change or remove the mirrored stream
++ *	classification service of the peer given by %NL80211_ATTR_MAC, as
++ *	requested in an MSCS Request frame or a (Re)Association Request. The
++ *	parameters are in %NL80211_ATTR_MSCS_DESCRIPTOR. The reply carries
++ *	the status code in %NL80211_ATTR_STATUS_CODE.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1793,6 +1805,9 @@ enum nl80211_commands {
+ 	NL80211_CMD_ADV_TTLM_ESTABLISHED,
+ 	NL80211_CMD_ADV_TTLM_ENDED,
+ 
++	NL80211_CMD_SET_SCS,
++	NL80211_CMD_SET_MSCS,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+@@ -3308,6 +3323,12 @@ enum nl80211_commands {
+  *	advertised TID-to-link mapping, in ns of %CLOCK_BOOTTIME, see
+  *	%NL80211_CMD_ADV_TTLM_STARTED and %NL80211_CMD_ADV_TTLM_ESTABLISHED.
+  *
++ * @NL80211_ATTR_SCS_DESCRIPTORS: Nested array of SCS descriptors, each one a
++ *	nested set of &enum nl80211_scs_desc_attr attributes. Used with
++ *	%NL80211_CMD_SET_SCS in both directions.
++ * @NL80211_ATTR_MSCS_DESCRIPTOR: Nested set of &enum nl80211_mscs_desc_attr
++ *	attributes. Used with %NL80211_CMD_SET_MSCS.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3922,6 +3943,9 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_MLO_ADV_TTLM_SWITCH_TSF,
+ 	NL80211_ATTR_MLO_ADV_TTLM_TBTT_BOOTTIME,
+ 
++	NL80211_ATTR_SCS_DESCRIPTORS,
++	NL80211_ATTR_MSCS_DESCRIPTOR,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -6203,6 +6227,87 @@ enum nl80211_tx_power_setting {
+ };
+ 
+ /**
++ * enum nl80211_scs_req_type - SCS or MSCS request type
++ *
++ * The values match the Request Type field of the descriptor on the air.
++ *
++ * @NL80211_SCS_REQ_ADD: create the stream, replacing an active one of the
++ *	same identifier
++ * @NL80211_SCS_REQ_REMOVE: terminate the stream
++ * @NL80211_SCS_REQ_CHANGE: modify an active stream, leaving it in force if
++ *	the request is declined
++ */
++enum nl80211_scs_req_type {
++	NL80211_SCS_REQ_ADD,
++	NL80211_SCS_REQ_REMOVE,
++	NL80211_SCS_REQ_CHANGE,
++};
++
++/**
++ * enum nl80211_scs_desc_attr - one SCS descriptor
++ *
++ * @__NL80211_SCS_DESC_ATTR_INVALID: invalid
++ * @NL80211_SCS_DESC_ATTR_ID: SCSID (u8, 1 to 255)
++ * @NL80211_SCS_DESC_ATTR_REQ_TYPE: request type (u8, see
++ *	&enum nl80211_scs_req_type)
++ * @NL80211_SCS_DESC_ATTR_UP: user priority to assign to a matching MSDU
++ *	(u8, 0 to 7), from the Intra-Access Category Priority element.
++ *	Required for a downlink descriptor or one without
++ *	%NL80211_SCS_DESC_ATTR_QOS_CHAR, and rejected otherwise.
++ * @NL80211_SCS_DESC_ATTR_TCLAS: one or more TCLAS elements and at most one
++ *	TCLAS Processing element (binary), as received over the air
++ * @NL80211_SCS_DESC_ATTR_QOS_CHAR: the whole QoS Characteristics element
++ *	(binary), header included, as received over the air
++ * @NL80211_SCS_DESC_ATTR_STATUS: IEEE status code (u16), kernel to userspace
++ *
++ * @__NL80211_SCS_DESC_ATTR_AFTER_LAST: internal use
++ * @NL80211_SCS_DESC_ATTR_MAX: highest attribute
++ */
++enum nl80211_scs_desc_attr {
++	__NL80211_SCS_DESC_ATTR_INVALID,
++	NL80211_SCS_DESC_ATTR_ID,
++	NL80211_SCS_DESC_ATTR_REQ_TYPE,
++	NL80211_SCS_DESC_ATTR_UP,
++	NL80211_SCS_DESC_ATTR_TCLAS,
++	NL80211_SCS_DESC_ATTR_QOS_CHAR,
++	NL80211_SCS_DESC_ATTR_STATUS,
++
++	__NL80211_SCS_DESC_ATTR_AFTER_LAST,
++	NL80211_SCS_DESC_ATTR_MAX = __NL80211_SCS_DESC_ATTR_AFTER_LAST - 1
++};
++
++/**
++ * enum nl80211_mscs_desc_attr - the MSCS of one peer
++ *
++ * @__NL80211_MSCS_DESC_ATTR_INVALID: invalid
++ * @NL80211_MSCS_DESC_ATTR_REQ_TYPE: request type (u8, see
++ *	&enum nl80211_scs_req_type)
++ * @NL80211_MSCS_DESC_ATTR_UP_BITMAP: user priorities that the AP learns
++ *	from, one bit each (u8)
++ * @NL80211_MSCS_DESC_ATTR_UP_LIMIT: ceiling for the assigned user priority
++ *	(u8, 0 to 7)
++ * @NL80211_MSCS_DESC_ATTR_STREAM_TIMEOUT: minimum lifetime of a learned
++ *	value, in TUs (u32)
++ * @NL80211_MSCS_DESC_ATTR_TCLAS_MASK: one or more TCLAS Mask elements
++ *	(binary), as received over the air. Required for add and change,
++ *	rejected for remove.
++ *
++ * @__NL80211_MSCS_DESC_ATTR_AFTER_LAST: internal use
++ * @NL80211_MSCS_DESC_ATTR_MAX: highest attribute
++ */
++enum nl80211_mscs_desc_attr {
++	__NL80211_MSCS_DESC_ATTR_INVALID,
++	NL80211_MSCS_DESC_ATTR_REQ_TYPE,
++	NL80211_MSCS_DESC_ATTR_UP_BITMAP,
++	NL80211_MSCS_DESC_ATTR_UP_LIMIT,
++	NL80211_MSCS_DESC_ATTR_STREAM_TIMEOUT,
++	NL80211_MSCS_DESC_ATTR_TCLAS_MASK,
++
++	__NL80211_MSCS_DESC_ATTR_AFTER_LAST,
++	NL80211_MSCS_DESC_ATTR_MAX = __NL80211_MSCS_DESC_ATTR_AFTER_LAST - 1
++};
++
++/**
+  * enum nl80211_tid_config - TID config state
+  * @NL80211_TID_CONFIG_ENABLE: Enable config for the TID
+  * @NL80211_TID_CONFIG_DISABLE: Disable config for the TID

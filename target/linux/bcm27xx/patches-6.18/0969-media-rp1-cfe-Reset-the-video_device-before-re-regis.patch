@@ -1,0 +1,34 @@
+From 77730ebe2a10b489162a2f141b05016309308a38 Mon Sep 17 00:00:00 2001
+From: Naushir Patuck <naush@raspberrypi.com>
+Date: Mon, 14 Sep 2026 15:20:31 +0100
+Subject: [PATCH] media: rp1-cfe: Reset the video_device before re-registering
+ it
+
+After a node is unregistered its embedded video_device still carries the
+released struct device and kobject state. Re-registering it triggered a
+"tried to init an initialized object" and use-after-free situation.
+
+Reset the video_device before registering it so that the node can be
+re-registered after the source subdev is rebound.
+
+Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
+---
+ drivers/media/platform/raspberrypi/rp1_cfe/cfe.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
++++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
+@@ -1915,6 +1915,13 @@ static int cfe_register_node(struct cfe_
+ 	struct cfe_node *node = &cfe->node[id];
+ 	int ret;
+ 
++	/*
++	 * The node may be re-registered after the source subdev has been
++	 * unbound and rebound. The embedded video_device must be reset before
++	 * being re-registered.
++	 */
++	memset(&node->video_dev, 0, sizeof(node->video_dev));
++
+ 	node->cfe = cfe;
+ 	node->id = id;
+ 

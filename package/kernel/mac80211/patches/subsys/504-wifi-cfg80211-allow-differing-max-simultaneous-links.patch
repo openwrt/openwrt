@@ -1,0 +1,39 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 5 Nov 2026 17:50:20 +0100
+Subject: [PATCH] wifi: cfg80211: allow differing max simultaneous links in assoc
+
+cfg80211_mlme_check_mlo_compat() compares the whole MLD Capabilities And
+Operations field of the association link and of each other link. The
+Maximum Number Of Simultaneous Links subfield of an AP MLD changes when
+the AP MLD adds affiliated APs. A Beacon does not replace the elements
+of a BSS entry that came from a Probe Response, so entries of one AP MLD
+can keep different values. The association then fails with "link MLD
+capabilities/ops mismatch".
+
+Ignore that subfield in the compare, like the Recommended Max
+Simultaneous Links subfield of the Extended MLD Capabilities. Nothing on
+the association path reads it from a BSS entry: mac80211 takes the field
+from the Association Response.
+
+Fixes: ccb964b4ab16 ("wifi: cfg80211: validate MLO connections better")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/wireless/mlme.c
++++ b/net/wireless/mlme.c
+@@ -390,8 +390,14 @@ cfg80211_mlme_check_mlo_compat(const struct ieee80211_multi_link_elem *mle_a,
+ 		return -EINVAL;
+ 	}
+ 
+-	if (ieee80211_mle_get_mld_capa_op((const u8 *)mle_a) !=
+-	    ieee80211_mle_get_mld_capa_op((const u8 *)mle_b)) {
++	/*
++	 * The Maximum Number Of Simultaneous Links subfield changes when the
++	 * AP adds links, so entries of one AP MLD can hold different values.
++	 */
++	if ((ieee80211_mle_get_mld_capa_op((const u8 *)mle_a) &
++	     ~IEEE80211_MLD_CAP_OP_MAX_SIMUL_LINKS) !=
++	    (ieee80211_mle_get_mld_capa_op((const u8 *)mle_b) &
++	     ~IEEE80211_MLD_CAP_OP_MAX_SIMUL_LINKS)) {
+ 		NL_SET_ERR_MSG(extack, "link MLD capabilities/ops mismatch");
+ 		return -EINVAL;
+ 	}

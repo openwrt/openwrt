@@ -1,0 +1,28 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] AP MLD: accept a Management frame to the AP MLD address
+
+mac80211 translates the Address 1 field of an individually addressed
+Management frame from an associated non-AP MLD to the AP MLD address.
+It translates the Address 3 field only where it holds the BSSID of the
+link. A Public Action frame with the wildcard BSSID, for example a DPP
+Connection Status Result from an enrollee that just associated, thus
+reaches hostapd with the AP MLD address as DA and the wildcard BSSID.
+ieee802_11_mgmt() accepts the AP MLD address in the BSSID field only,
+compares the DA with the address of the link, and drops the frame.
+
+Accept a frame whose DA is the AP MLD address as well.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -8820,7 +8820,8 @@ int ieee802_11_mgmt(struct hostapd_data
+ 	     stype != WLAN_FC_STYPE_ACTION) &&
+ #ifdef CONFIG_IEEE80211BE
+ 	    !(hapd->conf->mld_ap &&
+-	      ether_addr_equal(hapd->mld->mld_addr, mgmt->bssid)) &&
++	      (ether_addr_equal(hapd->mld->mld_addr, mgmt->bssid) ||
++	       ether_addr_equal(hapd->mld->mld_addr, mgmt->da))) &&
+ #endif /* CONFIG_IEEE80211BE */
+ #ifdef CONFIG_NAN_USD
+ 	    !ether_addr_equal(mgmt->da, nan_network_id) &&

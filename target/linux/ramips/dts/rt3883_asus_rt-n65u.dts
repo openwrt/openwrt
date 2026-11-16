@@ -1,0 +1,196 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+#include "rt3883.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "asus,rt-n65u", "ralink,rt3883-soc";
+	model = "Asus RT-N65U";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	rtl8367rb {
+		compatible = "realtek,rtl8367b";
+		realtek,extif = <6 1 0 1 1 1 1 1 1 2>;
+		mii-bus = <&mdio0>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power { // PWR
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		};
+
+		lan { // LAN
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+		};
+
+		wan { // WAN
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+		};
+
+		usb { // USB
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+		};
+
+		// There are also two LEDs for Wi-Fi:
+		// - AIR2 (2.4GHz) can be turned on via <&gpio0 1 GPIO_ACTIVE_LOW>,
+		//	 but not off: the RT3352 iNIC coprocessor drives the same line
+		//	 independently, so it isn't declared as a controllable LED here.
+		// - AIR5 (5GHz) is tied directly to the wmac radio state and turns
+		//	 on/off automatically with it; no separate GPIO controls it.
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "config";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xfb0000>;
+			};
+		};
+	};
+};
+
+&gpio0 {
+	// Enables the LED power rail (all LEDs except PWR).
+	led_all_enable {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "led-all-enable";
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "jtag", "uartf";
+		function = "gpio";
+	};
+};
+
+&pinctrl {
+	mdio_pins: mdio {
+		mdio {
+			groups = "mdio";
+			function = "mdio";
+		};
+	};
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+
+	port@0 {
+		status = "okay";
+		mediatek,fixed-link = <1000 1 1 1>;
+		phy-mode = "rgmii";
+	};
+
+	mdio0: mdio-bus {
+		status = "okay";
+	};
+};
+
+&pci {
+	status = "okay";
+};
+
+// PCI port connected to the onboard USB 3.0 host controller.
+&pci1 {
+	status = "okay";
+};
+
+&wmac {
+	ralink,2ghz = <0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};

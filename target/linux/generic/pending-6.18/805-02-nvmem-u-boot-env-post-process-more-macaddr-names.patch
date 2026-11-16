@@ -1,0 +1,57 @@
+From: "Michael C. Pratt" <mcpratt@pm.me>
+Date: Tue Aug 18 23:26:32 2026 -0400
+Subject: [PATCH] generic: nvmem: u-boot-env: match more variable names for post process
+
+Although it is not common, many other variable names for MAC addresses may be used,
+particularly "athaddr", "wlanaddr", "wanaddr", and "mac_addr" in certain models.
+
+Support a longer list of variable names for post processing as a MAC address.
+
+Signed-off-by: "Michael C. Pratt" <mcpratt@pm.me>
+---
+
+--- a/drivers/nvmem/layouts/u-boot-env.c
++++ b/drivers/nvmem/layouts/u-boot-env.c
+@@ -53,6 +53,8 @@ static int u_boot_env_parse_cells(struct
+ {
+ 	char *data = buf + data_offset;
+ 	char *var, *value, *eq;
++	const char *mac_vars[] = {"ethaddr", "RADIOADDR", "wanaddr", "wlanaddr",
++				  "macaddr", "mac_addr", "wifiaddr", "athaddr"};
+ 
+ 	for (var = data;
+ 	     var < data + data_len && *var;
+@@ -71,17 +73,22 @@ static int u_boot_env_parse_cells(struct
+ 		info.offset = data_offset + value - data;
+ 		info.bytes = strlen(value);
+ 		info.np = of_get_child_by_name(dev->of_node, info.name);
+-		if (!strcmp(var, "ethaddr") && info.bytes == MAC_ADDR_STR_LEN) {
+-			info.raw_len = strlen(value);
+-			info.bytes = ETH_ALEN;
+-			info.read_post_process = u_boot_env_read_post_process_ethaddr;
+-		}
+-		/* Handle quotation which increases length by 2 and offset by 1 if present. */
+-		if (!strcmp(var, "ethaddr") && info.bytes == MAC_ADDR_STR_LEN + 2) {
+-			info.offset = data_offset + value - data + 1;
+-			info.raw_len = strlen(value);
+-			info.bytes = ETH_ALEN;
+-			info.read_post_process = u_boot_env_read_post_process_ethaddr;
++
++		for (int i = 0; i < ARRAY_SIZE(mac_vars); i++) {
++			if (!strcmp(var, mac_vars[i]) && info.bytes == MAC_ADDR_STR_LEN) {
++				info.raw_len = strlen(value);
++				info.bytes = ETH_ALEN;
++				info.read_post_process = u_boot_env_read_post_process_ethaddr;
++				break;
++			}
++			/* Handle quotation which increases length by 2 and offset by 1 if present. */
++			if (!strcmp(var, mac_vars[i]) && info.bytes == MAC_ADDR_STR_LEN + 2) {
++				info.offset = data_offset + value - data + 1;
++				info.raw_len = strlen(value);
++				info.bytes = ETH_ALEN;
++				info.read_post_process = u_boot_env_read_post_process_ethaddr;
++				break;
++			}
+ 		}
+ 
+ 		nvmem_add_one_cell(nvmem, &info);

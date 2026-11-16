@@ -1,0 +1,664 @@
+From 7b33905397ece095c0844313c90a8716d66bf1f2 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 23:54:16 +0100
+Subject: [PATCH] media: rockchip: rkcif: Feed the RV1126 ISP with raw frames
+
+The VICAP of the RV1126 has no IOMMU, so the raw frames it shares with
+the ISP are allocated by its video node, and the ISP readback takes
+MSB-justified 16-bit words.
+
+Offer unpacked RAW10 and RAW12 samples written MSB-justified, with the
+high alignment bit, as the 16-bit Bayer formats. One 16-bit format
+serves two bus codes, so the capture picks the format by the bus code
+as well, and the enumeration lists each format once unless it is asked
+for one bus code. Offer the MIPI stream to a consumer through a V4L2
+subdevice described by rkcif-toisp.h, so that the ISP driver can take
+every completed frame.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../rockchip/rkcif/rkcif-capture-mipi.c       | 121 ++++++-
+ .../platform/rockchip/rkcif/rkcif-common.h    |  14 +
+ .../platform/rockchip/rkcif/rkcif-stream.c    | 296 +++++++++++++++++-
+ .../linux/platform_data/media/rkcif-toisp.h   |  68 ++++
+ 4 files changed, 487 insertions(+), 12 deletions(-)
+ create mode 100644 include/linux/platform_data/media/rkcif-toisp.h
+
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.c
+@@ -317,6 +317,94 @@ static const struct rkcif_output_fmt mip
+ 			.type = RKCIF_MIPI_TYPE_RAW12,
+ 		},
+ 	},
++	{
++		.fourcc = V4L2_PIX_FMT_SBGGR16,
++		.mbus_code = MEDIA_BUS_FMT_SBGGR10_1X10,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW10,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW10,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SGBRG16,
++		.mbus_code = MEDIA_BUS_FMT_SGBRG10_1X10,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW10,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW10,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SGRBG16,
++		.mbus_code = MEDIA_BUS_FMT_SGRBG10_1X10,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW10,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW10,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SRGGB16,
++		.mbus_code = MEDIA_BUS_FMT_SRGGB10_1X10,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW10,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW10,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SBGGR16,
++		.mbus_code = MEDIA_BUS_FMT_SBGGR12_1X12,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW12,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW12,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SGBRG16,
++		.mbus_code = MEDIA_BUS_FMT_SGBRG12_1X12,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW12,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW12,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SGRBG16,
++		.mbus_code = MEDIA_BUS_FMT_SGRBG12_1X12,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW12,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW12,
++		},
++	},
++	{
++		.fourcc = V4L2_PIX_FMT_SRGGB16,
++		.mbus_code = MEDIA_BUS_FMT_SRGGB12_1X12,
++		.depth = 16,
++		.cplanes = 1,
++		.mipi = {
++			.dt = MIPI_CSI2_DT_RAW12,
++			.high_align = true,
++			.type = RKCIF_MIPI_TYPE_RAW12,
++		},
++	},
+ };
+ 
+ static const struct rkcif_input_fmt mipi_in_fmts[] = {
+@@ -388,6 +476,8 @@ rkcif_rk3568_mipi_ctrl0(struct rkcif_str
+ 
+ 	if (active_out_fmt->mipi.compact)
+ 		ctrl0 |= RK3568_MIPI_CTRL0_COMPACT_EN;
++	if (active_out_fmt->mipi.high_align)
++		ctrl0 |= RK3568_MIPI_CTRL0_HIGH_ALIGN;
+ 
+ 	switch (active_out_fmt->mipi.type) {
+ 	case RKCIF_MIPI_TYPE_RAW8:
+@@ -496,6 +586,8 @@ rkcif_rk3588_mipi_ctrl0(struct rkcif_str
+ 	ctrl0 |= RKCIF_MIPI_CTRL0_DT_ID(active_out_fmt->mipi.dt);
+ 	ctrl0 |= RK3588_MIPI_CTRL0_CROP_EN;
+ 	ctrl0 |= RKCIF_MIPI_CTRL0_CAP_EN;
++	if (active_out_fmt->mipi.high_align)
++		ctrl0 |= RK3588_MIPI_CTRL0_HIGH_ALIGN;
+ 
+ 	switch (active_out_fmt->mipi.type) {
+ 	case RKCIF_MIPI_TYPE_RAW8:
+@@ -716,6 +808,32 @@ static void rkcif_mipi_queue_buffer(stru
+ 				buffer->buff_addr[RKCIF_PLANE_UV]);
+ }
+ 
++/* one 16-bit format serves both sample depths, so the bus code picks */
++static const struct rkcif_output_fmt *
++rkcif_mipi_find_output_fmt(struct rkcif_stream *stream)
++{
++	const struct rkcif_output_fmt *fmt;
++	struct v4l2_subdev_state *state;
++	struct v4l2_mbus_framefmt *mf;
++	unsigned int i;
++	u32 code = 0;
++
++	state = v4l2_subdev_lock_and_get_active_state(&stream->interface->sd);
++	mf = v4l2_subdev_state_get_format(state, RKCIF_IF_PAD_SRC, stream->id);
++	if (mf)
++		code = mf->code;
++	v4l2_subdev_unlock_state(state);
++
++	for (i = 0; i < stream->out_fmts_num; i++) {
++		fmt = &stream->out_fmts[i];
++		if (fmt->fourcc == stream->pix.pixelformat &&
++		    fmt->mbus_code == code)
++			return fmt;
++	}
++
++	return NULL;
++}
++
+ static int rkcif_mipi_start_streaming(struct rkcif_stream *stream)
+ {
+ 	struct rkcif_interface *interface = stream->interface;
+@@ -728,8 +846,7 @@ static int rkcif_mipi_start_streaming(st
+ 
+ 	state = v4l2_subdev_lock_and_get_active_state(&interface->sd);
+ 
+-	active_out_fmt = rkcif_stream_find_output_fmt(stream, false,
+-						      stream->pix.pixelformat);
++	active_out_fmt = rkcif_mipi_find_output_fmt(stream);
+ 	if (!active_out_fmt)
+ 		goto out;
+ 
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-common.h
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-common.h
+@@ -11,6 +11,7 @@
+ #ifndef _RKCIF_COMMON_H
+ #define _RKCIF_COMMON_H
+ 
++#include <linux/platform_data/media/rkcif-toisp.h>
+ #include <linux/clk.h>
+ #include <linux/mutex.h>
+ #include <linux/regmap.h>
+@@ -125,6 +126,7 @@ struct rkcif_output_fmt {
+ 		struct {
+ 			u8 dt;
+ 			bool compact;
++			bool high_align;
+ 			enum rkcif_mipi_format_type type;
+ 		} mipi;
+ 	};
+@@ -157,6 +159,18 @@ struct rkcif_stream {
+ 	bool stopping;
+ 	wait_queue_head_t wq_stopped;
+ 
++	/* frames go to an in-kernel consumer instead of the vb2 queue */
++	struct {
++		struct v4l2_subdev sd;
++		const struct rkcif_toisp_ops *ops;
++		void *priv;
++		struct rkcif_buffer *bufs;
++		void **handles;
++		struct sg_table *sgts;
++		size_t size;
++		unsigned int num;
++	} toisp;
++
+ 	/* queue of available buffers plus spinlock that protects it */
+ 	spinlock_t driver_queue_lock;
+ 	struct list_head driver_queue;
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-stream.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-stream.c
+@@ -23,6 +23,7 @@
+ #define CIF_MIN_HEIGHT	 64
+ #define CIF_MAX_WIDTH	 8192
+ #define CIF_MAX_HEIGHT	 8192
++#define RKCIF_TOISP_BUFS 4
+ 
+ static inline struct rkcif_buffer *to_rkcif_buffer(struct vb2_v4l2_buffer *vb)
+ {
+@@ -71,6 +72,19 @@ static void rkcif_stream_complete_buffer
+ {
+ 	struct vb2_v4l2_buffer *vb = &buffer->vb;
+ 
++	if (stream->toisp.ops) {
++		struct rkcif_toisp_frame frame = {
++			.addr = buffer->buff_addr[RKCIF_PLANE_Y],
++			.sgt = &stream->toisp.sgts[buffer - stream->toisp.bufs],
++			.timestamp = ktime_get_ns(),
++			.sequence = stream->frame_idx++,
++			.cookie = buffer,
++		};
++
++		stream->toisp.ops->frame(stream->toisp.priv, &frame);
++		return;
++	}
++
+ 	vb->vb2_buf.timestamp = ktime_get_ns();
+ 	vb->sequence = stream->frame_idx;
+ 	vb2_buffer_done(&vb->vb2_buf, VB2_BUF_STATE_DONE);
+@@ -150,6 +164,14 @@ static void rkcif_stream_return_all_buff
+ {
+ 	struct rkcif_buffer *buffer;
+ 
++	if (stream->toisp.ops) {
++		stream->buffers[0] = NULL;
++		stream->buffers[1] = NULL;
++		while (rkcif_stream_pop_buffer(stream))
++			;
++		state = VB2_BUF_STATE_ERROR;
++	}
++
+ 	if (stream->buffers[0] && !stream->buffers[0]->is_dummy) {
+ 		rkcif_stream_return_buffer(stream->buffers[0], state);
+ 		stream->buffers[0] = NULL;
+@@ -248,10 +270,8 @@ static void rkcif_stream_queue_buffer(st
+ 	rkcif_stream_push_buffer(stream, buffer);
+ }
+ 
+-static int rkcif_stream_start_streaming(struct vb2_queue *queue,
+-					unsigned int count)
++static int rkcif_stream_hw_start(struct rkcif_stream *stream)
+ {
+-	struct rkcif_stream *stream = queue->drv_priv;
+ 	struct rkcif_device *rkcif = stream->rkcif;
+ 	u64 mask;
+ 	int ret;
+@@ -301,9 +321,14 @@ err_out:
+ 	return ret;
+ }
+ 
+-static void rkcif_stream_stop_streaming(struct vb2_queue *queue)
++static int rkcif_stream_start_streaming(struct vb2_queue *queue,
++					unsigned int count)
++{
++	return rkcif_stream_hw_start(queue->drv_priv);
++}
++
++static void rkcif_stream_hw_stop(struct rkcif_stream *stream)
+ {
+-	struct rkcif_stream *stream = queue->drv_priv;
+ 	struct rkcif_device *rkcif = stream->rkcif;
+ 	u64 mask;
+ 	int ret;
+@@ -326,6 +351,11 @@ static void rkcif_stream_stop_streaming(
+ 	video_device_pipeline_stop(&stream->vdev);
+ }
+ 
++static void rkcif_stream_stop_streaming(struct vb2_queue *queue)
++{
++	rkcif_stream_hw_stop(queue->drv_priv);
++}
++
+ static const struct vb2_ops rkcif_stream_vb2_ops = {
+ 	.queue_setup = rkcif_stream_setup_queue,
+ 	.buf_prepare = rkcif_stream_prepare_buffer,
+@@ -395,13 +425,25 @@ static int rkcif_stream_enum_formats(str
+ 				     struct v4l2_fmtdesc *f)
+ {
+ 	struct rkcif_stream *stream = video_drvdata(file);
++	const struct rkcif_output_fmt *fmt, *first;
++	unsigned int i, index = 0;
+ 
+-	if (f->index >= stream->out_fmts_num)
+-		return -EINVAL;
++	for (i = 0; i < stream->out_fmts_num; i++) {
++		fmt = &stream->out_fmts[i];
++		first = rkcif_stream_find_output_fmt(stream, false,
++						     fmt->fourcc);
++		if (f->mbus_code && fmt->mbus_code != f->mbus_code)
++			continue;
++		if (!f->mbus_code && fmt != first)
++			continue;
++		if (index++ != f->index)
++			continue;
+ 
+-	f->pixelformat = stream->out_fmts[f->index].fourcc;
++		f->pixelformat = fmt->fourcc;
++		return 0;
++	}
+ 
+-	return 0;
++	return -EINVAL;
+ }
+ 
+ static int rkcif_stream_enum_framesizes(struct file *file, void *fh,
+@@ -526,6 +568,232 @@ static int rkcif_stream_init_vb2_queue(s
+ 	return vb2_queue_init(q);
+ }
+ 
++static void rkcif_toisp_buffers_free(struct rkcif_stream *stream)
++{
++	unsigned int i;
++
++	while (rkcif_stream_pop_buffer(stream))
++		;
++
++	for (i = 0; i < stream->toisp.num; i++) {
++		sg_free_table(&stream->toisp.sgts[i]);
++		dma_free_attrs(stream->rkcif->dev, stream->toisp.size,
++			       stream->toisp.handles[i],
++			       stream->toisp.bufs[i].buff_addr[RKCIF_PLANE_Y],
++			       DMA_ATTR_NO_KERNEL_MAPPING);
++	}
++	kfree(stream->toisp.sgts);
++	kfree(stream->toisp.bufs);
++	kfree(stream->toisp.handles);
++	stream->toisp.sgts = NULL;
++	stream->toisp.bufs = NULL;
++	stream->toisp.handles = NULL;
++	stream->toisp.num = 0;
++}
++
++static int rkcif_toisp_buffers_alloc(struct rkcif_stream *stream, size_t size)
++{
++	unsigned int i;
++
++	stream->toisp.bufs = kcalloc(RKCIF_TOISP_BUFS,
++				     sizeof(*stream->toisp.bufs), GFP_KERNEL);
++	stream->toisp.handles = kcalloc(
++		RKCIF_TOISP_BUFS, sizeof(*stream->toisp.handles), GFP_KERNEL);
++	stream->toisp.sgts = kcalloc(RKCIF_TOISP_BUFS,
++				     sizeof(*stream->toisp.sgts), GFP_KERNEL);
++	if (!stream->toisp.bufs || !stream->toisp.handles ||
++	    !stream->toisp.sgts)
++		goto err;
++
++	stream->toisp.size = size;
++	for (i = 0; i < RKCIF_TOISP_BUFS; i++) {
++		struct rkcif_buffer *buf = &stream->toisp.bufs[i];
++
++		stream->toisp.handles[i] =
++			dma_alloc_attrs(stream->rkcif->dev, size,
++					&buf->buff_addr[RKCIF_PLANE_Y],
++					GFP_KERNEL, DMA_ATTR_NO_KERNEL_MAPPING);
++		if (!stream->toisp.handles[i])
++			goto err;
++		if (dma_get_sgtable_attrs(stream->rkcif->dev,
++					  &stream->toisp.sgts[i],
++					  stream->toisp.handles[i],
++					  buf->buff_addr[RKCIF_PLANE_Y], size,
++					  DMA_ATTR_NO_KERNEL_MAPPING)) {
++			dma_free_attrs(stream->rkcif->dev, size,
++				       stream->toisp.handles[i],
++				       buf->buff_addr[RKCIF_PLANE_Y],
++				       DMA_ATTR_NO_KERNEL_MAPPING);
++			goto err;
++		}
++		stream->toisp.num++;
++		rkcif_stream_push_buffer(stream, buf);
++	}
++
++	return 0;
++
++err:
++	rkcif_toisp_buffers_free(stream);
++	return -ENOMEM;
++}
++
++static void rkcif_toisp_release(struct rkcif_stream *stream)
++{
++	stream->toisp.ops->release(stream->toisp.priv);
++	stream->toisp.ops = NULL;
++	rkcif_toisp_buffers_free(stream);
++}
++
++static int rkcif_toisp_format_get(struct rkcif_stream *stream,
++				  struct rkcif_toisp_format *format)
++{
++	struct v4l2_subdev_state *state;
++	struct v4l2_mbus_framefmt *mf;
++
++	state = v4l2_subdev_lock_and_get_active_state(&stream->interface->sd);
++	mf = v4l2_subdev_state_get_format(state, RKCIF_IF_PAD_SRC, stream->id);
++	format->width = mf->width;
++	format->height = mf->height;
++	format->mbus_code = mf->code;
++	v4l2_subdev_unlock_state(state);
++
++	return 0;
++}
++
++static int rkcif_toisp_start(struct rkcif_stream *stream,
++			     struct rkcif_toisp_start *start)
++{
++	struct rkcif_toisp_cfg *cfg = &start->cfg;
++	const struct rkcif_toisp_ops *ops = start->ops;
++	void *priv = start->priv;
++	unsigned int i;
++	int ret;
++
++	mutex_lock(&stream->vlock);
++	if (vb2_is_busy(&stream->buf_queue) || stream->toisp.ops) {
++		ret = -EBUSY;
++		goto unlock;
++	}
++
++	stream->pix.pixelformat = cfg->pixelformat;
++	stream->pix.width = cfg->width;
++	stream->pix.height = cfg->height;
++	ret = rkcif_stream_fill_format(stream, &stream->pix);
++	if (ret)
++		goto unlock;
++
++	cfg->bytesperline = stream->pix.plane_fmt[0].bytesperline;
++	ret = rkcif_toisp_buffers_alloc(
++		stream, PAGE_ALIGN(cfg->bytesperline * cfg->height));
++	if (ret)
++		goto unlock;
++
++	stream->toisp.ops = ops;
++	stream->toisp.priv = priv;
++	for (i = 0; i < stream->toisp.num; i++) {
++		struct rkcif_toisp_frame frame = {
++			.addr = stream->toisp.bufs[i].buff_addr[RKCIF_PLANE_Y],
++			.sgt = &stream->toisp.sgts[i],
++			.cookie = &stream->toisp.bufs[i],
++		};
++
++		ret = ops->buffer(priv, &frame);
++		if (ret)
++			goto err_release;
++	}
++
++	ret = rkcif_stream_hw_start(stream);
++	if (ret)
++		goto err_release;
++
++	mutex_unlock(&stream->vlock);
++
++	return 0;
++
++err_release:
++	rkcif_toisp_release(stream);
++
++unlock:
++	mutex_unlock(&stream->vlock);
++
++	return ret;
++}
++
++static void rkcif_toisp_stop(struct rkcif_stream *stream)
++{
++	mutex_lock(&stream->vlock);
++	if (stream->toisp.ops) {
++		rkcif_stream_hw_stop(stream);
++		rkcif_toisp_release(stream);
++	}
++	mutex_unlock(&stream->vlock);
++}
++
++static long rkcif_toisp_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
++			      void *arg)
++{
++	struct rkcif_stream *stream =
++		container_of(sd, struct rkcif_stream, toisp.sd);
++
++	switch (cmd) {
++	case RKCIF_TOISP_CMD_FORMAT_GET:
++		return rkcif_toisp_format_get(stream, arg);
++	case RKCIF_TOISP_CMD_START:
++		return rkcif_toisp_start(stream, arg);
++	case RKCIF_TOISP_CMD_STOP:
++		rkcif_toisp_stop(stream);
++		return 0;
++	case RKCIF_TOISP_CMD_PUT_FRAME:
++		rkcif_stream_push_buffer(stream, arg);
++		return 0;
++	}
++
++	return -ENOIOCTLCMD;
++}
++
++static const struct v4l2_subdev_core_ops rkcif_toisp_core_ops = {
++	.ioctl = rkcif_toisp_ioctl,
++};
++
++static const struct v4l2_subdev_ops rkcif_toisp_subdev_ops = {
++	.core = &rkcif_toisp_core_ops,
++};
++
++static int rkcif_toisp_register(struct rkcif_stream *stream)
++{
++	struct v4l2_subdev *sd = &stream->toisp.sd;
++	int ret;
++
++	v4l2_subdev_init(sd, &rkcif_toisp_subdev_ops);
++	sd->dev = stream->rkcif->dev;
++	sd->owner = THIS_MODULE;
++	snprintf(sd->name, sizeof(sd->name), "rkcif-toisp");
++	sd->entity.function = MEDIA_ENT_F_VID_IF_BRIDGE;
++
++	ret = media_entity_pads_init(&sd->entity, 0, NULL);
++	if (ret)
++		return ret;
++
++	ret = v4l2_async_register_subdev(sd);
++	if (ret)
++		media_entity_cleanup(&sd->entity);
++
++	return ret;
++}
++
++static void rkcif_toisp_unregister(struct rkcif_stream *stream)
++{
++	rkcif_toisp_stop(stream);
++	v4l2_async_unregister_subdev(&stream->toisp.sd);
++	media_entity_cleanup(&stream->toisp.sd.entity);
++}
++
++static bool rkcif_stream_is_toisp(struct rkcif_stream *stream)
++{
++	return stream->interface->index == RKCIF_MIPI_BASE &&
++	       stream->id == RKCIF_ID0;
++}
++
+ int rkcif_stream_register(struct rkcif_device *rkcif,
+ 			  struct rkcif_stream *stream)
+ {
+@@ -598,6 +866,12 @@ int rkcif_stream_register(struct rkcif_d
+ 		goto err_video_unregister;
+ 	}
+ 
++	if (rkcif_stream_is_toisp(stream)) {
++		ret = rkcif_toisp_register(stream);
++		if (ret)
++			goto err_video_unregister;
++	}
++
+ 	v4l2_info(v4l2_dev, "registered %s as /dev/video%d\n", vdev->name,
+ 		  vdev->num);
+ 
+@@ -612,6 +886,8 @@ err_media_entity_cleanup:
+ 
+ void rkcif_stream_unregister(struct rkcif_stream *stream)
+ {
++	if (rkcif_stream_is_toisp(stream))
++		rkcif_toisp_unregister(stream);
+ 	video_unregister_device(&stream->vdev);
+ 	media_entity_cleanup(&stream->vdev.entity);
+ }
+--- /dev/null
++++ b/include/linux/platform_data/media/rkcif-toisp.h
+@@ -0,0 +1,68 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Rockchip Camera Interface (CIF): in-kernel frame consumer interface.
++ *
++ * Lets an ISP take the frames of a MIPI stream directly instead of a
++ * user space queue: rkcif owns the buffers, hands every completed frame to
++ * the consumer and gets the buffer back when the consumer is done with it.
++ *
++ * rkcif registers a V4L2 subdevice for this; a consumer binds it through a
++ * V4L2 async notifier and issues the commands below with the subdevice core
++ * ioctl operation.
++ */
++
++#ifndef _RKCIF_TOISP_H
++#define _RKCIF_TOISP_H
++
++#include <linux/scatterlist.h>
++#include <linux/types.h>
++
++struct rkcif_toisp_frame {
++	dma_addr_t addr;
++	struct sg_table *sgt;
++	u64 timestamp;
++	u32 sequence;
++	void *cookie;
++};
++
++struct rkcif_toisp_cfg {
++	u32 pixelformat;
++	u32 width;
++	u32 height;
++	u32 bytesperline;
++};
++
++struct rkcif_toisp_ops {
++	/* called in process context for every buffer before the stream starts */
++	int (*buffer)(void *priv, const struct rkcif_toisp_frame *frame);
++	/* called in process context once the stream is stopped, before the
++	 * buffers are freed */
++	void (*release)(void *priv);
++	/* called from interrupt context for every completed frame */
++	void (*frame)(void *priv, const struct rkcif_toisp_frame *frame);
++};
++
++enum rkcif_toisp_cmd {
++	/* arg: struct rkcif_toisp_format, filled in */
++	RKCIF_TOISP_CMD_FORMAT_GET = 1,
++	/* arg: struct rkcif_toisp_start; cfg.bytesperline is returned */
++	RKCIF_TOISP_CMD_START,
++	/* arg: unused */
++	RKCIF_TOISP_CMD_STOP,
++	/* arg: the cookie of the frame to return */
++	RKCIF_TOISP_CMD_PUT_FRAME,
++};
++
++struct rkcif_toisp_format {
++	u32 width;
++	u32 height;
++	u32 mbus_code;
++};
++
++struct rkcif_toisp_start {
++	struct rkcif_toisp_cfg cfg;
++	const struct rkcif_toisp_ops *ops;
++	void *priv;
++};
++
++#endif

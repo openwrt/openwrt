@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: dsa: pass bridge multicast snooping changes to drivers
+
+A bridge announces a change of its multicast snooping state with
+SWITCHDEV_ATTR_ID_BRIDGE_MC_DISABLED, but DSA has no handler for it. A
+switch that holds permanent MDB entries in hardware keeps forwarding by
+them while the bridge floods multicast.
+
+Add an optional port_bridge_mcast_snooping operation and call it for that
+attribute, so a driver can remove or replay its MDB entries. Drivers that
+do not implement it behave as before.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+---
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -1055,6 +1055,9 @@ struct dsa_switch_ops {
+ 				     struct netlink_ext_ack *extack);
+ 	void	(*port_set_host_flood)(struct dsa_switch *ds, int port,
+ 				       bool uc, bool mc);
++	/* Synchronize static multicast entries with bridge snooping changes. */
++	int	(*port_bridge_mcast_snooping)(struct dsa_switch *ds, int port,
++					      bool enabled);
+ 
+ 	/*
+ 	 * VLAN support
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -620,6 +620,15 @@ static int dsa_user_port_attr_set(struct
+ 
+ 		ret = dsa_port_vlan_protocol(dp, attr->u.vlan_protocol, extack);
+ 		break;
++	case SWITCHDEV_ATTR_ID_BRIDGE_MC_DISABLED:
++		if ((!dsa_port_offloads_bridge_dev(dp, attr->orig_dev) &&
++		     !dsa_port_offloads_bridge_port(dp, attr->orig_dev)) ||
++		    !dp->ds->ops->port_bridge_mcast_snooping)
++			return -EOPNOTSUPP;
++
++		ret = dp->ds->ops->port_bridge_mcast_snooping(dp->ds, dp->index,
++							    !attr->u.mc_disabled);
++		break;
+ 	case SWITCHDEV_ATTR_ID_BRIDGE_AGEING_TIME:
+ 		if (!dsa_port_offloads_bridge_dev(dp, attr->orig_dev))
+ 			return -EOPNOTSUPP;

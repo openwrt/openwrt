@@ -1,0 +1,35 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] AP MLD: wait up to two beacon intervals for the frames of a
+ removed link
+
+After the removal TBTT, hostapd waits a quarter of a beacon interval for
+the TX status of the Disassociation and Deauthentication frames before
+it stops the link. The driver holds such a frame for a STA in power save
+or off the channel until the STA is back, which is often after the next
+Beacon frame, and the stop of the link drops it. A STA then learns of
+the removal only by its link loss.
+
+IEEE Std 802.11be-2024, 35.3.6.3 has the frame sent before the BSS
+terminates and lets the BSS terminate after the TBTT. Wait up to two
+beacon intervals. The TX status of the last frame still ends the wait,
+so the link stops as before where every STA is awake. removal_ms grows
+by the same amount and stays the latest time the link stops.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -537,9 +537,12 @@ static void hostapd_link_remove_timeout_register(struct hostapd_data *hapd)
+ }
+ 
+ 
++/* The driver holds the frame to a STA in power save or off the channel until
++ * the STA is back, which is often after the next Beacon frame, and the end of
++ * the BSS drops it */
+ static unsigned int hostapd_link_remove_tx_wait_us(struct hostapd_data *hapd)
+ {
+-	return TU_TO_USEC(hapd->iconf->beacon_int) / 4;
++	return 2 * TU_TO_USEC(hapd->iconf->beacon_int);
+ }
+ 
+ 

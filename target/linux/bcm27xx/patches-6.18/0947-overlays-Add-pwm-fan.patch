@@ -1,0 +1,225 @@
+From ee1a32961358a1adcaba4950d14f6765a3bd7593 Mon Sep 17 00:00:00 2001
+From: zumbiepig <121742281+zumbiepig@users.noreply.github.com>
+Date: Fri, 4 Sep 2026 07:49:41 -0700
+Subject: [PATCH] overlays: Add pwm-fan
+
+Why: the pwm-gpio-fan overlay that was added it really loud since it
+runs at 50hz (20ms cycle) and hardware pwm does 25khz (40ns cycle).
+
+This uses hardware pwm so it runs quiet and the only downside is that
+you get worse audio quality, but many people dont use their Raspberry
+Pi with audio.
+
+Signed-off-by: zumbiepig <121742281+zumbiepig@users.noreply.github.com>
+---
+ arch/arm/boot/dts/overlays/Makefile           |   1 +
+ arch/arm/boot/dts/overlays/README             |  33 ++++
+ .../arm/boot/dts/overlays/pwm-fan-overlay.dts | 150 ++++++++++++++++++
+ 3 files changed, 184 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/pwm-fan-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -238,6 +238,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
+ 	proto-codec.dtbo \
+ 	pwm.dtbo \
+ 	pwm-2chan.dtbo \
++	pwm-fan.dtbo \
+ 	pwm-gpio.dtbo \
+ 	pwm-gpio-fan.dtbo \
+ 	pwm-ir-tx.dtbo \
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -4369,6 +4369,39 @@ Params: pin                     Output p
+         clock                   PWM clock frequency (informational)
+ 
+ 
++Name:   pwm-fan
++Info:   Configure a PWM GPIO pin to control a cooling fan.
++Load:   dtoverlay=pwm-fan,<param>=<val>
++Params: fan_gpio_12             Use GPIO12 (PWM0) to control the fan.
++        fan_gpio_18             Use GPIO18 (PWM0) to control the fan (default).
++        fan_gpio_13             Use GPIO13 (PWM1) to control the fan.
++        fan_gpio_19             Use GPIO19 (PWM1) to control the fan.
++        fan_temp0               Temperature threshold (in millicelsius) for
++                                1st cooling level (default 50000).
++        fan_temp0_hyst          Temperature hysteresis (in millicelsius) for
++                                1st cooling level (default 5000).
++        fan_temp0_speed         Fan PWM setting for 1st cooling level (0-255,
++                                default 75).
++        fan_temp1               Temperature threshold (in millicelsius) for
++                                2nd cooling level (default 60000).
++        fan_temp1_hyst          Temperature hysteresis (in millicelsius) for
++                                2nd cooling level (default 5000).
++        fan_temp1_speed         Fan PWM setting for 2nd cooling level (0-255,
++                                default 125).
++        fan_temp2               Temperature threshold (in millicelsius) for
++                                3rd cooling level (default 67500).
++        fan_temp2_hyst          Temperature hysteresis (in millicelsius) for
++                                3rd cooling level (default 5000).
++        fan_temp2_speed         Fan PWM setting for 3rd cooling level (0-255,
++                                default 175).
++        fan_temp3               Temperature threshold (in millicelsius) for
++                                4th cooling level (default 75000).
++        fan_temp3_hyst          Temperature hysteresis (in millicelsius) for
++                                4th cooling level (default 5000).
++        fan_temp3_speed         Fan PWM setting for 4th cooling level (0-255,
++                                default 250).
++
++
+ Name:   pwm-gpio
+ Info:   Configures the software PWM GPIO driver
+ Load:   dtoverlay=pwm-gpio,<param>=<val>
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/pwm-fan-overlay.dts
+@@ -0,0 +1,150 @@
++/*
++ * Overlay for a GPIO connected PWM cooling fan.
++ * References:
++ *  - https://forums.raspberrypi.com/viewtopic.php?t=363655
++ *
++ * Optional parameters:
++ *  - "fan_gpio_12" - Use GPIO12 (PWM0) to control the fan;
++ *  - "fan_gpio_18" - Use GPIO18 (PWM0) to control the fan (default);
++ *  - "fan_gpio_13" - Use GPIO13 (PWM1) to control the fan;
++ *  - "fan_gpio_19" - Use GPIO19 (PWM1) to control the fan;
++ *  - "fan_temp0" - Temperature threshold (in millicelsius) for 1st cooling level (default 50000);
++ *  - "fan_temp0_hyst" - Temperature hysteresis (in millicelsius) for 1st cooling level (default 5000);
++ *  - "fan_temp0_speed" - Fan PWM setting for 1st cooling level (0-255, default 75);
++ *  - "fan_temp1" - Temperature threshold (in millicelsius) for 2nd cooling level (default 60000);
++ *  - "fan_temp1_hyst" - Temperature hysteresis (in millicelsius) for 2nd cooling level (default 5000);
++ *  - "fan_temp1_speed" - Fan PWM setting for 2nd cooling level (0-255, default 125);
++ *  - "fan_temp2" - Temperature threshold (in millicelsius) for 3rd cooling level (default 67500);
++ *  - "fan_temp2_hyst" - Temperature hysteresis (in millicelsius) for 3rd cooling level (default 5000);
++ *  - "fan_temp2_speed" - Fan PWM setting for 3rd cooling level (0-255, default 175);
++ *  - "fan_temp3" - Temperature threshold (in millicelsius) for 4th cooling level (default 75000);
++ *  - "fan_temp3_hyst" - Temperature hysteresis (in millicelsius) for 4th cooling level (default 5000);
++ *  - "fan_temp3_speed" - Fan PWM setting for 4th cooling level (0-255, default 250);
++ *
++ * Build:
++ *  - `sudo dtc -W no-unit_address_vs_reg -@ -I dts -O dtb -o /boot/firmware/overlays/pwm-fan.dtbo pwm-fan-overlay.dts`
++ *
++ * Activate:
++ *  - `sudo nano /boot/config.txt` add "dtoverlay=pwm-fan"
++ */
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835";
++
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			pwm_pins: pwm_pins {
++				brcm,pins = <18>;
++				brcm,function = <2>;
++				brcm,pull = <0>;
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&pwm>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm_pins>;
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target-path = "/";
++		__overlay__ {
++			fan: pwm-fan {
++				compatible = "pwm-fan";
++				#cooling-cells = <2>;
++				pwms = <&pwm 0 40000 0>;
++				cooling-min-state = <0>;
++				cooling-max-state = <4>;
++				cooling-levels = <0 75 125 175 250>;
++			};
++		};
++	};
++
++	fragment@3 {
++		target = <&thermal_trips>;
++		__overlay__ {
++			cpu_tepid: cpu-tepid {
++				temperature = <50000>;
++				hysteresis = <5000>;
++				type = "active";
++			};
++
++			cpu_warm: cpu-warm {
++				temperature = <60000>;
++				hysteresis = <5000>;
++				type = "active";
++			};
++
++			cpu_hot: cpu-hot {
++				temperature = <67500>;
++				hysteresis = <5000>;
++				type = "active";
++			};
++
++			cpu_vhot: cpu-vhot {
++				temperature = <75000>;
++				hysteresis = <5000>;
++				type = "active";
++			};
++		};
++	};
++
++	fragment@4 {
++		target = <&cooling_maps>;
++		__overlay__ {
++			tepid {
++				trip = <&cpu_tepid>;
++				cooling-device = <&fan 1 1>;
++			};
++
++			warm {
++				trip = <&cpu_warm>;
++				cooling-device = <&fan 2 2>;
++			};
++
++			hot {
++				trip = <&cpu_hot>;
++				cooling-device = <&fan 3 3>;
++			};
++
++			vhot {
++				trip = <&cpu_vhot>;
++				cooling-device = <&fan 4 4>;
++			};
++		};
++	};
++
++	__overrides__ {
++		fan_gpio_12 = <&pwm_pins>,"brcm,pins:0=12",
++		              <&pwm_pins>,"brcm,function:0=4",
++		              <&fan>,"pwms:4=0";
++		fan_gpio_18 = <&pwm_pins>,"brcm,pins:0=18",
++		              <&pwm_pins>,"brcm,function:0=2",
++		              <&fan>,"pwms:4=0";
++		fan_gpio_13 = <&pwm_pins>,"brcm,pins:0=13",
++		              <&pwm_pins>,"brcm,function:0=4",
++		              <&fan>,"pwms:4=1";
++		fan_gpio_19 = <&pwm_pins>,"brcm,pins:0=19",
++		              <&pwm_pins>,"brcm,function:0=2",
++		              <&fan>,"pwms:4=1";
++		fan_temp0 = <&cpu_tepid>,"temperature:0";
++		fan_temp0_hyst = <&cpu_tepid>,"hysteresis:0";
++		fan_temp0_speed = <&fan>,"cooling-levels:4";
++		fan_temp1 = <&cpu_warm>,"temperature:0";
++		fan_temp1_hyst = <&cpu_warm>,"hysteresis:0";
++		fan_temp1_speed = <&fan>,"cooling-levels:8";
++		fan_temp2 = <&cpu_hot>,"temperature:0";
++		fan_temp2_hyst = <&cpu_hot>,"hysteresis:0";
++		fan_temp2_speed = <&fan>,"cooling-levels:12";
++		fan_temp3 = <&cpu_vhot>,"temperature:0";
++		fan_temp3_hyst = <&cpu_vhot>,"hysteresis:0";
++		fan_temp3_speed = <&fan>,"cooling-levels:16";
++	};
++};

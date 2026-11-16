@@ -1,0 +1,88 @@
+--- a/src/drv_mei_cpe_linux.c
++++ b/src/drv_mei_cpe_linux.c
+@@ -1534,7 +1534,7 @@ struct proc_entry {
+    char name[32];
+    proc_rd_callback_t rd;
+    proc_wr_callback_t wr;
+-   struct file_operations ops;
++   struct proc_ops ops;
+    int entity;
+ };
+ 
+@@ -2068,16 +2068,15 @@ static int mei_proc_single_open(struct i
+ static void mei_proc_entry_create(struct proc_dir_entry *parent_node,
+                                   struct proc_entry *proc_entry)
+ {
+-   memset(&proc_entry->ops, 0, sizeof(struct file_operations));
+-   proc_entry->ops.owner = THIS_MODULE;
++   memset(&proc_entry->ops, 0, sizeof(struct proc_ops));
+ 
+-   proc_entry->ops.open = mei_proc_single_open;
+-   proc_entry->ops.release = single_release;
++   proc_entry->ops.proc_open = mei_proc_single_open;
++   proc_entry->ops.proc_release = single_release;
+ 
+-   proc_entry->ops.read = seq_read;
+-   proc_entry->ops.llseek = seq_lseek;
++   proc_entry->ops.proc_read = seq_read;
++   proc_entry->ops.proc_lseek = seq_lseek;
+    if (proc_entry->wr)
+-      proc_entry->ops.write = proc_entry->wr;
++      proc_entry->ops.proc_write = proc_entry->wr;
+ 
+    proc_create_data(proc_entry->name,
+                      (S_IFREG | S_IRUGO),
+--- a/src/drv_mei_cpe_linux.h
++++ b/src/drv_mei_cpe_linux.h
+@@ -31,6 +31,7 @@
+ #include <linux/module.h>
+ 
+ #include <linux/sched.h>
++#include <linux/sched/signal.h>
+ #include <linux/interrupt.h>
+ #include <linux/version.h>
+ #include <linux/crc32.h>
+@@ -122,7 +123,7 @@ typedef int (*MEI_RequestIrq_WrapLinux_t
+ /**
+    Function typedef for the Linux free_irq()
+ */
+-typedef void (*MEI_FreeIrq_WrapLinux_t)( unsigned int usedIrq,
++typedef const void *(*MEI_FreeIrq_WrapLinux_t)( unsigned int usedIrq,
+                                            void *usedDevId );
+ 
+ 
+--- a/src/drv_mei_cpe_linux_proc_config.c
++++ b/src/drv_mei_cpe_linux_proc_config.c
+@@ -1277,13 +1277,12 @@ static int mei_proc_single_open(struct i
+ 	return single_open(file, mei_seq_single_show, PDE_DATA(inode));
+ }
+ 
+-static struct file_operations proc_ops = {
+-   .owner = THIS_MODULE,
+-   .open = mei_proc_single_open,
+-   .release = single_release,
+-   .read = seq_read,
+-   .llseek = seq_lseek,
+-   .write = MEI_ProcWriteConfig
++static struct proc_ops proc_ops = {
++   .proc_open = mei_proc_single_open,
++   .proc_release = single_release,
++   .proc_read = seq_read,
++   .proc_lseek = seq_lseek,
++   .proc_write = MEI_ProcWriteConfig
+ };
+ 
+ /**
+--- a/src/mei_cpe_appl_osmap.h
++++ b/src/mei_cpe_appl_osmap.h
+@@ -38,10 +38,6 @@ extern "C"
+ #include <errno.h>
+ #include <ctype.h>
+ #include <sys/ioctl.h>
+-
+-extern int snprintf (char *__restrict __s, size_t __maxlen,
+-           __const char *__restrict __format, ...)
+-     __THROW __attribute__ ((__format__ (__printf__, 3, 4)));
+ #endif
+ 
+ /* ==========================================================================

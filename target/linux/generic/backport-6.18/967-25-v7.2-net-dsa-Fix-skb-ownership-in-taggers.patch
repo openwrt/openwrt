@@ -1,0 +1,86 @@
+From d4be5f6f9094c7c7e96b2fef6d030e23ce9211f3 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linusw@kernel.org>
+Date: Thu, 25 Jun 2026 09:47:01 +0200
+Subject: [PATCH] net: dsa: Fix skb ownership in taggers
+
+The tag_8021q.c tagger calls vlan_insert_tag() in dsa_8021q_xmit().
+vlan_insert_tag() will consume the skb with kfree_skb() on failure
+and return NULL.
+
+When NULL is returned as error code to ->xmit() in dsa_user_xmit()
+it will free the same skb again leading to a double-free.
+
+The idea of dsa_user_xmit() and dsa_switch_rcv() dropping the skb
+they held before the call to ->xmit() and ->rcv() is conceptually
+wrong: the pattern elsewhere in the networking code is that consumers
+drop their skb:s on failure.
+
+Modify the ->xmit() and ->rcv() call sites to not drop the SKB if
+the taggers return NULL from any of these calls. Move those drops into
+the taggers so every callback error path that retains ownership consumes
+the skb before returning NULL.
+
+Keep the existing helper ownership rules: VLAN insertion helpers already
+free on failure (this is the case in tag_8021q.c), while deferred
+transmit paths either transfer the skb reference to worker context or
+hold a worker reference with skb_get() and drop the caller's reference.
+
+For SJA1105 meta RX, transfer the buffered stampable skb under the meta
+lock and return NULL while the skb is waiting for its meta frame: the
+skb is not dropped in this case.
+
+NOTICE: Backporting patches to taggers (e.g. for stable kernels) after
+this point cannot be mechanical or they will introduce double
+kfree_skb().
+
+Reported-by: Sashiko AI Review <sashiko-bot@kernel.org>
+Closes: https://lore.kernel.org/r/20260610153952.1685895-1-kuba@kernel.org/
+Suggested-by: Jakub Kicinski <kuba@kernel.org>
+Acked-by: David Yang <mmyangfl@gmail.com> # yt921x
+Acked-by: Kurt Kanzenbach <kurt@linutronix.de> # hellcreek
+Reviewed-by: Wei Fang <wei.fang@nxp.com> # netc
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+Link: https://patch.msgid.link/20260625-dsa-fix-free-skb-v5-1-b5931e4cbdb0@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ net/dsa/tag_yt921x.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/net/dsa/tag_yt921x.c
++++ b/net/dsa/tag_yt921x.c
+@@ -87,8 +87,10 @@ yt921x_tag_rcv(struct sk_buff *skb, stru
+ 	__be16 *tag;
+ 	u16 rx;
+ 
+-	if (unlikely(!pskb_may_pull(skb, YT921X_TAG_LEN)))
++	if (unlikely(!pskb_may_pull(skb, YT921X_TAG_LEN))) {
++		kfree_skb(skb);
+ 		return NULL;
++	}
+ 
+ 	tag = dsa_etype_header_pos_rx(skb);
+ 
+@@ -96,6 +98,7 @@ yt921x_tag_rcv(struct sk_buff *skb, stru
+ 		dev_warn_ratelimited(&netdev->dev,
+ 				     "Unexpected EtherType 0x%04x\n",
+ 				     ntohs(tag[0]));
++		kfree_skb(skb);
+ 		return NULL;
+ 	}
+ 
+@@ -104,6 +107,7 @@ yt921x_tag_rcv(struct sk_buff *skb, stru
+ 	if (unlikely((rx & YT921X_TAG_PORT_EN) == 0)) {
+ 		dev_warn_ratelimited(&netdev->dev,
+ 				     "Unexpected rx tag 0x%04x\n", rx);
++		kfree_skb(skb);
+ 		return NULL;
+ 	}
+ 
+@@ -112,6 +116,7 @@ yt921x_tag_rcv(struct sk_buff *skb, stru
+ 	if (unlikely(!skb->dev)) {
+ 		dev_warn_ratelimited(&netdev->dev,
+ 				     "Couldn't decode source port %u\n", port);
++		kfree_skb(skb);
+ 		return NULL;
+ 	}
+ 

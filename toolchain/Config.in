@@ -1,0 +1,540 @@
+# Copyright (C) 2006-2013 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+menuconfig TARGET_OPTIONS
+	bool "Target Options"  if DEVEL
+
+	config TARGET_OPTIMIZATION
+		string "Target Optimizations" if TARGET_OPTIONS
+		default DEFAULT_TARGET_OPTIMIZATION
+		help
+		  Optimizations to use when building for the target host.
+
+	config SOFT_FLOAT
+		bool "Use software floating point by default" if TARGET_OPTIONS
+		default y if !HAS_FPU
+		depends on arm || armeb || powerpc || mipsel || mips || mips64el || mips64
+		help
+		  If your target CPU does not have a Floating Point Unit (FPU) or a
+		  kernel FPU emulator, but you still wish to support floating point
+		  functions, then everything will need to be compiled with soft floating
+		  point support (-msoft-float).
+
+		  Most people will answer N.
+
+	config USE_MIPS16
+		bool "Build packages with MIPS16 instructions" if TARGET_OPTIONS
+		depends on HAS_MIPS16
+		default y
+		help
+		  If your target CPU does support the MIPS16 instruction set
+		  and you want to use it for packages, enable this option.
+		  MIPS16 produces smaller binaries thus reducing pressure on
+		  caches and TLB.
+
+		  Most people will answer N.
+
+
+	choice BPF_TOOLCHAIN
+		prompt "BPF toolchain" if DEVEL
+		default BPF_TOOLCHAIN_PREBUILT if HAS_PREBUILT_LLVM_TOOLCHAIN
+		default BPF_TOOLCHAIN_BUILD_LLVM
+
+		config BPF_TOOLCHAIN_NONE
+			bool "None"
+
+		config BPF_TOOLCHAIN_PREBUILT
+			bool "Use prebuilt LLVM toolchain"
+			depends on HAS_PREBUILT_LLVM_TOOLCHAIN
+			select USE_LLVM_PREBUILT
+
+		config BPF_TOOLCHAIN_HOST
+			select USE_LLVM_HOST
+			bool "Use host LLVM toolchain"
+
+		config BPF_TOOLCHAIN_BUILD_LLVM
+			select USE_LLVM_BUILD if NEED_BPF_TOOLCHAIN
+			bool "Build LLVM toolchain for eBPF"
+			help
+			  If enabled, a LLVM toolchain for building eBPF binaries will be built.
+			  If this is not enabled, eBPF packages can only be built if the host
+			  has a suitable toolchain
+	endchoice
+
+	config BPF_TOOLCHAIN_HOST_PATH
+		string
+		depends on BPF_TOOLCHAIN_HOST
+		prompt "Host LLVM toolchain path (prefix)" if DEVEL
+		default "/usr/local/opt/llvm" if HOST_OS_MACOS
+		default ""
+
+menuconfig EXTERNAL_TOOLCHAIN
+	bool
+	prompt "Use external toolchain"  if DEVEL
+	help
+	  If enabled, the buildroot will compile using an existing toolchain instead of
+	  compiling one.
+
+	config NATIVE_TOOLCHAIN
+		bool
+		prompt "Use host's toolchain"  if DEVEL
+		depends on EXTERNAL_TOOLCHAIN
+		select NO_STRIP
+		help
+		  If enabled, the buildroot will compile using the native toolchain for your
+		  host instead of compiling one.
+
+	config TARGET_NAME
+		string
+		prompt "Target name"  if DEVEL
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "aarch64-unknown-linux-gnu"  if aarch64
+		default "aarch64_be-unknown-linux-gnu"  if aarch64_be
+		default "arm-unknown-linux-gnu"      if arm
+		default "armeb-unknown-linux-gnu"    if armeb
+		default "i486-unknown-linux-gnu"     if i386
+		default "loongarch64-unknown-linux-gnu" if loongarch64
+		default "mips-unknown-linux-gnu"     if mips
+		default "mipsel-unknown-linux-gnu"   if mipsel
+		default "powerpc-unknown-linux-gnu"  if powerpc
+		default "x86_64-unknown-linux-gnu"   if x86_64
+
+	config TOOLCHAIN_PREFIX
+		string
+		prompt "Toolchain prefix"  if DEVEL
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "aarch64-unknown-linux-gnu"  if aarch64
+		default "aarch64_be-unknown-linux-gnu"  if aarch64_be
+		default "arm-unknown-linux-gnu-"      if arm
+		default "armeb-unknown-linux-gnu-"    if armeb
+		default "i486-unknown-linux-gnu-"     if i386
+		default "loongarch64-unknown-linux-gnu-" if loongarch64
+		default "mips-unknown-linux-gnu-"     if mips
+		default "mipsel-unknown-linux-gnu-"   if mipsel
+		default "powerpc-unknown-linux-gnu-"  if powerpc
+		default "x86_64-unknown-linux-gnu-"   if x86_64
+
+	config TOOLCHAIN_ROOT
+		string
+		prompt "Toolchain root"  if DEVEL
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "/opt/cross/aarch64-unknown-linux-gnu"  if aarch64
+		default "/opt/cross/aarch64_be-unknown-linux-gnu"  if aarch64_be
+		default "/opt/cross/arm-unknown-linux-gnu"      if arm
+		default "/opt/cross/armeb-unknown-linux-gnu"    if armeb
+		default "/opt/cross/i486-unknown-linux-gnu"     if i386
+		default "/opt/cross/loongarch64-unknown-linux-gnu" if loongarch64
+		default "/opt/cross/mips-unknown-linux-gnu"     if mips
+		default "/opt/cross/mipsel-unknown-linux-gnu"   if mipsel
+		default "/opt/cross/powerpc-unknown-linux-gnu"  if powerpc
+		default "/opt/cross/x86_64-unknown-linux-gnu"   if x86_64
+
+	choice TOOLCHAIN_LIBC_TYPE
+		prompt "Toolchain libc"  if DEVEL
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL
+		help
+		  Specify the libc type used by the external toolchain. The given value
+		  is passed as -m flag to all gcc and g++ invocations. This is mainly
+		  intended for multilib toolchains which support glibc and uclibc at
+		  the same time. If no value is specified, no -m flag is passed.
+
+		config EXTERNAL_TOOLCHAIN_LIBC_USE_GLIBC
+			bool "glibc"
+			select USE_GLIBC
+
+		config EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL
+			bool "musl"
+			select USE_MUSL
+
+	endchoice
+
+	config EXTERNAL_GCC_VERSION
+		string
+		prompt "External Toolchain GCC Version" if DEVEL
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		help
+		  Manually specify the GCC version used by the selected
+		  external toolchain.
+
+	config TOOLCHAIN_LIBC
+		string
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "glibc" if EXTERNAL_TOOLCHAIN_LIBC_USE_GLIBC
+		default "musl" if EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL
+
+	config TOOLCHAIN_BIN_PATH
+		string
+		prompt "Toolchain program path"  if DEVEL
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "./usr/bin ./bin"
+		help
+		  Specify additional directories searched for toolchain binaries
+		  (override PATH). Use ./DIR for directories relative to the root above.
+
+	config TOOLCHAIN_INC_PATH
+		string
+		prompt "Toolchain include path"  if DEVEL
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "./usr/include ./include/fortify ./include" if EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL
+		default "./usr/include ./include"
+		help
+		  Specify additional directories searched for header files (override
+		  CPPFLAGS). Use ./DIR for directories relative to the root above.
+
+	config TOOLCHAIN_LIB_PATH
+		string
+		prompt "Toolchain library path"  if DEVEL
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "./usr/lib ./lib"
+		help
+		  Specify additional directories searched for libraries (override LDFLAGS).
+		  Use ./DIR for directories relative to the root above.
+
+	config EXTERNAL_TOOLCHAIN_IB
+		bool
+		prompt "Allow Imagebuilder with external toolchain" if DEVEL
+		depends on EXTERNAL_TOOLCHAIN
+		default n
+		help
+		  Allows selecting to build ImageBuilder even with external toolchain.
+
+	config EXTERNAL_TOOLCHAIN_SDK
+		bool
+		prompt "Allow SDK with external toolchain" if DEVEL
+		depends on EXTERNAL_TOOLCHAIN
+		default n
+		help
+		  Allows selecting to build SDK even with external toolchain.
+
+config NEED_TOOLCHAIN
+	bool
+	depends on DEVEL
+	default y if !EXTERNAL_TOOLCHAIN
+
+menuconfig TOOLCHAINOPTS
+	bool "Toolchain Options"  if DEVEL
+	depends on NEED_TOOLCHAIN
+
+menuconfig EXTRA_TARGET_ARCH
+	bool
+	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS
+	help
+	  Some builds may require a 'biarch' toolchain. This option
+	  allows you to specify an additional target arch.
+
+	  Most people will answer N here.
+
+	config EXTRA_TARGET_ARCH_NAME
+		string
+		prompt "Extra architecture name" if EXTRA_TARGET_ARCH
+		help
+		  Specify the cpu name (eg powerpc64 or x86_64) of the
+		  additional target architecture.
+
+	config EXTRA_TARGET_ARCH_OPTS
+		string
+		prompt "Extra architecture compiler options" if EXTRA_TARGET_ARCH
+		help
+		  If you're specifying an addition target architecture,
+		  you'll probably need to also provide options to make
+		  the compiler use this alternate arch.
+
+		  For example, if you're building a compiler that can build
+		  both powerpc and powerpc64 binaries, you'll need to
+		  specify -m64 here.
+
+
+	choice
+		prompt "MIPS64 user-land ABI" if TOOLCHAINOPTS && (mips64 || mips64el)
+		default MIPS64_ABI_N64
+		help
+		   MIPS64 supports 3 different user-land ABIs: o32 (legacy),
+		   n32 and n64.
+
+		config MIPS64_ABI_N64
+			bool "n64"
+
+		config MIPS64_ABI_N32
+			depends on !LIBC_USE_MUSL
+			bool "n32"
+
+		config MIPS64_ABI_O32
+			bool "o32"
+
+	endchoice
+
+comment "Binary tools"
+	depends on TOOLCHAINOPTS
+
+source "toolchain/binutils/Config.in"
+
+config DWARVES
+	bool
+	prompt "Build pahole" if TOOLCHAINOPTS
+	depends on !HOST_OS_MACOS
+	help
+	  Enable if you want to build pahole and the dwarves tools.
+
+comment "Compiler"
+	depends on TOOLCHAINOPTS
+
+source "toolchain/gcc/Config.in"
+
+config NASM
+	bool
+	depends on ( i386 || x86_64 )
+	prompt "Build nasm" if TOOLCHAINOPTS
+	default y
+	help
+	  Enable if you want to build nasm
+
+comment "C Library"
+	depends on TOOLCHAINOPTS
+
+choice
+	prompt "C Library implementation" if TOOLCHAINOPTS
+	default LIBC_USE_MUSL
+	help
+	  Select the C library implementation.
+
+	config LIBC_USE_GLIBC
+		bool "Use glibc"
+		select USE_GLIBC
+
+	config LIBC_USE_MUSL
+		select USE_MUSL
+		bool "Use musl"
+
+endchoice
+
+source "toolchain/musl/Config.in"
+
+comment "Debuggers"
+	depends on TOOLCHAINOPTS
+
+config GDB
+	bool
+	prompt "Build gdb" if TOOLCHAINOPTS
+	default y if !EXTERNAL_TOOLCHAIN
+	help
+	  Enable if you want to build the gdb.
+
+config GDB_PYTHON
+	bool
+	depends on GDB
+	prompt "Build gdb with python binding"
+	
+	help
+	  Enable the python bindings for GDB to allow using python in the gdb shell.
+
+menuconfig RUST_TOOLCHAINOPTS
+	bool "Rust toolchain options" if DEVEL
+	depends on aarch64||arm||i386||loongarch64||mips \
+		||(!(MIPS64_ABI_N32)&&mips64&&(USE_MUSL||!SOFT_FLOAT)) \
+		||(!(MIPS64_ABI_N32)&&mips64el&&!SOFT_FLOAT) \
+		||mipsel||(!(HAS_SPE_FPU)&&powerpc)||(!(HAS_SPE_FPU)&&powerpc64) \
+		||riscv64||x86_64
+
+choice
+	prompt "Rust toolchain" if RUST_TOOLCHAINOPTS
+	default RUST_TOOLCHAIN_BUILD if EXPERIMENTAL && TARGET_mpc85xx
+	default RUST_TOOLCHAIN_PREBUILT if EXPERIMENTAL
+	default RUST_TOOLCHAIN_NONE
+	help
+	  With None, Rust packages build with rust/host of the packages
+	  feed. After switching from None to a Rust toolchain in a tree
+	  where rust/host was built, run "make package/rust/host/clean":
+	  its cargo comes first in PATH and is otherwise used by tools
+	  that run cargo from PATH, such as maturin.
+
+	config RUST_TOOLCHAIN_NONE
+		bool "None"
+
+	config RUST_TOOLCHAIN_BUILD
+		bool "Build Rust toolchain from source"
+		select USE_RUST_BUILD
+		help
+		  Builds rustc and cargo from source. Adds significant build time.
+
+	config RUST_TOOLCHAIN_PREBUILT
+		bool "Use prebuilt Rust toolchain"
+		depends on !TARGET_mpc85xx
+		select USE_RUST_PREBUILT
+		help
+		  Downloads rustc, cargo, rust-src and llvm-tools from
+		  static.rust-lang.org instead of building them. The cross
+		  rust-std for the target is still built from source by
+		  package/libs/libstd-rust. Not available for e500v2 targets,
+		  which need the LLVM fix of tools/rust.
+
+	config RUST_TOOLCHAIN_HOST
+		bool "Use host Rust toolchain"
+		depends on !TARGET_mpc85xx
+		select USE_RUST_HOST
+		help
+		  Installs rustc, cargo, rust-src and llvm-tools from a
+		  relocatable Rust toolchain on the build host, such as a rustup
+		  toolchain directory. The version must match the one OpenWrt is
+		  built for. The cross rust-std for the target is still built
+		  from source by package/libs/libstd-rust.
+endchoice
+
+config RUST_TOOLCHAIN_HOST_PATH
+	string
+	depends on RUST_TOOLCHAIN_HOST
+	prompt "Host Rust toolchain path (prefix)" if RUST_TOOLCHAINOPTS
+	default ""
+	help
+	  Prefix of the host Rust toolchain. If empty, the sysroot of the
+	  rustc found in PATH is used.
+
+config RUST_PREFER_DYNAMIC
+	bool
+	prompt "Link Rust packages to the shared standard library" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	default y
+	help
+	  Link Rust packages to libstd-rust by default. Disable this for
+	  static linking. Cargo release builds use LTO either way; with
+	  the shared libstd through the unstable -Zdylib-lto of rustc.
+	  Individual packages can override this default.
+
+config RUST_PANIC_IMMEDIATE_ABORT
+	bool
+	prompt "Abort on panic without a panic message" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN && !DEBUG
+	default y
+	help
+	  Build libstd-rust and all Rust packages with the unstable
+	  -Cpanic=immediate-abort of rustc: a panic stops the program at
+	  once, without formatting a message, which removes the panic
+	  machinery from every binary. rustc requires the same setting for
+	  all crates of a program, the standard library included, so this
+	  applies to the whole build.
+
+config KERNEL_RUST
+	bool
+	prompt "Enable Rust in the kernel" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	depends on aarch64 || (arm && arm_v7 && !BIG_ENDIAN && !KERNEL_KASAN) \
+		|| (loongarch64 && !KERNEL_KASAN) || x86_64
+	select BUILD_BINDGEN
+	default y
+	help
+	  Builds bindgen and passes RUSTC/BINDGEN/RUST_LIB_SRC to the kernel
+	  Kbuild, enabling CONFIG_RUST to be selected in the kernel .config.
+	  riscv64 is excluded: kernel Rust on riscv64 requires CC_IS_CLANG.
+
+config BUILD_BINDGEN
+	bool
+	prompt "Build bindgen (C-header to Rust bindings)" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	select USE_LLVM_BUILD if !USE_LLVM_HOST && !USE_LLVM_PREBUILT
+	default y
+	help
+	  Installs bindgen-cli to the host toolchain. Required for kernel Rust
+	  and for meson-based Rust projects (Mesa3D RustiCL, Nouveau, glycin).
+	  Automatically selected by KERNEL_RUST.
+
+config USE_CBINDGEN
+	bool
+	prompt "Build cbindgen (Rust to C-header generator)" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	default y
+	help
+	  Installs cbindgen to the host toolchain. Required by Mesa3D Nouveau
+	  (NIL image library, NAK compiler) which generates C headers from Rust.
+	  Select when building Mesa3D with Nouveau/NVIDIA support.
+
+config USE_CORROSION
+	bool
+	prompt "Build corrosion-rs (CMake-Cargo integration)" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	default y
+	help
+	  Builds corrosion-rs and installs its CMake modules. Enables CMake-based
+	  projects to declare Rust crate targets via corrosion_import_crate().
+	  Provides Rust_CARGO_TARGET and Corrosion_DIR to cmake.mk automatically.
+
+config HAS_BPF_TOOLCHAIN
+	default y if !BPF_TOOLCHAIN_NONE
+	bool
+
+config NEED_BPF_TOOLCHAIN
+	bool
+
+config HAS_PREBUILT_LLVM_TOOLCHAIN
+	def_bool $(shell, [ -f llvm-bpf/.llvm-version ] && echo y || echo n)
+
+config USE_LLVM_HOST
+	bool
+
+config USE_LLVM_PREBUILT
+	default y if !DEVEL && !BUILDBOT && HAS_PREBUILT_LLVM_TOOLCHAIN
+	bool
+
+config USE_LLVM_BUILD
+	default y if !DEVEL && NEED_BPF_TOOLCHAIN && (BUILDBOT || !HAS_PREBUILT_LLVM_TOOLCHAIN)
+	bool
+
+config USE_RUST_BUILD
+	default y if EXPERIMENTAL && !RUST_TOOLCHAINOPTS && TARGET_mpc85xx
+	bool
+
+config USE_RUST_PREBUILT
+	default y if EXPERIMENTAL && !RUST_TOOLCHAINOPTS && !TARGET_mpc85xx
+	bool
+
+config USE_RUST_HOST
+	bool
+
+config USE_RUST_TOOLCHAIN
+	default y if USE_RUST_BUILD || USE_RUST_PREBUILT || USE_RUST_HOST
+	bool
+	depends on aarch64||arm||i386||loongarch64||mips \
+		||(!(MIPS64_ABI_N32)&&mips64&&(USE_MUSL||!SOFT_FLOAT)) \
+		||(!(MIPS64_ABI_N32)&&mips64el&&!SOFT_FLOAT) \
+		||mipsel||(!(HAS_SPE_FPU)&&powerpc)||(!(HAS_SPE_FPU)&&powerpc64) \
+		||riscv64||x86_64
+
+config USE_GLIBC
+	bool
+
+config USE_MUSL
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+	bool
+
+config SSP_SUPPORT
+	default y if !PKG_CC_STACKPROTECTOR_NONE
+	bool
+
+config USE_EXTERNAL_LIBC
+	bool
+	default y if EXTERNAL_TOOLCHAIN || NATIVE_TOOLCHAIN
+
+source "toolchain/binutils/Config.version"
+source "toolchain/gcc/Config.version"
+
+config LIBC
+	string
+	default "glibc"   if USE_GLIBC
+	default "musl"	  if USE_MUSL
+
+config TARGET_SUFFIX
+	string
+	default "gnueabi"         if USE_GLIBC && (arm || armeb)
+	default "gnu"             if USE_GLIBC && !(arm || armeb)
+	default "muslgnueabi"     if USE_MUSL && (arm || armeb)
+	default "musl"            if USE_MUSL && !(arm || armeb)
+
+config MIPS64_ABI
+	depends on mips64 || mips64el
+	string
+	default "64" if MIPS64_ABI_N64
+	default "n32" if MIPS64_ABI_N32
+	default "32" if MIPS64_ABI_O32
+	default "64"

@@ -1,0 +1,36 @@
+From 52869bbbcfbde006948c0fe1f8f08d650a9b0093 Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Sun, 12 Apr 2026 11:23:31 +0200
+Subject: arm64: dts: mediatek: mt7988a-bpi-r4pro: update gpio-leds
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+On the official case the red LED is named ERR, the blue LED is named ACT.​​​​​​​​​​​​​​​​
+Reflect these labels in function and set them default off.
+
+Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
+@@ -61,14 +61,14 @@
+ 
+ 		led_red: sys-led-red {
+ 			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_FAULT;
+ 			gpios = <&pca9555 15 GPIO_ACTIVE_HIGH>;
+-			default-state = "on";
+ 		};
+ 
+ 		led_blue: sys-led-blue {
+ 			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_ACTIVITY;
+ 			gpios = <&pca9555 14 GPIO_ACTIVE_HIGH>;
+-			default-state = "on";
+ 		};
+ 	};
+ 
