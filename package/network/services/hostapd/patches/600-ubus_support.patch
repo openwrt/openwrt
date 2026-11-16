@@ -721,7 +721,15 @@ probe/assoc/auth requests via object subscribe.
 +}
 --- a/wpa_supplicant/main.c
 +++ b/wpa_supplicant/main.c
-@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
+@@ -89,6 +89,7 @@ static void usage(void)
+ #ifdef CONFIG_MATCH_IFACE
+ 	       "  -M = start describing new matching interface\n"
+ #endif /* CONFIG_MATCH_IFACE */
++	       "  -n = start without configuring an interface\n"
+ 	       "  -N = start describing new interface\n"
+ 	       "  -o = override driver parameter for new interfaces\n"
+ 	       "  -O = override ctrl_interface parameter for new interfaces\n"
+@@ -214,7 +215,7 @@ int main(int argc, char *argv[])
  
  	for (;;) {
  		c = getopt(argc, argv,
@@ -730,7 +738,7 @@ probe/assoc/auth requests via object subscribe.
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -280,6 +280,9 @@ int main(int argc, char *argv[])
+@@ -280,6 +281,9 @@ int main(int argc, char *argv[])
  			params.conf_p2p_dev = os_rel2abs_path(optarg);
  			break;
  #endif /* CONFIG_P2P */
