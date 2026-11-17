@@ -138,8 +138,8 @@ linksys_lgs328mpc_v2() {
 	# For this, reduce PMW frequency as otherwise the fan won't start at low speeds.
 	# Temperature point 1 is set to 1C and a hysteresis of 9C gives 1C - 9C = -8C - most likely always on.
 	# Temperature point 2 is set to 40C and a hysteresis of 9C gives 40C - 9C = 31C.
-	# Other points must be monotonic for the kernel to accept auto mode.
-	local path_to_hwmon
+	# Other points must be non-decreasing for the kernel to accept auto mode.
+	local path_to_hwmon p
 
 	path_to_hwmon="$(lm63_hwmon)" || return 1
 
@@ -152,18 +152,11 @@ linksys_lgs328mpc_v2() {
 	echo 128   > "$path_to_hwmon/pwm1_auto_point1_pwm"  # 50% fan speed
 	echo 40000 > "$path_to_hwmon/pwm1_auto_point2_temp" # 40°C
 	echo 255   > "$path_to_hwmon/pwm1_auto_point2_pwm"  # 100% fan speed
-	echo 41000 > "$path_to_hwmon/pwm1_auto_point3_temp" # monotonically increasing entries so the driver accepts this LUT
-	echo 255   > "$path_to_hwmon/pwm1_auto_point3_pwm"
-	echo 42000 > "$path_to_hwmon/pwm1_auto_point4_temp"
-	echo 255   > "$path_to_hwmon/pwm1_auto_point4_pwm"
-	echo 43000 > "$path_to_hwmon/pwm1_auto_point5_temp"
-	echo 255   > "$path_to_hwmon/pwm1_auto_point5_pwm"
-	echo 44000 > "$path_to_hwmon/pwm1_auto_point6_temp"
-	echo 255   > "$path_to_hwmon/pwm1_auto_point6_pwm"
-	echo 45000 > "$path_to_hwmon/pwm1_auto_point7_temp"
-	echo 255   > "$path_to_hwmon/pwm1_auto_point7_pwm"
-	echo 46000 > "$path_to_hwmon/pwm1_auto_point8_temp"
-	echo 255   > "$path_to_hwmon/pwm1_auto_point8_pwm"
+	# Unused points must be non-decreasing.
+	for p in 3 4 5 6 7 8; do
+		echo 127000 > "$path_to_hwmon/pwm1_auto_point${p}_temp"
+		echo 255 > "$path_to_hwmon/pwm1_auto_point${p}_pwm"
+	done
 
 	# set temperature hysteresis to 9K
 	echo 9000 > "$path_to_hwmon/pwm1_auto_point_temp_hyst"
