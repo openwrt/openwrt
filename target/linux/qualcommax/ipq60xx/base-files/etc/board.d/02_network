@@ -39,8 +39,12 @@ ipq60xx_setup_interfaces()
 	jdcloud,re-cs-07|\
 	jdcloud,re-ss-01|\
 	netgear,rbr350|\
+	netgear,sxr30|\
 	qihoo,360v6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	netgear,sxs30)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	netgear,wax214)
 		ucidef_set_interfaces_lan_wan "lan"

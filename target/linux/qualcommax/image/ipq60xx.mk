@@ -247,6 +247,28 @@ define Device/netgear_rbs350
 endef
 TARGET_DEVICES += netgear_rbs350
 
+define Device/netgear_sxk30
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	SOC := ipq6018
+	DEVICE_VENDOR := Netgear
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-netgear_sxk30
+endef
+
+define Device/netgear_sxr30
+	$(call Device/netgear_sxk30)
+	DEVICE_MODEL := SXR30
+endef
+TARGET_DEVICES += netgear_sxr30
+
+define Device/netgear_sxs30
+	$(call Device/netgear_sxk30)
+	DEVICE_MODEL := SXS30
+endef
+TARGET_DEVICES += netgear_sxs30
+
 define Device/netgear_wax214
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
