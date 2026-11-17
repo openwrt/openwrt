@@ -1,17 +1,22 @@
 --- a/programs/CMakeLists.txt
 +++ b/programs/CMakeLists.txt
-@@ -3,14 +3,10 @@ add_custom_target(${programs_target})
+@@ -1,11 +1,7 @@
+ set(programs_target "${MBEDTLS_TARGET_PREFIX}programs")
+ add_custom_target(${programs_target})
  
- add_subdirectory(aes)
- add_subdirectory(cipher)
 -if (NOT WIN32)
 -    add_subdirectory(fuzz)
 -endif()
- add_subdirectory(hash)
- add_subdirectory(pkey)
- add_subdirectory(psa)
- add_subdirectory(random)
+ 
  add_subdirectory(ssl)
 -add_subdirectory(test)
  add_subdirectory(util)
  add_subdirectory(x509)
+--- a/tf-psa-crypto/programs/CMakeLists.txt
++++ b/tf-psa-crypto/programs/CMakeLists.txt
+@@ -2,5 +2,3 @@ set(programs_target "${TF_PSA_CRYPTO_TAR
+ add_custom_target(${programs_target})
+ 
+ add_subdirectory(psa)
+-add_subdirectory(test)
+-add_subdirectory(fuzz)
