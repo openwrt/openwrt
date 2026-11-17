@@ -286,7 +286,7 @@ SVN-Revision: 35130
   */
 --- a/net/ipv6/datagram.c
 +++ b/net/ipv6/datagram.c
-@@ -498,7 +498,7 @@ int ipv6_recv_error(struct sock *sk, str
+@@ -502,7 +502,7 @@ int ipv6_recv_error(struct sock *sk, str
  				ipv6_iface_scope_id(&sin->sin6_addr,
  						    IP6CB(skb)->iif);
  		} else {
@@ -295,7 +295,7 @@ SVN-Revision: 35130
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -890,12 +890,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -894,12 +894,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {

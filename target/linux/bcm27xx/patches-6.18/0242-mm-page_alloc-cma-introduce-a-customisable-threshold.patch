@@ -48,7 +48,7 @@ Signed-off-by: David Plowman <david.plowman@raspberrypi.com>
  #ifdef CONFIG_HUGETLB_PAGE_SIZE_VARIABLE
  unsigned int pageblock_order __read_mostly;
  #endif
-@@ -2503,12 +2524,13 @@ __rmqueue(struct zone *zone, unsigned in
+@@ -2506,12 +2527,13 @@ __rmqueue(struct zone *zone, unsigned in
  	if (IS_ENABLED(CONFIG_CMA)) {
  		/*
  		 * Balance movable allocations between regular and CMA areas by
