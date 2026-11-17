@@ -1,0 +1,15 @@
+. /lib/functions.sh
+
+profile_migrate /rom/etc/profile
+
+[ -f /etc/profile-opkg.backup ] && {
+	mv -f /etc/profile /etc/profile.apk-new
+	mv -f /etc/profile-opkg.backup /etc/profile
+}
+
+[ -f /etc/profile.apk-new ] && {
+	profile_migrate /etc/profile.apk-new
+	cmp -s /etc/profile /etc/profile.apk-new && rm -f /etc/profile.apk-new
+}
+
+exit 0

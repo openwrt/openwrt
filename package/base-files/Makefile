@@ -64,7 +64,6 @@ define Package/base-files/conffiles
 /etc/iproute2/rt_protos
 /etc/iproute2/rt_tables
 /etc/passwd
-/etc/profile
 /etc/profile.d
 /etc/protocols
 /etc/rc.local

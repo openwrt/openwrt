@@ -38,14 +38,15 @@ do_mount_root() {
 	boot_run_hook preinit_mount_root
 	[ -f /sysupgrade.tgz -o -f /tmp/sysupgrade.tar ] && {
 		echo "- config restore -"
-		cp /etc/passwd /etc/group /etc/shadow /tmp
+		cp /etc/passwd /etc/group /etc/shadow /etc/profile /tmp
 		cd /
 		[ -f /sysupgrade.tgz ] && tar xzf /sysupgrade.tgz
 		[ -f /tmp/sysupgrade.tar ] && tar xf /tmp/sysupgrade.tar
 		missing_lines /tmp/passwd /etc/passwd >> /etc/passwd
 		missing_lines /tmp/group /etc/group >> /etc/group
 		missing_lines /tmp/shadow /etc/shadow >> /etc/shadow
-		rm /tmp/passwd /tmp/group /tmp/shadow
+		profile_migrate /tmp/profile
+		rm /tmp/passwd /tmp/group /tmp/shadow /tmp/profile
 		# Prevent configuration corruption on a power loss
 		sync
 	}
