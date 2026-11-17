@@ -172,6 +172,42 @@ linksys_lgs328mpc_v2() {
 	echo 2 > "$path_to_hwmon/pwm1_enable"
 }
 
+# Configure the original Linksys LGS352C LM63 fan curve.
+linksys_lgs352c() (
+	local path_to_hwmon p
+
+	path_to_hwmon="$(lm63_hwmon)" || return 1
+
+	# If initialization fails, request maximum fan speed.
+	trap 'rc=$?; if [ "$rc" -ne 0 ]; then
+		echo 1 > "$path_to_hwmon/pwm1_enable" 2>/dev/null || :
+		echo 255 > "$path_to_hwmon/pwm1" 2>/dev/null || :
+		logger -t hwmon_fancontrol "LGS352C LM63 initialization failed; requesting full fan speed"
+	fi' EXIT
+	set -e
+
+	# Set full speed while configuring the original Linksys curve.
+	echo 1 > "$path_to_hwmon/pwm1_enable"
+	echo 255 > "$path_to_hwmon/pwm1"
+	echo 23 > "$path_to_hwmon/pwm1_freq"
+
+	echo 20000 > "$path_to_hwmon/pwm1_auto_point1_temp"
+	echo 102 > "$path_to_hwmon/pwm1_auto_point1_pwm"
+	echo 55000 > "$path_to_hwmon/pwm1_auto_point2_temp"
+	echo 255 > "$path_to_hwmon/pwm1_auto_point2_pwm"
+
+	for p in 3 4 5 6 7 8; do
+		echo 127000 > "$path_to_hwmon/pwm1_auto_point${p}_temp"
+		echo 255 > "$path_to_hwmon/pwm1_auto_point${p}_pwm"
+	done
+
+	echo 4000 > "$path_to_hwmon/pwm1_auto_point_temp_hyst"
+	echo 2 > "$path_to_hwmon/pwm1_enable"
+
+	[ "$(cat "$path_to_hwmon/pwm1_enable")" = 2 ]
+	[ "$(cat "$path_to_hwmon/pwm1_freq")" = 23 ]
+)
+
 boot() {
 	case $(board_name) in
 	d-link,dgs-1210-28mp-f|\
@@ -188,6 +224,9 @@ boot() {
 		;;
 	linksys,lgs328mpc-v2)
 		linksys_lgs328mpc_v2
+		;;
+	linksys,lgs352c)
+		linksys_lgs352c
 		;;
 	plasmacloud,esx28|\
 	plasmacloud,psx28)
