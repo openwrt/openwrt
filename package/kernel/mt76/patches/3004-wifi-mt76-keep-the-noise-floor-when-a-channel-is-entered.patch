@@ -1,0 +1,55 @@
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Tue, 17 Nov 2026 21:10:00 +0100
+Subject: [PATCH] wifi: mt76: keep the noise floor when a channel is entered
+
+While a phy has no operating channel (hostapd ACS at start), every
+channel the scan enters is a channel other than the main one, and
+__mt76_set_channel() clears its whole channel state. The noise floor
+is cleared with the counters, so a survey dump that arrives while the
+phy sits on the channel it has just entered reports no noise for it.
+hostapd then logs "Survey for freq 2412 is missing noise floor" for
+the channel the scan starts and parks on, and ACS discards it.
+
+The counters restart with every visit; the noise floor is an average
+that the next update continues, so keep it across the clear. When the
+driver has no counts yet, mt7915_update_channel() must not replace the
+floor that the state holds with none.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1157,8 +1157,17 @@
+ 	if (!offchannel)
+ 		phy->main_chandef = *chandef;
+ 
+-	if (chandef->chan != phy->main_chandef.chan)
++	if (chandef->chan != phy->main_chandef.chan) {
++		/* the counters restart with every visit, the noise floor is
++		 * an average that the next update continues: without it the
++		 * channel that has just been entered (a survey dump during a
++		 * scan, hostapd ACS) has no noise at all
++		 */
++		s8 noise = phy->chan_state->noise;
++
+ 		memset(phy->chan_state, 0, sizeof(*phy->chan_state));
++		phy->chan_state->noise = noise;
++	}
+ 
+ 	ret = dev->drv->set_channel(phy);
+ 
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -1231,7 +1231,11 @@
+ 	else if (nf)
+ 		phy->noise += nf - (phy->noise >> 4);
+ 
+-	state->noise = -(phy->noise >> 4);
++	/* no counts and no average yet: keep the floor that the channel state
++	 * holds instead of reporting none
++	 */
++	if (phy->noise)
++		state->noise = -(phy->noise >> 4);
+ }
+ 
+ static bool
