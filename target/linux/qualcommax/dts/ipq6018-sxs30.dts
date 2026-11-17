@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6018-sxk30.dtsi"
+
+/ {
+	model = "Netgear SXS30";
+	compatible = "netgear,sxs30", "qcom,ipq6018";
+
+	aliases {
+		label-mac-device = &swport2;
+	};
+};
+
+&swport2 {
+	label = "lan1";
+	nvmem-cells = <&macaddr_lan>;
+	nvmem-cell-names = "mac-address";
+};
+
+&swport3 {
+	label = "lan2";
+};
+
+&swport4 {
+	label = "lan3";
+};
+
+&swport5 {
+	label = "lan4";
+};
+
+&partitions {
+	partition@1b00000 {
+		label = "ubi";
+		reg = <0x1b00000 0x4b00000>;
+	};
+
+	partition@6600000 {
+		label = "firmware2";
+		reg = <0x6600000 0x4b00000>;
+	};
+
+	partition@b100000 {
+		label = "language";
+		reg = <0xb100000 0x0500000>;
+		read-only;
+	};
+
+	partition@b600000 {
+		label = "cert";
+		reg = <0xb600000 0x0100000>;
+		read-only;
+	};
+
+	partition@b700000 {
+		label = "mtdoops";
+		reg = <0xb700000 0x0080000>;
+	};
+
+	partition@b780000 {
+		label = "router_analytics";
+		reg = <0xb780000 0x0200000>;
+		read-only;
+	};
+
+	partition@b980000 {
+		label = "ntgrdata";
+		reg = <0xb980000 0x4400000>;
+		read-only;
+	};
+
+	partition@fd80000 {
+		label = "reserved";
+		reg = <0xfd80000 0x0280000>;
+		read-only;
+	};
+};
