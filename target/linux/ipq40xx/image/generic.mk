@@ -1499,3 +1499,32 @@ define Device/zyxel_wre6606
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += zyxel_wre6606
+
+define Device/zyxel_wsq-common
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Zyxel
+	DEVICE_DTS_CONFIG := config@1
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 4096k
+	ROOTFS_SIZE := 57344k
+	IMAGE_SIZE := 65536k
+	RAS_ROOTFS_SIZE := 20480k
+	RAS_VERSION := "$(VERSION_DIST) $(REVISION)"
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k | check-size $$$$(ROOTFS_SIZE) | zyxel-ras-image separate-kernel
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-zyxel_wsq50 kmod-fs-ext4 kmod-leds-lp5562 e2fsprogs
+endef
+
+define Device/zyxel_wsq50
+	$(call Device/zyxel_wsq-common)
+	DEVICE_MODEL := WSQ50 (Multy X)
+	RAS_BOARD := WSQ50
+endef
+TARGET_DEVICES += zyxel_wsq50
+
+define Device/zyxel_wsq60
+	$(call Device/zyxel_wsq-common)
+	DEVICE_MODEL := WSQ60 (Multy Plus)
+	RAS_BOARD := WSQ60
+endef
+TARGET_DEVICES += zyxel_wsq60

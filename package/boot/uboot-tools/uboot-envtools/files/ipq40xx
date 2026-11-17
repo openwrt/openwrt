@@ -63,6 +63,10 @@ linksys,whw03v2)
 zyxel,nbg6617)
 	ubootenv_add_uci_config "/dev/mtd6" "0x0" "0x10000" "0x10000"
 	;;
+zyxel,wsq50|\
+zyxel,wsq60)
+	ubootenv_add_mtd "env" "0x0" "0x10000" "0x10000"
+	;;
 esac
 
 config_load ubootenv
