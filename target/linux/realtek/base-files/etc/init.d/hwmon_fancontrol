@@ -112,6 +112,26 @@ dlink_dgs_1250() {
 	echo 57000 > "$path_temp_hwmon/temp1_max_hyst"
 }
 
+# Find the LM63 independent of the I2C bus and hwmon device number.
+lm63_hwmon() {
+	local dev found
+
+	for dev in /sys/class/hwmon/hwmon*; do
+		[ "$(cat "$dev/name" 2>/dev/null)" = lm63 ] || continue
+		[ -z "$found" ] || {
+			logger -t hwmon_fancontrol "Multiple LM63 controllers found"
+			return 1
+		}
+		found="$dev"
+	done
+
+	[ -n "$found" ] || {
+		logger -t hwmon_fancontrol "LM63 controller not found"
+		return 1
+	}
+	printf '%s\n' "$found"
+}
+
 linksys_lgs328mpc_v2() {
 	# The U-Boot of this device does not set up the LM63 fan controller for us, so we do it ourselves:
 	# Let LM63 steer high/low speed full automatically, vendor defaults are 40C low->high and 31C high->low.
@@ -119,9 +139,9 @@ linksys_lgs328mpc_v2() {
 	# Temperature point 1 is set to 1C and a hysteresis of 9C gives 1C - 9C = -8C - most likely always on.
 	# Temperature point 2 is set to 40C and a hysteresis of 9C gives 40C - 9C = 31C.
 	# Other points must be monotonic for the kernel to accept auto mode.
-	local path_to_hwmon="$(find /sys/bus/i2c/devices/0-004c/hwmon/ -type d -maxdepth 1 -mindepth 1 -name 'hwmon*')"
+	local path_to_hwmon
 
-	[ -n "$path_to_hwmon" ] || return 0
+	path_to_hwmon="$(lm63_hwmon)" || return 1
 
 	# switch to manual mode, otherwise LUT is not writable
 	echo 1 > "$path_to_hwmon/pwm1_enable"
