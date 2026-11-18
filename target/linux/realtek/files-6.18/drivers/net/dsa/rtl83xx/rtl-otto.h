@@ -100,6 +100,15 @@ struct rtldsa_red {
 	u64 drops;
 };
 
+struct rtldsa_ets {
+	u32 handle;
+	u16 children;
+	bool offloadable;
+	u8 weights[MAX_PRIOS];
+	struct rtldsa_tbf queue_tbf[MAX_PRIOS];
+	struct rtldsa_red queue_red[MAX_PRIOS];
+};
+
 struct rtldsa_port {
 	bool enable:1;
 	bool phy:1;
@@ -119,6 +128,7 @@ struct rtldsa_port {
 	struct rtldsa_red red_prev;
 	struct rtldsa_red queue_red[MAX_PRIOS];
 	struct rtldsa_red queue_red_prev[MAX_PRIOS];
+	struct rtldsa_ets ets_prev;
 	u32 red_cfg[MAX_PRIOS];
 	u64 red_drops[MAX_PRIOS];
 	u16 red_drops_hw[MAX_PRIOS];

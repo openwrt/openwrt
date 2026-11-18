@@ -1186,6 +1186,42 @@ static void otto_tc_ets_apply(struct otto_dsa_priv *priv, int port)
 		otto_qos_queue_sched_reset(priv, port);
 }
 
+/* the qdiscs on the bands of another ETS cannot be matched to a queue */
+static void otto_tc_ets_clear_bands(struct rtldsa_port *pp)
+{
+	pp->ets_children = 0;
+	for (int queue = 0; queue < MAX_PRIOS; queue++) {
+		pp->queue_tbf[queue].handle = 0;
+		pp->queue_red[queue].handle = 0;
+		pp->queue_red_prev[queue].handle = 0;
+	}
+}
+
+static void otto_tc_ets_save(struct rtldsa_port *pp)
+{
+	struct rtldsa_ets *prev = &pp->ets_prev;
+
+	prev->handle = pp->ets_handle;
+	prev->children = pp->ets_children;
+	prev->offloadable = pp->ets_offloadable;
+	memcpy(prev->weights, pp->ets_weights, sizeof(prev->weights));
+	memcpy(prev->queue_tbf, pp->queue_tbf, sizeof(prev->queue_tbf));
+	memcpy(prev->queue_red, pp->queue_red, sizeof(prev->queue_red));
+}
+
+static void otto_tc_ets_restore(struct rtldsa_port *pp)
+{
+	struct rtldsa_ets *prev = &pp->ets_prev;
+
+	pp->ets_handle = prev->handle;
+	pp->ets_children = prev->children;
+	pp->ets_offloadable = prev->offloadable;
+	memcpy(pp->ets_weights, prev->weights, sizeof(pp->ets_weights));
+	memcpy(pp->queue_tbf, prev->queue_tbf, sizeof(pp->queue_tbf));
+	memcpy(pp->queue_red, prev->queue_red, sizeof(pp->queue_red));
+	prev->handle = 0;
+}
+
 /* Band 0 is the band ETS serves first and queue 7 the queue the hardware serves first.
  * The hardware maps priority n to queue n for the whole switch, so only the priomap
  * that says the same can be offloaded.
@@ -1195,16 +1231,18 @@ static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
 {
 	struct tc_ets_qopt_offload_replace_params *p = &qopt->replace_params;
 	struct rtldsa_port *pp = &priv->ports[port];
-	u32 old_handle = pp->ets_handle, child;
 	unsigned int band;
+	u32 child;
 
 	if (!priv->r->queue_sched_set || qopt->parent != TC_H_ROOT)
 		return -EOPNOTSUPP;
 
 	switch (qopt->command) {
 	case TC_ETS_REPLACE:
-		if (pp->ets_handle != qopt->handle)
-			pp->ets_children = 0;
+		if (pp->ets_handle != qopt->handle) {
+			otto_tc_ets_save(pp);
+			otto_tc_ets_clear_bands(pp);
+		}
 		pp->ets_children &= GENMASK(p->bands - 1, 0);
 		pp->ets_handle = qopt->handle;
 		pp->ets_offloadable = p->bands == MAX_PRIOS;
@@ -1217,10 +1255,19 @@ static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
 		}
 		break;
 	case TC_ETS_DESTROY:
+		if (pp->ets_prev.handle == qopt->handle) {
+			pp->ets_prev.handle = 0;
+			return 0;
+		}
 		if (pp->ets_handle != qopt->handle)
 			return 0;
+		if (pp->ets_prev.handle) {
+			otto_tc_ets_restore(pp);
+			break;
+		}
 		pp->ets_handle = 0;
 		pp->ets_offloadable = false;
+		otto_tc_ets_clear_bands(pp);
 		break;
 	case TC_ETS_STATS:
 		if (pp->ets_handle != qopt->handle)
@@ -1243,13 +1290,6 @@ static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
 		break;
 	default:
 		return -EOPNOTSUPP;
-	}
-
-	/* the qdiscs on the bands of another ETS cannot be matched to a queue */
-	for (int queue = 0; pp->ets_handle != old_handle && queue < MAX_PRIOS; queue++) {
-		pp->queue_tbf[queue].handle = 0;
-		pp->queue_red[queue].handle = 0;
-		pp->queue_red_prev[queue].handle = 0;
 	}
 
 	scoped_guard(mutex, &priv->reg_mutex)
