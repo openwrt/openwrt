@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Carlo Szelinsky <github@szelinsky.de>
+Date: Thu, 10 Jul 2026 22:00:00 +0200
+Subject: [PATCH] mips: generic: realtek: provide plat_swiotlb_setup()
+
+RTL931X has a Coherence Manager but no IOCU, so streaming DMA from
+HIGHMEM-backed buffers is not cache coherent. Provide the platform
+SWIOTLB hook so the kernel can bounce those transfers through a lowmem
+pool, sized with the swiotlb= kernel command line parameter.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- a/arch/mips/generic/board-realtek.c
++++ b/arch/mips/generic/board-realtek.c
+@@ -6,6 +6,7 @@
+ #include <linux/errno.h>
+ #include <linux/libfdt.h>
+ #include <linux/printk.h>
++#include <linux/swiotlb.h>
+ #include <linux/types.h>
+ 
+ #include <asm/fw/fw.h>
+@@ -317,6 +318,19 @@ static void __init realtek_prom_init(con
+ }
+ 
+ 
++#ifdef CONFIG_SWIOTLB
++/*
++ * RTL931X has a Coherence Manager but no IOCU, so streaming DMA from
++ * HIGHMEM-backed buffers is not cache coherent. dma-ranges on the soc bus
++ * caps device DMA to lowmem and SWIOTLB bounces anything above it. The
++ * pool size is set with the swiotlb= kernel command line parameter.
++ */
++void __init plat_swiotlb_setup(void)
++{
++	swiotlb_init(true, SWIOTLB_VERBOSE);
++}
++#endif
++
+ static __init int realtek_add_initrd(void *fdt)
+ {
+ 	int node, err;
