@@ -3421,6 +3421,21 @@ define Device/nradio_c8-668gl
 endef
 TARGET_DEVICES += nradio_c8-668gl
 
+define Device/nradio_c2000-max
+  DEVICE_VENDOR := NRadio
+  DEVICE_MODEL := C2000-MAX
+  DEVICE_DTS := mt7987b-nradio-c2000-max
+  DEVICE_DTS_DIR := ../dts
+  BOARD_NAME := HCMT7987-EMMC
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7990-firmware \
+	kmod-hwmon-pwmfan kmod-usb3 kmod-usb-net-cdc-ncm kmod-usb-serial-option \
+	f2fsck mkf2fs
+  FILESYSTEMS := squashfs
+  KERNEL_LOADADDR := 0x40080000
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += nradio_c2000-max
+
 define Device/openembed_som7981
   DEVICE_VENDOR := OpenEmbed
   DEVICE_MODEL := SOM7981
