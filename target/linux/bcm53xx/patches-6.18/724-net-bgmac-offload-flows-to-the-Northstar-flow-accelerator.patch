@@ -1,0 +1,1186 @@
+From 24f5f4efb6f6bface0846a2eae9c0d1a7d4796e2 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 16:51:38 +0100
+Subject: [PATCH] net: bgmac: offload flows to the Northstar flow accelerator
+
+With the flow accelerator in the path (previous patch), let it forward
+the connections that a netfilter flowtable offloads. DSA passes the
+flowtable block from the user ports to the conduit's ndo_setup_tc, so
+bgmac gets one, and NETIF_F_HW_TC to switch it off.
+
+Offloaded: IPv4 TCP and UDP between two user ports of the switch behind
+this conduit, routed or with NAT of the source or of the destination
+(address and port). Everything else stays in software: IPv6, VLAN and
+PPPoE, both kinds of NAT at once, fragments.
+
+Each direction is one entry of the 1024-entry flow table, in one of the
+four slots selected by the software hash (CRC-ITU-T over the tuple, as
+fa_crc_ccitt() in Broadcom's etc_fa.c). The entry points to a next hop
+(destination MAC) and a pool entry (source MAC), shared between flows.
+The table formats and the access sequence follow etc_fa.c; the
+flow_rule parsing follows mtk_ppe_offload.c.
+
+Three details found on the hardware:
+- The FA hands its output to the switch with a tag that leaves the
+  forwarding to the switch's address table. DSA keeps learning off on
+  standalone ports such as the WAN port, so the switch flooded every
+  offloaded frame to all ports. Give it a static FDB entry for a next
+  hop behind a standalone port, as long as the next hop is in use.
+- The flowtable offloads the two directions separately and retries only
+  when both were refused. A direction whose reply does not fit in its
+  bucket is refused too, so the connection stays in software as a whole
+  and is retried later.
+- nf_tables unbinds a flowtable block on a ruleset change and tears its
+  connections down only after the last driver unbound, so the driver
+  never hears about them; a firewall reload left the old entries
+  forwarding outside the new ruleset. Remove a block's flows when it is
+  unbound.
+
+The tables are initialised on every open, so stop drops all flows; the
+flowtable then offloads the connections again from software.
+
+A table access busy-waits for the hardware, as etc_fa.c does: it takes
+microseconds. Sleeping there, under the lock that every add, removal
+and counter read takes, made the flowtable's workers queue up: with
+about 250 flows the load average reached 15 while the CPU was idle.
+On the A2 revision of the BCM4707 family (not BCM47094), etc_fa.c also
+lowers the hardware queue threshold and waits 1 ms around each table
+access (WAR777). Here that is done once per locked operation, so a flow
+add or removal waits once, not for each of its table accesses. No A2
+board was available to test it.
+
+The FA counts hits per entry but not bytes: the flowtable gets packet
+counts and the last-used time. One hit is one packet: on a Linksys
+EA6900, three runs of 74998 and 100002 UDP datagrams through an
+offloaded flow each ended with the conntrack packet counter at that
+number plus one, for the datagram that set the flow up.
+
+Known limits, for the patches that follow: the FA drops IPv4 packets
+with TTL 1 silently instead of passing them to Linux for the ICMP time
+exceeded, and it forwards a TCP FIN or RST without telling the
+flowtable, so the connection stays established in conntrack until it
+times out.
+
+Measured on a Linksys EA6900 (BCM4708), iperf3 TCP between a LAN port
+and the WAN port through NAT, upload/download in Mbit/s:
+- no offloading:              367/438, one CPU core busy
+- software flow offloading:   456/535, one CPU core busy
+- hardware flow offloading:   941/941, 1-3 % CPU
+- port forward from the WAN:  949/926, 1 % CPU
+Thirty firewall reloads during one transfer kept it at 938 Mbit/s with
+exactly two entries in the table each time, and the table was empty
+again a minute after the transfer.
+
+After a reload, conntrack sometimes shows such a connection as
+[OFFLOAD] instead of [HW_OFFLOAD] while the hardware forwards it: the
+old and the new flowtable share the conntrack entry, and the old one's
+delete work can clear IPS_HW_OFFLOAD after the new one's add work set
+it. That is the flowtable core, not this driver.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/ethernet/broadcom/Kconfig    |   1 +
+ drivers/net/ethernet/broadcom/bgmac-fa.c | 927 ++++++++++++++++++++++-
+ drivers/net/ethernet/broadcom/bgmac.c    |  20 +
+ drivers/net/ethernet/broadcom/bgmac.h    |   3 +
+ 4 files changed, 942 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/Kconfig
++++ b/drivers/net/ethernet/broadcom/Kconfig
+@@ -172,6 +172,7 @@ config BGMAC_BCMA
+ 	depends on BCMA && BCMA_HOST_SOC
+ 	depends on BCM47XX || ARCH_BCM_5301X || COMPILE_TEST
+ 	select BGMAC
++	select CRC_ITU_T
+ 	select PHYLIB
+ 	select FIXED_PHY
+ 	help
+--- a/drivers/net/ethernet/broadcom/bgmac-fa.c
++++ b/drivers/net/ethernet/broadcom/bgmac-fa.c
+@@ -18,10 +18,10 @@
+  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  *
+- * The register map and the mode sequences follow Broadcom's et driver
+- * (et/sys/etc_fa.c and et/include/fa_core.h: fa_setmode(), fa_up() and
+- * fa_down()), as published under the ISC license in router GPL source
+- * releases.
++ * The register map, the table formats, the hash and the mode and table
++ * access sequences follow Broadcom's et driver (et/sys/etc_fa.c and
++ * et/include/fa_core.h), as published under the ISC license in router GPL
++ * source releases.
+  *
+  * The FA sits between switch port 8 and GMAC2; its registers are in the
+  * core space of GMAC3, which is otherwise unused. With its header
+@@ -30,12 +30,29 @@
+  * tag from the CPU. So it must be in the path exactly while the DSA
+  * conduit on GMAC2 uses the "brcm-prepend" tagger, which can only change
+  * while the conduit is down: set the mode on every open.
++ *
++ * In the path, it forwards the connections that a netfilter flowtable
++ * offloads (TC_SETUP_FT, which DSA passes from the user ports to the
++ * conduit): IPv4 TCP and UDP between two user ports of this switch,
++ * routed or with one kind of NAT (of the source or of the destination).
++ * Each direction is one entry of the flow table, in one of the four slots
++ * that its hash selects. The FA decrements the TTL, rewrites the MAC
++ * addresses and, for NAT, the address and port, and sends the frame back
++ * to the switch. It counts hits per entry, not bytes.
+  */
+ 
+ #include <linux/bcma/bcma.h>
++#include <linux/bitfield.h>
++#include <linux/crc-itu-t.h>
++#include <linux/etherdevice.h>
++#include <linux/hashtable.h>
+ #include <linux/iopoll.h>
++#include <linux/ip.h>
+ #include <linux/module.h>
++#include <linux/slab.h>
+ #include <net/dsa.h>
++#include <net/flow_offload.h>
++#include <net/pkt_cls.h>
+ 
+ #include "bgmac.h"
+ 
+@@ -45,12 +62,17 @@
+ #define  FA_CTL_SW_ACC_MODE		BIT(0)
+ #define  FA_CTL_BYPASS			BIT(1)
+ #define  FA_CTL_CRC_OWRT		BIT(3)
++#define  FA_CTL_HWQ_THRESHOLD		GENMASK(12, 4)
+ #define  FA_CTL_NAPT_FLOW_INIT		BIT(13)
+ #define  FA_CTL_NEXT_HOP_INIT		BIT(14)
+ #define  FA_CTL_HWQ_INIT		BIT(15)
+ #define  FA_CTL_LAB_INIT		BIT(16)
+ #define  FA_CTL_HB_INIT			BIT(17)
+ #define  FA_CTL_DSBL_MAC_DA_CHECK	BIT(18)
++#define FA_MEM_ACC_CTL			0x04
++#define  FA_MEM_ACC_INDEX		GENMASK(9, 0)
++#define  FA_MEM_ACC_TABLE		GENMASK(11, 10)
++#define  FA_MEM_ACC_READ		BIT(12)
+ #define FA_BCM_HDR_CTL			0x08
+ #define  FA_BCM_HDR_HW_EN		BIT(0)
+ #define  FA_BCM_HDR_SW_RX_EN		BIT(1)
+@@ -69,13 +91,100 @@
+ #define FA_RCV_STATUS_EN		0x38
+ #define FA_ERROR			0x64
+ #define FA_ERROR_MASK			0x68
++#define FA_DBG_STATUS			0x70
++#define  FA_DBG_MEM_ACC_BUSY		BIT(0)
++#define FA_MEM_ACC_DATA(i)		(0xa0 + 4 * (i))
+ 
+ #define FA_CTL_INIT_ALL	(FA_CTL_NAPT_FLOW_INIT | FA_CTL_NEXT_HOP_INIT | \
+ 			 FA_CTL_HWQ_INIT | FA_CTL_LAB_INIT | FA_CTL_HB_INIT)
++#define FA_HWQ_THRESHOLD_DEFAULT	0x140
++
++/* tables, through FA_MEM_ACC_CTL and FA_MEM_ACC_DATA() */
++#define FA_TBL_FLOW			0
++#define FA_TBL_POOL			1	/* source MAC addresses */
++#define FA_TBL_NEXT_HOP			2	/* destination MAC, tag operation */
++
++#define FA_FLOWS			1024
++#define FA_FLOW_BUCKET			4	/* entries per hash value */
++#define FA_FLOW_WORDS			8
++#define FA_POOLS			4
++#define FA_POOL_WORDS			2
++#define FA_NEXT_HOPS			128
++#define FA_NEXT_HOP_WORDS		3
++
++/* IPv4 flow entry: bit positions in the 256-bit entry */
++#define FA_FLOW_HITS			3	/* 32 bits */
++#define FA_FLOW_ACTION			35	/* 2 bits */
++#define  FA_FLOW_ACT_OVRW_IP		BIT(0)
++#define  FA_FLOW_ACT_OVRW_PORT		BIT(1)
++#define FA_FLOW_POOL			38	/* 2 bits */
++#define FA_FLOW_NEXT_HOP		40	/* 7 bits */
++#define FA_FLOW_NAT_IP			47	/* 32 bits */
++#define FA_FLOW_NAT_PORT		79	/* 16 bits */
++#define FA_FLOW_DPORT			95	/* 16 bits */
++#define FA_FLOW_SPORT			111	/* 16 bits */
++#define FA_FLOW_TCP			127
++#define FA_FLOW_DIP			128	/* 32 bits */
++#define FA_FLOW_SIP			160	/* 32 bits */
++#define FA_FLOW_OVRW_DEST		192	/* NAT of the destination */
++#define FA_FLOW_VALID			212
++#define FA_FLOW_IPV4			255
++
++/* next hop entry */
++#define FA_NH_TAG_OP			1	/* 2 bits */
++#define  FA_NH_TAG_NONE			2
++#define FA_NH_DA			19	/* 48 bits */
++
++/* pool entry */
++#define FA_POOL_EXTERNAL		0
++#define FA_POOL_SA			1	/* 48 bits */
++
++struct bgmac_fa_tuple {
++	__be32 sip, dip;
++	__be16 sport, dport;
++	u8 proto;
++};
++
++struct bgmac_fa_next_hop {
++	u8 mac[ETH_ALEN];
++	struct dsa_port *dp;		/* egress port */
++	int refs;
++	bool fdb;			/* static switch FDB entry added for it */
++};
++
++struct bgmac_fa_pool {
++	u8 mac[ETH_ALEN];
++	bool external;
++	int refs;
++};
++
++/* cb_priv of one bound flowtable block */
++struct bgmac_fa_block {
++	struct bgmac *bgmac;
++};
++
++struct bgmac_fa_flow {
++	struct hlist_node node;
++	unsigned long cookie;
++	struct bgmac_fa_block *block;
++	struct bgmac_fa_tuple t;
++	int idx, next_hop, pool;
++	u32 hits;			/* last read from the entry */
++	u64 lastused;
++};
+ 
+ struct bgmac_fa {
+ 	struct bcma_device *core;	/* GMAC3, holding the FA registers */
+ 	bool normal;			/* in the path since the last open */
++	bool war777;			/* Broadcom's table access workaround */
++
++	struct mutex lock;		/* the rest */
++	bool active;			/* in the path and open: take flows */
++	DECLARE_HASHTABLE(flows, 8);
++	DECLARE_BITMAP(used, FA_FLOWS);
++	struct bgmac_fa_next_hop next_hop[FA_NEXT_HOPS];
++	struct bgmac_fa_pool pool[FA_POOLS];
++	struct list_head block_cb_list;
+ };
+ 
+ static u32 fa_read(struct bgmac *bgmac, u16 reg)
+@@ -169,6 +278,778 @@ static int bgmac_fa_bypass(struct bgmac
+ 	return 0;
+ }
+ 
++/* ---------- tables ---------- */
++
++/* OR val (width <= 32 bits) into the entry at bit pos (e[0] = bits 31:0) */
++static void fa_put_bits(u32 *e, unsigned int pos, unsigned int width, u32 val)
++{
++	u64 v = (u64)(width < 32 ? val & (BIT(width) - 1) : val) << (pos % 32);
++
++	e[pos / 32] |= lower_32_bits(v);
++	if (pos % 32 + width > 32)
++		e[pos / 32 + 1] |= upper_32_bits(v);
++}
++
++static u32 fa_get_bits(const u32 *e, unsigned int pos, unsigned int width)
++{
++	u64 v = e[pos / 32];
++
++	if (pos % 32 + width > 32)
++		v |= (u64)e[pos / 32 + 1] << 32;
++	v >>= pos % 32;
++	return width < 32 ? v & (BIT(width) - 1) : lower_32_bits(v);
++}
++
++static void fa_put_mac(u32 *e, unsigned int pos, const u8 *mac)
++{
++	u64 v = ether_addr_to_u64(mac);
++
++	fa_put_bits(e, pos, 32, lower_32_bits(v));
++	fa_put_bits(e, pos + 32, 16, upper_32_bits(v));
++}
++
++/* CTF_FA_WAR777_ON/OFF: on the A2 revision of the BCM4707 family (except
++ * BCM47094) Broadcom lowers the hardware queue threshold and waits 1 ms
++ * before it accesses a table. Here that is done once per locked operation
++ * (a flow add, removal, counter read or flush) rather than per access: the
++ * threshold stays low for all accesses in between.
++ */
++static void bgmac_fa_war777(struct bgmac *bgmac, bool on)
++{
++	u32 val;
++
++	if (!bgmac->fa->war777)
++		return;
++
++	val = fa_read(bgmac, FA_CONTROL) & ~FA_CTL_HWQ_THRESHOLD;
++	if (!on)
++		val |= FIELD_PREP(FA_CTL_HWQ_THRESHOLD, FA_HWQ_THRESHOLD_DEFAULT);
++	fa_write(bgmac, FA_CONTROL, val);
++	if (on)
++		usleep_range(1000, 1500);
++}
++
++/* fa->lock for an operation that accesses the tables */
++static void bgmac_fa_lock(struct bgmac *bgmac)
++{
++	mutex_lock(&bgmac->fa->lock);
++	bgmac_fa_war777(bgmac, true);
++}
++
++static void bgmac_fa_unlock(struct bgmac *bgmac)
++{
++	bgmac_fa_war777(bgmac, false);
++	mutex_unlock(&bgmac->fa->lock);
++}
++
++static int bgmac_fa_tbl_wait(struct bgmac *bgmac)
++{
++	u32 val;
++	int err;
++
++	err = read_poll_timeout_atomic(fa_read, val,
++				       !(val & FA_DBG_MEM_ACC_BUSY),
++				       1, 10000, false, bgmac, FA_DBG_STATUS);
++	if (err)
++		dev_err(bgmac->dev, "flow accelerator: table access timed out\n");
++	return err;
++}
++
++static int bgmac_fa_tbl_read(struct bgmac *bgmac, int tbl, int idx, u32 *d,
++			     int n)
++{
++	int i, err;
++
++	fa_write(bgmac, FA_MEM_ACC_CTL, FA_MEM_ACC_READ |
++		 FIELD_PREP(FA_MEM_ACC_TABLE, tbl) |
++		 FIELD_PREP(FA_MEM_ACC_INDEX, idx));
++	err = bgmac_fa_tbl_wait(bgmac);
++	if (!err) {
++		/* as CTF_FA_MACC_RD: one read of word 0 first, without it
++		 * the words returned lag one access behind
++		 */
++		fa_read(bgmac, FA_MEM_ACC_DATA(0));
++		for (i = n - 1; i >= 0; i--)
++			d[i] = fa_read(bgmac, FA_MEM_ACC_DATA(i));
++		err = bgmac_fa_tbl_wait(bgmac);
++	}
++
++	return err;
++}
++
++static int bgmac_fa_tbl_write(struct bgmac *bgmac, int tbl, int idx,
++			      const u32 *d, int n)
++{
++	int i, err;
++
++	fa_write(bgmac, FA_MEM_ACC_CTL, FIELD_PREP(FA_MEM_ACC_TABLE, tbl) |
++		 FIELD_PREP(FA_MEM_ACC_INDEX, idx));
++	/* word 0 last: it starts the write */
++	for (i = n - 1; i >= 0; i--)
++		fa_write(bgmac, FA_MEM_ACC_DATA(i), d[i]);
++	err = bgmac_fa_tbl_wait(bgmac);
++
++	return err;
++}
++
++/* The software hash (fa_crc_ccitt()): CRC-ITU-T over 7 zero bits, the
++ * source and destination address, a TCP bit and the source and
++ * destination port; the low 8 bits select a bucket of four entries.
++ */
++static int bgmac_fa_bucket(const struct bgmac_fa_tuple *t)
++{
++	u8 key[13] = {};
++	int i;
++
++	memcpy(&key[1], &t->sip, 4);
++	memcpy(&key[5], &t->dip, 4);
++	memcpy(&key[9], &t->sport, 2);
++	memcpy(&key[11], &t->dport, 2);
++	for (i = 0; i < 8; i++)
++		key[i] = (key[i] << 1) | (key[i + 1] >> 7);
++	key[8] = (key[8] << 1) | (t->proto == IPPROTO_TCP);
++
++	return (crc_itu_t(0, key, sizeof(key)) & 0xff) * FA_FLOW_BUCKET;
++}
++
++/* ---------- next hops and pools, shared and refcounted ---------- */
++
++static int bgmac_fa_next_hop_get(struct bgmac *bgmac, const u8 *mac,
++				 struct dsa_port *dp)
++{
++	struct bgmac_fa *fa = bgmac->fa;
++	struct bgmac_fa_next_hop *nh;
++	u32 d[FA_NEXT_HOP_WORDS] = {};
++	int i, free = -1, err;
++
++	for (i = 0; i < FA_NEXT_HOPS; i++) {
++		nh = &fa->next_hop[i];
++		if (nh->refs && nh->dp == dp && ether_addr_equal(nh->mac, mac)) {
++			nh->refs++;
++			return i;
++		}
++		if (!nh->refs && free < 0)
++			free = i;
++	}
++	if (free < 0)
++		return -ENOSPC;
++
++	/* Ethernet, no tag, destination address */
++	fa_put_bits(d, FA_NH_TAG_OP, 2, FA_NH_TAG_NONE);
++	fa_put_mac(d, FA_NH_DA, mac);
++	err = bgmac_fa_tbl_write(bgmac, FA_TBL_NEXT_HOP, free, d,
++				 FA_NEXT_HOP_WORDS);
++	if (err)
++		return err;
++
++	nh = &fa->next_hop[free];
++	ether_addr_copy(nh->mac, mac);
++	nh->dp = dp;
++	nh->refs = 1;
++	nh->fdb = false;
++
++	/* The FA hands its output to the switch with a tag that leaves the
++	 * forwarding to the switch's address table. DSA keeps learning off
++	 * on standalone ports, so without an entry for the next hop the
++	 * switch floods the frame to all ports of the VLAN.
++	 */
++	if (!dsa_port_bridge_dev_get(dp) && dp->ds->ops->port_fdb_add) {
++		struct dsa_db db = { .type = DSA_DB_PORT, .dp = dp };
++
++		err = dp->ds->ops->port_fdb_add(dp->ds, dp->index, mac, 0, db);
++		if (err)
++			netdev_warn(bgmac->net_dev,
++				    "flow accelerator: no switch FDB entry for %pM on port %d: %d\n",
++				    mac, dp->index, err);
++		else
++			nh->fdb = true;
++	}
++
++	return free;
++}
++
++static void bgmac_fa_next_hop_put(struct bgmac *bgmac, int i)
++{
++	struct bgmac_fa_next_hop *nh = &bgmac->fa->next_hop[i];
++	u32 d[FA_NEXT_HOP_WORDS] = {};
++
++	if (--nh->refs)
++		return;
++
++	bgmac_fa_tbl_write(bgmac, FA_TBL_NEXT_HOP, i, d, FA_NEXT_HOP_WORDS);
++	if (nh->fdb) {
++		struct dsa_port *dp = nh->dp;
++		struct dsa_db db = { .type = DSA_DB_PORT, .dp = dp };
++
++		dp->ds->ops->port_fdb_del(dp->ds, dp->index, nh->mac, 0, db);
++		nh->fdb = false;
++	}
++	nh->dp = NULL;
++}
++
++static int bgmac_fa_pool_get(struct bgmac *bgmac, const u8 *mac, bool external)
++{
++	struct bgmac_fa *fa = bgmac->fa;
++	struct bgmac_fa_pool *pool;
++	u32 d[FA_POOL_WORDS] = {};
++	int i, free = -1, err;
++
++	for (i = 0; i < FA_POOLS; i++) {
++		pool = &fa->pool[i];
++		if (pool->refs && pool->external == external &&
++		    ether_addr_equal(pool->mac, mac)) {
++			pool->refs++;
++			return i;
++		}
++		if (!pool->refs && free < 0)
++			free = i;
++	}
++	if (free < 0)
++		return -ENOSPC;
++
++	fa_put_bits(d, FA_POOL_EXTERNAL, 1, external);
++	fa_put_mac(d, FA_POOL_SA, mac);
++	err = bgmac_fa_tbl_write(bgmac, FA_TBL_POOL, free, d, FA_POOL_WORDS);
++	if (err)
++		return err;
++
++	pool = &fa->pool[free];
++	ether_addr_copy(pool->mac, mac);
++	pool->external = external;
++	pool->refs = 1;
++
++	return free;
++}
++
++static void bgmac_fa_pool_put(struct bgmac *bgmac, int i)
++{
++	u32 d[FA_POOL_WORDS] = {};
++
++	if (--bgmac->fa->pool[i].refs)
++		return;
++
++	bgmac_fa_tbl_write(bgmac, FA_TBL_POOL, i, d, FA_POOL_WORDS);
++}
++
++/* ---------- flow_rule parsing ---------- */
++
++struct bgmac_fa_rule {
++	struct bgmac_fa_tuple t;
++	u8 eth[2 * ETH_ALEN];		/* destination, source after the mangles */
++	__be32 nat_ip;
++	__be16 nat_port;
++	bool snat, dnat;		/* neither: routing only */
++	struct dsa_port *out;
++};
++
++/* a user port of the switch behind this conduit */
++static struct dsa_port *bgmac_fa_user_port(struct bgmac *bgmac,
++					   const struct net_device *dev)
++{
++#if IS_ENABLED(CONFIG_NET_DSA)
++	struct dsa_port *cpu_dp = bgmac->net_dev->dsa_ptr;
++	struct dsa_port *dp;
++
++	if (!dev || !netdev_uses_dsa(bgmac->net_dev))
++		return NULL;
++
++	list_for_each_entry(dp, &cpu_dp->dst->ports, list)
++		if (dsa_port_is_user(dp) && dp->user == dev &&
++		    dp->cpu_dp == cpu_dp)
++			return dp;
++#endif
++	return NULL;
++}
++
++static void bgmac_fa_mangle_eth(const struct flow_action_entry *act, u8 *eth)
++{
++	void *dest = eth + act->mangle.offset;
++	const void *src = &act->mangle.val;
++
++	if (act->mangle.offset > 8)
++		return;
++
++	if (act->mangle.mask == 0xffff) {
++		src += 2;
++		dest += 2;
++	}
++
++	memcpy(dest, src, act->mangle.mask ? 2 : 4);
++}
++
++static int bgmac_fa_parse(struct bgmac *bgmac, struct flow_cls_offload *f,
++			  struct bgmac_fa_rule *r)
++{
++	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
++	struct flow_action_entry *act;
++	bool snat_port = false, dnat_port = false;
++	struct net_device *out = NULL;
++	int i;
++
++	memset(r, 0, sizeof(*r));
++
++	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META) ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CONTROL) ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC) ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS) ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS) ||
++	    flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN) ||
++	    flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CVLAN))
++		return -EOPNOTSUPP;
++
++	{
++		struct flow_match_meta m;
++		struct net_device *in;
++		bool ours;
++
++		flow_rule_match_meta(rule, &m);
++		rcu_read_lock();
++		in = dev_get_by_index_rcu(&init_net, m.key->ingress_ifindex);
++		ours = bgmac_fa_user_port(bgmac, in);
++		rcu_read_unlock();
++		if (!ours)
++			return -EOPNOTSUPP;
++	}
++	{
++		struct flow_match_control m;
++
++		flow_rule_match_control(rule, &m);
++		if (m.key->addr_type != FLOW_DISSECTOR_KEY_IPV4_ADDRS ||
++		    m.mask->flags)
++			return -EOPNOTSUPP;
++	}
++	{
++		struct flow_match_basic m;
++
++		flow_rule_match_basic(rule, &m);
++		r->t.proto = m.key->ip_proto;
++		if (r->t.proto != IPPROTO_TCP && r->t.proto != IPPROTO_UDP)
++			return -EOPNOTSUPP;
++	}
++	{
++		struct flow_match_ipv4_addrs m;
++
++		flow_rule_match_ipv4_addrs(rule, &m);
++		r->t.sip = m.key->src;
++		r->t.dip = m.key->dst;
++	}
++	{
++		struct flow_match_ports m;
++
++		flow_rule_match_ports(rule, &m);
++		r->t.sport = m.key->src;
++		r->t.dport = m.key->dst;
++	}
++
++	flow_action_for_each(i, act, &rule->action) {
++		switch (act->id) {
++		case FLOW_ACTION_MANGLE:
++			switch (act->mangle.htype) {
++			case FLOW_ACT_MANGLE_HDR_TYPE_ETH:
++				bgmac_fa_mangle_eth(act, r->eth);
++				break;
++			case FLOW_ACT_MANGLE_HDR_TYPE_IP4:
++				if (act->mangle.offset == offsetof(struct iphdr, saddr))
++					r->snat = true;
++				else if (act->mangle.offset == offsetof(struct iphdr, daddr))
++					r->dnat = true;
++				else
++					return -EOPNOTSUPP;
++				r->nat_ip = (__force __be32)act->mangle.val;
++				break;
++			case FLOW_ACT_MANGLE_HDR_TYPE_TCP:
++			case FLOW_ACT_MANGLE_HDR_TYPE_UDP: {
++				u32 val = ntohl(act->mangle.val);
++
++				if (act->mangle.offset)
++					return -EOPNOTSUPP;
++				if (act->mangle.mask == ~htonl(0xffff)) {
++					dnat_port = true;
++					r->nat_port = htons(val & 0xffff);
++				} else {
++					snat_port = true;
++					r->nat_port = htons(val >> 16);
++				}
++				break;
++			}
++			default:
++				return -EOPNOTSUPP;
++			}
++			break;
++		case FLOW_ACTION_REDIRECT:
++			out = act->dev;
++			break;
++		case FLOW_ACTION_CSUM:
++		case FLOW_ACTION_PRIORITY:
++			break;
++		default:	/* VLAN, PPPoE: not supported */
++			return -EOPNOTSUPP;
++		}
++	}
++
++	/* One kind of NAT at most: the entry overwrites the source or the
++	 * destination, address and port together.
++	 */
++	if (r->snat && r->dnat)
++		return -EOPNOTSUPP;
++	if ((snat_port && !r->snat) || (dnat_port && !r->dnat))
++		return -EOPNOTSUPP;
++	if (!snat_port && !dnat_port)
++		r->nat_port = r->snat ? r->t.sport : r->t.dport;
++	if (!r->snat && !r->dnat)
++		r->nat_port = 0;
++
++	if (!is_valid_ether_addr(r->eth) ||
++	    !is_valid_ether_addr(r->eth + ETH_ALEN))
++		return -EINVAL;
++
++	r->out = bgmac_fa_user_port(bgmac, out);
++	if (!r->out)
++		return -EOPNOTSUPP;
++
++	return 0;
++}
++
++/* ---------- flows ---------- */
++
++static struct bgmac_fa_flow *bgmac_fa_flow_find(struct bgmac_fa *fa,
++						unsigned long cookie)
++{
++	struct bgmac_fa_flow *flow;
++
++	hash_for_each_possible(fa->flows, flow, node, cookie)
++		if (flow->cookie == cookie)
++			return flow;
++	return NULL;
++}
++
++static bool bgmac_fa_tuple_offloaded(struct bgmac_fa *fa,
++				     const struct bgmac_fa_tuple *t)
++{
++	struct bgmac_fa_flow *flow;
++	int bkt;
++
++	hash_for_each(fa->flows, bkt, flow, node)
++		if (flow->t.sip == t->sip && flow->t.dip == t->dip &&
++		    flow->t.sport == t->sport && flow->t.dport == t->dport &&
++		    flow->t.proto == t->proto)
++			return true;
++	return false;
++}
++
++static int bgmac_fa_free_slots(struct bgmac_fa *fa, int base)
++{
++	int i, n = 0;
++
++	for (i = 0; i < FA_FLOW_BUCKET; i++)
++		n += !test_bit(base + i, fa->used);
++	return n;
++}
++
++/* The flowtable offloads the two directions of a connection separately,
++ * and tries again only when both were refused. So refuse this direction
++ * too when the other one will not fit: then the whole connection stays in
++ * software for now, instead of one direction for good.
++ */
++static bool bgmac_fa_reply_fits(struct bgmac_fa *fa,
++				const struct bgmac_fa_rule *r, int base)
++{
++	struct bgmac_fa_tuple rt = { .proto = r->t.proto };
++	int rbase;
++
++	if (r->dnat) {		/* reply: from the NAT address and port */
++		rt.sip = r->nat_ip;
++		rt.sport = r->nat_port;
++		rt.dip = r->t.sip;
++		rt.dport = r->t.sport;
++	} else if (r->snat) {	/* reply: to the NAT address and port */
++		rt.sip = r->t.dip;
++		rt.sport = r->t.dport;
++		rt.dip = r->nat_ip;
++		rt.dport = r->nat_port;
++	} else {
++		rt.sip = r->t.dip;
++		rt.sport = r->t.dport;
++		rt.dip = r->t.sip;
++		rt.dport = r->t.sport;
++	}
++
++	if (bgmac_fa_tuple_offloaded(fa, &rt))
++		return true;
++
++	rbase = bgmac_fa_bucket(&rt);
++	return bgmac_fa_free_slots(fa, rbase) >= (rbase == base ? 2 : 1);
++}
++
++static int bgmac_fa_flow_add(struct bgmac *bgmac, struct flow_cls_offload *f,
++			     struct bgmac_fa_block *block)
++{
++	struct bgmac_fa *fa = bgmac->fa;
++	u32 e[FA_FLOW_WORDS] = {};
++	struct bgmac_fa_flow *flow;
++	struct bgmac_fa_rule r;
++	int base, i, err;
++	u32 action = 0;
++
++	if (!fa->active)
++		return -EOPNOTSUPP;
++	if (bgmac_fa_flow_find(fa, f->cookie))
++		return -EEXIST;
++
++	err = bgmac_fa_parse(bgmac, f, &r);
++	if (err)
++		return err;
++
++	base = bgmac_fa_bucket(&r.t);
++	for (i = 0; i < FA_FLOW_BUCKET; i++)
++		if (!test_bit(base + i, fa->used))
++			break;
++	if (i == FA_FLOW_BUCKET || !bgmac_fa_reply_fits(fa, &r, base))
++		return -ENOSPC;
++
++	flow = kzalloc(sizeof(*flow), GFP_KERNEL);
++	if (!flow)
++		return -ENOMEM;
++
++	flow->cookie = f->cookie;
++	flow->block = block;
++	flow->t = r.t;
++	flow->idx = base + i;
++	flow->lastused = jiffies;
++
++	flow->next_hop = bgmac_fa_next_hop_get(bgmac, r.eth, r.out);
++	if (flow->next_hop < 0) {
++		err = flow->next_hop;
++		goto free;
++	}
++
++	/* fa_napt_add(): the external pool entry, except for NAT of the
++	 * destination
++	 */
++	flow->pool = bgmac_fa_pool_get(bgmac, r.eth + ETH_ALEN, !r.dnat);
++	if (flow->pool < 0) {
++		err = flow->pool;
++		goto put_next_hop;
++	}
++
++	if (r.snat || r.dnat) {
++		action = FA_FLOW_ACT_OVRW_IP;
++		if (r.nat_port != (r.dnat ? r.t.dport : r.t.sport))
++			action |= FA_FLOW_ACT_OVRW_PORT;
++	}
++
++	fa_put_bits(e, FA_FLOW_ACTION, 2, action);
++	fa_put_bits(e, FA_FLOW_POOL, 2, flow->pool);
++	fa_put_bits(e, FA_FLOW_NEXT_HOP, 7, flow->next_hop);
++	fa_put_bits(e, FA_FLOW_NAT_IP, 32, ntohl(r.nat_ip));
++	fa_put_bits(e, FA_FLOW_NAT_PORT, 16, ntohs(r.nat_port));
++	fa_put_bits(e, FA_FLOW_DPORT, 16, ntohs(r.t.dport));
++	fa_put_bits(e, FA_FLOW_SPORT, 16, ntohs(r.t.sport));
++	fa_put_bits(e, FA_FLOW_TCP, 1, r.t.proto == IPPROTO_TCP);
++	fa_put_bits(e, FA_FLOW_DIP, 32, ntohl(r.t.dip));
++	fa_put_bits(e, FA_FLOW_SIP, 32, ntohl(r.t.sip));
++	fa_put_bits(e, FA_FLOW_OVRW_DEST, 1, r.dnat);
++	fa_put_bits(e, FA_FLOW_VALID, 1, 1);
++	fa_put_bits(e, FA_FLOW_IPV4, 1, 1);
++
++	err = bgmac_fa_tbl_write(bgmac, FA_TBL_FLOW, flow->idx, e,
++				 FA_FLOW_WORDS);
++	if (err)
++		goto put_pool;
++
++	set_bit(flow->idx, fa->used);
++	hash_add(fa->flows, &flow->node, flow->cookie);
++
++	return 0;
++
++put_pool:
++	bgmac_fa_pool_put(bgmac, flow->pool);
++put_next_hop:
++	bgmac_fa_next_hop_put(bgmac, flow->next_hop);
++free:
++	kfree(flow);
++	return err;
++}
++
++static void bgmac_fa_flow_remove(struct bgmac *bgmac, struct bgmac_fa_flow *flow)
++{
++	u32 e[FA_FLOW_WORDS];
++
++	/* _fa_napt_del(): clear the valid bit, keep the rest */
++	if (!bgmac_fa_tbl_read(bgmac, FA_TBL_FLOW, flow->idx, e, FA_FLOW_WORDS)) {
++		e[FA_FLOW_VALID / 32] &= ~BIT(FA_FLOW_VALID % 32);
++		bgmac_fa_tbl_write(bgmac, FA_TBL_FLOW, flow->idx, e,
++				   FA_FLOW_WORDS);
++	}
++
++	clear_bit(flow->idx, bgmac->fa->used);
++	bgmac_fa_pool_put(bgmac, flow->pool);
++	bgmac_fa_next_hop_put(bgmac, flow->next_hop);
++	hash_del(&flow->node);
++	kfree(flow);
++}
++
++static int bgmac_fa_flow_del(struct bgmac *bgmac, struct flow_cls_offload *f)
++{
++	struct bgmac_fa_flow *flow = bgmac_fa_flow_find(bgmac->fa, f->cookie);
++
++	if (!flow)
++		return -ENOENT;
++
++	bgmac_fa_flow_remove(bgmac, flow);
++	return 0;
++}
++
++static int bgmac_fa_flow_stats(struct bgmac *bgmac, struct flow_cls_offload *f)
++{
++	struct bgmac_fa_flow *flow = bgmac_fa_flow_find(bgmac->fa, f->cookie);
++	u32 e[FA_FLOW_WORDS], hits, delta;
++
++	if (!flow)
++		return -ENOENT;
++
++	if (bgmac_fa_tbl_read(bgmac, FA_TBL_FLOW, flow->idx, e, FA_FLOW_WORDS))
++		return -EIO;
++
++	hits = fa_get_bits(e, FA_FLOW_HITS, 32);
++	delta = hits - flow->hits;
++	flow->hits = hits;
++	if (delta)
++		flow->lastused = jiffies;
++
++	flow_stats_update(&f->stats, 0, delta, 0, flow->lastused,
++			  FLOW_ACTION_HW_STATS_IMMEDIATE);
++	return 0;
++}
++
++/* all flows (block NULL), or those of one flowtable block */
++static void bgmac_fa_flush(struct bgmac *bgmac, struct bgmac_fa_block *block)
++{
++	struct bgmac_fa *fa = bgmac->fa;
++	struct bgmac_fa_flow *flow;
++	struct hlist_node *tmp;
++	int bkt;
++
++	lockdep_assert_held(&fa->lock);
++
++	hash_for_each_safe(fa->flows, bkt, tmp, flow, node)
++		if (!block || flow->block == block)
++			bgmac_fa_flow_remove(bgmac, flow);
++}
++
++static int bgmac_fa_block_cb(enum tc_setup_type type, void *type_data,
++			     void *cb_priv)
++{
++	struct bgmac_fa_block *block = cb_priv;
++	struct bgmac *bgmac = block->bgmac;
++	struct flow_cls_offload *f = type_data;
++	int err;
++
++	if (type != TC_SETUP_CLSFLOWER)
++		return -EOPNOTSUPP;
++
++	bgmac_fa_lock(bgmac);
++	switch (f->command) {
++	case FLOW_CLS_REPLACE:
++		if (tc_can_offload(bgmac->net_dev))
++			err = bgmac_fa_flow_add(bgmac, f, block);
++		else
++			err = -EOPNOTSUPP;
++		break;
++	case FLOW_CLS_DESTROY:
++		err = bgmac_fa_flow_del(bgmac, f);
++		break;
++	case FLOW_CLS_STATS:
++		err = bgmac_fa_flow_stats(bgmac, f);
++		break;
++	default:
++		err = -EOPNOTSUPP;
++	}
++	bgmac_fa_unlock(bgmac);
++
++	return err;
++}
++
++static void bgmac_fa_block_release(void *cb_priv)
++{
++	kfree(cb_priv);
++}
++
++/*
++ * nf_tables unbinds a flowtable block when the ruleset changes, and only
++ * tears the flowtable's connections down later, when no driver is bound
++ * to it any more: this driver never gets FLOW_CLS_DESTROY for them. So
++ * remove a block's flows on its last unbind, or a firewall reload would
++ * leave them forwarding outside the new ruleset. A reload binds the new
++ * block before it unbinds the old one, hence per block.
++ */
++static int bgmac_fa_setup_block(struct bgmac *bgmac,
++				struct flow_block_offload *f)
++{
++	struct bgmac_fa *fa = bgmac->fa;
++	struct flow_block_cb *block_cb;
++	struct bgmac_fa_block *block;
++
++	if (f->binder_type != FLOW_BLOCK_BINDER_TYPE_CLSACT_INGRESS)
++		return -EOPNOTSUPP;
++
++	f->driver_block_list = &fa->block_cb_list;
++
++	switch (f->command) {
++	case FLOW_BLOCK_BIND:
++		block_cb = flow_block_cb_lookup(f->block, bgmac_fa_block_cb,
++						bgmac);
++		if (block_cb) {
++			flow_block_cb_incref(block_cb);
++			return 0;
++		}
++
++		block = kzalloc(sizeof(*block), GFP_KERNEL);
++		if (!block)
++			return -ENOMEM;
++		block->bgmac = bgmac;
++
++		block_cb = flow_block_cb_alloc(bgmac_fa_block_cb, bgmac, block,
++					       bgmac_fa_block_release);
++		if (IS_ERR(block_cb)) {
++			kfree(block);
++			return PTR_ERR(block_cb);
++		}
++
++		flow_block_cb_incref(block_cb);
++		flow_block_cb_add(block_cb, f);
++		list_add_tail(&block_cb->driver_list, &fa->block_cb_list);
++		return 0;
++	case FLOW_BLOCK_UNBIND:
++		block_cb = flow_block_cb_lookup(f->block, bgmac_fa_block_cb,
++						bgmac);
++		if (!block_cb)
++			return -ENOENT;
++
++		if (!flow_block_cb_decref(block_cb)) {
++			bgmac_fa_lock(bgmac);
++			bgmac_fa_flush(bgmac, flow_block_cb_priv(block_cb));
++			bgmac_fa_unlock(bgmac);
++			flow_block_cb_remove(block_cb, f);
++			list_del(&block_cb->driver_list);
++		}
++		return 0;
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++static int bgmac_fa_setup_tc(struct bgmac *bgmac, enum tc_setup_type type,
++			     void *type_data)
++{
++	if (type != TC_SETUP_FT)
++		return -EOPNOTSUPP;
++
++	return bgmac_fa_setup_block(bgmac, type_data);
++}
++
++/* ---------- open / stop ---------- */
++
+ static bool bgmac_fa_wanted(struct bgmac *bgmac)
+ {
+ #if IS_ENABLED(CONFIG_NET_DSA)
+@@ -183,38 +1064,59 @@ static bool bgmac_fa_wanted(struct bgmac
+ 
+ static int bgmac_fa_open(struct bgmac *bgmac)
+ {
++	struct bgmac_fa *fa = bgmac->fa;
+ 	int err;
+ 
+ 	if (!bgmac_fa_wanted(bgmac)) {
+ 		/* back out of the path if an earlier open put it there */
+-		if (!bgmac->fa->normal)
++		if (!fa->normal)
+ 			return 0;
+ 		err = bgmac_fa_bypass(bgmac);
+ 		if (!err)
+-			bgmac->fa->normal = false;
++			fa->normal = false;
+ 		return err;
+ 	}
+ 
+-	if (!bcma_core_is_enabled(bgmac->fa->core)) {
++	if (!bcma_core_is_enabled(fa->core)) {
+ 		dev_err(bgmac->dev, "flow accelerator: GMAC3 core is not enabled\n");
+ 		return -ENODEV;
+ 	}
+ 
++	/* this also empties the tables: stop has dropped their flows */
+ 	err = bgmac_fa_normal(bgmac);
+ 	if (err)
+ 		return err;
+ 
+-	if (!bgmac->fa->normal)
++	if (!fa->normal)
+ 		dev_info(bgmac->dev, "flow accelerator in the path (prepended tag)\n");
+-	bgmac->fa->normal = true;
++	fa->normal = true;
++
++	mutex_lock(&fa->lock);
++	fa->active = true;
++	mutex_unlock(&fa->lock);
+ 
+ 	return 0;
+ }
+ 
++/* The next open initialises the tables again, and may take the FA out of
++ * the path: drop all flows. Connections the flowtable still counts as
++ * offloaded go back to software, and are offloaded again from there.
++ */
++static void bgmac_fa_stop(struct bgmac *bgmac)
++{
++	struct bgmac_fa *fa = bgmac->fa;
++
++	bgmac_fa_lock(bgmac);
++	fa->active = false;
++	bgmac_fa_flush(bgmac, NULL);
++	bgmac_fa_unlock(bgmac);
++}
++
+ /* Called for GMAC2 of a Northstar SoC; the FA is in its path to port 8 */
+ void bgmac_fa_probe(struct bgmac *bgmac)
+ {
+ 	struct bcma_device *core = bgmac->bcma.core;
++	struct bcma_chipinfo *ci = &core->bus->chipinfo;
+ 	struct bcma_device *gmac3;
+ 	struct bgmac_fa *fa;
+ 
+@@ -227,8 +1129,15 @@ void bgmac_fa_probe(struct bgmac *bgmac)
+ 		return;
+ 
+ 	fa->core = gmac3;
++	fa->war777 = ci->rev == 2 && ci->id != BCMA_CHIP_ID_BCM47094;
++	mutex_init(&fa->lock);
++	hash_init(fa->flows);
++	INIT_LIST_HEAD(&fa->block_cb_list);
++
+ 	bgmac->fa = fa;
+ 	bgmac->fa_open = bgmac_fa_open;
++	bgmac->fa_stop = bgmac_fa_stop;
++	bgmac->fa_setup_tc = bgmac_fa_setup_tc;
+ }
+ EXPORT_SYMBOL_GPL(bgmac_fa_probe);
+ 
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -1212,6 +1212,9 @@ static int bgmac_stop(struct net_device
+ {
+ 	struct bgmac *bgmac = netdev_priv(net_dev);
+ 
++	if (bgmac->fa_stop)
++		bgmac->fa_stop(bgmac);
++
+ 	netif_carrier_off(net_dev);
+ 
+ 	phy_stop(net_dev->phydev);
+@@ -1262,6 +1265,17 @@ static int bgmac_change_mtu(struct net_d
+ 	return 0;
+ }
+ 
++static int bgmac_setup_tc(struct net_device *net_dev, enum tc_setup_type type,
++			  void *type_data)
++{
++	struct bgmac *bgmac = netdev_priv(net_dev);
++
++	if (!bgmac->fa_setup_tc)
++		return -EOPNOTSUPP;
++
++	return bgmac->fa_setup_tc(bgmac, type, type_data);
++}
++
+ static const struct net_device_ops bgmac_netdev_ops = {
+ 	.ndo_open		= bgmac_open,
+ 	.ndo_stop		= bgmac_stop,
+@@ -1271,6 +1285,7 @@ static const struct net_device_ops bgmac
+ 	.ndo_validate_addr	= eth_validate_addr,
+ 	.ndo_eth_ioctl           = phy_do_ioctl_running,
+ 	.ndo_change_mtu		= bgmac_change_mtu,
++	.ndo_setup_tc		= bgmac_setup_tc,
+ };
+ 
+ /**************************************************
+@@ -1545,6 +1560,11 @@ int bgmac_enet_probe(struct bgmac *bgmac
+ 	net_dev->features = NETIF_F_SG | NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
+ 	net_dev->hw_features = net_dev->features;
+ 	net_dev->vlan_features = net_dev->features;
++	/* flowtable offload through the flow accelerator */
++	if (bgmac->fa_setup_tc) {
++		net_dev->features |= NETIF_F_HW_TC;
++		net_dev->hw_features |= NETIF_F_HW_TC;
++	}
+ 
+ 	/* Omit FCS from max MTU size */
+ 	net_dev->max_mtu = BGMAC_RX_MAX_FRAME_SIZE - ETH_FCS_LEN;
+--- a/drivers/net/ethernet/broadcom/bgmac.h
++++ b/drivers/net/ethernet/broadcom/bgmac.h
+@@ -499,6 +499,9 @@ struct bgmac {
+ 	/* optional: the flow accelerator in front of this MAC (bgmac-fa.c) */
+ 	struct bgmac_fa *fa;
+ 	int (*fa_open)(struct bgmac *bgmac);
++	void (*fa_stop)(struct bgmac *bgmac);
++	int (*fa_setup_tc)(struct bgmac *bgmac, enum tc_setup_type type,
++			   void *type_data);
+ };
+ 
+ struct bgmac *bgmac_alloc(struct device *dev);

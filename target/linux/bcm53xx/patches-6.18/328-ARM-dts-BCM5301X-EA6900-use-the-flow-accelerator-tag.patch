@@ -1,0 +1,26 @@
+From 46680993eb0fef1dee1f0eac941f44841c1576f6 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 10:31:54 +0100
+Subject: [PATCH] ARM: dts: BCM5301X: EA6900: use the flow accelerator's tag
+
+Use the prepended Broadcom tag on the CPU port (port 8, gmac2), so that
+the flow accelerator between them is in the path. The EA6900's BCM4708
+has switch revision 3, which has the accelerator.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6900.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6900.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6900.dts
+@@ -148,6 +148,8 @@
+ 
+ 		port@8 {
+ 			label = "cpu";
++			/* through the flow accelerator, see bgmac-fa.c */
++			dsa-tag-protocol = "brcm-prepend";
+ 		};
+ 	};
+ };

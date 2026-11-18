@@ -1,0 +1,70 @@
+From 226eea9f7f5d1b3b0d5d8518b1e1026b156f397c Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 10:31:54 +0100
+Subject: [PATCH] net: dsa: tag_brcm: accept the flow accelerator's lookup
+ opcode
+
+The flow accelerator in front of switch port 8 of BCM5301x and BCM58xx
+puts the result of its flow lookup in the prepended tag: opcode 2, with
+its header check result in byte 2 and the source port in byte 3 as in
+opcode 0. Every frame that misses its flow table reaches the CPU that
+way once the accelerator is in the path, so the tagger dropped them all.
+
+Accept opcode 2 in the prepended tag only.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ net/dsa/tag_brcm.c | 29 ++++++++++++++++++++---------
+ 1 file changed, 20 insertions(+), 9 deletions(-)
+
+--- a/net/dsa/tag_brcm.c
++++ b/net/dsa/tag_brcm.c
+@@ -53,6 +53,12 @@
+ /* Ingress and egress opcodes */
+ #define BRCM_OPCODE_SHIFT	5
+ #define BRCM_OPCODE_MASK	0x7
++/* Egress opcode of the flow accelerator in front of port 8 of BCM5301x
++ * and BCM58xx, in the prepended tag only: the result of its flow lookup.
++ * Byte 2 then holds its header check result instead of a reason code;
++ * byte 3 holds the source port as with opcode 0.
++ */
++#define BRCM_OPCODE_FA_LOOKUP	0x2
+ 
+ /* Ingress fields */
+ /* 1st byte in the tag */
+@@ -150,21 +156,26 @@ static struct sk_buff *brcm_tag_rcv_ll(s
+ {
+ 	int source_port;
+ 	u8 *brcm_tag;
++	u8 opcode;
+ 
+ 	if (unlikely(!pskb_may_pull(skb, BRCM_TAG_LEN)))
+ 		return NULL;
+ 
+ 	brcm_tag = skb->data - offset;
++	opcode = (brcm_tag[0] >> BRCM_OPCODE_SHIFT) & BRCM_OPCODE_MASK;
+ 
+-	/* The opcode should never be different than 0b000 */
+-	if (unlikely((brcm_tag[0] >> BRCM_OPCODE_SHIFT) & BRCM_OPCODE_MASK))
+-		return NULL;
+-
+-	/* We should never see a reserved reason code without knowing how to
+-	 * handle it
+-	 */
+-	if (unlikely(brcm_tag[2] & BRCM_EG_RC_RSVD))
++	if (likely(!opcode)) {
++		/* We should never see a reserved reason code without knowing
++		 * how to handle it
++		 */
++		if (unlikely(brcm_tag[2] & BRCM_EG_RC_RSVD))
++			return NULL;
++	} else if (opcode != BRCM_OPCODE_FA_LOOKUP || offset != ETH_HLEN) {
++		/* Any other opcode, or the flow accelerator's one outside
++		 * the prepended tag, is unexpected
++		 */
+ 		return NULL;
++	}
+ 
+ 	/* Locate which port this is coming from */
+ 	source_port = brcm_tag[3] & BRCM_EG_PID_MASK;

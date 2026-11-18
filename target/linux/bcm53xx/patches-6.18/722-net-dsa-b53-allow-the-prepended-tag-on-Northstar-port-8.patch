@@ -1,0 +1,106 @@
+From 1ee9ebbf6aa71ea1dbd0a454530e247d69d9f425 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 10:31:54 +0100
+Subject: [PATCH] net: dsa: b53: allow the prepended tag on Northstar port 8
+
+The BCM5301x (Northstar) switches of revision 3 and later, and all of
+BCM47094, have the same flow accelerator in front of port 8 as BCM58xx
+(Broadcom's et driver: FA_CAPABLE()). With it in the path the CPU sees
+the prepended tag, so let a device tree select "brcm-prepend" for such
+a switch with a CPU port 8, and keep the regular tag the default.
+
+The switch side is the same for both tags. DSA only changes the tagger
+while the conduits are down, which is when the conduit driver sets the
+accelerator up for it.
+
+Add the Broadcom taggers to the dsa-tag-protocol values of the binding.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ .../devicetree/bindings/net/dsa/dsa-port.yaml |  2 +
+ drivers/net/dsa/b53/b53_common.c              | 48 +++++++++++++++++++
+ 2 files changed, 50 insertions(+)
+
+--- a/Documentation/devicetree/bindings/net/dsa/dsa-port.yaml
++++ b/Documentation/devicetree/bindings/net/dsa/dsa-port.yaml
+@@ -51,6 +51,8 @@ properties:
+       possible. Useful when a device supports multiple protocols and
+       the default is incompatible with the Ethernet device.
+     enum:
++      - brcm
++      - brcm-prepend
+       - dsa
+       - edsa
+       - ocelot
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -582,6 +582,17 @@ void b53_imp_vlan_setup(struct dsa_switc
+ }
+ EXPORT_SYMBOL(b53_imp_vlan_setup);
+ 
++/* The BCM5301x (Northstar) switches with a flow accelerator in front of
++ * port 8: switch revision 3 or later, or any BCM47094. As on BCM58xx, the
++ * accelerator turns the regular tag into a prepended one on its way to
++ * the CPU, once its driver has put it in the path.
++ */
++static bool b53_has_flow_accelerator(struct b53_device *dev)
++{
++	return is5301x(dev) &&
++	       (dev->core_rev >= 3 || of_machine_is_compatible("brcm,bcm47094"));
++}
++
+ static int b53_port_change_conduit(struct dsa_switch *ds, int port,
+ 				   struct net_device *conduit,
+ 				   struct netlink_ext_ack *extack)
+@@ -2600,6 +2611,42 @@ out:
+ }
+ EXPORT_SYMBOL(b53_get_tag_protocol);
+ 
++static int b53_change_tag_protocol(struct dsa_switch *ds,
++				   enum dsa_tag_protocol proto)
++{
++	struct b53_device *dev = ds->priv;
++	struct dsa_port *cpu_dp;
++	bool port8 = false;
++
++	/* Both tags use the same switch setup; only offer them where one of
++	 * them is in use already
++	 */
++	if (dev->tag_protocol != DSA_TAG_PROTO_BRCM &&
++	    dev->tag_protocol != DSA_TAG_PROTO_BRCM_PREPEND)
++		return -EPROTONOSUPPORT;
++
++	switch (proto) {
++	case DSA_TAG_PROTO_BRCM:
++		break;
++	case DSA_TAG_PROTO_BRCM_PREPEND:
++		dsa_switch_for_each_cpu_port(cpu_dp, ds)
++			if (cpu_dp->index == 8)
++				port8 = true;
++		if (!port8 || (dev->chip_id != BCM58XX_DEVICE_ID &&
++			       !b53_has_flow_accelerator(dev)))
++			return -EPROTONOSUPPORT;
++		break;
++	default:
++		return -EPROTONOSUPPORT;
++	}
++
++	dev->tag_protocol = proto;
++	dsa_switch_for_each_cpu_port(cpu_dp, ds)
++		b53_brcm_hdr_setup(ds, cpu_dp->index);
++
++	return 0;
++}
++
+ int b53_mirror_add(struct dsa_switch *ds, int port,
+ 		   struct dsa_mall_mirror_tc_entry *mirror, bool ingress,
+ 		   struct netlink_ext_ack *extack)
+@@ -2766,6 +2813,7 @@ static const struct phylink_mac_ops b53_
+ 
+ static const struct dsa_switch_ops b53_switch_ops = {
+ 	.get_tag_protocol	= b53_get_tag_protocol,
++	.change_tag_protocol	= b53_change_tag_protocol,
+ 	.preferred_default_local_cpu_port = b53_preferred_default_local_cpu_port,
+ 	.port_change_conduit	= b53_port_change_conduit,
+ 	.setup			= b53_setup,
