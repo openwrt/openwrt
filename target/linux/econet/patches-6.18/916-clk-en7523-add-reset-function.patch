@@ -1,0 +1,33 @@
+clk: en7523: add reset function
+
+Add a .reset function which asserts and then de-asserts reset with no
+delay in between, the same way that is done in the MT7621 reset
+controller.
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -799,10 +799,23 @@ static int en7523_reset_xlate(struct res
+ 	return rst_data->idx_map[reset_spec->args[0]];
+ }
+ 
++static int en7523_reset_device(struct reset_controller_dev *rcdev,
++			       unsigned long id)
++{
++	int ret;
++
++	ret = en7523_reset_assert(rcdev, id);
++	if (ret < 0)
++		return ret;
++
++	return en7523_reset_deassert(rcdev, id);
++}
++
+ static const struct reset_control_ops en7581_reset_ops = {
+ 	.assert = en7523_reset_assert,
+ 	.deassert = en7523_reset_deassert,
+ 	.status = en7523_reset_status,
++	.reset = en7523_reset_device,
+ };
+ 
+ static int en7581_reset_register(struct device *dev, void __iomem *base,
