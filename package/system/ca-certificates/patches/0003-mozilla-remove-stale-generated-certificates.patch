@@ -1,0 +1,25 @@
+From 99277872bdc1495453458493affed7111307c825 Mon Sep 17 00:00:00 2001
+From: Alexey Immoreev <github@luixo.me>
+Date: Wed, 18 Nov 2026 18:48:12 +0000
+Subject: [PATCH] mozilla: remove stale generated certificates before
+ conversion
+
+certdata2pem.py does not remove obsolete files and creates a _2 variant
+when a certificate output name already exists. Clear previous generated
+output before invoking the converter.
+
+Signed-off-by: Alexey Immoreev <github@luixo.me>
+---
+ mozilla/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/mozilla/Makefile
++++ b/mozilla/Makefile
+@@ -3,6 +3,7 @@
+ #
+ 
+ all:
++	rm -f -- *.crt
+ 	python3 certdata2pem.py
+ 
+ clean:
