@@ -119,7 +119,7 @@ endef
 
 define Build/zyxel-nwa-fit-filogic
 	$(TOPDIR)/scripts/mkits-zyxel-fit-filogic.sh \
-		$@.its $@ "80 e1 81 e1 ff ff ff ff ff ff"
+		$@.its $@ "80e1 81e1"
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef

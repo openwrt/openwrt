@@ -46,7 +46,7 @@ endef
 
 define Build/zyxel-nwax10ax-fit
 	$(TOPDIR)/scripts/mkits-zyxel-fit-filogic.sh \
-		$@.its $@ "$(ZYXEL_MODEL_ID) ff ff ff ff ff ff ff ff"
+		$@.its $@ "$(ZYXEL_MODEL_ID)"
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -663,7 +663,7 @@ define Device/zyxel_nwa110ax
 	DEVICE_DTS_CONFIG := config@ac01
 	SOC := ipq8070
 	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa110ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
-	ZYXEL_MODEL_ID := 59 e1
+	ZYXEL_MODEL_ID := 59e1
 endef
 TARGET_DEVICES += zyxel_nwa110ax
 
@@ -673,6 +673,6 @@ define Device/zyxel_nwa210ax
 	DEVICE_DTS_CONFIG := config@ac02
 	SOC := ipq8071
 	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa210ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
-	ZYXEL_MODEL_ID := 5c e1
+	ZYXEL_MODEL_ID := 5ce1
 endef
 TARGET_DEVICES += zyxel_nwa210ax
