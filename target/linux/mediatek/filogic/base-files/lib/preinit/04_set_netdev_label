@@ -2,9 +2,15 @@
 
 set_netdev_labels() {
 	local dir
+	local phase
 
-	for dir in /sys/class/net/*; do
-		netdev_name_set "$dir"
+	# park: move every mislabelled interface to a temporary name first,
+	# so that swaps (e.g. eth0 <-> eth1) cannot collide
+	# rename: give every interface its final name
+	for phase in park rename; do
+		for dir in /sys/class/net/*; do
+			netdev_name_set "$dir" "$phase"
+		done
 	done
 }
 

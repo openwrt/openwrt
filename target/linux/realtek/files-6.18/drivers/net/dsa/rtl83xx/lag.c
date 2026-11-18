@@ -160,7 +160,7 @@ int otto_lag_find_group_from_port(struct otto_dsa_priv *priv, int port)
  * @e: L2 entry data
  * @lag_group: lag id of the trunk group
  */
-void otto_lag_93xx_prepare_fdb(struct rtl838x_l2_entry *e, int lag_group)
+void otto_lag_93xx_prepare_fdb(struct otto_l2_entry *e, int lag_group)
 {
 	if (e && lag_group >= 0) {
 		e->is_trunk = true;
@@ -536,7 +536,13 @@ static int otto_lag_93xx_set_group2ports(struct otto_dsa_priv *priv, int group,
 static inline void otto_lag_93xx_set_local_group2ports(struct otto_dsa_priv *priv, int group,
 						       u64 ports)
 {
-	priv->r->set_port_reg_be(ports, priv->r->trk_mbr_ctr(group));
+	int reg = priv->r->trk_mbr_ctr(group);
+
+	if (priv->r->cpu_port >= 32) {
+		regmap_write(priv->map, reg, upper_32_bits(ports));
+		reg += 4;
+	}
+	regmap_write(priv->map, reg, lower_32_bits(ports));
 }
 
 int otto_lag_93xx_set_port_members(struct otto_dsa_priv *priv, int group,
@@ -626,13 +632,18 @@ int otto_lag_838x_set_distribution_algorithm(struct otto_dsa_priv *priv,
 	return 0;
 }
 
-int otto_lag_838x_set_port_members(struct otto_dsa_priv *priv, int group,
-				   u64 members, struct netdev_lag_upper_info *info)
+int otto_lag_83xx_set_port_members(struct otto_dsa_priv *priv, int group,
+				 u64 members, struct netdev_lag_upper_info *info)
 {
+	int reg = priv->r->trk_mbr_ctr(group);
+
 	priv->lags_port_members[group] = members;
 
-	priv->r->set_port_reg_be(priv->lags_port_members[group],
-				 priv->r->trk_mbr_ctr(group));
+	if (priv->r->cpu_port >= 32) {
+		regmap_write(priv->map, reg, upper_32_bits(members));
+		reg += 4;
+	}
+	regmap_write(priv->map, reg, lower_32_bits(members));
 
 	return 0;
 }
@@ -648,17 +659,6 @@ int otto_lag_839x_set_distribution_algorithm(struct otto_dsa_priv *priv,
 	regmap_write_bits(priv->map, RTL839X_TRK_HASH_IDX_CTRL + ((group >> 4) << 2),
 			  3U << ((group & 0xf) << 1), (u32)algoidx << ((group & 0xf) << 1));
 	regmap_write(priv->map, RTL839X_TRK_HASH_CTRL + (algoidx << 2), algomsk);
-
-	return 0;
-}
-
-int otto_lag_839x_set_port_members(struct otto_dsa_priv *priv, int group,
-				   u64 members, struct netdev_lag_upper_info *info)
-{
-	priv->lags_port_members[group] = members;
-
-	priv->r->set_port_reg_be(priv->lags_port_members[group],
-				 priv->r->trk_mbr_ctr(group));
 
 	return 0;
 }

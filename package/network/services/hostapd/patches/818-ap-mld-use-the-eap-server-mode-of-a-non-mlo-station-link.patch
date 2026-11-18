@@ -166,7 +166,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int eapol_auth_dump_state(struct eapol_state_machine *sm, char *buf,
 --- a/src/radius/radius_server.c
 +++ b/src/radius/radius_server.c
-@@ -661,6 +661,7 @@ radius_server_get_new_session(struct rad
+@@ -665,6 +665,7 @@ radius_server_get_new_session(struct rad
  	os_memset(&eap_sess, 0, sizeof(eap_sess));
  	eap_sess.wps = data->eap_cfg->wps;
  	eap_sess.msg_ctx = data->eap_cfg->msg_ctx;

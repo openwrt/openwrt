@@ -331,7 +331,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -4358,6 +4358,8 @@ static __net_initdata struct pernet_oper
+@@ -4364,6 +4364,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
@@ -342,7 +342,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -3014,11 +3014,13 @@ static const struct seq_operations fib_r
+@@ -3012,11 +3012,13 @@ static const struct seq_operations fib_r
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -358,7 +358,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			fib_triestat_seq_show, NULL))
  		goto out2;
  
-@@ -3029,17 +3031,21 @@ int __net_init fib_proc_init(struct net
+@@ -3027,17 +3029,21 @@ int __net_init fib_proc_init(struct net
  	return 0;
  
  out3:

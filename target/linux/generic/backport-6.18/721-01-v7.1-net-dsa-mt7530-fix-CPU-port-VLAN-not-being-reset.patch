@@ -34,7 +34,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -1555,6 +1555,49 @@ mt7530_port_bridge_join(struct dsa_switc
+@@ -1605,6 +1605,49 @@ mt7530_port_bridge_join(struct dsa_switc
  	return 0;
  }
  
@@ -84,7 +84,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static void
  mt7530_port_set_vlan_unaware(struct dsa_switch *ds, int port)
  {
-@@ -1580,6 +1623,8 @@ mt7530_port_set_vlan_unaware(struct dsa_
+@@ -1630,6 +1673,8 @@ mt7530_port_set_vlan_unaware(struct dsa_
  		   G0_PORT_VID_DEF);
  
  	for (i = 0; i < priv->ds->num_ports; i++) {
@@ -93,7 +93,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		if (dsa_is_user_port(ds, i) &&
  		    dsa_port_is_vlan_filtering(dsa_to_port(ds, i))) {
  			all_user_ports_removed = false;
-@@ -1591,13 +1636,9 @@ mt7530_port_set_vlan_unaware(struct dsa_
+@@ -1641,13 +1686,9 @@ mt7530_port_set_vlan_unaware(struct dsa_
  	 * the CPU port get out of VLAN filtering mode.
  	 */
  	if (all_user_ports_removed) {
@@ -110,7 +110,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}
  }
  
-@@ -1786,33 +1827,6 @@ mt7530_port_mdb_del(struct dsa_switch *d
+@@ -1836,33 +1877,6 @@ mt7530_port_mdb_del(struct dsa_switch *d
  }
  
  static int
@@ -144,7 +144,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  mt7530_port_vlan_filtering(struct dsa_switch *ds, int port, bool vlan_filtering,
  			   struct netlink_ext_ack *extack)
  {
-@@ -1917,21 +1931,6 @@ mt7530_hw_vlan_update(struct mt7530_priv
+@@ -1967,21 +1981,6 @@ mt7530_hw_vlan_update(struct mt7530_priv
  }
  
  static int
@@ -166,7 +166,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  mt7530_port_vlan_add(struct dsa_switch *ds, int port,
  		     const struct switchdev_obj_port_vlan *vlan,
  		     struct netlink_ext_ack *extack)
-@@ -1943,9 +1942,18 @@ mt7530_port_vlan_add(struct dsa_switch *
+@@ -1993,9 +1992,18 @@ mt7530_port_vlan_add(struct dsa_switch *
  
  	mutex_lock(&priv->reg_mutex);
  
@@ -185,7 +185,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (pvid) {
  		priv->ports[port].pvid = vlan->vid;
  
-@@ -1985,10 +1993,15 @@ mt7530_port_vlan_del(struct dsa_switch *
+@@ -2035,10 +2043,15 @@ mt7530_port_vlan_del(struct dsa_switch *
  
  	mutex_lock(&priv->reg_mutex);
  

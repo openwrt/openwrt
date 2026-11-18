@@ -1,3 +1,51 @@
+DEVICE_VARS += BOOT_SCRIPT
+
+define Build/boot-scr
+	rm -f $@.scr
+	mkimage -A powerpc -O linux -T script -C none -a 0 -e 0 \
+		-d $(BOOT_SCRIPT).bootscript $@.scr
+endef
+
+# the factory U-Boot runs "fatload mmc 0:1 ... zImage"
+define Build/boot-img
+	rm -f $@.boot
+	mkfs.fat --invariant -C $@.boot $$(( $(CONFIG_TARGET_KERNEL_PARTSIZE) * 1024 ))
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::zImage
+	mcopy -i $@.boot $@.scr ::boot.scr
+endef
+
+define Build/sdcard-img
+	SIGNATURE="$(IMG_PART_SIGNATURE)" \
+	./gen_mpc85xx_sdcard_img.sh $@ \
+		c $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
+		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
+endef
+
+define Device/cznic_turris1x
+  DEVICE_VENDOR := CZ.NIC
+  DEVICE_MODEL := Turris 1.x
+  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-fs-ext4 kmod-fs-f2fs kmod-fs-vfat \
+	  kmod-gpio-pca953x kmod-hwmon-lm90 kmod-leds-turris-1x \
+	  kmod-phy-micrel kmod-rtc-ds1307 kmod-usb-storage-uas \
+	  kmod-usb3 e2fsprogs mkf2fs
+  BOOT_SCRIPT := turris1x
+  KERNEL_NAME := zImage.la3000000
+  KERNEL_LOADADDR := 0x3000000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
+  # Micron MT29F2G08ABAEAWP
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  # the boot arguments name squashfs
+  FILESYSTEMS := squashfs
+  IMAGES := sdcard.img.gz factory-nand.ubi sysupgrade.bin
+  IMAGE/sdcard.img.gz := boot-scr | boot-img | sdcard-img | libdeflate-gzip
+  IMAGE/factory-nand.ubi := append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += cznic_turris1x
+
 define Device/freescale_p2020rdb
   DEVICE_VENDOR := Freescale
   DEVICE_MODEL := P2020RDB

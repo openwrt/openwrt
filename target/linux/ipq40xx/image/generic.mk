@@ -172,6 +172,7 @@ define Device/aruba_ap-303
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-303
 	DEVICE_DTS_CONFIG := Glenmorangie@1
+	DEVICE_PACKAGES := ipq-wifi-aruba_ap-303
 endef
 TARGET_DEVICES += aruba_ap-303
 
@@ -179,13 +180,14 @@ define Device/aruba_ap-303h
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-303H
 	DEVICE_DTS_CONFIG := Aberlour@1
+	DEVICE_PACKAGES := ipq-wifi-aruba_ap-303h
 endef
 TARGET_DEVICES += aruba_ap-303h
 
 define Device/aruba_ap-365
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-365
-	DEVICE_PACKAGES := kmod-hwmon-ad7418
+	DEVICE_PACKAGES := kmod-hwmon-ad7418 ipq-wifi-aruba_ap-365
 	DEVICE_DTS_CONFIG := Bunker@1
 endef
 TARGET_DEVICES += aruba_ap-365

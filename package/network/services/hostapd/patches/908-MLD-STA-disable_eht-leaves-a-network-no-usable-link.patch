@@ -1,0 +1,22 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 1 Nov 2026 11:33:26 +0100
+Subject: [PATCH] MLD STA: disable_eht leaves a network no usable MLD link
+
+mac80211 refuses an MLD association with ASSOC_REQ_DISABLE_EHT, so a
+network with disable_eht set associates to one link of an AP MLD as a
+non-MLD HE station.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/wpa_supplicant/bss.c
++++ b/wpa_supplicant/bss.c
+@@ -1914,6 +1914,9 @@ u16 wpa_bss_get_usable_links(struct wpa_
+ 	if (!bss->valid_links)
+ 		return 0;
+ 
++	if (ssid && ssid->disable_eht)
++		return 0;
++
+ 	os_get_reltime(&now);
+ 
+ 	rsne_type = -1;

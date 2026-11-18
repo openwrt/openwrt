@@ -37,8 +37,8 @@ define Device/edgecore_ecs4100-12ph
 	kmod-eeprom-at24 \
 	kmod-hwmon-adt7470 \
 	kmod-hwmon-lm75 \
-	kmod-thermal \
-	realtek-poe
+	kmod-thermal
+  FEED_DEVICE_PACKAGES := realtek-poe
 endef
 TARGET_DEVICES += edgecore_ecs4100-12ph
 
@@ -54,7 +54,8 @@ define Device/hpe_1920-48g-poe
   $(Device/hpe_1920)
   SOC := rtl8393
   DEVICE_MODEL := 1920-48G-PoE (JG928A)
-  DEVICE_PACKAGES += realtek-poe kmod-hwmon-gpiofan
+  DEVICE_PACKAGES += kmod-hwmon-gpiofan
+  FEED_DEVICE_PACKAGES += realtek-poe
   H3C_DEVICE_ID := 0x0001002b
 endef
 TARGET_DEVICES += hpe_1920-48g-poe
@@ -122,7 +123,7 @@ define Device/zyxel_gs1900-48hp-a1
   DEVICE_MODEL := GS1900-48HP
   DEVICE_VARIANT := A1
   ZYXEL_VERS := AAHO
-  DEVICE_PACKAGES += realtek-poe
+  FEED_DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += zyxel_gs1900-48hp-a1
 

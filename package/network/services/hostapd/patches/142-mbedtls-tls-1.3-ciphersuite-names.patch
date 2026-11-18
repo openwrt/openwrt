@@ -1,0 +1,94 @@
+From ea3530e5627a1d7c181fd0b6a36214c4eac6fe1f Mon Sep 17 00:00:00 2001
+From: Karsten Sperling <ksperling@apple.com>
+Date: Fri, 26 Jun 2026 14:57:31 +1200
+Subject: [PATCH] mbedtls: use standard IANA TLS 1.3 ciphersuite names
+
+Mbed TLS names TLS 1.3 ciphersuites e.g. "TLS1-3-AES-128-GCM-SHA256",
+while OpenSSL and the IANA registry use "TLS_AES_128_GCM_SHA256". To map
+them, the backend derives OpenSSL-style names from the names returned by
+Mbed TLS using a set of heuristics; this works for the legacy (TLS <=
+1.2) names but produces non-standard results for TLS 1.3, e.g.
+"TLS-AES128-GCM-SHA256". Consequently the standard names were neither
+accepted in openssl_ciphers nor reported for a negotiated connection.
+
+Add a table of the five standardized TLS 1.3 suites (RFC 8446) and use
+it in both directions: match it before falling back to translating the
+mbedtls names, and report from it in tls_mbedtls_translate_ciphername().
+This makes the standard names work consistently across all hostap TLS
+backends. (The non-standard names derived by the translation logic
+continue to be accepted.)
+
+Signed-off-by: Karsten Sperling <ksperling@apple.com>
+
+--- a/src/crypto/tls_mbedtls.c
++++ b/src/crypto/tls_mbedtls.c
+@@ -1103,9 +1103,37 @@ tls_mbedtls_append_ciphersuite (int *ids
+ }
+ 
+ 
++#ifdef TLS_MBEDTLS_TLS13
++/* The standardized names (RFC 8446) of the TLS 1.3 ciphersuites, which OpenSSL
++ * and the IANA registry use, but mbedtls does not (it calls them e.g.
++ * "TLS1-3-AES-128-GCM-SHA256"). Using these makes the standard names work
++ * consistently across all hostap TLS backends, in both directions: selecting a
++ * ciphersuite via openssl_ciphers, and reporting the negotiated one. */
++static const struct { const char *name; int id; } tls_mbedtls_tls13_suites[] = {
++    { "TLS_AES_128_GCM_SHA256",       MBEDTLS_TLS1_3_AES_128_GCM_SHA256 },
++    { "TLS_AES_256_GCM_SHA384",       MBEDTLS_TLS1_3_AES_256_GCM_SHA384 },
++    { "TLS_CHACHA20_POLY1305_SHA256", MBEDTLS_TLS1_3_CHACHA20_POLY1305_SHA256 },
++    { "TLS_AES_128_CCM_SHA256",       MBEDTLS_TLS1_3_AES_128_CCM_SHA256 },
++    { "TLS_AES_128_CCM_8_SHA256",     MBEDTLS_TLS1_3_AES_128_CCM_8_SHA256 },
++};
++#endif
++
++
+ static int
+ tls_mbedtls_translate_ciphername(int id, char *buf, size_t buflen)
+ {
++  #if defined(TLS_MBEDTLS_TLS13)
++    for (size_t k = 0; k < ARRAY_SIZE(tls_mbedtls_tls13_suites); ++k) {
++        if (id != tls_mbedtls_tls13_suites[k].id)
++            continue;
++        const size_t nlen = os_strlen(tls_mbedtls_tls13_suites[k].name);
++        if (nlen >= buflen)
++            return 0;
++        os_strlcpy(buf, tls_mbedtls_tls13_suites[k].name, buflen);
++        return (int)nlen;
++    }
++  #endif
++
+     const mbedtls_ssl_ciphersuite_t *info =
+       mbedtls_ssl_ciphersuite_from_id(id);
+     if (info == NULL)
+@@ -1234,6 +1262,31 @@ tls_mbedtls_set_ciphers(struct tls_conf
+         if (clen == 7 && os_memcmp(ciphers, "-aECDSA", 7) == 0)
+             continue;
+ 
++#ifdef TLS_MBEDTLS_TLS13
++        /* special-case the standardized TLS 1.3 ciphersuites by their IANA /
++         * OpenSSL names (e.g. "TLS_AES_128_GCM_SHA256"), which the translation
++         * of the mbedtls names below does not produce */
++        if (clen > 4 && os_memcmp(ciphers, "TLS_", 4) == 0) {
++            int tls13 = 0;
++            size_t k;
++            for (k = 0; k < ARRAY_SIZE(tls_mbedtls_tls13_suites); ++k) {
++                if (clen == os_strlen(tls_mbedtls_tls13_suites[k].name)
++                    && os_memcmp(ciphers,
++                                 tls_mbedtls_tls13_suites[k].name, clen) == 0) {
++                    nids = tls_mbedtls_append_ciphersuite(
++                             ids, nids, idsz,
++                             &tls_mbedtls_tls13_suites[k].id, 1);
++                    if (nids == -1)
++                        return 0;
++                    tls13 = 1;
++                    break;
++                }
++            }
++            if (tls13)
++                continue;
++        }
++#endif /* TLS_MBEDTLS_TLS13 */
++
+         /* attempt to match mbedtls cipher names
+          * nb: does not support openssl group names or list manipulation syntax
+          *   (alt: could copy almost 1200 lines (!!!) of lighttpd mod_mbedtls.c

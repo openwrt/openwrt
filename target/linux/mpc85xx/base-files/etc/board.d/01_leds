@@ -8,6 +8,9 @@ boardname="${board##*,}"
 board_config_update
 
 case $board in
+cznic,turris1x)
+	ucidef_set_led_wlan "wlan" "WLAN" "rgb:wlan" "phy0tpt"
+	;;
 enterasys,ws-ap3715i)
 	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "eth0"
 	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "eth1"

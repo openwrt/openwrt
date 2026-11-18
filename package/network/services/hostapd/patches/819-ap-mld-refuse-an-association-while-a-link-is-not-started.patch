@@ -144,7 +144,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			wpa_auth_ml_get_key_info(bss->wpa_auth,
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -7937,10 +7937,14 @@ static void handle_assoc(struct hostapd_
+@@ -7939,10 +7939,14 @@ static void handle_assoc(struct hostapd_
  	/*
  	 * Remove the station in case transmission of a success response fails
  	 * (the STA was added associated to the driver) or if the station was

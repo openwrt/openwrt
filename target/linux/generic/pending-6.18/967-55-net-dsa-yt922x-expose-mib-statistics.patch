@@ -1,0 +1,326 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nilanka de Silva <nilankadsilva@gmail.com>
+Subject: [PATCH] net: dsa: yt922x: expose the MIB statistics
+
+The YT9224 is bound to yt922x_dsa_switch_ops, which carries no statistics
+callbacks, so DSA falls back to software counters for its user ports on the
+GL-BE14000: "ethtool -S" shows only the four DSA counters, the standard
+eth-mac/rmon groups come back empty and rx_crc_errors/rx_frame_errors are
+always 0 even though the switch keeps hardware MIB counters.
+
+The YT9224 MIB block differs from the YT9215 one: it lives at
+0xc0200 + 0x200 * port and holds 46 counters of 64 bits (low word first).
+Add a reader for it that fills struct yt921x_mib, dispatch yt921x_read_mib()
+on the chip series, start and stop the existing 3 s poll from the yt922x
+setup and link handlers, and wire the standard statistics callbacks into
+yt922x_dsa_switch_ops. All 46 raw slots are also exported through
+"ethtool -S" under the names the vendor tooling uses.
+
+Each 64-bit counter is read as high, low, high and the low word is re-read
+while the high word moves between the two reads; whether the low read
+latches the high word is not documented, and the vendor SDK uses the same
+sequence for the YT9215 byte counters, so no latch is assumed. TxQueueDrop
+feeds a new trailing tx_dropped field of struct yt921x_mib (the YT9215
+reader never writes it, so it stays 0 there) which get_stats64 now reports.
+The poll is cancelled synchronously on link down; the yt922x link handler
+runs in process context and does not hold reg_lock at that point.
+
+Slot layout, verified on a GL-BE14000 with directed traffic bursts (unicast,
+broadcast, multicast, every size bucket in both directions, byte counters)
+and cross-checked against the field order printed by the vendor ytswconfig
+module of the stock firmware:
+
+   0 RxBroadcast   1 RxPause     2 RxUnicast    3 RxOam*   4 RxMulticast
+   5-7 RxAlignErr (<64, 64-1518, jumbo)   8-9 RxFcsErr (64-1518, jumbo)
+  10 RxUnderSize  11 RxFragment  12-18 Rx size buckets  19 RxOverSize
+  20 TxBroadcast  21 TxPause     22 TxOam*      23 TxMulticast  24 RxFcDrop
+  25-31 Tx size buckets  32 TxOverSize*  33 TxLateCollision
+  34 TxExcessiveCollision  35 TxMultipleCollision  36 TxSingleCollision
+  37 TxUnicast    38 TxDefer     39 TxCollision  40 RxDiscard  41 TxQueueDrop
+  42 reserved*    43 RxOkBytes   44 RxNotOkBytes  45 TxOkBytes
+  (* named by analogy with the YT923x series, not observed counting)
+
+Tested on a GL-BE14000: the sfp port's RxUnicastPkts/RxOkBytes/TxUnicastPkts
+advance by exactly the same amounts as the GMAC1 conduit's rx_packets/
+rx_bytes/tx_packets, "ip -s link" refreshes on its own every 3 s and keeps
+doing so across a link flap, 300 back-to-back reads of a byte counter never
+went backwards or jumped, tx_dropped follows TxQueueDrop, and all error
+counters read 0 on clean links.
+
+Signed-off-by: Nilanka de Silva <nilankadsilva@gmail.com>
+---
+--- a/drivers/net/dsa/yt921x.h
++++ b/drivers/net/dsa/yt921x.h
+@@ -889,6 +889,10 @@ enum yt921x_fdb_entry_status {
+ #define YT92XX_SERDES_MODE_10GBASER		YT922X_SERDES_MODE(6)
+ #define YT922X_PORT_NUM			9
+ 
++/* YT922x MIB: 46 64-bit counters per port (low word first), see yt922x_mib_names[] */
++#define YT922X_MIBn_DATA0(port)		(0xc0200 + 0x200 * (port))
++#define YT922X_MIB_NUM			46
++
+ /* LAG */
+ #define YT922X_LAG_NUM			4
+ /* ISO */
+@@ -994,6 +998,9 @@ struct yt921x_mib {
+ 	u64 tx_late_collisions;
+ 	u64 rx_oam;
+ 	u64 tx_oam;
++
++	/* not part of the YT9215 MIB (stays 0 there); filled by yt922x_read_mib() */
++	u64 tx_dropped;
+ };
+ 
+ struct yt921x_acl_entry {
+@@ -1027,6 +1034,7 @@ struct yt921x_port {
+ 	u64 rx_frames;
+ 	u64 tx_frames;
+ 	bool mib_working;
++	u64 yt922x_mib[YT922X_MIB_NUM];
+ 	struct yt921x_priv *priv;
+ 	struct phylink_pcs pcs;
+ 
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -768,7 +768,7 @@ yt921x_mbus_ext_init(struct yt921x_priv
+ }
+ 
+ /* Read and handle overflow of 32bit MIBs. MIB buffer must be zeroed before. */
+-static int yt921x_read_mib(struct yt921x_priv *priv, int port)
++static int yt9215_read_mib(struct yt921x_priv *priv, int port)
+ {
+ 	struct yt921x_port *pp = &priv->ports[port];
+ 	struct device *dev = to_device(priv);
+@@ -827,6 +827,176 @@ static int yt921x_read_mib(struct yt921x
+ 	return res;
+ }
+ 
++/* YT922x (YT9224) MIB block: 0xc0200 + 0x200 * port, 46 counters of 64 bits
++ * (low word first, no software wrap-around needed). Layout established on a
++ * GL-BE14000 by traffic experiments and cross-checked against the field order
++ * the vendor "ytswconfig" swconfig module prints; slots 3, 22, 32 and 42 are
++ * named by analogy with the YT923x series and have not been seen counting.
++ * Slots 46/47 read back as garbage on idle ports and are not exposed.
++ */
++static const char * const yt922x_mib_names[YT922X_MIB_NUM] = {
++	[0] = "RxBroadcastPkts",	[1] = "RxPause",
++	[2] = "RxUnicastPkts",		[3] = "RxOamPkts",
++	[4] = "RxMulticastPkts",	[5] = "RxAlignErrLess64",
++	[6] = "RxAlignErr64To1518",	[7] = "RxAlignErrJumbo",
++	[8] = "RxFcsErr64To1518",	[9] = "RxFcsErrJumbo",
++	[10] = "RxUnderSize",		[11] = "RxFragment",
++	[12] = "Rx64Byte",		[13] = "Rx65To127Byte",
++	[14] = "Rx128To255Byte",	[15] = "Rx256To511Byte",
++	[16] = "Rx512To1023Byte",	[17] = "Rx1024To1518Byte",
++	[18] = "RxJumbo",		[19] = "RxOverSize",
++	[20] = "TxBroadcastPkts",	[21] = "TxPause",
++	[22] = "TxOamPkts",		[23] = "TxMulticastPkts",
++	[24] = "RxFcDrop",		[25] = "Tx64Byte",
++	[26] = "Tx65To127Byte",		[27] = "Tx128To255Byte",
++	[28] = "Tx256To511Byte",	[29] = "Tx512To1023Byte",
++	[30] = "Tx1024To1518Byte",	[31] = "TxJumbo",
++	[32] = "TxOverSize",		[33] = "TxLateCollision",
++	[34] = "TxExcessiveCollision",	[35] = "TxMultipleCollision",
++	[36] = "TxSingleCollision",	[37] = "TxUnicastPkts",
++	[38] = "TxDefer",		[39] = "TxCollision",
++	[40] = "RxDiscard",		[41] = "TxQueueDrop",
++	[42] = "Reserved42",		[43] = "RxOkBytes",
++	[44] = "RxNotOkBytes",		[45] = "TxOkBytes",
++};
++
++/* Read one 64-bit counter as high, low, high. Whether reading the low word
++ * latches the high word is not documented for this chip; the vendor SDK uses
++ * the same high/low/high sequence for the YT9215 byte counters, so do not
++ * rely on a latch: retry while the high word moves under us.
++ */
++static int yt922x_read_counter(struct yt921x_priv *priv, u32 reg, u64 *valp)
++{
++	u32 lo, hi, hi2;
++	int res;
++
++	res = yt921x_reg_read(priv, reg + 4, &hi);
++	if (res)
++		return res;
++
++	for (unsigned int i = 0; i < 4; i++) {
++		res = yt921x_reg_read(priv, reg, &lo);
++		if (res)
++			return res;
++		res = yt921x_reg_read(priv, reg + 4, &hi2);
++		if (res)
++			return res;
++		if (hi2 == hi)
++			break;
++		hi = hi2;
++	}
++
++	*valp = ((u64)hi << 32) | lo;
++	return 0;
++}
++
++static int yt922x_read_mib(struct yt921x_priv *priv, int port)
++{
++	struct yt921x_port *pp = &priv->ports[port];
++	struct device *dev = to_device(priv);
++	struct yt921x_mib *mib = &pp->mib;
++	u64 *m = pp->yt922x_mib;
++	int res = 0;
++
++	for (unsigned int i = 0; i < YT922X_MIB_NUM; i++) {
++		u64 val;
++
++		res = yt922x_read_counter(priv, YT922X_MIBn_DATA0(port) + 8 * i,
++					  &val);
++		if (res)
++			break;
++		WRITE_ONCE(m[i], val);
++	}
++	if (res) {
++		dev_err(dev, "Failed to %s port %d: %i\n", "read stats for",
++			port, res);
++		return res;
++	}
++
++	mib->rx_broadcast = m[0];
++	mib->rx_pause = m[1];
++	mib->rx_multicast = m[4];
++	mib->rx_crc_errors = m[8] + m[9];
++	mib->rx_alignment_errors = m[5] + m[6] + m[7];
++	mib->rx_undersize_errors = m[10];
++	mib->rx_fragment_errors = m[11];
++	mib->rx_64byte = m[12];
++	mib->rx_65_127byte = m[13];
++	mib->rx_128_255byte = m[14];
++	mib->rx_256_511byte = m[15];
++	mib->rx_512_1023byte = m[16];
++	mib->rx_1024_1518byte = m[17];
++	mib->rx_jumbo = m[18];
++	mib->rx_good_bytes = m[43];
++	mib->rx_bad_bytes = m[44];
++	mib->rx_oversize_errors = m[19];
++	mib->rx_dropped = m[40] + m[24];
++	mib->tx_broadcast = m[20];
++	mib->tx_pause = m[21];
++	mib->tx_multicast = m[23];
++	mib->tx_undersize_errors = 0;
++	mib->tx_64byte = m[25];
++	mib->tx_65_127byte = m[26];
++	mib->tx_128_255byte = m[27];
++	mib->tx_256_511byte = m[28];
++	mib->tx_512_1023byte = m[29];
++	mib->tx_1024_1518byte = m[30];
++	mib->tx_jumbo = m[31];
++	mib->tx_good_bytes = m[45];
++	mib->tx_collisions = m[39];
++	mib->tx_aborted_errors = m[34];
++	mib->tx_multiple_collisions = m[35];
++	mib->tx_single_collisions = m[36];
++	mib->tx_good = m[37] + m[20] + m[23];
++	mib->tx_deferred = m[38];
++	mib->tx_late_collisions = m[33];
++	mib->rx_oam = m[3];
++	mib->tx_oam = m[22];
++	mib->tx_dropped = m[41];
++
++	pp->rx_frames = m[12] + m[13] + m[14] + m[15] + m[16] + m[17] + m[18];
++	pp->tx_frames = m[25] + m[26] + m[27] + m[28] + m[29] + m[30] + m[31];
++
++	return 0;
++}
++
++static int yt921x_read_mib(struct yt921x_priv *priv, int port)
++{
++	if (priv->series_info->mode == YT9224)
++		return yt922x_read_mib(priv, port);
++	return yt9215_read_mib(priv, port);
++}
++
++static void
++yt922x_dsa_get_strings(struct dsa_switch *ds, int port, u32 stringset,
++		       uint8_t *data)
++{
++	if (stringset != ETH_SS_STATS)
++		return;
++
++	for (unsigned int i = 0; i < YT922X_MIB_NUM; i++)
++		ethtool_puts(&data, yt922x_mib_names[i]);
++}
++
++static int yt922x_dsa_get_sset_count(struct dsa_switch *ds, int port, int sset)
++{
++	return sset == ETH_SS_STATS ? YT922X_MIB_NUM : 0;
++}
++
++static void
++yt922x_dsa_get_ethtool_stats(struct dsa_switch *ds, int port, uint64_t *data)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct yt921x_port *pp = &priv->ports[port];
++
++	mutex_lock(&priv->reg_lock);
++	yt922x_read_mib(priv, port);
++	mutex_unlock(&priv->reg_lock);
++
++	for (unsigned int i = 0; i < YT922X_MIB_NUM; i++)
++		data[i] = READ_ONCE(pp->yt922x_mib[i]);
++}
++
+ static void yt921x_poll_mib(struct work_struct *work)
+ {
+ 	struct yt921x_port *pp = container_of_const(work, struct yt921x_port,
+@@ -1034,7 +1204,7 @@ yt921x_dsa_get_stats64(struct dsa_switch
+ 	stats->tx_errors = stats->tx_aborted_errors + stats->tx_fifo_errors +
+ 			   stats->tx_window_errors;
+ 	stats->rx_dropped = mib->rx_dropped;
+-	/* stats->tx_dropped */
++	stats->tx_dropped = mib->tx_dropped;
+ 	stats->multicast = mib->rx_multicast;
+ 	stats->collisions = mib->tx_collisions;
+ }
+@@ -5034,6 +5204,12 @@ yt922x_phylink_mac_link_down(struct phyl
+ 	int port = dp->index;
+ 	int res;
+ 
++	/* Stop the MIB poll before the port goes down. Synchronous: the poll
++	 * may be mid-run and would re-arm itself after a plain cancel; we do
++	 * not hold reg_lock here and phylink calls us from process context.
++	 */
++	cancel_delayed_work_sync(&priv->ports[port].mib_read);
++
+ 	mutex_lock(&priv->reg_lock);
+ 	res = yt922x_port_down(priv, port);
+ 	mutex_unlock(&priv->reg_lock);
+@@ -5190,6 +5366,8 @@ yt922x_phylink_mac_link_up(struct phylin
+ 	if (res)
+ 		dev_err(dp->ds->dev, "Failed to %s port %d: %i\n", "bring up",
+ 			port, res);
++
++	schedule_delayed_work(&priv->ports[port].mib_read, 0);
+ }
+ 
+ static int
+@@ -6359,6 +6537,8 @@ static int yt922x_dsa_setup(struct dsa_s
+ 
+ 		pp->index = i;
+ 		pp->priv = priv;
++		INIT_DELAYED_WORK(&pp->mib_read, yt921x_poll_mib);
++		pp->mib_working = 1;
+ 		pp->pcs.ops = &yt922x_pcs_ops;
+ 		pp->pcs.poll = true;
+ 		pp->fixed_usxgmii_10g = false;
+@@ -7414,6 +7594,15 @@ static const struct dsa_switch_ops yt922
+ 	.port_vlan_add		= yt922x_dsa_port_vlan_add,
+ 	.port_vlan_del		= yt922x_dsa_port_vlan_del,
+ 	.set_ageing_time		= yt922x_dsa_set_ageing_time,
++	/* statistics */
++	.get_strings		= yt922x_dsa_get_strings,
++	.get_ethtool_stats	= yt922x_dsa_get_ethtool_stats,
++	.get_sset_count		= yt922x_dsa_get_sset_count,
++	.get_eth_mac_stats	= yt921x_dsa_get_eth_mac_stats,
++	.get_eth_ctrl_stats	= yt921x_dsa_get_eth_ctrl_stats,
++	.get_rmon_stats		= yt921x_dsa_get_rmon_stats,
++	.get_stats64		= yt921x_dsa_get_stats64,
++	.get_pause_stats	= yt921x_dsa_get_pause_stats,
+ 	/* port */
+ 	.get_tag_protocol	= yt922x_dsa_get_tag_protocol,
+ 	.change_tag_protocol	= yt922x_dsa_change_tag_protocol,

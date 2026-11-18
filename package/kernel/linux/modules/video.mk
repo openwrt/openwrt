@@ -68,7 +68,7 @@ define KernelPackage/backlight
 		CONFIG_BACKLIGHT_ADP8860=n \
 		CONFIG_BACKLIGHT_ADP8870=n
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/backlight.ko
-	AUTOLOAD:=$(call AutoProbe,video backlight)
+	AUTOLOAD:=$(call AutoProbe,backlight)
 endef
 
 define KernelPackage/backlight/description
@@ -98,7 +98,7 @@ define KernelPackage/backlight-pwm
 	DEPENDS:=@PWM_SUPPORT +kmod-backlight
 	KCONFIG:=CONFIG_BACKLIGHT_PWM
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/pwm_bl.ko
-	AUTOLOAD:=$(call AutoProbe,video pwm_bl,1)
+	AUTOLOAD:=$(call AutoProbe,pwm_bl,1)
 endef
 
 define KernelPackage/backlight-pwm/description
@@ -611,6 +611,39 @@ endef
 
 $(eval $(call KernelPackage,drm-dw-hdmi))
 
+define KernelPackage/drm-dw-hdmi-i2s-audio
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Synopsys DesignWare HDMI I2S audio interface
+  DEPENDS:=+kmod-drm-dw-hdmi +kmod-sound-soc-hdmi-codec
+  KCONFIG:=CONFIG_DRM_DW_HDMI_I2S_AUDIO
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-i2s-audio.ko
+  AUTOLOAD:=$(call AutoProbe,dw-hdmi-i2s-audio)
+endef
+
+define KernelPackage/drm-dw-hdmi-i2s-audio/description
+  I2S audio interface of the Synopsys DesignWare HDMI transmitter, which
+  plays the audio an I2S controller of the SoC sends, as on RK3288,
+  RK3399 and RK3568.
+endef
+
+$(eval $(call KernelPackage,drm-dw-hdmi-i2s-audio))
+
+define KernelPackage/drm-dw-hdmi-ahb-audio
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Synopsys DesignWare HDMI AHB audio interface
+  DEPENDS:=+kmod-drm-dw-hdmi +kmod-sound-core
+  KCONFIG:=CONFIG_DRM_DW_HDMI_AHB_AUDIO
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko
+  AUTOLOAD:=$(call AutoProbe,dw-hdmi-ahb-audio)
+endef
+
+define KernelPackage/drm-dw-hdmi-ahb-audio/description
+  AHB audio interface of the Synopsys DesignWare HDMI transmitter, which
+  fetches the audio from memory by DMA, as on i.MX6.
+endef
+
+$(eval $(call KernelPackage,drm-dw-hdmi-ahb-audio))
+
 define KernelPackage/drm-dw-mipi-dsi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Synopsys DesignWare MIPI DSI bridge support
@@ -638,6 +671,23 @@ define KernelPackage/drm-dw-mipi-dsi2
 endef
 
 $(eval $(call KernelPackage,drm-dw-mipi-dsi2))
+
+
+define KernelPackage/drm-panfrost
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Panfrost (ARM Mali Midgard/Bifrost GPU) DRM support
+  DEPENDS:=video-support @TARGET_rockchip_armv8 +kmod-drm-sched +kmod-drm-shmem-helper
+  KCONFIG:=CONFIG_DRM_PANFROST
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/panfrost/panfrost.ko
+  AUTOLOAD:=$(call AutoProbe,panfrost)
+endef
+
+define KernelPackage/drm-panfrost/description
+  Direct Rendering Manager (DRM) support for ARM Mali Midgard (T6xx, T7xx,
+  T8xx) and Bifrost (G3x, G5x, G7x) GPUs.
+endef
+
+$(eval $(call KernelPackage,drm-panfrost))
 
 
 define KernelPackage/drm-panthor
@@ -760,7 +810,7 @@ define KernelPackage/drm-imx
 	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imxdrm.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/drm_dma_helper.ko \
 	$(LINUX_DIR)/drivers/gpu/ipu-v3/imx-ipu-v3.ko
-  AUTOLOAD:=$(call AutoLoad,08,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
+  AUTOLOAD:=$(call AutoLoad,08,imxdrm imx-ipu-v3)
 endef
 
 define KernelPackage/drm-imx/description
@@ -772,15 +822,10 @@ $(eval $(call KernelPackage,drm-imx))
 define KernelPackage/drm-imx-hdmi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX HDMI DRM support
-  DEPENDS:=+kmod-sound-core kmod-drm-imx +kmod-drm-display-helper
-  KCONFIG:=CONFIG_DRM_IMX_HDMI \
-	CONFIG_DRM_DW_HDMI_AHB_AUDIO \
-	CONFIG_DRM_DW_HDMI_I2S_AUDIO
-  FILES:= \
-	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/dw_hdmi-imx.ko
-  AUTOLOAD:=$(call AutoLoad,08,dw-hdmi dw-hdmi-ahb-audio.ko dw_hdmi-imx)
+  DEPENDS:=kmod-drm-imx +kmod-drm-dw-hdmi +kmod-drm-dw-hdmi-ahb-audio
+  KCONFIG:=CONFIG_DRM_IMX_HDMI
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/dw_hdmi-imx.ko
+  AUTOLOAD:=$(call AutoLoad,08,dw_hdmi-imx)
 endef
 
 define KernelPackage/drm-imx-hdmi/description
@@ -837,7 +882,7 @@ define KernelPackage/drm-panel-backlight-quirks
   KCONFIG:=CONFIG_DRM_PANEL_BACKLIGHT_QUIRKS
   DEPENDS:=+kmod-backlight
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_panel_backlight_quirks.ko
-  AUTOLOAD:=$(call AutoProbe,panel-backlight-quirks)
+  AUTOLOAD:=$(call AutoProbe,drm_panel_backlight_quirks)
 endef
 
 define KernelPackage/drm-panel-backlight-quirks/description

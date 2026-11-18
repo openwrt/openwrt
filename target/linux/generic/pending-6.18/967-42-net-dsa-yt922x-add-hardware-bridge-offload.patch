@@ -1,0 +1,511 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: dsa: yt922x: add hardware bridge offload
+
+Enable single VLAN-unaware bridge forwarding on YT9224 without a module
+parameter. Use the isolation matrix for forwarding state, gate source
+learning on bridge/STP state and flush dynamic entries with Whale's FDB
+engine. Mark hardware-flooded broadcast frames in both tag formats to
+avoid duplicate software forwarding. Unknown unicast and multicast remain
+trapped to the CPU.
+
+Five-minute tests on GL-BE14000 confirm internal LAN unicast forwarding
+with about 0.8% CPU usage and working PPE routing offload in parallel.
+Numbered broadcast packets are delivered once. VLAN/MST, static FDB/MDB,
+multiple forwarding domains and bridge lifecycle acceptance remain work
+in progress; this is not yet complete switch functionality.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+
+---
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -9,6 +9,7 @@
+  */
+ 
+ #include <linux/dcbnl.h>
++#include <linux/dsa/yt922x.h>
+ #include <linux/etherdevice.h>
+ #include <linux/if_bridge.h>
+ #include <linux/if_hsr.h>
+@@ -6249,10 +6250,14 @@ static int yt922x_dsa_setup(struct dsa_s
+ 		pp->pcs.poll = true;
+ 		pp->fixed_usxgmii_10g = false;
+ 		pp->conduit_operational = false;
++		pp->yt922x_bridge = NULL;
++		pp->yt922x_stp_state = BR_STATE_DISABLED;
++		pp->yt922x_learning = false;
+ 	}
+ 
+ 	mutex_lock(&priv->reg_lock);
+ 	priv->cpu_mac_stopping = false;
++	priv->yt922x_bridge_broken = false;
+ 	res = yt922x_chip_reset(priv);
+ 	mutex_unlock(&priv->reg_lock);
+ 	if (res)
+@@ -6288,10 +6293,344 @@ static void yt922x_dsa_teardown(struct d
+ 	yt922x_cpu_mac_stop(to_yt921x_priv(ds));
+ }
+ 
++#define YT922X_FDB_INPUT(n)	(0x180000 + 4 * (n))
++#define YT922X_FDB_COMMAND	0x180020
++#define YT922X_FDB_RESULT		0x180024
++#define YT922X_FDB_DONE		BIT(15)
++#define YT922X_FDB_FLUSH_PORT	BIT(8)
++#define YT922X_FDB_FLUSH		(4 << 1)
++#define YT922X_FDB_START		BIT(0)
++#define YT922X_AGEING_TIME	0x18043c
++
++/* Whale's indirect FDB engine is different from Tiger's. The command below
++ * removes dynamic unicast entries learned on one physical port. In
++ * particular, bit 7 (flush static entries) must remain clear.
++ * Caller holds reg_lock throughout the input/command/result transaction.
++ */
++static int yt922x_bridge_fast_age(struct yt921x_priv *priv, int port)
++{
++	u32 done = YT922X_FDB_DONE;
++	int i, ret;
++
++	for (i = 0; i < 4; i++) {
++		ret = yt921x_reg_write(priv, YT922X_FDB_INPUT(i),
++				       i ? 0 : port);
++		if (ret)
++			return ret;
++	}
++	ret = yt921x_reg_write(priv, YT922X_FDB_COMMAND,
++			       YT922X_FDB_FLUSH_PORT | YT922X_FDB_FLUSH |
++			       YT922X_FDB_START);
++	if (ret)
++		return ret;
++
++	return yt921x_reg_wait(priv, YT922X_FDB_RESULT, YT922X_FDB_DONE, &done);
++}
++
++/* An isolation bit blocks an egress port. Use the matrix for STP as well:
++ * non-forwarding ports cannot exchange frames with any user port, while
++ * BPDUs and other control traffic can still reach the software bridge.
++ * Do not copy Tiger's STP state encoding into Whale's STP register.
++ */
++static int yt922x_bridge_matrix(struct yt921x_priv *priv)
++{
++	struct dsa_port *dp, *other;
++	int ret;
++
++	dsa_switch_for_each_user_port(dp, &priv->ds) {
++		struct yt921x_port *p = &priv->ports[dp->index];
++		u32 allowed = priv->cpu_ports_mask;
++
++		if (!priv->yt922x_bridge_broken && p->yt922x_bridge &&
++		    p->yt922x_stp_state == BR_STATE_FORWARDING) {
++			dsa_switch_for_each_user_port(other, &priv->ds) {
++				struct yt921x_port *q = &priv->ports[other->index];
++
++				if (dp != other &&
++				    p->yt922x_bridge == q->yt922x_bridge &&
++				    q->yt922x_stp_state == BR_STATE_FORWARDING)
++					allowed |= BIT(other->index);
++			}
++		}
++		ret = yt921x_reg_write(priv, YT922X_PORTn_ISOLATION(dp->index),
++				       ~allowed);
++		if (ret)
++			return ret;
++	}
++	return 0;
++}
++
++static int yt922x_bridge_learning(struct yt921x_priv *priv, int port)
++{
++	struct yt921x_port *p = &priv->ports[port];
++	bool learn = !priv->yt922x_bridge_broken &&
++		     p->yt922x_bridge && p->yt922x_learning &&
++		     (p->yt922x_stp_state == BR_STATE_LEARNING ||
++		      p->yt922x_stp_state == BR_STATE_FORWARDING);
++
++	return yt921x_reg_update_bits(priv, YT922X_PORTn_LEARN(port),
++				      YT922X_PORT_LEARN_DIS,
++				      learn ? 0 : YT922X_PORT_LEARN_DIS);
++}
++
++/* Void switchdev callbacks cannot propagate bus errors. Quarantine the
++ * hardware bridge on error, rather than leave a stale forwarding matrix.
++ * Recovery requires reinitializing the switch.
++ */
++static void yt922x_tagger_sync(struct yt921x_priv *priv)
++{
++	struct yt922x_tagger_data *tagger_data = priv->ds.tagger_data;
++
++	WRITE_ONCE(tagger_data->hw_fwd_disabled, priv->yt922x_bridge_broken);
++}
++
++static void yt922x_bridge_quarantine(struct yt921x_priv *priv, int error)
++{
++	struct dsa_port *dp;
++	int ret;
++
++	priv->yt922x_bridge_broken = true;
++	yt922x_tagger_sync(priv);
++	dsa_switch_for_each_user_port(dp, &priv->ds) {
++		ret = yt921x_reg_set_bits(priv, YT922X_PORTn_LEARN(dp->index),
++					  YT922X_PORT_LEARN_DIS);
++		if (ret)
++			dev_err(to_device(priv), "Cannot stop learning on port %d: %d\n",
++				dp->index, ret);
++		ret = yt921x_reg_write(priv, YT922X_PORTn_ISOLATION(dp->index),
++				       ~(u32)priv->cpu_ports_mask);
++		if (ret)
++			dev_err(to_device(priv), "Cannot isolate port %d: %d\n",
++				dp->index, ret);
++	}
++	dev_err(to_device(priv), "YT9224 bridge quarantined after error %d; reinitialize switch\n",
++		error);
++}
++
++static int
++yt922x_dsa_port_bridge_join(struct dsa_switch *ds, int port,
++			    struct dsa_bridge bridge, bool *tx_fwd_offload,
++			    struct netlink_ext_ack *extack)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct yt921x_port *p = &priv->ports[port];
++	struct dsa_port *dp;
++	int ret = 0;
++
++	if (br_vlan_enabled(bridge.dev) || br_mst_enabled(bridge.dev)) {
++		NL_SET_ERR_MSG_MOD(extack, "YT9224 VLAN/MST bridge offload is not implemented yet");
++		return -EOPNOTSUPP;
++	}
++	/* DSA does not inherit every bridge flag after joining. Validate the
++	 * pre-existing settings too, before opening any forwarding path.
++	 */
++	if (br_port_flag_is_set(dsa_to_port(ds, port)->user, BR_HAIRPIN_MODE) ||
++	    br_port_flag_is_set(dsa_to_port(ds, port)->user, BR_ISOLATED) ||
++	    br_port_flag_is_set(dsa_to_port(ds, port)->user, BR_PORT_LOCKED) ||
++	    !br_port_flag_is_set(dsa_to_port(ds, port)->user, BR_BCAST_FLOOD)) {
++		NL_SET_ERR_MSG_MOD(extack, "Unsupported YT9224 bridge port flags");
++		return -EOPNOTSUPP;
++	}
++
++	mutex_lock(&priv->reg_lock);
++	if (priv->yt922x_bridge_broken) {
++		ret = -EIO;
++		goto out;
++	}
++	dsa_switch_for_each_user_port(dp, ds) {
++		struct net_device *b = priv->ports[dp->index].yt922x_bridge;
++
++		if (b && b != bridge.dev) {
++			NL_SET_ERR_MSG_MOD(extack,
++					   "YT9224 supports only one hardware bridge");
++			ret = -EOPNOTSUPP;
++			goto out;
++		}
++	}
++	p->yt922x_bridge = bridge.dev;
++	p->yt922x_stp_state = BR_STATE_DISABLED;
++	p->yt922x_learning = false;
++	ret = yt922x_bridge_learning(priv, port);
++	if (!ret)
++		ret = yt922x_bridge_fast_age(priv, port);
++	if (!ret)
++		ret = yt922x_bridge_matrix(priv);
++	if (ret) {
++		p->yt922x_bridge = NULL;
++		yt922x_bridge_quarantine(priv, ret);
++	}
++	/* CPU TX still targets individual ports, not the hardware bridge. */
++	*tx_fwd_offload = false;
++out:
++	mutex_unlock(&priv->reg_lock);
++	return ret;
++}
++
++static void
++yt922x_dsa_port_bridge_leave(struct dsa_switch *ds, int port,
++			     struct dsa_bridge bridge)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct yt921x_port *p = &priv->ports[port];
++	int ret;
++
++	mutex_lock(&priv->reg_lock);
++	p->yt922x_bridge = NULL;
++	p->yt922x_learning = false;
++	p->yt922x_stp_state = BR_STATE_DISABLED;
++	ret = yt922x_bridge_learning(priv, port);
++	if (!ret)
++		ret = yt922x_bridge_matrix(priv);
++	if (!ret)
++		ret = yt922x_bridge_fast_age(priv, port);
++	if (ret)
++		yt922x_bridge_quarantine(priv, ret);
++	mutex_unlock(&priv->reg_lock);
++}
++
++static void
++yt922x_dsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct yt921x_port *p = &priv->ports[port];
++	int ret;
++
++	mutex_lock(&priv->reg_lock);
++	if (!p->yt922x_bridge || priv->yt922x_bridge_broken)
++		goto out;
++	p->yt922x_stp_state = state;
++	ret = yt922x_bridge_learning(priv, port);
++	if (!ret)
++		ret = yt922x_bridge_matrix(priv);
++	if (!ret && state != BR_STATE_FORWARDING && state != BR_STATE_LEARNING)
++		ret = yt922x_bridge_fast_age(priv, port);
++	if (ret)
++		yt922x_bridge_quarantine(priv, ret);
++out:
++	mutex_unlock(&priv->reg_lock);
++}
++
++static void yt922x_dsa_port_fast_age(struct dsa_switch *ds, int port)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	int ret;
++
++	mutex_lock(&priv->reg_lock);
++	if (priv->ports[port].yt922x_bridge && !priv->yt922x_bridge_broken) {
++		ret = yt922x_bridge_fast_age(priv, port);
++		if (ret)
++			yt922x_bridge_quarantine(priv, ret);
++	}
++	mutex_unlock(&priv->reg_lock);
++}
++
++static int
++yt922x_dsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
++				 struct switchdev_brport_flags flags,
++				 struct netlink_ext_ack *extack)
++{
++	if (flags.mask & ~(BR_LEARNING | BR_FLOOD | BR_MCAST_FLOOD |
++			   BR_BCAST_FLOOD | BR_HAIRPIN_MODE | BR_ISOLATED |
++			   BR_PORT_LOCKED))
++		return -EOPNOTSUPP;
++	if (flags.mask & flags.val &
++	    (BR_HAIRPIN_MODE | BR_ISOLATED | BR_PORT_LOCKED)) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "YT9224 hairpin, isolated and locked ports are not supported yet");
++		return -EINVAL;
++	}
++	if ((flags.mask & BR_BCAST_FLOOD) && !(flags.val & BR_BCAST_FLOOD)) {
++		NL_SET_ERR_MSG_MOD(extack, "YT9224 hardware bridge requires broadcast flooding");
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static int
++yt922x_dsa_port_bridge_flags(struct dsa_switch *ds, int port,
++			     struct switchdev_brport_flags flags,
++			     struct netlink_ext_ack *extack)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct yt921x_port *p = &priv->ports[port];
++	int ret;
++
++	ret = yt922x_dsa_port_pre_bridge_flags(ds, port, flags, extack);
++	if (ret)
++		return ret;
++	/* Unknown unicast and multicast are trapped; the software bridge
++	 * applies BR_FLOOD/BR_MCAST_FLOOD when it replicates these packets.
++	 */
++	if (!(flags.mask & BR_LEARNING))
++		return 0;
++	mutex_lock(&priv->reg_lock);
++	if (priv->yt922x_bridge_broken) {
++		ret = -EIO;
++		goto out;
++	}
++	p->yt922x_learning = !!(flags.val & BR_LEARNING);
++	ret = yt922x_bridge_learning(priv, port);
++	if (!ret && !p->yt922x_learning && p->yt922x_bridge)
++		ret = yt922x_bridge_fast_age(priv, port);
++	if (ret)
++		yt922x_bridge_quarantine(priv, ret);
++out:
++	mutex_unlock(&priv->reg_lock);
++	return ret;
++}
++
++static int
++yt922x_dsa_port_vlan_filtering(struct dsa_switch *ds, int port, bool filtering,
++			       struct netlink_ext_ack *extack)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++
++	if (filtering && priv->ports[port].yt922x_bridge) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "Disable YT9224 bridge offload before enabling VLAN filtering");
++		return -EINVAL;
++	}
++	return filtering ? -EOPNOTSUPP : 0;
++}
++
++static int yt922x_dsa_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	int ret;
++
++	mutex_lock(&priv->reg_lock);
++	ret = yt921x_reg_write(priv, YT922X_AGEING_TIME,
++			       clamp_t(u32, msecs / 6000, 1, U16_MAX));
++	mutex_unlock(&priv->reg_lock);
++	return ret;
++}
++
++static int yt922x_dsa_connect_tag_protocol(struct dsa_switch *ds,
++					   enum dsa_tag_protocol proto)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++
++	if (proto != DSA_TAG_PROTO_YT922X && proto != DSA_TAG_PROTO_YT922X_4B)
++		return -EPROTONOSUPPORT;
++
++	yt922x_tagger_sync(priv);
++
++	return 0;
++}
++
+ static const struct dsa_switch_ops yt922x_dsa_switch_ops = {
++	.port_bridge_join	= yt922x_dsa_port_bridge_join,
++	.port_bridge_leave	= yt922x_dsa_port_bridge_leave,
++	.port_stp_state_set	= yt922x_dsa_port_stp_state_set,
++	.port_fast_age		= yt922x_dsa_port_fast_age,
++	.port_pre_bridge_flags	= yt922x_dsa_port_pre_bridge_flags,
++	.port_bridge_flags	= yt922x_dsa_port_bridge_flags,
++	.port_vlan_filtering	= yt922x_dsa_port_vlan_filtering,
++	.set_ageing_time		= yt922x_dsa_set_ageing_time,
+ 	/* port */
+ 	.get_tag_protocol	= yt922x_dsa_get_tag_protocol,
+ 	.change_tag_protocol	= yt922x_dsa_change_tag_protocol,
++	.connect_tag_protocol	= yt922x_dsa_connect_tag_protocol,
+ 	.phylink_get_caps	= yt922x_dsa_phylink_get_caps,
+ 	.port_setup		= yt922x_dsa_port_setup,
+ 	/* chip */
+--- a/drivers/net/dsa/yt921x.h
++++ b/drivers/net/dsa/yt921x.h
+@@ -1034,6 +1034,11 @@ struct yt921x_port {
+ 	struct delayed_work cpu_mac_work;
+ 	bool fixed_usxgmii_10g;
+ 	bool conduit_operational;
++
++	/* YT9224 bridge state, protected by reg_lock. */
++	struct net_device *yt922x_bridge;
++	u8 yt922x_stp_state;
++	bool yt922x_learning;
+ };
+ 
+ struct yt921x_reg_ops {
+@@ -1079,6 +1084,7 @@ struct yt921x_priv {
+ 
+ 	struct yt921x_port ports[YT921X_PORT_NUM];
+ 	bool cpu_mac_stopping;
++	bool yt922x_bridge_broken;
+ 
+ 	u16 eee_ports_mask;
+ 
+--- a/net/dsa/tag_yt922x.c
++++ b/net/dsa/tag_yt922x.c
+@@ -8,6 +8,7 @@
+ 
+ #include <linux/etherdevice.h>
+ #include <linux/dsa/yt922x.h>
++#include <linux/slab.h>
+ 
+ #include "tag.h"
+ 
+@@ -57,6 +58,34 @@ yt922x_tag_xmit(struct sk_buff *skb, str
+ 	return skb;
+ }
+ 
++static bool yt922x_hw_fwd_disabled(struct net_device *user)
++{
++	struct yt922x_tagger_data *tagger_data;
++
++	tagger_data = dsa_user_to_port(user)->ds->tagger_data;
++
++	return READ_ONCE(tagger_data->hw_fwd_disabled);
++}
++
++static int yt922x_tag_connect(struct dsa_switch *ds)
++{
++	struct yt922x_tagger_data *tagger_data;
++
++	tagger_data = kzalloc(sizeof(*tagger_data), GFP_KERNEL);
++	if (!tagger_data)
++		return -ENOMEM;
++
++	ds->tagger_data = tagger_data;
++
++	return 0;
++}
++
++static void yt922x_tag_disconnect(struct dsa_switch *ds)
++{
++	kfree(ds->tagger_data);
++	ds->tagger_data = NULL;
++}
++
+ static struct sk_buff *
+ yt922x_tag_rcv(struct sk_buff *skb, struct net_device *netdev)
+ {
+@@ -91,6 +120,13 @@ yt922x_tag_rcv(struct sk_buff *skb, stru
+ 	skb_pull_rcsum(skb, YT922X_TAG_LEN);
+ 	dsa_strip_etype_header(skb, YT922X_TAG_LEN);
+ 
++	/* Broadcast is flooded in hardware. Unknown unicast and multicast
++	 * remain trapped, so they must still be forwarded by the bridge.
++	 */
++	if (is_broadcast_ether_addr(eth_hdr(skb)->h_dest) &&
++	    !yt922x_hw_fwd_disabled(skb->dev))
++		dsa_default_offload_fwd_mark(skb);
++
+ 	return skb;
+ }
+ 
+@@ -99,6 +135,8 @@ static const struct dsa_device_ops yt922
+ 	.proto  = DSA_TAG_PROTO_YT922X,
+ 	.xmit   = yt922x_tag_xmit,
+ 	.rcv    = yt922x_tag_rcv,
++	.connect = yt922x_tag_connect,
++	.disconnect = yt922x_tag_disconnect,
+ 	.needed_headroom = YT922X_TAG_LEN,
+ };
+ 
+@@ -152,6 +190,10 @@ yt922x_4b_tag_rcv(struct sk_buff *skb, s
+ 		return NULL;
+ 	skb->dev = user;
+ 
++	if (is_broadcast_ether_addr(eth_hdr(skb)->h_dest) &&
++	    !yt922x_hw_fwd_disabled(user))
++		dsa_default_offload_fwd_mark(skb);
++
+ 	return skb;
+ }
+ 
+@@ -160,6 +202,8 @@ static const struct dsa_device_ops yt922
+ 	.proto = DSA_TAG_PROTO_YT922X_4B,
+ 	.xmit = yt922x_4b_tag_xmit,
+ 	.rcv = yt922x_4b_tag_rcv,
++	.connect = yt922x_tag_connect,
++	.disconnect = yt922x_tag_disconnect,
+ 	.needed_headroom = VLAN_HLEN,
+ };
+ 
+--- a/include/linux/dsa/yt922x.h
++++ b/include/linux/dsa/yt922x.h
+@@ -22,4 +22,8 @@ static inline u16 yt922x_4b_port_tag(uns
+ 	return FIELD_PREP(YT922X_4B_TX_PORT_M, BIT(port));
+ }
+ 
++struct yt922x_tagger_data {
++	bool hw_fwd_disabled;
++};
++
+ #endif

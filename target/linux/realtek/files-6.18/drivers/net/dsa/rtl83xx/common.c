@@ -11,77 +11,18 @@
 #include <linux/inetdevice.h>
 #include <linux/mfd/syscon.h>
 #include <linux/platform_device.h>
+#include <linux/regmap.h>
 #include <linux/rhashtable.h>
 #include <linux/of_net.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "fdb.h"
 #include "l2.h"
 #include "l3.h"
 #include "pie.h"
 #include "rtl-otto.h"
 #include "tc.h"
 #include "stp.h"
-
-/* Port register accessor functions for the RTL838x and RTL930X SoCs */
-void rtl838x_mask_port_reg(u64 clear, u64 set, int reg)
-{
-	sw_w32_mask((u32)clear, (u32)set, reg);
-}
-
-void rtl838x_set_port_reg(u64 set, int reg)
-{
-	sw_w32((u32)set, reg);
-}
-
-u64 rtl838x_get_port_reg(int reg)
-{
-	return ((u64)sw_r32(reg));
-}
-
-/* Port register accessor functions for the RTL839x and RTL931X SoCs */
-void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg)
-{
-	sw_w32_mask((u32)(clear >> 32), (u32)(set >> 32), reg);
-	sw_w32_mask((u32)(clear & 0xffffffff), (u32)(set & 0xffffffff), reg + 4);
-}
-
-u64 rtl839x_get_port_reg_be(int reg)
-{
-	u64 v = sw_r32(reg);
-
-	v <<= 32;
-	v |= sw_r32(reg + 4);
-
-	return v;
-}
-
-void rtl839x_set_port_reg_be(u64 set, int reg)
-{
-	sw_w32(set >> 32, reg);
-	sw_w32(set & 0xffffffff, reg + 4);
-}
-
-void rtl839x_mask_port_reg_le(u64 clear, u64 set, int reg)
-{
-	sw_w32_mask((u32)clear, (u32)set, reg);
-	sw_w32_mask((u32)(clear >> 32), (u32)(set >> 32), reg + 4);
-}
-
-void rtl839x_set_port_reg_le(u64 set, int reg)
-{
-	sw_w32(set, reg);
-	sw_w32(set >> 32, reg + 4);
-}
-
-u64 rtl839x_get_port_reg_le(int reg)
-{
-	u64 v = sw_r32(reg + 4);
-
-	v <<= 32;
-	v |= sw_r32(reg);
-
-	return v;
-}
 
 static bool rtldsa_phy_load_deferred(struct phy_device *phydev)
 {
@@ -274,24 +215,47 @@ static void rtldsa_port_link_change(struct dsa_switch *ds, int port,
 
 static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 {
-	struct otto_dsa_priv *priv;
 	struct dsa_switch *ds = dev_id;
-	u64 link, ports;
+	struct otto_dsa_priv *priv;
+	u32 link, ports;
 
 	priv = ds->priv;
-	ports = priv->r->get_port_reg_le(priv->r->isr_port_link_sts_chg);
-	priv->r->set_port_reg_le(ports, priv->r->isr_port_link_sts_chg);
 
-	/* read latched */
-	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
-	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
+	for (int i = 0; i < DIV_ROUND_UP(priv->r->cpu_port + 1, 32); i++) {
+		if (regmap_read(priv->map, priv->r->isr_port_link_sts_chg + i * 4,
+				&ports))
+			break;
 
-	for (int port = 0; port < priv->r->cpu_port; port++)
-		if (ports & BIT_ULL(port))
-			rtldsa_port_link_change(ds, port, &priv->ports[port],
-						link & BIT_ULL(port));
+		/* Acknowledge only the status bits read above. */
+		if (regmap_write(priv->map, priv->r->isr_port_link_sts_chg + i * 4,
+				 ports))
+			break;
+
+		/* read latched */
+		if (regmap_read(priv->map, priv->r->mac_link_sts + i * 4, &link))
+			break;
+		if (regmap_read(priv->map, priv->r->mac_link_sts + i * 4, &link))
+			break;
+
+		for (int port = i * 32; port < (i + 1) * 32 && port < priv->r->cpu_port; port++)
+			if (ports & BIT(port % 32))
+				rtldsa_port_link_change(ds, port, &priv->ports[port],
+							link & BIT(port % 32));
+	}
 
 	return IRQ_HANDLED;
+}
+
+static void rtldsa_switch_irq_disable(struct otto_dsa_priv *priv)
+{
+	const u32 masks[2] = { 0 };
+
+	/* Stop the device from asserting the shared IRQ before releasing it. */
+	regmap_bulk_write(priv->map, priv->r->imr_port_link_sts_chg, masks,
+			  DIV_ROUND_UP(priv->r->cpu_port + 1, 32));
+
+	if (priv->r->imr_glb)
+		regmap_write(priv->map, priv->r->imr_glb, 0);
 }
 
 /*
@@ -329,11 +293,11 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 
 static int rtl83xx_sw_probe(struct platform_device *pdev)
 {
-	struct otto_dsa_priv *priv;
 	struct device *dev = &pdev->dev;
 	const struct rtldsa_config *r;
+	struct otto_dsa_priv *priv;
+	int bpdu_reg, err = 0;
 	u64 bpdu_mask;
-	int err = 0;
 
 	pr_debug("Probing RTL838X switch device\n");
 	if (!pdev->dev.of_node) {
@@ -393,7 +357,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return err;
 
 	priv->family_id = soc_info.family;
-	priv->r->stp_init();
+	priv->r->stp_init(priv);
 	priv->irq_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0);
 
 	err = rtldsa_mdio_loaded();
@@ -424,10 +388,14 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->ports[i].dp = dsa_to_port(priv->ds, i);
 
 	/* Enable link and media change interrupts. Are the SERDES masks needed? */
-	sw_w32_mask(0, 3, priv->r->isr_glb_src);
+	regmap_write_bits(priv->map, priv->r->isr_glb_src, 3, 3);
 
-	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
-	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
+	for (int i = 0; i < DIV_ROUND_UP(priv->r->cpu_port + 1, 32); i++) {
+		u32 mask = priv->irq_mask >> (i * 32);
+
+		regmap_write(priv->map, priv->r->isr_port_link_sts_chg + i * 4, mask);
+		regmap_write(priv->map, priv->r->imr_port_link_sts_chg + i * 4, mask);
+	}
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
@@ -436,11 +404,13 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (err) {
 		dev_err(dev, "Error setting up switch interrupt.\n");
 		/* Need to free allocated switch here */
+	} else {
+		priv->link_state_irq_requested = true;
 	}
 
-	/* Enable interrupts for switch, on RTL931x, the IRQ is always on globally */
-	if (soc_info.family != RTL9310_FAMILY_ID)
-		sw_w32(0x1, priv->r->imr_glb);
+	/* Enable the global interrupt mask where one exists. */
+	if (priv->r->imr_glb)
+		regmap_write(priv->map, priv->r->imr_glb, 1);
 
 	otto_l2_get_ageing_time(priv);
 
@@ -456,24 +426,25 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		goto err_register_l3;
 
 	/* TODO: put this into l2_setup() */
-	switch (soc_info.family) {
-	default:
+	if (priv->r->spcl_trap_eapol_ctrl) {
 		/* Flood BPDUs to all ports including cpu-port */
-		bpdu_mask = soc_info.family == RTL8380_FAMILY_ID ? 0x1FFFFFFF : 0x1FFFFFFFFFFFFF;
-		priv->r->set_port_reg_be(bpdu_mask, priv->r->rma_bpdu_fld_pmask);
+		bpdu_mask = GENMASK_ULL(priv->r->cpu_port, 0);
+		bpdu_reg = priv->r->rma_bpdu_fld_pmask;
+		if (priv->r->cpu_port >= 32) {
+			regmap_write(priv->map, bpdu_reg, upper_32_bits(bpdu_mask));
+			bpdu_reg += 4;
+		}
+		regmap_write(priv->map, bpdu_reg, lower_32_bits(bpdu_mask));
 
 		/* TRAP 802.1X frames (EAPOL) to the CPU-Port, bypass STP and VLANs */
-		sw_w32(7, priv->r->spcl_trap_eapol_ctrl);
+		regmap_write(priv->map, priv->r->spcl_trap_eapol_ctrl, 7);
 
 		rtl838x_dbgfs_init(priv);
-		break;
-	case RTL9300_FAMILY_ID:
-	case RTL9310_FAMILY_ID:
+	} else {
 		rtl930x_dbgfs_init(priv);
-		break;
 	}
 
-	otto_l2_dbgfs_init(priv);
+	otto_fdb_dbgfs_init(priv);
 
 	if (priv->r->lag_switch_init)
 		priv->r->lag_switch_init(priv);
@@ -483,7 +454,11 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	return 0;
 
 err_register_l3:
-	dsa_switch_shutdown(priv->ds);
+	rtldsa_switch_irq_disable(priv);
+	if (priv->link_state_irq_requested)
+		free_irq(priv->link_state_irq, priv->ds);
+	cancel_delayed_work_sync(&priv->counters_work);
+	dsa_unregister_switch(priv->ds);
 err_register_switch:
 	otto_tc_cleanup(priv);
 	destroy_workqueue(priv->wq);
@@ -498,7 +473,6 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	if (!priv)
 		return;
 
-	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
 
 	/* Stop debugfs readers before tearing down the switch. */
@@ -512,7 +486,10 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	otto_l3_remove(priv);
 	cancel_delayed_work_sync(&priv->counters_work);
 
-	dsa_switch_shutdown(priv->ds);
+	rtldsa_switch_irq_disable(priv);
+	if (priv->link_state_irq_requested)
+		free_irq(priv->link_state_irq, priv->ds);
+	dsa_unregister_switch(priv->ds);
 
 	otto_tc_cleanup(priv);
 

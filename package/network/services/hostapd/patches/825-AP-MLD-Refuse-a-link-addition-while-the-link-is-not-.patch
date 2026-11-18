@@ -1,0 +1,37 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 23 Oct 2026 22:30:00 +0200
+Subject: [PATCH] AP MLD: Refuse a link addition while the link is not started
+
+A link of an AP MLD joins the AP MLD in hostapd_driver_init(), before
+hostapd_setup_bss() starts it. While the link waits for an HT scan, ACS
+or a DFS CAC, it has no wpa_auth. A Link Reconfiguration Request that
+adds such a link passes the checks of
+hostapd_parse_link_reconf_req_sta_profile(), and hostapd adds a link
+station for it. Where the driver takes that link station, the RSN state
+machine holds no authenticator for the link, and the Link
+Reconfiguration Response accepts the link without the MLO GTK, IGTK
+and BIGTK KDEs that IEEE Std 802.11be-2024, 35.3.6.4 requires for each
+added link. Where the driver refuses it, the release of the link
+station reports AP-STA-DISCONNECTED for a station that stays
+associated.
+
+Refuse the addition of such a link, as for a link that the AP MLD does
+not have.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -2308,6 +2308,12 @@ hostapd_parse_link_reconf_req_sta_profil
+ 		goto add_to_list;
+ 	}
+ 
++	if (reconf_type == EHT_RECONF_TYPE_ADD_LINK && !lhapd->started) {
++		wpa_printf(MSG_DEBUG, "MLD: Link ID=%u not started", link_id);
++		ret = 1; /* reject this per-STA profile */
++		goto add_to_list;
++	}
++
+ 	lsta = ap_get_sta(lhapd, req->sta_mld_addr);
+ 
+ 	if (reconf_type == EHT_RECONF_TYPE_DELETE_LINK) {

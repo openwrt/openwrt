@@ -1,0 +1,36 @@
+From: Robert Marko <robimarko@gmail.com>
+Date: Mon, 26 Oct 2026 13:08:12 +0100
+Subject: [PATCH] clk: qcom: ipq-cmn-pll: Correct IPQ8074 NSS NoC rate
+
+The IPQ8074 NSS NoC bias output feeds the GCC NSS NoC clock without
+a divider.
+
+GCC and SSDK (Qualcomm vendor switch driver from SDK) both configure that
+clock for 461.5 MHz, while the CMN PLL driver reports its parent at
+416.5 MHz.
+
+Report the 461.5 MHz output rate so consumers see the correct rate.
+
+Fixes: 4e36f8ab45c4 ("clk: qcom: ipq-cmn-pll: Add IPQ8074 SoC support")
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Reviewed-by: Abel Vesa <abel.vesa@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20261026120920.1667982-1-robimarko@gmail.com
+---
+Changes in v2:
+- New patch to correct the IPQ8074 NSS NoC bias clock rate.
+
+ drivers/clk/qcom/ipq-cmn-pll.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/qcom/ipq-cmn-pll.c
++++ b/drivers/clk/qcom/ipq-cmn-pll.c
+@@ -127,7 +127,7 @@ static const struct cmn_pll_fixed_output
+ 
+ static const struct cmn_pll_fixed_output_clk ipq8074_output_clks[] = {
+ 	CLK_PLL_OUTPUT(IPQ8074_BIAS_PLL_CC_CLK, "bias_pll_cc_clk", 300000000UL),
+-	CLK_PLL_OUTPUT(IPQ8074_BIAS_PLL_NSS_NOC_CLK, "bias_pll_nss_noc_clk", 416500000UL),
++	CLK_PLL_OUTPUT(IPQ8074_BIAS_PLL_NSS_NOC_CLK, "bias_pll_nss_noc_clk", 461500000UL),
+ 	{ /* Sentinel */ }
+ };
+ 

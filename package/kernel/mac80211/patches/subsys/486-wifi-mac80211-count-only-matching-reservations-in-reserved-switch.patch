@@ -1,0 +1,126 @@
+From 437f3727b4fd715266c296435c116288f82666fd Mon Sep 17 00:00:00 2001
+From: Zhiling Zou <zhilinz@nebusec.ai>
+Date: Mon, 3 Aug 2026 11:28:22 +0800
+Subject: [PATCH] wifi: mac80211: count only matching reservations in reserved
+ switch
+
+ieee80211_vif_use_reserved_switch() validates a replacement by counting
+assigned links on ctx->replace_ctx and treating reservations too
+broadly. A link can still be assigned to the old channel context while
+holding a reservation that belongs to a different replacement
+operation.
+
+That can make the current replacement appear complete too early. If
+another link finalizes first, the function can free the
+WILL_BE_REPLACED chanctx while the unmatched link and driver still use
+it, leading to a use-after-free in later beacon generation.
+
+Require an in-place reservation to point at the current replacement
+context, and require the reserved and assigned contexts to be the
+matching replacement pair, before counting or moving the link.
+
+Fixes: 5bcae31d9cb1 ("mac80211: implement multi-vif in-place reservations")
+Cc: stable@vger.kernel.org
+Reported-by: Vega <vega@nebusec.ai>
+Signed-off-by: Zhiling Zou <zhilinz@nebusec.ai>
+Link: https://patch.msgid.link/4b6c4b8648ab1920c38a40be32c0b1a2797b4ac6.1785726007.git.zhilinz@nebusec.ai
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/chan.c | 30 +++++++++++++++++++++++-------
+ 1 file changed, 23 insertions(+), 7 deletions(-)
+
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -1785,7 +1785,8 @@ out:
+ }
+ 
+ static bool
+-ieee80211_link_has_in_place_reservation(struct ieee80211_link_data *link)
++ieee80211_link_has_in_place_reservation(struct ieee80211_link_data *link,
++					struct ieee80211_chanctx *ctx)
+ {
+ 	struct ieee80211_sub_if_data *sdata = link->sdata;
+ 	struct ieee80211_chanctx *old_ctx, *new_ctx;
+@@ -1795,6 +1796,9 @@ ieee80211_link_has_in_place_reservation(
+ 	new_ctx = link->reserved_chanctx;
+ 	old_ctx = ieee80211_link_get_chanctx(link);
+ 
++	if (new_ctx != ctx)
++		return false;
++
+ 	if (!old_ctx)
+ 		return false;
+ 
+@@ -1807,6 +1811,12 @@ ieee80211_link_has_in_place_reservation(
+ 	if (new_ctx->replace_state != IEEE80211_CHANCTX_REPLACES_OTHER)
+ 		return false;
+ 
++	if (new_ctx->replace_ctx != old_ctx)
++		return false;
++
++	if (old_ctx->replace_ctx != new_ctx)
++		return false;
++
+ 	return true;
+ }
+ 
+@@ -1836,7 +1846,8 @@ static int ieee80211_chsw_switch_vifs(st
+ 		}
+ 
+ 		for_each_chanctx_user_reserved(local, ctx, &iter) {
+-			if (!ieee80211_link_has_in_place_reservation(iter.link))
++			if (!ieee80211_link_has_in_place_reservation(iter.link,
++								     ctx))
+ 				continue;
+ 
+ 			old_ctx = ieee80211_link_get_chanctx(iter.link);
+@@ -1938,7 +1949,9 @@ static int ieee80211_vif_use_reserved_sw
+ 
+ 		for_each_chanctx_user_assigned(local, ctx->replace_ctx, &iter) {
+ 			n_assigned++;
+-			if (iter.link && iter.link->reserved_chanctx) {
++			if (iter.link &&
++			    ieee80211_link_has_in_place_reservation(iter.link,
++								    ctx)) {
+ 				n_reserved++;
+ 				if (iter.link->reserved_ready)
+ 					n_ready++;
+@@ -1963,7 +1976,8 @@ static int ieee80211_vif_use_reserved_sw
+ use_reserved:
+ 		ctx->conf.radar_enabled = false;
+ 		for_each_chanctx_user_reserved(local, ctx, &iter) {
+-			if (ieee80211_link_has_in_place_reservation(iter.link) &&
++			if (ieee80211_link_has_in_place_reservation(iter.link,
++								    ctx) &&
+ 			    !iter.link->reserved_ready)
+ 				return -EAGAIN;
+ 
+@@ -2004,7 +2018,8 @@ use_reserved:
+ 		}
+ 
+ 		for_each_chanctx_user_reserved(local, ctx, &iter) {
+-			if (!ieee80211_link_has_in_place_reservation(iter.link))
++			if (!ieee80211_link_has_in_place_reservation(iter.link,
++								     ctx))
+ 				continue;
+ 
+ 			ieee80211_chan_bw_change(local,
+@@ -2053,7 +2068,7 @@ use_reserved:
+ 			struct ieee80211_bss_conf *link_conf = link->conf;
+ 			u64 changed = 0;
+ 
+-			if (!ieee80211_link_has_in_place_reservation(link))
++			if (!ieee80211_link_has_in_place_reservation(link, ctx))
+ 				continue;
+ 
+ 			rcu_assign_pointer(link_conf->chanctx_conf,
+@@ -2104,7 +2119,8 @@ use_reserved:
+ 		for_each_chanctx_user_reserved(local, ctx, &iter) {
+ 			struct ieee80211_link_data *link = iter.link;
+ 
+-			if (WARN_ON(ieee80211_link_has_in_place_reservation(link)))
++			if (WARN_ON(ieee80211_link_has_in_place_reservation(link,
++									    ctx)))
+ 				continue;
+ 
+ 			if (!link->reserved_ready)

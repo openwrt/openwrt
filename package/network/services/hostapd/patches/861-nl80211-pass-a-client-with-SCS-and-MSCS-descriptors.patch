@@ -1,0 +1,140 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 16:35:55 +0200
+Subject: [PATCH] nl80211: pass a client with SCS and MSCS descriptors
+
+The kernel takes more attributes in the SCS and MSCS descriptors:
+NL80211_SCS_DESC_ATTR_CLIENT/NL80211_MSCS_DESC_ATTR_CLIENT, a host behind
+a 4-address peer that the rule applies to, and
+NL80211_MSCS_DESC_ATTR_CONFIGURED, which marks an MSCS that the AP
+configures on behalf of the network, for example for a Multi-AP
+Controller (EasyMesh 6.1 section 20.2.4), and not at the request of the
+peer. The client does not scope the SCSID: the SCSIDs of a peer are one
+space, which the caller assigns.
+
+Copy the attributes into nl80211_copy.h, give struct hostapd_scs_desc a
+client address and struct hostapd_mscs_desc a client address and a
+configured flag, and send them where they are set. A descriptor without
+them behaves as before.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/drivers/driver.h         |  9 +++++++++
+ src/drivers/driver_nl80211.c | 12 ++++++++++--
+ src/drivers/nl80211_copy.h   | 18 ++++++++++++++++++
+ 3 files changed, 37 insertions(+), 2 deletions(-)
+
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -836,6 +836,8 @@ enum wps_mode {
+  * @tclas_len: Length of @tclas
+  * @qos_char: The QoS Characteristics element as received, or %NULL
+  * @qos_char_len: Length of @qos_char
++ * @client: Address of a host behind a 4-address peer that the descriptor
++ *	applies to, or %NULL for every MSDU to the peer
+  */
+ struct hostapd_scs_desc {
+ 	u8 id;
+@@ -845,6 +847,7 @@ struct hostapd_scs_desc {
+ 	size_t tclas_len;
+ 	const u8 *qos_char;
+ 	size_t qos_char_len;
++	const u8 *client;
+ };
+ 
+ /**
+@@ -855,6 +858,10 @@ struct hostapd_scs_desc {
+  * @stream_timeout: Stream Timeout in TUs
+  * @tclas_mask: The TCLAS Mask elements as received, or %NULL for a removal
+  * @tclas_mask_len: Length of @tclas_mask
++ * @client: Address of a host behind a 4-address peer that the MSCS learns
++ *	from and applies to, or %NULL for the peer itself
++ * @configured: The AP configures the MSCS on behalf of the network, not at
++ *	the request of the peer
+  */
+ struct hostapd_mscs_desc {
+ 	u8 req_type;
+@@ -863,6 +870,8 @@ struct hostapd_mscs_desc {
+ 	u32 stream_timeout;
+ 	const u8 *tclas_mask;
+ 	size_t tclas_mask_len;
++	const u8 *client;
++	bool configured;
+ };
+ 
+ /**
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -13053,7 +13053,10 @@ static int nl80211_set_scs(void *priv, c
+ 		     desc->tclas)) ||
+ 	    (desc->qos_char &&
+ 	     nla_put(msg, NL80211_SCS_DESC_ATTR_QOS_CHAR, desc->qos_char_len,
+-		     desc->qos_char))) {
++		     desc->qos_char)) ||
++	    (desc->client &&
++	     nla_put(msg, NL80211_SCS_DESC_ATTR_CLIENT, ETH_ALEN,
++		     desc->client))) {
+ 		nlmsg_free(msg);
+ 		return -ENOBUFS;
+ 	}
+@@ -13111,7 +13114,12 @@ static int nl80211_set_mscs(void *priv,
+ 			desc->stream_timeout) ||
+ 	    (desc->tclas_mask &&
+ 	     nla_put(msg, NL80211_MSCS_DESC_ATTR_TCLAS_MASK,
+-		     desc->tclas_mask_len, desc->tclas_mask))) {
++		     desc->tclas_mask_len, desc->tclas_mask)) ||
++	    (desc->client &&
++	     nla_put(msg, NL80211_MSCS_DESC_ATTR_CLIENT, ETH_ALEN,
++		     desc->client)) ||
++	    (desc->configured &&
++	     nla_put_flag(msg, NL80211_MSCS_DESC_ATTR_CONFIGURED))) {
+ 		nlmsg_free(msg);
+ 		return -ENOBUFS;
+ 	}
+--- a/src/drivers/nl80211_copy.h
++++ b/src/drivers/nl80211_copy.h
+@@ -6259,6 +6259,12 @@ enum nl80211_scs_req_type {
+  * @NL80211_SCS_DESC_ATTR_QOS_CHAR: the whole QoS Characteristics element
+  *	(binary), header included, as received over the air
+  * @NL80211_SCS_DESC_ATTR_STATUS: IEEE status code (u16), kernel to userspace
++ * @NL80211_SCS_DESC_ATTR_CLIENT: MAC address of a host behind a 4-address
++ *	peer (6 octets). The descriptor then applies only to MSDUs with that
++ *	destination address. Without it, the descriptor applies to every MSDU
++ *	sent to the peer. The client does not scope the SCSID: userspace
++ *	assigns each descriptor of the peer an SCSID of its own, also one
++ *	for a host behind it or one that a Multi-AP Controller configures.
+  *
+  * @__NL80211_SCS_DESC_ATTR_AFTER_LAST: internal use
+  * @NL80211_SCS_DESC_ATTR_MAX: highest attribute
+@@ -6271,6 +6277,7 @@ enum nl80211_scs_desc_attr {
+ 	NL80211_SCS_DESC_ATTR_TCLAS,
+ 	NL80211_SCS_DESC_ATTR_QOS_CHAR,
+ 	NL80211_SCS_DESC_ATTR_STATUS,
++	NL80211_SCS_DESC_ATTR_CLIENT,
+ 
+ 	__NL80211_SCS_DESC_ATTR_AFTER_LAST,
+ 	NL80211_SCS_DESC_ATTR_MAX = __NL80211_SCS_DESC_ATTR_AFTER_LAST - 1
+@@ -6291,6 +6298,15 @@ enum nl80211_scs_desc_attr {
+  * @NL80211_MSCS_DESC_ATTR_TCLAS_MASK: one or more TCLAS Mask elements
+  *	(binary), as received over the air. Required for add and change,
+  *	rejected for remove.
++ * @NL80211_MSCS_DESC_ATTR_CLIENT: MAC address of a host behind a 4-address
++ *	peer (6 octets). The AP then learns from uplink MSDUs with that source
++ *	address and applies the result to downlink MSDUs with that
++ *	destination address. Without it, the peer's own address is used.
++ * @NL80211_MSCS_DESC_ATTR_CONFIGURED: flag, the AP configures the MSCS on
++ *	behalf of the network, for example for a Multi-AP Controller, not at
++ *	the request of the peer. An MSCS is identified by its client and this
++ *	flag together, also in a removal. Where both apply to an MSDU, the
++ *	MSCS that the peer requested takes precedence.
+  *
+  * @__NL80211_MSCS_DESC_ATTR_AFTER_LAST: internal use
+  * @NL80211_MSCS_DESC_ATTR_MAX: highest attribute
+@@ -6302,6 +6318,8 @@ enum nl80211_mscs_desc_attr {
+ 	NL80211_MSCS_DESC_ATTR_UP_LIMIT,
+ 	NL80211_MSCS_DESC_ATTR_STREAM_TIMEOUT,
+ 	NL80211_MSCS_DESC_ATTR_TCLAS_MASK,
++	NL80211_MSCS_DESC_ATTR_CLIENT,
++	NL80211_MSCS_DESC_ATTR_CONFIGURED,
+ 
+ 	__NL80211_MSCS_DESC_ATTR_AFTER_LAST,
+ 	NL80211_MSCS_DESC_ATTR_MAX = __NL80211_MSCS_DESC_ATTR_AFTER_LAST - 1

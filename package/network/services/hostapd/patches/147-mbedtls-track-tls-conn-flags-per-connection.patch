@@ -1,0 +1,165 @@
+From 75ff02951ef75721f9424b6421fccdf8b8376d9b Mon Sep 17 00:00:00 2001
+From: Karsten Sperling <ksperling@apple.com>
+Date: Thu, 30 Jul 2026 00:44:13 +1200
+Subject: [PATCH] mbedtls: track TLS_CONN_* flags per connection
+
+tls_connection_set_verify() applied the per-connection flags with
+conn->tls_conf->flags |= flags, i.e. into an mbedtls_ssl_config that is
+shared with every other connection created from the same context, and
+never cleared them. A flag set for one EAP authentication therefore
+stuck to all subsequent ones: for example eap_server_tls_common.c sets
+TLS_CONN_DISABLE_SESSION_TICKET for every method other than EAP-FAST.
+
+Store the flags in the tls_connection instead, and read them from there
+at the sites where the use is per-connection:
+TLS_CONN_DISABLE_SESSION_TICKET in the session ticket handling,
+TLS_CONN_EXT_CERT_CHECK and TLS_CONN_DISABLE_TIME_CHECKS in the
+certificate event and verify callbacks.
+
+Some flags are applied to the mbedtls_ssl_config (TLS version range and
+Suite B mode) and so cannot be changed for an individual connection;
+reject such a request rather than silently ignoring it. (This does not
+affect current hostapd code since it passes the same bss->tls_flags to
+tls_global_set_params() and tls_connection_set_verify().) Note that this
+relies on the two preceding commits, which keep tls_conf->flags as the
+unmodified flags provided by the caller.
+
+tls_connection_set_cipher_list() modified the shared config in the same
+way: an EAP-FAST authentication would have restricted the ciphersuites
+of every subsequent connection on the same context. Refuse changing the
+cipher list per connection unless the connection has its own tls_conf.
+EAP-FAST does not yet work on this backend anyway, since the ticket
+parse callback discards the master secret it is passed, and Mbed TLS
+invokes it before the server random exists. A connection that has its
+own tls_conf via tls_connection_set_params(), i.e. on the EAP peer side,
+is unaffected.
+
+Also fix the bound of ids[] in tls_connection_set_cipher_list().
+
+Signed-off-by: Karsten Sperling <ksperling@apple.com>
+
+--- a/src/crypto/tls_mbedtls.c
++++ b/src/crypto/tls_mbedtls.c
+@@ -198,6 +198,8 @@ struct tls_connection {
+ 	struct wpabuf *pull_buf;
+ 	size_t pull_buf_offset;
+ 
++	unsigned int flags;
++
+ 	unsigned int established:1;
+ 	unsigned int resumed:1;
+ 	unsigned int verify_peer:1;
+@@ -451,6 +453,7 @@ struct tls_connection * tls_connection_i
+ 		/* check for CRL refresh if inheriting from global config */
+ 		tls_mbedtls_refresh_crl(global);
+ 
++		conn->flags = conn->tls_conf->flags;
+ 		conn->verify_peer = conn->tls_conf->verify_peer;
+ 		if (tls_mbedtls_ssl_setup(conn) != 0) {
+ 			tls_connection_deinit(global, conn);
+@@ -1916,6 +1919,7 @@ int tls_connection_set_params(void *tls_
+ 
+ 	if (tls_mbedtls_set_params(tls_conf, params) != 0)
+ 		return -1;
++	conn->flags = tls_conf->flags;
+ 	conn->verify_peer = tls_conf->verify_peer;
+ 
+ 	return tls_mbedtls_ssl_setup(conn);
+@@ -1927,7 +1931,7 @@ int tls_connection_set_params(void *tls_
+ static int tls_mbedtls_clienthello_session_ticket_prep (struct tls_connection *conn,
+                                                         const u8 *data, size_t len)
+ {
+-	if (conn->tls_conf->flags & TLS_CONN_DISABLE_SESSION_TICKET)
++	if (conn->flags & TLS_CONN_DISABLE_SESSION_TICKET)
+ 		return -1;
+ 	if (conn->clienthello_session_ticket)
+ 		tls_connection_deinit_clienthello_session_ticket(conn);
+@@ -2063,6 +2067,22 @@ int tls_global_set_verify(void *tls_ctx,
+ }
+ 
+ 
++/* Flags that are applied to the mbedtls_ssl_config, which a connection shares
++ * with the others created from the same context, so they cannot be changed for
++ * an individual connection.
++ *
++ * Note that TLS_CONN_DISABLE_SESSION_TICKET is not listed here despite
++ * mbedtls_ssl_conf_session_tickets_cb() being conf-scoped: Callbacks are
++ * installed temporarily for the duration of mbedtls_ssl_handshake() by
++ * tls_connection_handshake() on a per-connection basis, honoring the flag
++ * at that time. */
++#define TLS_MBEDTLS_CONF_SCOPE_FLAGS \
++	(TLS_CONN_DISABLE_TLSv1_0 | TLS_CONN_ENABLE_TLSv1_0 | \
++	 TLS_CONN_DISABLE_TLSv1_1 | TLS_CONN_ENABLE_TLSv1_1 | \
++	 TLS_CONN_DISABLE_TLSv1_2 | TLS_CONN_ENABLE_TLSv1_2 | \
++	 TLS_CONN_DISABLE_TLSv1_3 | \
++	 TLS_CONN_SUITEB | TLS_CONN_SUITEB_NO_ECDH)
++
+ int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
+ 			      int verify_peer, unsigned int flags,
+ 			      const u8 *session_ctx, size_t session_ctx_len)
+@@ -2070,8 +2090,21 @@ int tls_connection_set_verify(void *tls_
+ 	/*(EAP server-side calls this from eap_server_tls_ssl_init())*/
+ 	if (conn == NULL)
+ 		return -1;
++	if (conn->tls_conf == NULL) /* tls_global_set_params() not called */
++		return -1;
+ 
+-	conn->tls_conf->flags |= flags;/* TODO: reprocess flags, if necessary */
++	/* Don't modify tls_conf, it may be shared with other connections. */
++	conn->flags = flags;
++
++	/* Reject config-scoped flags that differ from how the context was
++	 * configured, rather than silently ignoring them. */
++	unsigned int diff = (conn->flags ^ conn->tls_conf->flags)
++	                  & TLS_MBEDTLS_CONF_SCOPE_FLAGS;
++	if (diff) {
++		wpa_printf(MSG_ERROR, "MTLS: connection flags 0x%x cannot change "
++		           "0x%x relative to shared TLS config", flags, diff);
++		return -1;
++	}
+ 
+ 	int authmode;
+ 	switch (verify_peer) {
+@@ -2359,7 +2392,7 @@ struct wpabuf * tls_connection_handshake
+ 	 *  since ticket write and parse callbacks take (mbedtls_ssl_session *)
+ 	 *  param instead of (mbedtls_ssl_context *) param) */
+ 	int use_session_ticket_cb = (conn->session_ticket_cb != NULL)
+-		&& !(conn->tls_conf->flags & TLS_CONN_DISABLE_SESSION_TICKET);
++		&& !(conn->flags & TLS_CONN_DISABLE_SESSION_TICKET);
+ 	if (use_session_ticket_cb)
+ 		mbedtls_ssl_conf_session_tickets_cb(&conn->tls_conf->conf,
+ 		                                    tls_mbedtls_ssl_ticket_write,
+@@ -2542,9 +2575,14 @@ int tls_connection_resumed(void *tls_ctx
+ int tls_connection_set_cipher_list(void *tls_ctx, struct tls_connection *conn,
+ 				   u8 *ciphers)
+ {
++	if (conn->tls_conf == conn->global->tls_conf) {
++		emsg(MSG_INFO, "cipher list change not supported on shared TLS config");
++		return -1;
++	}
++
+ 	/* ciphers is list of TLS_CIPHER_* from hostap/src/crypto/tls.h */
+ 	int ids[7];
+-	const int idsz = (int)sizeof(ids);
++	const int idsz = (int)ARRAY_SIZE(ids);
+ 	int nids = -1, id;
+ 	for ( ; *ciphers != TLS_CIPHER_NONE; ++ciphers) {
+ 		switch (*ciphers) {
+@@ -3220,7 +3258,7 @@ tls_mbedtls_verify_cert_event (struct tl
+ 	}
+ 
+ 	struct tls_conf *tls_conf = conn->tls_conf;
+-	if (tls_conf->ca_cert_probe || (tls_conf->flags & TLS_CONN_EXT_CERT_CHECK)
++	if (tls_conf->ca_cert_probe || (conn->flags & TLS_CONN_EXT_CERT_CHECK)
+ 	    || global->cert_in_cb) {
+ 		certbuf = wpabuf_alloc_copy(crt->raw.p, crt->raw.len);
+ 		ev.peer_cert.cert = certbuf;
+@@ -3373,7 +3411,7 @@ tls_mbedtls_verify_cb (void *arg, mbedtl
+ 		*flags &= ~MBEDTLS_X509_BADCRL_FUTURE;
+ 	}
+ 
+-	if (tls_conf->flags & TLS_CONN_DISABLE_TIME_CHECKS) {
++	if (conn->flags & TLS_CONN_DISABLE_TIME_CHECKS) {
+ 		*flags &= ~MBEDTLS_X509_BADCERT_EXPIRED;
+ 		*flags &= ~MBEDTLS_X509_BADCERT_FUTURE;
+ 	}

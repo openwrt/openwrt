@@ -2,6 +2,7 @@
 
 #include <linux/debugfs.h>
 #include <linux/kernel.h>
+#include <linux/regmap.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "mac.h"
@@ -113,7 +114,7 @@ static ssize_t stp_state_read(struct file *filp, char __user *buffer, size_t cou
 {
 	struct rtldsa_port *p = filp->private_data;
 	struct dsa_switch *ds = p->dp->ds;
-	int state = rtldsa_port_get_stp_state(ds->priv, p->dp->index);
+	int state = otto_stp_port_state_get(ds->priv, p->dp->index);
 
 	if (state < 0)
 		return state;
@@ -131,7 +132,7 @@ static ssize_t stp_state_write(struct file *filp, const char __user *buffer,
 	if (res < 0)
 		return res;
 
-	rtldsa_port_stp_state_set(p->dp->ds, p->dp->index, (u8)value);
+	otto_stp_port_state_set(p->dp->ds, p->dp->index, (u8)value);
 
 	return res;
 }
@@ -230,7 +231,7 @@ static const struct file_operations rtldsa_pmsks_table_fops = {
 static int rtldsa_vlan_profiles_show(struct seq_file *m, void *v)
 {
 	struct otto_dsa_priv *priv = m->private;
-	struct rtldsa_vlan_profile profile;
+	struct otto_vlan_profile profile;
 	int ret, profiles_max;
 
 	if (!priv->r->vlan_profile_get)
@@ -371,12 +372,14 @@ static ssize_t age_out_read(struct file *filp, char __user *buffer, size_t count
 	struct rtldsa_port *p = filp->private_data;
 	struct dsa_switch *ds = p->dp->ds;
 	struct otto_dsa_priv *priv = ds->priv;
-	int value = sw_r32(priv->r->l2_port_aging_out);
+	u32 value;
+	int ret;
 
-	if (value < 0)
-		return -EINVAL;
+	ret = regmap_read(priv->map, priv->r->l2_port_aging_out, &value);
+	if (ret)
+		return ret;
 
-	return rtl838x_common_read(buffer, count, ppos, (u32)value);
+	return rtl838x_common_read(buffer, count, ppos, value);
 }
 
 static ssize_t age_out_write(struct file *filp, const char __user *buffer,

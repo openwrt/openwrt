@@ -1,0 +1,163 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 15 Oct 2026 12:00:00 +0200
+Subject: [PATCH] wifi: cfg80211: add the flow key and flow description types
+
+The PPE driver of mtk_eth_soc describes an offloaded flow to the
+wireless driver with struct cfg80211_flow_info, which the SCS and MSCS
+patches of the mac80211 package add to the cfg80211 header of the
+backports tree. The Ethernet driver builds against the kernel header,
+so add the same types there. The layout must match the backports copy,
+since the Ethernet driver fills the structure and the wireless driver
+reads it.
+
+The two copies are separate definitions, so a change to one of them
+still builds and then corrupts the data on the other side. Assert the
+offset of each field, the size of each structure and the value of each
+flow field. The mac80211 package asserts the same values for its copy.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -4013,6 +4013,141 @@ struct cfg80211_nan_band_config {
+ };
+ 
+ /**
++ * enum cfg80211_flow_field - classifier parameter of one MSDU
++ *
++ * A set of these is held as a bitmap of BIT(field) in a u32.
++ *
++ * @CFG80211_FLOW_F_ETH_SA: Ethernet source address
++ * @CFG80211_FLOW_F_ETH_DA: Ethernet destination address
++ * @CFG80211_FLOW_F_ETH_TYPE: ethertype
++ * @CFG80211_FLOW_F_VLAN_PCP: IEEE 802.1Q priority code point
++ * @CFG80211_FLOW_F_VLAN_DEI: IEEE 802.1Q drop eligibility indicator
++ * @CFG80211_FLOW_F_VLAN_VID: IEEE 802.1Q VLAN identifier
++ * @CFG80211_FLOW_F_IP_VERSION: IP version
++ * @CFG80211_FLOW_F_IP_SRC: IP source address
++ * @CFG80211_FLOW_F_IP_DST: IP destination address
++ * @CFG80211_FLOW_F_SRC_PORT: layer 4 source port
++ * @CFG80211_FLOW_F_DST_PORT: layer 4 destination port
++ * @CFG80211_FLOW_F_DSCP: differentiated services code point
++ * @CFG80211_FLOW_F_PROTO: IPv4 protocol or IPv6 next header
++ * @CFG80211_FLOW_F_FLOW_LABEL: IPv6 flow label
++ * @NUM_CFG80211_FLOW_FIELDS: number of fields
++ */
++enum cfg80211_flow_field {
++	CFG80211_FLOW_F_ETH_SA,
++	CFG80211_FLOW_F_ETH_DA,
++	CFG80211_FLOW_F_ETH_TYPE,
++	CFG80211_FLOW_F_VLAN_PCP,
++	CFG80211_FLOW_F_VLAN_DEI,
++	CFG80211_FLOW_F_VLAN_VID,
++	CFG80211_FLOW_F_IP_VERSION,
++	CFG80211_FLOW_F_IP_SRC,
++	CFG80211_FLOW_F_IP_DST,
++	CFG80211_FLOW_F_SRC_PORT,
++	CFG80211_FLOW_F_DST_PORT,
++	CFG80211_FLOW_F_DSCP,
++	CFG80211_FLOW_F_PROTO,
++	CFG80211_FLOW_F_FLOW_LABEL,
++
++	NUM_CFG80211_FLOW_FIELDS,
++};
++
++/**
++ * struct cfg80211_flow_key - masked classifier parameters of one MSDU
++ *
++ * Unselected fields are zero. The whole structure is hashed and compared as a
++ * byte string, so it must contain no undefined octet.
++ *
++ * @src: IP source address, IPv4 in the first four octets
++ * @dst: IP destination address, IPv4 in the first four octets
++ * @flow_label: IPv6 flow label
++ * @sa: Ethernet source address
++ * @da: Ethernet destination address
++ * @eth_type: ethertype
++ * @vlan_tci: IEEE 802.1Q tag control information
++ * @src_port: layer 4 source port
++ * @dst_port: layer 4 destination port
++ * @ip_version: IP version, which keeps IPv4 and IPv6 keys apart
++ * @dscp: differentiated services code point, in the six LSBs
++ * @proto: IPv4 protocol or IPv6 next header
++ * @pad: must be zero
++ */
++struct cfg80211_flow_key {
++	struct in6_addr src;
++	struct in6_addr dst;
++	__be32 flow_label;
++	u8 sa[ETH_ALEN];
++	u8 da[ETH_ALEN];
++	__be16 eth_type;
++	__be16 vlan_tci;
++	__be16 src_port;
++	__be16 dst_port;
++	u8 ip_version;
++	u8 dscp;
++	u8 proto;
++	u8 pad;
++};
++
++/**
++ * struct cfg80211_flow_info - classifier parameters of one MSDU
++ *
++ * @key: every parameter the source carries, with nothing masked out
++ * @present: bitmap of &enum cfg80211_flow_field, the parameters the source
++ *	actually carries. A classifier that names an absent parameter cannot
++ *	match.
++ * @skb: the frame the parameters came from, or %NULL when the caller
++ *	describes a flow rather than a frame. A filter classifier reads the
++ *	frame again and cannot be evaluated without it.
++ * @l3_off: offset of the IP header in @skb
++ */
++struct cfg80211_flow_info {
++	struct cfg80211_flow_key key;
++	u32 present;
++	const struct sk_buff *skb;
++	u16 l3_off;
++};
++
++/*
++ * The kernel and the backports tree each define these types, and a structure
++ * crosses from one build to the other, so both keep this layout.
++ */
++static_assert(CFG80211_FLOW_F_ETH_SA == 0);
++static_assert(CFG80211_FLOW_F_ETH_DA == 1);
++static_assert(CFG80211_FLOW_F_ETH_TYPE == 2);
++static_assert(CFG80211_FLOW_F_VLAN_PCP == 3);
++static_assert(CFG80211_FLOW_F_VLAN_DEI == 4);
++static_assert(CFG80211_FLOW_F_VLAN_VID == 5);
++static_assert(CFG80211_FLOW_F_IP_VERSION == 6);
++static_assert(CFG80211_FLOW_F_IP_SRC == 7);
++static_assert(CFG80211_FLOW_F_IP_DST == 8);
++static_assert(CFG80211_FLOW_F_SRC_PORT == 9);
++static_assert(CFG80211_FLOW_F_DST_PORT == 10);
++static_assert(CFG80211_FLOW_F_DSCP == 11);
++static_assert(CFG80211_FLOW_F_PROTO == 12);
++static_assert(CFG80211_FLOW_F_FLOW_LABEL == 13);
++static_assert(NUM_CFG80211_FLOW_FIELDS == 14);
++static_assert(offsetof(struct cfg80211_flow_key, src) == 0);
++static_assert(offsetof(struct cfg80211_flow_key, dst) == 16);
++static_assert(offsetof(struct cfg80211_flow_key, flow_label) == 32);
++static_assert(offsetof(struct cfg80211_flow_key, sa) == 36);
++static_assert(offsetof(struct cfg80211_flow_key, da) == 42);
++static_assert(offsetof(struct cfg80211_flow_key, eth_type) == 48);
++static_assert(offsetof(struct cfg80211_flow_key, vlan_tci) == 50);
++static_assert(offsetof(struct cfg80211_flow_key, src_port) == 52);
++static_assert(offsetof(struct cfg80211_flow_key, dst_port) == 54);
++static_assert(offsetof(struct cfg80211_flow_key, ip_version) == 56);
++static_assert(offsetof(struct cfg80211_flow_key, dscp) == 57);
++static_assert(offsetof(struct cfg80211_flow_key, proto) == 58);
++static_assert(offsetof(struct cfg80211_flow_key, pad) == 59);
++static_assert(sizeof(struct cfg80211_flow_key) == 60);
++static_assert(offsetof(struct cfg80211_flow_info, key) == 0);
++static_assert(offsetof(struct cfg80211_flow_info, present) == 60);
++static_assert(offsetof(struct cfg80211_flow_info, skb) == 64);
++static_assert(offsetof(struct cfg80211_flow_info, l3_off) ==
++	      64 + sizeof(void *));
++static_assert(sizeof(struct cfg80211_flow_info) == 64 + 2 * sizeof(void *));
++
++/**
+  * struct cfg80211_nan_conf - NAN configuration
+  *
+  * This struct defines NAN configuration parameters

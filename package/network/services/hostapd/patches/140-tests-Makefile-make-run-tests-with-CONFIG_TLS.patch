@@ -271,7 +271,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  endif
 --- a/src/crypto/crypto_module_tests.c
 +++ b/src/crypto/crypto_module_tests.c
-@@ -2470,6 +2470,139 @@ static int test_hpke(void)
+@@ -2470,6 +2470,142 @@ static int test_hpke(void)
  }
  
  
@@ -314,7 +314,10 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +		    || crypto_ec_get_order(e) == NULL
 +		    || crypto_ec_get_a(e) == NULL
 +		    || crypto_ec_get_b(e) == NULL
-+		    || crypto_ec_get_generator(e) == NULL) {
++#ifdef CONFIG_DPP
++		    || crypto_ec_get_generator(e) == NULL
++#endif
++		    ) {
 +			break;
 +		}
 +#ifdef CONFIG_DPP
@@ -411,7 +414,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  static int test_ms_funcs(void)
  {
  #ifndef CONFIG_FIPS
-@@ -2591,6 +2724,7 @@ int crypto_module_tests(void)
+@@ -2591,6 +2727,7 @@ int crypto_module_tests(void)
  	    test_fips186_2_prf() ||
  	    test_extract_expand_hkdf() ||
  	    test_hpke() ||

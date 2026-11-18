@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "Ritesh Harjani (IBM)" <ritesh.list@gmail.com>
+Date: Tue, 3 Nov 2026 08:24:43 +0530
+Subject: [PATCH] powerpc/code-patching: Flush the patch area TLB entry locally
+
+patching functions like patch_mem() and patch_instructions(), maps the
+target page at the per-cpu text_poke_area, write it, clear the PTE and
+then flushes the tlb using flush_tlb_kernel_range(), with interrupts
+disabled. flush_tlb_kernel_range() on SMP nohash (e500) does an IPI
+based TLB invalidation i.e -
+
+	smp_call_function(do_flush_tlb_mm_ipi, NULL, 1);
+
+...which will wait for other CPUs but with interrupts off. This can be
+caught by lockdep with the following warning:
+
+  WARNING: kernel/smp.c:917 at smp_call_function_many_cond+0x430/0x818, CPU#1: swapper/0/1
+  CPU: 1 UID: 0 PID: 1 Comm: swapper/0 Not tainted 7.3.0-rc1-leds-v4 #1 PREEMPT
+  Hardware name: Turris 1.1 e500v2 0x80211051 Freescale P2020
+  Call Trace:
+  [c1915bc0] [c001be04] flush_tlb_kernel_range+0x2c/0x74
+  [c1915bd0] [c001ce2c] patch_instructions+0x1b0/0x318
+  [c1915c20] [c003113c] bpf_arch_text_copy+0x5c/0xb4
+  [c1915c40] [c01c3398] bpf_jit_binary_pack_finalize+0x28/0x8c
+  [c1915c60] [c0031770] bpf_int_jit_compile+0x5dc/0x758
+  ...
+  [c1915dd0] [c102e114] ptp_classifier_init+0x30/0x4c
+  [c1915df0] [c102d3a8] sock_init+0xc8/0xe4
+  ...
+  hardirqs last disabled at (3076): [<c001ceb4>] patch_instructions+0x238/0x318
+
+Josef confirmed that this was causing a hang (deadlock):
+    I think this is why the CZ.NIC Turris 1.1 hangs early in boot with
+    CONFIG_JUMP_LABEL=y. On 6.18.44 it hung in 19 of 19 boots and booted
+    fine 9 of 9 times with jump labels off. The hang comes while static
+    keys are patched and modules are loaded, nothing is printed and the
+    watchdog resets the board. OpenWrt keeps jump labels off on these
+    boards for now.
+
+...which is possible if both cpus are doing similar operations with interrupts
+off and doing TLB invalidation using IPI.
+
+Broadcast TLB invalidation is not needed here since text_poke_area is
+a per-cpu area. It is mapped and unmapped with interrupts disabled by
+it's own cpu. The only reason I think, if we would need a broadcast tlb
+invalidate is, when we want to prevent a stray or malicious write to
+this cpu text_poke_area by another CPU. This generally gets solved with
+temporary-mm path like how Radix and even x86 implements. However, booke
+doesn't implement that, so for now let's ensure we use local tlb
+flushing for correctness.
+
+Fixes: 49e3d8ea6248 ("powerpc/fsl_booke: Enable STRICT_KERNEL_RWX")
+Cc: stable@vger.kernel.org
+Reported-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Closes: https://lore.kernel.org/all/20261026195644.16384-1-pepe.schlehofer@gmail.com/
+Tested-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Signed-off-by: Ritesh Harjani (IBM) <ritesh.list@gmail.com>
+Link: https://lore.kernel.org/all/b7916dadd8ef56d417d0cbf69fa9ef2a447a5a3e.1793674111.git.ritesh.list@gmail.com/
+---
+ arch/powerpc/lib/code-patching.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+--- a/arch/powerpc/lib/code-patching.c
++++ b/arch/powerpc/lib/code-patching.c
+@@ -324,6 +324,23 @@ static int __do_patch_mem_mm(void *addr,
+ 	return err;
+ }
+ 
++/*
++ * The patch area is per-CPU and only used by its own CPU, with IRQs
++ * disabled, so only the local TLB can hold an entry for it.
++ *
++ * On nohash SMP, flush_tlb_kernel_range() IPIs the other CPUs and waits, which
++ * must not be done with IRQs disabled (see smp_call_function_many_cond()), so
++ * flush just the local kernel (PID 0) entry.
++ * Book3S keeps flush_tlb_kernel_range() which doesn't IPI here.
++ */
++static void flush_patch_area(unsigned long addr)
++{
++	if (IS_ENABLED(CONFIG_PPC_BOOK3S))
++		flush_tlb_kernel_range(addr, addr + PAGE_SIZE);
++	else
++		local_flush_tlb_page(NULL, addr);
++}
++
+ static int __do_patch_mem(void *addr, unsigned long val, bool is_dword)
+ {
+ 	int err;
+@@ -344,7 +361,7 @@ static int __do_patch_mem(void *addr, un
+ 	err = __patch_mem(addr, val, patch_addr, is_dword);
+ 
+ 	pte_clear(&init_mm, text_poke_addr, pte);
+-	flush_tlb_kernel_range(text_poke_addr, text_poke_addr + PAGE_SIZE);
++	flush_patch_area(text_poke_addr);
+ 
+ 	return err;
+ }
+@@ -536,7 +553,7 @@ static int __do_patch_instructions(u32 *
+ 	err = __patch_instructions(patch_addr, code, len, repeat_instr);
+ 
+ 	pte_clear(&init_mm, text_poke_addr, pte);
+-	flush_tlb_kernel_range(text_poke_addr, text_poke_addr + PAGE_SIZE);
++	flush_patch_area(text_poke_addr);
+ 
+ 	return err;
+ }

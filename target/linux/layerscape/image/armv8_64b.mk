@@ -53,6 +53,11 @@ endef
 
 # The vendor bootloader only cares that partition 3 is ext2 and exposes the FIT
 # as /kernel_T20_T40_prod.itb at the filesystem root.
+#
+# mkfs.ext2 picks a random UUID and directory hash seed by default (the seed
+# also decides the readdir order); pin both for reproducible images.
+T40_BOOTFS_UUID = $(patsubst %00,%03,$(IMG_PART_DISKGUID))
+
 define T40/mk-bootfs-ext2
 	set -e; \
 	mkdir -p "$(KDIR_TMP)"; \
@@ -62,7 +67,9 @@ define T40/mk-bootfs-ext2
 	trap 'rm -rf "$$tmpdir"; rm -f "$$cmdfile"' EXIT HUP INT TERM; \
 	cp "$(2)" "$$tmpdir/kernel_T20_T40_prod.itb"; \
 	dd if=/dev/zero of="$(1)" bs=1M count="$(T40_BOOTFS_PARTSIZE)" >/dev/null 2>&1; \
-	$(STAGING_DIR_HOST)/bin/mkfs.ext2 -q -F -L SYSA -d "$$tmpdir" "$(1)" >/dev/null 2>&1; \
+	$(STAGING_DIR_HOST)/bin/mkfs.ext2 -q -F -L SYSA \
+		-U $(T40_BOOTFS_UUID) -E hash_seed=$(T40_BOOTFS_UUID) \
+		-d "$$tmpdir" "$(1)" >/dev/null 2>&1; \
 	( cd "$$tmpdir" && \
 		find . -mindepth 1 -printf 'set_inode_field /%P uid 0\nset_inode_field /%P gid 0\n' \
 			> "$$cmdfile" ); \

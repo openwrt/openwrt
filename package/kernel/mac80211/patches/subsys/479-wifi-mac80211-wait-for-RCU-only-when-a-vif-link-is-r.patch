@@ -1,0 +1,33 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 10:45:00 +0100
+Subject: [PATCH] wifi: mac80211: wait for RCU only when a vif link is removed
+
+ieee80211_vif_update_links() calls ieee80211_tear_down_links() also when
+the update only adds links, and ieee80211_tear_down_links() waits for an
+RCU grace period whatever its mask holds. The AP VLAN of a 4-address
+station follows the links of its station, so
+ieee80211_add_link_station() updates the links of that VLAN, and a Link
+Reconfiguration add of such a station waits for a grace period before
+hostapd can send the response. A mac80211 station waits 100 ms
+(IEEE80211_ASSOC_TIMEOUT_SHORT) for it and drops the added link on a
+loaded host.
+
+Return from ieee80211_tear_down_links() when no link goes away: no link
+pointer was cleared and nothing is freed after the call, so no reader can
+hold a pointer to freed memory, and there are no keys to free.
+
+Fixes: b2e8434f1829 ("wifi: mac80211: set up/tear down client vif links properly")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/link.c
++++ b/net/mac80211/link.c
+@@ -234,6 +234,9 @@ static void ieee80211_tear_down_links(st
+ 	LIST_HEAD(keys);
+ 	unsigned int link_id;
+ 
++	if (!mask)
++		return;
++
+ 	for (link_id = 0; link_id < IEEE80211_MLD_MAX_NUM_LINKS; link_id++) {
+ 		if (!(mask & BIT(link_id)))
+ 			continue;

@@ -1,0 +1,46 @@
+From: Zhi-Jun You <hujy652@gmail.com>
+Date: Mon, 26 Oct 2026 17:57:31 +0800
+Subject: [PATCH] net: ethernet: mtk_wed: setup WDMA_RING_TX(0) for non-DBDC MT7986
+
+WDMA_RING_TX(0) is required to set MTK_WED_WDMA_RING_TX for WED RX
+but on a non-DBDC MT7986 it is never setup because idx is 1.
+
+Setting MTK_WED_WDMA_RING_TX with WDMA_RING_TX(1) is not feasible because
+WED still tries to send through WDMA_RING_TX(0). This is verified with
+register dump.
+
+Fix this by calling mtk_wed_wdma_tx_ring_setup if wed is v2 and
+rx_ring[0] is not allocated and reset tx_wdma[0] if it's already
+allocated also add error messages and bail when mtk_wed_start fails.
+
+Fixes: 4c5de09eb0d0 ("net: ethernet: mtk_wed: add configure wed wo support")
+Signed-off-by: Zhi-Jun You <hujy652@gmail.com>
+---
+---
+ drivers/net/ethernet/mediatek/mtk_wed.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -2345,7 +2345,20 @@ mtk_wed_start(struct mtk_wed_device *dev
+ 
+ 	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++)
+ 		if (!dev->rx_wdma[i].desc)
+-			mtk_wed_wdma_rx_ring_setup(dev, i, 16, false);
++			if (mtk_wed_wdma_rx_ring_setup(dev, i, 16, false)) {
++				dev_err(dev->hw->dev, "wdma rx ring %d setup failed\n", i);
++				return;
++			}
++
++	/*
++	 * non-DBDC MT7986 allocates only rx_ring[1] and tx_wdma[1] during setup
++	 * but tx_wdma[0] is also needed for WED to function.
++	 */
++	if (mtk_wed_is_v2(dev->hw) && !dev->rx_ring[0].desc)
++		if (mtk_wed_wdma_tx_ring_setup(dev, 0, MTK_WED_WDMA_RING_SIZE, !!dev->tx_wdma[0].desc)) {
++			dev_err(dev->hw->dev, "wdma tx ring 0 setup failed\n");
++			return;
++		}
+ 
+ 	if (dev->wlan.hw_rro) {
+ 		for (i = 0; i < MTK_WED_RX_PAGE_QUEUES; i++) {

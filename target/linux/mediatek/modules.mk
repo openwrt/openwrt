@@ -4,7 +4,7 @@ define KernelPackage/ata-ahci-mtk
   FILES:= \
 	$(LINUX_DIR)/drivers/ata/ahci_mtk.ko \
 	$(LINUX_DIR)/drivers/ata/libahci_platform.ko
-  AUTOLOAD:=$(call AutoLoad,40,libahci libahci_platform ahci_mtk,1)
+  AUTOLOAD:=$(call AutoLoad,40,libahci_platform ahci_mtk,1)
   $(call AddDepends/ata)
   DEPENDS+=@(TARGET_mediatek_mt7622||TARGET_mediatek_mt7623)
 endef
@@ -38,6 +38,25 @@ define KernelPackage/iio-mt6577-auxadc
   $(call AddDepends/iio)
 endef
 $(eval $(call KernelPackage,iio-mt6577-auxadc))
+
+define KernelPackage/input-touchscreen-hynitron-cst3530
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=Hynitron CST3530 touchscreen
+  DEPENDS:=@TARGET_mediatek_filogic +kmod-i2c-core +kmod-input-core
+  KCONFIG:= \
+	CONFIG_INPUT_TOUCHSCREEN=y \
+	CONFIG_TOUCHSCREEN_HYNITRON_CST3530
+  FILES:= \
+	$(LINUX_DIR)/drivers/input/touchscreen/hynitron-cst3530.ko
+  AUTOLOAD:=$(call AutoProbe,hynitron-cst3530)
+endef
+
+define KernelPackage/input-touchscreen-hynitron-cst3530/description
+  Kernel module for the Hynitron CST3530 touchscreen controller, as
+  fitted to the GL.iNet GL-BE10000 and GL-BE14000.
+endef
+
+$(eval $(call KernelPackage,input-touchscreen-hynitron-cst3530))
 
 
 define KernelPackage/phy-mediatek-2p5g

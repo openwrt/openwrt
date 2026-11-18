@@ -18,8 +18,9 @@ let wdev_cur;
 let wdev_handler = {};
 let wdev_script_task, wdev_script_timeout;
 let handler_timer;
+let round_start_cb;
 
-function wireless_config_done()
+function supplicant_mld_start()
 {
 	ubus.call({
 		object: "wpa_supplicant",
@@ -27,6 +28,11 @@ function wireless_config_done()
 		return: "ignore",
 		data: { },
 	});
+}
+
+function wireless_config_done()
+{
+	supplicant_mld_start();
 
 	ubus.call({
 		object: "service",
@@ -265,6 +271,9 @@ function run_next_handler()
 
 function run_handler(wdev, op, cb)
 {
+	if (!wdev_cur && !length(wdev_handler) && round_start_cb)
+		round_start_cb();
+
 	wdev.dbg("queue " + op);
 	wdev_handler[wdev.name] = {
 		op, wdev, cb,
@@ -406,7 +415,6 @@ function update(data)
 
 	wdev_reset(this);
 	this.config_change = true;
-	this.check();
 }
 
 function start()
@@ -676,6 +684,19 @@ const wdev_proto = {
 	dbg,
 };
 
+export function round_start_set(cb)
+{
+	round_start_cb = cb;
+};
+
+export function mld_start_idle()
+{
+	if (wdev_cur || length(wdev_handler) > 0)
+		return;
+
+	supplicant_mld_start();
+};
+
 export function new(data, script, driver)
 {
 	let wdev = {
@@ -687,6 +708,7 @@ export function new(data, script, driver)
 		ifindex_cache: {},
 
 		autostart: true,
+		config_change: true,
 		state: "down",
 	};
 	wdev_update_disabled_vifs(wdev);

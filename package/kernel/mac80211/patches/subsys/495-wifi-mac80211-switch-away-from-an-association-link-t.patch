@@ -1,0 +1,165 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 11:46:46 +0100
+Subject: [PATCH] wifi: mac80211: switch away from an association link that
+ TTLM disables
+
+Since commit aebc29dec67a ("wifi: mac80211: apply advertised TTLM from
+association response"), ieee80211_assoc_success() marks every link that
+the TTLM of the Association Response disables as dormant, the
+association link included. ieee80211_set_vif_links_bitmaps() keeps the
+active links of a station, so the association link stays active, while
+ieee80211_set_associated() skips it as not usable and leaves its
+conf->bss NULL. The next Beacon frame on that link dereferences it:
+
+  BUG: kernel NULL pointer dereference, address: 0000000000000058
+  RIP: 0010:ieee80211_rx_mgmt_beacon+0x49c/0xe20
+  Call Trace:
+   ieee80211_iface_work+0x6d/0x190
+   cfg80211_wiphy_work+0x88/0xb0
+
+An AP MLD reaches this by advertising an established TTLM that disables
+the link a station associates through, since it then includes that
+mapping in the Association Response (IEEE 802.11be-2024 35.3.7.2.3).
+A driver that moves the active links to the usable ones after the
+association, such as mac80211_hwsim, does so only after that Beacon
+frame.
+
+Associate with all links usable, and apply such a mapping right after
+the association as a pending switch through the TTLM work, like an
+advertised TTLM with a switch time. The work moves the active links to
+the links that the mapping enables. A Beacon frame without the mapping
+cancels the switch, as for any pending advertised TTLM.
+
+Reset the TTLM state at each association, so that a failed attempt
+leaves no pending switch behind.
+
+Set conf->bss of each accepted link in ieee80211_set_associated(), also
+of a dormant one: nothing sets it when a mapping later activates that
+link, and its next Beacon frame then dereferences it. Clear the bit of a
+rejected link from the dormant links too, since a dormant link outside
+the valid links makes ieee80211_vif_set_links() drop all active links.
+
+Fixes: aebc29dec67a ("wifi: mac80211: apply advertised TTLM from association response")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -4450,10 +4450,6 @@ static void ieee80211_set_associated(str
+ 		    assoc_data->link[link_id].status != WLAN_STATUS_SUCCESS)
+ 			continue;
+ 
+-		if (ieee80211_vif_is_mld(&sdata->vif) &&
+-		    !(ieee80211_vif_usable_links(&sdata->vif) & BIT(link_id)))
+-			continue;
+-
+ 		link = sdata_dereference(sdata->link[link_id], sdata);
+ 		if (WARN_ON(!link))
+ 			return;
+@@ -6985,6 +6981,53 @@ ieee80211_parse_adv_t2l(struct ieee80211
+ 	return 0;
+ }
+ 
++/*
++ * We do not support setting a negotiated TTLM during association. As such,
++ * we can assume that if there is a TTLM, then it is the currently active
++ * advertised TTLM. In that case, there must be exactly one TTLM that does
++ * not have a switch time set. This mapping should also leave us with at
++ * least one usable link.
++ */
++static bool ieee80211_assoc_adv_ttlm(struct ieee80211_sub_if_data *sdata,
++				     struct ieee802_11_elems *elems,
++				     u16 valid_links, u16 *dormant_links)
++{
++	struct ieee80211_mgd_assoc_data *assoc_data = sdata->u.mgd.assoc_data;
++	struct ieee80211_adv_ttlm_info *ttlm_info = &sdata->u.mgd.ttlm_info;
++
++	memset(ttlm_info, 0, sizeof(*ttlm_info));
++
++	if (!elems->ttlm_num)
++		return true;
++
++	if (elems->ttlm_num > 1) {
++		sdata_info(sdata,
++			   "More than one advertised TTLM in association response\n");
++		return false;
++	}
++
++	if (ieee80211_parse_adv_t2l(sdata, elems->ttlm[0], ttlm_info) ||
++	    ttlm_info->switch_time != 0 ||
++	    !(valid_links & ttlm_info->map)) {
++		sdata_info(sdata,
++			   "Invalid advertised TTLM in association response\n");
++		return false;
++	}
++
++	/*
++	 * The association link must stay active until the association is
++	 * complete, so a mapping that disables it is a pending switch.
++	 */
++	if (!(ttlm_info->map & BIT(assoc_data->assoc_link_id))) {
++		ttlm_info->switch_time = 1;
++		return true;
++	}
++
++	ttlm_info->active = true;
++	*dormant_links = valid_links & ~ttlm_info->map;
++	return true;
++}
++
+ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
+ 				    struct ieee80211_mgmt *mgmt,
+ 				    struct ieee802_11_elems *elems,
+@@ -7030,32 +7073,9 @@ static bool ieee80211_assoc_success(stru
+ 			}
+ 		}
+ 
+-		/*
+-		 * We do not support setting a negotiated TTLM during
+-		 * association. As such, we can assume that if there is a TTLM,
+-		 * then it is the currently active advertised TTLM.
+-		 * In that case, there must be exactly one TTLM that does not
+-		 * have a switch time set. This mapping should also leave us
+-		 * with at least one usable link.
+-		 */
+-		if (elems->ttlm_num > 1) {
+-			sdata_info(sdata,
+-				   "More than one advertised TTLM in association response\n");
++		if (!ieee80211_assoc_adv_ttlm(sdata, elems, valid_links,
++					      &dormant_links))
+ 			goto out_err;
+-		} else if (elems->ttlm_num == 1) {
+-			if (ieee80211_parse_adv_t2l(sdata, elems->ttlm[0],
+-						    &sdata->u.mgd.ttlm_info) ||
+-			    sdata->u.mgd.ttlm_info.switch_time != 0 ||
+-			    !(valid_links & sdata->u.mgd.ttlm_info.map)) {
+-				sdata_info(sdata,
+-					   "Invalid advertised TTLM in association response\n");
+-				goto out_err;
+-			}
+-
+-			sdata->u.mgd.ttlm_info.active = true;
+-			dormant_links =
+-				valid_links & ~sdata->u.mgd.ttlm_info.map;
+-		}
+ 
+ 		ieee80211_vif_set_links(sdata, valid_links, dormant_links);
+ 	}
+@@ -7141,6 +7161,7 @@ static bool ieee80211_assoc_success(stru
+ 	}
+ 
+ 	/* links might have changed due to rejected ones, set them again */
++	dormant_links &= valid_links;
+ 	ieee80211_vif_set_links(sdata, valid_links, dormant_links);
+ 
+ 	rate_control_rate_init_all_links(sta);
+@@ -7174,6 +7195,10 @@ static bool ieee80211_assoc_success(stru
+ 
+ 	ieee80211_set_associated(sdata, assoc_data, changed);
+ 
++	if (ieee80211_vif_is_mld(&sdata->vif) &&
++	    sdata->u.mgd.ttlm_info.switch_time)
++		wiphy_hrtimer_work_queue(local->hw.wiphy, &ifmgd->ttlm_work, 0);
++
+ 	/*
+ 	 * If we're using 4-addr mode, let the AP know that we're
+ 	 * doing so, so that it can create the STA VLAN on its side

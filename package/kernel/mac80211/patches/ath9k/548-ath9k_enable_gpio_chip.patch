@@ -10,22 +10,20 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -25,6 +25,8 @@
+@@ -25,6 +25,7 @@
  #include <linux/completion.h>
  #include <linux/time.h>
  #include <linux/hw_random.h>
 +#include <linux/gpio/driver.h>
-+#include <linux/gpio/consumer.h>
  
  #include "common.h"
  #include "debug.h"
-@@ -1048,6 +1050,10 @@ struct ath_softc {
- #ifdef CPTCFG_MAC80211_LEDS
- 	const char *led_default_trigger;
- 	struct list_head leds;
+@@ -1038,6 +1039,9 @@ struct ath_softc {
+ 	bool led_registered;
+ 	char led_name[32];
+ 	struct led_classdev led_cdev;
 +#ifdef CONFIG_GPIOLIB
 +	struct gpio_chip *gpiochip;
-+	struct gpio_desc *gpiodesc;
 +#endif
  #endif
  
@@ -166,40 +164,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void ath_fill_led_pin(struct ath_softc *sc)
  {
  	struct ath_hw *ah = sc->sc_ah;
-@@ -80,6 +199,12 @@ static int ath_add_led(struct ath_softc
- 	else
- 		ath9k_hw_set_gpio(sc->sc_ah, gpio->gpio, gpio->active_low);
+@@ -62,6 +181,8 @@ static void ath_led_brightness(struct le
  
-+#ifdef CONFIG_GPIOLIB
-+	/* If there is GPIO chip configured, reserve LED pin */
-+	if (sc->gpiochip)
-+		sc->gpiodesc = gpiod_get(sc->dev, gpio->name, GPIOD_ASIS);
-+#endif
-+
- 	return 0;
- }
- 
-@@ -117,6 +242,11 @@ void ath_deinit_leds(struct ath_softc *s
- 
- 	while (!list_empty(&sc->leds)) {
- 		led = list_first_entry(&sc->leds, struct ath_led, list);
-+#ifdef CONFIG_GPIOLIB
-+		/* If there is GPIO chip configured, free LED pin */
-+		if (sc->gpiochip)
-+			gpiod_put(sc->gpiodesc);
-+#endif
- 		list_del(&led->list);
- 		ath_led_brightness(&led->cdev, LED_OFF);
- 		led_classdev_unregister(&led->cdev);
-@@ -124,6 +254,7 @@ void ath_deinit_leds(struct ath_softc *s
- 		ath9k_hw_gpio_free(sc->sc_ah, gpio->gpio);
- 		kfree(led);
- 	}
+ void ath_deinit_leds(struct ath_softc *sc)
+ {
 +	ath9k_unregister_gpio_chip(sc);
- }
++
+ 	if (!sc->led_registered)
+ 		return;
  
- void ath_init_leds(struct ath_softc *sc)
-@@ -136,6 +267,12 @@ void ath_init_leds(struct ath_softc *sc)
+@@ -78,6 +199,12 @@ void ath_init_leds(struct ath_softc *sc)
  	if (AR_SREV_9100(sc->sc_ah))
  		return;
  
@@ -211,4 +185,4 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
  	ath_fill_led_pin(sc);
  
- 	snprintf(led_name, sizeof(led_name), "ath9k-%s",
+ 	if (!ath9k_led_blink)

@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1238,7 +1238,8 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1272,7 +1272,8 @@ ieee80211_tx_prepare(struct ieee80211_su
  			tx->sta = rcu_dereference(sdata->u.vlan.sta);
  			if (!tx->sta && sdata->wdev.use_4addr)
  				return TX_DROP;

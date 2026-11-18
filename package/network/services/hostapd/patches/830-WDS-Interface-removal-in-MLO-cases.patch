@@ -1,0 +1,62 @@
+From: Ramasamy Kaliappan <ramasamy.kaliappan@oss.qualcomm.com>
+Date: Tue, 1 Sep 2026 17:17:31 +0530
+Subject: [PATCH] WDS: Interface removal in MLO cases
+
+A WDS interface is shared by the station across affiliated links. Do not
+remove the interface when the station is removed from one link while it
+is still present on another affiliated link. Remove the WDS interface
+and release its identifier only after the station has been removed from
+all links.
+
+Signed-off-by: Ramasamy Kaliappan <ramasamy.kaliappan@oss.qualcomm.com>
+Signed-off-by: Aaradhana Sahu <aaradhana.sahu@oss.qualcomm.com>
+
+[backport of the removal part of hostap commit 7561cfa1ea9a. The
+ identifier part needs the MLD-wide wds_ifname_id of ec2ecd606cd1, which
+ is not taken: here every link station of a non-AP MLD gets the AID of
+ the origin station, so the AID already names one WDS interface for the
+ MLD. Without this, freeing one link station (link removal, Link
+ Reconfiguration delete, a refused link) removes the AP_VLAN of a
+ non-AP MLD that stays associated over its other links.]
+---
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -394,6 +394,7 @@ void ap_free_sta(struct hostapd_data *ha
+ 	struct hostapd_data *vlan_bss = hapd;
+ #endif /* CONFIG_NO_VLAN */
+ 	int set_beacon = 0;
++	bool remove = true;
+ 
+ 	accounting_sta_stop(hapd, sta);
+ 
+@@ -405,8 +406,28 @@ void ap_free_sta(struct hostapd_data *ha
+ 	    (sta->flags & WLAN_STA_MULTI_AP &&
+ 	     (hapd->conf->multi_ap & BACKHAUL_BSS) &&
+ 	     hapd->conf->wds_sta &&
+-	     !(sta->flags & WLAN_STA_WPS)))
+-		hostapd_set_wds_sta(hapd, NULL, sta->addr, sta->aid, 0);
++	     !(sta->flags & WLAN_STA_WPS))) {
++#ifdef CONFIG_IEEE80211BE
++		if (ap_sta_is_mld(hapd, sta)) {
++			struct hostapd_data *phapd;
++			struct sta_info *psta;
++
++			for_each_mld_link(phapd, hapd) {
++				if (phapd == hapd)
++					continue;
++
++				psta = ap_get_sta(phapd, sta->addr);
++				if (psta) {
++					remove = false;
++					break;
++				}
++			}
++		}
++#endif /* CONFIG_IEEE80211BE */
++
++		if (remove)
++			hostapd_set_wds_sta(hapd, NULL, sta->addr, sta->aid, 0);
++	}
+ 
+ 	if (sta->ipaddr)
+ 		hostapd_drv_br_delete_ip_neigh(hapd, 4, (u8 *) &sta->ipaddr);

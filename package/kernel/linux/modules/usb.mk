@@ -409,7 +409,7 @@ define KernelPackage/usb2
   ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko),)
     FILES+=$(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko
   endif
-  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion ehci-atmel ehci-fsl fsl-mph-dr-of,1)
+  AUTOLOAD:=$(call AutoLoad,40,ehci-platform ehci-orion ehci-atmel ehci-fsl fsl-mph-dr-of,1)
   $(call AddDepends/usb)
 endef
 

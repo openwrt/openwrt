@@ -1,0 +1,131 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 1 Nov 2026 13:00:00 +0100
+Subject: [PATCH] wifi: mac80211: remove every link of overlapping AP removals
+
+ieee80211_ml_reconfiguration() uses a delay of 0 as "unset", so a link
+whose AP Removal Timer has run out does not hold the minimum and the
+next link of the element replaces its delay. It also overwrites
+u.mgd.removed_links with the links of the newest element, and it cancels
+the work where an element names no link of the station. An AP MLD drops
+a link from the element once it removed the AP of that link (IEEE Std
+802.11be-2024, 35.3.6.3), and the standard defines no cancellation. If
+two removals overlap, or if the AP MLD also removes an AP that the
+station has no link to, the next Beacon frame can arrive before the
+work and take the first link out of the pending mask. The station keeps
+that link, on which the AP no longer serves it.
+
+Take the minimum over the delays of all named links, and add the links
+of each element to the pending mask until the work has run. If a pending
+link is absent from the element, the AP MLD removed it, so run the work
+at once.
+
+ieee80211_ml_reconf_work() now clears the mask on every path and limits
+it to the valid links. A link that the station deleted while the timer
+ran is otherwise passed to cfg80211_links_removed(), which warns, or its
+bit stays in the mask until a later element adds to it.
+
+Fixes: 8eb8dd2ffbbb ("wifi: mac80211: Support link removal using Reconfiguration ML element")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -7699,19 +7699,19 @@ static void ieee80211_ml_reconf_work(str
+ 	struct ieee80211_sub_if_data *sdata =
+ 		container_of(work, struct ieee80211_sub_if_data,
+ 			     u.mgd.ml_reconf_work.work);
+-	u16 new_valid_links, new_active_links, new_dormant_links;
++	u16 new_valid_links, new_active_links, new_dormant_links, removed_links;
+ 	int ret;
+ 
+-	if (!sdata->u.mgd.removed_links)
++	removed_links = sdata->u.mgd.removed_links & sdata->vif.valid_links;
++	sdata->u.mgd.removed_links = 0;
++	if (!removed_links)
+ 		return;
+ 
+ 	sdata_info(sdata,
+ 		   "MLO Reconfiguration: work: valid=0x%x, removed=0x%x\n",
+-		   sdata->vif.valid_links, sdata->u.mgd.removed_links);
++		   sdata->vif.valid_links, removed_links);
+ 
+-	new_valid_links = sdata->vif.valid_links & ~sdata->u.mgd.removed_links;
+-	if (new_valid_links == sdata->vif.valid_links)
+-		return;
++	new_valid_links = sdata->vif.valid_links & ~removed_links;
+ 
+ 	if (!new_valid_links ||
+ 	    !(new_valid_links & ~sdata->vif.dormant_links)) {
+@@ -7720,7 +7720,7 @@ static void ieee80211_ml_reconf_work(str
+ 		goto out;
+ 	}
+ 
+-	new_active_links = sdata->vif.active_links & ~sdata->u.mgd.removed_links;
++	new_active_links = sdata->vif.active_links & ~removed_links;
+ 	if (new_active_links != sdata->vif.active_links) {
+ 		if (!new_active_links)
+ 			new_active_links =
+@@ -7735,7 +7735,7 @@ static void ieee80211_ml_reconf_work(str
+ 		}
+ 	}
+ 
+-	new_dormant_links = sdata->vif.dormant_links & ~sdata->u.mgd.removed_links;
++	new_dormant_links = sdata->vif.dormant_links & ~removed_links;
+ 
+ 	ret = ieee80211_vif_set_links(sdata, new_valid_links,
+ 				      new_dormant_links);
+@@ -7746,11 +7746,9 @@ static void ieee80211_ml_reconf_work(str
+ 
+ out:
+ 	if (!ret)
+-		cfg80211_links_removed(sdata->dev, sdata->u.mgd.removed_links);
++		cfg80211_links_removed(sdata->dev, removed_links);
+ 	else
+ 		__ieee80211_disconnect(sdata);
+-
+-	sdata->u.mgd.removed_links = 0;
+ }
+ 
+ static void ieee80211_ml_reconfiguration(struct ieee80211_sub_if_data *sdata,
+@@ -7804,17 +7802,8 @@ static void ieee80211_ml_reconfiguration
+ 	}
+ 
+ 	removed_links &= sdata->vif.valid_links;
+-	if (!removed_links) {
+-		/* In case the removal was cancelled, abort it */
+-		if (sdata->u.mgd.removed_links) {
+-			sdata->u.mgd.removed_links = 0;
+-			wiphy_hrtimer_work_cancel(sdata->local->hw.wiphy,
+-						  &sdata->u.mgd.ml_reconf_work);
+-		}
+-		return;
+-	}
+ 
+-	delay = 0;
++	delay = U32_MAX;
+ 	for_each_set_bit(link_id, &removed_links, IEEE80211_MLD_MAX_NUM_LINKS) {
+ 		struct ieee80211_bss_conf *link_conf =
+ 			sdata_dereference(sdata->vif.link_conf[link_id], sdata);
+@@ -7831,13 +7820,18 @@ static void ieee80211_ml_reconfiguration
+ 			link_delay = link_conf->beacon_int *
+ 				(link_removal_timeout[link_id] - 1);
+ 
+-		if (!delay)
+-			delay = link_delay;
+-		else
+-			delay = min(delay, link_delay);
++		delay = min(delay, link_delay);
+ 	}
+ 
+-	sdata->u.mgd.removed_links = removed_links;
++	/* The AP MLD drops a link from the element once it removed the AP of
++	 * that link, and a removal cannot be cancelled.
++	 */
++	if (sdata->u.mgd.removed_links & sdata->vif.valid_links & ~removed_links)
++		delay = 0;
++	else if (!removed_links)
++		return;
++
++	sdata->u.mgd.removed_links |= removed_links;
+ 	wiphy_hrtimer_work_queue(sdata->local->hw.wiphy,
+ 				 &sdata->u.mgd.ml_reconf_work,
+ 				 us_to_ktime(ieee80211_tu_to_usec(delay)));

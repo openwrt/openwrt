@@ -1,0 +1,108 @@
+From 554cfeb72e093102896f3f8b638c81a460f6449b Mon Sep 17 00:00:00 2001
+From: Minda Chen <minda.chen@starfivetech.com>
+Date: Fri, 5 Jun 2026 14:02:12 +0800
+Subject: [PATCH] net: phy: motorcomm: Add YT8522 100M RMII PHY support
+
+Add YT8522 100M RMII ethernet PHY base driver support, including
+PHY ID and base config init function.
+
+Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260605060212.41895-4-minda.chen@starfivetech.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/motorcomm.c | 49 ++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 48 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/motorcomm.c
++++ b/drivers/net/phy/motorcomm.c
+@@ -1,6 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0+
+ /*
+- * Motorcomm 8511/8521/8531/8531S/8821 PHY driver.
++ * Motorcomm 8511/8521/8522/8531/8531S/8821 PHY driver.
+  *
+  * Author: Peter Geis <pgwipeout@gmail.com>
+  * Author: Frank <Frank.Sae@motor-comm.com>
+@@ -14,6 +14,7 @@
+ 
+ #define PHY_ID_YT8511		0x0000010a
+ #define PHY_ID_YT8521		0x0000011a
++#define PHY_ID_YT8522		0x4f51e928
+ #define PHY_ID_YT8531		0x4f51e91b
+ #define PHY_ID_YT8531S		0x4f51e91a
+ #define PHY_ID_YT8821		0x4f51ea19
+@@ -227,6 +228,13 @@
+ #define YT8521_LED_100_ON_EN			BIT(5)
+ #define YT8521_LED_10_ON_EN			BIT(4)
+ 
++#define YT8522_EXTREG_SLEEP_CONTROL		0x2027
++#define YT8522_EN_SLEEP_SW			BIT(15)
++
++#define YT8522_EXTENDED_COMBO_CTRL		0x4000
++#define YT8522_RXDV_SEL				BIT(4)
++#define YT8522_RMII_EN				BIT(1)
++
+ #define YTPHY_MISC_CONFIG_REG			0xA006
+ #define YTPHY_MCR_FIBER_SPEED_MASK		BIT(0)
+ #define YTPHY_MCR_FIBER_1000BX			(0x1 << 0)
+@@ -1842,6 +1850,36 @@ static int yt8531_config_init(struct phy
+ 	return 0;
+ }
+ 
++static int yt8522_config_init(struct phy_device *phydev)
++{
++	struct device *dev = &phydev->mdio.dev;
++	int ret, val;
++
++	val = ytphy_read_ext_with_lock(phydev, YT8522_EXTENDED_COMBO_CTRL);
++	if (val < 0)
++		return val;
++
++	if (val & YT8522_RMII_EN) {
++		val |= YT8522_RXDV_SEL;
++		ret = ytphy_write_ext_with_lock(phydev,
++						YT8522_EXTENDED_COMBO_CTRL,
++						val);
++		if (ret < 0)
++			return ret;
++	}
++
++	if (device_property_read_bool(dev, "motorcomm,auto-sleep-disabled")) {
++		/* disable auto sleep */
++		ret = ytphy_modify_ext_with_lock(phydev,
++						 YT8522_EXTREG_SLEEP_CONTROL,
++						 YT8522_EN_SLEEP_SW, 0);
++		if (ret < 0)
++			return ret;
++	}
++
++	return 0;
++}
++
+ /**
+  * yt8531_link_change_notify() - Adjust the tx clock direction according to
+  * the current speed and dts config.
+@@ -3052,6 +3090,14 @@ static struct phy_driver motorcomm_phy_d
+ 		.led_hw_control_get = yt8521_led_hw_control_get,
+ 	},
+ 	{
++		PHY_ID_MATCH_EXACT(PHY_ID_YT8522),
++		.name		= "YT8522 100 Megabit Ethernet",
++		.config_aneg	= genphy_config_aneg,
++		.config_init	= yt8522_config_init,
++		.suspend	= genphy_suspend,
++		.resume		= genphy_resume,
++	},
++	{
+ 		PHY_ID_MATCH_EXACT(PHY_ID_YT8531),
+ 		.name		= "YT8531 Gigabit Ethernet",
+ 		.probe		= yt8531_probe,
+@@ -3111,6 +3157,7 @@ MODULE_LICENSE("GPL");
+ static const struct mdio_device_id __maybe_unused motorcomm_tbl[] = {
+ 	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8511) },
+ 	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8521) },
++	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8522) },
+ 	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8531) },
+ 	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8531S) },
+ 	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8821) },

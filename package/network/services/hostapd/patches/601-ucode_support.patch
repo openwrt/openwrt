@@ -42,8 +42,17 @@ as adding/removing interfaces.
  
  	return global;
  }
-@@ -9002,6 +9008,8 @@ void wpa_supplicant_deinit(struct wpa_gl
- 
+@@ -8994,6 +9000,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+ 	wifi_display_deinit(global);
+ #endif /* CONFIG_WIFI_DISPLAY */
+
++	wpas_ucode_terminate();
++
+ 	while (global->ifaces)
+ 		wpa_supplicant_remove_iface(global, global->ifaces, 1);
+
+@@ -9002,6 +9010,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+
  	wpas_notify_supplicant_deinitialized(global);
  
 +	wpas_ucode_free();
@@ -165,7 +174,7 @@ as adding/removing interfaces.
  ifdef CONFIG_CODE_COVERAGE
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -6062,6 +6062,7 @@ try_again:
+@@ -6064,6 +6064,7 @@ try_again:
  		return -1;
  	}
  
@@ -173,7 +182,7 @@ as adding/removing interfaces.
  	wpa_msg_register_cb(hostapd_ctrl_iface_msg_cb);
  
  	return 0;
-@@ -6163,6 +6164,8 @@ fail:
+@@ -6165,6 +6166,8 @@ fail:
  	os_free(fname);
  
  	interface->global_ctrl_sock = s;
@@ -551,7 +560,7 @@ as adding/removing interfaces.
  void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
  {
  #ifndef CONFIG_NO_VLAN
-@@ -610,6 +619,8 @@ void ap_free_sta(struct hostapd_data *ha
+@@ -612,6 +621,8 @@ void ap_free_sta(struct hostapd_data *ha
  	os_free(sta->eap_auth_data.rsnxe);
  #endif /* CONFIG_IEEE8021X_AUTH */
  
@@ -560,7 +569,7 @@ as adding/removing interfaces.
  	os_free(sta);
  }
  
-@@ -1870,6 +1881,8 @@ void ap_sta_set_authorized_event(struct
+@@ -1872,6 +1883,8 @@ void ap_sta_set_authorized_event(struct
  #endif /* CONFIG_P2P */
  	const u8 *ip_ptr = NULL;
  

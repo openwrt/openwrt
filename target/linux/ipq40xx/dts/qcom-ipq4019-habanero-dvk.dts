@@ -371,14 +371,14 @@
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_1000>, <&macaddr_art_1006>;
-	qcom,ath10k-calibration-variant = "8devices-Habanero";
+	qcom,calibration-variant = "8devices-Habanero";
 };
 
 &wifi1 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_5000>;
-	qcom,ath10k-calibration-variant = "8devices-Habanero";
+	qcom,calibration-variant = "8devices-Habanero";
 };
 
 &usb3 {

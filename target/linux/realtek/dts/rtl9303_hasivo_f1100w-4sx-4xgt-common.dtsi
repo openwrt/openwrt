@@ -99,6 +99,11 @@
 	};
 };
 
+&gpio0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinmux_disable_spi0>;
+};
+
 &i2c_mst1 {
 	status = "okay";
 

@@ -162,6 +162,9 @@ function setup_sta(data, config, phy_features) {
 
 	case 'wps':
 		config.key_mgmt = 'WPS';
+		/* the reader of the wps_credentials event applies the credential,
+		 * as with hostapd.sh; the supplicant does not join with it */
+		append('wps_cred_processing', 1);
 		break;
 
 	case 'psk':

@@ -1,0 +1,384 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 14 Nov 2026 17:00:00 +0100
+Subject: [PATCH] wifi: mac80211: refuse beacon changes during an offloaded AP
+ removal
+
+A driver with NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD can take the
+AP Removal Timer of each new beacon of the AP MLD as a new start of its
+count. Such a driver keeps the beacons it had when the removal started
+and drops a later change, which user space does not see. A channel
+switch or a colour change of the AP MLD then cannot complete during the
+countdown either.
+
+Add a hardware flag with which the driver has mac80211 refuse these
+requests until it reports the expiry, as mac80211 refuses a beacon
+change during a channel switch. The removal starts with the first beacon
+that announces it in a Reconfiguration Multi-Link element, and each link
+takes one such beacon. A removal does not start while a link of the AP
+MLD switches its channel or colour, since the beacon that ends the
+switch would come during the countdown. A channel switch is refused for
+every user of a channel context that a link of the AP MLD uses, since
+the context switches only where each user switches, and a colour change
+likewise, since user space changes the colour of the BSSs of a channel
+together.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -3091,6 +3091,14 @@ struct ieee80211_txq {
+  *	ieee80211_sta_register_airtime() for each station and AC at a
+  *	regular interval, also with an airtime of 0.
+  *
++ * @IEEE80211_HW_AP_REMOVAL_BEACON_HOLD: The driver counts the AP Removal
++ *	Timer of %NL80211_EXT_FEATURE_AP_REMOVAL_TIMER_OFFLOAD from the beacons
++ *	of the AP MLD it has when the removal starts, and takes the timer of a
++ *	later beacon as a new start. mac80211 then refuses a beacon that would
++ *	replace one of them, the start of a link, and a channel switch or a
++ *	colour change on the channel of a link of the AP MLD, until the driver
++ *	reports the expiry with ieee80211_links_removed().
++ *
+  * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
+  */
+ enum ieee80211_hw_flags {
+@@ -3153,6 +3161,7 @@ enum ieee80211_hw_flags {
+ 	IEEE80211_HW_STRICT,
+ 	IEEE80211_HW_SUPPORTS_NDP_BLOCKACK,
+ 	IEEE80211_HW_DEFERRED_AIRTIME_REPORT,
++	IEEE80211_HW_AP_REMOVAL_BEACON_HOLD,
+ 
+ 	/* keep last, obviously */
+ 	NUM_IEEE80211_HW_FLAGS
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1678,6 +1678,100 @@ static u8 ieee80211_num_beaconing_links(
+ 	return num;
+ }
+ 
++/* The links whose removal the Reconfiguration Multi-Link element of a beacon
++ * announces with an AP Removal Timer (IEEE 802.11be-2024, 35.3.6.3)
++ */
++static u16
++ieee80211_beacon_ap_removal_links(const struct cfg80211_beacon_data *beacon)
++{
++	const struct element *elem, *sub;
++	u16 links = 0;
++
++	for_each_element_extid(elem, WLAN_EID_EXT_EHT_MULTI_LINK, beacon->tail,
++			       beacon->tail_len) {
++		const u8 *mle = elem->data + 1;
++		size_t mle_len = elem->datalen - 1;
++
++		if (!ieee80211_mle_type_ok(mle, IEEE80211_ML_CONTROL_TYPE_RECONF,
++					   mle_len))
++			continue;
++
++		for_each_mle_subelement(sub, mle, mle_len) {
++			const struct ieee80211_mle_per_sta_profile *prof =
++				(const void *)sub->data;
++			u16 control;
++
++			if (sub->id != IEEE80211_MLE_SUBELEM_PER_STA_PROFILE ||
++			    !ieee80211_mle_reconf_sta_prof_size_ok(sub->data,
++								   sub->datalen))
++				continue;
++
++			control = le16_to_cpu(prof->control);
++			if (u16_get_bits(control,
++					 IEEE80211_MLE_STA_RECONF_CONTROL_OPERATION_TYPE) !=
++			    IEEE80211_MLE_STA_RECONF_CONTROL_OPERATION_TYPE_AP_REM ||
++			    !(control &
++			      IEEE80211_MLE_STA_RECONF_CONTROL_AP_REM_TIMER_PRESENT))
++				continue;
++
++			links |= BIT(control &
++				     IEEE80211_MLE_STA_RECONF_CONTROL_LINK_ID);
++		}
++	}
++
++	return links;
++}
++
++static bool ieee80211_vif_switching(struct ieee80211_sub_if_data *sdata)
++{
++	struct ieee80211_link_data *link;
++
++	for_each_link_data(sdata, link)
++		if (link->conf->csa_active || link->conf->color_change_active)
++			return true;
++
++	return false;
++}
++
++/* With IEEE80211_HW_AP_REMOVAL_BEACON_HOLD, a link keeps the beacon that
++ * announces a removal, and no link starts, until the driver reports the
++ * expiry. A removal does not start during a switch, whose last beacon would
++ * come during the countdown.
++ */
++static int ieee80211_ap_removal_check(struct ieee80211_link_data *link,
++				      const struct cfg80211_beacon_data *beacon,
++				      bool start, u16 *announced)
++{
++	struct ieee80211_sub_if_data *sdata = link->sdata;
++
++	*announced = 0;
++	if (!ieee80211_hw_check(&sdata->local->hw, AP_REMOVAL_BEACON_HOLD))
++		return 0;
++
++	if (sdata->ap_removal_links &&
++	    (start || (sdata->ap_removal_bcn_links & BIT(link->link_id))))
++		return -EBUSY;
++
++	*announced = ieee80211_beacon_ap_removal_links(beacon);
++	if ((*announced & ~sdata->ap_removal_links) &&
++	    ieee80211_vif_switching(sdata))
++		return -EBUSY;
++
++	return 0;
++}
++
++static void ieee80211_ap_removal_start(struct ieee80211_link_data *link,
++				       u16 announced)
++{
++	struct ieee80211_sub_if_data *sdata = link->sdata;
++
++	if (!announced)
++		return;
++
++	sdata->ap_removal_links |= announced;
++	sdata->ap_removal_bcn_links |= BIT(link->link_id);
++}
++
+ static int ieee80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
+ 			      struct cfg80211_ap_settings *params)
+ {
+@@ -1700,6 +1794,7 @@ static int ieee80211_start_ap(struct wip
+ 		.oper = params->chandef,
+ 		.require_npca = true,
+ 	};
++	u16 removal;
+ 	u64 tsf;
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+@@ -1714,6 +1809,10 @@ static int ieee80211_start_ap(struct wip
+ 	if (old)
+ 		return -EALREADY;
+ 
++	err = ieee80211_ap_removal_check(link, &params->beacon, true, &removal);
++	if (err)
++		return err;
++
+ 	link->smps_mode = IEEE80211_SMPS_OFF;
+ 
+ 	link->needed_rx_chains = sdata->local->rx_chains;
+@@ -1969,6 +2068,7 @@ static int ieee80211_start_ap(struct wip
+ 
+ 	ieee80211_vif_cfg_change_notify(sdata, BSS_CHANGED_SSID);
+ 	ieee80211_link_info_change_notify(sdata, link, changed);
++	ieee80211_ap_removal_start(link, removal);
+ 
+ 	if (ieee80211_num_beaconing_links(sdata) <= 1)
+ 		netif_carrier_on(dev);
+@@ -1995,6 +2095,7 @@ static int ieee80211_change_beacon(struc
+ 	int err;
+ 	struct ieee80211_bss_conf *link_conf;
+ 	u64 changed = 0;
++	u16 removal;
+ 
+ 	lockdep_assert_wiphy(wiphy);
+ 
+@@ -2014,6 +2115,10 @@ static int ieee80211_change_beacon(struc
+ 	if (!old)
+ 		return -ENOENT;
+ 
++	err = ieee80211_ap_removal_check(link, beacon, false, &removal);
++	if (err)
++		return err;
++
+ 	err = ieee80211_assign_beacon(sdata, link, beacon, NULL, NULL,
+ 				      &changed);
+ 	if (err < 0)
+@@ -2051,6 +2156,7 @@ static int ieee80211_change_beacon(struc
+ 	}
+ 
+ 	ieee80211_link_info_change_notify(sdata, link, changed);
++	ieee80211_ap_removal_start(link, removal);
+ 	return 0;
+ }
+ 
+@@ -4793,14 +4899,18 @@ __ieee80211_channel_switch(struct wiphy
+ 		goto out;
+ 	}
+ 
++	chanctx = container_of(conf, struct ieee80211_chanctx, conf);
++	if (ieee80211_chanctx_ap_removal_held(local, chanctx)) {
++		err = -EBUSY;
++		goto out;
++	}
++
+ 	err = ieee80211_set_unsol_bcast_probe_resp(sdata,
+ 						   &params->unsol_bcast_probe_resp,
+ 						   link_data, link_conf, &changed);
+ 	if (err)
+ 		goto out;
+ 
+-	chanctx = container_of(conf, struct ieee80211_chanctx, conf);
+-
+ 	ch_switch.timestamp = 0;
+ 	ch_switch.device_timestamp = 0;
+ 	ch_switch.block_tx = params->block_tx;
+@@ -5863,6 +5973,7 @@ ieee80211_color_change(struct wiphy *wip
+ {
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+ 	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_chanctx_conf *conf;
+ 	struct ieee80211_bss_conf *link_conf;
+ 	struct ieee80211_link_data *link;
+ 	u8 link_id = params->link_id;
+@@ -5890,6 +6001,15 @@ ieee80211_color_change(struct wiphy *wip
+ 		err = -EBUSY;
+ 		goto out;
+ 	}
++
++	/* user space changes the colour of the BSSs of a channel together */
++	conf = wiphy_dereference(wiphy, link_conf->chanctx_conf);
++	if (conf &&
++	    ieee80211_chanctx_ap_removal_held(local,
++			container_of(conf, struct ieee80211_chanctx, conf))) {
++		err = -EBUSY;
++		goto out;
++	}
+ 
+ 	err = ieee80211_set_unsol_bcast_probe_resp(sdata,
+ 						   &params->unsol_bcast_probe_resp,
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -200,6 +200,22 @@ int ieee80211_chanctx_num_assigned(struc
+ 	return num;
+ }
+ 
++/* A channel context switches only where each of its users switches */
++bool ieee80211_chanctx_ap_removal_held(struct ieee80211_local *local,
++				       struct ieee80211_chanctx *ctx)
++{
++	struct ieee80211_chanctx_user_iter iter;
++
++	if (!ieee80211_hw_check(&local->hw, AP_REMOVAL_BEACON_HOLD))
++		return false;
++
++	for_each_chanctx_user_assigned(local, ctx, &iter)
++		if (iter.sdata->ap_removal_links)
++			return true;
++
++	return false;
++}
++
+ static int ieee80211_chanctx_num_reserved(struct ieee80211_local *local,
+ 					  struct ieee80211_chanctx *ctx)
+ {
+--- a/net/mac80211/debugfs.c
++++ b/net/mac80211/debugfs.c
+@@ -484,6 +484,7 @@ static const char *hw_flag_names[] = {
+ 	FLAG(STRICT),
+ 	FLAG(SUPPORTS_NDP_BLOCKACK),
+ 	FLAG(DEFERRED_AIRTIME_REPORT),
++	FLAG(AP_REMOVAL_BEACON_HOLD),
+ #undef FLAG
+ };
+ 
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1308,6 +1308,12 @@ struct ieee80211_sub_if_data {
+ 	struct wiphy_work links_removed_work;
+ 	atomic_t links_removed;
+ 
++	/* with IEEE80211_HW_AP_REMOVAL_BEACON_HOLD: the links whose removal
++	 * the beacons announce, and the links whose beacon announces it
++	 */
++	u16 ap_removal_links;
++	u16 ap_removal_bcn_links;
++
+ 	u16 restart_active_links;
+ 
+ #ifdef CPTCFG_MAC80211_DEBUGFS
+@@ -2305,6 +2311,7 @@ void ieee80211_link_init(struct ieee8021
+ void ieee80211_link_stop(struct ieee80211_link_data *link);
+ int ieee80211_vif_set_links(struct ieee80211_sub_if_data *sdata,
+ 			    u16 new_links, u16 dormant_links);
++void ieee80211_ap_removal_end(struct ieee80211_sub_if_data *sdata, u16 links);
+ static inline void ieee80211_vif_clear_links(struct ieee80211_sub_if_data *sdata)
+ {
+ 	ieee80211_vif_set_links(sdata, 0, 0);
+@@ -3010,6 +3017,8 @@ void ieee80211_free_chanctx(struct ieee8
+ 			    bool skip_idle_recalc);
+ int ieee80211_chanctx_num_assigned(struct ieee80211_local *local,
+ 				   struct ieee80211_chanctx *ctx);
++bool ieee80211_chanctx_ap_removal_held(struct ieee80211_local *local,
++				       struct ieee80211_chanctx *ctx);
+ /* TDLS */
+ int ieee80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
+ 			const u8 *peer, int link_id,
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -880,6 +880,7 @@ static int ieee80211_stop(struct net_dev
+ 	wiphy_work_cancel(sdata->local->hw.wiphy, &sdata->activate_links_work);
+ 	wiphy_work_cancel(sdata->local->hw.wiphy, &sdata->links_removed_work);
+ 	atomic_set(&sdata->links_removed, 0);
++	ieee80211_ap_removal_end(sdata, sdata->ap_removal_links);
+ 
+ 	/* Close the dependent MBSSID interfaces with wiphy lock as we may be
+ 	 * terminating its partner links too in case of MLD.
+@@ -1924,6 +1925,9 @@ static void ieee80211_links_removed_work
+ 	u16 links = atomic_xchg(&sdata->links_removed, 0);
+ 	u16 valid_links = sdata->wdev.valid_links;
+ 
++	/* before user space hears of the expiry, which sets the beacons */
++	ieee80211_ap_removal_end(sdata, links);
++
+ 	/* a link that user space removed meanwhile is gone already */
+ 	links &= valid_links;
+ 	if (!ieee80211_sdata_running(sdata) || !links || links == valid_links)
+@@ -1944,6 +1948,16 @@ void ieee80211_links_removed(struct ieee
+ }
+ EXPORT_SYMBOL_GPL(ieee80211_links_removed);
+ 
++void ieee80211_ap_removal_end(struct ieee80211_sub_if_data *sdata, u16 links)
++{
++	lockdep_assert_wiphy(sdata->local->hw.wiphy);
++
++	sdata->ap_removal_links &= ~links;
++	sdata->ap_removal_bcn_links &= ~links;
++	if (!sdata->ap_removal_links)
++		sdata->ap_removal_bcn_links = 0;
++}
++
+ /*
+  * Helper function to initialise an interface to a specific type.
+  */
+--- a/net/mac80211/link.c
++++ b/net/mac80211/link.c
+@@ -416,6 +416,7 @@ static int ieee80211_vif_update_links(st
+ 		ieee80211_tear_down_links(sdata, to_free, rem);
+ 
+ 		ieee80211_set_vif_links_bitmaps(sdata, new_links, dormant_links);
++		ieee80211_ap_removal_end(sdata, rem);
+ 
+ 		/* tell the driver */
+ 		if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN)
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -7419,10 +7419,10 @@ enum nl80211_feature_flags {
+  *	element in the beacon of an AP MLD link announces (IEEE 802.11be-2024,
+  *	35.3.6.3), in the Beacon frames of every link that carries the element,
+  *	and reports its expiry with %NL80211_CMD_LINKS_REMOVED on the AP
+- *	interface. User space sets the beacons with the element once. Until
+- *	the expiry, the driver can keep later beacon updates of the links of
+- *	the AP MLD from the device, so user space sets the beacons of the links
+- *	that stay again after the event. The expiry comes before the TBTT at
++ *	interface. Until the expiry, a beacon update, the start of a link, a
++ *	channel switch and a colour change of the AP MLD can fail with
++ *	-EBUSY, so user space sets the beacons of the links that stay again
++ *	after the event. The expiry comes before the TBTT at
+  *	which the timer reaches 0, and the removed links keep running until
+  *	user space stops them.
+  * @NL80211_EXT_FEATURE_AP_NEG_TTLM: The driver applies the TID-to-link

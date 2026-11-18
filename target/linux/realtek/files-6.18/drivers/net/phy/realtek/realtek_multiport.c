@@ -5,6 +5,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/bitfield.h>
 #include <linux/delay.h>
 #include <linux/of.h>
 #include <linux/phy.h>
@@ -44,10 +45,6 @@
 #define RTL821X_MEDIA_PAGE_FIBRE	3
 #define RTL821X_MEDIA_PAGE_INTERNAL	8
 
-#define RTL821X_JOIN_FIRST		0
-#define RTL821X_JOIN_LAST		1
-#define RTL821X_JOIN_OTHER		2
-
 #define RTL8214FC_MEDIA_COPPER		BIT(11)
 
 #define PHY_ID_RTL8214C			0x001cc942
@@ -56,6 +53,7 @@
 #define PHY_ID_RTL8218D			0x001cc983
 #define PHY_ID_RTL8218E			0x001cc984
 #define PHY_ID_RTL8218B_I		0x001cca40
+#define PHY_ID_RTL8214QF		0x001ccab0
 
 /* These PHYs share the same id (0x001cc981) */
 #define PHY_IS_NOT_RTL821X		0
@@ -65,28 +63,24 @@
 
 struct rtl821x_shared_priv {
 	int base_addr;
-	int ports;
+	bool setup_done;	/* the chip has been set up (RTL8214QF) */
 };
 
 static int rtl821x_package_join(struct phy_device *phydev, int ports)
 {
 	struct rtl821x_shared_priv *shared_priv;
 	int base_addr = phydev->mdio.addr & ~(ports - 1);
+	int ret;
 
-	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr,
-			      sizeof(struct rtl821x_shared_priv));
+	ret = devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr,
+				    sizeof(struct rtl821x_shared_priv));
+	if (ret)
+		return ret;
 
 	shared_priv = phy_package_get_priv(phydev);
 	shared_priv->base_addr = base_addr;
-	shared_priv->ports++;
 
-	if (shared_priv->ports == 1)
-		return RTL821X_JOIN_FIRST;
-
-	if (shared_priv->ports == ports)
-		return RTL821X_JOIN_LAST;
-
-	return RTL821X_JOIN_OTHER;
+	return 0;
 }
 
 static inline struct phy_device *get_package_phy(struct phy_device *phydev, int port)
@@ -175,6 +169,63 @@ static int rtl821x_read_page(struct phy_device *phydev)
 static int rtl821x_write_page(struct phy_device *phydev, int page)
 {
 	return __phy_write(phydev, RTL821x_PAGE_SELECT, page);
+}
+
+/* Paged access with the MDIO bus already locked, e.g. by phy_save_page() */
+static int __rtl821x_read_paged(struct phy_device *phydev, int page, u32 regnum)
+{
+	int ret;
+
+	ret = rtl821x_write_page(phydev, page);
+	if (ret < 0)
+		return ret;
+
+	return __phy_read(phydev, regnum);
+}
+
+static int __rtl821x_write_paged(struct phy_device *phydev, int page, u32 regnum, u16 val)
+{
+	int ret;
+
+	ret = rtl821x_write_page(phydev, page);
+	if (ret < 0)
+		return ret;
+
+	return __phy_write(phydev, regnum, val);
+}
+
+static int __rtl821x_modify_paged(struct phy_device *phydev, int page, u32 regnum,
+				  u16 mask, u16 set)
+{
+	int ret;
+
+	ret = rtl821x_write_page(phydev, page);
+	if (ret < 0)
+		return ret;
+
+	return __phy_modify(phydev, regnum, mask, set);
+}
+
+/* Like struct reg_sequence of regmap */
+struct rtl821x_reg_sequence {
+	u16 page;
+	u16 reg;
+	u16 val;
+};
+
+/* Like regmap_multi_reg_write(), with the MDIO bus already locked */
+static int __rtl821x_multi_reg_write(struct phy_device *phydev,
+				     const struct rtl821x_reg_sequence *regs, int num_regs)
+{
+	int ret;
+
+	for (int i = 0; i < num_regs; i++) {
+		ret = __rtl821x_write_paged(phydev, regs[i].page, regs[i].reg, regs[i].val);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
 }
 
 static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
@@ -340,6 +391,246 @@ static int rtl8214fc_read_status(struct phy_device *phydev)
 	return ret;
 }
 
+/*
+ * RTL8214QF: quad 1000BASE-X fibre PHY with clause 37 registers, documented with a QSGMII
+ * interface. Two of them can also share one XSGMII SerDes, as on the Acorid GLS7700-24F8G-4X: the
+ * master carries all eight ports, the slave reaches it through the master (slave SerDes S0 to
+ * master S1). Only that setup is tested, and the link between the two chips only trains when
+ * they leave reset. Pages: 0x1xx SerDes S0, 0x3xx S1, 0x400-0x7ff the SerDes of ports 0-3.
+ * Undocumented registers follow the vendor SDK.
+ */
+#define RTL8214QF_CHIP_MODE		0x11	/* page 0 */
+#define   RTL8214QF_CHIP_MODE_MASK	GENMASK(3, 0)
+#define   RTL8214QF_CHIP_MODE_SLAVE	0xb
+
+#define RTL8214QF_PAGE_FIBRE_CTRL	0x5
+#define RTL8214QF_FIBRE_CTRL(port)	(0x14 + (port))
+#define   RTL8214QF_FIBRE_CTRL_HOLD	BIT(14)
+
+#define RTL8214QF_PAGE_S0_CTRL		0x180
+#define RTL8214QF_S0_RESET		0x10
+#define   RTL8214QF_S0_RESET_STEP1	0x0400
+#define   RTL8214QF_S0_RESET_STEP2	0x0c00
+
+#define RTL8214QF_PORT_PAGE(port, page)	(0x400 + (port) * 0x100 + (page))
+#define RTL8214QF_PORT_RX_ERR_PAGE	0x04
+#define RTL8214QF_PORT_RX_ERR		0x10
+#define RTL8214QF_PORT_SDS_PAGE		0x80
+#define RTL8214QF_PORT_SDS_CTRL		0x12
+#define   RTL8214QF_PORT_SDS_RESET	BIT(10)
+#define RTL8214QF_PORT_RX_PAGE		0x91
+#define RTL8214QF_PORT_RX_CTRL		0x10
+#define   RTL8214QF_PORT_RX_RESET	BIT(9)
+
+/*
+ * Net effect of the vendor SDK patch sequence, measured by register dumps after a cold power-on
+ * and after the vendor firmware setup: the changes common to all chips, and those of the master
+ * only. Registers that ignore writes are left out. Without it autonegotiation never completes.
+ */
+static const struct rtl821x_reg_sequence rtl8214qf_init_common[] = {
+	{ 0x000, 23, 0x2000 }, { 0x001, 17, 0x0001 }, { 0x001, 22, 0x5800 },
+	{ 0x103, 20, 0xc000 }, { 0x17c, 18, 0x0016 }, { 0x184, 16, 0xe150 },
+	{ 0x184, 18, 0x1ca4 }, { 0x184, 19, 0x4612 }, { 0x184, 21, 0x420d },
+	{ 0x189, 20, 0x2527 }, { 0x18b, 16, 0x3e48 }, { 0x18b, 22, 0x7ffa },
+	{ 0x18d, 17, 0xffd0 }, { 0x18d, 19, 0x7c17 }, { 0x18d, 20, 0x002d },
+	{ 0x18e, 20, 0x8389 }, { 0x18e, 21, 0x3f89 }, { 0x196, 20, 0x8294 },
+	{ 0x196, 21, 0x3e94 }, { 0x1a8, 19, 0xf000 }, { 0x1a9, 23, 0xbfdf },
+	{ 0x1aa, 18, 0x2100 }, { 0x1aa, 20, 0x1378 }, { 0x1ab, 22, 0x07fa },
+	{ 0x1ac, 18, 0x114f }, { 0x1ac, 21, 0x787c }, { 0x1ae, 20, 0x8294 },
+	{ 0x1ae, 21, 0x3e94 }, { 0x1af, 16, 0x8107 }, { 0x1af, 17, 0x8107 },
+	{ 0x1af, 21, 0x0019 }, { 0x1af, 22, 0xf0e0 }, { 0x1b9, 20, 0x2527 },
+	{ 0x1bb, 16, 0x3e48 }, { 0x1bb, 22, 0x7ffa }, { 0x1bd, 17, 0xffd0 },
+	{ 0x1bd, 19, 0x7c17 }, { 0x1bd, 20, 0x002d }, { 0x1be, 20, 0x8389 },
+	{ 0x1be, 21, 0x3f89 }, { 0x384, 21, 0x420d }, { 0x38e, 20, 0x8389 },
+	{ 0x38e, 21, 0x3f89 }, { 0x396, 20, 0x8294 }, { 0x396, 21, 0x3e94 },
+	{ 0x3a8, 19, 0xf000 }, { 0x3a9, 23, 0xbfdf }, { 0x3aa, 18, 0x2100 },
+	{ 0x3aa, 20, 0x1378 }, { 0x3ab, 22, 0x07fa }, { 0x3ac, 18, 0x114f },
+	{ 0x3ac, 21, 0x787c }, { 0x3ae, 20, 0x8294 }, { 0x3ae, 21, 0x3e94 },
+	{ 0x3af, 16, 0x8107 }, { 0x3af, 17, 0x8107 }, { 0x3af, 21, 0x0019 },
+	{ 0x3af, 22, 0xf0e0 }, { 0x3be, 20, 0x8389 }, { 0x3be, 21, 0x3f89 },
+	{ 0x400, 16, 0x1503 }, { 0x400, 20, 0x074d }, { 0x488, 19, 0x5cd8 },
+	{ 0x489, 20, 0xe002 }, { 0x490, 19, 0x5cd8 }, { 0x491, 20, 0xe002 },
+	{ 0x500, 16, 0x1503 }, { 0x500, 20, 0x074d }, { 0x588, 19, 0x5cd8 },
+	{ 0x589, 20, 0xe002 }, { 0x590, 19, 0x5cd8 }, { 0x591, 20, 0xe002 },
+	{ 0x600, 16, 0x1503 }, { 0x600, 20, 0x074d }, { 0x688, 19, 0x5cd8 },
+	{ 0x689, 20, 0xe002 }, { 0x690, 19, 0x5cd8 }, { 0x691, 20, 0xe002 },
+	{ 0x700, 16, 0x1503 }, { 0x700, 20, 0x074d }, { 0x788, 19, 0x5cd8 },
+	{ 0x789, 20, 0xe002 }, { 0x790, 19, 0x5cd8 }, { 0x791, 20, 0xe002 },
+};
+
+static const struct rtl821x_reg_sequence rtl8214qf_init_master[] = {
+	{ 0x389, 20, 0x2527 }, { 0x38b, 16, 0x3e48 }, { 0x38b, 22, 0x7ffa },
+	{ 0x38d, 17, 0xffd0 }, { 0x38d, 19, 0x7c17 }, { 0x38d, 20, 0x002d },
+	{ 0x3b9, 20, 0x2527 }, { 0x3bb, 16, 0x3e48 }, { 0x3bb, 22, 0x7ffa },
+	{ 0x3bd, 17, 0xffd0 }, { 0x3bd, 19, 0x7c17 }, { 0x3bd, 20, 0x002d },
+};
+
+/* Vendor SDK phy_8214qf_fiberRx_reset(); releases the reset and hold also on errors */
+static int __rtl8214qf_fibre_rx_reset(struct phy_device *base, int port)
+{
+	int rx_page = RTL8214QF_PORT_PAGE(port, RTL8214QF_PORT_RX_PAGE);
+	int ctrl, ret, err;
+
+	ctrl = __rtl821x_read_paged(base, RTL8214QF_PAGE_FIBRE_CTRL, RTL8214QF_FIBRE_CTRL(port));
+	if (ctrl < 0)
+		return ctrl;
+
+	/* The hold is only ever set here */
+	ctrl &= ~RTL8214QF_FIBRE_CTRL_HOLD;
+
+	ret = __rtl821x_write_paged(base, RTL8214QF_PAGE_FIBRE_CTRL, RTL8214QF_FIBRE_CTRL(port),
+				    ctrl | RTL8214QF_FIBRE_CTRL_HOLD);
+	if (!ret)
+		ret = __rtl821x_modify_paged(base, rx_page, RTL8214QF_PORT_RX_CTRL, 0,
+					     RTL8214QF_PORT_RX_RESET);
+
+	/* A failed write may still have taken effect */
+	err = __rtl821x_modify_paged(base, rx_page, RTL8214QF_PORT_RX_CTRL,
+				     RTL8214QF_PORT_RX_RESET, 0);
+	if (!ret)
+		ret = err;
+
+	err = __rtl821x_write_paged(base, RTL8214QF_PAGE_FIBRE_CTRL, RTL8214QF_FIBRE_CTRL(port),
+				    ctrl);
+	if (!ret)
+		ret = err;
+	if (ret < 0)
+		return ret;
+
+	return __rtl821x_write_paged(base, RTL8214QF_PORT_PAGE(port, RTL8214QF_PORT_RX_ERR_PAGE),
+				     RTL8214QF_PORT_RX_ERR, 0);
+}
+
+/* Vendor SDK reset of SerDes S0; released also on errors */
+static int __rtl8214qf_s0_reset(struct phy_device *base)
+{
+	int ret, err;
+
+	ret = __rtl821x_write_paged(base, RTL8214QF_PAGE_S0_CTRL, RTL8214QF_S0_RESET,
+				    RTL8214QF_S0_RESET_STEP1);
+	if (!ret)
+		ret = __rtl821x_write_paged(base, RTL8214QF_PAGE_S0_CTRL, RTL8214QF_S0_RESET,
+					    RTL8214QF_S0_RESET_STEP2);
+
+	err = __rtl821x_write_paged(base, RTL8214QF_PAGE_S0_CTRL, RTL8214QF_S0_RESET, 0);
+	if (!ret)
+		ret = err;
+
+	return ret;
+}
+
+/* Vendor SDK _phy_8214qf_serdes_reset(); released also on errors */
+static int __rtl8214qf_port_sds_reset(struct phy_device *base, int port)
+{
+	int page = RTL8214QF_PORT_PAGE(port, RTL8214QF_PORT_SDS_PAGE);
+	int ret, err;
+
+	ret = __rtl821x_modify_paged(base, page, RTL8214QF_PORT_SDS_CTRL, 0,
+				     RTL8214QF_PORT_SDS_RESET);
+	if (!ret)
+		usleep_range(1000, 2000);
+
+	err = __rtl821x_modify_paged(base, page, RTL8214QF_PORT_SDS_CTRL,
+				     RTL8214QF_PORT_SDS_RESET, 0);
+	if (!ret)
+		ret = err;
+	if (ret < 0)
+		return ret;
+
+	return __rtl8214qf_fibre_rx_reset(base, port);
+}
+
+static int __rtl8214qf_chip_init(struct phy_device *base)
+{
+	int mode, ret;
+
+	mode = __rtl821x_read_paged(base, 0, RTL8214QF_CHIP_MODE);
+	if (mode < 0)
+		return mode;
+
+	ret = __rtl821x_multi_reg_write(base, rtl8214qf_init_common,
+					ARRAY_SIZE(rtl8214qf_init_common));
+	if (ret < 0)
+		return ret;
+
+	if (FIELD_GET(RTL8214QF_CHIP_MODE_MASK, mode) != RTL8214QF_CHIP_MODE_SLAVE) {
+		ret = __rtl821x_multi_reg_write(base, rtl8214qf_init_master,
+						ARRAY_SIZE(rtl8214qf_init_master));
+		if (ret < 0)
+			return ret;
+	}
+
+	ret = __rtl8214qf_s0_reset(base);
+	if (ret < 0)
+		return ret;
+
+	for (int port = 0; port < 4; port++) {
+		ret = __rtl8214qf_port_sds_reset(base, port);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int rtl8214qf_probe(struct phy_device *phydev)
+{
+	int ret;
+
+	ret = rtl821x_package_join(phydev, 4);
+	if (ret)
+		return ret;
+
+	phydev->port = PORT_FIBRE;
+
+	return 0;
+}
+
+/*
+ * The chip is set up once, through its first port, which must be described in DT. The bus stays
+ * locked for the whole setup and only success is recorded, so the next port retries after an
+ * error. The chip must not be reset later on; the MDIO controller only resets it before probing.
+ */
+static int rtl8214qf_config_init(struct phy_device *phydev)
+{
+	struct rtl821x_shared_priv *shared_priv = phy_package_get_priv(phydev);
+	struct phy_device *base = get_base_phy(phydev);
+	int oldpage, ret = 0;
+
+	if (!base) {
+		phydev_err(phydev, "first port of the RTL8214QF is not described\n");
+		return -ENODEV;
+	}
+
+	oldpage = phy_save_page(base);
+	if (oldpage >= 0 && !shared_priv->setup_done) {
+		ret = __rtl8214qf_chip_init(base);
+		if (ret)
+			phydev_err(phydev, "RTL8214QF setup failed: %d\n", ret);
+		shared_priv->setup_done = !ret;
+	}
+
+	return phy_restore_page(base, oldpage, ret);
+}
+
+static int rtl8214qf_get_features(struct phy_device *phydev)
+{
+	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT, phydev->supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, phydev->supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, phydev->supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_Pause_BIT, phydev->supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, phydev->supported);
+
+	return 0;
+}
+
+static int rtl8214qf_read_status(struct phy_device *phydev)
+{
+	bool changed;
+
+	return genphy_c37_read_status(phydev, &changed);
+}
+
 static int rtl8214fc_config_aneg(struct phy_device *phydev)
 {
 	int ret;
@@ -446,16 +737,12 @@ static const struct sfp_upstream_ops rtl8214fc_sfp_ops = {
 
 static int rtl8214c_phy_probe(struct phy_device *phydev)
 {
-	rtl821x_package_join(phydev, 4);
-
-	return 0;
+	return rtl821x_package_join(phydev, 4);
 }
 
 static int rtl8218x_phy_probe(struct phy_device *phydev)
 {
-	rtl821x_package_join(phydev, 8);
-
-	return 0;
+	return rtl821x_package_join(phydev, 8);
 }
 
 static int rtl821x_config_init(struct phy_device *phydev)
@@ -636,7 +923,9 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 	static int regs[] = {16, 19, 20, 21};
 	int ret;
 
-	rtl821x_package_join(phydev, 4);
+	ret = rtl821x_package_join(phydev, 4);
+	if (ret)
+		return ret;
 
 	/*
 	 * Normally phy_probe() only initializes PHY structures and setup is run in
@@ -683,6 +972,19 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
+	},
+	{
+		PHY_ID_MATCH_EXACT(PHY_ID_RTL8214QF),
+		.name		= "Realtek RTL8214QF",
+		.config_aneg	= genphy_c37_config_aneg,
+		.config_init	= rtl8214qf_config_init,
+		.get_features	= rtl8214qf_get_features,
+		.probe		= rtl8214qf_probe,
+		.read_page	= rtl821x_read_page,
+		.read_status	= rtl8214qf_read_status,
+		.resume		= genphy_resume,
+		.suspend	= genphy_suspend,
+		.write_page	= rtl821x_write_page,
 	},
 	{
 		.match_phy_device = rtl8214fc_match_phy_device,

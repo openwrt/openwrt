@@ -283,6 +283,13 @@ platform_do_upgrade() {
 	tplink,eap625-outdoor-hd-v1)
 		tplink_do_upgrade "$1"
 		;;
+	wallys,dr6018s)
+		CI_UBIPART="rootfs"
+		remove_oem_ubi_volume debug
+		remove_oem_ubi_volume wifi_fw
+		remove_oem_ubi_volume ubi_rootfs
+		nand_do_upgrade "$1"
+		;;
 	yuncore,fap650)
 		[ "$(fw_printenv -n owrt_env_ver 2>/dev/null)" != "7" ] && yuncore_fap650_env_setup
 		local active="$(fw_printenv -n owrt_slotactive 2>/dev/null)"
@@ -297,6 +304,18 @@ platform_do_upgrade() {
 		;;
 	*)
 		default_do_upgrade "$1"
+		;;
+	esac
+}
+
+platform_copy_config() {
+	case "$(board_name)" in
+	jdcloud,re-cs-02|\
+	jdcloud,re-cs-07|\
+	jdcloud,re-ss-01|\
+	link,nn6000-v1|\
+	link,nn6000-v2)
+		emmc_copy_config
 		;;
 	esac
 }

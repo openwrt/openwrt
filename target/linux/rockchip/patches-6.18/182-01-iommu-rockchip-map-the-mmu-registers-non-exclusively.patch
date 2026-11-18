@@ -23,7 +23,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/iommu/rockchip-iommu.c
 +++ b/drivers/iommu/rockchip-iommu.c
-@@ -1236,8 +1236,9 @@ static int rk_iommu_probe(struct platfor
+@@ -1246,8 +1246,9 @@ static int rk_iommu_probe(struct platfor
  		res = platform_get_resource(pdev, IORESOURCE_MEM, i);
  		if (!res)
  			continue;

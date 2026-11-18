@@ -1,0 +1,27 @@
+From 42e63b1373a32bd136dc51325684727f3b9a4986 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Sun, 30 Nov 2025 15:16:48 +0200
+Subject: [PATCH] net: dsa: yt921x: use simple HSR offloading helpers
+
+Accelerate TX packet duplication with HSR rings.
+
+Cc: David Yang <mmyangfl@gmail.com>
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Link: https://patch.msgid.link/20251130131657.65080-7-vladimir.oltean@nxp.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/yt921x.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -2874,6 +2874,9 @@ static const struct dsa_switch_ops yt921
+ 	/* mtu */
+ 	.port_change_mtu	= yt921x_dsa_port_change_mtu,
+ 	.port_max_mtu		= yt921x_dsa_port_max_mtu,
++	/* hsr */
++	.port_hsr_leave		= dsa_port_simple_hsr_leave,
++	.port_hsr_join		= dsa_port_simple_hsr_join,
+ 	/* mirror */
+ 	.port_mirror_del	= yt921x_dsa_port_mirror_del,
+ 	.port_mirror_add	= yt921x_dsa_port_mirror_add,

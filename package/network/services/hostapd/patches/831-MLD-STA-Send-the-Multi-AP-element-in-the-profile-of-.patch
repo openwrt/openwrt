@@ -1,0 +1,184 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 00:50:00 +0200
+Subject: [PATCH] MLD STA: Send the Multi-AP element in the profile of an added
+ link
+
+A Link Reconfiguration Request that adds a link carries the complete
+profile of the non-AP STA of that link. IEEE Std 802.11be-2024, 35.3.6.4
+requires all the elements that a Reassociation Request frame would carry
+for that STA, with no inheritance. In an ML (re)association, the Multi-AP
+element in the frame body applies to every link by inheritance, so the
+profile of an added link has to repeat it.
+
+wpa_supplicant sent no elements for an added link, so the profile of a
+Multi-AP backhaul STA had no Multi-AP element. hostapd checks that
+profile alone and refuses the link on a backhaul-only BSS with status 12
+("Non-Multi-AP STA tries to associate with backhaul-only BSS"). On a BSS
+that is fronthaul and backhaul, it accepts the link but clears
+WLAN_STA_MULTI_AP of the new link STA. If that link STA is the last one
+freed, its free leaves the AP_VLAN of the MLD.
+
+Add elements for the added links to struct wpa_mlo_reconfig_info and
+send them as NL80211_ATTR_IE of each added link; cfg80211 and mac80211
+put them into the STA Profile. SETUP_LINK_RECONFIG fills them with the
+Multi-AP element of a network with multi_ap_backhaul_sta. A helper
+builds that element for the association request and for the link
+addition, in place of the two copies in sme_associate() and
+wpas_populate_assoc_ies(). Upstream main 741d70dd8e32 sends no elements
+for an added link.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -3010,12 +3010,18 @@ struct wpa_mlo_signal_info {
+  * @add_links: Bitmask of links to be added
+  * @add_link_bssid: Array of BSSIDs for the links to be added
+  * @add_link_freq: Array of frequencies for the links to be added
++ * @add_link_ies: Elements for the STA Profile of each link to be added, in
++ *	addition to the ones the driver builds; no inheritance applies there
++ *	(IEEE Std 802.11be-2024, 35.3.6.4)
++ * @add_link_ies_len: Length of add_link_ies in octets
+  * @delete_links: Bitmask of links to be removed
+  */
+ struct wpa_mlo_reconfig_info {
+ 	u16 add_links;
+ 	u8 add_link_bssid[MAX_NUM_MLD_LINKS][ETH_ALEN];
+ 	int add_link_freq[MAX_NUM_MLD_LINKS];
++	const u8 *add_link_ies;
++	size_t add_link_ies_len;
+ 	u16 delete_links;
+ };
+ 
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -15880,7 +15880,10 @@ nl80211_send_link_reconfig_request(void
+ 		    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN,
+ 			    info->add_link_bssid[link_id]) ||
+ 		    nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ,
+-				info->add_link_freq[link_id]))
++				info->add_link_freq[link_id]) ||
++		    (info->add_link_ies_len &&
++		     nla_put(msg, NL80211_ATTR_IE, info->add_link_ies_len,
++			     info->add_link_ies)))
+ 			goto error;
+ 
+ 		nla_nest_end(msg, attr);
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
+@@ -12672,6 +12672,8 @@ wpa_supplicant_ctrl_iface_setup_link_rec
+ {
+ 	const char *pos, *add_pos, *dlt_pos;
+ 	struct wpa_mlo_reconfig_info info;
++	struct wpa_ssid *ssid = wpa_s->current_ssid;
++	u8 multi_ap_ie[2 + 4 + 3 + 3];
+ 	int link_id;
+ 
+ 	add_pos = os_strstr(cmd, "add=");
+@@ -12687,8 +12689,7 @@ wpa_supplicant_ctrl_iface_setup_link_rec
+ 		return -1;
+ 	}
+ 
+-	info.add_links = 0;
+-	info.delete_links = 0;
++	os_memset(&info, 0, sizeof(info));
+ 
+ 	if (add_pos) {
+ 		pos = add_pos + 4;
+@@ -12741,6 +12742,14 @@ wpa_supplicant_ctrl_iface_setup_link_rec
+ 		} while (pos && pos != add_pos);
+ 	}
+ 
++	if (info.add_links && ssid && ssid->multi_ap_backhaul_sta) {
++		info.add_link_ies_len = wpas_build_multi_ap_ie(
++			ssid, multi_ap_ie, sizeof(multi_ap_ie));
++		if (!info.add_link_ies_len)
++			return -1;
++		info.add_link_ies = multi_ap_ie;
++	}
++
+ 	return wpa_drv_setup_link_reconfig(wpa_s, &info);
+ }
+ 
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -4395,21 +4395,14 @@ mscs_fail:
+ 
+ 	if (ssid && ssid->multi_ap_backhaul_sta) {
+ 		size_t multi_ap_ie_len;
+-		struct multi_ap_params multi_ap = { 0 };
+ 
+-		multi_ap.capability = MULTI_AP_BACKHAUL_STA;
+-		multi_ap.profile = ssid->multi_ap_profile;
+-
+-		multi_ap_ie_len = add_multi_ap_ie(
++		multi_ap_ie_len = wpas_build_multi_ap_ie(
++			ssid,
+ 			wpa_s->sme.assoc_req_ie + wpa_s->sme.assoc_req_ie_len,
+ 			sizeof(wpa_s->sme.assoc_req_ie) -
+-			wpa_s->sme.assoc_req_ie_len,
+-			&multi_ap);
+-		if (multi_ap_ie_len == 0) {
+-			wpa_printf(MSG_ERROR,
+-				   "Multi-AP: Failed to build Multi-AP IE");
++			wpa_s->sme.assoc_req_ie_len);
++		if (multi_ap_ie_len == 0)
+ 			return;
+-		}
+ 		wpa_s->sme.assoc_req_ie_len += multi_ap_ie_len;
+ 	}
+ 
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -3828,6 +3828,21 @@ int wpas_populate_wfa_capa(struct wpa_su
+ }
+ 
+ 
++size_t wpas_build_multi_ap_ie(struct wpa_ssid *ssid, u8 *buf, size_t len)
++{
++	struct multi_ap_params multi_ap = { 0 };
++	size_t multi_ap_ie_len;
++
++	multi_ap.capability = MULTI_AP_BACKHAUL_STA;
++	multi_ap.profile = ssid->multi_ap_profile;
++
++	multi_ap_ie_len = add_multi_ap_ie(buf, len, &multi_ap);
++	if (multi_ap_ie_len == 0)
++		wpa_printf(MSG_ERROR, "Multi-AP: Failed to build Multi-AP IE");
++	return multi_ap_ie_len;
++}
++
++
+ #ifdef CONFIG_IEEE8021X_AUTH
+ static bool wpas_set_802_1x_auth_alg(struct wpa_supplicant *wpa_s,
+ 				     struct wpa_bss *bss,
+@@ -4464,17 +4479,10 @@ mscs_end:
+ 
+ 	if (ssid->multi_ap_backhaul_sta) {
+ 		size_t multi_ap_ie_len;
+-		struct multi_ap_params multi_ap = { 0 };
+-
+-		multi_ap.capability = MULTI_AP_BACKHAUL_STA;
+-		multi_ap.profile = ssid->multi_ap_profile;
+ 
+-		multi_ap_ie_len = add_multi_ap_ie(wpa_ie + wpa_ie_len,
+-						  max_wpa_ie_len - wpa_ie_len,
+-						  &multi_ap);
++		multi_ap_ie_len = wpas_build_multi_ap_ie(
++			ssid, wpa_ie + wpa_ie_len, max_wpa_ie_len - wpa_ie_len);
+ 		if (multi_ap_ie_len == 0) {
+-			wpa_printf(MSG_ERROR,
+-				   "Multi-AP: Failed to build Multi-AP IE");
+ 			os_free(wpa_ie);
+ 			return NULL;
+ 		}
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -1922,6 +1922,7 @@ int wpas_build_ext_capab(struct wpa_supp
+ int wpas_populate_wfa_capa(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
+ 			   u8 *wpa_ie, size_t wpa_ie_len,
+ 			   size_t max_wpa_ie_len);
++size_t wpas_build_multi_ap_ie(struct wpa_ssid *ssid, u8 *buf, size_t len);
+ int wpas_update_random_addr(struct wpa_supplicant *wpa_s,
+ 			    enum wpas_mac_addr_style style,
+ 			    struct wpa_ssid *ssid);

@@ -1,0 +1,162 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 21:51:50 +0100
+Subject: [PATCH] MLD STA: put the RM Enabled Capabilities element into an added link
+
+The STA profile of a link that a Link Reconfiguration Request adds
+holds only the Multi-AP element of a backhaul STA, so the AP MLD
+keeps no RM Enabled Capabilities for the STA of that link and refuses
+a Radio Measurement Request through its AP. IEEE Std 802.11be-2024,
+35.3.6.4: that STA Profile field "shall include the complete profile
+... except no inheritance is applied and all the applicable elements
+and fields are included", and a Reassociation Request frame carries
+the RM Enabled Capabilities element where radio measurement is used.
+
+Build the element in one function for the Association Request frame
+and for the STA profile of an added link, and add it there where the
+association uses radio measurement.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
+@@ -12673,7 +12673,8 @@ wpa_supplicant_ctrl_iface_setup_link_rec
+ 	const char *pos, *add_pos, *dlt_pos;
+ 	struct wpa_mlo_reconfig_info info;
+ 	struct wpa_ssid *ssid = wpa_s->current_ssid;
+-	u8 multi_ap_ie[2 + 4 + 3 + 3];
++	u8 add_link_ies[2 + 5 + 2 + 4 + 3 + 3];
++	size_t len = 0, multi_ap_ie_len;
+ 	int link_id;
+ 
+ 	add_pos = os_strstr(cmd, "add=");
+@@ -12742,12 +12743,25 @@ wpa_supplicant_ctrl_iface_setup_link_rec
+ 		} while (pos && pos != add_pos);
+ 	}
+ 
++#ifndef CONFIG_NO_RRM
++	/* The STA profile of an added link inherits no element (IEEE Std
++	 * 802.11be-2024, 35.3.6.4) */
++	if (info.add_links && wpa_s->rrm.rrm_used)
++		len += wpas_rrm_build_capab_ie(wpa_s, add_link_ies,
++					       sizeof(add_link_ies));
++#endif /* CONFIG_NO_RRM */
++
+ 	if (info.add_links && ssid && ssid->multi_ap_backhaul_sta) {
+-		info.add_link_ies_len = wpas_build_multi_ap_ie(
+-			ssid, multi_ap_ie, sizeof(multi_ap_ie));
+-		if (!info.add_link_ies_len)
++		multi_ap_ie_len = wpas_build_multi_ap_ie(
++			ssid, add_link_ies + len, sizeof(add_link_ies) - len);
++		if (!multi_ap_ie_len)
+ 			return -1;
+-		info.add_link_ies = multi_ap_ie;
++		len += multi_ap_ie_len;
++	}
++
++	if (len) {
++		info.add_link_ies = add_link_ies;
++		info.add_link_ies_len = len;
+ 	}
+ 
+ 	return wpa_drv_setup_link_reconfig(wpa_s, &info);
+--- a/wpa_supplicant/rrm.c
++++ b/wpa_supplicant/rrm.c
+@@ -54,6 +54,39 @@ void wpas_rrm_reset(struct wpa_supplican
+ 
+ 
+ /*
++ * wpas_rrm_build_capab_ie - Build the RM Enabled Capabilities element
++ * @wpa_s: Pointer to wpa_supplicant
++ * @buf: Buffer for the element
++ * @len: Length of buf in octets
++ * Returns: Length of the element, or 0 where buf is too short
++ */
++size_t wpas_rrm_build_capab_ie(struct wpa_supplicant *wpa_s, u8 *buf,
++			       size_t len)
++{
++	const u8 rrm_ie_len = 5;
++
++	if (len < 2U + rrm_ie_len)
++		return 0;
++
++	os_memset(buf, 0, 2 + rrm_ie_len);
++	buf[0] = WLAN_EID_RRM_ENABLED_CAPABILITIES;
++	buf[1] = rrm_ie_len;
++
++	if (wpa_s->drv_rrm_flags & WPA_DRIVER_FLAGS_TX_POWER_INSERTION)
++		buf[2] |= WLAN_RRM_CAPS_LINK_MEASUREMENT;
++
++	buf[2] |= WLAN_RRM_CAPS_BEACON_REPORT_PASSIVE |
++		WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE |
++		WLAN_RRM_CAPS_BEACON_REPORT_TABLE;
++
++	if (wpa_s->lci)
++		buf[3] |= WLAN_RRM_CAPS_LCI_MEASUREMENT;
++
++	return 2 + rrm_ie_len;
++}
++
++
++/*
+  * wpas_rrm_process_neighbor_rep - Handle incoming neighbor report
+  * @wpa_s: Pointer to wpa_supplicant
+  * @da: DA of the received frame
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -705,8 +705,7 @@ sme_build_802_1x_auth_request(struct wpa
+ static void sme_auth_handle_rrm(struct wpa_supplicant *wpa_s,
+ 				struct wpa_bss *bss)
+ {
+-	const u8 rrm_ie_len = 5;
+-	u8 *pos;
++	size_t rrm_ie_len;
+ 	const u8 *rrm_ie;
+ 
+ 	wpa_s->rrm.rrm_used = 0;
+@@ -730,31 +729,17 @@ static void sme_auth_handle_rrm(struct w
+ 		return;
+ 	}
+ 
+-	if (sizeof(wpa_s->sme.assoc_req_ie) <
+-	    wpa_s->sme.assoc_req_ie_len + rrm_ie_len + 2) {
++	rrm_ie_len = wpas_rrm_build_capab_ie(
++		wpa_s, wpa_s->sme.assoc_req_ie + wpa_s->sme.assoc_req_ie_len,
++		sizeof(wpa_s->sme.assoc_req_ie) - wpa_s->sme.assoc_req_ie_len);
++	if (!rrm_ie_len) {
+ 		wpa_printf(MSG_INFO,
+ 			   "RRM: Unable to use RRM, no room for RRM IE");
+ 		return;
+ 	}
+ 
+ 	wpa_printf(MSG_DEBUG, "RRM: Adding RRM IE to Association Request");
+-	pos = wpa_s->sme.assoc_req_ie + wpa_s->sme.assoc_req_ie_len;
+-	os_memset(pos, 0, 2 + rrm_ie_len);
+-	*pos++ = WLAN_EID_RRM_ENABLED_CAPABILITIES;
+-	*pos++ = rrm_ie_len;
+-
+-	/* Set supported capabilities flags */
+-	if (wpa_s->drv_rrm_flags & WPA_DRIVER_FLAGS_TX_POWER_INSERTION)
+-		*pos |= WLAN_RRM_CAPS_LINK_MEASUREMENT;
+-
+-	*pos |= WLAN_RRM_CAPS_BEACON_REPORT_PASSIVE |
+-		WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE |
+-		WLAN_RRM_CAPS_BEACON_REPORT_TABLE;
+-
+-	if (wpa_s->lci)
+-		pos[1] |= WLAN_RRM_CAPS_LCI_MEASUREMENT;
+-
+-	wpa_s->sme.assoc_req_ie_len += rrm_ie_len + 2;
++	wpa_s->sme.assoc_req_ie_len += rrm_ie_len;
+ 	wpa_s->rrm.rrm_used = 1;
+ }
+ 
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -1943,6 +1943,8 @@ int wpas_twt_send_setup(struct wpa_suppl
+ int wpas_twt_send_teardown(struct wpa_supplicant *wpa_s, u8 flags);
+ 
+ void wpas_rrm_reset(struct wpa_supplicant *wpa_s);
++size_t wpas_rrm_build_capab_ie(struct wpa_supplicant *wpa_s, u8 *buf,
++			       size_t len);
+ void wpas_rrm_process_neighbor_rep(struct wpa_supplicant *wpa_s,
+ 				   const u8 *da, const u8 *sa,
+ 				   const u8 *report, size_t report_len);

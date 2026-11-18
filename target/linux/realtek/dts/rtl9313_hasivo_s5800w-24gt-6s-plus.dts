@@ -1,0 +1,301 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "rtl931x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/phy/phy.h>
+
+/ {
+	compatible = "hasivo,s5800w-24gt-6s-plus", "realtek,rtl9313-soc";
+	model = "Hasivo S5800W-24GT-6S+";
+
+	chosen {
+		bootargs = "console=ttyS0,38400";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>, /* low mem 256 MiB */
+		      <0x90000000 0x10000000>; /* high mem 256 MiB */
+	};
+
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+
+		led_set0 = <(RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_10M | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)>;
+
+		led_set1 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_1G | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)>;
+	};
+
+	/* LOS and TX disable lines, if wired, have not been identified. */
+	sfp1: sfp-p25 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp25>;
+		mod-def0-gpio = <&gpio0 9 GPIO_ACTIVE_LOW>;
+	};
+
+	sfp2: sfp-p26 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp26>;
+		mod-def0-gpio = <&gpio0 11 GPIO_ACTIVE_LOW>;
+	};
+
+	sfp3: sfp-p27 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp27>;
+		mod-def0-gpio = <&gpio0 14 GPIO_ACTIVE_LOW>;
+	};
+
+	sfp4: sfp-p28 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp28>;
+		mod-def0-gpio = <&gpio0 22 GPIO_ACTIVE_LOW>;
+	};
+
+	sfp5: sfp-p29 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp29>;
+		mod-def0-gpio = <&gpio0 24 GPIO_ACTIVE_LOW>;
+	};
+
+	sfp6: sfp-p30 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp30>;
+		mod-def0-gpio = <&gpio0 26 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xe0000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0xe0000 0x10000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "sysinfo";
+				reg = <0xf0000 0x10000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "vendor-cfg";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "vendor-log";
+				reg = <0x200000 0x100000>;
+				read-only;
+			};
+
+			/*
+			 * The vendor's second runtime region spans 0xa00000-0x2000000
+			 * as one JFFS2 filesystem, so restoring the stock firmware
+			 * needs both firmware and firmware2 written from one backup.
+			 */
+			partition@300000 {
+				label = "firmware";
+				reg = <0x300000 0xe80000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x93000000>;
+			};
+
+			partition@1180000 {
+				label = "firmware2";
+				reg = <0x1180000 0xe80000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x93000000>;
+			};
+		};
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	i2c_sfp25: i2c@0 { reg = <0>; };
+	i2c_sfp26: i2c@1 { reg = <1>; };
+	i2c_sfp27: i2c@2 { reg = <2>; };
+	i2c_sfp28: i2c@3 { reg = <3>; };
+	i2c_sfp29: i2c@4 { reg = <4>; };
+	i2c_sfp30: i2c@5 { reg = <5>; };
+};
+
+&mdio_ctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinmux_enable_mdc_mdio_0>,
+		    <&pinmux_enable_mdc_mdio_1>;
+};
+
+&mdio_bus0 {
+	/* RTL8224 */
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C45(0, 0)
+		PHY_C45(1, 1)
+		PHY_C45(4, 2)
+		PHY_C45(5, 3)
+	};
+
+	/* RTL8224 */
+	ethernet-phy-package@4 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <4>;
+
+		PHY_C45(8, 4)
+		PHY_C45(9, 5)
+		PHY_C45(12, 6)
+		PHY_C45(13, 7)
+	};
+
+	/* RTL8224 */
+	ethernet-phy-package@8 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <8>;
+
+		PHY_C45(16, 8)
+		PHY_C45(17, 9)
+		PHY_C45(20, 10)
+		PHY_C45(21, 11)
+	};
+};
+
+&mdio_bus1 {
+	/* RTL8224 */
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C45(24, 0)
+		PHY_C45(25, 1)
+		PHY_C45(28, 2)
+		PHY_C45(29, 3)
+	};
+
+	/* RTL8224 */
+	ethernet-phy-package@4 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <4>;
+
+		PHY_C45(32, 4)
+		PHY_C45(33, 5)
+		PHY_C45(36, 6)
+		PHY_C45(37, 7)
+	};
+
+	/* RTL8224 */
+	ethernet-phy-package@8 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <8>;
+
+		PHY_C45(40, 8)
+		PHY_C45(41, 9)
+		PHY_C45(44, 10)
+		PHY_C45(45, 11)
+	};
+};
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT_LED(0, 1, 2, 0, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(1, 2, 2, 1, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(4, 3, 2, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(5, 4, 2, 3, 0, 10g-qxgmii)
+
+		SWITCH_PORT_LED(8, 5, 3, 0, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(9, 6, 3, 1, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(12, 7, 3, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(13, 8, 3, 3, 0, 10g-qxgmii)
+
+		SWITCH_PORT_LED(16, 9, 4, 0, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(17, 10, 4, 1, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(20, 11, 4, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(21, 12, 4, 3, 0, 10g-qxgmii)
+
+		SWITCH_PORT_LED(24, 13, 5, 0, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(25, 14, 5, 1, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(28, 15, 5, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(29, 16, 5, 3, 0, 10g-qxgmii)
+
+		SWITCH_PORT_LED(32, 17, 6, 0, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(33, 18, 6, 1, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(36, 19, 6, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(37, 20, 6, 3, 0, 10g-qxgmii)
+
+		SWITCH_PORT_LED(40, 21, 7, 0, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(41, 22, 7, 1, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(44, 23, 7, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(45, 24, 7, 3, 0, 10g-qxgmii)
+
+		SWITCH_PORT_SFP(48, 25, 8, 1, 1)
+		SWITCH_PORT_SFP(50, 26, 9, 1, 2)
+		SWITCH_PORT_SFP(52, 27, 10, 1, 3)
+		SWITCH_PORT_SFP(53, 28, 11, 1, 4)
+		SWITCH_PORT_SFP(54, 29, 12, 1, 5)
+		SWITCH_PORT_SFP(55, 30, 13, 1, 6)
+
+		port@56 {
+			ethernet = <&ethernet0>;
+			reg = <56>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&serdes2 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes3 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes4 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes5 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes6 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes7 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes8 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes9 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes10 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes11 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes12 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes13 { tx-polarity = <PHY_POL_INVERT>; };

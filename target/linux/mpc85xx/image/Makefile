@@ -10,6 +10,7 @@ define Device/Default
   KERNEL_ENTRY := 0x00000000
   KERNEL_LOADADDR := 0x00000000
   KERNEL := kernel-bin
+  COMPILE :=
 endef
 
 include $(SUBTARGET).mk

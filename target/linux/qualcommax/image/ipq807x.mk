@@ -25,12 +25,10 @@ define Build/asus-trx
 endef
 
 define Build/netgear-rbx750_850-qsdk-ipq-factory
-	$(CP) $(NETGEAR_FLASH_SCRIPT) $(KDIR_TMP)/
-
 	echo "VERSION : V8.0.0.0_$(LINUX_VERSION)" > $@.metadata
 	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
 
-	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(NETGEAR_FLASH_SCRIPT) txt $@.metadata ubi $@
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(CURDIR)/$(NETGEAR_FLASH_SCRIPT) txt $@.metadata ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -80,7 +78,7 @@ define Device/arcadyan_aw1000
 endef
 TARGET_DEVICES += arcadyan_aw1000
 
-define Device/asus_rt-ax89x
+define Device/asus_rt-ax89x-common
 	DEVICE_VENDOR := Asus
 	DEVICE_MODEL := RT-AX89X
 	BLOCKSIZE := 128k
@@ -108,7 +106,19 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endif
 endef
-TARGET_DEVICES += asus_rt-ax89x
+
+define Device/asus_rt-ax89x-b1
+	$(call Device/asus_rt-ax89x-common)
+	DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += asus_rt-ax89x-b1
+
+define Device/asus_rt-ax89x-b2
+	$(call Device/asus_rt-ax89x-common)
+	DEVICE_VARIANT := B2
+	SUPPORTED_DEVICES += asus,rt-ax89x
+endef
+TARGET_DEVICES += asus_rt-ax89x-b2
 
 define Device/buffalo_wxr-5950ax12
 	$(call Device/FitImage)
@@ -629,6 +639,7 @@ define Device/zyxel_nbg7815
 	DEVICE_MODEL := NBG7815
 	DEVICE_DTS_CONFIG := config@nbg7815
 	SOC := ipq8074
+	KERNEL_SIZE := 6144k
 	DEVICE_PACKAGES := kmod-fs-f2fs f2fs-tools ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci \
 		kmod-hci-uart kmod-hwmon-tmp103 kmod-hwmon-gpiofan \
 		kmod-leds-lp5569

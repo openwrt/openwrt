@@ -8,6 +8,8 @@
 /* Register definition */
 
 #define RTETH_838X_CPU_PORT			28
+#define RTETH_838X_CRC_CPU_RC_CTRL		(0xa4a4)
+#define RTETH_838X_CRC_CPU_RC_EN		GENMASK(1, 0)
 #define RTETH_838X_DMA_IF_CTRL			(0x9f58)
 #define RTETH_838X_DMA_IF_INTR_MSK		(0x9f50)
 #define RTETH_838X_DMA_IF_INTR_STS		(0x9f54)
@@ -28,6 +30,7 @@
 #define RTETH_838X_RMA_CTRL_0			(0x4300)
 #define RTETH_838X_RMA_CTRL_0_SLOW_TRAP		(2 << 2)
 #define RTETH_838X_RMA_CTRL_1			(0x4304)
+#define RTETH_838X_RX_CHK_CRC_EN		BIT(3)
 #define RTETH_838X_TAG1_PROTO_MASK		GENMASK(15, 8)
 #define RTETH_838X_TAG1_PROTO			0x04
 /* TX CPU tag: bypass the egress spanning-tree port state and egress VLAN filtering */
@@ -55,6 +58,7 @@
 #define RTETH_839X_RMA_CTRL_3			(0x120c)
 
 #define RTETH_930X_CPU_PORT			28
+#define RTETH_930X_CRC_CPU_RC_EN		GENMASK(24, 23)
 #define RTETH_930X_DMA_IF_CTRL			(0xe028)
 #define RTETH_930X_DMA_IF_INTR_MSK		(0xe010)
 #define RTETH_930X_DMA_IF_INTR_STS		(0xe01c)
@@ -65,6 +69,7 @@
 #define RTETH_930X_MAC_FORCE_MODE_CTRL		(0xca1c + RTETH_930X_CPU_PORT * 4)
 #define RTETH_930X_MAC_L2_ADDR_CTRL		(0xc714)
 #define RTETH_930X_MAC_L2_CPU_MAX_LEN_CTRL	(0xa3a0)
+#define RTETH_930X_MAC_L2_GLOBAL_CTRL0		(0xc700)
 #define RTETH_930X_MAC_L2_PORT_CTRL		(0x3268 + RTETH_930X_CPU_PORT * 64)
 #define RTETH_930X_MAC_L2_PORT_MAX_LEN_CTRL	(0x326c + RTETH_930X_CPU_PORT * 64)
 #define RTETH_930X_QM_CPUQID2QID_CTRL		(0xa324)
@@ -92,6 +97,10 @@
 #define RTETH_931X_RMA_CTRL_0			(0x8800)
 #define RTETH_931X_RMA_CTRL_1			(0x8804)
 #define RTETH_931X_RMA_CTRL_2			(0x8808)
+
+/* RMA_CTRL_0 action for 01-80-C2-00-00-02 (slow protocols) on RTL93xx */
+#define RTETH_93XX_RMA_02_ACT			GENMASK(5, 4)
+#define RTETH_93XX_RMA_CTRL_0_SLOW_TRAP		(2 << 4)
 
 /*
  * Reset
@@ -332,7 +341,6 @@ struct rteth_cfg {
 	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
 	void (*set_rx_mode)(struct net_device *dev);
-	u32 rx_csum_mask;
 };
 
 

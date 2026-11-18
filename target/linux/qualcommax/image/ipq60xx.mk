@@ -13,12 +13,10 @@ define Build/wax610-netgear-tar
 endef
 
 define Build/netgear-rbx350-qsdk-ipq-factory
-	$(CP) $(FLASH_SCRIPT) $(KDIR_TMP)/
-
 	echo "VERSION : V5.0.0.0_$(LINUX_VERSION)" > $@.metadata
 	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
 
-	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(FLASH_SCRIPT) txt $@.metadata ubi $@
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(CURDIR)/$(FLASH_SCRIPT) txt $@.metadata ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -254,6 +252,9 @@ define Device/netgear_wax214
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := Netgear
 	DEVICE_MODEL := WAX214
+	DEVICE_ALT0_VENDOR := EnGenius
+	DEVICE_ALT0_MODEL := EWS357AP
+	DEVICE_ALT0_VARIANT := v3
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@cp03-c1
@@ -385,6 +386,22 @@ define Device/tplink_eap620-hd-v3
 
 endef
 TARGET_DEVICES += tplink_eap620-hd-v3
+
+define Device/wallys_dr6018s
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Wallys
+	DEVICE_MODEL := DR6018S
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@cp01-c4
+	SOC := ipq6010
+	NAND_SIZE := 256m
+	IMAGES += nand-factory.bin
+	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+	DEVICE_PACKAGES := ath11k-firmware-qcn9074 ipq-wifi-wallys_dr6018s kmod-ath11k-pci
+endef
+TARGET_DEVICES += wallys_dr6018s
 
 define Device/yuncore_fap650
 	$(call Device/FitImage)

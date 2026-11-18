@@ -5,9 +5,9 @@
 ifeq ($(MAKECMDGOALS),prereq)
   SUBTARGETS:=prereq
   PREREQ_ONLY:=1
-# For target/linux related target add dtb to selectively compile dtbs
+# For target/linux related targets, add DTB build and schema checks
 else ifneq ($(filter target/linux/%,$(MAKECMDGOALS)),)
-  SUBTARGETS:=$(DEFAULT_SUBDIR_TARGETS) dtb
+  SUBTARGETS:=$(DEFAULT_SUBDIR_TARGETS) dtb dtbs_check
 else
   SUBTARGETS:=$(DEFAULT_SUBDIR_TARGETS)
 endif
