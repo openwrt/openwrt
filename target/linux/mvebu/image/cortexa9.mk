@@ -35,6 +35,32 @@ define Build/seil-header
   mv $@.new $@
 endef
 
+# Build a Western Digital "Merge" (.bin) firmware image for the stock web UI
+# and rescue bootloader. The 128-byte header holds little-endian (offset, len)
+# pairs and IEEE CRC-32 checksums for uImage, uRamdisk, image.cfs (UBI), and
+# default.tar.gz, followed by the 8-byte board codename and version metadata.
+# The trailing extra-file offset (uP.bin MCU firmware) is intentionally set to
+# 0 so the existing Weltrend MCU firmware is left untouched.
+define Build/wd-merge
+	rm -rf $@.dir && mkdir -p $@.dir && mv $@ $@.dir/ubi.img
+	tar -czf $@.dir/default.tar.gz -T /dev/null
+	dd if=/dev/zero of=$@.dir/empty bs=1 count=1 2>/dev/null
+	$(STAGING_DIR_HOST)/bin/mkimage -A arm -O linux -T ramdisk -C none \
+		-n "Empty Ramdisk" -d $@.dir/empty $@.dir/uRamdisk
+	( \
+		le32() { h=$$(printf "%08x" "$$1"); printf "\\x$$(echo "$$h" | cut -c7-8)\\x$$(echo "$$h" | cut -c5-6)\\x$$(echo "$$h" | cut -c3-4)\\x$$(echo "$$h" | cut -c1-2)"; }; \
+		files="$(IMAGE_KERNEL) $@.dir/uRamdisk $@.dir/ubi.img $@.dir/default.tar.gz"; \
+		off=128; for f in $$files; do len=$$(wc -c < "$$f"); le32 $$off; le32 $$len; off=$$((off + len)); done; \
+		for f in $$files; do gzip -1 -c "$$f" | tail -c 8 | head -c 4; done; \
+		printf '\x55\xaa%-8.8s' "$(1)" | tr ' ' '\000'; \
+		printf '\x55\xaa\x00\x14\x01\x01'; \
+		printf '%-60.60s' "8.0.001.003.2016" | tr ' ' '\000'; \
+		le32 0; \
+		cat $$files; \
+	) > $@
+	rm -rf $@.dir
+endef
+
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
@@ -480,6 +506,27 @@ define Device/wd_cloud-ex2-ultra
   IMAGE/uImage-factory.bin := append-kernel
 endef
 TARGET_DEVICES += wd_cloud-ex2-ultra
+
+define Device/wd_cloud-mirror-gen1
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := My Cloud Mirror
+  DEVICE_VARIANT := Gen 1
+  DEVICE_PACKAGES += uboot-envtools mkf2fs e2fsprogs \
+		     partx-utils kmod-hwmon-drivetemp kmod-hwmon-gpiofan \
+		     kmod-wt69p3 \
+		     kmod-usb3 kmod-usb-storage kmod-usb-storage-uas \
+		     -ppp -kmod-nft-offload \
+		     -dnsmasq -odhcpd-ipv6only
+  DEVICE_DTS := armada-370-wd_cloud-mirror-gen1
+  SUPPORTED_DEVICES += wd,cloud-mirror-gen1
+  KERNEL_SIZE := 5120k
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | wd-merge KingsCa
+endef
+TARGET_DEVICES += wd_cloud-mirror-gen1
 
 define Device/wd_cloud-mirror-gen2
   $(Device/NAND-128K)
