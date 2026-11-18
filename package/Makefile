@@ -124,7 +124,7 @@ $(shell ( \
 		$(if $(CONFIG_USE_MKLIBS),$(SCRIPT_DIR)/rstrip.sh) \
 		$(INCLUDE_DIR)/rootfs.mk $(TOPDIR)/package/Makefile; \
 	[ ! -d $(TOPDIR)/files ] || ( cd $(TOPDIR)/files && \
-		find . -printf '%p %y %m %l\n' | LC_ALL=C sort && \
+		find . -printf '%p %y %m %U %G %l\n' | LC_ALL=C sort && \
 		find . -type f -print0 | LC_ALL=C sort -z | xargs -0 -r cat ); \
 ) | $(MKHASH) sha256)
 endef
