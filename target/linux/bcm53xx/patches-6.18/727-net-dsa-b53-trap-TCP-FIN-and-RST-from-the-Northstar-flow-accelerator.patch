@@ -1,0 +1,90 @@
+From f5b2c9e566df70535cf6055d8675b1d743882073 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 13:44:19 +0100
+Subject: [PATCH] net: dsa: b53: trap TCP FIN and RST from the Northstar flow
+ accelerator
+
+The flow accelerator also forwards the FIN and RST of a connection it
+holds, so the flowtable never sees the connection end. Its entries stay
+in the accelerator until the flowtable timeout, and conntrack does not
+learn that the connection is closing.
+
+Redirect IPv4 TCP frames with FIN or RST to the trap port as well, with
+a user defined field on the TCP flags. The flowtable then marks the flow
+as closing and removes it from the hardware. The MediaTek PPE has the
+same in hardware: it passes the FIN of a bound flow to the CPU
+(MTK_PPE_CPU_REASON_HIT_BIND_TCP_FIN), and mtk_ppe ages such entries
+quickly (MTK_PPE_TB_CFG_AGE_TCP_FIN). Broadcom's own
+driver copies FIN and RST to an auxiliary port (robo_fa_aux_init() in
+bcmrobo.c, ISC licensed in router GPL source releases).
+
+Linksys EA6900 (BCM4708), iperf3 TCP from a LAN host through the
+accelerator, its entries after the end of the test:
+
+                   1 s after FIN     1 s after RST
+  without traps    4 in hardware     4 in hardware (gone after ~30 s)
+  with traps       0                 2 (the other connection)
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 27 ++++++++++++++++++++++++++-
+ drivers/net/dsa/b53/b53_regs.h   |  3 +++
+ 2 files changed, 29 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -654,6 +654,8 @@ static int b53_cfp_redirect(struct b53_d
+ /* The CFP rules for the flow accelerator, from the first one on */
+ enum {
+ 	B53_FA_TRAP_TTL,
++	B53_FA_TRAP_FIN,
++	B53_FA_TRAP_RST,
+ 	B53_FA_TRAP_NUM,
+ };
+ 
+@@ -680,8 +682,31 @@ static int b53_fa_trap_set(struct b53_de
+ 	mask[6] |= CFP_DATA6_TTL_RANGE_HIGH;
+ 	err = b53_cfp_redirect(dev, B53_FA_TRAP_TTL, data, mask, map);
+ 	mask[6] &= ~CFP_DATA6_TTL_RANGE_HIGH;
++	if (err)
++		return err;
+ 
+-	return err;
++	/* TCP FIN and RST, which the flow accelerator would forward: the
++	 * host would not see the connection end, and the flow would stay
++	 * in it until it times out. UDF A0 holds the TCP flags.
++	 */
++	b53_write8(dev, B53_CFP_PAGE, B53_CFP_UDF_0_A_0,
++		   CFP_UDF_EOL3 | B53_CFP_UDF_TCP_FLAGS);
++	data[5] = CFP_DATA5_UDF_VALID_0;
++	mask[5] = CFP_DATA5_UDF_VALID_0;
++	data[6] = IPPROTO_TCP << CFP_DATA6_IP_PROTO_S;
++	mask[6] |= CFP_DATA6_IP_PROTO_MASK;
++
++	data[0] |= CFP_UDF_TCP_FIN << CFP_DATA0_UDF_A0_S;
++	mask[0] |= CFP_UDF_TCP_FIN << CFP_DATA0_UDF_A0_S;
++	err = b53_cfp_redirect(dev, B53_FA_TRAP_FIN, data, mask, map);
++	data[0] &= ~(CFP_UDF_TCP_FIN << CFP_DATA0_UDF_A0_S);
++	mask[0] &= ~(CFP_UDF_TCP_FIN << CFP_DATA0_UDF_A0_S);
++	if (err)
++		return err;
++
++	data[0] |= CFP_UDF_TCP_RST << CFP_DATA0_UDF_A0_S;
++	mask[0] |= CFP_UDF_TCP_RST << CFP_DATA0_UDF_A0_S;
++	return b53_cfp_redirect(dev, B53_FA_TRAP_RST, data, mask, map);
+ }
+ 
+ static void b53_fa_trap_clear(struct b53_device *dev)
+--- a/drivers/net/dsa/b53/b53_regs.h
++++ b/drivers/net/dsa/b53/b53_regs.h
+@@ -608,6 +608,9 @@
+ #define B53_CFP_UDF_0_A_0		0x10
+ #define   CFP_UDF_OFFSET_MASK		0x1f	/* in 16 bit words */
+ #define   CFP_UDF_EOL3			(3 << 5) /* from the end of L3 */
++#define   B53_CFP_UDF_TCP_FLAGS		6	/* data offset, flags */
++#define   CFP_UDF_TCP_FIN		BIT(0)	/* in the flags word */
++#define   CFP_UDF_TCP_RST		BIT(2)
+ 
+ /*************************************************************************
+  * CFP TCAM and Action/Policy RAM Access Page Registers
