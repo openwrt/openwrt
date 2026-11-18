@@ -1,0 +1,55 @@
+From 296022cef0542dade3c8138f1f2de329f8959396 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Tue, 10 Nov 2026 10:20:19 +0100
+Subject: [PATCH net-next v4 1/6] net: mvneta: lift the per-queue TX rate
+ limits
+
+After the mqprio shaper is turned off, the per-queue rate limits stay
+in effect. mvneta_disable_per_queue_rate_limit() only changes the mode
+bits in MVNETA_TXQ_CMD1_REG, but the token buckets limit the TX queues
+in that mode as well, and their refill still holds the old rate.
+
+Refill the token buckets of all TX queues at full rate when the rate
+limit is disabled. Deleting the qdisc reaches this code only with the
+next patch.
+
+Triggered during code development on a Turris Omnia (Armada 385) with
+a 100 Mbit/s link:
+
+  tc qdisc add dev eth2 root handle 100: mqprio num_tc 2 \
+    map 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 queues 4@0 4@4 hw 1 \
+    mode channel shaper bw_rlimit max_rate 10Mbit 10Mbit
+  tc qdisc del dev eth2 root
+  tc qdisc add dev eth2 root handle 100: mqprio num_tc 2 \
+    map 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 queues 4@0 4@4 hw 1
+
+Each TX queue then stayed at 10 Mbit/s. With this patch and the next
+one the link reaches 94 Mbit/s, and 941 Mbit/s on a 1 Gbit/s link. No
+kernel selftest covers the mvneta mqprio offload.
+
+Fixes: 2551dc9e398c ("net: mvneta: Add TC traffic shaping offload")
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+---
+ drivers/net/ethernet/marvell/mvneta.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -5212,9 +5212,16 @@ static int mvneta_enable_per_queue_rate_
+ static void mvneta_disable_per_queue_rate_limit(struct mvneta_port *pp)
+ {
+ 	u32 val = mvreg_read(pp, MVNETA_TXQ_CMD1_REG);
++	int queue;
+ 
+ 	val |= (MVNETA_TXQ_CMD1_BW_LIM_SEL_V1 | MVNETA_TXQ_CMD1_BW_LIM_EN);
+ 	mvreg_write(pp, MVNETA_TXQ_CMD1_REG, val);
++
++	/* The token buckets still limit the queues, refill them at full rate */
++	val = (1 << MVNETA_TXQ_BUCKET_REFILL_PERIOD_SHIFT) |
++	      MVNETA_TXQ_BUCKET_REFILL_VALUE_MAX;
++	for (queue = 0; queue < txq_number; queue++)
++		mvreg_write(pp, MVNETA_TXQ_BUCKET_REFILL_REG(queue), val);
+ }
+ 
+ static int mvneta_setup_queue_rates(struct mvneta_port *pp, int queue,
