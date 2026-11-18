@@ -367,7 +367,7 @@ define Device/heltec_ht-hd01-v2
   DEVICE_MODEL := HT-HD01-V2
   DEVICE_ALT0_VENDOR := Heltec
   DEVICE_ALT0_MODEL := Wi-Fi HaLow Dongle V2
-  DEVICE_PACKAGES := kmod-sdhci-mt7620
+  DEVICE_PACKAGES := kmod-mmc-mtk
 endef
 TARGET_DEVICES += heltec_ht-hd01-v2
 

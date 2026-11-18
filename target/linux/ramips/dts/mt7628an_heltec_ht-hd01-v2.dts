@@ -35,15 +35,24 @@
 	mm6108_pwrseq: mm6108-pwrseq {
 		compatible = "mmc-pwrseq-simple";
 		reset-gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+		post-power-on-delay-ms = <50>;
 	};
 };
 
-&gpio {
-	mm6108-power {
-		gpio-hog;
-		gpios = <39 GPIO_ACTIVE_HIGH>, <41 GPIO_ACTIVE_HIGH>;
-		output-high;
-		line-name = "mm6108-power";
+&pinctrl {
+	/* The MM6108 SDIO bus is wired to the EPHY port 1-4 pins */
+	ephy-digital;
+
+	sdxc_iot_mode: sdxc_iot_mode {
+		esd {
+			groups = "esd";
+			function = "iot";
+		};
+
+		sdxc {
+			groups = "sdmode";
+			function = "sdxc";
+		};
 	};
 };
 
@@ -129,8 +138,22 @@
 &sdhci {
 	status = "okay";
 
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sdxc_iot_mode>;
+	pinctrl-1 = <&sdxc_iot_mode>;
+
 	bus-width = <4>;
 	non-removable;
 	cap-sdio-irq;
 	mmc-pwrseq = <&mm6108_pwrseq>;
+
+	wifi@2 {
+		compatible = "morse,mm610x";
+		reg = <2>;
+		/* wake, busy (morse_driver of.c); reset is done by mm6108_pwrseq */
+		power-gpios = <&gpio 41 GPIO_ACTIVE_HIGH>,
+			      <&gpio 39 GPIO_ACTIVE_HIGH>;
+	};
 };
