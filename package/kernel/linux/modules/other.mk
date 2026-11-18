@@ -334,8 +334,9 @@ define KernelPackage/mmc
 	CONFIG_SDIO_UART=n
   FILES:= \
 	$(LINUX_DIR)/drivers/mmc/core/mmc_core.ko \
-	$(LINUX_DIR)/drivers/mmc/core/mmc_block.ko
-  AUTOLOAD:=$(call AutoProbe,mmc_core mmc_block,1)
+	$(LINUX_DIR)/drivers/mmc/core/mmc_block.ko \
+	$(LINUX_DIR)/drivers/mmc/core/pwrseq_simple.ko
+  AUTOLOAD:=$(call AutoProbe,mmc_core pwrseq_simple mmc_block,1)
 endef
 
 define KernelPackage/mmc/description
