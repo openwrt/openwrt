@@ -132,7 +132,7 @@ Signed-off-by: Bevan Weiss <bevan.weiss@gmail.com>
 +    };
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
-@@ -616,6 +616,17 @@ config MFD_MX25_TSADC
+@@ -626,6 +626,17 @@ config MFD_MX25_TSADC
  	  i.MX25 processors. They consist of a conversion queue for general
  	  purpose ADC and a queue for Touchscreens.
  
@@ -152,7 +152,7 @@ Signed-off-by: Bevan Weiss <bevan.weiss@gmail.com>
  	depends on OF
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -304,3 +304,5 @@ obj-$(CONFIG_MFD_RSMU_SPI)	+= rsmu_spi.o
+@@ -305,3 +305,5 @@ obj-$(CONFIG_MFD_RSMU_SPI)	+= rsmu_spi.o
  obj-$(CONFIG_MFD_UPBOARD_FPGA)	+= upboard-fpga.o
  
  obj-$(CONFIG_MFD_LOONGSON_SE)	+= loongson-se.o

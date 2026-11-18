@@ -15,7 +15,7 @@ Signed-off-by: Taiga Ogawa <zectaiga@gmail.com>
 
 --- a/drivers/net/dsa/Kconfig
 +++ b/drivers/net/dsa/Kconfig
-@@ -88,6 +88,8 @@ source "drivers/net/dsa/realtek/Kconfig"
+@@ -97,6 +97,8 @@ source "drivers/net/dsa/realtek/Kconfig"
  
  source "drivers/net/dsa/rtl83xx/Kconfig"
  
@@ -26,7 +26,7 @@ Signed-off-by: Taiga Ogawa <zectaiga@gmail.com>
  	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
 --- a/drivers/net/dsa/Makefile
 +++ b/drivers/net/dsa/Makefile
-@@ -25,5 +25,6 @@ obj-y				+= ocelot/
+@@ -26,5 +26,6 @@ obj-y				+= ocelot/
  obj-y				+= qca/
  obj-y				+= realtek/
  obj-y				+= rtl83xx/

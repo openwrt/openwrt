@@ -163,7 +163,7 @@ Signed-off-by: Shi Jiayang <shi05275@163.com>
 +module_dsa_tag_driver(yt922x_netdev_ops);
 --- a/drivers/net/dsa/Kconfig
 +++ b/drivers/net/dsa/Kconfig
-@@ -157,11 +157,12 @@ config NET_DSA_VITESSE_VSC73XX_PLATFORM
+@@ -166,11 +166,12 @@ config NET_DSA_VITESSE_VSC73XX_PLATFORM
  	  and VSC7398 SparX integrated ethernet switches, connected over
  	  a CPU-attached address bus and work in memory-mapped I/O mode.
  
@@ -181,7 +181,7 @@ Signed-off-by: Shi Jiayang <shi05275@163.com>
  endmenu
 --- a/drivers/net/dsa/Makefile
 +++ b/drivers/net/dsa/Makefile
-@@ -14,7 +14,7 @@ obj-$(CONFIG_NET_DSA_SMSC_LAN9303_MDIO)
+@@ -15,7 +15,7 @@ obj-$(CONFIG_NET_DSA_SMSC_LAN9303_MDIO)
  obj-$(CONFIG_NET_DSA_VITESSE_VSC73XX) += vitesse-vsc73xx-core.o
  obj-$(CONFIG_NET_DSA_VITESSE_VSC73XX_PLATFORM) += vitesse-vsc73xx-platform.o
  obj-$(CONFIG_NET_DSA_VITESSE_VSC73XX_SPI) += vitesse-vsc73xx-spi.o
