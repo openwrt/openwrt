@@ -167,12 +167,16 @@ TFA_TARGETS := \
   lx2160a-rdb \
   lx2160a-rdb-sdboot
 
+UBOOT_BIN = $(STAGING_DIR_IMAGE)/fsl_$(BUILD_VARIANT)-uboot.bin
+RCW_BIN = $(STAGING_DIR_IMAGE)/fsl_$(BUILD_VARIANT)-rcw.bin
+STAMP_BUILT_DEPENDS += $(UBOOT_BIN) $(RCW_BIN)
+
 TFA_MAKE_FLAGS += \
 	LDFLAGS="-Wl,--no-warn-rwx-segments" \
 	fip pbl \
 	BOOT_MODE=$(BOOT_MODE) \
-	RCW=$(STAGING_DIR_IMAGE)/fsl_$(BUILD_VARIANT)-rcw.bin \
-	BL33=$(STAGING_DIR_IMAGE)/fsl_$(BUILD_VARIANT)-uboot.bin \
+	RCW=$(RCW_BIN) \
+	BL33=$(UBOOT_BIN) \
 	FIPTOOL=$(STAGING_DIR_HOST)/bin/fiptool-layerscape \
 	CREATE_PBL=$(STAGING_DIR_HOST)/bin/tfa-create-pbl \
 	BYTE_SWAP=$(STAGING_DIR_HOST)/bin/tfa-byte-swap
