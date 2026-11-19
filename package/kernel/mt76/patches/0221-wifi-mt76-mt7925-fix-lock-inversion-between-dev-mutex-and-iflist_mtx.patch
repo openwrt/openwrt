@@ -1,0 +1,42 @@
+From 699df2cec2e8d4eaa46baf49b3ee16f962ecccf1 Mon Sep 17 00:00:00 2001
+From: Devin Wittmayer <lucid_duck@justthetip.ca>
+Date: Sun, 9 Aug 2026 21:53:38 -0700
+Subject: [PATCH] wifi: mt76: mt7925: fix lock inversion between dev->mutex and
+ iflist_mtx
+
+mt7925_config() has the same inversion as mt7921_config(): it holds
+dev->mutex across ieee80211_iterate_active_interfaces(), which takes
+local->iflist_mtx, while mac80211 calls drv_unassign_vif_chanctx() with
+iflist_mtx already held.
+
+.config is only reached through drv_config(), which asserts the wiphy
+mutex, so use ieee80211_iterate_active_interfaces_mtx() here too.
+
+Fixes: c948b5da6bbe ("wifi: mt76: mt7925: add Mediatek Wi-Fi7 driver for mt7925 chips")
+Signed-off-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Link: https://patch.msgid.link/20260810045338.118923-3-lucid_duck@justthetip.ca
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7925/main.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/mt7925/main.c b/mt7925/main.c
+index cd0c473d..891246b8 100644
+--- a/mt7925/main.c
++++ b/mt7925/main.c
+@@ -806,9 +806,9 @@ static int mt7925_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
+ 	}
+ 
+ 	if (changed & IEEE80211_CONF_CHANGE_MONITOR) {
+-		ieee80211_iterate_active_interfaces(hw,
+-						    IEEE80211_IFACE_ITER_RESUME_ALL,
+-						    mt7925_sniffer_interface_iter, dev);
++		ieee80211_iterate_active_interfaces_mtx(hw,
++							IEEE80211_IFACE_ITER_RESUME_ALL,
++							mt7925_sniffer_interface_iter, dev);
+ 	}
+ 
+ out:
+-- 
+2.54.0 (Apple Git-157)
+
