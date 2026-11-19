@@ -1,0 +1,18 @@
+# the Ethernet port is behind the chip, there is no network before it runs
+failsafe_bcmplcd() {
+	local index="$(find_mtd_index rootfs_data)"
+	local dir=/tmp/bcmplcd-settings
+
+	# a chip that starts now takes the parameters kept with the settings,
+	# such as a pairing made since the flash, if they can be read
+	mkdir -p /tmp/bcmplcd "$dir"
+	if [ -n "$index" ] && mount -t jffs2 -o ro "/dev/mtdblock$index" "$dir" 2>/dev/null; then
+		cp "$dir/upper/etc/bcmplcd/param" /tmp/bcmplcd/ 2>/dev/null
+		umount "$dir"
+	fi
+	rmdir "$dir"
+
+	bcmplcd -d default-param -s /tmp/bcmplcd/param </dev/null >/dev/null 2>&1 &
+}
+
+boot_hook_add failsafe failsafe_bcmplcd
