@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Faliang Wang <faliang.wang@airoha.com>
+Date: Thu, 19 Nov 2026 23:31:24 +0800
+Subject: [PATCH] net: airoha: fix intermittent Wi-Fi bring-up failures on reboot
+
+During automated reboot testing, NPU mailbox communication can fail
+intermittently, preventing Wi-Fi from coming up after reboot.
+
+Write the function information to CTRL(3) before updating the message
+counter in CTRL(2). The counter update notifies the NPU that a new
+message is ready for processing, so the function information must be
+set before this notification.
+
+Allow up to three total attempts for WLAN initialization commands.
+Wait 10 ms after failed attempts to accommodate temporary processing
+delays before reporting an initialization error.
+
+
+Signed-off-by: Faliang Wang <faliang.wang@airoha.com>
+
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -195,11 +195,10 @@ static int __airoha_npu_send_msg(struct
+ 
+ 	regmap_write(npu->regmap, REG_CR_MBQ0_CTRL(0) + offset, core->addr);
+ 	regmap_write(npu->regmap, REG_CR_MBQ0_CTRL(1) + offset, len);
+-	regmap_read(npu->regmap, REG_CR_MBQ0_CTRL(2) + offset, &val);
+-	regmap_write(npu->regmap, REG_CR_MBQ0_CTRL(2) + offset, val + 1);
+ 	val = FIELD_PREP(MBOX_MSG_FUNC_ID, func_id) | MBOX_MSG_WAIT_RSP;
+ 	regmap_write(npu->regmap, REG_CR_MBQ0_CTRL(3) + offset, val);
+-
++	regmap_read(npu->regmap, REG_CR_MBQ0_CTRL(2) + offset, &val);
++	regmap_write(npu->regmap, REG_CR_MBQ0_CTRL(2) + offset, val + 1);
+ 	ret = regmap_read_poll_timeout_atomic(npu->regmap,
+ 					      REG_CR_MBQ0_CTRL(3) + offset,
+ 					      val, (val & MBOX_MSG_DONE),
+@@ -551,30 +550,47 @@ airoha_npu_wlan_set_reserved_memory(stru
+ 	return airoha_npu_wlan_msg_send(npu, ifindex, func_id, &val,
+ 					sizeof(val), GFP_KERNEL);
+ }
++static int airoha_npu_wlan_cmd_with_retry(struct airoha_npu *npu, int ifindex,
++					  enum airoha_npu_wlan_set_cmd cmd,
++					  const char *name, int is_msg_send, u32 *val)
++{
++	int err = 0, retry_cnt = 3;
++
++	while (retry_cnt--) {
++		if (is_msg_send)
++			err = airoha_npu_wlan_msg_send(npu, ifindex, cmd, val, sizeof(*val), GFP_KERNEL);
++		else
++			err = airoha_npu_wlan_set_reserved_memory(npu, ifindex, name, cmd);
++		if (!err)
++			break;
++		msleep(10);
++	}
++	return err;
++}
++
+ 
+ static int airoha_npu_wlan_init_memory(struct airoha_npu *npu)
+ {
+ 	enum airoha_npu_wlan_set_cmd cmd = WLAN_FUNC_SET_WAIT_NPU_BAND0_ONCPU;
+ 	u32 val = 0;
+-	int err;
++	int err = 0;
+ 
+-	err = airoha_npu_wlan_msg_send(npu, 1, cmd, &val, sizeof(val),
+-				       GFP_KERNEL);
++	err = airoha_npu_wlan_cmd_with_retry(npu, 1, cmd, "band0_oncpu", 1, &val);
+ 	if (err)
+ 		return err;
+ 
+ 	cmd = WLAN_FUNC_SET_WAIT_TX_BUF_CHECK_ADDR;
+-	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-bufid", cmd);
++	err = airoha_npu_wlan_cmd_with_retry(npu, 0, cmd, "tx-bufid", 0, NULL);
+ 	if (err)
+ 		return err;
+ 
+ 	cmd = WLAN_FUNC_SET_WAIT_PKT_BUF_ADDR;
+-	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "pkt", cmd);
++	err = airoha_npu_wlan_cmd_with_retry(npu, 0, cmd, "pkt", 0, NULL);
+ 	if (err)
+ 		return err;
+ 
+ 	cmd = WLAN_FUNC_SET_WAIT_TX_PKT_BUF_ADDR;
+-	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-pkt", cmd);
++	err = airoha_npu_wlan_cmd_with_retry(npu, 0, cmd, "tx-pkt", 0, NULL);
+ 	if (err)
+ 		return err;
+ 
+@@ -587,8 +603,7 @@ static int airoha_npu_wlan_init_memory(s
+ 	}
+ 
+ 	cmd = WLAN_FUNC_SET_WAIT_IS_FORCE_TO_CPU;
+-	return airoha_npu_wlan_msg_send(npu, 0, cmd, &val, sizeof(val),
+-					GFP_KERNEL);
++	return airoha_npu_wlan_cmd_with_retry(npu, 0, cmd, "force_to_cpu", 1, &val);
+ }
+ 
+ static u32 airoha_npu_wlan_queue_addr_get(struct airoha_npu *npu, int qid,
