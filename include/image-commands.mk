@@ -375,12 +375,12 @@ define Build/elecom-product-header
 	$(eval product=$(word 1,$(1)))
 	$(eval fw=$(if $(word 2,$(1)),$(word 2,$(1)),$@))
 
-	-( \
+	( \
 		echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync iflag=fullblock; \
 		echo -n "0.00" | dd bs=16 count=1 conv=sync iflag=fullblock; \
 		dd if=$(fw); \
-	) > $(fw).new \
-	&& mv $(fw).new $(fw) || rm -f $(fw)
+	) > $(fw).new
+	mv $(fw).new $(fw)
 endef
 
 define Build/elecom-wrc-gs-factory
