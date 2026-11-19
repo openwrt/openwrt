@@ -159,7 +159,7 @@ define Device/friendlyarm_nanopi-r5s
   $(Device/rk3568)
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R5S
-  DEVICE_PACKAGES := kmod-r8169
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-r8169
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r5s
 
