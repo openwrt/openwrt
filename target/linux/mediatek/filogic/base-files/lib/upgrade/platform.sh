@@ -167,8 +167,8 @@ platform_do_upgrade() {
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-2g5|\
-	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-lite|\
+	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-pro-4e|\
 	bananapi,bpi-r4-pro-8x|\
 	bazis,ax3000wm|\
@@ -183,9 +183,9 @@ platform_do_upgrade() {
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
 	cudy,wr3000e-v1-ubootmod|\
-	cudy,wr3000s-v1-ubootmod|\
 	cudy,wr3000h-v1-ubootmod|\
 	cudy,wr3000p-v1-ubootmod|\
+	cudy,wr3000s-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	glinet,gl-be10000-ubootmod|\
 	globitel,bt-r320|\
@@ -198,6 +198,8 @@ platform_do_upgrade() {
 	mediatek,mt7988a-rfb|\
 	mercusys,mr85x-ubi|\
 	mercusys,mr90x-v1-ubi|\
+	netcore,n60|\
+	netcore,n60-pro|\
 	netis,eap930-v1|\
 	netis,n6-v2|\
 	netis,nx30v2|\
@@ -205,8 +207,6 @@ platform_do_upgrade() {
 	netis,nx32u|\
 	nokia,ea0326gmp|\
 	openwrt,one|\
-	netcore,n60|\
-	netcore,n60-pro|\
 	qihoo,360t7|\
 	qihoo,360t7-ubi|\
 	routerich,ax3000-ubootmod|\
@@ -222,8 +222,8 @@ platform_do_upgrade() {
 	tplink,tl-xtr8488|\
 	wavlink,wl-wnt100x3-ubootmod|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
-	xiaomi,redmi-router-ax6000-ubootmod|\
 	xiaomi,mi-router-wr30u-ubootmod|\
+	xiaomi,redmi-router-ax6000-ubootmod|\
 	zyxel,ex5601-t0-ubootmod|\
 	zyxel,wx5600-t0-ubootmod)
 		fit_do_upgrade "$1"
@@ -346,6 +346,13 @@ platform_do_upgrade() {
 		esac
 		nand_do_upgrade "$1"
 		;;
+	ltc,vl7m19k)
+		mtk_dual_boot_flash_both_slots "$1"
+		# clear any marker the bootloader set after failing to verify
+		fw_setenv dual_boot.slot_0_invalid 0
+		fw_setenv dual_boot.slot_1_invalid 0
+		nand_do_upgrade_success
+		;;
 	mercusys,mr80x-v3|\
 	mercusys,mr85x|\
 	mercusys,mr90x-v1|\
@@ -356,16 +363,19 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
-	ltc,vl7m19k)
-		mtk_dual_boot_flash_both_slots "$1"
-		# clear any marker the bootloader set after failing to verify
-		fw_setenv dual_boot.slot_0_invalid 0
-		fw_setenv dual_boot.slot_1_invalid 0
-		nand_do_upgrade_success
-		;;
 	netgear,eax17)
 		mtk_dual_boot_flash_both_slots "$1"
 		nand_do_upgrade_success
+		;;
+	nradio,c8-668gl)
+		CI_DATAPART="rootfs_data"
+		CI_KERNPART="kernel_2nd"
+		CI_ROOTPART="rootfs_2nd"
+		emmc_do_upgrade "$1"
+		;;
+	teltonika,rutc50)
+		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
+		nand_do_upgrade "$1"
 		;;
 	tplink,fr365-v1|\
 	zbtlink,zbt-z8803be)
@@ -373,16 +383,6 @@ platform_do_upgrade() {
 		CI_KERNPART="kernel"
 		CI_ROOTPART="rootfs"
 		nand_do_upgrade "$1"
-		;;
-	teltonika,rutc50)
-		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
-		nand_do_upgrade "$1"
-		;;
-	nradio,c8-668gl)
-		CI_DATAPART="rootfs_data"
-		CI_KERNPART="kernel_2nd"
-		CI_ROOTPART="rootfs_2nd"
-		emmc_do_upgrade "$1"
 		;;
 	ubnt,unifi-6-plus)
 		CI_KERNPART="kernel0"
@@ -428,8 +428,8 @@ platform_check_image() {
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-2g5|\
-	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-lite|\
+	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-pro-4e|\
 	bananapi,bpi-r4-pro-8x|\
 	bazis,ax3000wm|\
@@ -444,9 +444,9 @@ platform_check_image() {
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
 	cudy,wr3000e-v1-ubootmod|\
-	cudy,wr3000s-v1-ubootmod|\
 	cudy,wr3000h-v1-ubootmod|\
 	cudy,wr3000p-v1-ubootmod|\
+	cudy,wr3000s-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	glinet,gl-be10000-ubootmod|\
 	globitel,bt-r320|\
@@ -458,12 +458,12 @@ platform_check_image() {
 	mediatek,mt7988a-rfb|\
 	mercusys,mr85x-ubi|\
 	mercusys,mr90x-v1-ubi|\
-	nokia,ea0326gmp|\
+	netcore,n60|\
 	netis,eap930-v1|\
 	netis,n6-v2|\
 	netis,nx32u|\
+	nokia,ea0326gmp|\
 	openwrt,one|\
-	netcore,n60|\
 	qihoo,360t7|\
 	qihoo,360t7-ubi|\
 	routerich,ax3000-ubootmod|\
@@ -477,8 +477,8 @@ platform_check_image() {
 	tplink,tl-xtr8488|\
 	wavlink,wl-wnt100x3-ubootmod|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
-	xiaomi,redmi-router-ax6000-ubootmod|\
 	xiaomi,mi-router-wr30u-ubootmod|\
+	xiaomi,redmi-router-ax6000-ubootmod|\
 	zyxel,ex5601-t0-ubootmod)
 		fit_check_image "$1"
 		return $?
@@ -509,21 +509,6 @@ platform_check_image() {
 
 platform_copy_config() {
 	case "$(board_name)" in
-	bananapi,bpi-r3|\
-	bananapi,bpi-r3-mini|\
-	bananapi,bpi-r4|\
-	bananapi,bpi-r4-2g5|\
-	bananapi,bpi-r4-poe|\
-	bananapi,bpi-r4-lite|\
-	bananapi,bpi-r4-pro-4e|\
-	bananapi,bpi-r4-pro-8x|\
-	cmcc,rax3000m|\
-	gatonetworks,gdsp|\
-	mediatek,mt7988a-rfb)
-		if [ "$CI_METHOD" = "emmc" ]; then
-			emmc_copy_config
-		fi
-		;;
 	acer,predator-w6|\
 	acer,predator-w6d|\
 	acer,vero-w6m|\
@@ -554,6 +539,21 @@ platform_copy_config() {
 	smartrg,sdg-9000|\
 	ubnt,unifi-6-plus)
 		emmc_copy_config
+		;;
+	bananapi,bpi-r3|\
+	bananapi,bpi-r3-mini|\
+	bananapi,bpi-r4|\
+	bananapi,bpi-r4-2g5|\
+	bananapi,bpi-r4-lite|\
+	bananapi,bpi-r4-poe|\
+	bananapi,bpi-r4-pro-4e|\
+	bananapi,bpi-r4-pro-8x|\
+	cmcc,rax3000m|\
+	gatonetworks,gdsp|\
+	mediatek,mt7988a-rfb)
+		if [ "$CI_METHOD" = "emmc" ]; then
+			emmc_copy_config
+		fi
 		;;
 	esac
 }
