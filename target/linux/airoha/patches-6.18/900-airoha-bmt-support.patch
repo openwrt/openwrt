@@ -1,3 +1,12 @@
+From 9131cb44ffc39372eb77bd068ccb2b349f1a5fa7 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 17 Oct 2024 15:54:52 +0200
+Subject: [PATCH] mtd: nand: add Airoha bad block management table support
+
+Add support for the bad block management table (BMT) used by the Airoha
+bootloader on SPI-NAND flash, so that bad blocks are remapped the same
+way as by the vendor firmware.
+---
 --- /dev/null
 +++ b/drivers/mtd/nand/airoha_bmt.c
 @@ -0,0 +1,575 @@

@@ -1,3 +1,12 @@
+From f5637607a25e28c47e25c1f4374aa2d7052f68d4 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Mon, 16 Feb 2026 20:00:40 -0800
+Subject: [PATCH] ARM: dts: NSP: meraki-mx6x: use mac-base for the MAC addresses
+
+Describe the base MAC address of the Meraki MX64/MX65 (Alamo/Kingpin) as
+NVMEM cell with the mac-base layout, so that the MAC addresses of the
+Ethernet interfaces are derived from it.
+---
 --- a/arch/arm/boot/dts/broadcom/bcm958625-meraki-alamo.dtsi
 +++ b/arch/arm/boot/dts/broadcom/bcm958625-meraki-alamo.dtsi
 @@ -254,11 +254,17 @@

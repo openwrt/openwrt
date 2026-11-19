@@ -1,3 +1,11 @@
+From 5f4502998a5846146a428e9cfa3f0bbc4c145bb1 Mon Sep 17 00:00:00 2001
+From: Antonio Silverio <menion@gmail.com>
+Date: Mon, 30 Jul 2018 12:26:07 +0200
+Subject: [PATCH] arm64: dts: allwinner: orangepi-pc2: use USB OTG as host and power key
+
+Set the USB OTG port of the Orange Pi PC2 to host mode and map its
+button to KEY_POWER.
+---
 --- a/arch/arm64/boot/dts/allwinner/sun50i-h5-orangepi-pc2.dts
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-h5-orangepi-pc2.dts
 @@ -60,7 +60,7 @@

@@ -1,3 +1,12 @@
+From d8655868ca04d12ad5ed36e26fc63d61b076e33d Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Feb 2018 15:09:43 +0100
+Subject: [PATCH] MIPS: ralink: mt7621: fix spurious IRQ7 with perf
+
+The performance counter events are routed through the GIC. Prevent them
+from firing on CPU IRQ7 as well, which caused spurious interrupts when
+using perf.
+---
 --- a/arch/mips/ralink/irq-gic.c
 +++ b/arch/mips/ralink/irq-gic.c
 @@ -14,6 +14,12 @@

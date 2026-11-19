@@ -1,3 +1,11 @@
+From c8778250a91d691a274d2070dc25827325e3f090 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 5 Feb 2017 15:03:14 +0100
+Subject: [PATCH] MIPS: ralink: mt7620: add chip version and package helpers
+
+Add mt7620_get_chipver() and mt7620_get_pkg() to get the chip version
+and the package type of the MT7620.
+---
 --- a/arch/mips/include/asm/mach-ralink/mt7620.h
 +++ b/arch/mips/include/asm/mach-ralink/mt7620.h
 @@ -62,4 +62,16 @@ static inline int mt7620_get_eco(void)

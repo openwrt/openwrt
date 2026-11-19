@@ -1,3 +1,11 @@
+From b910cbfc0c5d538f695d2234d6425587434c14e6 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Sun, 17 May 2026 20:19:35 +0200
+Subject: [PATCH] net: stmmac: add Qualcomm IPQ5018 DWMAC driver to the build
+
+Hook the glue driver for the DWMAC Ethernet controllers of the Qualcomm
+IPQ5018 into the stmmac Kconfig and Makefile.
+---
 --- a/drivers/net/ethernet/stmicro/stmmac/Kconfig
 +++ b/drivers/net/ethernet/stmicro/stmmac/Kconfig
 @@ -79,6 +79,14 @@ config DWMAC_INGENIC

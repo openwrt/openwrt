@@ -1,20 +1,19 @@
-commit eb6c3ba1d42fd087708f568ca220ff557f22104e
-Author: Jakob Haufe <sur5r@sur5r.net>
-Date:   Tue Jun 17 13:58:19 2025 +0200
+From eb6c3ba1d42fd087708f568ca220ff557f22104e Mon Sep 17 00:00:00 2001
+From: Jakob Haufe <sur5r@sur5r.net>
+Date: Tue, 17 Jun 2025 13:58:19 +0200
+Subject: [PATCH] MIPS: OCTEON: Add UBNT specific DTS pruning
 
-    MIPS: OCTEON: Add UBNT specific DTS pruning
-    
-    This imports device specific DTS pruning from
-    https://github.com/UI-Packages/kernel_e200/blob/master/arch/mips/cavium-octeon/octeon-platform.c#L1067
-    
-    - Reduce MMC clock frequency on E200/E220 to make
-      MMC communication reliable again. See linked issue.
-    - Remove unused MMC node on E300.
-    
-    Related: https://github.com/openwrt/openwrt/issues/13762
-    
-    Signed-off-by: Jakob Haufe <sur5r@sur5r.net>
+This imports device specific DTS pruning from
+https://github.com/UI-Packages/kernel_e200/blob/master/arch/mips/cavium-octeon/octeon-platform.c#L1067
 
+- Reduce MMC clock frequency on E200/E220 to make
+  MMC communication reliable again. See linked issue.
+- Remove unused MMC node on E300.
+
+Related: https://github.com/openwrt/openwrt/issues/13762
+
+Signed-off-by: Jakob Haufe <sur5r@sur5r.net>
+---
 --- a/arch/mips/cavium-octeon/octeon-platform.c
 +++ b/arch/mips/cavium-octeon/octeon-platform.c
 @@ -1134,6 +1134,41 @@ end_led:
