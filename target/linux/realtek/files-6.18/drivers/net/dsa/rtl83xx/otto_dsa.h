@@ -109,7 +109,9 @@ struct rtldsa_ets {
 	u32 handle;
 	u16 children;
 	bool offloadable;
+	bool offloaded;
 	u8 weights[MAX_PRIOS];
+	struct otto_dsa_qdisc_stats stats;
 	struct rtldsa_tbf queue_tbf[MAX_PRIOS];
 	struct rtldsa_red queue_red[MAX_PRIOS];
 };
@@ -131,7 +133,9 @@ struct rtldsa_port {
 	u32 ets_handle;
 	u16 ets_children;
 	bool ets_offloadable;
+	bool ets_offloaded;
 	u8 ets_weights[MAX_PRIOS];
+	struct otto_dsa_qdisc_stats ets_stats;
 	struct rtldsa_tbf tbf;
 	struct rtldsa_tbf queue_tbf[MAX_PRIOS];
 	struct rtldsa_red red;
