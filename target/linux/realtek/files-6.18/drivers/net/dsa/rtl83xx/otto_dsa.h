@@ -82,6 +82,12 @@ struct rtldsa_93xx_lag_entry {
 	u32 num_tx_candi:4;
 };
 
+struct otto_dsa_qdisc_stats {
+	u64 tx_bytes;
+	u64 tx_packets;
+	u64 drops;
+};
+
 struct rtldsa_tbf {
 	u32 handle;
 	u64 rate_bytes_ps;
@@ -95,9 +101,7 @@ struct rtldsa_red {
 	struct tc_red_qopt_offload_params params;
 	bool child;
 	bool offloaded;
-	u64 tx_bytes;
-	u64 tx_packets;
-	u64 drops;
+	struct otto_dsa_qdisc_stats stats;
 };
 
 struct rtldsa_ets {
@@ -107,6 +111,11 @@ struct rtldsa_ets {
 	u8 weights[MAX_PRIOS];
 	struct rtldsa_tbf queue_tbf[MAX_PRIOS];
 	struct rtldsa_red queue_red[MAX_PRIOS];
+};
+
+struct otto_dsa_queue {
+	u64 drops;
+	u16 drops_hw;
 };
 
 struct rtldsa_port {
@@ -130,8 +139,7 @@ struct rtldsa_port {
 	struct rtldsa_red queue_red_prev[MAX_PRIOS];
 	struct rtldsa_ets ets_prev;
 	u32 red_cfg[MAX_PRIOS];
-	u64 red_drops[MAX_PRIOS];
-	u16 red_drops_hw[MAX_PRIOS];
+	struct otto_dsa_queue queues[MAX_PRIOS];
 	unsigned long cached_flags;
 	u64 pm;
 	u16 pvid;
@@ -525,7 +533,7 @@ struct rtldsa_config {
 				bool strict);
 	int (*red_set)(struct otto_dsa_priv *priv, int port,
 		       const struct tc_red_qopt_offload_params **p);
-	void (*red_drops_update)(struct otto_dsa_priv *priv, int port);
+	void (*queue_drops_update)(struct otto_dsa_priv *priv, int port);
 	int (*egress_shaper_set)(struct otto_dsa_priv *priv, int port, int queue,
 				 u64 rate_bytes_ps, u32 burst);
 	void (*qos_init)(struct otto_dsa_priv *priv);
@@ -595,7 +603,10 @@ struct otto_dsa_priv {
 
 	/** @red_cfg: RED setting of each queue, shared by all ports in @red_ports */
 	u32 red_cfg[MAX_PRIOS];
-	struct delayed_work red_work;
+
+	/** @drops_ports: Port (bit) has the drop counters of its queues polled */
+	u64 drops_ports;
+	struct delayed_work drops_work;
 	struct workqueue_struct *wq;
 	bool eee_enabled;
 	unsigned long mc_group_bm[MAX_MC_GROUPS >> 5];
