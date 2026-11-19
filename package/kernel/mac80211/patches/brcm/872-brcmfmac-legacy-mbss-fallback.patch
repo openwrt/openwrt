@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Collin Rose <collinr@gmail.com>
+Date: Fri, 13 Nov 2026 22:05:00 -0500
+Subject: [PATCH] brcmfmac: fall back to legacy MBSS when interface_create
+ is unsupported
+
+BCM43602 firmware 7.35.177.56 does not implement the interface_create
+iovar. brcmf_cfg80211_request_ap_if() tries versions 1 and 2, then
+queries the supported version. When that query fails, the function
+returns -EOPNOTSUPP and skips the bsscfg:ssid path immediately below,
+which this firmware does support. A second AP BSS then fails, and
+hostapd disables the whole radio, including the primary AP.
+
+Set the version to 0 and fall through. The switch default marks the
+iovar unsupported, and the existing bsscfg:ssid block runs. Firmware
+that answers the version query is unchanged.
+
+This change was first published for a Netgear R8000 on the same
+firmware, as patches/861-brcmfmac-r8000-legacy-mbss-fallback.patch in
+88plug/netgear-r8000-plus (GPL-2.0). It is re-ported here onto
+backports 7.2. The same early return is still in current mainline
+Linux. It has not been sent to linux-wireless yet.
+
+Upstream-Status: Not yet submitted to linux-wireless
+
+https://github.com/88plug/netgear-r8000-plus/blob/netgear-r8000-plus/patches/861-brcmfmac-r8000-legacy-mbss-fallback.patch
+
+Signed-off-by: Collin Rose <collinr@gmail.com>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -758,8 +758,9 @@ static int brcmf_cfg80211_request_ap_if(struct brcmf_if *ifp)
+ 	err = brcmf_fil_bsscfg_int_query(ifp, "interface_create",
+ 					 &iface_create_ver);
+ 	if (err) {
+ 		brcmf_err("fail to get supported version, err=%d\n", err);
+-		return -EOPNOTSUPP;
++		/* Fall through to the legacy bsscfg:ssid MBSS path. */
++		iface_create_ver = 0;
+ 	}
+ 
+ 	switch (iface_create_ver) {
