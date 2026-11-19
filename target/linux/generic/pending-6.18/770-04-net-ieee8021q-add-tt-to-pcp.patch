@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oleksij Rempel <o.rempel@pengutronix.de>
+Date: Mon, 16 Nov 2026 20:10:15 +0100
+Subject: [PATCH] net: ieee8021q: add tt_to_pcp()
+
+Add ieee8021q_tt_to_pcp(), the inverse of ieee8021q_pcp_to_tt(): it
+encodes an 802.1Q traffic type back to its Priority Code Point, and
+completes the pcp/tt helper family.
+
+A driver that reseeds its PCP classifier through ieee8021q_pcp_to_tt()
+stores traffic types in the hardware tables, while the dcbnl priority
+ops exchange 802.1p priorities across the DSA boundary. Reading such a
+table back therefore needs the reverse mapping to restore the 802.1p
+value, which no existing helper provides. Because pcp_to_tt only
+transposes Best Effort and Background and is the identity elsewhere the
+two directions are numerically equal; provide tt_to_pcp as its own named
+function so the read path does not decode a traffic type as if it were a
+PCP.
+
+The first user is the Realtek rtl8365mb DSA driver, whose dcbnl
+get_default_prio and get_dscp_prio paths read back traffic types and
+must return 802.1p priorities.
+
+Signed-off-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Reviewed-by: Alvin Šipraga <alvin.sipraga@analog.com>
+Reviewed-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+--- a/include/net/ieee8021q.h
++++ b/include/net/ieee8021q.h
+@@ -42,6 +42,7 @@ enum ieee8021q_traffic_type {
+ 
+ int ietf_dscp_to_ieee8021q_tt(u8 dscp);
+ int ieee8021q_pcp_to_tt(u8 pcp);
++int ieee8021q_tt_to_pcp(enum ieee8021q_traffic_type tt);
+ int ieee8021q_tt_to_tc(enum ieee8021q_traffic_type tt, unsigned int num_queues);
+ 
+ #else
+@@ -55,6 +56,11 @@ static inline int ieee8021q_pcp_to_tt(u8
+ {
+ 	return -EOPNOTSUPP;
+ }
++
++static inline int ieee8021q_tt_to_pcp(enum ieee8021q_traffic_type tt)
++{
++	return -EOPNOTSUPP;
++}
+ 
+ static inline int ieee8021q_tt_to_tc(enum ieee8021q_traffic_type tt,
+ 				     unsigned int num_queues)
+--- a/net/core/ieee8021q_helpers.c
++++ b/net/core/ieee8021q_helpers.c
+@@ -245,6 +245,8 @@ static const u8 ieee8021q_pcp_to_tt_map[
+ 
+ static_assert(ARRAY_SIZE(ieee8021q_pcp_to_tt_map) ==
+ 	      (VLAN_PRIO_MASK >> VLAN_PRIO_SHIFT) + 1);
++/* ieee8021q_tt_to_pcp() needs one entry per traffic type. */
++static_assert(ARRAY_SIZE(ieee8021q_pcp_to_tt_map) == IEEE8021Q_TT_MAX);
+ 
+ /**
+  * ieee8021q_pcp_to_tt - Map an IEEE 802.1Q PCP to a traffic type
+@@ -269,3 +271,27 @@ int ieee8021q_pcp_to_tt(u8 pcp)
+ 	return ieee8021q_pcp_to_tt_map[pcp];
+ }
+ EXPORT_SYMBOL_GPL(ieee8021q_pcp_to_tt);
++
++/**
++ * ieee8021q_tt_to_pcp - Map an IEEE 802.1Q traffic type to a PCP
++ * @tt: IEEE 802.1Q traffic type
++ *
++ * Encode @tt to its priority per Table I-2 (IEEE 802.1Q-2022, I.4). Then
++ * encode the priority to its PCP per the 8P0D row of Table 6-2 (6.9.3). This
++ * is the inverse of ieee8021q_pcp_to_tt(). The enum values of Best Effort and
++ * Background are not their priorities, see &enum ieee8021q_traffic_type.
++ *
++ * Return: the PCP (0..7), or -EINVAL if @tt is not a traffic type. Without
++ * CONFIG_NET_IEEE8021Q_HELPERS, the stub returns -EOPNOTSUPP.
++ */
++int ieee8021q_tt_to_pcp(enum ieee8021q_traffic_type tt)
++{
++	int pcp;
++
++	for (pcp = 0; pcp < ARRAY_SIZE(ieee8021q_pcp_to_tt_map); pcp++)
++		if (ieee8021q_pcp_to_tt_map[pcp] == tt)
++			return pcp;
++
++	return -EINVAL;
++}
++EXPORT_SYMBOL_GPL(ieee8021q_tt_to_pcp);
