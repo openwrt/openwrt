@@ -1,0 +1,23 @@
+From 4af9338c70020bd2e76a54b653cf8614fc3979aa Mon Sep 17 00:00:00 2001
+From: basavaraj-sm05 <basavaraj@digiscrypt.com>
+Date: Mon, 6 Jul 2026 18:02:24 +0530
+Subject: [PATCH 19/23] Fix cleantext() to strip control characters
+
+(cherry picked from commit 08729e21aef920b68e027bfff36f4bf3bd570ebf)
+[backport: dropped the src/dbutil.c hunk, cleantext() is not in dbutil.c in
+2025.89 since 2aceda7d7a14 ("Move cleantext() to dbutil") is not backported]
+---
+ src/progressmeter.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/progressmeter.c
++++ b/src/progressmeter.c
+@@ -249,7 +249,7 @@ static void cleantext(char* dirtytext, i
+ 
+ 		c = (unsigned char)dirtytext[i];
+ 		/* We can ignore '\r's */
+-		if (c >= ' ' || c <= '~' || (allow_whitespace && (c == '\n' || c == '\t'))) {
++		if ((c >= ' ' && c <= '~') || (allow_whitespace && (c == '\n' || c == '\t'))) {
+ 			dirtytext[j] = c;
+ 			j++;
+ 		}

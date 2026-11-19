@@ -1,0 +1,38 @@
+From f43ff9f01b6a7e336dc0a90f486b2fe9969a1eca Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Mon, 8 Jun 2026 21:30:36 +0800
+Subject: [PATCH 09/23] Check packet length for integer overflow
+
+The packet length provided by a peer could wrap around calculating
+"len", which would then pass the length check. Also check "plen"
+directly.
+
+This doesn't have any functional effect, since subsequent buf_getptr()
+and buf_getwriteptr() would catch the incorrect length before use in
+decrypt_packet().
+
+Reported by Yiyi Wang, Tsinghua University
+
+(cherry picked from commit edd5fa1ef9bbdc759ac8eb90552f9e87ce220f87)
+---
+ src/packet.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/src/packet.c
++++ b/src/packet.c
+@@ -278,12 +278,12 @@ static int read_packet_init() {
+ 
+ 	TRACE2(("packet size is %u, block %u mac %u", len, blocksize, macsize))
+ 
+-
+-	/* check packet length */
++	/* check packet length. plen max to catch integer wraparound. */
+ 	if ((len > RECV_MAX_PACKET_LEN) ||
++	    (plen > RECV_MAX_PACKET_LEN) ||
+ 		(plen < blocksize) ||
+ 		(plen % blocksize != 0)) {
+-		dropbear_exit("Integrity error (bad packet size %u)", len);
++		dropbear_exit("Integrity error (bad packet size %u)", plen);
+ 	}
+ 
+ 	if (len > ses.readbuf->size) {
