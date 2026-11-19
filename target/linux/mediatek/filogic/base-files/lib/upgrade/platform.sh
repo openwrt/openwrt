@@ -161,6 +161,7 @@ platform_do_upgrade() {
 	case "$board" in
 	abt,asr3000|\
 	acer,predator-w6x-ubootmod|\
+	aigo,ags21|\
 	asus,rt-ax59u-ubi|\
 	asus,zenwifi-bt8-ubootmod|\
 	bananapi,bpi-r3|\
@@ -422,6 +423,7 @@ platform_check_image() {
 	case "$board" in
 	abt,asr3000|\
 	acer,predator-w6x-ubootmod|\
+	aigo,ags21|\
 	asus,rt-ax59u-ubi|\
 	asus,zenwifi-bt8-ubootmod|\
 	bananapi,bpi-r3|\
@@ -509,6 +511,7 @@ platform_check_image() {
 
 platform_copy_config() {
 	case "$(board_name)" in
+	aigo,ags21|\
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
