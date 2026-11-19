@@ -1,0 +1,63 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+case "$BUTTON" in
+fn|lights_toggle) ;;
+*) exit 0 ;;
+esac
+[ "$ACTION" = "released" ] || exit 0
+
+model="$(tr -d '\000' </proc/device-tree/model 2>/dev/null)"
+case "$model" in
+*"Keenetic Ultra"*) ;;
+*) exit 0 ;;
+esac
+
+state=/tmp/rt6855a-led-shutdown
+snapshot="$state/leds"
+
+switch_leds()
+{
+	[ -x /sbin/swconfig ] || return 0
+	/sbin/swconfig dev switch0 set leds_off "$1" 2>/dev/null || true
+}
+
+if [ ! -e "$state/enabled" ]; then
+	mkdir -p "$state"
+	: >"$snapshot"
+	for led in /sys/class/leds/*; do
+		[ -d "$led" ] || continue
+		trigger="$(sed -n 's/.*\[\([^]]*\)\].*/\1/p' "$led/trigger" 2>/dev/null)"
+		brightness="$(cat "$led/brightness" 2>/dev/null)"
+		printf '%s\t%s\t%s\n' "$led" "${trigger:-none}" \
+			"${brightness:-0}" >>"$snapshot"
+		echo none >"$led/trigger" 2>/dev/null || true
+		echo 0 >"$led/brightness" 2>/dev/null || true
+	done
+	switch_leds 1
+	touch "$state/enabled"
+	logger -t rt6855a-leds "front-panel LEDs disabled by FN"
+	exit 0
+fi
+
+switch_leds 0
+tab="$(printf '\t')"
+while IFS="$tab" read -r led trigger brightness; do
+	[ -d "$led" ] || continue
+	if [ -n "$trigger" ] && [ "$trigger" != "none" ]; then
+		echo "$trigger" >"$led/trigger" 2>/dev/null || true
+	else
+		echo none >"$led/trigger" 2>/dev/null || true
+		echo "${brightness:-0}" >"$led/brightness" 2>/dev/null || true
+	fi
+done <"$snapshot"
+
+# Reapply trigger-specific parameters such as switch port masks and modes.
+/etc/init.d/led restart >/dev/null 2>&1 || true
+
+# U-Boot may leave Power physically on without updating LED-class state.
+echo 1 >/sys/class/leds/green:power/brightness 2>/dev/null || true
+rm -r "$state"
+logger -t rt6855a-leds "front-panel LEDs restored by FN"
+
+exit 0
