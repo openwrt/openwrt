@@ -1,0 +1,43 @@
+From b90b5376aa1fc4036174fa5e6148a01caab8b705 Mon Sep 17 00:00:00 2001
+From: Alexey Immoreev <github@luixo.me>
+Date: Thu, 19 Nov 2026 12:44:46 +0000
+Subject: [PATCH] soc: qcom: mdt_loader: allow blocking user PD DMA allocations
+
+The user PD load callback already sleeps while requesting firmware.
+Passing GFP_DMA alone to dma_alloc_coherent() does not allow direct
+reclaim. On ARM32 the allocation can be limited to the atomic pool;
+a normal firmware segment may exceed that pool's capacity.
+
+Use GFP_KERNEL for the coherent descriptor and data allocations. The DMA
+API already chooses the memory zone. Fix the diagnostic formats while
+touching the allocation sites.
+
+Signed-off-by: Alexey Immoreev <github@luixo.me>
+---
+--- a/drivers/soc/qcom/mdt_loader.c
++++ b/drivers/soc/qcom/mdt_loader.c
+@@ -122,18 +122,20 @@ static int mdt_load_split_segment_dma(in
+ 	dma_addr_t dma_args, dma_addrs, dma_ptr;
+ 	int ret;
+ 
+-	args = dma_alloc_coherent(dev, sizeof(*args) + sizeof(*addrs), &dma_args, GFP_DMA);
++	args = dma_alloc_coherent(dev, sizeof(*args) + sizeof(*addrs), &dma_args,
++				  GFP_KERNEL);
+ 	if (!args) {
+-		dev_err(dev, "Error in dma alloc regin: %ld\n", sizeof(*args));
++		dev_err(dev, "Error in dma alloc region: %zu\n", sizeof(*args));
+ 		return -ENOMEM;
+ 	}
+ 
+ 	addrs = (void *) args + sizeof(*args);
+ 	dma_addrs = dma_args + sizeof(*args);
+ 
+-	ptr = dma_alloc_coherent(dev, phdr->p_filesz, &dma_ptr, GFP_DMA);
++	ptr = dma_alloc_coherent(dev, phdr->p_filesz, &dma_ptr,
++				 GFP_KERNEL);
+ 	if (!ptr) {
+-		dev_err(dev, "Error in dma alloc ptr: %d\n", phdr->p_filesz);
++		dev_err(dev, "Error in dma alloc ptr: %u\n", phdr->p_filesz);
+ 		return -ENOMEM;
+ 	}
+ 
