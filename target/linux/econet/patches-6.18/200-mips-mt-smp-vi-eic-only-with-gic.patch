@@ -1,0 +1,36 @@
+From: Emre Yavuzalp <emreyavuzalp2@gmail.com>
+Subject: mips: only force vectored/EIC interrupt mode for MT SMP with a GIC
+
+MIPS_MT_SMP force-selects CPU_MIPSR2_IRQ_VI and CPU_MIPSR2_IRQ_EI, a
+Malta-era assumption that a vectored/EIC-capable interrupt controller
+is present. On the EcoNet EN751221 the 34Kc advertises the VInt/VEIC
+ability bits in Config3, so these options switch trap_init() to
+vectored dispatch, but the SoC has no EIC: the interrupt vector number
+is sampled from IPL lines nothing drives, the CPU latches RIPL=0x1f
+(Cause=0x50807c00) and jumps to an uninstalled vector:
+
+  do_default_vi -> Kernel panic: "Caught unexpected vectored interrupt."
+
+at the very first local_irq_enable() during boot. VSMP itself has no
+dependency on vectored mode: the SW0/SW1 MT IPIs from irq-mips-cpu are
+plain Cause.IP bits and the classic cause-mode plat_irq_dispatch()
+handles them fine, which is exactly how this platform already runs in
+uniprocessor mode.
+
+Make the two selects conditional on MIPS_GIC: the GIC is a real
+EIC-capable controller and installs its vector handlers itself (this
+keeps the EN7528/1004Kc+GIC configuration unchanged), while GIC-less
+MT SMP systems like the EN751221 stay on cause-mode dispatch.
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -2211,8 +2211,8 @@ config MIPS_MT_SMP
+ 	default y
+ 	depends on TARGET_ISA_REV > 0 && TARGET_ISA_REV < 6
+ 	depends on SYS_SUPPORTS_MULTITHREADING && !CPU_MICROMIPS
+-	select CPU_MIPSR2_IRQ_VI
+-	select CPU_MIPSR2_IRQ_EI
++	select CPU_MIPSR2_IRQ_VI if MIPS_GIC
++	select CPU_MIPSR2_IRQ_EI if MIPS_GIC
+ 	select SYNC_R4K
+ 	select MIPS_MT
+ 	select SMP

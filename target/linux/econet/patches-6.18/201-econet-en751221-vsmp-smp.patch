@@ -1,0 +1,100 @@
+From: Emre Yavuzalp <emreyavuzalp2@gmail.com>
+Subject: mips: econet: bring up the second VPE on EN751221 via VSMP
+
+The EN751221 is a single MIPS 34Kc core implementing the MT ASE with
+2 VPEs (the vendor SMTC kernel runs "VPE 0: TC 0 1 2, VPE 1: TC 3").
+The platform only registered CPS SMP ops (for the dual-core EN7528)
+and otherwise fell back to uniprocessor, so the second VPE was never
+used.
+
+Advertise SYS_SUPPORTS_MULTITHREADING for the EN751221 SoC - this also
+makes IRQ_MIPS_CPU select GENERIC_IRQ_IPI, so irq-mips-cpu registers
+the SW0/SW1 MT IPI domain - and register VSMP smp ops when the CPS
+probe fails. Do not use the generic vsmp_smp_ops directly: its
+init_secondary() is Malta-specific and, without a GIC, only unmasks
+IP0/IP1/IP6/IP7 on the secondary VPE. All EN751221 peripheral
+interrupts, including the per-VPE HPT clockevent (hwirq 30, shadow 29
+in the EN751221 INTC), cascade through CPU IRQ 2, so VPE1 must unmask
+IP2 as well or it never gets a timer tick. Use a copy of vsmp_smp_ops
+with init_secondary unmasking IP0/IP1 (IPIs) and IP2 (INTC).
+
+The EN751221 INTC (econet,shadow-interrupts) and the HPT timer percpu
+mode were already designed upstream for this 2-VPE arrangement.
+
+Without CONFIG_MIPS_MT_SMP this is a no-op and the platform falls back
+to UP as before.
+--- a/arch/mips/econet/Kconfig
++++ b/arch/mips/econet/Kconfig
+@@ -19,6 +19,7 @@ choice
+ 		select PCI_DRIVERS_GENERIC
+ 		select SMP
+ 		select SMP_UP
++		select SYS_SUPPORTS_MULTITHREADING
+ 		select SYS_SUPPORTS_SMP
+ 		help
+ 		  The EN751221 family includes EN7512, RN7513, EN7521, EN7526.
+--- a/arch/mips/econet/init.c
++++ b/arch/mips/econet/init.c
+@@ -12,6 +12,8 @@
+ #include <asm/addrspace.h>
+ #include <asm/io.h>
+ #include <asm/bootinfo.h>
++#include <asm/cpu-features.h>
++#include <asm/mipsregs.h>
+ #include <asm/time.h>
+ #include <asm/prom.h>
+ #include <asm/smp-ops.h>
+@@ -40,6 +42,42 @@ void __init prom_init(void)
+ 	_machine_restart = hw_reset;
+ }
+ 
++#ifdef CONFIG_MIPS_MT_SMP
++/*
++ * The generic vsmp_init_secondary() assumes a Malta-like interrupt setup:
++ * without a GIC it only unmasks the MT IPI software interrupts and the CPU
++ * timer lines (IP0/IP1/IP6/IP7). On the EN751221 every peripheral interrupt,
++ * including the per-VPE HPT clockevent, arrives through the EN751221 INTC
++ * whose output is wired to CPU IRQ 2 on both VPEs, so IP2 must be unmasked
++ * on the secondary VPE too or it never receives a timer tick.
++ */
++static void econet_vsmp_init_secondary(void)
++{
++	change_c0_status(ST0_IM, STATUSF_IP0 | STATUSF_IP1 | STATUSF_IP2);
++}
++
++static struct plat_smp_ops econet_vsmp_smp_ops;
++
++static int __init econet_register_vsmp_smp_ops(void)
++{
++	extern const struct plat_smp_ops vsmp_smp_ops;
++
++	if (!cpu_has_mipsmt)
++		return -ENODEV;
++
++	econet_vsmp_smp_ops = vsmp_smp_ops;
++	econet_vsmp_smp_ops.init_secondary = econet_vsmp_init_secondary;
++	register_smp_ops(&econet_vsmp_smp_ops);
++
++	return 0;
++}
++#else
++static inline int econet_register_vsmp_smp_ops(void)
++{
++	return -ENODEV;
++}
++#endif
++
+ /* 2. Parse the DT and find memory */
+ void __init plat_mem_setup(void)
+ {
+@@ -68,6 +106,10 @@ void __init device_tree_init(void)
+ 	if (!register_cps_smp_ops())
+ 		return;
+ 
++	/* EN751221: single 34Kc core with the MT ASE; bring up VPE1 via VSMP */
++	if (!econet_register_vsmp_smp_ops())
++		return;
++
+ 	register_up_smp_ops();
+ }
+ 

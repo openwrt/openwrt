@@ -1,0 +1,90 @@
+From: Emre Yavuzalp <emreyavuzalp2@gmail.com>
+Subject: irqchip: EN751221: split pending dispatch between the VPEs
+
+The INTC parent CPU interrupt (IP2) is broadcast to both VPEs and the
+PENDING registers expose the raw global status. Per-CPU interrupts for
+VPE1 arrive on dedicated shadow inputs (e.g. bit 29 for the VPE1 HPT
+timer) which are deliberately not mapped in the IRQ domain. Without
+filtering, VPE0 dispatches the shadow bit into an unmapped hwirq (so it
+is never acked and the line storms: observed 46M spurious interrupts,
+5-6 minute boots, starved mt76/DHCP) while a target-only filter on VPE1
+drops its own timer.
+
+Split the pending set: VPE1 dispatches only shadow bits, translated to
+their target hwirqs so the percpu handler acks the right hardware; VPE0
+ignores shadow bits entirely. Verified on Archer C5v: ERR stays 0,
+CPU1 ticks at exactly HZ, mt76 IRQs flow, 253 Mbit/s iperf3 with both
+VPEs under 90%.
+
+--- a/drivers/irqchip/irq-econet-en751221.c
++++ b/drivers/irqchip/irq-econet-en751221.c
+@@ -50,6 +50,15 @@
+ static struct {
+ 	void __iomem	*membase;
+ 	u8		interrupt_shadows[IRQ_COUNT];
++	/* Reverse map: shadow hwirq -> target hwirq, for dispatch-time
++	 * translation on VPE#1 (shadows are not mapped in the domain). */
++	u8		shadow_targets[IRQ_COUNT];
++	/* Bits (per pending word) of the shadow inputs. The PENDING
++	 * registers are global and the parent CPU interrupt is broadcast
++	 * to both VPEs: VPE#1 may only dispatch these bits (translated to
++	 * their targets) and VPE#0 must ignore them, otherwise the VPEs
++	 * race and VPE#1's timer input is never acknowledged. */
++	u32		shadow_mask[2];
+ } econet_intc __ro_after_init;
+ 
+ static DEFINE_RAW_SPINLOCK(irq_lock);
+@@ -119,11 +128,16 @@ static void econet_mask_all(void)
+ 
+ static void econet_intc_handle_pending(struct irq_domain *d, u32 pending, u32 offset)
+ {
++	u32 real_hwirq;
+ 	int hwirq;
+ 
+ 	while (pending) {
+ 		hwirq = fls(pending) - 1;
+-		generic_handle_domain_irq(d, hwirq + offset);
++		real_hwirq = hwirq + offset;
++		if (real_hwirq < IRQ_COUNT &&
++		    econet_intc.shadow_targets[real_hwirq] != NOT_PERCPU)
++			real_hwirq = econet_intc.shadow_targets[real_hwirq];
++		generic_handle_domain_irq(d, real_hwirq);
+ 		pending &= ~BIT(hwirq);
+ 	}
+ }
+@@ -139,6 +153,17 @@ static void econet_intc_from_parent(stru
+ 	pending0 = ioread32(econet_intc.membase + REG_PENDING0);
+ 	pending1 = ioread32(econet_intc.membase + REG_PENDING1);
+ 
++	/* Split the global pending set between the VPEs: VPE#1 owns the
++	 * shadow inputs (its per-CPU interrupts), VPE#0 owns the rest.
++	 */
++	if (IS_ENABLED(CONFIG_SMP) && smp_processor_id() == 1) {
++		pending0 &= econet_intc.shadow_mask[0];
++		pending1 &= econet_intc.shadow_mask[1];
++	} else if (IS_ENABLED(CONFIG_SMP)) {
++		pending0 &= ~econet_intc.shadow_mask[0];
++		pending1 &= ~econet_intc.shadow_mask[1];
++	}
++
+ 	if (unlikely(!(pending0 | pending1))) {
+ 		spurious_interrupt();
+ 	} else {
+@@ -198,6 +223,8 @@ static int __init get_shadow_interrupts(
+ 
+ 	memset(econet_intc.interrupt_shadows, NOT_PERCPU,
+ 	       sizeof(econet_intc.interrupt_shadows));
++	memset(econet_intc.shadow_targets, NOT_PERCPU,
++	       sizeof(econet_intc.shadow_targets));
+ 
+ 	if (num_shadows <= 0) {
+ 		return 0;
+@@ -244,6 +271,8 @@ static int __init get_shadow_interrupts(
+ 
+ 		econet_intc.interrupt_shadows[target] = shadow;
+ 		econet_intc.interrupt_shadows[shadow] = IS_SHADOW;
++		econet_intc.shadow_targets[shadow] = target;
++		econet_intc.shadow_mask[shadow / 32] |= BIT(shadow % 32);
+ 	}
+ 
+ 	return 0;
