@@ -1,0 +1,24 @@
+From 46b84b9c0174e84eaacbebdae7e9dc9c78e1f7bd Mon Sep 17 00:00:00 2001
+From: Alexey Immoreev <github@luixo.me>
+Date: Wed, 18 Nov 2026 19:46:40 +0000
+Subject: [PATCH] nss-dp: ipq50xx: do not count good oversize frames as drops
+
+IPQ50xx SSDK populates RxTooLong from rx_oversize_frames_good. Exclude
+this successful receive counter from rx_dropped without changing the raw
+ethtool stat or the existing RX error accounting.
+---
+ hal/gmac_ops/syn/gmac/syn_if.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/hal/gmac_ops/syn/gmac/syn_if.c
++++ b/hal/gmac_ops/syn/gmac/syn_if.c
+@@ -498,7 +498,8 @@ static int32_t syn_get_netdev_stats(stru
+ 	stats->rx_errors = stats->rx_crc_errors + stats->rx_frame_errors +
+ 			   stats->rx_fifo_errors;
+ 
+-	stats->rx_dropped = hal_stats.RxTooLong + stats->rx_errors;
++	/* IPQ50xx RxTooLong counts successfully received oversize frames. */
++	stats->rx_dropped = stats->rx_errors;
+ 
+ 	/*
+ 	 * TX errors
