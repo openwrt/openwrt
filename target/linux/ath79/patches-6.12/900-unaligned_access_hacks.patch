@@ -285,7 +285,7 @@ SVN-Revision: 35130
   */
 --- a/net/ipv6/datagram.c
 +++ b/net/ipv6/datagram.c
-@@ -498,7 +498,7 @@ int ipv6_recv_error(struct sock *sk, str
+@@ -502,7 +502,7 @@ int ipv6_recv_error(struct sock *sk, str
  				ipv6_iface_scope_id(&sin->sin6_addr,
  						    IP6CB(skb)->iif);
  		} else {
@@ -294,7 +294,7 @@ SVN-Revision: 35130
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -891,12 +891,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -895,12 +895,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -336,7 +336,7 @@ SVN-Revision: 35130
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1507,7 +1507,7 @@ struct sk_buff *inet_gro_receive(struct
+@@ -1510,7 +1510,7 @@ struct sk_buff *inet_gro_receive(struct
  		goto out;
  
  	NAPI_GRO_CB(skb)->proto = proto;
@@ -577,7 +577,7 @@ SVN-Revision: 35130
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -271,7 +271,7 @@ INDIRECT_CALLABLE_SCOPE struct sk_buff *
+@@ -275,7 +275,7 @@ INDIRECT_CALLABLE_SCOPE struct sk_buff *
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);

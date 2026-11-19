@@ -22,7 +22,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -887,6 +887,51 @@ static void mt7530_get_rmon_stats(struct
+@@ -903,6 +903,51 @@ static void mt7530_get_rmon_stats(struct
  	*ranges = mt7530_rmon_ranges;
  }
  
@@ -74,7 +74,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static void mt7530_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
  				      struct ethtool_eth_ctrl_stats *ctrl_stats)
  {
-@@ -3265,6 +3310,7 @@ const struct dsa_switch_ops mt7530_switc
+@@ -3287,6 +3332,7 @@ const struct dsa_switch_ops mt7530_switc
  	.get_eth_mac_stats	= mt7530_get_eth_mac_stats,
  	.get_rmon_stats		= mt7530_get_rmon_stats,
  	.get_eth_ctrl_stats	= mt7530_get_eth_ctrl_stats,

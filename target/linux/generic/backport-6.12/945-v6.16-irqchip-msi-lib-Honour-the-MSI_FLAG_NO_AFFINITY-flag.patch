@@ -23,7 +23,7 @@ Link: https://lore.kernel.org/all/20250513172819.2216709-7-maz@kernel.org
 
 --- a/drivers/irqchip/irq-msi-lib.c
 +++ b/drivers/irqchip/irq-msi-lib.c
-@@ -104,8 +104,13 @@ bool msi_lib_init_dev_msi_info(struct de
+@@ -105,8 +105,13 @@ bool msi_lib_init_dev_msi_info(struct de
  	 * MSI message into the hardware which is the whole purpose of the
  	 * device MSI domain aside of mask/unmask which is provided e.g. by
  	 * PCI/MSI device domains.

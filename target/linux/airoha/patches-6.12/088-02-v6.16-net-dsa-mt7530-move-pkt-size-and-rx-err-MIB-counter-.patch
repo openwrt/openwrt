@@ -51,7 +51,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	MIB_DESC(2, 0xa8, "RxBytes"),
  	MIB_DESC(1, 0xb0, "RxCtrlDrop"),
  	MIB_DESC(1, 0xb4, "RxIngressDrop"),
-@@ -810,6 +794,60 @@ mt7530_get_sset_count(struct dsa_switch
+@@ -826,6 +810,60 @@ mt7530_get_sset_count(struct dsa_switch
  	return ARRAY_SIZE(mt7530_mib);
  }
  
@@ -112,7 +112,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int
  mt7530_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
  {
-@@ -3173,6 +3211,7 @@ const struct dsa_switch_ops mt7530_switc
+@@ -3195,6 +3233,7 @@ const struct dsa_switch_ops mt7530_switc
  	.get_strings		= mt7530_get_strings,
  	.get_ethtool_stats	= mt7530_get_ethtool_stats,
  	.get_sset_count		= mt7530_get_sset_count,
