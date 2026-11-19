@@ -41,6 +41,15 @@ mediatek_setup_interfaces()
 	acer,vero-w6m)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" internet
 		;;
+	aigo,ags21|\
+	mercusys,h90x-v1|\
+	mercusys,h90x-v1-ubi|\
+	tplink,tl-xdr6086|\
+	wavlink,wl-wn551x3|\
+	wavlink,wl-wn586x3|\
+	wavlink,wl-wn586x3b)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
+		;;
 	airtel,aap4221zy|\
 	comfast,cf-wa933|\
 	comfast,cf-wa933-ubi)
@@ -253,14 +262,6 @@ mediatek_setup_interfaces()
 		;;
 	tplink,tl-7dr7250*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 eth1" eth2
-		;;
-	mercusys,h90x-v1|\
-	mercusys,h90x-v1-ubi|\
-	tplink,tl-xdr6086|\
-	wavlink,wl-wn551x3|\
-	wavlink,wl-wn586x3|\
-	wavlink,wl-wn586x3b)
-		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
 		;;
 	tplink,archer-ax80-v1|\
 	tplink,archer-ax80-v1-eu)
