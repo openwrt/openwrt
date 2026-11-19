@@ -1,0 +1,122 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oleksij Rempel <o.rempel@pengutronix.de>
+Date: Mon, 16 Nov 2026 20:10:13 +0100
+Subject: [PATCH] net: ieee8021q: add pcp_to_tt()
+
+Add a helper that maps an IEEE 802.1Q Priority Code Point (PCP) to the
+corresponding 802.1Q traffic type, complementing the existing
+ietf_dscp_to_ieee8021q_tt().
+
+It is very nearly an identity map, except that PCP 0 (Best Effort) and
+PCP 1 (Background) are swapped: per 802.1Q-2022 (Annex I, Table I-2)
+Background is a lower priority than Best Effort even though it carries
+the higher PCP value. PCP 2..7 map straight through to the matching
+traffic type, and values above 7 are rejected with -EINVAL. This decodes
+the 8P0D encoding (Table 6-3), where every PCP value is a priority and
+none carries drop eligibility.
+
+Drivers that classify ingress traffic by PCP need this to map into a
+priority-ordered internal space without misordering Best Effort and
+Background. The first consumer, the realtek rtl8365mb DSA driver, lands
+later in this series.
+
+Signed-off-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Reviewed-by: Alvin Šipraga <alvin.sipraga@analog.com>
+Reviewed-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+--- a/include/net/ieee8021q.h
++++ b/include/net/ieee8021q.h
+@@ -7,11 +7,14 @@
+ #include <linux/errno.h>
+ 
+ /**
+- * enum ieee8021q_traffic_type - 802.1Q traffic type priority values (802.1Q-2022)
++ * enum ieee8021q_traffic_type - 802.1Q traffic types (802.1Q-2022)
+  *
+  * @IEEE8021Q_TT_BK: Background
+- * @IEEE8021Q_TT_BE: Best Effort (default). According to 802.1Q-2022, BE is 0
+- * but has higher priority than BK which is 1.
++ * @IEEE8021Q_TT_BE: Best Effort (default). The enum value is not the 802.1Q
++ * priority. IEEE 802.1Q-2022 (Annex I.4, Table I-2) gives Best Effort priority
++ * 0 and Background priority 1, and says that priority 1 is lower than priority
++ * 0. The enum orders the traffic types lowest first, so Background is 0 and
++ * Best Effort is 1.
+  * @IEEE8021Q_TT_EE: Excellent Effort
+  * @IEEE8021Q_TT_CA: Critical Applications
+  * @IEEE8021Q_TT_VI: Video, < 100 ms latency and jitter
+@@ -38,6 +41,7 @@ enum ieee8021q_traffic_type {
+ #if IS_ENABLED(CONFIG_NET_IEEE8021Q_HELPERS)
+ 
+ int ietf_dscp_to_ieee8021q_tt(u8 dscp);
++int ieee8021q_pcp_to_tt(u8 pcp);
+ int ieee8021q_tt_to_tc(enum ieee8021q_traffic_type tt, unsigned int num_queues);
+ 
+ #else
+@@ -46,6 +50,11 @@ static inline int ietf_dscp_to_ieee8021q
+ {
+ 	return -EOPNOTSUPP;
+ }
++
++static inline int ieee8021q_pcp_to_tt(u8 pcp)
++{
++	return -EOPNOTSUPP;
++}
+ 
+ static inline int ieee8021q_tt_to_tc(enum ieee8021q_traffic_type tt,
+ 				     unsigned int num_queues)
+--- a/net/core/ieee8021q_helpers.c
++++ b/net/core/ieee8021q_helpers.c
+@@ -2,6 +2,7 @@
+ // Copyright (c) 2024 Pengutronix, Oleksij Rempel <kernel@pengutronix.de>
+ 
+ #include <linux/array_size.h>
++#include <linux/if_vlan.h>
+ #include <linux/printk.h>
+ #include <linux/types.h>
+ #include <net/dscp.h>
+@@ -222,3 +223,44 @@ int ietf_dscp_to_ieee8021q_tt(u8 dscp)
+ 	return SIMPLE_IETF_DSCP_TO_IEEE8021Q_TT(dscp);
+ }
+ EXPORT_SYMBOL_GPL(ietf_dscp_to_ieee8021q_tt);
++
++/* Index: the PCP, which in 8P0D is the 802.1Q priority. Priority 0 is Best
++ * Effort and priority 1 Background, the reverse of their enum order.
++ */
++static const u8 ieee8021q_pcp_to_tt_map[] = {
++	[0] = IEEE8021Q_TT_BE,
++	[1] = IEEE8021Q_TT_BK,
++	[2] = IEEE8021Q_TT_EE,
++	[3] = IEEE8021Q_TT_CA,
++	[4] = IEEE8021Q_TT_VI,
++	[5] = IEEE8021Q_TT_VO,
++	[6] = IEEE8021Q_TT_IC,
++	[7] = IEEE8021Q_TT_NC,
++};
++
++static_assert(ARRAY_SIZE(ieee8021q_pcp_to_tt_map) ==
++	      (VLAN_PRIO_MASK >> VLAN_PRIO_SHIFT) + 1);
++
++/**
++ * ieee8021q_pcp_to_tt - Map an IEEE 802.1Q PCP to a traffic type
++ * @pcp: IEEE 802.1Q Priority Code Point value
++ *
++ * Decode @pcp with the 8P0D row of Table 6-3 (IEEE 802.1Q-2022, 6.9.3). In that
++ * row the priority equals the PCP, and no PCP carries drop eligibility. Then
++ * look up the traffic type for that priority in Table I-2. The enum values of
++ * Best Effort and Background are not their priorities, see
++ * &enum ieee8021q_traffic_type.
++ *
++ * The other rows of Table 6-3 (7P1D, 6P2D, 5P3D) are not decoded here.
++ *
++ * Return: the traffic type, or -EINVAL if @pcp is above 7. Without
++ * CONFIG_NET_IEEE8021Q_HELPERS, the stub returns -EOPNOTSUPP.
++ */
++int ieee8021q_pcp_to_tt(u8 pcp)
++{
++	if (pcp >= ARRAY_SIZE(ieee8021q_pcp_to_tt_map))
++		return -EINVAL;
++
++	return ieee8021q_pcp_to_tt_map[pcp];
++}
++EXPORT_SYMBOL_GPL(ieee8021q_pcp_to_tt);
