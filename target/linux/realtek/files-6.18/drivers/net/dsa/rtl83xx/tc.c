@@ -948,6 +948,9 @@ static void otto_tc_qdisc_stats(struct otto_dsa_priv *priv, int port, int queue,
 	struct rtnl_link_stats64 hw, sw;
 	struct Qdisc *root;
 
+	if (!priv->r->queue_drops_update)
+		return;
+
 	priv->r->queue_drops_update(priv, port);
 	for (int q = 0; q < MAX_PRIOS; q++)
 		if (queue < 0 || q == queue)
@@ -984,10 +987,13 @@ static void otto_tc_qdisc_stats(struct otto_dsa_priv *priv, int port, int queue,
 static void otto_tc_drops_track(struct otto_dsa_priv *priv, int port)
 {
 	struct rtldsa_port *pp = &priv->ports[port];
-	bool track = pp->red.offloaded;
+	bool track = pp->tbf.offloaded || pp->red.offloaded;
+
+	if (!priv->r->queue_drops_update)
+		return;
 
 	for (int queue = 0; queue < MAX_PRIOS; queue++)
-		track |= pp->queue_red[queue].offloaded;
+		track |= pp->queue_tbf[queue].offloaded || pp->queue_red[queue].offloaded;
 
 	if (track)
 		priv->drops_ports |= BIT_ULL(port);
@@ -1009,8 +1015,11 @@ static void otto_tc_tbf_apply(struct otto_dsa_priv *priv, int port, int queue, b
 						      tbf->burst);
 	if (!offload && tbf->offloaded)
 		priv->r->egress_shaper_set(priv, port, queue, 0, 0);
+	if (offload && !tbf->offloaded)
+		otto_tc_qdisc_stats(priv, port, queue, &tbf->stats, NULL, false);
 
 	tbf->offloaded = offload;
+	otto_tc_drops_track(priv, port);
 }
 
 int otto_tc_cls_flower_add(struct dsa_switch *ds, int port,
@@ -1399,6 +1408,7 @@ static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
 	unsigned int band = TC_H_MIN(qopt->parent);
 	struct rtldsa_port *pp = &priv->ports[port];
 	struct rtldsa_tbf *tbf;
+	bool replaced = false;
 	int queue = -1;
 
 	if (!priv->r->egress_shaper_set)
@@ -1416,7 +1426,8 @@ static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
 
 	switch (qopt->command) {
 	case TC_TBF_REPLACE:
-		if (tbf->handle != qopt->handle)
+		replaced = tbf->handle != qopt->handle;
+		if (replaced)
 			tbf->child = false;
 		tbf->handle = qopt->handle;
 		/* the limiters know no overhead, minimum size or ATM cells, so a TBF that
@@ -1434,7 +1445,12 @@ static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
 		tbf->handle = 0;
 		break;
 	case TC_TBF_STATS:
-		return tbf->handle == qopt->handle && tbf->offloaded ? 0 : -EOPNOTSUPP;
+		scoped_guard(mutex, &priv->reg_mutex) {
+			if (tbf->handle != qopt->handle || !tbf->offloaded)
+				return -EOPNOTSUPP;
+			otto_tc_qdisc_stats(priv, port, queue, &tbf->stats, &qopt->stats, false);
+		}
+		return 0;
 	case TC_TBF_GRAFT:
 		if (tbf->handle != qopt->handle)
 			return -EOPNOTSUPP;
@@ -1446,11 +1462,16 @@ static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
 	}
 
 	scoped_guard(mutex, &priv->reg_mutex) {
+		bool was_offloaded = tbf->offloaded;
+
 		/* the egress police uses the shaper of the port */
 		if (queue < 0)
 			otto_tc_tbf_apply(priv, port, queue, !pp->rate_police_egress);
 		else
 			otto_tc_ets_apply(priv, port);
+
+		if (replaced && was_offloaded && tbf->offloaded)
+			otto_tc_qdisc_stats(priv, port, queue, &tbf->stats, NULL, false);
 	}
 
 	return (tbf->offloaded || qopt->command == TC_TBF_DESTROY) ? 0 : -EOPNOTSUPP;

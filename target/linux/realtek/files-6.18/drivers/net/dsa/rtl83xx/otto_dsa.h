@@ -94,6 +94,7 @@ struct rtldsa_tbf {
 	u32 burst;
 	bool child;
 	bool offloaded;
+	struct otto_dsa_qdisc_stats stats;
 };
 
 struct rtldsa_red {
