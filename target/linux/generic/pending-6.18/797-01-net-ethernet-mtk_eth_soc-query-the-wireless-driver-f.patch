@@ -1,3 +1,4 @@
+From 0547b912e981df32731e8bd6f583a79c1021e181 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 30 Aug 2026 01:44:29 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: query the wireless driver for the
@@ -45,7 +46,7 @@ Publish the WED device for it through a separate RCU protected pointer,
 which is cleared and synchronised before the device is detached.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
-
+---
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -1576,6 +1576,8 @@ int mtk_gmac_usxgmii_path_setup(struct m

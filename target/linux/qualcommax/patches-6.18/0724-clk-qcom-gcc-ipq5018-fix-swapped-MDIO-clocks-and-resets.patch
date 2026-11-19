@@ -1,3 +1,4 @@
+From b7afc4baab1353d1be2211ede536a3fbae896b25 Mon Sep 17 00:00:00 2001
 From: Davíð Steinn Geirsson <david@dsg.is>
 Date: Thu, 12 Nov 2026 00:07:49 +0000
 Subject: [PATCH] clk: qcom: gcc-ipq5018: fix swapped MDIO clocks and resets
@@ -29,6 +30,7 @@ controller it is named after. No in-tree DT uses the MDIO resets.
 Fixes: e3fdbef1bab8 ("clk: qcom: Add Global Clock controller (GCC) driver for IPQ5018")
 Link: https://lore.kernel.org/r/20261112155801.610730-1-david@dsg.is
 Signed-off-by: Davíð Steinn Geirsson <david@dsg.is>
+---
 --- a/drivers/clk/qcom/gcc-ipq5018.c
 +++ b/drivers/clk/qcom/gcc-ipq5018.c
 @@ -1980,9 +1980,9 @@ static struct clk_branch gcc_lpass_sway_

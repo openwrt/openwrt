@@ -1,3 +1,4 @@
+From 6aaffddf27066c87026a270e397cf078c38442b3 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Mon, 5 Jan 2026 17:55:02 +0000
 Subject: [PATCH] net: phy: realtek: rate-adapter in C22 mode
@@ -9,6 +10,7 @@ This is necessary because phylink only handles dynamically switching the
 interface mode if the PHY is connected using Clause-45 MDIO.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
 @@ -1804,7 +1804,7 @@ static int rtl822x_set_serdes_option_mod
