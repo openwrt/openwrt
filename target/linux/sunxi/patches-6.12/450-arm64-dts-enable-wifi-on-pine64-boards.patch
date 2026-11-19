@@ -1,3 +1,11 @@
+From bb9915407bdf24fd45daa49b32715fe3e8e00be0 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sun, 28 Feb 2021 16:42:05 +0100
+Subject: [PATCH] arm64: dts: allwinner: pine64: enable WiFi module
+
+Add the MMC power sequence and enable the SDIO interface for the
+optional WiFi module of the Pine64 and the SOPine baseboard.
+---
 --- a/arch/arm64/boot/dts/allwinner/sun50i-a64-sopine-baseboard.dts
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-sopine-baseboard.dts
 @@ -42,6 +42,11 @@

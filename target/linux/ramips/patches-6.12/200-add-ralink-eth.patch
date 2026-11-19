@@ -1,3 +1,11 @@
+From 33d027c5b8fb5265ea84ac41a7bfedd805c48b24 Mon Sep 17 00:00:00 2001
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Thu, 9 Apr 2020 14:09:48 +0800
+Subject: [PATCH] net: ethernet: add Ralink SoC Ethernet driver to the build
+
+Hook the Ethernet driver for Ralink and MediaTek MIPS SoCs, which is
+located in drivers/net/ethernet/ralink, into Kconfig and the Makefile.
+---
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
 @@ -176,6 +176,7 @@ source "drivers/net/ethernet/pensando/Kc

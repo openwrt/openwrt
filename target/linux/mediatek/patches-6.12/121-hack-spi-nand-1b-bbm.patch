@@ -1,3 +1,11 @@
+From 2138956bdc3145fac26d2ba8ac966f31d33cd290 Mon Sep 17 00:00:00 2001
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Thu, 7 Apr 2022 10:05:56 +0800
+Subject: [PATCH] mtd: spinand: check only one byte of the bad block marker
+
+Only check the first byte of the bad block marker in the OOB area
+instead of the first two bytes.
+---
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
 @@ -938,7 +938,7 @@ static int spinand_mtd_write(struct mtd_

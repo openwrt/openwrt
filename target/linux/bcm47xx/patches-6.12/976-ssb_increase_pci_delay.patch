@@ -1,3 +1,11 @@
+From a8e2cc2534201d7aa7914f7b8c9be801114b086d Mon Sep 17 00:00:00 2001
+From: Jo-Philipp Wich <jow@openwrt.org>
+Date: Fri, 13 Aug 2010 00:18:16 +0000
+Subject: [PATCH] ssb: increase delay for the PCI core initialization
+
+Wait 300 ms instead of 10 ms after the reset of the PCI core to give it
+enough time to initialize. This fixes PCI issues with Atheros cards.
+---
 --- a/drivers/ssb/driver_pcicore.c
 +++ b/drivers/ssb/driver_pcicore.c
 @@ -394,7 +394,7 @@ static void ssb_pcicore_init_hostmode(st

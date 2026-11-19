@@ -1,3 +1,11 @@
+From cfe8e6e75fed4d18f234334b96061fbbb7fd0c64 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 29 Oct 2024 13:37:40 +0100
+Subject: [PATCH] net: phy: add Realtek RTL8261N driver to the build
+
+Hook the driver for the Realtek RTL8261N 10G PHY, which is located in
+drivers/net/phy/rtl8261n, into Kconfig and the Makefile.
+---
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
 @@ -431,6 +431,8 @@ config QSEMI_PHY

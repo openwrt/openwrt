@@ -1,3 +1,13 @@
+From 38936426f7d4d569f918cb2ca646263b4c38e25b Mon Sep 17 00:00:00 2001
+From: Luka Perkov <luka@openwrt.org>
+Date: Thu, 3 Oct 2013 02:50:00 +0000
+Subject: [PATCH] ARM: dts: kirkwood-ib62x0: adapt for OpenWrt
+
+Adapt the device tree of the RaidSonic ICY BOX IB-NAS62x0 to OpenWrt:
+change the flash partitions to the layout used by OpenWrt and add the
+LED aliases used by OpenWrt to indicate the boot, failsafe, running and
+upgrade states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-ib62x0.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-ib62x0.dts
 @@ -6,7 +6,14 @@

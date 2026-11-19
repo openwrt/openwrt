@@ -1,3 +1,13 @@
+From 27b2f0fc0fc5513304a5be3c5b8cb23aeb09e6f5 Mon Sep 17 00:00:00 2001
+From: Ademar Arvati Filho <arvati@hotmail.com>
+Date: Fri, 6 Jul 2018 00:56:58 +0000
+Subject: [PATCH] ARM: dts: kirkwood-iomega_ix2_200: adapt for OpenWrt
+
+Adapt the device tree of the Iomega StorCenter ix2-200 to OpenWrt:
+change the flash partitions to the layout used by OpenWrt and add the
+LED aliases used by OpenWrt to indicate the boot, failsafe, running and
+upgrade states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-iomega_ix2_200.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-iomega_ix2_200.dts
 @@ -8,6 +8,13 @@

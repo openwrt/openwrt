@@ -1,3 +1,12 @@
+From 208f6c1232901835708eb4ace44ae17628fc12f5 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 21 Jan 2024 23:50:02 +0000
+Subject: [PATCH] arm64: dts: mediatek: bpi-r64: add rootdisk
+
+Describe the storage layout used by OpenWrt on the BananaPi BPI-R64, set
+the rootdisk for the fitblk driver and provide the U-Boot environment
+and the MAC address via NVMEM.
+---
 --- a/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
 @@ -32,6 +32,9 @@

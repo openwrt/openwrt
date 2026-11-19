@@ -1,11 +1,14 @@
-Nanopi R6: show boot progress on the system LED
+From de9ad11dac094b6074c9b23341acbc28806404ae Mon Sep 17 00:00:00 2001
+From: Michel Lespinasse <michel@lespinasse.org>
+Date: Thu, 16 Jan 2025 00:50:01 -0800
+Subject: [PATCH] Nanopi R6: show boot progress on the system LED
 
 Set up openwrt to show boot progress on the nanopi R6S or R6C system LED.
 
 The LED blinking states indicate the boot stage. The led is defined as
 a power LED, but can still be set to heartbeat in /etc/config/system
 after the system is done booting.
-
+---
 --- a/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi
 +++ b/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi
 @@ -16,6 +16,10 @@

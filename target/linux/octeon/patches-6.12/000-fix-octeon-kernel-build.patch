@@ -1,3 +1,11 @@
+From 673b48a674487644aa42ee3179f5ca4f37633252 Mon Sep 17 00:00:00 2001
+From: Rui Salvaterra <rsalvaterra@gmail.com>
+Date: Tue, 5 Aug 2025 12:55:24 +0100
+Subject: [PATCH] MIPS: octeon: fix build with -Werror
+
+Add missing includes and prototypes to the Octeon platform code to fix
+the build when warnings are treated as errors (CONFIG_KERNEL_WERROR).
+---
 --- a/arch/mips/cavium-octeon/octeon-platform.c
 +++ b/arch/mips/cavium-octeon/octeon-platform.c
 @@ -15,6 +15,7 @@

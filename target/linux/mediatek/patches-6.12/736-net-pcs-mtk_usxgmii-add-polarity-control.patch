@@ -1,3 +1,11 @@
+From ddfae94a14bf0fc301505da75825dfe473525a33 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 29 Oct 2024 13:40:11 +0100
+Subject: [PATCH] net: pcs: mtk-usxgmii: add polarity control
+
+Allow swapping the RX and TX polarity of the USXGMII PCS via device tree
+properties.
+---
 --- a/drivers/net/pcs/pcs-mtk-usxgmii.c
 +++ b/drivers/net/pcs/pcs-mtk-usxgmii.c
 @@ -52,6 +52,12 @@

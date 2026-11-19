@@ -1,3 +1,12 @@
+From 4149d2b91c43784ada37efe928c5f6b610c74259 Mon Sep 17 00:00:00 2001
+From: DENG Qingfang <dengqf6@mail2.sysu.edu.cn>
+Date: Thu, 30 Apr 2020 19:41:39 +0800
+Subject: [PATCH] ARM: dts: armada-385-linksys: use eth0 as DSA CPU port
+
+Connect the CPU port of the switch via eth0 (port 6) instead of eth2
+(port 5) on the Armada 385 based Linksys WRT devices and disable the
+interface which is no longer used.
+---
 --- a/arch/arm/boot/dts/marvell/armada-385-linksys.dtsi
 +++ b/arch/arm/boot/dts/marvell/armada-385-linksys.dtsi
 @@ -116,7 +116,7 @@

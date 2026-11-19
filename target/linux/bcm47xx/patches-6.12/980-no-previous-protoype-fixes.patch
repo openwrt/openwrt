@@ -1,3 +1,12 @@
+From f91e205286aa0e3f60a8102c344ff14d9c1b96e1 Mon Sep 17 00:00:00 2001
+From: Kyle Hendry <kylehendrydev@gmail.com>
+Date: Tue, 4 Nov 2025 17:59:13 -0800
+Subject: [PATCH] bcma, firmware: fix missing prototype errors
+
+Make bcma_sflash_shrink_flash() static and add a prototype for
+cfe_env_get() to fix "no previous prototype" errors when building with
+-Werror.
+---
 --- a/drivers/bcma/driver_chipcommon_sflash.c
 +++ b/drivers/bcma/driver_chipcommon_sflash.c
 @@ -93,7 +93,7 @@ static void bcma_sflash_cmd(struct bcma_
