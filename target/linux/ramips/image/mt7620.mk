@@ -1338,6 +1338,21 @@ define Device/tplink_re210-v1
 endef
 TARGET_DEVICES += tplink_re210-v1
 
+define Device/tplink_tl-wpa7510-v2
+  $(Device/tplink-safeloader)
+  SOC := mt7620a
+  DEVICE_MODEL := TL-WPA7510
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt76x0e bcmplcd
+  TPLINK_BOARD_ID := TL-WPA7510-V2
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | lzma -a0 | \
+	tplink-v1-header -e -O
+  IMAGE_SIZE := 5952k
+  DEFAULT := n
+endef
+TARGET_DEVICES += tplink_tl-wpa7510-v2
+
 define Device/trendnet_tew-810dr
   SOC := mt7620a
   DEVICE_PACKAGES := kmod-mt76x0e
