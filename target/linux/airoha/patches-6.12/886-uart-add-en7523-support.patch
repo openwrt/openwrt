@@ -1,3 +1,13 @@
+From 9131cb44ffc39372eb77bd068ccb2b349f1a5fa7 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 17 Oct 2024 15:54:52 +0200
+Subject: [PATCH] serial: 8250: add Airoha EN7523/EN7581 UART support
+
+The Airoha UART is 16550 compatible, except for the baud rate
+generation, which uses an additional fractional (XYD) divider. Add a
+port type for it together with the code to program this divider, so that
+the common baud rates can be set correctly.
+---
 --- /dev/null
 +++ b/drivers/tty/serial/8250/8250_en7523.c
 @@ -0,0 +1,94 @@

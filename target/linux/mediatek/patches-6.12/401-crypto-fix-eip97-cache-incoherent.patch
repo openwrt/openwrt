@@ -1,3 +1,12 @@
+From 4841ac042e00df7e29d305eb92f68994ebc739fd Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 1 Sep 2020 09:09:13 +0200
+Subject: [PATCH] crypto: inside-secure: fix EIP97 on cache incoherent systems
+
+Align the buffers shared with the EIP97 to the system cache line size of
+64 bytes, to avoid data corruption on systems without cache coherent
+DMA.
+---
 --- a/drivers/crypto/inside-secure/safexcel.h
 +++ b/drivers/crypto/inside-secure/safexcel.h
 @@ -743,6 +743,9 @@ struct safexcel_priv_data {

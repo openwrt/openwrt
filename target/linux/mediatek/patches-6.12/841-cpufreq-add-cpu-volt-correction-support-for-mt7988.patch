@@ -1,3 +1,11 @@
+From 2595e31220f8e515714a71deb781e3fdf8c483ef Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 5 Oct 2025 03:42:19 +0100
+Subject: [PATCH] cpufreq: mediatek: add CPU voltage correction for MT7988
+
+Add support for applying a voltage correction to the CPU voltage of the
+MT7988.
+---
 --- a/drivers/cpufreq/mediatek-cpufreq.c
 +++ b/drivers/cpufreq/mediatek-cpufreq.c
 @@ -741,6 +741,16 @@ static struct platform_driver mtk_cpufre

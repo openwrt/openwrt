@@ -1,3 +1,11 @@
+From d3f058db1cb9b2d43764cd0d84fdc2779f0abacf Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Fri, 27 Mar 2020 15:34:33 +0100
+Subject: [PATCH] arm64: dts: mediatek: mt7622-rfb1: add SPI-NAND support
+
+Add the SPI-NAND flash with its partitions (Preloader, ATF, Bootloader,
+Config, Factory and User_data) to the device tree of the MT7622 RFB1.
+---
 --- a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
 @@ -558,6 +558,65 @@

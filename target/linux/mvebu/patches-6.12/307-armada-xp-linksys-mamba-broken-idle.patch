@@ -1,3 +1,11 @@
+From 5faa9556b1c10a4b21208615bddb7480401fa213 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 19 Mar 2018 21:58:12 +0100
+Subject: [PATCH] ARM: dts: armada-xp-linksys-mamba: disable CPU idle
+
+Mark the coherency fabric of the Linksys WRT1900AC v1 as broken-idle to
+disable CPU idle, which causes instability on this device.
+---
 --- a/arch/arm/boot/dts/marvell/armada-xp-linksys-mamba.dts
 +++ b/arch/arm/boot/dts/marvell/armada-xp-linksys-mamba.dts
 @@ -481,3 +481,7 @@

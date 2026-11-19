@@ -1,3 +1,11 @@
+From fb1f765ccd02deac89c6a01019023a74e7ab6f01 Mon Sep 17 00:00:00 2001
+From: Edward Chow <equu@openmail.cc>
+Date: Mon, 27 Apr 2026 11:13:51 +0800
+Subject: [PATCH] powerpc: boot: link the simpleImage loader at 0x3000000
+
+Link the loader of all simpleImage based images at 0x3000000, so that
+the initramfs kernels fit below it.
+---
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
 @@ -351,6 +351,7 @@ adder875-redboot)

@@ -1,3 +1,11 @@
+From 877ec78e2354e39a363bf257b7562a36d4b18e4a Mon Sep 17 00:00:00 2001
+From: Ian Chang <ianchang@ieiworld.com>
+Date: Tue, 11 Apr 2023 16:07:24 +0800
+Subject: [PATCH] mfd: iei-wt61p803-puzzle: retry MCU writes
+
+Retry writing commands to the IEI WT61P803 PUZZLE MCU if no answer is
+received, instead of failing immediately.
+---
 --- a/drivers/mfd/iei-wt61p803-puzzle.c
 +++ b/drivers/mfd/iei-wt61p803-puzzle.c
 @@ -241,6 +241,7 @@ int iei_wt61p803_puzzle_write_command(st

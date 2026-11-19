@@ -1,3 +1,11 @@
+From eadb1a943744997a8685c6de97a25d60d258af85 Mon Sep 17 00:00:00 2001
+From: Donald Hoskins <grommish@gmail.com>
+Date: Wed, 22 Jul 2020 05:26:33 -0400
+Subject: [PATCH] MIPS: octeon: add Itus Shield board type
+
+Replace the CUST_DSR1000N board type (20006) with ITUS_SHIELD, as this
+board ID is used by the Itus Shield Router.
+---
 --- a/arch/mips/cavium-octeon/octeon-platform.c
 +++ b/arch/mips/cavium-octeon/octeon-platform.c
 @@ -776,7 +776,7 @@ int __init octeon_prune_device_tree(void

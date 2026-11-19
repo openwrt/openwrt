@@ -1,3 +1,11 @@
+From 85a4358432c1dde7ebafce8ec0cc1c5b2b050b2c Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Sun, 30 Nov 2025 23:50:48 +0100
+Subject: [PATCH] powerpc: 85xx: select PPC_ZIMAGE_LA3000000 for P2020
+
+Let the P2020 platform select PPC_ZIMAGE_LA3000000, so that the zImage
+is linked at 0x3000000, as needed for the WatchGuard XTM330.
+---
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
 @@ -187,6 +187,7 @@ config PPC_P2020

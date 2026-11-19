@@ -1,3 +1,11 @@
+From debb9a4a97a66560e88b2bd2578d1451677746fe Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Tue, 19 Feb 2013 14:53:16 +0000
+Subject: [PATCH] powerpc: 85xx: add gpio-keys to OF match table
+
+Add gpio-keys to the OF match table of the 85xx platforms, so that the
+buttons described in the device tree are probed.
+---
 --- a/arch/powerpc/platforms/85xx/common.c
 +++ b/arch/powerpc/platforms/85xx/common.c
 @@ -31,6 +31,7 @@ static const struct of_device_id mpc85xx

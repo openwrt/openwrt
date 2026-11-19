@@ -1,3 +1,11 @@
+From c78e4fb220169b5ee8358f7b2582972c00b88fd7 Mon Sep 17 00:00:00 2001
+From: Mathias Adam <m.adam--openwrt@adamis.de>
+Date: Mon, 16 Sep 2013 21:09:10 +0000
+Subject: [PATCH] MIPS: BCM47xx: add support for the Huawei E970
+
+Register a platform device for the GPIO driven watchdog of the Huawei
+E970 and do not use the SSB watchdog on this board.
+---
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
 @@ -38,6 +38,7 @@
