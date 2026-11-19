@@ -4585,3 +4585,18 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endef
 TARGET_DEVICES += zyxel_wx5600-t0-ubootmod
+
+define Device/ineauto_owe3000
+  DEVICE_VENDOR := INEAUTO
+  DEVICE_MODEL := OWE3000
+  DEVICE_DTS := mt7981b-ineauto-owe3000
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGES := sysupgrade.bin
+  IMAGE_SIZE := 14336k
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += ineauto_owe3000
