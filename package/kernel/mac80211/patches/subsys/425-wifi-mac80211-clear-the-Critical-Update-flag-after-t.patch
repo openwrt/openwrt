@@ -371,7 +371,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		wiphy_hrtimer_work_cancel(link->sdata->local->hw.wiphy,
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -5668,6 +5668,46 @@ ieee80211_beacon_add_mbssid(struct sk_bu
+@@ -5674,6 +5674,46 @@ ieee80211_beacon_add_mbssid(struct sk_bu
  			     beacon->mbssid_ies->elem[i].len);
  }
  
@@ -418,7 +418,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static struct sk_buff *
  __ieee80211_beacon_get_ap(struct ieee80211_hw *hw,
  			  struct ieee80211_vif *vif,
-@@ -5709,6 +5749,8 @@ __ieee80211_beacon_get_ap(struct ieee802
+@@ -5715,6 +5755,8 @@ __ieee80211_beacon_get_ap(struct ieee802
  	skb_put_data(skb, beacon->head, beacon->head_len);
  
  	ieee80211_beacon_add_tim(sdata, link, &ap->ps, skb, is_template);

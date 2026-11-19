@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4910,6 +4910,7 @@ static void ieee80211_8023_xmit(struct i
+@@ -4914,6 +4914,7 @@ static void ieee80211_8023_xmit(struct i
  	struct tid_ampdu_tx *tid_tx = NULL;
  	struct sk_buff *seg, *next;
  	unsigned int skbs = 0, len = 0;
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u32 ctrl_flags = 0;
  	u16 queue;
  	u8 tid;
-@@ -4933,7 +4934,11 @@ static void ieee80211_8023_xmit(struct i
+@@ -4937,7 +4938,11 @@ static void ieee80211_8023_xmit(struct i
  		tid_tx = rcu_dereference(sta->ampdu_mlme.tid_tx[tid]);
  	if (tid_tx) {
  		if (!test_bit(HT_AGG_STATE_OPERATIONAL, &tid_tx->state)) {

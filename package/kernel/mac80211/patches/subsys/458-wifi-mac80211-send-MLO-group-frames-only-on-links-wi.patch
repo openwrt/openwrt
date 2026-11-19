@@ -34,7 +34,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4042,6 +4042,32 @@ static bool ieee80211_drop_unauth_port(s
+@@ -4045,6 +4045,32 @@ static bool ieee80211_drop_unauth_port(s
  	return true;
  }
  
@@ -67,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  struct sk_buff *ieee80211_tx_dequeue(struct ieee80211_hw *hw,
  				     struct ieee80211_txq *txq)
  {
-@@ -4106,6 +4132,11 @@ begin:
+@@ -4109,6 +4135,11 @@ begin:
  	tx.skb = skb;
  	tx.sdata = vif_to_sdata(info->control.vif);
  
@@ -79,7 +79,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (txq->sta) {
  		tx.sta = container_of(txq->sta, struct sta_info, sta);
  
-@@ -4723,11 +4754,26 @@ static void ieee80211_mlo_multicast_tx_o
+@@ -4727,11 +4758,26 @@ static void ieee80211_mlo_multicast_tx_o
  	__ieee80211_subif_start_xmit(out, sdata->dev, 0, ctrl_flags, NULL);
  }
  

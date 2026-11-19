@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -2827,6 +2827,9 @@ static struct sk_buff *ieee80211_build_h
+@@ -2830,6 +2830,9 @@ static struct sk_buff *ieee80211_build_h
  	/* convert Ethernet header to proper 802.11 header (based on
  	 * operation mode) */
  	ethertype = (skb->data[12] << 8) | skb->data[13];
@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	fc = cpu_to_le16(IEEE80211_FTYPE_DATA | IEEE80211_STYPE_DATA);
  
  	if (!ieee80211_vif_is_mld(&sdata->vif))
-@@ -3972,7 +3975,8 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3975,7 +3978,8 @@ static bool ieee80211_xmit_fast(struct i
  	u8 tid = IEEE80211_NUM_TIDS;
  
  	/* control port protocol needs a lot of special handling */
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return false;
  
  	/* only RFC 1042 SNAP */
-@@ -6838,6 +6842,7 @@ int ieee80211_tx_control_port(struct wip
+@@ -6844,6 +6848,7 @@ int ieee80211_tx_control_port(struct wip
  	struct sta_info *sta;
  	struct sk_buff *skb;
  	struct ethhdr *ehdr;
@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u32 ctrl_flags = 0;
  	u32 flags = 0;
  	int err;
-@@ -6845,14 +6850,19 @@ int ieee80211_tx_control_port(struct wip
+@@ -6851,14 +6856,19 @@ int ieee80211_tx_control_port(struct wip
  	/* mutex lock is only needed for incrementing the cookie counter */
  	lockdep_assert_wiphy(local->hw.wiphy);
  
@@ -71,7 +71,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		ctrl_flags |= IEEE80211_TX_CTRL_PORT_CTRL_PROTO |
  			      IEEE80211_TX_CTRL_SKIP_MPATH_LOOKUP;
  
-@@ -6901,7 +6911,7 @@ int ieee80211_tx_control_port(struct wip
+@@ -6907,7 +6917,7 @@ int ieee80211_tx_control_port(struct wip
  	ehdr->h_proto = proto;
  
  	skb->dev = dev;

@@ -163,7 +163,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3782,7 +3782,7 @@ void __ieee80211_xmit_fast(struct ieee80
+@@ -3785,7 +3785,7 @@ void __ieee80211_xmit_fast(struct ieee80
  			   struct sta_info *sta,
  			   struct ieee80211_fast_tx *fast_tx,
  			   struct sk_buff *skb, bool ampdu,
@@ -172,7 +172,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
-@@ -3821,7 +3821,7 @@ void __ieee80211_xmit_fast(struct ieee80
+@@ -3824,7 +3824,7 @@ void __ieee80211_xmit_fast(struct ieee80
  	info->control.vif = &sdata->vif;
  	info->flags = IEEE80211_TX_CTL_FIRST_FRAGMENT |
  		      IEEE80211_TX_CTL_DONTFRAG;
@@ -181,7 +181,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			      u32_encode_bits(IEEE80211_LINK_UNSPECIFIED,
  					      IEEE80211_TX_CTRL_MLO_LINK);
  
-@@ -3871,7 +3871,7 @@ free:
+@@ -3874,7 +3874,7 @@ free:
  static bool ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
  				struct sta_info *sta,
  				struct ieee80211_fast_tx *fast_tx,
@@ -190,7 +190,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	u16 ethertype = (skb->data[12] << 8) | skb->data[13];
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
-@@ -3913,7 +3913,7 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3916,7 +3916,7 @@ static bool ieee80211_xmit_fast(struct i
  	skb_list_walk_safe(skb, skb, next) {
  		skb_mark_not_on_list(skb);
  		__ieee80211_xmit_fast(sdata, sta, fast_tx, skb, tid_tx,
@@ -199,7 +199,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	return true;
-@@ -4458,7 +4458,8 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4462,7 +4462,8 @@ void __ieee80211_subif_start_xmit(struct
  	if (IS_ERR(sta))
  		sta = NULL;
  
@@ -209,7 +209,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ieee80211_aggr_check(sdata, sta, skb);
  
  	if (sta) {
-@@ -4466,8 +4467,11 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4470,8 +4471,11 @@ void __ieee80211_subif_start_xmit(struct
  
  		fast_tx = rcu_dereference(sta->fast_tx);
  
@@ -222,7 +222,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			goto out;
  	}
  
-@@ -4769,10 +4773,11 @@ static void ieee80211_8023_xmit(struct i
+@@ -4773,10 +4777,11 @@ static void ieee80211_8023_xmit(struct i
  	struct tid_ampdu_tx *tid_tx = NULL;
  	struct sk_buff *seg, *next;
  	unsigned int skbs = 0, len = 0;
@@ -235,7 +235,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	skb_set_queue_mapping(skb, queue);
  
  	if (unlikely(test_bit(SCAN_SW_SCANNING, &local->scanning)) &&
-@@ -4827,6 +4832,7 @@ static void ieee80211_8023_xmit(struct i
+@@ -4831,6 +4836,7 @@ static void ieee80211_8023_xmit(struct i
  
  	info->flags |= IEEE80211_TX_CTL_HW_80211_ENCAP;
  	info->control.vif = &sdata->vif;
@@ -243,7 +243,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (key)
  		info->control.hw_key = &key->conf;
-@@ -6773,7 +6779,7 @@ int ieee80211_tx_control_port(struct wip
+@@ -6779,7 +6785,7 @@ int ieee80211_tx_control_port(struct wip
  	}
  
  	if (!IS_ERR(sta)) {

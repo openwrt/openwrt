@@ -312,7 +312,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  struct ieee80211_link_data {
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -5708,6 +5708,40 @@ static void ieee80211_beacon_crit_update
+@@ -5714,6 +5714,40 @@ static void ieee80211_beacon_crit_update
  	}
  }
  
@@ -353,7 +353,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static struct sk_buff *
  __ieee80211_beacon_get_ap(struct ieee80211_hw *hw,
  			  struct ieee80211_vif *vif,
-@@ -5769,6 +5803,8 @@ __ieee80211_beacon_get_ap(struct ieee802
+@@ -5775,6 +5809,8 @@ __ieee80211_beacon_get_ap(struct ieee802
  	if (beacon->tail)
  		skb_put_data(skb, beacon->tail, beacon->tail_len);
  
