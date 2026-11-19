@@ -1,0 +1,31 @@
+From cdbfb972276ca3d07bec9246f57be8cd7c7d5478 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 16 Oct 2026 22:33:51 +0100
+Subject: [PATCH] Fix logic error in TFTP caching.
+
+The TFTP subsystem prefetches data from disk. If a TFTP transfer
+is freed, and a new one allocated the same memory, then previously
+prefetched data could be wrongly supplied.
+
+Thanks to Lucas Celant <lcelant@redhat.com> for spotting this.
+
+CVE-2026-93006 may apply.
+---
+ src/tftp.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/src/tftp.c
++++ b/src/tftp.c
+@@ -838,6 +838,12 @@ static void free_transfer(struct tftp_tr
+       close(transfer->file->fd);
+       free(transfer->file);
+     }
++
++  /* freeing this transfer and then allocating a new one
++     may result in the same memory, but the contents of
++     the transfer is no longer valid to cache. */
++  if (daemon->srv_save == transfer)
++    daemon->srv_save = NULL;
+   
+   free(transfer);
+ }
