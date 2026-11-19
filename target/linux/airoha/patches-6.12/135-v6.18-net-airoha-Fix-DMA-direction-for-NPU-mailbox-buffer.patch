@@ -1,0 +1,63 @@
+From 6f884eb87a79e0c482baef2ad96c96b81d024235 Mon Sep 17 00:00:00 2001
+From: Wayen Yan <win847@gmail.com>
+Date: Wed, 8 Jul 2026 19:35:29 +0800
+Subject: [PATCH 1/1] net: airoha: Fix DMA direction for NPU mailbox buffer
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+airoha_npu_send_msg() always maps the mailbox buffer with DMA_TO_DEVICE,
+but some callers expect the NPU to write response data back into the
+same buffer:
+
+- airoha_npu_wlan_msg_get() (NPU_OP_GET): NPU writes response into
+  the buffer, then the caller reads it via memcpy()
+- airoha_npu_ppe_stats_setup() (NPU_OP_SET): NPU writes back
+  npu_stats_addr field in the response
+
+On non-cache-coherent architectures like EN7581 (Cortex-A53 without
+hardware cache coherency for NPU DMA), DMA_TO_DEVICE unmap is a no-op
+— it does not invalidate the CPU cache. If the NPU-written cache line
+is still present in the CPU cache when the caller reads the buffer,
+the CPU observes stale data instead of the NPU response.
+
+This is a timing-sensitive bug: small mailbox buffers (~24 bytes)
+typically fit in a single cache line and may survive in the cache
+until the caller reads them, producing silent data corruption rather
+than a crash. The bug is more likely to trigger when the caller reads
+the response immediately after dma_unmap_single() without intervening
+cache-evicting operations.
+
+Fix by using DMA_BIDIRECTIONAL for both map and unmap, which ensures
+dma_unmap_single() invalidates the CPU cache on non-coherent systems.
+The mailbox buffers are small so there is no performance concern.
+
+Fixes: c52918744ee1e49cea86622a2633b9782446428f ("net: airoha: npu: Move memory allocation in airoha_npu_send_msg() caller")
+Signed-off-by: Wayen Yan <win847@gmail.com>
+Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/178351055214.98729.11403147818632027428@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/airoha/airoha_npu.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -168,7 +168,7 @@ static int airoha_npu_send_msg(struct ai
+ 	dma_addr_t dma_addr;
+ 	int ret;
+ 
+-	dma_addr = dma_map_single(npu->dev, p, size, DMA_TO_DEVICE);
++	dma_addr = dma_map_single(npu->dev, p, size, DMA_BIDIRECTIONAL);
+ 	ret = dma_mapping_error(npu->dev, dma_addr);
+ 	if (ret)
+ 		return ret;
+@@ -191,7 +191,7 @@ static int airoha_npu_send_msg(struct ai
+ 
+ 	spin_unlock_bh(&npu->cores[core].lock);
+ 
+-	dma_unmap_single(npu->dev, dma_addr, size, DMA_TO_DEVICE);
++	dma_unmap_single(npu->dev, dma_addr, size, DMA_BIDIRECTIONAL);
+ 
+ 	return ret;
+ }
