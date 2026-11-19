@@ -1,3 +1,11 @@
+From c99a30668d5f01832fb27fec644975b05ce527d7 Mon Sep 17 00:00:00 2001
+From: Damien Dejean <dam.dejean@gmail.com>
+Date: Thu, 17 Jul 2025 16:52:40 +0200
+Subject: [PATCH] net: phy: realtek: add SerDes configuration for RTL8224
+
+Add helpers to access the SerDes registers of the Realtek RTL8224 and
+use them to configure its SerDes interface.
+---
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
 @@ -195,6 +195,41 @@

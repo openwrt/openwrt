@@ -1,8 +1,13 @@
+From df8741f92b5e5520d3335eb7e2fea4942a924e81 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 6 Jul 2014 13:45:43 +0000
+Subject: [PATCH] tg3: do not power down the device if a switch is attached
+
 When the Ethernet controller is powered down and someone wants to 
 access the mdio bus like the witch driver (b53) the system crashed if 
 PCI_D3hot was set before. This patch deactivates this power sawing mode 
 when a switch driver is in use.
-
+---
 --- a/drivers/net/ethernet/broadcom/tg3.c
 +++ b/drivers/net/ethernet/broadcom/tg3.c
 @@ -4270,7 +4270,8 @@ static void tg3_power_down_prepare(struc

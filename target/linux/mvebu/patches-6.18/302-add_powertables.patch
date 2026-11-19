@@ -1,3 +1,11 @@
+From b17844d21af30b467e108c765c7010eba2b2b28e Mon Sep 17 00:00:00 2001
+From: Imre Kaloz <kaloz@openwrt.org>
+Date: Thu, 10 Dec 2015 12:08:13 +0000
+Subject: [PATCH] ARM: dts: marvell: linksys: add mwlwifi configuration
+
+Add the mwlwifi configuration (band selection, chain masks and power
+tables) for the Marvell WiFi chips of the Linksys WRT devices.
+---
 --- a/arch/arm/boot/dts/marvell/armada-385-linksys.dtsi
 +++ b/arch/arm/boot/dts/marvell/armada-385-linksys.dtsi
 @@ -212,11 +212,19 @@

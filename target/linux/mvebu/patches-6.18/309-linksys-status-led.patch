@@ -1,3 +1,12 @@
+From ee808154571229cd3b677ea6c1ab96b122475c10 Mon Sep 17 00:00:00 2001
+From: Sungbo Eo <mans0n@gorani.run>
+Date: Thu, 12 Mar 2020 02:50:35 +0900
+Subject: [PATCH] ARM: dts: marvell: linksys: add LED aliases
+
+Add the LED aliases used by OpenWrt to indicate the boot, failsafe,
+running and upgrade states to the device trees of the Linksys WRT
+devices, using the power LED.
+---
 --- a/arch/arm/boot/dts/marvell/armada-385-linksys.dtsi
 +++ b/arch/arm/boot/dts/marvell/armada-385-linksys.dtsi
 @@ -14,6 +14,13 @@

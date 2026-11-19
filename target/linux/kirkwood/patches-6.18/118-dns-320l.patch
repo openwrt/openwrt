@@ -1,3 +1,12 @@
+From 8619d7af67c28ff974373c9a2937da1025cd81e5 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Fri, 5 Jan 2024 18:42:53 +0100
+Subject: [PATCH] ARM: dts: kirkwood: add D-Link DNS-320L
+
+Add the device tree of the D-Link DNS-320L to the Makefile and add the
+LED aliases used by OpenWrt to indicate the boot, failsafe, running and
+upgrade states.
+---
 --- a/arch/arm/boot/dts/marvell/Makefile
 +++ b/arch/arm/boot/dts/marvell/Makefile
 @@ -92,6 +92,7 @@ dtb-$(CONFIG_MACH_KIRKWOOD) += \

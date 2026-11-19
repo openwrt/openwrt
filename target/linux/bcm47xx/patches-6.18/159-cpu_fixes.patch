@@ -1,3 +1,12 @@
+From 4319c79ad42461e64dba2f5d17ebc3628a50afa4 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Thu, 15 Mar 2007 12:07:43 +0000
+Subject: [PATCH] MIPS: BCM47xx: add BCM4710 CPU workarounds
+
+The MIPS core of the BCM4710 needs additional nops and dummy register
+reads around cache and TLB operations to work reliably. Add these
+workarounds to the cache, TLB and exception handling code.
+---
 --- a/arch/mips/include/asm/r4kcache.h
 +++ b/arch/mips/include/asm/r4kcache.h
 @@ -31,6 +31,38 @@ extern int mips_sc_init(void);

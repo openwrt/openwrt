@@ -1,3 +1,12 @@
+From c19ad8db1b23381ff9a4826fab25ee605bf1035d Mon Sep 17 00:00:00 2001
+From: Tianling Shen <cnsztl@immortalwrt.org>
+Date: Thu, 4 Sep 2025 02:46:38 +0800
+Subject: [PATCH] arm64: dts: rockchip: nanopi-r76s: update LED properties
+
+Add the LED aliases used by OpenWrt to indicate the boot, failsafe,
+running and upgrade states and replace the default heartbeat trigger of
+the FriendlyElec NanoPi R76S, so that the LED reflects these states.
+---
 --- a/arch/arm64/boot/dts/rockchip/rk3576-nanopi-r76s.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3576-nanopi-r76s.dts
 @@ -23,6 +23,11 @@
