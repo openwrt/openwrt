@@ -987,7 +987,7 @@ static void otto_tc_qdisc_stats(struct otto_dsa_priv *priv, int port, int queue,
 static void otto_tc_drops_track(struct otto_dsa_priv *priv, int port)
 {
 	struct rtldsa_port *pp = &priv->ports[port];
-	bool track = pp->tbf.offloaded || pp->red.offloaded;
+	bool track = pp->tbf.offloaded || pp->red.offloaded || pp->ets_offloaded;
 
 	if (!priv->r->queue_drops_update)
 		return;
@@ -1212,6 +1212,11 @@ static void otto_tc_ets_apply(struct otto_dsa_priv *priv, int port)
 
 	if (!offload)
 		otto_qos_queue_sched_reset(priv, port);
+
+	if (offload && !pp->ets_offloaded)
+		otto_tc_qdisc_stats(priv, port, -1, &pp->ets_stats, NULL, false);
+	pp->ets_offloaded = offload;
+	otto_tc_drops_track(priv, port);
 }
 
 /* the qdiscs on the bands of another ETS cannot be matched to a queue */
@@ -1232,7 +1237,9 @@ static void otto_tc_ets_save(struct rtldsa_port *pp)
 	prev->handle = pp->ets_handle;
 	prev->children = pp->ets_children;
 	prev->offloadable = pp->ets_offloadable;
+	prev->offloaded = pp->ets_offloaded;
 	memcpy(prev->weights, pp->ets_weights, sizeof(prev->weights));
+	prev->stats = pp->ets_stats;
 	memcpy(prev->queue_tbf, pp->queue_tbf, sizeof(prev->queue_tbf));
 	memcpy(prev->queue_red, pp->queue_red, sizeof(prev->queue_red));
 }
@@ -1244,7 +1251,9 @@ static void otto_tc_ets_restore(struct rtldsa_port *pp)
 	pp->ets_handle = prev->handle;
 	pp->ets_children = prev->children;
 	pp->ets_offloadable = prev->offloadable;
+	pp->ets_offloaded = prev->offloaded;
 	memcpy(pp->ets_weights, prev->weights, sizeof(pp->ets_weights));
+	pp->ets_stats = prev->stats;
 	memcpy(pp->queue_tbf, prev->queue_tbf, sizeof(pp->queue_tbf));
 	memcpy(pp->queue_red, prev->queue_red, sizeof(pp->queue_red));
 	prev->handle = 0;
@@ -1270,6 +1279,7 @@ static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
 		if (pp->ets_handle != qopt->handle) {
 			otto_tc_ets_save(pp);
 			otto_tc_ets_clear_bands(pp);
+			pp->ets_offloaded = false;
 		}
 		pp->ets_children &= GENMASK(p->bands - 1, 0);
 		pp->ets_handle = qopt->handle;
@@ -1298,9 +1308,12 @@ static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
 		otto_tc_ets_clear_bands(pp);
 		break;
 	case TC_ETS_STATS:
-		if (pp->ets_handle != qopt->handle)
-			return -EOPNOTSUPP;
-		return otto_tc_ets_offloaded(pp) ? 0 : -EOPNOTSUPP;
+		scoped_guard(mutex, &priv->reg_mutex) {
+			if (pp->ets_handle != qopt->handle || !pp->ets_offloaded)
+				return -EOPNOTSUPP;
+			otto_tc_qdisc_stats(priv, port, -1, &pp->ets_stats, &qopt->stats, false);
+		}
+		return 0;
 	case TC_ETS_GRAFT:
 		if (pp->ets_handle != qopt->handle)
 			return -EOPNOTSUPP;
