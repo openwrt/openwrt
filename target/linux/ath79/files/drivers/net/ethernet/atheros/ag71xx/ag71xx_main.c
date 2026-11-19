@@ -662,6 +662,7 @@ static void ag71xx_sgmii_init_qca955x(struct device_node *np)
 	u32 sgmii_status;
 	u8 tries = 0;
 	int err = 0;
+	bool an_off = of_property_read_bool(np, "qca955x-sgmii-autoneg-off");
 
 	np = of_get_child_by_name(np, "gmac-config");
 	if (!np)
@@ -735,6 +736,17 @@ static void ag71xx_sgmii_init_qca955x(struct device_node *np)
 	} while (!(sgmii_status == 0xf || sgmii_status == 0x10));
 
 sgmii_out:
+	/*
+	 * Some SFP modules (e.g. the Proscend 180-T VDSL2 SFP with an
+	 * RTL8211FS) negotiate 1000BASE-X only once, at their own power-up.
+	 * After the reset above with autoneg enabled the link stays down
+	 * until the module is power-cycled. Leave autoneg off for them,
+	 * forcing 1000 Mbit/s full duplex.
+	 */
+	if (an_off)
+		__raw_writel(QCA955X_MR_AN_CONTROL_SPEED_SEL1 |
+			     QCA955X_MR_AN_CONTROL_DUPLEX_MODE,
+			     gmac_base + QCA955X_GMAC_REG_MR_AN_CONTROL);
 	iounmap(gmac_base);
 err_iomap:
 	of_node_put(np_dev);
