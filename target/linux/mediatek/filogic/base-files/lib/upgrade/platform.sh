@@ -363,7 +363,9 @@ platform_do_upgrade() {
 		fw_setenv dual_boot.slot_1_invalid 0
 		nand_do_upgrade_success
 		;;
-	netgear,eax17)
+	bo,rt622-g31-g2|\
+	netgear,eax17|\
+	snr,advance-ax2)
 		mtk_dual_boot_flash_both_slots "$1"
 		nand_do_upgrade_success
 		;;
