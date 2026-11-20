@@ -208,6 +208,8 @@ define KernelPackage/depends
   endef
 endef
 
+uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+
 define KernelPackage
   NAME:=$(1)
   $(eval $(call Package/Default))
@@ -262,7 +264,7 @@ $(call KernelPackage/$(1)/config)
 				exit 1; \
 			fi; \
 		  done;
-		  $(call ModuleAutoLoad,$(1),$$(1),$(filter-out 0-,$(word 1,$(AUTOLOAD))-),$(filter-out 0,$(word 2,$(AUTOLOAD))),$(sort $(wordlist 3,99,$(AUTOLOAD))))
+		  $(call ModuleAutoLoad,$(1),$$(1),$(filter-out 0-,$(word 1,$(AUTOLOAD))-),$(filter-out 0,$(word 2,$(AUTOLOAD))),$(call uniq,$(wordlist 3,99,$(AUTOLOAD))))
 		  $(call KernelPackage/$(1)/install,$$(1))
     endef
   $(if $(CONFIG_PACKAGE_kmod-$(1)),
