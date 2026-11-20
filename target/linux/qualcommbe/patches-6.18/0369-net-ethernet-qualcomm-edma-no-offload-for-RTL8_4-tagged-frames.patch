@@ -1,0 +1,72 @@
+From: Alex Rau <alex@retroduction.org>
+Date: Mon, 2 Nov 2026 21:30:00 +0100
+Subject: [PATCH] net: ethernet: qualcomm: edma: no offload for RTL8_4-tagged
+ frames
+
+DSA user ports inherit the conduit's checksum and segmentation offload
+features. A frame sent through a user port therefore reaches the EDMA
+with CHECKSUM_PARTIAL, after the tagger has put its tag in front of the
+ethertype. With the RTL8_4 tag (Realtek RTL8365MB, RTL8372N) the EDMA
+cannot find the L3/L4 headers and sends the frame with a wrong
+checksum, so the router's own TCP and UDP traffic through the switch
+fails while ICMP and forwarded traffic still work.
+
+Drop checksum and GSO offload for such frames in ndo_features_check, so
+the stack does both in software. RTL8_4T is not affected: its tagger
+checksums in software before appending the trailer.
+
+Switch drivers used to work around this by clearing the conduit's
+checksum features in their setup, but edma_port_open() sets them again
+whenever the conduit opens, so the workaround depended on the order of
+switch setup and conduit open.
+
+Same approach as OpenWrt's mtk_eth_soc fix
+739-net-ethernet-mtk_eth_soc-fix-offload-with-incompatible-.patch.
+
+Tested on the UniFi Cloud Gateway Fiber (IPQ9574, RTL8372N, RTL8_4 tag):
+SSH, HTTP and DNS to the router work right after boot and after
+eth0 down/up, without clearing the conduit features by hand; 300 MB
+TCP from the router at 557 Mbit/s.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Alex Rau <alex@retroduction.org>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -10,6 +10,7 @@
+ #include <linux/of_net.h>
+ #include <linux/phylink.h>
+ #include <linux/printk.h>
++#include <net/dsa.h>
+ 
+ #include "edma.h"
+ #include "edma_cfg_rx.h"
+@@ -177,10 +178,26 @@ static int edma_port_change_mtu(struct n
+ 	return ppe_port_set_maxframe(port_priv->ppe_port, mtu);
+ }
+ 
+-static netdev_features_t edma_port_feature_check(__maybe_unused struct sk_buff *skb,
+-						 __maybe_unused struct net_device *netdev,
++static netdev_features_t edma_port_feature_check(struct sk_buff *skb,
++						 struct net_device *netdev,
+ 						 netdev_features_t features)
+ {
++	/* Only frames that ask for checksum or segmentation offload matter */
++	if (skb->ip_summed != CHECKSUM_PARTIAL)
++		return features;
++
++#if IS_ENABLED(CONFIG_NET_DSA)
++	/* The RTL8_4 tag sits in front of the ethertype, so the EDMA cannot
++	 * find the L3/L4 headers and sends the frame with a wrong checksum.
++	 * Let the stack checksum and segment such frames in software.
++	 * RTL8_4T is not affected: its tagger checksums in software before
++	 * appending the trailer.
++	 */
++	if (netdev_uses_dsa(netdev) &&
++	    netdev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_RTL8_4)
++		features &= ~(NETIF_F_CSUM_MASK | NETIF_F_GSO_MASK);
++#endif
++
+ 	return features;
+ }
+ 
