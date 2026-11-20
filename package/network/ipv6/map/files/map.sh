@@ -64,7 +64,7 @@ proto_map_setup() {
 	fi
 
 	echo "$RULE_DATA" >> /tmp/map-$cfg.rules
-	eval $RULE_DATA
+	eval "$RULE_DATA"
 
 	if [ -z "$RULE_BMR" ]; then
 		proto_notify_error "$cfg" "NO_MATCHING_PD"
