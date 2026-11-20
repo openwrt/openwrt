@@ -1,0 +1,87 @@
+From 21a498a1fbb4edd328757ad6e81d0a9c7645804a Mon Sep 17 00:00:00 2001
+From: Niels Wiek <niels.wiek@gmail.com>
+Date: Tue, 10 Nov 2026 13:46:50 +0100
+Subject: [PATCH] mtd: rawnand: optionally write a JFFS2 cleanmarker after
+ erase
+
+The CFE bootloader of the ZyXEL VMG8324-B10A erases, at every power-on,
+each block of its image slots whose first page has no JFFS2 cleanmarker
+in the OOB. Blocks written by Linux (UBI, ubiformat, flash_erase without
+-j) have none, so the CFE wipes them on the next cold boot and the board
+ends in a boot loop once UBI has written to the slot.
+
+Add an "openwrt,jffs2-cleanmarker-range = <start size>" property for the
+NAND chip node: after a successful erase of a block inside that range,
+program the standard 8-byte JFFS2 cleanmarker into the free OOB bytes of
+its first page, as the CFE does for the blocks it writes itself. Later
+page programs leave those OOB bytes untouched.
+
+Signed-off-by: Niels Wiek <niels.wiek@gmail.com>
+---
+ drivers/mtd/nand/raw/nand_base.c | 31 +++++++++++++++++++++++++++++++
+ include/linux/mtd/rawnand.h      |  7 +++++++
+ 2 files changed, 38 insertions(+)
+
+--- a/drivers/mtd/nand/raw/nand_base.c
++++ b/drivers/mtd/nand/raw/nand_base.c
+@@ -4590,6 +4590,27 @@ int nand_erase_nand(struct nand_chip *ch
+ 			goto erase_exit;
+ 		}
+ 
++		if (ofs >= chip->jffs2_cm_start && ofs < chip->jffs2_cm_end) {
++			static const u8 cleanmarker[8] = {
++				0x19, 0x85, 0x20, 0x03, 0x00, 0x00, 0x00, 0x08
++			};
++			struct mtd_oob_ops ops = {
++				.mode = MTD_OPS_AUTO_OOB,
++				.ooblen = sizeof(cleanmarker),
++				.oobbuf = (u8 *)cleanmarker,
++			};
++
++			ret = nand_do_write_oob(chip, ofs, &ops);
++			/* nand_do_write_oob() deselects the target */
++			nand_select_target(chip, chipnr);
++			if (ret) {
++				pr_warn("%s: cleanmarker write failed at 0x%08llx: %d\n",
++					__func__, (unsigned long long)ofs, ret);
++				instr->fail_addr = ofs;
++				goto erase_exit;
++			}
++		}
++
+ 		/* Increment page address and decrement length */
+ 		len -= (1ULL << chip->phys_erase_shift);
+ 		page += pages_per_block;
+@@ -5510,6 +5531,16 @@ static int rawnand_dt_init(struct nand_c
+ 	if (of_property_read_bool(dn, "nand-on-flash-bbt"))
+ 		chip->bbt_options |= NAND_BBT_USE_FLASH;
+ 
++	{
++		u32 cm[2];
++
++		if (!of_property_read_u32_array(dn, "openwrt,jffs2-cleanmarker-range",
++						cm, 2) && cm[1]) {
++			chip->jffs2_cm_start = cm[0];
++			chip->jffs2_cm_end = (u64)cm[0] + cm[1];
++		}
++	}
++
+ 	of_get_nand_ecc_user_config(nand);
+ 	of_get_nand_ecc_legacy_user_config(chip);
+ 
+--- a/include/linux/mtd/rawnand.h
++++ b/include/linux/mtd/rawnand.h
+@@ -1287,6 +1287,13 @@ struct nand_secure_region {
+  */
+ struct nand_chip {
+ 	struct nand_device base;
++	/*
++	 * Range (device offsets) in which a JFFS2 cleanmarker is written to the
++	 * OOB of the first page of every block after it is erased. Some
++	 * Broadcom CFE bootloaders erase blocks without one in their image area.
++	 */
++	u64 jffs2_cm_start;
++	u64 jffs2_cm_end;
+ 	struct nand_id id;
+ 	struct nand_parameters parameters;
+ 	struct nand_manufacturer manufacturer;
