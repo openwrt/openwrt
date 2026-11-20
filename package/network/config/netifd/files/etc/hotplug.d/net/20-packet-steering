@@ -1,0 +1,18 @@
+#!/bin/sh
+# A wireless interface made after boot has no receive packet steering until
+# the next interface event: apply it now. One run covers the interfaces a
+# radio brings up together.
+
+[ "$ACTION" = add ] && [ "$DEVTYPE" = wlan ] || exit 0
+[ -x /etc/init.d/packet_steering ] || exit 0
+/etc/init.d/packet_steering enabled || exit 0
+
+PENDING=/var/run/packet-steering.pending
+[ -e "$PENDING" ] && exit 0
+touch "$PENDING"
+
+(
+	sleep 3
+	rm -f "$PENDING"
+	/etc/init.d/packet_steering reload
+) &
