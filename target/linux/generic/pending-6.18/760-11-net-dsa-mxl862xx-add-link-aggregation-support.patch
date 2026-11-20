@@ -90,7 +90,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define INT_GPHY_READ			(GPY_GPY2XX_MAGIC + 0x1)
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
-@@ -766,7 +766,42 @@ static int mxl862xx_setup_snooping_traps
+@@ -768,7 +768,42 @@ static int mxl862xx_setup_snooping_traps
  	return mxl862xx_pce_rule_write(priv, &rule);
  }
  
@@ -134,7 +134,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  	struct mxl862xx_bridge_port_config br_port_cfg = {};
  	struct dsa_port *dp = dsa_to_port(ds, port);
-@@ -799,8 +834,12 @@ static int mxl862xx_set_bridge_port(stru
+@@ -801,8 +836,12 @@ static int mxl862xx_set_bridge_port(stru
  						  dp->bridge->dev) {
  			if (member_dp->index == port)
  				continue;
@@ -149,7 +149,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		}
  		mxl862xx_fw_portmap_set_bit(br_port_cfg.bridge_port_map,
  					    mxl862xx_cpu_bridge_port_id(ds, port));
-@@ -813,7 +852,7 @@ static int mxl862xx_set_bridge_port(stru
+@@ -815,7 +854,7 @@ static int mxl862xx_set_bridge_port(stru
  
  	bridge_id = dp->bridge ? priv->bridges[dp->bridge->num] : p->fid;
  
@@ -158,7 +158,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	br_port_cfg.bridge_id = cpu_to_le16(bridge_id);
  	br_port_cfg.mask = cpu_to_le32(MXL862XX_BRIDGE_PORT_CONFIG_MASK_BRIDGE_ID |
  				       MXL862XX_BRIDGE_PORT_CONFIG_MASK_BRIDGE_PORT_MAP |
-@@ -894,11 +933,38 @@ static int mxl862xx_set_bridge_port(stru
+@@ -896,11 +935,38 @@ static int mxl862xx_set_bridge_port(stru
  				  br_port_cfg);
  }
  
@@ -198,7 +198,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	dsa_switch_for_each_bridge_member(dp, ds, bridge->dev) {
  		err = mxl862xx_set_bridge_port(ds, dp->index);
-@@ -906,6 +972,25 @@ static int mxl862xx_sync_bridge_members(
+@@ -908,6 +974,25 @@ static int mxl862xx_sync_bridge_members(
  			ret = err;
  	}
  
@@ -224,7 +224,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return ret;
  }
  
-@@ -2018,6 +2103,408 @@ static int mxl862xx_setup_cpu_bridge(str
+@@ -2048,6 +2133,408 @@ static int mxl862xx_setup_cpu_bridge(str
  	return mxl862xx_set_bridge_port(ds, port);
  }
  
@@ -633,7 +633,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int mxl862xx_port_bridge_join(struct dsa_switch *ds, int port,
  				     const struct dsa_bridge bridge,
  				     bool *tx_fwd_offload,
-@@ -2043,7 +2530,18 @@ static int mxl862xx_port_bridge_join(str
+@@ -2073,7 +2560,18 @@ static int mxl862xx_port_bridge_join(str
  		return 0;
  	}
  
@@ -653,7 +653,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static void mxl862xx_port_bridge_leave(struct dsa_switch *ds, int port,
-@@ -2094,6 +2592,17 @@ static void mxl862xx_port_bridge_leave(s
+@@ -2124,6 +2622,17 @@ static void mxl862xx_port_bridge_leave(s
  			"failed to update CPU VBP for port %d: %pe\n", port,
  			ERR_PTR(err));
  
@@ -671,7 +671,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (!dsa_bridge_ports(ds, bridge.dev))
  		mxl862xx_free_bridge(ds, &bridge);
  }
-@@ -2764,18 +3273,17 @@ static int mxl862xx_get_fid(struct dsa_s
+@@ -2784,18 +3293,17 @@ static int mxl862xx_get_fid(struct dsa_s
  }
  
  /**
@@ -697,7 +697,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   */
  static int mxl862xx_fdb_bridge_port(struct dsa_switch *ds, int port,
  				    const struct dsa_db db)
-@@ -2791,7 +3299,7 @@ static int mxl862xx_fdb_bridge_port(stru
+@@ -2811,7 +3319,7 @@ static int mxl862xx_fdb_bridge_port(stru
  			return bp_cpu;
  	}
  
@@ -706,7 +706,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  /**
-@@ -3044,11 +3552,43 @@ static int mxl862xx_port_fdb_del(struct
+@@ -3065,11 +3573,43 @@ static int mxl862xx_port_fdb_del(struct
  	return ret;
  }
  
@@ -750,7 +750,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	u32 entry_port_id;
  	int ret;
  
-@@ -3062,7 +3602,7 @@ static int mxl862xx_port_fdb_dump(struct
+@@ -3083,7 +3623,7 @@ static int mxl862xx_port_fdb_dump(struct
  
  		entry_port_id = le32_to_cpu(param.port_id);
  
@@ -759,7 +759,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			ret = cb(param.mac, FIELD_GET(MXL862XX_TCI_VLAN_ID,
  						      le16_to_cpu(param.tci)),
  				 param.static_entry, data);
-@@ -3742,6 +4282,11 @@ static const struct dsa_switch_ops mxl86
+@@ -3772,6 +4312,11 @@ static const struct dsa_switch_ops mxl86
  	.port_fdb_dump = mxl862xx_port_fdb_dump,
  	.port_mdb_add = mxl862xx_port_mdb_add,
  	.port_mdb_del = mxl862xx_port_mdb_del,
@@ -771,7 +771,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.port_vlan_filtering = mxl862xx_port_vlan_filtering,
  	.port_vlan_add = mxl862xx_port_vlan_add,
  	.port_vlan_del = mxl862xx_port_vlan_del,
-@@ -3791,6 +4336,7 @@ static int mxl862xx_probe(struct mdio_de
+@@ -3815,6 +4360,7 @@ static int mxl862xx_probe(struct mdio_de
  	ds->assisted_learning_on_cpu_port = true;
  	ds->fdb_isolation = true;
  	ds->max_num_bridges = MXL862XX_MAX_BRIDGES;
@@ -824,7 +824,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct mxl862xx_port_stats stats;
  	spinlock_t stats_lock; /* protects stats accumulators */
  };
-@@ -360,6 +382,15 @@ struct mxl862xx_fw_version {
+@@ -376,6 +398,15 @@ struct mxl862xx_fw_version {
   *                      policy. Set once in setup() and referenced by
   *                      fill_cpu_trap_action() via bFidEnable. The PCE FID
   *                      action field is 6 bits, so this value must be <= 63.
@@ -840,7 +840,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @stats_work:         periodic work item that polls RMON hardware counters
   *                      and accumulates them into 64-bit per-port stats
   */
-@@ -389,6 +420,8 @@ struct mxl862xx_priv {
+@@ -407,6 +438,8 @@ struct mxl862xx_priv {
  	bool rescue_ready;
  	bool rescue_failed;
  	u16 cpu_trap_fid;

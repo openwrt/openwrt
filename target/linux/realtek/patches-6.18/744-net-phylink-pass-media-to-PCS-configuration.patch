@@ -86,7 +86,7 @@ Signed-off-by: Jonas Jelonek <jonas@jonasjelonek.de>
  }
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
-@@ -71,7 +71,7 @@ static int mxl862xx_legacy_pcs_config(st
+@@ -76,7 +76,7 @@ static int mxl862xx_legacy_pcs_config(st
  				      unsigned int neg_mode,
  				      phy_interface_t interface,
  				      const unsigned long *advertising,
@@ -95,7 +95,7 @@ Signed-off-by: Jonas Jelonek <jonas@jonasjelonek.de>
  {
  	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
  	struct mxl862xx_priv *priv = mpcs->priv;
-@@ -298,7 +298,7 @@ static int mxl862xx_xpcs_errno(int resul
+@@ -303,7 +303,7 @@ static int mxl862xx_xpcs_errno(int resul
  static int mxl862xx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
  			       phy_interface_t interface,
  			       const unsigned long *advertising,
