@@ -4,15 +4,167 @@ START=35
 STOP=85
 USE_PROCD=1
 
+ODHCPD_CAPS=/etc/capabilities/odhcpd.json
+ODHCPD_CFGDIR=/var/etc/odhcpd
+
+# odhcpd applies every section of type odhcpd, the last one winning
+odhcpd_get_options() {
+	config_get leasefile "$1" leasefile "$leasefile"
+	config_get leasetrigger "$1" leasetrigger "$leasetrigger"
+	config_get hostsdir "$1" hostsdir "$hostsdir"
+	config_get piodir "$1" piodir "$piodir"
+}
+
+# procd drops user and group silently when the name does not resolve, and
+# a sysupgrade can preserve an /etc/passwd that predates the uid. A lease
+# trigger runs as the daemon's uid, so a custom one keeps running as root.
+odhcpd_jailed() {
+	[ -x /sbin/ujail ] && [ -e "$ODHCPD_CAPS" ] &&
+		id -u odhcpd >/dev/null 2>&1 || return 1
+
+	case "$leasetrigger" in
+	""|/usr/sbin/odhcpd-update) return 0 ;;
+	esac
+
+	logger -t odhcpd -p daemon.notice \
+		"not jailed: leasetrigger $leasetrigger may need root"
+	return 1
+}
+
+# Hand the unprivileged daemon what it cannot take itself: the state
+# directories it writes through a temporary file, and the files a root-run
+# instance left in the world-writable ones.
+odhcpd_prepare() {
+	local lock dir file
+
+	for dir in "${leasefile%/*}" "$hostsdir" "$piodir"; do
+		[ -n "$dir" ] || continue
+		mkdir -p "$dir" || continue
+		case "$(ls -ld "$dir" 2>/dev/null)" in
+		# world-writable: shared with everything else, not ours to take
+		????????w*) ;;
+		d*) chown odhcpd:odhcpd "$dir" ;;
+		esac
+	done
+
+	# the lock procd.sh takes for a lease trigger that sources it, named
+	# as procd_lock() names it
+	if [ -n "$leasetrigger" ]; then
+		lock="$(readlink "$leasetrigger")"
+		lock="/var/lock/procd_$(basename "${lock:-$leasetrigger}").lock"
+	fi
+
+	# an upgrade restarts the daemon inside the boot, leaving files the
+	# root-run instance created: the leasefile, which the sticky bit stops
+	# uid 455 from renaming its replacement over, and the lease trigger's
+	# lock, which uid 455 cannot open for writing. Only where the directory
+	# is world-writable, which already grants everyone that much
+	for file in "$leasefile" "$lock"; do
+		[ -n "$file" ] && [ -f "$file" ] || continue
+		case "$(ls -ld "${file%/*}" 2>/dev/null)" in
+		????????w*) chown -h odhcpd:odhcpd "$file" ;;
+		esac
+	done
+
+	return 0
+}
+
+# a real directory owned by root that nobody else can write to
+odhcpd_root_dir() {
+	set -- $(ls -ld "$1" 2>/dev/null)
+	case "$1" in
+	d????-??-?) [ "$3" = root ] ;;
+	*) return 1 ;;
+	esac
+}
+
+odhcpd_quote() {
+	printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
+}
+
+odhcpd_write_globals() {
+	local duid
+
+	config_get duid "$1" dhcp_default_duid
+	echo "config globals $(odhcpd_quote "$1")"
+	[ -z "$duid" ] || echo "	option dhcp_default_duid $(odhcpd_quote "$duid")"
+}
+
+odhcpd_write_system() {
+	local timezone zonename
+
+	config_get timezone "$1" timezone
+	config_get zonename "$1" zonename
+	echo "config system $(odhcpd_quote "$1")"
+	[ -z "$timezone" ] || echo "	option timezone $(odhcpd_quote "$timezone")"
+	[ -z "$zonename" ] || echo "	option zonename $(odhcpd_quote "$zonename")"
+}
+
+# odhcpd reads the dhcp, network and system packages, and the last two are
+# 0600 with credentials in network. Give it a copy of dhcp and only the
+# options it parses from the others (config.c: globals dhcp_default_duid,
+# system timezone and zonename), in a directory only root writes to.
+odhcpd_write_config() {
+	local dir="$ODHCPD_CFGDIR" parent="${ODHCPD_CFGDIR%/*}" file
+
+	[ -e "$parent" ] || mkdir -m 0755 "$parent"
+	odhcpd_root_dir "$parent" || return 1
+	[ -e "$dir" ] || mkdir -m 0750 "$dir"
+	odhcpd_root_dir "$dir" || return 1
+	chgrp odhcpd "$dir" && chmod 0750 "$dir" || return 1
+
+	if [ -e /etc/config/dhcp ]; then
+		uci -q export dhcp >"$dir/.dhcp" || return 1
+	else
+		: >"$dir/.dhcp" || return 1
+	fi
+	( config_load network; config_foreach odhcpd_write_globals globals ) \
+		>"$dir/.network" || return 1
+	( config_load system; config_foreach odhcpd_write_system system ) \
+		>"$dir/.system" || return 1
+
+	for file in dhcp network system; do
+		chgrp odhcpd "$dir/.$file" && chmod 0640 "$dir/.$file" &&
+			mv -f "$dir/.$file" "$dir/$file" || return 1
+	done
+}
+
 start_service() {
+	local leasefile leasetrigger hostsdir piodir jail=0
+
+	config_load dhcp
+	config_foreach odhcpd_get_options odhcpd
+
+	if odhcpd_jailed; then
+		jail=1
+		odhcpd_prepare
+		odhcpd_write_config || {
+			logger -t odhcpd -p daemon.err \
+				"cannot write $ODHCPD_CFGDIR, not starting"
+			return 1
+		}
+	fi
+
 	procd_open_instance
-	procd_set_param command /usr/sbin/odhcpd
+	if [ "$jail" = 1 ]; then
+		procd_set_param command /usr/sbin/odhcpd -c "$ODHCPD_CFGDIR"
+		procd_add_jail odhcpd
+		procd_set_param capabilities "$ODHCPD_CAPS"
+		procd_set_param no_new_privs 1
+		procd_set_param user odhcpd
+		procd_set_param group odhcpd
+	else
+		procd_set_param command /usr/sbin/odhcpd
+	fi
 	procd_set_param respawn
 	procd_close_instance
 }
 
+# start_service rewrites the private configuration, and procd restarts the
+# instance when the jail decision changed its command or parameters
 reload_service() {
-	procd_send_signal odhcpd
+	rc_procd start_service "$@"
+	procd_send_signal odhcpd "$@"
 }
 
 service_triggers()
