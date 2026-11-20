@@ -11,6 +11,24 @@ define Device/mikrotik_routerboard-2011uias-2hnd
 endef
 TARGET_DEVICES += mikrotik_routerboard-2011uias-2hnd
 
+define Device/mikrotik_routerboard-450g
+  $(Device/mikrotik_nand)
+  SOC := ar7161
+  DEVICE_MODEL := RouterBOARD 450G
+  # RouterBOOT refuses an ELF image whose segments reach beyond the 3.75 MiB
+  # kernel partition ("kernel out of range"), which is what the uncompressed
+  # vmlinux of a current kernel does.  Store the lzma loader instead, as the
+  # ar71xx image did.  The loader needs a flat binary to decompress, so take
+  # the objcopy output instead of the ELF the other MikroTik images use:
+  # decompressing an ELF and jumping to it just enters the file header
+  # (first=7f454c46) and hangs without a line on the console.
+  KERNEL_NAME := vmlinux
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel
+  DEVICE_PACKAGES += -kmod-ath9k -wpad-basic-mbedtls -uboot-envtools
+  SUPPORTED_DEVICES += rb-450g
+endef
+TARGET_DEVICES += mikrotik_routerboard-450g
+
 define Device/mikrotik_routerboard-493g
   $(Device/mikrotik_nand)
   SOC := ar7161

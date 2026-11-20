@@ -2416,6 +2416,30 @@ ar8xxx_start(struct ar8xxx_priv *priv)
 	return 0;
 }
 
+/*
+ * Some boards wire port 4 of the switch to a CPU MAC and use it as that
+ * MAC's PHY instead of as a switch port.  ar8xxx_start() has to know this
+ * when it programs the switch, which happens at probe time - before any MAC
+ * attaches the PHY and ar8xxx_phy_config_init() gets a chance to set it.
+ * Let the board declare it in the device tree.
+ */
+static bool
+ar8xxx_port4_is_phy(struct ar8xxx_priv *priv)
+{
+	struct device_node *np = priv->pdev ? priv->pdev->of_node : NULL;
+
+	if (np && of_property_read_bool(np, "qca,phy4-mii-enable"))
+		return true;
+
+	if (np && np->parent &&
+	    of_property_read_bool(np->parent, "qca,phy4-mii-enable"))
+		return true;
+
+	return priv->mii_bus->dev.of_node &&
+	       of_property_read_bool(priv->mii_bus->dev.of_node,
+				     "qca,phy4-mii-enable");
+}
+
 static int
 ar8xxx_phy_config_init(struct phy_device *phydev)
 {
@@ -2490,6 +2514,18 @@ ar8xxx_check_link_states(struct ar8xxx_priv *priv)
 	mutex_unlock(&priv->reg_mutex);
 
 	return changed;
+}
+
+/*
+ * Boards whose MACs are not phylib clients (fixed link) still need the
+ * switch programmed.  Initialise it as soon as the switch PHY is probed.
+ */
+static bool
+ar8xxx_init_at_probe(struct ar8xxx_priv *priv)
+{
+	struct device_node *np = priv->mii_bus->dev.of_node;
+
+	return np && of_property_read_bool(np, "qca,init-at-probe");
 }
 
 static int
@@ -2649,6 +2685,20 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 
 found:
 	priv->use_count++;
+
+	if (phydev->mdio.addr == 0 && ar8xxx_init_at_probe(priv)) {
+		if (ar8xxx_port4_is_phy(priv)) {
+			priv->dev.ports = (AR8216_NUM_PORTS - 1);
+			priv->port4_phy = true;
+		}
+
+		priv->phy = phydev;
+		phydev->interface = PHY_INTERFACE_MODE_RGMII;
+
+		ret = ar8xxx_start(priv);
+		if (ret)
+			goto err_unregister_switch;
+	}
 
 	if (phydev->mdio.addr == 0 && priv->chip->config_at_probe) {
 		priv->phy = phydev;
@@ -2873,6 +2923,22 @@ static struct mdio_driver ar8xxx_mdio_driver = {
 static int __init ar8216_init(void)
 {
 	int ret;
+
+	/*
+	 * Built into the kernel this driver registers before the generic PHY
+	 * drivers and keeps the switch PHYs away from them, which is what
+	 * boards whose MAC is not a phylib client need.  Boards that drive
+	 * the same switch through DSA have to keep those PHYs for the DSA
+	 * driver, so stay out of the way when the device tree describes one.
+	 */
+	if (of_find_compatible_node(NULL, NULL, "qca,ar9331-switch") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8327") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8328") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8334") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8337")) {
+		pr_info("ar8xxx: DSA switch in the device tree, not registering\n");
+		return -ENODEV;
+	}
 
 	ret = phy_drivers_register(ar8xxx_phy_driver,
 				   ARRAY_SIZE(ar8xxx_phy_driver),
