@@ -33,6 +33,8 @@ def parse_args():
                         help="Required source format of input: 'apk' or 'opkg'")
     parser.add_argument("-m", "--manifest", action="store_true", default=False,
                         help="Print output in opkg list format, as 'package - version' pairs")
+    parser.add_argument("-p", "--packages-manifest", action="store_true", default=False,
+                        help="Print output in legacy Packages.manifest (control stanza) format; apk only")
     parser.add_argument(dest="source",
                         help="File name for input, '-' for stdin")
     # fmt: on
@@ -62,6 +64,55 @@ def parse_apk(text: str) -> dict:
     return packages
 
 
+def apk_to_packages_manifest(text: str) -> str:
+    """Render 'apk adbdump' JSON as legacy Packages.manifest stanzas.
+
+    Keeps the field names of the opkg-era Packages.manifest so existing
+    consumers (e.g. Repology's OpenWrtPackagesParser) work unchanged.
+    """
+
+    def one_line(value) -> str:
+        if isinstance(value, list):
+            value = ", ".join(str(v) for v in value)
+        return " ".join(str(value).split())
+
+    data = json.loads(text)
+    if isinstance(data, dict) and "packages" in data:
+        data = data["packages"]
+
+    stanzas: list = []
+    for package in sorted(data, key=lambda p: p["name"]):
+        tags: dict = {}
+        for tag in package.get("tags", []):
+            key, _, value = tag.partition("=")
+            tags[key] = value
+
+        arch = package.get("arch", "")
+        fields = [
+            ("Package", package["name"]),
+            ("Version", package["version"]),
+            ("Depends", package.get("depends")),
+            ("Provides", package.get("provides")),
+            ("Source", package.get("origin")),
+            ("License", package.get("license")),
+            ("Section", tags.get("openwrt:section")),
+            ("URL", package.get("url")),
+            ("ABIVersion", tags.get("openwrt:abiversion")),
+            ("CPE-ID", tags.get("openwrt:cpe")),
+            ("Maintainer", package.get("maintainer")),
+            ("Architecture", "all" if arch == "noarch" else arch),
+            ("Installed-Size", package.get("installed-size")),
+            ("Description", package.get("description")),
+        ]
+        lines = [f"{k}: {one_line(v)}" for k, v in fields if v not in (None, "", [])]
+        # Every stanza, including the last, must end with a blank line:
+        # Debian-style readers (Repology's included) only emit a package
+        # when they hit the blank separator line.
+        stanzas.append("\n".join(lines) + "\n\n")
+
+    return "".join(stanzas)
+
+
 def parse_opkg(text: str) -> dict:
     packages: dict = {}
 
@@ -87,6 +138,12 @@ if __name__ == "__main__":
     input = sys.stdin if args.source == "-" else open(args.source, "r")
     with input:
         text: str = input.read()
+
+    if args.packages_manifest:
+        if args.source_format != "apk":
+            sys.exit("--packages-manifest requires --source-format apk")
+        sys.stdout.write(apk_to_packages_manifest(text))
+        sys.exit(0)
 
     packages = parse_apk(text) if args.source_format == "apk" else parse_opkg(text)
     if args.manifest:
