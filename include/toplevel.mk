@@ -46,6 +46,10 @@ unexport C_INCLUDE_PATH CROSS_COMPILE ARCH
 # prevent distro default LPATH from interfering
 unexport LPATH
 
+# prevent user settings for cargo, rustc and sccache from interfering
+unexport $(foreach v,$(filter CARGO CARGO_% RUST% SCCACHE_%,$(.VARIABLES)), \
+	$(if $(filter environment,$(origin $(v))),$(v)))
+
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
 export LDFLAGS=
@@ -302,7 +306,7 @@ help:
 	cat README.md
 
 distclean:
-	rm -rf bin build_dir .ccache .config* dl feeds key-build* logs package/feeds target/linux/feeds staging_dir tmp
+	rm -rf bin build_dir .ccache .sccache .config* dl feeds key-build* logs package/feeds target/linux/feeds staging_dir tmp
 	@$(_SINGLE)$(SUBMAKE) -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)

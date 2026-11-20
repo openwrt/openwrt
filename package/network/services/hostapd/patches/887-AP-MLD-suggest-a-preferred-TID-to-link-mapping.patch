@@ -1,0 +1,549 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 10:00:00 +0100
+Subject: [PATCH] AP MLD: suggest a preferred TID-to-link mapping
+
+hostapd only accepts or denies a TID-to-link mapping negotiation, and
+suggests nothing but the default mapping, so an AP MLD cannot steer a
+non-AP MLD to the mapping it prefers.
+
+Add hostapd_neg_ttlm_policy_set(), which takes a switch for the
+negotiation and up to 32 preferred mappings of the AP MLD, each for one
+non-AP MLD or, with the broadcast address, for every non-AP MLD without
+one of its own. A preferred mapping is used only where the AP MLD would
+accept it as a request of the non-AP MLD.
+
+- A TID-To-Link Mapping Request frame that differs from the preferred
+  mapping gets status 134 with it in the Response frame
+  (IEEE Std 802.11be-2024, 35.3.7.2.3); one equal to it is accepted.
+- A mapping of a (Re)Association Request frame that differs from it is
+  rejected. The Response frame carries the preferred mapping in place
+  of the default mapping, and the association stands (NOTE 1 of
+  35.3.7.2.3). Once the station is authorized, an unsolicited
+  TID-To-Link Mapping Response frame with Dialog Token 0 and status 134
+  carries it again (35.3.7.2.3, 9.6.38.3). A Protected EHT Action frame
+  needs the keys of the station.
+- While an established advertised mapping is in the Response frame,
+  that element answers the request, as before.
+- With the negotiation off, the AP MLD advertises support 0, tears down
+  each negotiated mapping, and the default mapping applies (35.3.7.2.2).
+
+A new preferred mapping keeps a negotiated mapping: it applies to the
+negotiations after it, and a negotiated mapping holds until a teardown
+or a new negotiation (35.3.7.2.3).
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -598,6 +598,8 @@ struct hostapd_sta_info {
+ };
+ 
+ #ifdef CONFIG_IEEE80211BE
++#define HOSTAPD_NEG_TTLM_PREF_MAX 32
++
+ /**
+  * struct hostapd_mld - hostapd per-mld data structure
+  */
+@@ -629,6 +631,16 @@ struct hostapd_mld {
+ 	struct os_reltime adv_ttlm_established;
+ 	u64 adv_ttlm_cookie;
+ 
++	/* Preferred mappings of a TTLM negotiation; the broadcast address
++	 * stands for every non-AP MLD without an entry of its own */
++	bool neg_ttlm_disabled;
++	u8 neg_ttlm_pref_num;
++	struct hostapd_neg_ttlm_pref {
++		u8 addr[ETH_ALEN];
++		bool dflt;
++		u16 links[EHT_TTLM_NUM_TIDS];
++	} neg_ttlm_pref[HOSTAPD_NEG_TTLM_PREF_MAX];
++
+ 	int ctrl_sock;
+ 	struct dl_list ctrl_dst;
+ 	char *ctrl_interface; /* Directory for UNIX domain sockets */
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -7001,6 +7001,7 @@ static u16 send_assoc_resp(struct hostap
+ 		if (ap_sta_is_mld(hapd, sta)) {
+ 			buflen += hostapd_eid_eht_ml_tid_to_link_map_len(hapd);
+ 			buflen += hostapd_eid_eht_ml_assoc_len(hapd, sta);
++			buflen += hostapd_eid_neg_ttlm_assoc_len();
+ 		}
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -348,9 +348,16 @@ void hostapd_neg_ttlm_assoc_cb(struct ho
+ void hostapd_neg_ttlm_assoc_req(struct hostapd_data *hapd,
+ 				struct sta_info *sta,
+ 				const struct ieee802_11_elems *elems);
++size_t hostapd_eid_neg_ttlm_assoc_len(void);
+ u8 * hostapd_eid_neg_ttlm_assoc(struct hostapd_data *hapd,
+ 				struct sta_info *sta, u8 *eid);
++void hostapd_neg_ttlm_authorized(struct hostapd_data *hapd,
++				 struct sta_info *sta);
+ void hostapd_neg_ttlm_adv_request(struct hostapd_data *hapd, u16 links);
++struct hostapd_neg_ttlm_pref;
++int hostapd_neg_ttlm_policy_set(struct hostapd_data *hapd, bool enabled,
++				const struct hostapd_neg_ttlm_pref *pref,
++				size_t num);
+ 
+ size_t hostapd_eid_eht_ml_tid_to_link_map_len(struct hostapd_data *hapd);
+ u8 * hostapd_eid_eht_ml_tid_to_link_map(struct hostapd_data *hapd, u8 *eid,
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -21,6 +21,7 @@
+ #include "accounting.h"
+ #include "ieee802_1x.h"
+ #include "robust_av.h"
++#include "beacon.h"
+ 
+ 
+ static u16 ieee80211_eht_ppet_size(u16 ppe_thres_hdr, const u8 *phy_cap_info)
+@@ -1706,6 +1707,9 @@ struct sta_info * hostapd_ml_move_assoc_
+ 	assoc_sta->neg_ttlm_req_dflt = sta->neg_ttlm_req_dflt;
+ 	assoc_sta->neg_ttlm_req_token = sta->neg_ttlm_req_token;
+ 	assoc_sta->neg_ttlm_req = sta->neg_ttlm_req;
++	assoc_sta->neg_ttlm_assoc_pref = sta->neg_ttlm_assoc_pref;
++	assoc_sta->neg_ttlm_pref_dflt = sta->neg_ttlm_pref_dflt;
++	assoc_sta->neg_ttlm_pref = sta->neg_ttlm_pref;
+ 	return assoc_sta;
+ }
+ 
+@@ -2879,13 +2883,13 @@ out:
+ 
+ /* The TID-To-Link Mapping Negotiation Support of the AP MLD, as its bits of
+  * the MLD Capabilities And Operations subfield, or 0 where the driver does not
+- * apply a negotiated mapping. Value 2 is reserved. */
++ * apply a negotiated mapping or the negotiation is off. Value 2 is reserved. */
+ u16 hostapd_mld_neg_ttlm_capa(struct hostapd_data *hapd)
+ {
+ 	u16 capa = hapd->iface->mld_mld_capa &
+ 		EHT_ML_MLD_CAPA_TID_TO_LINK_MAP_NEG_SUPP_MSK;
+ 
+-	if (!hapd->conf->mld_ap || !hapd->mld ||
++	if (!hapd->conf->mld_ap || !hapd->mld || hapd->mld->neg_ttlm_disabled ||
+ 	    !(hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_AP_NEG_TTLM) ||
+ 	    capa == EHT_ML_MLD_CAPA_TID_TO_LINK_MAP_ALL_TO_ONE)
+ 		return 0;
+@@ -2921,6 +2925,27 @@ static u16 hostapd_neg_ttlm_links(const
+ }
+ 
+ 
++/* The map of one TID: setup links of the station alone, none that an
++ * advertised mapping disables for all TIDs (35.3.7.2.4), and with support
++ * value 1 the map of TID 0 for every TID (35.3.7.2.3) */
++static bool hostapd_neg_ttlm_map_valid(struct hostapd_data *hapd,
++				       struct sta_info *sta, u16 capa,
++				       u16 map, u16 map0)
++{
++	struct hostapd_mld *mld = hapd->mld;
++
++	if (!map || (map & ~hostapd_sta_setup_links(sta)))
++		return false;
++
++	if (mld->adv_ttlm_state != HOSTAPD_ADV_TTLM_NONE &&
++	    (map & ~mld->adv_ttlm_links))
++		return false;
++
++	return capa != EHT_ML_MLD_CAPA_TID_TO_LINK_MAP_ALL_TO_ALL ||
++		map == map0;
++}
++
++
+ /* IEEE Std 802.11be-2024, 35.3.7.2.3. Only one element for both directions
+  * is accepted, with a map for every TID, since a TID without a map would map
+  * to no link. */
+@@ -2930,8 +2955,6 @@ static u16 hostapd_neg_ttlm_parse(struct
+ 				  struct eht_neg_ttlm *ttlm, bool *dflt)
+ {
+ 	u16 capa = hostapd_mld_neg_ttlm_capa(hapd);
+-	u16 links = hostapd_sta_setup_links(sta);
+-	struct hostapd_mld *mld = hapd->mld;
+ 	u8 control, map_size;
+ 	const u8 *pos, *end;
+ 	int tid;
+@@ -2963,18 +2986,8 @@ static u16 hostapd_neg_ttlm_parse(struct
+ 		u16 map = map_size == 1 ? *pos : WPA_GET_LE16(pos);
+ 
+ 		pos += map_size;
+-		if (!map || (map & ~links))
+-			return WLAN_STATUS_DENIED_TID_TO_LINK_MAPPING;
+-
+-		/* An advertised mapping disables the other links for all
+-		 * TIDs (35.3.7.2.4) */
+-		if (mld->adv_ttlm_state != HOSTAPD_ADV_TTLM_NONE &&
+-		    (map & ~mld->adv_ttlm_links))
+-			return WLAN_STATUS_DENIED_TID_TO_LINK_MAPPING;
+-
+-		/* Support value 1 maps all TIDs to the same link set */
+-		if (capa == EHT_ML_MLD_CAPA_TID_TO_LINK_MAP_ALL_TO_ALL &&
+-		    tid && map != ttlm->dlink[0])
++		if (!hostapd_neg_ttlm_map_valid(hapd, sta, capa, map,
++						tid ? ttlm->dlink[0] : map))
+ 			return WLAN_STATUS_DENIED_TID_TO_LINK_MAPPING;
+ 
+ 		ttlm->dlink[tid] = map;
+@@ -2985,6 +2998,106 @@ static u16 hostapd_neg_ttlm_parse(struct
+ }
+ 
+ 
++/* The preferred mapping of @sta: its own entry, else the entry of the
++ * broadcast address, where the AP MLD would accept it as a request of
++ * @sta */
++static bool hostapd_neg_ttlm_pref_get(struct hostapd_data *hapd,
++				      struct sta_info *sta, bool *dflt,
++				      struct eht_neg_ttlm *ttlm)
++{
++	u16 capa = hostapd_mld_neg_ttlm_capa(hapd);
++	const struct hostapd_neg_ttlm_pref *pref = NULL;
++	struct hostapd_mld *mld = hapd->mld;
++	int i, tid;
++
++	if (!capa)
++		return false;
++
++	for (i = 0; i < mld->neg_ttlm_pref_num; i++) {
++		if (ether_addr_equal(mld->neg_ttlm_pref[i].addr, sta->addr)) {
++			pref = &mld->neg_ttlm_pref[i];
++			break;
++		}
++		if (is_broadcast_ether_addr(mld->neg_ttlm_pref[i].addr))
++			pref = &mld->neg_ttlm_pref[i];
++	}
++
++	if (!pref)
++		return false;
++
++	*dflt = pref->dflt;
++	if (pref->dflt)
++		return true;
++
++	for (tid = 0; tid < EHT_TTLM_NUM_TIDS; tid++) {
++		if (!hostapd_neg_ttlm_map_valid(hapd, sta, capa,
++						pref->links[tid],
++						pref->links[0]))
++			return false;
++
++		ttlm->dlink[tid] = pref->links[tid];
++		ttlm->ulink[tid] = pref->links[tid];
++	}
++
++	return true;
++}
++
++
++static bool hostapd_neg_ttlm_equal(bool dflt_a, const struct eht_neg_ttlm *a,
++				   bool dflt_b, const struct eht_neg_ttlm *b)
++{
++	if (dflt_a || dflt_b)
++		return dflt_a == dflt_b;
++
++	return !os_memcmp(a, b, sizeof(*a));
++}
++
++
++#define HOSTAPD_NEG_TTLM_ELEM_MAX (5 + 2 * EHT_TTLM_NUM_TIDS)
++
++/* IEEE Std 802.11be-2024, 9.4.2.324: one element for both directions */
++static u8 * hostapd_eid_neg_ttlm(u8 *eid, bool dflt,
++				 const struct eht_neg_ttlm *ttlm)
++{
++	u8 control = EHT_TID_TO_LINK_MAP_DIRECTION_BOTH;
++	bool one_octet = true;
++	u8 *len;
++	int tid;
++
++	*eid++ = WLAN_EID_EXTENSION;
++	len = eid++;
++	*eid++ = WLAN_EID_EXT_TID_TO_LINK_MAPPING;
++
++	if (dflt) {
++		*eid++ = control | EHT_TID_TO_LINK_MAP_DEFAULT;
++		*len = eid - len - 1;
++		return eid;
++	}
++
++	for (tid = 0; tid < EHT_TTLM_NUM_TIDS; tid++) {
++		if (ttlm->dlink[tid] & 0xff00)
++			one_octet = false;
++	}
++
++	if (one_octet)
++		control |= EHT_TID_TO_LINK_MAP_LINK_MAPPING_SIZE;
++	*eid++ = control;
++	*eid++ = 0xff;
++
++	for (tid = 0; tid < EHT_TTLM_NUM_TIDS; tid++) {
++		if (one_octet) {
++			*eid++ = ttlm->dlink[tid];
++		} else {
++			WPA_PUT_LE16(eid, ttlm->dlink[tid]);
++			eid += 2;
++		}
++	}
++
++	*len = eid - len - 1;
++	return eid;
++}
++
++
+ static int hostapd_neg_ttlm_apply(struct hostapd_data *hapd,
+ 				  struct sta_info *sta,
+ 				  const struct eht_neg_ttlm *ttlm)
+@@ -3007,12 +3120,16 @@ static int hostapd_neg_ttlm_apply(struct
+ 
+ static int hostapd_send_neg_ttlm_action(struct hostapd_data *hapd,
+ 					struct sta_info *sta, u8 action,
+-					u8 dialog_token, u16 status_code)
++					u8 dialog_token, u16 status_code,
++					const u8 *elem, size_t elem_len)
+ {
+-	u8 buf[IEEE80211_HDRLEN + 5];
++	u8 buf[IEEE80211_HDRLEN + 5 + HOSTAPD_NEG_TTLM_ELEM_MAX];
+ 	struct ieee80211_mgmt *mgmt = (struct ieee80211_mgmt *) buf;
+ 	u8 *pos = buf + IEEE80211_HDRLEN;
+ 
++	if (elem_len > HOSTAPD_NEG_TTLM_ELEM_MAX)
++		return -1;
++
+ 	os_memset(buf, 0, sizeof(buf));
+ 	mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
+ 					   WLAN_FC_STYPE_ACTION);
+@@ -3028,6 +3145,11 @@ static int hostapd_send_neg_ttlm_action(
+ 		pos += 2;
+ 	}
+ 
++	if (elem_len) {
++		os_memcpy(pos, elem, elem_len);
++		pos += elem_len;
++	}
++
+ 	return hostapd_drv_send_mlme(hapd, buf, pos - buf, 0, NULL, 0, 0);
+ }
+ 
+@@ -3037,7 +3159,8 @@ void hostapd_neg_ttlm_teardown(struct ho
+ {
+ 	sta->neg_ttlm_req_pending = false;
+ 	hostapd_send_neg_ttlm_action(hapd, sta,
+-				     WLAN_PROT_EHT_T2L_MAPPING_TEARDOWN, 0, 0);
++				     WLAN_PROT_EHT_T2L_MAPPING_TEARDOWN, 0, 0,
++				     NULL, 0);
+ 	hostapd_neg_ttlm_apply(hapd, sta, NULL);
+ }
+ 
+@@ -3049,10 +3172,13 @@ static void hostapd_rx_neg_ttlm_req(stru
+ 	const u8 *pos = (const u8 *) mgmt + IEEE80211_HDRLEN + 2;
+ 	const u8 *end = (const u8 *) mgmt + len;
+ 	u16 status = WLAN_STATUS_DENIED_TID_TO_LINK_MAPPING;
++	u8 elem[HOSTAPD_NEG_TTLM_ELEM_MAX], *elem_end = elem;
+ 	struct ieee802_11_elems elems;
+ 	struct hostapd_data *assoc_hapd;
++	struct eht_neg_ttlm pref;
+ 	struct sta_info *sta;
+ 	u8 dialog_token;
++	bool pref_dflt;
+ 
+ 	if (end - pos < 1)
+ 		return;
+@@ -3069,6 +3195,14 @@ static void hostapd_rx_neg_ttlm_req(stru
+ 						&sta->neg_ttlm_req,
+ 						&sta->neg_ttlm_req_dflt);
+ 
++	if (hostapd_neg_ttlm_pref_get(assoc_hapd, sta, &pref_dflt, &pref) &&
++	    (status != WLAN_STATUS_SUCCESS ||
++	     !hostapd_neg_ttlm_equal(sta->neg_ttlm_req_dflt, &sta->neg_ttlm_req,
++				     pref_dflt, &pref))) {
++		status = WLAN_STATUS_PREFERRED_TID_TO_LINK_MAPPING_SUGGESTED;
++		elem_end = hostapd_eid_neg_ttlm(elem, pref_dflt, &pref);
++	}
++
+ 	wpa_printf(MSG_DEBUG,
+ 		   "MLD: Negotiated TTLM Request from " MACSTR
+ 		   " dialog_token=%u status=%u",
+@@ -3082,7 +3216,8 @@ static void hostapd_rx_neg_ttlm_req(stru
+ 	/* The station is awake on the link of its request */
+ 	if (hostapd_send_neg_ttlm_action(hapd, sta,
+ 					 WLAN_PROT_EHT_T2L_MAPPING_RESPONSE,
+-					 dialog_token, status))
++					 dialog_token, status, elem,
++					 elem_end - elem))
+ 		sta->neg_ttlm_req_pending = false;
+ }
+ 
+@@ -3145,13 +3280,27 @@ void hostapd_neg_ttlm_assoc_req(struct h
+ }
+ 
+ 
+-/* A rejected mapping is answered with the default mapping as the preferred
+- * one, which the station uses during the association (35.3.7.2.3). The links
+- * that the response refuses are known only once the request is processed. */
++size_t hostapd_eid_neg_ttlm_assoc_len(void)
++{
++	return HOSTAPD_NEG_TTLM_ELEM_MAX;
++}
++
++
++/* A rejected mapping is answered with a preferred one, and the default mapping
++ * applies during the association (35.3.7.2.3). The answer is the preferred
++ * mapping of the station where one is set, else the default mapping. A
++ * preferred mapping also
++ * rejects a request that the AP MLD would accept, unless the two are the
++ * same. The links that the response refuses are known only once the request
++ * is processed. */
+ u8 * hostapd_eid_neg_ttlm_assoc(struct hostapd_data *hapd,
+ 				struct sta_info *sta, u8 *eid)
+ {
+-	if (sta && sta->neg_ttlm_assoc && !sta->neg_ttlm_req_dflt &&
++	if (!sta)
++		return eid;
++
++	sta->neg_ttlm_assoc_pref = false;
++	if (sta->neg_ttlm_assoc && !sta->neg_ttlm_req_dflt &&
+ 	    (hostapd_neg_ttlm_links(&sta->neg_ttlm_req) &
+ 	     ~hostapd_sta_setup_links(sta))) {
+ 		sta->neg_ttlm_assoc = false;
+@@ -3161,17 +3310,62 @@ u8 * hostapd_eid_neg_ttlm_assoc(struct h
+ 			   " rejected for a refused link", MAC2STR(sta->addr));
+ 	}
+ 
+-	if (!sta || !sta->neg_ttlm_assoc_reject ||
++	if ((!sta->neg_ttlm_assoc && !sta->neg_ttlm_assoc_reject) ||
+ 	    hapd->mld->adv_ttlm_state == HOSTAPD_ADV_TTLM_ESTABLISHED)
+ 		return eid;
+ 
+-	*eid++ = WLAN_EID_EXTENSION;
+-	*eid++ = 2;
+-	*eid++ = WLAN_EID_EXT_TID_TO_LINK_MAPPING;
+-	*eid++ = EHT_TID_TO_LINK_MAP_DIRECTION_BOTH |
+-		EHT_TID_TO_LINK_MAP_DEFAULT;
++	if (hostapd_neg_ttlm_pref_get(hapd, sta, &sta->neg_ttlm_pref_dflt,
++				      &sta->neg_ttlm_pref) &&
++	    !(sta->neg_ttlm_assoc &&
++	      hostapd_neg_ttlm_equal(sta->neg_ttlm_req_dflt,
++				     &sta->neg_ttlm_req,
++				     sta->neg_ttlm_pref_dflt,
++				     &sta->neg_ttlm_pref))) {
++		sta->neg_ttlm_assoc = false;
++		sta->neg_ttlm_assoc_reject = true;
++		sta->neg_ttlm_assoc_pref = true;
++		wpa_printf(MSG_DEBUG,
++			   "MLD: TTLM in the association request of " MACSTR
++			   " answered with the preferred mapping",
++			   MAC2STR(sta->addr));
++		return hostapd_eid_neg_ttlm(eid, sta->neg_ttlm_pref_dflt,
++					    &sta->neg_ttlm_pref);
++	}
+ 
+-	return eid;
++	if (!sta->neg_ttlm_assoc_reject)
++		return eid;
++
++	return hostapd_eid_neg_ttlm(eid, true, NULL);
++}
++
++
++/* The preferred mapping of a rejected association request also goes out
++ * as a TID-To-Link Mapping Response frame with status 134, which is the
++ * unsolicited Response frame of 35.3.7.2.3 and 9.6.38.3. A Protected EHT
++ * Action frame waits for the keys of the station. */
++void hostapd_neg_ttlm_authorized(struct hostapd_data *hapd,
++				 struct sta_info *sta)
++{
++	u8 elem[HOSTAPD_NEG_TTLM_ELEM_MAX], *elem_end;
++	struct hostapd_data *assoc_hapd;
++
++	sta = hostapd_ml_get_assoc_sta(hapd, sta, &assoc_hapd);
++	if (!sta || !sta->neg_ttlm_assoc_pref)
++		return;
++
++	sta->neg_ttlm_assoc_pref = false;
++	if (!hostapd_mld_neg_ttlm_capa(assoc_hapd))
++		return;
++
++	elem_end = hostapd_eid_neg_ttlm(elem, sta->neg_ttlm_pref_dflt,
++				       &sta->neg_ttlm_pref);
++	wpa_printf(MSG_DEBUG,
++		   "MLD: Unsolicited TTLM Response with the preferred mapping to "
++		   MACSTR, MAC2STR(sta->addr));
++	hostapd_send_neg_ttlm_action(
++		assoc_hapd, sta, WLAN_PROT_EHT_T2L_MAPPING_RESPONSE, 0,
++		WLAN_STATUS_PREFERRED_TID_TO_LINK_MAPPING_SUGGESTED, elem,
++		elem_end - elem);
+ }
+ 
+ 
+@@ -3214,6 +3408,45 @@ void hostapd_neg_ttlm_adv_request(struct
+ }
+ 
+ 
++/* The negotiation switch and the preferred mappings of the AP MLD. A
++ * preferred mapping applies to the negotiations after it, so a negotiated
++ * mapping stays. With the negotiation off, the AP MLD advertises support
++ * 0, and the default mapping applies (35.3.7.2.2). */
++int hostapd_neg_ttlm_policy_set(struct hostapd_data *hapd, bool enabled,
++				const struct hostapd_neg_ttlm_pref *pref,
++				size_t num)
++{
++	struct hostapd_mld *mld = hapd->mld;
++	struct hostapd_data *link_bss;
++	struct sta_info *sta;
++
++	if (!hapd->conf->mld_ap || !mld || num > HOSTAPD_NEG_TTLM_PREF_MAX)
++		return -EINVAL;
++
++	if (num)
++		os_memcpy(mld->neg_ttlm_pref, pref, num * sizeof(*pref));
++	mld->neg_ttlm_pref_num = num;
++
++	if (mld->neg_ttlm_disabled == !enabled)
++		return 0;
++
++	mld->neg_ttlm_disabled = !enabled;
++	wpa_printf(MSG_DEBUG, "MLD: TTLM negotiation %s",
++		   enabled ? "enabled" : "disabled");
++
++	for_each_mld_link(link_bss, hapd) {
++		for (sta = link_bss->sta_list; sta && !enabled; sta = sta->next) {
++			if (sta->neg_ttlm_valid || sta->neg_ttlm_req_pending)
++				hostapd_neg_ttlm_teardown(link_bss, sta);
++		}
++	}
++
++	hostapd_mld_beacons_update(hapd);
++
++	return 0;
++}
++
++
+ static void hostapd_rx_neg_ttlm_teardown(struct hostapd_data *hapd,
+ 					 const struct ieee80211_mgmt *mgmt)
+ {
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -2070,6 +2070,10 @@ void ap_sta_set_authorized_event(struct
+ 
+ 	if (authorized)
+ 		hostapd_ucode_sta_connected(hapd, sta);
++#ifdef CONFIG_IEEE80211BE
++	if (authorized && ap_sta_is_mld(hapd, sta))
++		hostapd_neg_ttlm_authorized(hapd, sta);
++#endif /* CONFIG_IEEE80211BE */
+ #ifdef CONFIG_P2P
+ 	if (hapd->p2p_group == NULL) {
+ 		if (sta->p2p_ie != NULL &&
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -376,6 +376,12 @@ struct sta_info {
+ 	/* The (Re)Association Request frame asked for a mapping */
+ 	bool neg_ttlm_assoc;
+ 	bool neg_ttlm_assoc_reject;
++	/* The preferred mapping of the (Re)Association Response frame, which a
++	 * TID-To-Link Mapping Response frame repeats once the station is
++	 * authorized */
++	bool neg_ttlm_assoc_pref;
++	bool neg_ttlm_pref_dflt;
++	struct eht_neg_ttlm neg_ttlm_pref;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	u16 max_idle_period; /* if nonzero, the granted BSS max idle period in

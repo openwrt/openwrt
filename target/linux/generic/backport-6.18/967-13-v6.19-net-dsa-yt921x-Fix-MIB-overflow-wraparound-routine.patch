@@ -1,0 +1,53 @@
+From 709bbb015538dfd5c97308b77c950d41a4d95cd3 Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Fri, 23 Jan 2026 01:05:09 +0800
+Subject: [PATCH] net: dsa: yt921x: Fix MIB overflow wraparound routine
+
+Reported by the following Smatch static checker warning:
+
+  drivers/net/dsa/yt921x.c:702 yt921x_read_mib()
+  warn: was expecting a 64 bit value instead of '(~0)'
+
+Fixes: 186623f4aa72 ("net: dsa: yt921x: Add support for Motorcomm YT921x")
+Reported-by: Dan Carpenter <dan.carpenter@linaro.org>
+Closes: https://lore.kernel.org/netdev/aPsjYKQMzpY0nSXm@stanley.mountain/
+Suggested-by: David Laight <david.laight.linux@gmail.com>
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+Link: https://patch.msgid.link/20260122170512.2713738-1-mmyangfl@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/yt921x.c | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -682,21 +682,22 @@ static int yt921x_read_mib(struct yt921x
+ 		const struct yt921x_mib_desc *desc = &yt921x_mib_descs[i];
+ 		u32 reg = YT921X_MIBn_DATA0(port) + desc->offset;
+ 		u64 *valp = &((u64 *)mib)[i];
+-		u64 val = *valp;
+ 		u32 val0;
+-		u32 val1;
++		u64 val;
+ 
+ 		res = yt921x_reg_read(priv, reg, &val0);
+ 		if (res)
+ 			break;
+ 
+ 		if (desc->size <= 1) {
+-			if (val < (u32)val)
+-				/* overflow */
+-				val += (u64)U32_MAX + 1;
+-			val &= ~U32_MAX;
+-			val |= val0;
++			u64 old_val = *valp;
++
++			val = (old_val & ~(u64)U32_MAX) | val0;
++			if (val < old_val)
++				val += 1ull << 32;
+ 		} else {
++			u32 val1;
++
+ 			res = yt921x_reg_read(priv, reg + 4, &val1);
+ 			if (res)
+ 				break;

@@ -1,0 +1,50 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 31 Oct 2026 19:00:00 +0000
+Subject: [PATCH] MLD: consider a link missing if its BSS entry is on another
+ frequency
+
+wpa_bss_get_usable_links() accepts a neighbor BSS entry that is younger
+than WPA_BSS_ML_LINK_FRESH_AGE without a look at its frequency, while
+the association takes the link frequency from the RNR of the association
+link (wpas_sme_set_mlo_links()). After an AP MLD moved a link to another
+channel, the entry of the old channel stays fresh for up to 25 seconds.
+cfg80211 knows no BSS on the new channel, so nl80211_assoc_bss() fails
+the link with -ENOENT. sme_associate() then lists the link on the BSSID
+ignore list and the next attempt goes without it.
+
+Treat such an entry as missing, as an entry that is too old.
+wpa_supplicant_connect_ml_missing() then scans the RNR frequency before
+the association, and the entry follows the link to the new channel.
+
+The scan runs once for each connection request, since
+ml_link_probe_scan() associates without another check. If the entry
+stays on the other frequency, for instance with an AP whose RNR
+persistently differs from its own channel, wpas_sme_set_mlo_links()
+leaves the link out of the association, with no driver failure and no
+ignore list entry.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/wpa_supplicant/bss.c
++++ b/wpa_supplicant/bss.c
+@@ -1879,6 +1879,20 @@ u16 wpa_bss_get_usable_links(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
+ 			continue;
+ 		}
+ 
++		/* Association uses the RNR frequency, and the driver needs a
++		 * BSS entry on that frequency. */
++		if (bss->mld_links[link_id].freq > 0 &&
++		    neigh_bss->freq != bss->mld_links[link_id].freq) {
++			wpa_dbg(wpa_s, MSG_DEBUG,
++				"MLD: Scan entry for neighbor " MACSTR
++				" is on %d MHz and the RNR reports %d MHz; consider link %u missing",
++				MAC2STR(neigh_bss->bssid), neigh_bss->freq,
++				bss->mld_links[link_id].freq, link_id);
++			if (missing_links)
++				*missing_links |= BIT(link_id);
++			continue;
++		}
++
+ 		/* Check that the affiliated links are for the same AP MLD and
+ 		 * the information matches */
+ 		if (!neigh_bss->valid_links) {

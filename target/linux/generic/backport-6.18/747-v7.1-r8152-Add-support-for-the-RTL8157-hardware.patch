@@ -982,7 +982,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	r8153_aldps_en(tp, false);
  
  	ocp_byte_clr_bits(tp, MCU_TYPE_PLA, PLA_OOB_CTRL, NOW_IS_OOB);
-@@ -7642,106 +7956,241 @@ static void r8156b_hw_phy_cfg(struct r81
+@@ -7644,106 +7958,241 @@ static void r8156b_hw_phy_cfg(struct r81
  	set_bit(PHY_RESET, &tp->flags);
  }
  
@@ -1280,7 +1280,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		r8156b_wait_loading_flash(tp);
  		break;
  	default:
-@@ -7761,14 +8210,22 @@ static void r8156b_init(struct r8152 *tp
+@@ -7763,14 +8212,22 @@ static void r8156b_init(struct r8152 *tp
  	data = r8153_phy_status(tp, 0);
  	if (data == PHY_STAT_EXT_INIT) {
  		ocp_reg_clr_bits(tp, 0xa468, BIT(3) | BIT(1));
@@ -1306,7 +1306,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	/* MSC timer = 0xfff * 8ms = 32760 ms */
  	ocp_write_word(tp, MCU_TYPE_USB, USB_MSC_TIMER, 0x0fff);
-@@ -7776,7 +8233,11 @@ static void r8156b_init(struct r8152 *tp
+@@ -7778,7 +8235,11 @@ static void r8156b_init(struct r8152 *tp
  	/* U1/U2/L1 idle timer. 500 us */
  	ocp_write_word(tp, MCU_TYPE_USB, USB_U1U2_TIMER, 500);
  
@@ -1319,7 +1319,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	r8156_ups_en(tp, false);
  	r8153_queue_wake(tp, false);
  	rtl_runtime_suspend_enable(tp, false);
-@@ -7786,39 +8247,53 @@ static void r8156b_init(struct r8152 *tp
+@@ -7788,39 +8249,53 @@ static void r8156b_init(struct r8152 *tp
  
  	usb_enable_lpm(tp->udev);
  
@@ -1393,7 +1393,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	r8156_mdio_force_mode(tp);
  	rtl_tally_reset(tp);
-@@ -8969,6 +9444,11 @@ static void rtl8153_unload(struct r8152
+@@ -8971,6 +9446,11 @@ static void rtl8153_unload(struct r8152
  		return;
  
  	r8153_power_cut_en(tp, false);
@@ -1405,7 +1405,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void rtl8153b_unload(struct r8152 *tp)
-@@ -8979,6 +9459,38 @@ static void rtl8153b_unload(struct r8152
+@@ -8981,6 +9461,38 @@ static void rtl8153b_unload(struct r8152
  	r8153b_power_cut_en(tp, false);
  }
  
@@ -1444,7 +1444,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int rtl_ops_init(struct r8152 *tp)
  {
  	struct rtl_ops *ops = &tp->rtl_ops;
-@@ -9002,6 +9514,7 @@ static int rtl_ops_init(struct r8152 *tp
+@@ -9004,6 +9516,7 @@ static int rtl_ops_init(struct r8152 *tp
  		tp->rx_buf_sz		= 16 * 1024;
  		tp->eee_en		= true;
  		tp->eee_adv		= MDIO_EEE_100TX;
@@ -1452,7 +1452,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		break;
  
  	case RTL_VER_03:
-@@ -9026,6 +9539,7 @@ static int rtl_ops_init(struct r8152 *tp
+@@ -9028,6 +9541,7 @@ static int rtl_ops_init(struct r8152 *tp
  			tp->rx_buf_sz	= 32 * 1024;
  		tp->eee_en		= true;
  		tp->eee_adv		= MDIO_EEE_1000T | MDIO_EEE_100TX;
@@ -1460,7 +1460,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		break;
  
  	case RTL_VER_08:
-@@ -9045,6 +9559,7 @@ static int rtl_ops_init(struct r8152 *tp
+@@ -9047,6 +9561,7 @@ static int rtl_ops_init(struct r8152 *tp
  		tp->rx_buf_sz		= 32 * 1024;
  		tp->eee_en		= true;
  		tp->eee_adv		= MDIO_EEE_1000T | MDIO_EEE_100TX;
@@ -1468,7 +1468,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		break;
  
  	case RTL_VER_11:
-@@ -9067,6 +9582,7 @@ static int rtl_ops_init(struct r8152 *tp
+@@ -9069,6 +9584,7 @@ static int rtl_ops_init(struct r8152 *tp
  		ops->change_mtu		= rtl8156_change_mtu;
  		tp->rx_buf_sz		= 48 * 1024;
  		tp->support_2500full	= 1;
@@ -1476,7 +1476,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		break;
  
  	case RTL_VER_12:
-@@ -9077,8 +9593,8 @@ static int rtl_ops_init(struct r8152 *tp
+@@ -9079,8 +9595,8 @@ static int rtl_ops_init(struct r8152 *tp
  		tp->eee_en		= true;
  		tp->eee_adv		= MDIO_EEE_1000T | MDIO_EEE_100TX;
  		tp->eee_adv2		= MDIO_EEE_2_5GT;
@@ -1487,7 +1487,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		ops->disable		= rtl8153_disable;
  		ops->up			= rtl8156_up;
  		ops->down		= rtl8156_down;
-@@ -9090,6 +9606,7 @@ static int rtl_ops_init(struct r8152 *tp
+@@ -9092,6 +9608,7 @@ static int rtl_ops_init(struct r8152 *tp
  		ops->autosuspend_en	= rtl8156_runtime_enable;
  		ops->change_mtu		= rtl8156_change_mtu;
  		tp->rx_buf_sz		= 48 * 1024;
@@ -1495,7 +1495,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		break;
  
  	case RTL_VER_14:
-@@ -9108,6 +9625,29 @@ static int rtl_ops_init(struct r8152 *tp
+@@ -9110,6 +9627,29 @@ static int rtl_ops_init(struct r8152 *tp
  		tp->rx_buf_sz		= 32 * 1024;
  		tp->eee_en		= true;
  		tp->eee_adv		= MDIO_EEE_1000T | MDIO_EEE_100TX;
@@ -1525,7 +1525,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		break;
  
  	default:
-@@ -9260,6 +9800,9 @@ static u8 __rtl_get_hw_ver(struct usb_de
+@@ -9262,6 +9802,9 @@ static u8 __rtl_get_hw_ver(struct usb_de
  	case 0x7420:
  		version = RTL_VER_15;
  		break;
@@ -1535,7 +1535,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	default:
  		version = RTL_VER_UNKNOWN;
  		dev_info(&udev->dev, "Unknown version 0x%04x\n", ocp_data);
-@@ -9416,6 +9959,7 @@ static int rtl8152_probe_once(struct usb
+@@ -9418,6 +9961,7 @@ static int rtl8152_probe_once(struct usb
  	case RTL_VER_12:
  	case RTL_VER_13:
  	case RTL_VER_15:
@@ -1543,7 +1543,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		netdev->max_mtu = size_to_mtu(16 * 1024);
  		break;
  	case RTL_VER_01:
-@@ -9576,6 +10120,7 @@ static const struct usb_device_id rtl815
+@@ -9578,6 +10122,7 @@ static const struct usb_device_id rtl815
  	{ USB_DEVICE(VENDOR_ID_REALTEK, 0x8153) },
  	{ USB_DEVICE(VENDOR_ID_REALTEK, 0x8155) },
  	{ USB_DEVICE(VENDOR_ID_REALTEK, 0x8156) },

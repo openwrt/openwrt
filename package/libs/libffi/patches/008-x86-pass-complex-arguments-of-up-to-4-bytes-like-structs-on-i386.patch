@@ -1,0 +1,58 @@
+From 63213836c52800a255985a3f222a239020bcbce9 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 21 Oct 2026 03:44:34 +0000
+Subject: [PATCH] x86: pass complex arguments of up to 4 bytes like structs on
+ i386
+
+ffi_call_int() passes an argument of up to 4 bytes that is not a struct
+as an integer widened by extend_basic_type(), which aborts on anything
+but the basic integer and float types.  A _Complex char or _Complex
+short is such an argument, so ffi_call() aborted for them.  GCC passes
+these values like small structs, as their memory image in a 4-byte
+stack slot, and ffi_closure_inner() would have taken them from a
+register with FFI_FASTCALL or FFI_THISCALL.
+
+Handle complex types like structs in ffi_call_int(), ffi_closure_inner()
+and ffi_raw_call().
+
+complex_int_small aborted on x86 (pentium4, musl) and passes now.  For
+FFI_FASTCALL and FFI_THISCALL this follows what libffi does for small
+structs, which has not been checked against GCC.
+
+Fixes: 198f469e9107 ("x86: Add support for Complex")
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/x86/ffi.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/src/x86/ffi.c
++++ b/src/x86/ffi.c
+@@ -348,7 +348,7 @@ ffi_call_int (ffi_cif *cif, void (*fn)(v
+       size_t z = ty->size;
+       int t = ty->type;
+ 
+-      if (z <= FFI_SIZEOF_ARG && t != FFI_TYPE_STRUCT)
++      if (z <= FFI_SIZEOF_ARG && t != FFI_TYPE_STRUCT && t != FFI_TYPE_COMPLEX)
+         {
+ 	  ffi_arg val = extend_basic_type (valp, t);
+ 
+@@ -495,7 +495,7 @@ ffi_closure_inner (struct closure_frame
+       int t = ty->type;
+       void *valp;
+ 
+-      if (z <= FFI_SIZEOF_ARG && t != FFI_TYPE_STRUCT)
++      if (z <= FFI_SIZEOF_ARG && t != FFI_TYPE_STRUCT && t != FFI_TYPE_COMPLEX)
+ 	{
+ 	  if (t != FFI_TYPE_FLOAT && narg_reg < pabi->nregs)
+ 	    valp = &frame->regs[pabi->regs[narg_reg++]];
+@@ -804,7 +804,8 @@ ffi_raw_call(ffi_cif *cif, void (*fn)(vo
+       size_t z = ty->size;
+       int t = ty->type;
+ 
+-      if (z <= FFI_SIZEOF_ARG && t != FFI_TYPE_STRUCT && t != FFI_TYPE_FLOAT)
++      if (z <= FFI_SIZEOF_ARG && t != FFI_TYPE_STRUCT && t != FFI_TYPE_COMPLEX
++	  && t != FFI_TYPE_FLOAT)
+ 	{
+ 	  ffi_arg val = extend_basic_type (avalue, t);
+ 	  frame->regs[pabi->regs[narg_reg++]] = val;

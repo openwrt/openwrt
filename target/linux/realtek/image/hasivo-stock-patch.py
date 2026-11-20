@@ -28,6 +28,7 @@ MAGIC = 0x27051956
 BOARD_HOSTS = {
     "hasivo_f1100w-4sx-4xgt": "F1100W-4SX-4XGT",
     "hasivo_f1100w-4sx-4xgt-512mb": "F1100W-4SX-4XGT",
+    "hasivo_s1100wp-8gt-2s-plus": "S1100WP-8GT-2S+",
 }
 APPLET_CONFIG = (
     "ASH", "ASH_BASH_COMPAT", "ASH_ECHO", "ASH_PRINTF", "ASH_TEST",
@@ -260,7 +261,7 @@ def build(args: argparse.Namespace) -> None:
         args.build_dir / f"busybox-{args.busybox_variant}/busybox-{busybox_version}"
     )
     env_version = version(args.topdir, "boot/uboot-tools")
-    env_objects = args.build_dir / f"u-boot-{env_version}/tools/env"
+    env_objects = args.build_dir / f"u-boot-v{env_version}/tools/env"
     for obj in ENV_OBJECTS:
         if not (env_objects / obj).is_file():
             raise ValueError(f"missing {env_objects / obj}; build uboot-envtools first")

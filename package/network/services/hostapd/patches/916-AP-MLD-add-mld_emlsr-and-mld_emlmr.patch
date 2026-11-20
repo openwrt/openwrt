@@ -1,0 +1,217 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] AP MLD: add mld_emlsr and mld_emlmr
+
+The EML Capabilities of the Basic Multi-Link element come from the
+driver alone, so an AP MLD always advertises EMLSR and EMLMR where the
+driver supports them. The configuration cannot turn either mode off.
+
+Add the per-BSS keys mld_emlsr and mld_emlmr, both 1 by default. A 0
+clears the support bit of the mode in the EML Capabilities. The EML
+Capabilities belong to the AP MLD, so every affiliated AP of one AP MLD
+needs the same value.
+
+An MLD with neither EMLSR nor EMLMR sets the EML Capabilities Present
+subfield to 0 (IEEE Std 802.11be-2024, 35.3.17), but hostapd always
+includes the EML Capabilities, also for a driver without EMLSR and
+EMLMR. Omit them where neither support bit remains. Leave them out of
+the computed length of the element too: the Link Reconfiguration
+Response and the Multiple BSSID element need it exact.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -5243,6 +5243,10 @@ static int hostapd_config_fill(struct ho
+ 			return 1;
+ 		}
+ 		bss->mld_link_id = val;
++	} else if (os_strcmp(buf, "mld_emlsr") == 0) {
++		bss->mld_emlsr = !!atoi(pos);
++	} else if (os_strcmp(buf, "mld_emlmr") == 0) {
++		bss->mld_emlmr = !!atoi(pos);
+ 	} else if (os_strcmp(buf, "mld_addr") == 0) {
+ 		if (hwaddr_aton(pos, bss->mld_addr)) {
+ 			wpa_printf(MSG_ERROR, "Line %d: Invalid mld_addr",
+--- a/hostapd/hostapd.conf
++++ b/hostapd/hostapd.conf
+@@ -1180,6 +1180,16 @@ wmm_ac_vo_acm=0
+ # will be used as the AP MLD MAC address.
+ #mld_addr=02:03:04:05:06:07
+ 
++# AP MLD EMLSR and EMLMR support
++# The EML Capabilities of the Basic Multi-Link element advertise the EMLSR and
++# the EMLMR support of the driver. 0 clears the support bit; where neither
++# support bit remains, the element omits the EML Capabilities. The value is one
++# for the AP MLD, so every affiliated AP of an AP MLD must have the same value.
++# 0 = do not advertise the mode
++# 1 = advertise the mode where the driver supports it (default)
++#mld_emlsr=1
++#mld_emlmr=1
++
+ # Disable EHT-MCS 15 RX
+ # If set to 1, the MCS15 Disable subfield in the EHT Operation element is set
+ # to 1, disabling EHT-MCS 15. If set to 0, the subfield is set to 0, enabling
+--- a/src/ap/ap_config.c
++++ b/src/ap/ap_config.c
+@@ -182,6 +182,8 @@ void hostapd_config_defaults_bss(struct
+ 	bss->urnm_mfpr = -1;
+ #ifdef CONFIG_IEEE80211BE
+ 	bss->mld_link_id = -1;
++	bss->mld_emlsr = true;
++	bss->mld_emlmr = true;
+ #endif /* CONFIG_IEEE80211BE */
+ #ifdef CONFIG_ENC_ASSOC
+ 	bss->assoc_frame_encryption = 0;
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -1009,6 +1009,10 @@ struct hostapd_bss_config {
+ 	/* The link ID of the AP within the AP MLD, -1 to assign one */
+ 	int mld_link_id;
+ 
++	/* Advertise the EMLSR and the EMLMR support of the driver */
++	bool mld_emlsr;
++	bool mld_emlmr;
++
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	/*
+ 	 * If set indicate the AP as disabled in the RNR element included in the
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -444,6 +444,43 @@ void hostapd_get_eht_capab(struct hostap
+  * beacon interval (2) + TSF offset (8) + DTIM info (2)
+  */
+ #define EHT_ML_STA_INFO_LEN 21
++
++/* The EML Capabilities of the AP MLD, 0 where the element omits them */
++static u16 hostapd_eht_ml_eml_capa(struct hostapd_data *hapd)
++{
++	u16 eml_capa;
++
++	/* Set EMLSR/EMLMR Transition and Padding delay to zero for AP MLD as
++	 * per IEEE Std 802.11be-2024, 9.4.2.322.2.3 (Common Info field of the
++	 * Basic Multi-Link element).
++	 */
++	eml_capa = hapd->iface->mld_eml_capa &
++		~(EHT_ML_EML_CAPA_EMLSR_TRANS_DELAY_MASK |
++		  EHT_ML_EML_CAPA_EMLSR_PADDING_DELAY_MASK);
++	if (!hapd->conf->mld_emlsr)
++		eml_capa &= ~EHT_ML_EML_CAPA_EMLSR_SUPP;
++	if (!hapd->conf->mld_emlmr)
++		eml_capa &= ~EHT_ML_EML_CAPA_EMLMR_SUPP;
++
++	/* An MLD with neither EMLSR nor EMLMR omits the EML Capabilities
++	 * (IEEE Std 802.11be-2024, 35.3.17). */
++	if (!(eml_capa & (EHT_ML_EML_CAPA_EMLSR_SUPP |
++			  EHT_ML_EML_CAPA_EMLMR_SUPP)))
++		return 0;
++
++	return eml_capa;
++}
++
++
++static u8 hostapd_eht_ml_common_info_len(struct hostapd_data *hapd)
++{
++	if (!hostapd_eht_ml_eml_capa(hapd))
++		return EHT_ML_COMMON_INFO_LEN - 2;
++
++	return EHT_ML_COMMON_INFO_LEN;
++}
++
++
+ u8 * hostapd_eid_eht_basic_ml_common(struct hostapd_data *hapd,
+ 				     u8 *eid, struct mld_info *mld_info,
+ 				     bool include_mld_id, bool include_bpcc)
+@@ -467,21 +504,25 @@ u8 * hostapd_eid_eht_basic_ml_common(str
+ 	if (!buf)
+ 		return pos;
+ 
++	mld_eml_capa = hostapd_eht_ml_eml_capa(hapd);
++
+ 	/* Multi-Link Control field */
+ 	control = MULTI_LINK_CONTROL_TYPE_BASIC |
+ 		BASIC_MULTI_LINK_CTRL_PRES_LINK_ID |
+ 		BASIC_MULTI_LINK_CTRL_PRES_BSS_PARAM_CH_COUNT |
+-		BASIC_MULTI_LINK_CTRL_PRES_EML_CAPA |
+ 		BASIC_MULTI_LINK_CTRL_PRES_MLD_CAPA;
++	if (mld_eml_capa)
++		control |= BASIC_MULTI_LINK_CTRL_PRES_EML_CAPA;
+ 
+ 	/*
+-	 * Set the basic Multi-Link common information. Hard code the common
+-	 * info length to 13 based on the length of the present fields:
++	 * Set the basic Multi-Link common information. The common info
++	 * length is 13 with the EML Capabilities and 11 without them, see
++	 * hostapd_eht_ml_common_info_len(). It follows from the present fields:
+ 	 * Length (1) + MLD address (6) + Link ID (1) +
+ 	 * BSS Parameters Change Count (1) + EML Capabilities (2) +
+ 	 * MLD Capabilities and Operations (2)
+ 	 */
+-	common_info_len = EHT_ML_COMMON_INFO_LEN;
++	common_info_len = hostapd_eht_ml_common_info_len(hapd);
+ 
+ 	if (include_mld_id) {
+ 		/* AP MLD ID */
+@@ -501,16 +542,11 @@ u8 * hostapd_eid_eht_basic_ml_common(str
+ 
+ 	wpabuf_put_u8(buf, hapd->eht_mld_bss_param_change);
+ 
+-	/* Set EMLSR/EMLMR Transition and Padding delay to zero for AP MLD as
+-	 * per IEEE Std 802.11be-2024, 9.4.2.322.2.3 (Common Info field of the
+-	 * Basic Multi-Link element).
+-	 */
+-	mld_eml_capa = hapd->iface->mld_eml_capa &
+-		~(EHT_ML_EML_CAPA_EMLSR_TRANS_DELAY_MASK |
+-		  EHT_ML_EML_CAPA_EMLSR_PADDING_DELAY_MASK);
+-
+-	wpa_printf(MSG_DEBUG, "MLD: EML Capabilities=0x%x", mld_eml_capa);
+-	wpabuf_put_le16(buf, mld_eml_capa);
++	if (control & BASIC_MULTI_LINK_CTRL_PRES_EML_CAPA) {
++		wpa_printf(MSG_DEBUG, "MLD: EML Capabilities=0x%x",
++			   mld_eml_capa);
++		wpabuf_put_le16(buf, mld_eml_capa);
++	}
+ 
+ 	mld_cap = hapd->iface->mld_mld_capa;
+ 	max_simul_links = mld_cap & EHT_ML_MLD_CAPA_MAX_NUM_SIM_LINKS_MASK;
+@@ -700,7 +736,7 @@ size_t hostapd_eid_eht_basic_ml_len(stru
+ 	/* control field */
+ 	len += 2;
+ 	/* Common info len for Basic MLE */
+-	len += EHT_ML_COMMON_INFO_LEN;
++	len += hostapd_eht_ml_common_info_len(hapd);
+ 	if (include_mld_id)
+ 		len++;
+ 
+@@ -827,11 +863,12 @@ static u8 * hostapd_eid_eht_reconf_ml(st
+ }
+ 
+ 
+-static size_t hostapd_eid_eht_ml_len(struct mld_info *info,
++static size_t hostapd_eid_eht_ml_len(struct hostapd_data *hapd,
++				     struct mld_info *info,
+ 				     bool include_mld_id, bool include_bpcc)
+ {
+ 	size_t len = 0;
+-	size_t eht_ml_len = 2 + EHT_ML_COMMON_INFO_LEN;
++	size_t eht_ml_len = 2 + hostapd_eht_ml_common_info_len(hapd);
+ 	u8 link_id;
+ 
+ 	if (include_mld_id)
+@@ -912,7 +949,7 @@ size_t hostapd_eid_eht_ml_beacon_len(str
+ 				     struct mld_info *info,
+ 				     bool include_mld_id)
+ {
+-	return hostapd_eid_eht_ml_len(info, include_mld_id, false) +
++	return hostapd_eid_eht_ml_len(hapd, info, include_mld_id, false) +
+ 		hostapd_eid_eht_reconf_ml_len(hapd);
+ }
+ 
+@@ -2051,7 +2088,7 @@ hostapd_send_link_reconf_resp(struct hos
+ 		 * once mac80211 is fixed to match the standard (or this comment
+ 		 * be removed if the standard is modified to match
+ 		 * implementation). */
+-		mle_len = hostapd_eid_eht_ml_len(&mld, false, true);
++		mle_len = hostapd_eid_eht_ml_len(hapd, &mld, false, true);
+ 		len += mle_len;
+ 	}
+ 

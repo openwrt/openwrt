@@ -1,0 +1,22 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 13:38:19 +0200
+Subject: [PATCH] build_features: indicate the SCS and MSCS handling
+
+A program that configures hostapd cannot tell whether the build handles
+SCS and MSCS requests, which a build of CONFIG_ROBUST_AV before that
+handling does not. Answer "robust-av-scs" in has_feature(), so that
+`hostapd -vrobust-av-scs` tells it.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/utils/build_features.h
++++ b/src/utils/build_features.h
+@@ -76,6 +76,8 @@ static inline int has_feature(const char
+ #ifdef CONFIG_ROBUST_AV
+ 	if (!strcmp(feat, "robust-av"))
+ 		return 1;
++	if (!strcmp(feat, "robust-av-scs"))
++		return 1;
+ #endif
+ 	return 0;
+ }

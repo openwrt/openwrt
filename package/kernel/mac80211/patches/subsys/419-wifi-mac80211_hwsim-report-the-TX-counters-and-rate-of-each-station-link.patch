@@ -66,7 +66,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
 --- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
-@@ -2255,6 +2255,39 @@ static void mac80211_hwsim_tx_rate_fill(
+@@ -2272,6 +2272,39 @@ static void mac80211_hwsim_tx_rate_fill(
  		mac80211_hwsim_tx_ht(rate, peer, bw);
  }
  
@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void mac80211_hwsim_tx(struct ieee80211_hw *hw,
  			      struct ieee80211_tx_control *control,
  			      struct sk_buff *skb)
-@@ -2268,6 +2301,8 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2285,6 +2318,8 @@ static void mac80211_hwsim_tx(struct iee
  	struct ieee80211_vif *vif = txi->control.vif;
  	struct ieee80211_link_sta *peer =
  		control->sta ? &control->sta->deflink : NULL;
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool ack, unicast_data;
  	enum nl80211_chan_width confbw = NL80211_CHAN_WIDTH_20_NOHT;
  	u32 _portid, i;
-@@ -2328,8 +2363,10 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2345,8 +2380,10 @@ static void mac80211_hwsim_tx(struct iee
  								 hdr, &link_sta);
  		}
  
@@ -127,7 +127,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		if (unlikely(!bss_conf)) {
  			/* if it's an MLO STA, it might have deactivated all
-@@ -2424,6 +2461,10 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2441,6 +2478,10 @@ static void mac80211_hwsim_tx(struct iee
  			return;
  	}
  
@@ -138,7 +138,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* wmediumd mode check */
  	_portid = READ_ONCE(data->wmediumd);
  
-@@ -3030,6 +3071,7 @@ static int mac80211_hwsim_sta_add(struct
+@@ -3047,6 +3088,7 @@ static int mac80211_hwsim_sta_add(struct
  		     sta->valid_links);
  		sp->active_links_rx = sta->valid_links;
  	}
@@ -146,7 +146,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	spin_lock_init(&sp->nan_sched.lock);
  
-@@ -3740,15 +3782,59 @@ static int mac80211_hwsim_change_sta_lin
+@@ -3757,15 +3799,59 @@ static int mac80211_hwsim_change_sta_lin
  					   u16 old_links, u16 new_links)
  {
  	struct hwsim_sta_priv *sp = (void *)sta->drv_priv;
@@ -206,7 +206,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int mac80211_hwsim_send_pmsr_ftm_request_peer(struct sk_buff *msg,
  						     struct cfg80211_pmsr_ftm_request_peer *request)
  {
-@@ -4513,6 +4599,7 @@ static const struct ieee80211_ops mac802
+@@ -4530,6 +4616,7 @@ static const struct ieee80211_ops mac802
  	HWSIM_CHANCTX_OPS
  	.change_vif_links = mac80211_hwsim_change_vif_links,
  	.change_sta_links = mac80211_hwsim_change_sta_links,

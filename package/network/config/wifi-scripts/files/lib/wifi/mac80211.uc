@@ -1,12 +1,13 @@
 #!/usr/bin/env ucode
 import { readfile } from "fs";
 import * as uci from 'uci';
+import { board_wlan } from 'wifi.utils';
 
 const bands_order = [ "60G", "6G", "5G", "2G" ];
 const htmode_order = [ "EHT", "HE", "VHT", "HT" ];
 
-let board = json(readfile("/etc/board.json"));
-if (!board.wlan)
+let wlan = board_wlan();
+if (!wlan)
 	exit(0);
 
 function provision_country_get() {
@@ -51,7 +52,7 @@ function radio_exists(path, macaddr, phy, radio) {
 	}
 }
 
-for (let phy_name, phy in board.wlan) {
+for (let phy_name, phy in wlan) {
 	let info = phy.info;
 	if (!info || !length(info.bands))
 		continue;
@@ -105,10 +106,10 @@ for (let phy_name, phy in board.wlan) {
 		} else {
 			encryption = 'none';
 		}
-		if (board.wlan.defaults) {
-			defaults = board.wlan.defaults.ssids?.[band_name]?.ssid ? board.wlan.defaults.ssids?.[band_name] : board.wlan.defaults.ssids?.all;
-			country = board.wlan.defaults.country;
-			num_global_macaddr = board.wlan.defaults.ssids?.[band_name]?.mac_count;
+		if (wlan.defaults) {
+			defaults = wlan.defaults.ssids?.[band_name]?.ssid ? wlan.defaults.ssids?.[band_name] : wlan.defaults.ssids?.all;
+			country = wlan.defaults.country;
+			num_global_macaddr = wlan.defaults.ssids?.[band_name]?.mac_count;
 		}
 
 		if (provision_country)

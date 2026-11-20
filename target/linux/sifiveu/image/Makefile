@@ -16,7 +16,7 @@ define Build/riscv-sdcard
 
 	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot.scr ::boot.scr
 	mcopy -i $@.boot $(DTS_DIR)/$(DEVICE_DTS).dtb ::dtb
-	mcopy -i $@.boot $(IMAGE_KERNEL) ::Image
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::uImage
 
 	./gen_sifiveu_sdcard_img.sh \
 		$@ \
@@ -31,7 +31,7 @@ endef
 define Device/Default
   PROFILES := Default
   KERNEL_NAME := Image
-  KERNEL := kernel-bin | libdeflate-gzip
+  KERNEL = kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := riscv-sdcard | append-metadata | gzip
 endef

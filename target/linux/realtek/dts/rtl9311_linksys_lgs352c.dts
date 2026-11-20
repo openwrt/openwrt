@@ -3,6 +3,7 @@
 
 #include "rtl931x.dtsi"
 #include "rtl93xx_linksys_lgs3xxc_nand_common.dtsi"
+#include "rtl931x_linksys_lgs352c_sfp.dtsi"
 
 #include <dt-bindings/phy/phy.h>
 
@@ -22,6 +23,8 @@
 
 	i2c2: i2c@2 {
 		reg = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		lm63@4c {
 			compatible = "national,lm63";

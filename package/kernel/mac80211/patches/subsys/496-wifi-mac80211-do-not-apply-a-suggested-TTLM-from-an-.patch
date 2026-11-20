@@ -1,0 +1,120 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 11:47:16 +0100
+Subject: [PATCH] wifi: mac80211: do not apply a suggested TTLM from an
+ association response
+
+ieee80211_assoc_success() takes every TTLM element of an Association
+Response as the established advertised TTLM. mac80211 adds no TTLM
+element to the request, but user space can. IEEE 802.11be-2024
+35.3.7.2.3 then gives the element of the response another meaning:
+where the AP MLD advertises no established TTLM and rejects the
+requested mapping, the element suggests a preferred mapping, and "the
+default TTLM shall be used during the association". The station instead
+applies the suggestion, and fails the association where the suggestion
+maps the TIDs to different links or holds one direction only, although
+"An ML (re)setup can be successful even if the TTLM negotiation
+embedded in the ML (re)setup procedure is not successful".
+
+Where the request carried a TTLM element and the Beacon or Probe
+Response frame of the association link holds no established TTLM, keep
+the default mapping. Where the AP MLD advertises an established TTLM,
+the response carries that mapping, so keep applying it then.
+
+The scan result can be older than the mapping. Apply an established
+mapping from a Beacon frame where the station still uses the default
+mapping, so that a wrong decision at the association does not last.
+
+Fixes: aebc29dec67a ("wifi: mac80211: apply advertised TTLM from association response")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -6981,18 +6981,43 @@ ieee80211_parse_adv_t2l(struct ieee80211
+ 	return 0;
+ }
+ 
++static bool ieee80211_adv_ttlm_established(struct cfg80211_bss *cbss)
++{
++	const struct cfg80211_bss_ies *ies;
++	const struct element *elem;
++	bool ret = false;
++
++	rcu_read_lock();
++	ies = rcu_dereference(cbss->ies);
++	for_each_element_extid(elem, WLAN_EID_EXT_TID_TO_LINK_MAPPING,
++			       ies->data, ies->len) {
++		if (elem->datalen >= 2 &&
++		    !(elem->data[1] & IEEE80211_TTLM_CONTROL_SWITCH_TIME_PRESENT)) {
++			ret = true;
++			break;
++		}
++	}
++	rcu_read_unlock();
++
++	return ret;
++}
++
+ /*
+- * We do not support setting a negotiated TTLM during association. As such,
+- * we can assume that if there is a TTLM, then it is the currently active
+- * advertised TTLM. In that case, there must be exactly one TTLM that does
+- * not have a switch time set. This mapping should also leave us with at
+- * least one usable link.
++ * We do not support setting a negotiated TTLM during association, but user
++ * space may add a TTLM element to the request. Where the AP MLD advertises
++ * no established TTLM, a TTLM in the response then only suggests a mapping,
++ * and the default mapping applies (IEEE 802.11be-2024 35.3.7.2.3).
++ * Otherwise a TTLM is the currently active advertised TTLM. In that case,
++ * there must be exactly one TTLM that does not have a switch time set. This
++ * mapping should also leave us with at least one usable link.
+  */
+ static bool ieee80211_assoc_adv_ttlm(struct ieee80211_sub_if_data *sdata,
+ 				     struct ieee802_11_elems *elems,
+ 				     u16 valid_links, u16 *dormant_links)
+ {
+ 	struct ieee80211_mgd_assoc_data *assoc_data = sdata->u.mgd.assoc_data;
++	struct cfg80211_bss *assoc_bss =
++		assoc_data->link[assoc_data->assoc_link_id].bss;
+ 	struct ieee80211_adv_ttlm_info *ttlm_info = &sdata->u.mgd.ttlm_info;
+ 
+ 	memset(ttlm_info, 0, sizeof(*ttlm_info));
+@@ -7000,6 +7025,15 @@ static bool ieee80211_assoc_adv_ttlm(str
+ 	if (!elems->ttlm_num)
+ 		return true;
+ 
++	if (cfg80211_find_ext_elem(WLAN_EID_EXT_TID_TO_LINK_MAPPING,
++				   sdata->u.mgd.assoc_req_ies,
++				   sdata->u.mgd.assoc_req_ies_len) &&
++	    !ieee80211_adv_ttlm_established(assoc_bss)) {
++		sdata_info(sdata,
++			   "TTLM in association response suggests a mapping, using the default mapping\n");
++		return true;
++	}
++
+ 	if (elems->ttlm_num > 1) {
+ 		sdata_info(sdata,
+ 			   "More than one advertised TTLM in association response\n");
+@@ -7937,6 +7971,23 @@ static void ieee80211_process_adv_ttlm(s
+ 			return;
+ 		}
+ 
++		/*
++		 * The association decides by a scan result that can be older
++		 * than the established mapping, so apply it from here.
++		 */
++		if (!ttlm_info.switch_time &&
++		    !sdata->u.mgd.ttlm_info.active &&
++		    !sdata->u.mgd.ttlm_info.switch_time &&
++		    !sdata->vif.neg_ttlm.valid &&
++		    (ttlm_info.map & sdata->vif.valid_links)) {
++			sdata->u.mgd.ttlm_info = ttlm_info;
++			sdata->u.mgd.ttlm_info.switch_time = 1;
++			wiphy_hrtimer_work_queue(sdata->local->hw.wiphy,
++						 &sdata->u.mgd.ttlm_work,
++						 us_to_ktime(0));
++			return;
++		}
++
+ 		if (ttlm_info.switch_time) {
+ 			u16 beacon_ts_tu, st_tu, delay;
+ 			u64 delay_usec;

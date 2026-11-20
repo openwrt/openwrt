@@ -1,0 +1,37 @@
+From 834d99c2c8b809fb36fbdec3b6d2df834c546777 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 17 Oct 2026 01:14:12 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Document the AWB gain width
+
+The comment of struct rkisp2_isp_awb_gains gives a range of 0 to 63 and
+leaves the upper two bits open. The colour gain registers of the RV1126
+ISP 2.0 hold 10 bits, so gains from 4 upwards wrap around, which was
+measured with gains of 10, 20 and 38 that act as 2, 0 and 2.
+
+State the range of the ISP 2.0 and that the other versions are
+unverified.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ include/uapi/linux/media/rockchip/rkisp2-config.h | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+--- a/include/uapi/linux/media/rockchip/rkisp2-config.h
++++ b/include/uapi/linux/media/rockchip/rkisp2-config.h
+@@ -254,12 +254,11 @@ struct rkisp2_isp_bls_fixed_val {
+  * struct rkisp2_isp_awb_gains - Auto white balance gain in the ISP block
+  *
+  * All fields in this struct are 16 bit, where:
+- * 0x100h = 1, unsigned integer value, range 0 to 63 with 8 bit fractional part.
++ * 0x100h = 1, unsigned integer value with 8 bit fractional part.
+  *
+- * This leaves the upper two msb unaccounted for; it is unknown if these are
+- * unused or misdocumented.
+- *
+- * TODO investigate the upper two bits
++ * The ISP 2.0 of the RV1126 implements only the lower 10 bits, so its gains
++ * range from 0 to 3.996 and larger values wrap around. The width on the other
++ * ISP versions is unknown.
+  *
+  * @r: gain value for red component.
+  * @gr: gain value for green component in red line.

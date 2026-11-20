@@ -24,6 +24,18 @@ define Device/hasivo_s1300wp-8xgt-4s-plus
 endef
 TARGET_DEVICES += hasivo_s1300wp-8xgt-4s-plus
 
+define Device/hasivo_s5800w-24gt-6s-plus
+  SOC := rtl9313
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S5800W-24GT-6S+
+  IMAGE_SIZE := 14848k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += hasivo_s5800w-24gt-6s-plus
+
 define Device/horaco_zx-swtgw2c48ns
   SOC := rtl9313
   DEVICE_VENDOR := Horaco
@@ -144,6 +156,19 @@ define Device/xikestor_sks8300-12x-v2
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += xikestor_sks8300-12x-v2
+
+define Device/zyxel_xgs2220-30hp
+  SOC := rtl9311
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := XGS2220-30HP
+  DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-hwmon-gpiofan kmod-i2c-mux-pca954x \
+	kmod-pse-realtek-mcu-uart kmod-seg-led-gpio
+  FLASH_ADDR := 0xb4290000
+  IMAGE_SIZE := 30208k
+  ZYNFW_ALIGN := 0x10000
+  $(Device/zyxel_zynos)
+endef
+TARGET_DEVICES += zyxel_xgs2220-30hp
 
 define Device/zyxel_xs1930
   SOC := rtl9313

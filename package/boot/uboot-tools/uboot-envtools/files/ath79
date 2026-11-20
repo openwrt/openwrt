@@ -2,14 +2,23 @@
 # Copyright (C) 2011-2014 OpenWrt.org
 #
 
-[ -e /etc/config/ubootenv ] && exit 0
-
-touch /etc/config/ubootenv
-
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
 
 board=$(board_name)
+
+case "$board" in
+engenius,epg5000|\
+engenius,esr1200|\
+engenius,esr1750|\
+engenius,esr900)
+	rm -f /etc/config/ubootenv /etc/fw_env.config
+	;;
+*)
+	[ -e /etc/config/ubootenv ] && exit 0
+	touch /etc/config/ubootenv
+	;;
+esac
 
 case "$board" in
 alcatel,hh40v|\

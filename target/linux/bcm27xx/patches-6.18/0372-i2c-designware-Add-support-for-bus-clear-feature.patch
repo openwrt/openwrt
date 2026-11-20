@@ -113,7 +113,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	/* Write SDA hold time if supported */
  	if (dev->sda_hold_time)
  		regmap_write(dev->map, DW_IC_SDA_HOLD, dev->sda_hold_time);
-@@ -1060,6 +1072,7 @@ int i2c_dw_probe_master(struct dw_i2c_de
+@@ -1068,6 +1080,7 @@ int i2c_dw_probe_master(struct dw_i2c_de
  	struct i2c_adapter *adap = &dev->adapter;
  	unsigned long irq_flags;
  	unsigned int ic_con;
@@ -121,7 +121,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int ret;
  
  	init_completion(&dev->cmd_complete);
-@@ -1094,7 +1107,11 @@ int i2c_dw_probe_master(struct dw_i2c_de
+@@ -1102,7 +1115,11 @@ int i2c_dw_probe_master(struct dw_i2c_de
  	if (ret)
  		return ret;
  

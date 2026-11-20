@@ -1,0 +1,172 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 31 Oct 2026 19:24:34 +0100
+Subject: [PATCH] wifi: mac80211: pass a tagged EAPOL to the control port
+
+A Multi-AP backhaul with a Primary VLAN sends EAPOL frames with a
+C-Tag, also before the 802.1X port opens, and the receiver must take
+tagged and untagged EAPOL frames. mac80211 compares only the outer type
+with the control port protocol, so ieee80211_frame_allowed() drops such
+a frame on an unauthorised port and an authorised port passes it to the
+network stack, where a bridge takes it. The handshake or the rekey then
+times out.
+
+Pass a frame with TPID 0x8100 and the control port protocol as inner
+type to the control port, on either side of an authorised port. Keep it
+to a 4-address link, the backhaul that Traffic Separation applies to.
+It also needs the control port over nl80211, because the receiver has
+to remove the tag, and the destination rules of an untagged EAPOL
+frame. Any other tagged frame stays subject to the port. A 4-address
+station accepts the frame in a 3-address group frame, as it does an
+untagged one.
+
+The check sits where the frame is delivered to the stack, which
+ieee80211_deliver_skb(), ieee80211_invoke_fast_rx() and the 802.3
+offload path share. Deliver it on the BSS interface, since the owner of
+the control port does not listen on an AP VLAN. Document the tagged
+form of the RX event at NL80211_CMD_CONTROL_PORT_FRAME.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -15,6 +15,7 @@
+ #include <linux/skbuff.h>
+ #include <linux/netdevice.h>
+ #include <linux/etherdevice.h>
++#include <linux/if_vlan.h>
+ #include <linux/rcupdate.h>
+ #include <linux/export.h>
+ #include <linux/kcov.h>
+@@ -2662,6 +2663,61 @@ ieee80211_drop_unencrypted_mgmt(struct i
+ }
+ EXPORT_SYMBOL_IF_MAC80211_KUNIT(ieee80211_drop_unencrypted_mgmt);
+ 
++static bool ieee80211_is_control_port_dest(struct ieee80211_sub_if_data *sdata,
++					   const u8 *addr)
++{
++	static const u8 pae_group_addr[ETH_ALEN] __aligned(2)
++		= { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x03 };
++
++	return ieee80211_is_our_addr(sdata, addr, NULL) ||
++	       ether_addr_equal(addr, pae_group_addr);
++}
++
++/*
++ * A Multi-AP backhaul with a Primary VLAN sends EAPOL with a C-Tag on a
++ * 4-address link. The BSS accepts that form, while a tagged frame of any
++ * other station stays subject to the port. Only a receiver on the control
++ * port over nl80211 can take the tagged frame apart.
++ */
++static bool ieee80211_is_tagged_control_port(struct ieee80211_rx_data *rx,
++					     struct sk_buff *skb,
++					     const struct ethhdr *ehdr,
++					     int tag_offs)
++{
++	struct ieee80211_sub_if_data *sdata;
++	const __be16 *inner;
++	__be16 _inner;
++
++	if (likely(ehdr->h_proto != cpu_to_be16(ETH_P_8021Q)) || !rx->sta)
++		return false;
++
++	sdata = rx->sta->sdata;
++	if (!sdata->control_port_over_nl80211)
++		return false;
++
++	switch (sdata->vif.type) {
++	case NL80211_IFTYPE_AP_VLAN:
++		if (!rcu_access_pointer(sdata->u.vlan.sta))
++			return false;
++		break;
++	case NL80211_IFTYPE_STATION:
++		if (!sdata->u.mgd.use_4addr)
++			return false;
++		break;
++	default:
++		return false;
++	}
++
++	inner = skb_header_pointer(skb, tag_offs +
++				   offsetof(struct vlan_hdr,
++					    h_vlan_encapsulated_proto),
++				   sizeof(_inner), &_inner);
++	if (!inner || *inner != sdata->control_port_protocol)
++		return false;
++
++	return ieee80211_is_control_port_dest(rx->sdata, ehdr->h_dest);
++}
++
+ static ieee80211_rx_result
+ __ieee80211_data_to_8023(struct ieee80211_rx_data *rx, bool *port_control)
+ {
+@@ -2695,7 +2751,8 @@ __ieee80211_data_to_8023(struct ieee8021
+ 	ehdr = (struct ethhdr *) rx->skb->data;
+ 	if (ehdr->h_proto == rx->sdata->control_port_protocol)
+ 		*port_control = true;
+-	else if (check_port_control)
++	else if (check_port_control &&
++		 !ieee80211_is_tagged_control_port(rx, rx->skb, ehdr, ETH_HLEN))
+ 		return RX_DROP_U_NOT_PORT_CONTROL;
+ 
+ 	return RX_CONTINUE;
+@@ -2735,8 +2792,6 @@ bool ieee80211_is_our_addr(struct ieee80
+  */
+ static bool ieee80211_frame_allowed(struct ieee80211_rx_data *rx, __le16 fc)
+ {
+-	static const u8 pae_group_addr[ETH_ALEN] __aligned(2)
+-		= { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x03 };
+ 	struct ethhdr *ehdr = (struct ethhdr *) rx->skb->data;
+ 
+ 	/*
+@@ -2745,8 +2800,10 @@ static bool ieee80211_frame_allowed(stru
+ 	 * all other destination addresses for them.
+ 	 */
+ 	if (unlikely(ehdr->h_proto == rx->sdata->control_port_protocol))
+-		return ieee80211_is_our_addr(rx->sdata, ehdr->h_dest, NULL) ||
+-		       ether_addr_equal(ehdr->h_dest, pae_group_addr);
++		return ieee80211_is_control_port_dest(rx->sdata, ehdr->h_dest);
++
++	if (ieee80211_is_tagged_control_port(rx, rx->skb, ehdr, ETH_HLEN))
++		return true;
+ 
+ 	if (ieee80211_802_1x_port_control(rx) ||
+ 	    ieee80211_drop_unencrypted(rx, fc))
+@@ -2760,14 +2817,22 @@ static void ieee80211_deliver_skb_to_loc
+ {
+ 	struct ieee80211_sub_if_data *sdata = rx->sdata;
+ 	struct net_device *dev = sdata->dev;
++	bool tagged;
+ 
+-	if (unlikely((skb->protocol == sdata->control_port_protocol ||
+-		     (skb->protocol == cpu_to_be16(ETH_P_PREAUTH) &&
+-		      !sdata->control_port_no_preauth)) &&
+-		     sdata->control_port_over_nl80211)) {
++	tagged = ieee80211_is_tagged_control_port(rx, skb, eth_hdr(skb), 0);
++
++	if (unlikely(tagged ||
++		     ((skb->protocol == sdata->control_port_protocol ||
++		       (skb->protocol == cpu_to_be16(ETH_P_PREAUTH) &&
++			!sdata->control_port_no_preauth)) &&
++		      sdata->control_port_over_nl80211))) {
+ 		struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
+ 		bool noencrypt = !(status->flag & RX_FLAG_DECRYPTED);
+ 
++		/* the control port owner listens on the BSS, not on an AP VLAN */
++		if (tagged)
++			dev = get_bss_sdata(sdata)->dev;
++
+ 		cfg80211_rx_control_port(dev, skb, noencrypt, rx->link_id);
+ 		dev_kfree_skb(skb);
+ 	} else {
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1165,6 +1165,9 @@
+  *	%NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT and %NL80211_ATTR_MAC are added
+  *	indicating the protocol type of the received frame; whether the frame
+  *	was received unencrypted and the MAC address of the peer respectively.
++ *	A received control port frame with a C-Tag (Multi-AP Traffic
++ *	Separation) has the protocol type 0x8100, and its frame starts with the
++ *	TCI and the inner protocol type, the control port protocol.
+  *
+  * @NL80211_CMD_RELOAD_REGDB: Request that the regdb firmware file is reloaded.
+  *

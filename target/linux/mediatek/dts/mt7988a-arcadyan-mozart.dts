@@ -14,7 +14,6 @@
 	aliases {
 		serial0 = &serial0;
 		led-boot = &led_status_blue;
-		led-failsafe = &led_status_red;
 		led-running = &led_status_green;
 		led-upgrade = &led_status_green;
 	};
@@ -26,28 +25,16 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		wifi_white {
-			color = <LED_COLOR_ID_WHITE>;
-			function = LED_FUNCTION_STATUS;
-			gpios = <&pio 68 GPIO_ACTIVE_HIGH>;
-		};
-
-		led_status_red: wifi_red {
-			color = <LED_COLOR_ID_RED>;
-			function = LED_FUNCTION_STATUS;
-			gpios = <&pio 29 GPIO_ACTIVE_HIGH>;
-		};
-
 		led_status_green: wifi_green {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&pio 30 GPIO_ACTIVE_HIGH>;
+			gpios = <&pio 26 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_blue: wifi_blue {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&pio 31 GPIO_ACTIVE_HIGH>;
+			gpios = <&pio 27 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -69,29 +56,62 @@
 		cooling-levels = <0 128 255>;
 		pwms = <&pwm 1 40000 0>;
 	};
-};
 
-&usxgmiisys0 {
-	rx-polarity = <PHY_POL_INVERT>;
-};
+	i2c_sfp1: i2c-gpio-0 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&pio 70 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&pio 69 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sfp_i2c_pins>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
 
-&usxgmiisys1 {
-	rx-polarity = <PHY_POL_INVERT>;
+	sfp {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp1>;
+		mod-def0-gpios = <&pio 63 GPIO_ACTIVE_LOW>;
+		los-gpios = <&pio 0 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&pio 77 GPIO_ACTIVE_HIGH>;
+		rate-select0-gpios = <&pio 78 GPIO_ACTIVE_HIGH>;
+		rate-select1-gpios = <&pio 79 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
 };
 
 &mdio_bus {
-	reset-gpios = <&pio 72 GPIO_ACTIVE_LOW>;
-	reset-assert-us = <100000>;
-	reset-deassert-us = <100000>;
+	reset-gpios = <&pio 68 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <100000>;
+	reset-post-delay-us = <1000000>;
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 		compatible = "ethernet-phy-ieee802.3-c45";
+		tx-polarity = <PHY_POL_INVERT>;
 	};
 
 	phy8: ethernet-phy@8 {
 		reg = <8>;
 		compatible = "ethernet-phy-ieee802.3-c45";
+		tx-polarity = <PHY_POL_INVERT>;
+	};
+};
+
+&pio {
+	sfp_i2c_pins: sfp-i2c-pins {
+		conf-sda {
+			pins = "GPIO_C";
+			drive-strength = <8>;
+			mediatek,pull-up-adv = <0>;
+		};
+
+		conf-scl {
+			pins = "GPIO_B";
+			drive-strength = <8>;
+			mediatek,pull-up-adv = <1>;
+		};
 	};
 };
 

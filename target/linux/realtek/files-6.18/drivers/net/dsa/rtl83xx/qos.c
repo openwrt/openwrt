@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <net/dcbnl.h>
 #include <net/dsa.h>
+#include <net/pkt_cls.h>
 #include <linux/delay.h>
 #include <linux/regmap.h>
+#include <linux/soc/realtek/otto_table.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "qos.h"
 #include "rtl-otto.h"
-
-#define RTL839X_TBL_ACCESS_DATA_2(i)		(0x6120 + (((i) << 2)))
 
 #define RTL838X_SCHED_P_EGR_RATE_CTRL(p)	(0xC008 + (((p) << 7)))
 
@@ -38,20 +39,6 @@
 #define RTL838X_SCHED_P_TYPE_CTRL(p)		(0xC04C + (((p) << 7)))
 #define RTL838X_SCHED_LB_CTRL(p)		(0xC004 + (((p) << 7)))
 #define RTL838X_FC_P_EGR_DROP_CTRL(p)		(0x6B1C + (((p) << 2)))
-
-#define RTL930X_REMAP_DSCP(p)			(0x9B04 + (((p) / 10) * 4))
-#define RTL931X_REMAP_DSCP(p)			(0x9034 + (((p) / 10) * 4))
-#define RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(p) \
-						(((p) % 10) * 3)
-#define RTL93XX_REMAP_DSCP_INTPRI_DSCP_MASK(index) \
-						(0x7 << RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(index))
-
-#define RTL930X_PORT_TBL_IDX_CTRL(port)		(0x9B20 + (((port) / 16) * 4))
-#define RTL931X_PORT_TBL_IDX_CTRL(port)		(0x9064 + (((port) / 16) * 4))
-#define RTL93XX_PORT_TBL_IDX_CTRL_IDX_OFFSET(port) \
-						(((port) & 0xF) << 1)
-#define RTL93XX_PORT_TBL_IDX_CTRL_IDX_MASK(port) \
-						(0x3 << RTL93XX_PORT_TBL_IDX_CTRL_IDX_OFFSET(port))
 
 #define RTL930X_PRI_SEL_TBL_CTRL(group)		(0x9B28 + ((group) * 4))
 #define RTL931X_PRI_SEL_TBL_CTRL(group)		(0x9074 + ((group) * 8))
@@ -85,6 +72,28 @@
 #define RTL930X_FC_GLB_FCOFF_LO_THR		(0xD88C)
 #define RTL930X_FC_GLB_THR_ON_MASK		GENMASK(27, 16)
 #define RTL930X_FC_GLB_THR_OFF_MASK		GENMASK(11, 0)
+#define RTL930X_FC_GLB_SYS_UTIL_THR		(0xD878)
+#define RTL930X_FC_GLB_SYS_UTIL_THR_MASK	GENMASK(11, 0)
+
+#define RTL930X_FC_PORT_EGR_DROP_CTRL(port)	(0xC380 + ((port) << 2))
+#define RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST	BIT(1)
+#define RTL930X_FC_Q_EGR_DROP_THR(queue, set)	(0x791C + ((((queue) << 2) + (set)) << 2))
+#define RTL930X_FC_Q_EGR_DROP_THR_ON_MASK	GENMASK(27, 16)
+#define RTL930X_FC_Q_EGR_DROP_THR_SETS		4
+#define RTL930X_SWRED_PORT_CTRL			(0x7A04)
+#define RTL930X_SWRED_QUEUE_DROP_CTRL(queue, dp) \
+						(0x7A08 + ((queue) * 12) + ((dp) << 2))
+#define RTL930X_SWRED_RATE_MASK			GENMASK(31, 24)
+#define RTL930X_SWRED_MAX_MASK			GENMASK(23, 12)
+#define RTL930X_SWRED_MIN_MASK			GENMASK(11, 0)
+#define RTL930X_SWRED_PAGE_SIZE			256
+#define RTL930X_SWRED_RATE_SCALE		1023
+#define RTL930X_SWRED_DROP_PRECEDENCES		3
+#define RTL930X_SWRED_QUEUES			12
+#define RTL930X_STAT_PORT_E_DROP_CNTR0(port, queue) \
+						(0xB9A4 + ((port) << 5) + ((queue) << 2))
+#define RTL930X_STAT_PORT_E_DROP_CNTR1(port, queue) \
+						(0xBCA4 + ((port) - 24) * 48 + ((queue) << 2))
 
 #define DSCP_MAP_MAX 64
 
@@ -93,36 +102,21 @@ enum scheduler_type {
 	WEIGHTED_ROUND_ROBIN,
 };
 
-static int rtldsa_max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
-static int rtldsa_default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
+struct otto_qos_trust {
+	u8 nsel;
+	u8 sel[2];
+};
+
+static const struct otto_qos_trust otto_qos_93xx_trust[] = {
+	{ 2, { DCB_APP_SEL_PCP, IEEE_8021QAZ_APP_SEL_DSCP } },
+	{ 1, { DCB_APP_SEL_PCP } },
+	{ 1, { IEEE_8021QAZ_APP_SEL_DSCP } },
+	{ 0 },
+};
+
+static int otto_qos_max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
+static int otto_qos_default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
 static int dot1p_priority_remapping[] = {0, 1, 2, 3, 4, 5, 6, 7};
-
-static void otto_qos_839x_read_scheduling_table(struct otto_dsa_priv *priv, int port)
-{
-	u32 cmd = 1 << 9 | /* Execute cmd */
-		  0 << 8 | /* Read */
-		  0 << 6 | /* Table type 0b00 */
-		  (port & 0x3f);
-	rtl839x_exec_tbl2_cmd(priv, cmd);
-}
-
-static void otto_qos_839x_write_scheduling_table(struct otto_dsa_priv *priv, int port)
-{
-	u32 cmd = 1 << 9 | /* Execute cmd */
-		  1 << 8 | /* Write */
-		  0 << 6 | /* Table type 0b00 */
-		  (port & 0x3f);
-	rtl839x_exec_tbl2_cmd(priv, cmd);
-}
-
-static void otto_qos_839x_read_out_q_table(struct otto_dsa_priv *priv, int port)
-{
-	u32 cmd = 1 << 9 | /* Execute cmd */
-		  0 << 8 | /* Read */
-		  2 << 6 | /* Table type 0b10 */
-		  (port & 0x3f);
-	rtl839x_exec_tbl2_cmd(priv, cmd);
-}
 
 u32 otto_qos_838x_get_egress_rate(struct otto_dsa_priv *priv, int port)
 {
@@ -153,49 +147,60 @@ int otto_qos_838x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625 */
 u32 otto_qos_839x_get_egress_rate(struct otto_dsa_priv *priv, int port)
 {
-	u32 rate = 0, v = 0;
+	u32 data[2];
+	int err;
 
 	if (port >= priv->r->cpu_port)
 		return 0;
 
 	mutex_lock(&priv->reg_mutex);
-
-	otto_qos_839x_read_scheduling_table(priv, port);
-
-	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(7), &rate);
-	rate <<= 12;
-	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), &v);
-	rate |= v >> 20;
-
+	err = otto_table_offset_read(RTL8390_TBL_SCHED, port, &data, 7);
 	mutex_unlock(&priv->reg_mutex);
-	pr_debug("%s: Getting egress rate on port %d is %d\n", __func__, port, rate);
+	if (err) {
+		dev_err(priv->dev, "Failed to read egress rate on port %d: %d\n", port, err);
+		return 0;
+	}
 
-	return rate;
+	return ((data[0] & 0xff) << 12) | (data[1] >> 20);
 }
 
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625, returns previous rate */
+static int otto_qos_839x_set_egress_rate_locked(struct otto_dsa_priv *priv, int port,
+					     u32 rate)
+{
+	u32 data[9], old_rate;
+	int tbl, err;
+
+	lockdep_assert_held(&priv->reg_mutex);
+
+	if (port >= priv->r->cpu_port)
+		return -EINVAL;
+
+	tbl = otto_table_acquire(RTL8390_TBL_SCHED);
+	if (tbl < 0)
+		return tbl;
+
+	err = __otto_table_read(tbl, port, &data);
+	if (err)
+		goto out;
+
+	old_rate = ((data[7] & 0xff) << 12) | (data[8] >> 20);
+	data[7] = (data[7] & ~0xffU) | ((rate >> 12) & 0xff);
+	data[8] = (data[8] & ~(0xfffU << 20)) | (rate << 20);
+	err = __otto_table_write(tbl, port, &data);
+	if (!err)
+		err = old_rate;
+out:
+	otto_table_release(tbl);
+	return err;
+}
+
 int otto_qos_839x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate)
 {
-	u32 old_rate = 0, v = 0;
-
-	pr_debug("%s: Setting egress rate on port %d to %d\n", __func__, port, rate);
-	if (port >= priv->r->cpu_port)
-		return -1;
+	int old_rate;
 
 	mutex_lock(&priv->reg_mutex);
-
-	otto_qos_839x_read_scheduling_table(priv, port);
-
-	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(7), &old_rate);
-	old_rate &= 0xff;
-	old_rate <<= 12;
-	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), &v);
-	old_rate |= v >> 20;
-	regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(7), 0xff, (rate >> 12) & 0xff);
-	regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), 0xfffU << 20, rate << 20);
-
-	otto_qos_839x_write_scheduling_table(priv, port);
-
+	old_rate = otto_qos_839x_set_egress_rate_locked(priv, port, rate);
 	mutex_unlock(&priv->reg_mutex);
 
 	return old_rate;
@@ -233,19 +238,19 @@ static void otto_qos_83xx_setup_prio2queue_cpu_matrix(struct otto_dsa_priv *priv
 	regmap_read(priv->map, reg, &old);
 	pr_info("QM_PKT2CPU_INTPRI_MAP: %08x\n", old);
 	for (int i = 0; i < MAX_PRIOS; i++)
-		v |= rtldsa_max_available_queue[i] << (i * 3);
+		v |= otto_qos_max_available_queue[i] << (i * 3);
 	regmap_write(priv->map, reg, v);
 }
 
 static void otto_qos_838x_setup_default_prio2queue(struct otto_dsa_priv *priv)
 {
-	otto_qos_838x_setup_prio2queue_matrix(priv, rtldsa_max_available_queue);
+	otto_qos_838x_setup_prio2queue_matrix(priv, otto_qos_max_available_queue);
 	otto_qos_83xx_setup_prio2queue_cpu_matrix(priv, RTL838X_QM_PKT2CPU_INTPRI_MAP);
 }
 
 static void otto_qos_839x_setup_default_prio2queue(struct otto_dsa_priv *priv)
 {
-	otto_qos_839x_setup_prio2queue_matrix(priv, rtldsa_max_available_queue);
+	otto_qos_839x_setup_prio2queue_matrix(priv, otto_qos_max_available_queue);
 	otto_qos_83xx_setup_prio2queue_cpu_matrix(priv, RTL839X_QM_PKT2CPU_INTPRI_MAP);
 }
 
@@ -267,104 +272,131 @@ static void otto_qos_839x_set_ingress_priority(struct otto_dsa_priv *priv, int p
 	regmap_write_bits(priv->map, RTL839X_PRI_SEL_PORT_PRI(port), (7 << shift) | val, val);
 }
 
-static int otto_qos_839x_get_scheduling_algorithm(struct otto_dsa_priv *priv, int port)
-{
-	u32 v = 0;
-
-	mutex_lock(&priv->reg_mutex);
-
-	otto_qos_839x_read_scheduling_table(priv, port);
-	regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), &v);
-
-	mutex_unlock(&priv->reg_mutex);
-
-	if (v & BIT(19))
-		return WEIGHTED_ROUND_ROBIN;
-
-	return WEIGHTED_FAIR_QUEUE;
-}
-
 static void otto_qos_839x_set_scheduling_algorithm(struct otto_dsa_priv *priv, int port,
-						   enum scheduler_type sched)
+						 enum scheduler_type sched)
 {
-	enum scheduler_type t = otto_qos_839x_get_scheduling_algorithm(priv, port);
-	u32 v = 0, oam_state = 0, oam_port_state = 0;
-	u32 count = 0;
-	int i, egress_rate;
+	u32 data[9], oam_state = 0, oam_port_state = 0, egress_rate = 0;
+	bool restore_oam = false, restore_rate = false;
+	u32 count, v;
+	int tbl, err, ret;
 
 	mutex_lock(&priv->reg_mutex);
-	/* Check whether we need to empty the egress queue of that port due to Errata E0014503 */
-	if (sched == WEIGHTED_FAIR_QUEUE && t == WEIGHTED_ROUND_ROBIN && port != priv->r->cpu_port) {
-		/* Read Operations, Adminstatrion and Management control register */
-		regmap_read(priv->map, RTL839X_OAM_CTRL, &oam_state);
+	err = otto_table_read(RTL8390_TBL_SCHED, port, &data);
+	if (err)
+		goto out;
 
-		/* Get current OAM state */
-		regmap_read(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), &oam_port_state);
+	/* Erratum E0014503: drain the port when switching from WRR to WFQ. */
+	if (sched == WEIGHTED_FAIR_QUEUE && (data[8] & BIT(19)) &&
+	    port != priv->r->cpu_port) {
+		egress_rate = ((data[7] & 0xff) << 12) | (data[8] >> 20);
+		err = regmap_read(priv->map, RTL839X_OAM_CTRL, &oam_state);
+		if (err)
+			goto out;
+		err = regmap_read(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), &oam_port_state);
+		if (err)
+			goto out;
 
-		/* Disable OAM to block traffice */
-		regmap_read(priv->map, RTL839X_OAM_CTRL, &v);
-		regmap_write_bits(priv->map, RTL839X_OAM_CTRL, 1, 1);
-		regmap_read(priv->map, RTL839X_OAM_CTRL, &v);
+		/* Restore saved state even if a write fails after reaching hardware. */
+		restore_oam = true;
+		err = regmap_write_bits(priv->map, RTL839X_OAM_CTRL, 1, 1);
+		if (err)
+			goto restore;
+		err = regmap_read(priv->map, RTL839X_OAM_CTRL, &v);
+		if (err)
+			goto restore;
+		err = regmap_write(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), 0x2);
+		if (err)
+			goto restore;
 
-		/* Set to trap action OAM forward (bits 1, 2) and OAM Mux Action Drop (bit 0) */
-		regmap_write(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), 0x2);
+		restore_rate = true;
+		ret = otto_qos_839x_set_egress_rate_locked(priv, port, 0xfffff);
+		if (ret < 0) {
+			err = ret;
+			goto restore;
+		}
 
-		/* Set port egress rate to unlimited */
-		egress_rate = otto_qos_839x_set_egress_rate(priv, port, 0xFFFFF);
-
-		/* Wait until the egress used page count of that port is 0 */
-		i = 0;
-		do {
+		/* OUT_Q shares the SCHED access register: do not hold either table here. */
+		for (int i = 0; i < 3500; i++) {
 			usleep_range(100, 200);
-			otto_qos_839x_read_out_q_table(priv, port);
-			regmap_read(priv->map, RTL839X_TBL_ACCESS_DATA_2(6), &count);
-			count >>= 20;
-			i++;
-		} while (i < 3500 && count > 0);
+			err = otto_table_offset_read(RTL8390_TBL_OUT_Q, port, &count, 6);
+			if (err)
+				goto restore;
+			if (!(count >> 20))
+				break;
+		}
 	}
 
-	/* Actually set the scheduling algorithm */
-	otto_qos_839x_read_scheduling_table(priv, port);
-	regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(8), BIT(19), sched ? BIT(19) : 0);
-	otto_qos_839x_write_scheduling_table(priv, port);
-
-	if (sched == WEIGHTED_FAIR_QUEUE && t == WEIGHTED_ROUND_ROBIN && port != priv->r->cpu_port) {
-		/* Restore OAM state to control register */
-		regmap_write(priv->map, RTL839X_OAM_CTRL, oam_state);
-
-		/* Restore trap action state */
-		regmap_write(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), oam_port_state);
-
-		/* Restore port egress rate */
-		otto_qos_839x_set_egress_rate(priv, port, egress_rate);
+	tbl = otto_table_acquire(RTL8390_TBL_SCHED);
+	if (tbl < 0) {
+		err = tbl;
+		goto restore;
 	}
+	err = __otto_table_read(tbl, port, &data);
+	if (!err) {
+		data[8] &= ~BIT(19);
+		if (sched == WEIGHTED_ROUND_ROBIN)
+			data[8] |= BIT(19);
+		err = __otto_table_write(tbl, port, &data);
+	}
+	otto_table_release(tbl);
 
+restore:
+	if (restore_oam) {
+		ret = regmap_write(priv->map, RTL839X_OAM_CTRL, oam_state);
+		if (ret && !err)
+			err = ret;
+		ret = regmap_write(priv->map, RTL839X_OAM_PORT_ACT_CTRL(port), oam_port_state);
+		if (ret && !err)
+			err = ret;
+	}
+	if (restore_rate) {
+		ret = otto_qos_839x_set_egress_rate_locked(priv, port, egress_rate);
+		if (ret < 0 && !err)
+			err = ret;
+	}
+out:
 	mutex_unlock(&priv->reg_mutex);
+	if (err)
+		dev_err(priv->dev, "Failed to set scheduling algorithm on port %d: %d\n", port, err);
 }
 
 static void otto_qos_839x_set_scheduling_queue_weights(struct otto_dsa_priv *priv, int port,
-						       int *queue_weights)
+						    int *queue_weights)
 {
-	mutex_lock(&priv->reg_mutex);
+	u32 data[9];
+	int tbl, err;
 
-	otto_qos_839x_read_scheduling_table(priv, port);
+	mutex_lock(&priv->reg_mutex);
+	tbl = otto_table_acquire(RTL8390_TBL_SCHED);
+	if (tbl < 0) {
+		err = tbl;
+		goto out;
+	}
+	err = __otto_table_read(tbl, port, &data);
+	if (err)
+		goto release;
 
 	for (int i = 0; i < 8; i++) {
-		int lsb = 48 + i * 8;
-		int low_byte = 8 - (lsb >> 5);
-		int start_bit = lsb - (low_byte << 5);
-		int high_mask = 0x3ff >> (32 - start_bit);
+		int lsb = 48 + i * 10;
+		int word = 8 - (lsb >> 5);
+		int start_bit = lsb & 31;
+		u32 weight = queue_weights[i] & 0x3ff;
 
-		regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(low_byte),
-				  0x3ff << start_bit, (queue_weights[i] & 0x3ff) << start_bit);
-		if (high_mask)
-			regmap_write_bits(priv->map, RTL839X_TBL_ACCESS_DATA_2(low_byte - 1),
-					  high_mask,
-					  (queue_weights[i] & 0x3ff) >> (32 - start_bit));
+		data[word] &= ~(0x3ffU << start_bit);
+		data[word] |= weight << start_bit;
+		if (start_bit > 22) {
+			data[word - 1] &= ~(0x3ffU >> (32 - start_bit));
+			data[word - 1] |= weight >> (32 - start_bit);
+		}
 	}
 
-	otto_qos_839x_write_scheduling_table(priv, port);
+	err = __otto_table_write(tbl, port, &data);
+release:
+	otto_table_release(tbl);
+out:
 	mutex_unlock(&priv->reg_mutex);
+	if (err)
+		dev_err(priv->dev, "Failed to set queue weights on port %d: %d\n", port, err);
 }
 
 void otto_qos_838x_init(struct otto_dsa_priv *priv)
@@ -430,7 +462,7 @@ void otto_qos_839x_init(struct otto_dsa_priv *priv)
 	for (int port = 0; port <= priv->r->cpu_port; port++) {
 		otto_qos_839x_set_ingress_priority(priv, port, 0);
 		otto_qos_839x_set_scheduling_algorithm(priv, port, WEIGHTED_FAIR_QUEUE);
-		otto_qos_839x_set_scheduling_queue_weights(priv, port, rtldsa_default_queue_weights);
+		otto_qos_839x_set_scheduling_queue_weights(priv, port, otto_qos_default_queue_weights);
 		/* Do re-marking based on outer tag */
 		regmap_write_bits(priv->map, RTL839X_RMK_PORT_DEI_TAG_CTRL(port),
 				  BIT(port % 32), BIT(port % 32));
@@ -473,26 +505,23 @@ void otto_qos_839x_init(struct otto_dsa_priv *priv)
 	}
 }
 
-static void otto_qos_930x_set_group_selector(struct otto_dsa_priv *priv, int port, int group)
+static bool otto_qos_trusts(const struct otto_qos_trust *trust, u8 sel)
 {
-	u32 val = (u32)group << RTL93XX_PORT_TBL_IDX_CTRL_IDX_OFFSET(port);
-
-	regmap_write_bits(priv->map, RTL930X_PORT_TBL_IDX_CTRL(port),
-			  RTL93XX_PORT_TBL_IDX_CTRL_IDX_MASK(port) | val, val);
+	return memchr(trust->sel, sel, trust->nsel);
 }
 
-static void otto_qos_930x_setup_default_dscp2queue_map(struct otto_dsa_priv *priv)
+static u32 otto_qos_93xx_trust_weights(const struct otto_qos_trust *trust)
 {
-	u32 queue;
+	u32 v = FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_PORT_MASK, 3);
 
-	/* The default mapping between dscp and queue is based on
-	 * the first 3 bits indicate the precedence (prio = dscp >> 3).
-	 */
-	for (int i = 0; i < DSCP_MAP_MAX; i++) {
-		queue = (i >> 3) << RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(i);
-		regmap_write_bits(priv->map, RTL930X_REMAP_DSCP(i),
-				  RTL93XX_REMAP_DSCP_INTPRI_DSCP_MASK(i), queue);
-	}
+	if (otto_qos_trusts(trust, IEEE_8021QAZ_APP_SEL_DSCP))
+		v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_DSCP_MASK, 5);
+
+	if (otto_qos_trusts(trust, DCB_APP_SEL_PCP))
+		v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_ITAG_MASK, 6) |
+		     FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_OTAG_MASK, 7);
+
+	return v;
 }
 
 static void otto_qos_930x_prio2queue_matrix(struct otto_dsa_priv *priv, int *min_queues)
@@ -519,7 +548,7 @@ void otto_qos_930x_queue_sched_set(struct otto_dsa_priv *priv, int port, int que
 void otto_qos_queue_sched_reset(struct otto_dsa_priv *priv, int port)
 {
 	for (int q = 0; q < MAX_PRIOS; q++)
-		priv->r->queue_sched_set(priv, port, q, rtldsa_default_queue_weights[q], false);
+		priv->r->queue_sched_set(priv, port, q, otto_qos_default_queue_weights[q], false);
 }
 
 static void otto_qos_930x_set_scheduling_queue_weights(struct otto_dsa_priv *priv)
@@ -557,29 +586,142 @@ static void otto_qos_930x_set_fc_thresholds(struct otto_dsa_priv *priv)
 	regmap_update_bits(priv->map, RTL930X_FC_GLB_LO_THR, mask, lo);
 	regmap_update_bits(priv->map, RTL930X_FC_GLB_FCOFF_HI_THR, mask, hi);
 	regmap_update_bits(priv->map, RTL930X_FC_GLB_FCOFF_LO_THR, mask, lo);
+
+	/* egress drop thresholds and RED only act once the buffer holds more pages than this */
+	regmap_update_bits(priv->map, RTL930X_FC_GLB_SYS_UTIL_THR,
+			   RTL930X_FC_GLB_SYS_UTIL_THR_MASK, 1);
+}
+
+static u32 otto_qos_930x_red_tail_drop(struct otto_dsa_priv *priv, int queue)
+{
+	u32 thr = 0, v;
+
+	for (int set = 0; set < RTL930X_FC_Q_EGR_DROP_THR_SETS; set++) {
+		regmap_read(priv->map, RTL930X_FC_Q_EGR_DROP_THR(queue, set), &v);
+		thr = max(thr, FIELD_GET(RTL930X_FC_Q_EGR_DROP_THR_ON_MASK, v));
+	}
+
+	return FIELD_PREP(RTL930X_SWRED_MAX_MASK, thr) | FIELD_PREP(RTL930X_SWRED_MIN_MASK, thr);
+}
+
+static void otto_qos_930x_red_read_drops(struct otto_dsa_priv *priv, int port, bool add)
+{
+	struct rtldsa_port *pp = &priv->ports[port];
+	u32 val;
+
+	for (int queue = 0; queue < MAX_PRIOS; queue++) {
+		u32 reg = port < 24 ? RTL930X_STAT_PORT_E_DROP_CNTR0(port, queue) :
+				      RTL930X_STAT_PORT_E_DROP_CNTR1(port, queue);
+
+		if (regmap_read(priv->map, reg, &val))
+			continue;
+
+		if (add)
+			pp->red_drops[queue] += (u16)(val - pp->red_drops_hw[queue]);
+		pp->red_drops_hw[queue] = val;
+	}
+}
+
+void otto_qos_930x_red_drops_update(struct otto_dsa_priv *priv, int port)
+{
+	if (priv->red_ports & BIT_ULL(port))
+		otto_qos_930x_red_read_drops(priv, port, true);
+}
+
+static int otto_qos_930x_red_apply(struct otto_dsa_priv *priv, int port)
+{
+	u32 *wanted = priv->ports[port].red_cfg;
+	int ret = 0;
+
+	if (!memchr_inv(wanted, 0, sizeof(priv->red_cfg)))
+		goto disable;
+
+	if (priv->red_ports & ~BIT_ULL(port)) {
+		if (memcmp(wanted, priv->red_cfg, sizeof(priv->red_cfg))) {
+			dev_warn(priv->dev, "port %d: RED differs from the one in use\n", port);
+			ret = -EBUSY;
+			goto disable;
+		}
+	} else {
+		for (int queue = 0; queue < RTL930X_SWRED_QUEUES; queue++) {
+			u32 cfg = queue < MAX_PRIOS ? wanted[queue] : 0;
+
+			if (!cfg)
+				cfg = otto_qos_930x_red_tail_drop(priv, queue);
+
+			for (int dp = 0; dp < RTL930X_SWRED_DROP_PRECEDENCES; dp++)
+				regmap_write(priv->map,
+					     RTL930X_SWRED_QUEUE_DROP_CTRL(queue, dp), cfg);
+		}
+
+		memcpy(priv->red_cfg, wanted, sizeof(priv->red_cfg));
+	}
+
+	/* RED only drops while the egress drop stage looks at the egress queue */
+	regmap_clear_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
+			  RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
+	regmap_set_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
+	if (!(priv->red_ports & BIT_ULL(port)))
+		otto_qos_930x_red_read_drops(priv, port, false);
+	priv->red_ports |= BIT_ULL(port);
+
+	return 0;
+
+disable:
+	if (priv->red_ports & BIT_ULL(port)) {
+		regmap_clear_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
+		regmap_set_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
+				RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
+		priv->red_ports &= ~BIT_ULL(port);
+	}
+
+	return ret;
+}
+
+int otto_qos_930x_red_set(struct otto_dsa_priv *priv, int port,
+			  const struct tc_red_qopt_offload_params **p)
+{
+	u32 *wanted = priv->ports[port].red_cfg;
+	int ret, err = 0;
+
+	for (int queue = 0; queue < MAX_PRIOS && !err; queue++) {
+		u32 min, max;
+		u64 rate;
+
+		wanted[queue] = 0;
+		if (!p[queue])
+			continue;
+
+		min = DIV_ROUND_UP(p[queue]->min, RTL930X_SWRED_PAGE_SIZE);
+		max = p[queue]->max / RTL930X_SWRED_PAGE_SIZE;
+		rate = ((u64)p[queue]->probability * RTL930X_SWRED_RATE_SCALE + U32_MAX) >> 32;
+
+		if (!min || min >= max || max > FIELD_MAX(RTL930X_SWRED_MAX_MASK) ||
+		    !rate || rate > FIELD_MAX(RTL930X_SWRED_RATE_MASK))
+			err = -EINVAL;
+		else
+			wanted[queue] = FIELD_PREP(RTL930X_SWRED_RATE_MASK, rate) |
+					FIELD_PREP(RTL930X_SWRED_MAX_MASK, max) |
+					FIELD_PREP(RTL930X_SWRED_MIN_MASK, min);
+	}
+
+	if (err)
+		memset(wanted, 0, sizeof(priv->red_cfg));
+
+	ret = otto_qos_930x_red_apply(priv, port);
+
+	return err ?: ret;
 }
 
 void otto_qos_930x_init(struct otto_dsa_priv *priv)
 {
-	struct dsa_port *dp;
-	u32 v;
-
-	/* Assign all the ports to the Group-0 */
-	dsa_switch_for_each_user_port(dp, priv->ds)
-		otto_qos_930x_set_group_selector(priv, dp->index, 0);
-
-	otto_qos_930x_prio2queue_matrix(priv, rtldsa_max_available_queue);
+	otto_qos_930x_prio2queue_matrix(priv, otto_qos_max_available_queue);
 
 	/* configure priority weights */
-	v = 0;
-	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_PORT_MASK, 3);
-	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_DSCP_MASK, 5);
-	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_ITAG_MASK, 6);
-	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_OTAG_MASK, 7);
+	for (int group = 0; group < ARRAY_SIZE(otto_qos_93xx_trust); group++)
+		regmap_write(priv->map, RTL930X_PRI_SEL_TBL_CTRL(group),
+			     otto_qos_93xx_trust_weights(&otto_qos_93xx_trust[group]));
 
-	regmap_write(priv->map, RTL930X_PRI_SEL_TBL_CTRL(0), v);
-
-	otto_qos_930x_setup_default_dscp2queue_map(priv);
 	otto_qos_930x_set_scheduling_queue_weights(priv);
 	otto_qos_930x_set_fc_thresholds(priv);
 }
@@ -628,7 +770,7 @@ static void otto_qos_931x_set_scheduling_queue_weights(struct otto_dsa_priv *pri
 			else
 				addr = RTL931X_SCHED_PORT_Q_CTRL_SET1(dp->index, q);
 
-			regmap_write(priv->map, addr, rtldsa_default_queue_weights[q]);
+			regmap_write(priv->map, addr, otto_qos_default_queue_weights[q]);
 		}
 	}
 }
@@ -642,7 +784,7 @@ void otto_qos_931x_init(struct otto_dsa_priv *priv)
 	dsa_switch_for_each_user_port(dp, priv->ds)
 		otto_qos_931x_set_group_selector(priv, dp->index, 0);
 
-	otto_qos_931x_prio2queue_matrix(priv, rtldsa_max_available_queue);
+	otto_qos_931x_prio2queue_matrix(priv, otto_qos_max_available_queue);
 
 	/* configure priority weights */
 	v = 0;
@@ -656,4 +798,163 @@ void otto_qos_931x_init(struct otto_dsa_priv *priv)
 
 	otto_qos_931x_setup_default_dscp2queue_map(priv);
 	otto_qos_931x_set_scheduling_queue_weights(priv);
+}
+
+static u32 otto_qos_prio_get(struct otto_dsa_priv *priv, int base, int index)
+{
+	u32 v = 0;
+
+	regmap_read(priv->map, base + (index / 10) * 4, &v);
+
+	return (v >> ((index % 10) * 3)) & 0x7;
+}
+
+static void otto_qos_prio_set(struct otto_dsa_priv *priv, int base, int index, u8 prio)
+{
+	regmap_update_bits(priv->map, base + (index / 10) * 4,
+			   0x7 << ((index % 10) * 3), prio << ((index % 10) * 3));
+}
+
+static void otto_qos_port_set_group(struct otto_dsa_priv *priv, int port, int group)
+{
+	regmap_update_bits(priv->map, priv->r->pri_sel_port_tbl_idx + (port / 16) * 4,
+			   RTL93XX_PORT_TBL_IDX_CTRL_IDX_MASK(port),
+			   group << RTL93XX_PORT_TBL_IDX_CTRL_IDX_OFFSET(port));
+}
+
+/* The user ports exist before qos_init(): DSA reads the DSCP map and apptrust can be set */
+void otto_qos_setup(struct dsa_switch *ds)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	struct dsa_port *dp;
+
+	if (priv->r->pri_sel_port_tbl_idx)
+		dsa_switch_for_each_user_port(dp, ds)
+			otto_qos_port_set_group(priv, dp->index, 0);
+
+	if (!priv->r->pri_sel_remap_dscp)
+		return;
+
+	for (int dscp = 0; dscp < DSCP_MAP_MAX; dscp++)
+		otto_qos_prio_set(priv, priv->r->pri_sel_remap_dscp, dscp, dscp >> 3);
+
+	ds->dscp_prio_mapping_is_global = true;
+}
+
+int otto_qos_port_get_default_prio(struct dsa_switch *ds, int port)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->pri_sel_port_pri)
+		return 0;
+
+	return otto_qos_prio_get(priv, priv->r->pri_sel_port_pri, port);
+}
+
+int otto_qos_port_set_default_prio(struct dsa_switch *ds, int port, u8 prio)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->pri_sel_port_pri)
+		return -EOPNOTSUPP;
+
+	if (prio >= MAX_PRIOS)
+		return -EINVAL;
+
+	scoped_guard(mutex, &priv->reg_mutex)
+		otto_qos_prio_set(priv, priv->r->pri_sel_port_pri, port, prio);
+
+	return 0;
+}
+
+int otto_qos_port_get_dscp_prio(struct dsa_switch *ds, int port, u8 dscp)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->pri_sel_remap_dscp)
+		return -EOPNOTSUPP;
+
+	return otto_qos_prio_get(priv, priv->r->pri_sel_remap_dscp, dscp);
+}
+
+int otto_qos_port_add_dscp_prio(struct dsa_switch *ds, int port, u8 dscp, u8 prio)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->pri_sel_remap_dscp)
+		return -EOPNOTSUPP;
+
+	if (prio >= MAX_PRIOS)
+		return -EINVAL;
+
+	scoped_guard(mutex, &priv->reg_mutex)
+		otto_qos_prio_set(priv, priv->r->pri_sel_remap_dscp, dscp, prio);
+
+	return 0;
+}
+
+/* A replace adds the new entry first, so only an entry that still holds @prio may change.
+ * A failed add gets here with @prio still in the table.
+ */
+int otto_qos_port_del_dscp_prio(struct dsa_switch *ds, int port, u8 dscp, u8 prio)
+{
+	struct dcb_ieee_app_dscp_map map = {};
+	struct otto_dsa_priv *priv = ds->priv;
+	u8 mask;
+
+	if (!priv->r->pri_sel_remap_dscp)
+		return -EOPNOTSUPP;
+
+	if (IS_ENABLED(CONFIG_DCB))
+		dcb_ieee_getapp_dscp_prio_mask_map(dsa_to_port(ds, port)->user, &map);
+	mask = map.map[dscp] & ~BIT(prio);
+
+	scoped_guard(mutex, &priv->reg_mutex) {
+		if (otto_qos_prio_get(priv, priv->r->pri_sel_remap_dscp, dscp) == prio)
+			otto_qos_prio_set(priv, priv->r->pri_sel_remap_dscp, dscp,
+					  mask ? __fls(mask) : dscp >> 3);
+	}
+
+	return 0;
+}
+
+int otto_qos_port_get_apptrust(struct dsa_switch *ds, int port, u8 *sel, int *nsel)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	const struct otto_qos_trust *trust;
+	u32 v = 0;
+
+	if (!priv->r->pri_sel_port_tbl_idx)
+		return -EOPNOTSUPP;
+
+	regmap_read(priv->map, priv->r->pri_sel_port_tbl_idx + (port / 16) * 4, &v);
+	trust = &otto_qos_93xx_trust[(v & RTL93XX_PORT_TBL_IDX_CTRL_IDX_MASK(port)) >>
+				   RTL93XX_PORT_TBL_IDX_CTRL_IDX_OFFSET(port)];
+
+	memcpy(sel, trust->sel, trust->nsel);
+	*nsel = trust->nsel;
+
+	return 0;
+}
+
+int otto_qos_port_set_apptrust(struct dsa_switch *ds, int port, const u8 *sel, int nsel)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->pri_sel_port_tbl_idx)
+		return -EOPNOTSUPP;
+
+	for (int group = 0; group < ARRAY_SIZE(otto_qos_93xx_trust); group++) {
+		const struct otto_qos_trust *trust = &otto_qos_93xx_trust[group];
+
+		if (nsel != trust->nsel || memcmp(sel, trust->sel, nsel))
+			continue;
+
+		scoped_guard(mutex, &priv->reg_mutex)
+			otto_qos_port_set_group(priv, port, group);
+
+		return 0;
+	}
+
+	return -EOPNOTSUPP;
 }

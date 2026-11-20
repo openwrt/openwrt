@@ -375,6 +375,23 @@ int wpas_ucode_dpp_gas_rx(struct wpa_supplicant *wpa_s, const u8 *src,
 	return ret;
 }
 
+/* IEEE 802.11be 35.3.2: on a link between two MLDs the TA is the address of
+ * the affiliated STA, not the MLD address. Between the start of the ML
+ * authentication and the association event a link has a BSSID and no
+ * address yet. */
+static const u8 *
+dpp_tx_src_get(struct wpa_supplicant *wpa_s, const u8 *dst)
+{
+	int i;
+
+	for_each_link(wpa_s->valid_links, i)
+		if (ether_addr_equal(wpa_s->links[i].bssid, dst) &&
+		    !is_zero_ether_addr(wpa_s->links[i].addr))
+			return wpa_s->links[i].addr;
+
+	return wpa_s->own_addr;
+}
+
 static uc_value_t *
 uc_wpas_iface_dpp_send_action(uc_vm_t *vm, size_t nargs)
 {
@@ -424,7 +441,8 @@ uc_wpas_iface_dpp_send_action(uc_vm_t *vm, size_t nargs)
 
 	wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_TX "dst=" MACSTR " freq=%u type=%d",
 		MAC2STR(dst), freq, frame_type);
-	ret = offchannel_send_action(wpa_s, freq, dst, wpa_s->own_addr,
+	ret = offchannel_send_action(wpa_s, freq, dst,
+				     dpp_tx_src_get(wpa_s, dst),
 				     broadcast_ether_addr,
 				     wpabuf_head(msg), wpabuf_len(msg),
 				     500, NULL, 0);
@@ -479,7 +497,8 @@ uc_wpas_iface_dpp_send_gas_req(uc_vm_t *vm, size_t nargs)
 	wpabuf_put_data(buf, data, data_len);
 	os_free(data);
 
-	ret = offchannel_send_action(wpa_s, freq, dst, wpa_s->own_addr,
+	ret = offchannel_send_action(wpa_s, freq, dst,
+				     dpp_tx_src_get(wpa_s, dst),
 				     broadcast_ether_addr, wpabuf_head(buf),
 				     wpabuf_len(buf), 500, NULL, 0);
 	wpabuf_free(buf);
@@ -525,7 +544,8 @@ uc_wpas_iface_dpp_send_gas_comeback_req(uc_vm_t *vm, size_t nargs)
 	if (!buf)
 		return NULL;
 
-	ret = offchannel_send_action(wpa_s, freq, dst, wpa_s->own_addr,
+	ret = offchannel_send_action(wpa_s, freq, dst,
+				     dpp_tx_src_get(wpa_s, dst),
 				     broadcast_ether_addr, wpabuf_head(buf),
 				     wpabuf_len(buf), 500, NULL, 0);
 	wpabuf_free(buf);
@@ -939,6 +959,12 @@ int wpas_ucode_init(struct wpa_global *gl)
 free_vm:
 	wpa_ucode_free_vm();
 	return -1;
+}
+
+void wpas_ucode_terminate(void)
+{
+	if (wpa_ucode_call_prepare("terminate") == 0)
+		ucv_put(wpa_ucode_call(0));
 }
 
 void wpas_ucode_free(void)

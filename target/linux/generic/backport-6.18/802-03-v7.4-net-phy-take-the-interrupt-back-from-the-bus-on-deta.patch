@@ -1,0 +1,51 @@
+From 026bb4593faf31585a82781df25370c82cf95ed6 Mon Sep 17 00:00:00 2001
+From: Aleksei Sviridkin <f@lex.la>
+Date: Thu, 1 Oct 2026 16:02:35 +0300
+Subject: [PATCH] net: phy: take the interrupt back from the bus on detach
+
+When a PHY's driver is a module that is not loaded yet when the MAC
+connects, the PHY gets the generic driver first. phy_probe() then
+replaces phydev->irq with PHY_POLL, because genphy has no interrupt
+support. Nothing puts the number back, so after the real driver binds
+the PHY is polled for the rest of the uptime.
+
+Seen on a Keenetic KN-1012: the Airoha EN8811H behind an MT7531 port
+has its driver on the root filesystem. Its devicetree interrupt maps to
+irq 15, and after the real driver binds phydev->irq reads -1.
+
+Restore the number when the PHY detaches. It comes from the bus table,
+mdiobus->irq[], where the bus or the MAC driver recorded it. Do it only
+when phy_attach_direct() bound the generic driver, since that is the
+substitution being undone; otherwise the field belongs to whoever wrote
+it. Do it before device_release_driver(), because after the release a
+probing driver can write the same field.
+
+The store is ordered before the release rather than locked against it:
+device_release_driver() takes the device lock itself. A MAC that sets
+phydev->irq before phy_start(), as phy.rst describes, is not affected,
+since the restore runs on detach, between connections.
+
+Tested on the KN-1012 with a 6.18 distribution kernel: phydev->irq
+reads 15 after the real driver binds, and -1 without this patch.
+
+Cc: stable+noautosel@kernel.org # never worked
+Fixes: 00db8189d984 ("This patch adds a PHY Abstraction Layer to the Linux Kernel, enabling ethernet drivers to remain as ignorant as is reasonable of the connected PHY's design and operation details.")
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20261001130236.106059-4-f@lex.la
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/phy_device.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1672,6 +1672,8 @@ static void phy_detach_internal(struct p
+ 	 * real driver could be loaded
+ 	 */
+ 	if (phydev->is_genphy_driven) {
++		/* The release below lets phy_probe() write this field. */
++		phydev->irq = phydev->mdio.bus->irq[phydev->mdio.addr];
+ 		device_release_driver(&phydev->mdio.dev);
+ 		phydev->is_genphy_driven = 0;
+ 	}

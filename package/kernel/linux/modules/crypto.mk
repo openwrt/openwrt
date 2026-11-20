@@ -105,11 +105,20 @@ $(eval $(call KernelPackage,crypto-cbc))
 define KernelPackage/crypto-ccm
  TITLE:=Support for Counter with CBC MAC (CCM)
  DEPENDS:=+kmod-crypto-ctr +kmod-crypto-aead
- KCONFIG:=CONFIG_CRYPTO_CCM
+ KCONFIG:= \
+	CONFIG_CRYPTO_CCM \
+	CONFIG_CRYPTO_AES_ARM64_CE_CCM
  FILES:=$(LINUX_DIR)/crypto/ccm.ko
  AUTOLOAD:=$(call AutoLoad,09,ccm)
  $(call AddDepends/crypto)
 endef
+
+define KernelPackage/crypto-ccm/aarch64-ce
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/aes-ce-ccm.ko
+  AUTOLOAD+=aes-ce-ccm
+endef
+
+KernelPackage/crypto-ccm/qualcommax=$(KernelPackage/crypto-ccm/aarch64-ce)
 
 $(eval $(call KernelPackage,crypto-ccm))
 
@@ -169,11 +178,23 @@ $(eval $(call KernelPackage,crypto-crc32c))
 define KernelPackage/crypto-ctr
   TITLE:=Counter Mode CryptoAPI module
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-seqiv
-  KCONFIG:=CONFIG_CRYPTO_CTR
+  KCONFIG:= \
+	CONFIG_CRYPTO_CTR \
+	CONFIG_CRYPTO_AES_ARM64_CE \
+	CONFIG_CRYPTO_AES_ARM64_CE_BLK
   FILES:=$(LINUX_DIR)/crypto/ctr.ko
   AUTOLOAD:=$(call AutoLoad,09,ctr)
   $(call AddDepends/crypto)
 endef
+
+define KernelPackage/crypto-ctr/aarch64-ce
+  FILES+= \
+	$(LINUX_DIR)/arch/arm64/crypto/aes-ce-cipher.ko \
+	$(LINUX_DIR)/arch/arm64/crypto/aes-ce-blk.ko
+  AUTOLOAD+=aes-ce-cipher aes-ce-blk
+endef
+
+KernelPackage/crypto-ctr/qualcommax=$(KernelPackage/crypto-ctr/aarch64-ce)
 
 $(eval $(call KernelPackage,crypto-ctr))
 
@@ -327,7 +348,8 @@ define KernelPackage/crypto-ghash
   DEPENDS:=+kmod-crypto-gf128 +kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_GHASH \
-	CONFIG_CRYPTO_GHASH_ARM_CE
+	CONFIG_CRYPTO_GHASH_ARM_CE \
+	CONFIG_CRYPTO_GHASH_ARM64_CE
   FILES:=$(LINUX_DIR)/crypto/ghash-generic.ko
   AUTOLOAD:=$(call AutoLoad,09,ghash-generic)
   $(call AddDepends/crypto)
@@ -335,13 +357,20 @@ endef
 
 define KernelPackage/crypto-ghash/arm-ce
   FILES+= $(LINUX_DIR)/arch/arm/crypto/ghash-arm-ce.ko
-  AUTOLOAD+=$(call AutoLoad,09,ghash-arm-ce)
+  AUTOLOAD+=ghash-arm-ce
 endef
 
 KernelPackage/crypto-ghash/imx/cortexa7=$(KernelPackage/crypto-ghash/arm-ce)
 KernelPackage/crypto-ghash/imx/cortexa9=$(KernelPackage/crypto-ghash/arm-ce)
 KernelPackage/crypto-ghash/ipq40xx=$(KernelPackage/crypto-ghash/arm-ce)
 KernelPackage/crypto-ghash/mvebu/cortexa9=$(KernelPackage/crypto-ghash/arm-ce)
+
+define KernelPackage/crypto-ghash/aarch64-ce
+  FILES+= $(LINUX_DIR)/arch/arm64/crypto/ghash-ce.ko
+  AUTOLOAD+=ghash-ce
+endef
+
+KernelPackage/crypto-ghash/qualcommax=$(KernelPackage/crypto-ghash/aarch64-ce)
 
 $(eval $(call KernelPackage,crypto-ghash))
 
@@ -557,6 +586,32 @@ define KernelPackage/crypto-kpp
 endef
 
 $(eval $(call KernelPackage,crypto-kpp))
+
+define KernelPackage/crypto-krb5
+  TITLE:=Kerberos 5 crypto library
+  DEPENDS:= \
+	+kmod-crypto-manager \
+	+kmod-crypto-aead \
+	+kmod-crypto-authenc \
+	+kmod-crypto-hmac \
+	+kmod-crypto-cmac \
+	+kmod-crypto-sha1 \
+	+kmod-crypto-sha256 \
+	+kmod-crypto-sha512 \
+	+kmod-crypto-cbc \
+	+kmod-crypto-cts
+  KCONFIG:= \
+	CONFIG_CRYPTO_KRB5 \
+	CONFIG_CRYPTO_KRB5ENC \
+	CONFIG_CRYPTO_KRB5_SELFTESTS=n
+  FILES:= \
+	$(LINUX_DIR)/crypto/krb5enc.ko \
+	$(LINUX_DIR)/crypto/krb5/krb5.ko
+  AUTOLOAD:=$(call AutoLoad,09,krb5enc krb5)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-krb5))
 
 define KernelPackage/crypto-lib-chacha20
   TITLE:=ChaCha library interface

@@ -1,0 +1,31 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 24 Oct 2026 06:03:04 +0200
+Subject: [PATCH] ubus: wake the main loop while waiting to connect again
+
+After a lost UBus connection, the main loop calls ubus_init() again
+only when poll() returns. Without DNS or DHCP traffic nothing wakes
+poll(), so dnsmasq stays off the bus after a ubusd restart.
+
+Wake every second while the UBus connection is missing, as for a
+missing DBus connection.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/dnsmasq.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -1118,6 +1118,12 @@ int main (int argc, char **argv)
+ 	       (timeout == -1 || timeout > 1000))
+ 	timeout = 1000;
+       
++#ifdef HAVE_UBUS
++      if (option_bool(OPT_UBUS) && !daemon->ubus &&
++	  (timeout == -1 || timeout > 1000))
++	timeout = 1000;
++#endif
++
+       if (daemon->port != 0)
+ 	set_dns_listeners();
+       

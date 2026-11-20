@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
+#include <linux/bitmap.h>
+#include <linux/errno.h>
 #include <linux/etherdevice.h>
 #include <linux/iopoll.h>
 #include <linux/lockdep.h>
@@ -51,6 +53,24 @@
 
 #define N_FIXED_FIELDS 12
 #define N_FIXED_FIELDS_RTL931X 14
+
+static int otto_pie_find_free_slot(struct otto_dsa_priv *priv, int block)
+{
+	unsigned long first, end, idx;
+
+	lockdep_assert_held(&priv->pie_mutex);
+
+	if (block < 0 || block >= priv->r->n_pie_blocks)
+		return -EINVAL;
+
+	first = block * PIE_BLOCK_SIZE;
+	end = first + PIE_BLOCK_SIZE;
+	idx = find_next_zero_bit(priv->pie_use_bm, end, first);
+	if (idx >= end)
+		return -ENOSPC;
+
+	return idx;
+}
 
 /* RTL838X */
 
@@ -906,8 +926,6 @@ static bool otto_pie_838x_templ_has(int t, enum rtl838x_template_field_id field_
 static int otto_pie_838x_verify_template(struct otto_dsa_priv *priv,
 					 struct pie_rule *pr, int t, int block)
 {
-	int i;
-
 	if (!pr->is_ipv6 && pr->sip_m && !otto_pie_838x_templ_has(t, RTL838X_TEMPLATE_FIELD_SIP0))
 		return -1;
 
@@ -946,12 +964,7 @@ static int otto_pie_838x_verify_template(struct otto_dsa_priv *priv,
 
 	/* TODO: Check more */
 
-	i = find_first_zero_bit(&priv->pie_use_bm[block * 4], PIE_BLOCK_SIZE);
-
-	if (i >= PIE_BLOCK_SIZE)
-		return -1;
-
-	return i + PIE_BLOCK_SIZE * block;
+	return otto_pie_find_free_slot(priv, block);
 }
 
 int otto_pie_838x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
@@ -1755,8 +1768,6 @@ static bool otto_pie_839x_templ_has(int t, enum rtl839x_template_field_id field_
 static int otto_pie_839x_verify_template(struct otto_dsa_priv *priv,
 					 struct pie_rule *pr, int t, int block)
 {
-	int i;
-
 	if (!pr->is_ipv6 && pr->sip_m && !otto_pie_839x_templ_has(t, RTL839X_TEMPLATE_FIELD_SIP0))
 		return -1;
 
@@ -1795,12 +1806,7 @@ static int otto_pie_839x_verify_template(struct otto_dsa_priv *priv,
 
 	/* TODO: Check more */
 
-	i = find_first_zero_bit(&priv->pie_use_bm[block * 4], PIE_BLOCK_SIZE);
-
-	if (i >= PIE_BLOCK_SIZE)
-		return -1;
-
-	return i + PIE_BLOCK_SIZE * block;
+	return otto_pie_find_free_slot(priv, block);
 }
 
 int otto_pie_839x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
@@ -2462,10 +2468,7 @@ static bool otto_pie_930x_templ_has(int t, enum rtl930x_template_field_id field_
 static int otto_pie_930x_verify_template(struct otto_dsa_priv *priv,
 					 struct pie_rule *pr, int t, int block)
 {
-	int i;
-
-	if (t < 0 || t >= ARRAY_SIZE(rtl930x_fixed_templates) ||
-	    block < 0 || block >= priv->r->n_pie_blocks)
+	if (t < 0 || t >= ARRAY_SIZE(rtl930x_fixed_templates))
 		return -1;
 
 	if (!pr->is_ipv6 && pr->sip_m && !otto_pie_930x_templ_has(t, RTL930X_TEMPLATE_FIELD_SIP0))
@@ -2509,12 +2512,7 @@ static int otto_pie_930x_verify_template(struct otto_dsa_priv *priv,
 
 	/* TODO: Check more */
 
-	i = find_first_zero_bit(&priv->pie_use_bm[block * 4], PIE_BLOCK_SIZE);
-
-	if (i >= PIE_BLOCK_SIZE)
-		return -1;
-
-	return i + PIE_BLOCK_SIZE * block;
+	return otto_pie_find_free_slot(priv, block);
 }
 
 int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
@@ -3137,8 +3135,6 @@ static bool otto_pie_931x_templ_has(int t, enum rtl931x_template_field_id field_
 static int otto_pie_931x_verify_template(struct otto_dsa_priv *priv,
 					 struct pie_rule *pr, int t, int block)
 {
-	int i;
-
 	if (!pr->is_ipv6 && pr->sip_m && !otto_pie_931x_templ_has(t, RTL931X_TEMPLATE_FIELD_SIP0))
 		return -1;
 
@@ -3177,12 +3173,7 @@ static int otto_pie_931x_verify_template(struct otto_dsa_priv *priv,
 
 	/* TODO: Check more */
 
-	i = find_first_zero_bit(&priv->pie_use_bm[block * 4], PIE_BLOCK_SIZE);
-
-	if (i >= PIE_BLOCK_SIZE)
-		return -1;
-
-	return i + PIE_BLOCK_SIZE * block;
+	return otto_pie_find_free_slot(priv, block);
 }
 
 int otto_pie_931x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)

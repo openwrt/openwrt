@@ -120,7 +120,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			if (orig != new1)
  				ocp_reg_write(tp, OCP_10GBT_CTRL, new1);
  		}
-@@ -8227,17 +8252,38 @@ int rtl8152_get_link_ksettings(struct ne
+@@ -8229,17 +8254,38 @@ int rtl8152_get_link_ksettings(struct ne
  	linkmode_mod_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
  			 cmd->link_modes.supported, tp->support_2500full);
  
@@ -169,7 +169,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}
  
  	mutex_unlock(&tp->control);
-@@ -8287,6 +8333,10 @@ static int rtl8152_set_link_ksettings(st
+@@ -8289,6 +8335,10 @@ static int rtl8152_set_link_ksettings(st
  		     cmd->link_modes.advertising))
  		advertising |= RTL_ADVERTISED_2500_FULL;
  
@@ -180,7 +180,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	mutex_lock(&tp->control);
  
  	ret = rtl8152_set_speed(tp, cmd->base.autoneg, cmd->base.speed,
-@@ -8404,7 +8454,7 @@ static int r8152_set_eee(struct r8152 *t
+@@ -8406,7 +8456,7 @@ static int r8152_set_eee(struct r8152 *t
  
  	tp->eee_en = eee->eee_enabled;
  	tp->eee_adv = val;
@@ -189,7 +189,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		val = linkmode_to_mii_eee_cap2_t(eee->advertised);
  		tp->eee_adv2 = val;
  	}
-@@ -8428,19 +8478,28 @@ static int r8153_get_eee(struct r8152 *t
+@@ -8430,19 +8480,28 @@ static int r8153_get_eee(struct r8152 *t
  	val = ocp_reg_read(tp, OCP_EEE_LPABLE);
  	mii_eee_cap1_mod_linkmode_t(eee->lp_advertised, val);
  
@@ -221,7 +221,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	eee->eee_enabled = tp->eee_en;
  
  	if (speed & _1000bps)
-@@ -9386,6 +9445,11 @@ static int rtl8152_probe_once(struct usb
+@@ -9388,6 +9447,11 @@ static int rtl8152_probe_once(struct usb
  		} else {
  			tp->speed = SPEED_1000;
  		}

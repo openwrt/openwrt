@@ -63,7 +63,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	slave_config.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
  
  	ret = dmaengine_slave_config(ctlr->dma_rx, &slave_config);
-@@ -1360,6 +1350,7 @@ static int bcm2835_spi_probe(struct plat
+@@ -1362,6 +1352,7 @@ static int bcm2835_spi_probe(struct plat
  {
  	struct spi_controller *ctlr;
  	struct bcm2835_spi *bs;
@@ -71,7 +71,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int err;
  
  	ctlr = devm_spi_alloc_host(&pdev->dev, sizeof(*bs));
-@@ -1383,10 +1374,11 @@ static int bcm2835_spi_probe(struct plat
+@@ -1385,10 +1376,11 @@ static int bcm2835_spi_probe(struct plat
  	bs = spi_controller_get_devdata(ctlr);
  	bs->ctlr = ctlr;
  

@@ -83,7 +83,7 @@
 		wifi@0,0 {
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
-			qcom,ath11k-calibration-variant = "JDC-RE-CS-02";
+			qcom,calibration-variant = "JDC-RE-CS-02";
 		};
 	};
 };
@@ -168,5 +168,5 @@
 &wifi {
 	status = "okay";
 
-	qcom,ath11k-calibration-variant = "JDC-RE-CS-02";
+	qcom,calibration-variant = "JDC-RE-CS-02";
 };

@@ -18,10 +18,10 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #include <dt-bindings/interrupt-controller/arm-gic.h>
  #include <dt-bindings/clock/qcom,gcc-ipq8074.h>
 +#include <dt-bindings/clock/qcom,apss-ipq.h>
+ #include <dt-bindings/clock/qcom,ipq8074-cmn-pll.h>
  
  / {
- 	#address-cells = <2>;
-@@ -38,6 +39,8 @@
+@@ -45,6 +46,8 @@
  			reg = <0x0>;
  			next-level-cache = <&l2_0>;
  			enable-method = "psci";
@@ -30,7 +30,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cpu1: cpu@1 {
-@@ -46,6 +49,8 @@
+@@ -53,6 +56,8 @@
  			enable-method = "psci";
  			reg = <0x1>;
  			next-level-cache = <&l2_0>;
@@ -39,7 +39,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cpu2: cpu@2 {
-@@ -54,6 +59,8 @@
+@@ -61,6 +66,8 @@
  			enable-method = "psci";
  			reg = <0x2>;
  			next-level-cache = <&l2_0>;
@@ -48,7 +48,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cpu3: cpu@3 {
-@@ -62,6 +69,8 @@
+@@ -69,6 +76,8 @@
  			enable-method = "psci";
  			reg = <0x3>;
  			next-level-cache = <&l2_0>;

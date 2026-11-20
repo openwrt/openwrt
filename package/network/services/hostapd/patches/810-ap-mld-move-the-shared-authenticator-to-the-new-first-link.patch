@@ -196,7 +196,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return 0;
  	}
  #endif /* CONFIG_IEEE80211BE */
-@@ -503,6 +506,41 @@ int authsrv_init(struct hostapd_data *ha
+@@ -504,6 +507,41 @@ int authsrv_init(struct hostapd_data *ha
  }
  
  
@@ -261,7 +261,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_NO_RADIUS */
  
  	ssid = &hapd->conf->ssid;
-@@ -5930,6 +5931,28 @@ int hostapd_mld_add_link(struct hostapd_
+@@ -6235,6 +6236,28 @@ int hostapd_mld_add_link(struct hostapd_
  }
  
  
@@ -290,7 +290,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int hostapd_mld_remove_link(struct hostapd_data *hapd)
  {
  	struct hostapd_mld *mld = hapd->mld;
-@@ -5971,6 +5994,10 @@ int hostapd_mld_remove_link(struct hosta
+@@ -6276,6 +6299,10 @@ int hostapd_mld_remove_link(struct hosta
  			hostapd_mld_move_vlan_list(hapd, next_fbss);
  
  		mld->fbss = next_fbss;
@@ -619,7 +619,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	struct dl_list erp_keys; /* struct eap_server_erp_key */
  
-@@ -2089,7 +2089,11 @@ radius_server_init(struct radius_server_
+@@ -2093,7 +2093,11 @@ radius_server_init(struct radius_server_
  			  conf->eap_req_id_text_len);
  		data->eap_req_id_text_len = conf->eap_req_id_text_len;
  	}
@@ -632,7 +632,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (conf->t_c_server_url) {
  		data->t_c_server_url = os_strdup(conf->t_c_server_url);
-@@ -2181,6 +2185,18 @@ void radius_server_erp_flush(struct radi
+@@ -2185,6 +2189,18 @@ void radius_server_erp_flush(struct radi
  
  
  /**
@@ -651,7 +651,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * radius_server_deinit - Deinitialize RADIUS server
   * @data: RADIUS server context from radius_server_init()
   */
-@@ -2206,6 +2222,7 @@ void radius_server_deinit(struct radius_
+@@ -2210,6 +2226,7 @@ void radius_server_deinit(struct radius_
  	os_free(data->dump_msk_file);
  #endif /* CONFIG_RADIUS_TEST */
  	os_free(data->t_c_server_url);

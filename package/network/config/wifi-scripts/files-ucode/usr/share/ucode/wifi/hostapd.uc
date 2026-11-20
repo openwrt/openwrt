@@ -11,8 +11,8 @@ import * as nl80211 from 'nl80211';
 import * as ap from 'wifi.ap';
 import * as fs from 'fs';
 
-const NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER = 33;
-const NL80211_EXT_FEATURE_RADAR_BACKGROUND = 61;
+const NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER = 32;
+const NL80211_EXT_FEATURE_RADAR_BACKGROUND = 60;
 
 let phy_features = {};
 let phy_capabilities = {};
@@ -106,7 +106,7 @@ function device_cell_density_append(config) {
 				config.supported_rates ??= [ 5500, 6000, 9000, 11000, 12000, 18000, 24000, 36000, 48000, 54000 ];
 				config.basic_rates ??= [ 5500, 11000 ];
 			}
-		} else if (config.cell_density == 2 || (config.cell_density > 3 && config.legacy_rates)) {
+		} else if (config.cell_density == 2 || (config.cell_density > 2 && config.legacy_rates)) {
 			if (!config.legacy_rates) {
 				config.supported_rates ??= [ 12000, 18000, 24000, 36000, 48000, 54000 ];
 				config.basic_rates ??= [ 12000, 24000 ];
@@ -277,14 +277,14 @@ function device_htmode_append(config) {
 					break;
 				}
 			config.op_class = 137;
-			config.eht_oper_chwidth = 7;
+			config.eht_oper_chwidth = 9;
 
 			/*
 			 * Set HE operation values for 160MHz backward compatibility
 			 * with WiFi 6E clients. Pick the 160MHz half that contains
 			 * the primary channel.
 			 */
-			config.he_oper_chwidth = 3;
+			config.he_oper_chwidth = 2;
 			if (config.channel < config.eht_oper_centr_freq_seg0_idx)
 				config.he_oper_centr_freq_seg0_idx = config.eht_oper_centr_freq_seg0_idx - 16;
 			else
@@ -467,7 +467,7 @@ function device_htmode_append(config) {
 
 		append_vars(config, [
 			'ieee80211be', 'eht_su_beamformer', 'eht_su_beamformee',
-			'eht_mu_beamformer',
+			'eht_mu_beamformer', 'punct_bitmap',
 		]);
 
 		if (config.hw_mode == 'a')
@@ -519,8 +519,6 @@ function generate(config) {
 
 	device_country_code(config);
 
-	device_cell_density_append(config);
-
 	/* beacon */
 	append_vars(config, [ 'beacon_int', 'beacon_rate', 'rnr_beacon' ]);
 
@@ -553,6 +551,7 @@ function generate(config) {
 		config.legacy_rates = false;
 		append(require_mode[config.require_mode], 1);
 	}
+	device_cell_density_append(config);
 	device_htmode_append(config);
 
 	if (config.ieee80211ax || config.ieee80211be)

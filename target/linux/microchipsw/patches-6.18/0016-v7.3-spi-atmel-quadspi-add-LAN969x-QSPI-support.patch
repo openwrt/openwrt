@@ -87,7 +87,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  static int atmel_qspi_sama7g5_setup(struct spi_device *spi)
  {
  	struct atmel_qspi *aq = spi_controller_get_devdata(spi->controller);
-@@ -1680,6 +1732,15 @@ static const struct atmel_qspi_caps atme
+@@ -1682,6 +1734,15 @@ static const struct atmel_qspi_caps atme
  	.has_dllon = true,
  };
  
@@ -103,7 +103,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  static const struct of_device_id atmel_qspi_dt_ids[] = {
  	{
  		.compatible = "atmel,sama5d2-qspi",
-@@ -1709,7 +1770,10 @@ static const struct of_device_id atmel_q
+@@ -1711,7 +1772,10 @@ static const struct of_device_id atmel_q
  		.compatible = "microchip,sama7d65-qspi",
  		.data = &atmel_sama7d65_qspi_caps,
  	},

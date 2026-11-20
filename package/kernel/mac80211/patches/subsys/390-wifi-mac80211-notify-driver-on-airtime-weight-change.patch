@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			      struct ieee80211_twt_setup *twt);
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2578,8 +2578,12 @@ static int sta_apply_parameters(struct i
+@@ -2585,8 +2585,12 @@ static int sta_apply_parameters(struct i
  	if (ieee80211_vif_is_mesh(&sdata->vif))
  		sta_apply_mesh_params(local, sta, params);
  

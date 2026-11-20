@@ -1,0 +1,12 @@
+. /lib/functions.sh
+
+preinit_mount_ubi_config() {
+	case $(board_name) in
+	buffalo,wsr-1500ax2s)
+		mkdir -p /tmp/ubi_Config
+		mount -r -t ubifs ubi0:ubi_Config /tmp/ubi_Config
+		;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_mount_ubi_config

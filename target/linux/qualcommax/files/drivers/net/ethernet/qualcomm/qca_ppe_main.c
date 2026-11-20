@@ -1339,6 +1339,13 @@ static int qca_ppe_port_mdb_del(struct dsa_switch *ds, int port,
 		return ppe_fdb_mcast_op(priv, mdb->addr, 0,
 					vsi, PPE_FDB_OP_DEL);
 
+	/* The CPU port is in every entry from its first member on, as
+	 * qca_ppe_port_mdb_add() seeds it, so the host leaving the group
+	 * only matters once no user port is left in it.
+	 */
+	if (port == QCA_PPE_CPU_PORT)
+		return 0;
+
 	return ppe_fdb_mcast_op(priv, mdb->addr, portmap,
 				vsi, PPE_FDB_OP_ADD);
 }
@@ -3074,7 +3081,7 @@ static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 		if (ret)
 			continue;
 
-		port3_ch = pcs_args.args[0];
+		port3_ch = pcs_args.args_count ? pcs_args.args[0] : 0;
 		of_node_put(pcs_args.np);
 	}
 

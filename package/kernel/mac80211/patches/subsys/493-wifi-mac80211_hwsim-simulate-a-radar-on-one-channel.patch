@@ -1,0 +1,137 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 28 Oct 2026 22:00:00 +0100
+Subject: [PATCH] wifi: mac80211_hwsim: simulate a radar on one channel context
+
+mac80211_hwsim creates the debugfs file dfs_simulate_radar only for a
+radio without channel contexts. A radio with MLO or with several radios
+per wiphy always uses channel contexts, so no radar can be simulated on
+it. A write to the file also reports the radar on every channel context
+of the wiphy, while on hardware one radio detects it.
+
+Create the file on every radio. On a radio with channel contexts, read
+the written value as the frequency in MHz of the primary channel of a
+channel context, and report the radar on that context only. A value
+that matches no context, or that does not fit in 32 bits, is refused
+with -EINVAL. A radio without channel contexts ignores the value, as
+before.
+
+The incumbent signal file looks up a channel context by its frequency
+as well. Share the lookup, and keep the 6 GHz check in that write.
+ieee80211_iter_chan_contexts_atomic() holds the RCU read lock only while
+the iterator runs, and a context is freed after a grace period, so the
+lookup copies the chandef of the context. The incumbent signal write
+read the chandef of the context after the lookup before. The radar
+write passes the context to ieee80211_radar_detected(), which only
+compares the pointer.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -1168,11 +1168,50 @@ static int hwsim_fops_ps_write(void *dat
+ DEFINE_DEBUGFS_ATTRIBUTE(hwsim_fops_ps, hwsim_fops_ps_read, hwsim_fops_ps_write,
+ 			 "%llu\n");
+ 
++/* The context is freed after an RCU grace period, and the iterator holds the
++ * RCU read lock only while it runs, so the context's chandef is copied. The
++ * pointer of the context serves as an identifier only.
++ */
++struct hwsim_chanctx_iter_arg {
++	struct ieee80211_chanctx_conf *conf;
++	struct cfg80211_chan_def def;
++	u32 freq_mhz;
++};
++
++static void hwsim_chanctx_freq_iter(struct ieee80211_hw *hw,
++				    struct ieee80211_chanctx_conf *conf,
++				    void *data)
++{
++	struct hwsim_chanctx_iter_arg *arg = data;
++
++	if (!conf->def.chan || conf->def.chan->center_freq != arg->freq_mhz)
++		return;
++
++	arg->conf = conf;
++	arg->def = conf->def;
++}
++
++/*
++ * With channel contexts, the value is the frequency in MHz of the context
++ * that detects the radar, as on hardware where one radio detects it.
++ */
+ static int hwsim_write_simulate_radar(void *dat, u64 val)
+ {
+ 	struct mac80211_hwsim_data *data = dat;
++	struct hwsim_chanctx_iter_arg arg = { .freq_mhz = val };
++
++	if (data->use_chanctx) {
++		if (val > U32_MAX)
++			return -EINVAL;
++
++		ieee80211_iter_chan_contexts_atomic(data->hw,
++						    hwsim_chanctx_freq_iter,
++						    &arg);
++		if (!arg.conf)
++			return -EINVAL;
++	}
+ 
+-	ieee80211_radar_detected(data->hw, NULL);
++	ieee80211_radar_detected(data->hw, arg.conf);
+ 
+ 	return 0;
+ }
+@@ -1215,23 +1254,6 @@ static const struct file_operations hwsi
+ 	.llseek = default_llseek,
+ };
+ 
+-struct hwsim_chanctx_iter_arg {
+-	struct ieee80211_chanctx_conf *conf;
+-	u32 freq_mhz;
+-};
+-
+-static void hwsim_6ghz_chanctx_iter(struct ieee80211_hw *hw,
+-				    struct ieee80211_chanctx_conf *conf,
+-				    void *data)
+-{
+-	struct hwsim_chanctx_iter_arg *arg = data;
+-
+-	if (conf->def.chan &&
+-	    conf->def.chan->band == NL80211_BAND_6GHZ &&
+-	    conf->def.chan->center_freq == arg->freq_mhz)
+-		arg->conf = conf;
+-}
+-
+ static ssize_t hwsim_simulate_incumbent_signal_write(struct file *file,
+ 						     const char __user *ubuf,
+ 						     size_t len, loff_t *ppos)
+@@ -1255,14 +1277,14 @@ static ssize_t hwsim_simulate_incumbent_
+ 		return -EINVAL;
+ 
+ 	ieee80211_iter_chan_contexts_atomic(data->hw,
+-					    hwsim_6ghz_chanctx_iter,
++					    hwsim_chanctx_freq_iter,
+ 					    &arg);
+ 
+-	if (!arg.conf)
++	if (!arg.conf || arg.def.chan->band != NL80211_BAND_6GHZ)
+ 		return -EINVAL;
+ 
+ 	cfg80211_incumbent_signal_notify(data->hw->wiphy,
+-					 &arg.conf->def,
++					 &arg.def,
+ 					 bitmap,
+ 					 GFP_KERNEL);
+ 
+@@ -7800,10 +7822,8 @@ static int mac80211_hwsim_new_radio(stru
+ 			    &hwsim_fops_rx_rssi);
+ 	debugfs_create_u16("scs_status", 0600, data->debugfs,
+ 			   &data->scs_status);
+-	if (!data->use_chanctx)
+-		debugfs_create_file("dfs_simulate_radar", 0222,
+-				    data->debugfs,
+-				    data, &hwsim_simulate_radar);
++	debugfs_create_file("dfs_simulate_radar", 0222, data->debugfs,
++			    data, &hwsim_simulate_radar);
+ 	if (param->background_radar)
+ 		debugfs_create_file("dfs_background_cac", 0200,
+ 				    data->debugfs,

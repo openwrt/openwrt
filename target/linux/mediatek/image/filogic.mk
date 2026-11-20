@@ -1,6 +1,7 @@
 DTS_DIR := $(DTS_DIR)/mediatek
 DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
 DEVICE_VARS += SUPPORTED_TELTONIKA_HW_MODS
+DEVICE_VARS += ZYXEL_MODEL_IDS
 
 define Image/Prepare
 	# For UBI we want only one extra block
@@ -117,9 +118,9 @@ define Build/mstc-header
   mv $@.new $@
 endef
 
-define Build/zyxel-nwa-fit-filogic
+define Build/zyxel-fit-filogic
 	$(TOPDIR)/scripts/mkits-zyxel-fit-filogic.sh \
-		$@.its $@ "80 e1 81 e1 ff ff ff ff ff ff"
+		$@.its $@ "$(ZYXEL_MODEL_IDS)"
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -383,7 +384,7 @@ define Device/smartrg_sdg-8734
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8734
   DEVICE_DTS := mt7988a-smartrg-sdg-8734
-  DEVICE_PACKAGES += kmod-mt7996-firmware kmod-phy-aquantia kmod-sfp kmod-usb3 mt7988-wo-firmware
+  DEVICE_PACKAGES += kmod-i2c-gpio kmod-mt7996-firmware kmod-phy-aquantia kmod-sfp kmod-usb3 mt7988-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8734
 
@@ -438,7 +439,8 @@ define Device/arcadyan_mozart
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x45f00000
-  DEVICE_PACKAGES := kmod-hwmon-pwmfan e2fsprogs f2fsck mkf2fs kmod-mt7996-firmware
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-gpio kmod-sfp e2fsprogs f2fsck mkf2fs \
+		     kmod-mt7996-firmware
   KERNEL_LOADADDR := 0x46000000
   KERNEL := kernel-bin | libdeflate-gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
@@ -981,6 +983,17 @@ define Device/bazis_ax3000wm
   ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot bazis-ax3000wm
 endef
 TARGET_DEVICES += bazis_ax3000wm
+
+define Device/benton_sn-r1
+  DEVICE_VENDOR := Benton
+  DEVICE_MODEL := SN-R1
+  DEVICE_DTS := mt7981b-benton-sn-r1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+	e2fsprogs f2fsck mkf2fs
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += benton_sn-r1
 
 define Device/buffalo_wsr-3000ax4p
   DEVICE_VENDOR := BUFFALO
@@ -1971,17 +1984,25 @@ define Device/gatonetworks_gdsp
 endef
 TARGET_DEVICES += gatonetworks_gdsp
 
-define Device/glinet_gl-be10000
+define Device/glinet_gl-be10000-common
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-BE10000
-  DEVICE_DTS := mt7987a-glinet-gl-be10000
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x4ff00000
-  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7996-233-firmware kmod-hwmon-pwmfan kmod-usb3
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7996-233-firmware \
+	kmod-hwmon-pwmfan kmod-usb3 kmod-backlight-pwm kmod-drm-panel-mipi-dbi \
+	kmod-input-touchscreen-hynitron-cst3530 kmod-input-evdev \
+	input-support video-support mipi-dbi-glinet-gl-be10000
+  FEED_DEVICE_PACKAGES := glinet-panel-ui
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 256k
   PAGESIZE := 4096
+endef
+
+define Device/glinet_gl-be10000
+  $(call Device/glinet_gl-be10000-common)
+  DEVICE_DTS := mt7987a-glinet-gl-be10000
   IMAGE_SIZE := 482304k
 ifeq ($(IB),)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
@@ -1992,6 +2013,52 @@ endif
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += glinet_gl-be10000
+
+define Device/glinet_gl-be10000-ubootmod
+  $(call Device/glinet_gl-be10000-common)
+  DEVICE_VARIANT := U-Boot mod
+  DEVICE_DTS := mt7987a-glinet-gl-be10000-ubootmod
+  KERNEL_LOADADDR := 0x40000000
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
+	pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | \
+	pad-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip factory.ubi
+  ARTIFACT/preloader.bin := mt7987-bl2 spim-nand2-4k-ubi-comb-be10000
+  ARTIFACT/bl31-uboot.fip := mt7987-bl31-uboot glinet_gl-be10000
+  ARTIFACT/factory.ubi := ubinize-image fit squashfs-sysupgrade.itb
+  UBINIZE_PARTS := fip=:$(STAGING_DIR_IMAGE)/mt7987_glinet_gl-be10000-u-boot.fip
+endef
+TARGET_DEVICES += glinet_gl-be10000-ubootmod
+
+define Device/glinet_gl-be14000
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-BE14000
+  DEVICE_DTS := mt7988a-glinet-gl-be14000
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x45f00000
+  KERNEL_LOADADDR := 0x46000000
+  DEVICE_PACKAGES := kmod-mt7996-233-firmware kmod-hwmon-pwmfan kmod-usb3 \
+	kmod-backlight-pwm kmod-drm-panel-mipi-dbi mipi-dbi-glinet-gl-be14000 \
+	kmod-input-touchscreen-hynitron-cst3530 kmod-input-evdev input-support \
+	video-support mt7988-wo-firmware rtl8261c-firmware e2fsprogs f2fsck \
+	mkf2fs bridger kmod-sfp kmod-i2c-gpio
+  FEED_DEVICE_PACKAGES := glinet-panel-ui
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to 32M | append-rootfs
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7988-bl2 emmc-comb-be14000
+  ARTIFACT/bl31-uboot.fip := mt7988-bl31-uboot glinet_gl-be14000
+endef
+TARGET_DEVICES += glinet_gl-be14000
 
 define Device/glinet_gl-mt2500
   DEVICE_VENDOR := GL.iNet
@@ -4485,12 +4552,8 @@ define Device/zyxel_ex5700-telenor
 endef
 TARGET_DEVICES += zyxel_ex5700-telenor
 
-define Device/zyxel_nwa50ax-pro
+define Device/zyxel_filogic_common
   DEVICE_VENDOR := Zyxel
-  DEVICE_MODEL := NWA50AX Pro
-  DEVICE_ALT0_VENDOR := Zyxel
-  DEVICE_ALT0_MODEL := NWA90AX Pro
-  DEVICE_DTS := mt7981b-zyxel-nwa50ax-pro
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware zyxel-bootconfig
   DEVICE_DTS_LOADADDR := 0x44000000
@@ -4500,10 +4563,28 @@ define Device/zyxel_nwa50ax-pro
   IMAGE_SIZE := 51200k
   KERNEL_IN_UBI := 1
   IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE) | zyxel-nwa-fit-filogic
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE) | zyxel-fit-filogic
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  ZYXEL_MODEL_IDS :=
+endef
+
+define Device/zyxel_nwa50ax-pro
+  $(call Device/zyxel_filogic_common)
+  DEVICE_MODEL := NWA50AX Pro
+  DEVICE_ALT0_VENDOR := Zyxel
+  DEVICE_ALT0_MODEL := NWA90AX Pro
+  DEVICE_DTS := mt7981b-zyxel-nwa50ax-pro
+  ZYXEL_MODEL_IDS := 80e1 81e1
 endef
 TARGET_DEVICES += zyxel_nwa50ax-pro
+
+define Device/zyxel_wax300h
+  $(call Device/zyxel_filogic_common)
+  DEVICE_MODEL := WAX300H
+  DEVICE_DTS := mt7981b-zyxel-wax300h
+  ZYXEL_MODEL_IDS := 84e1
+endef
+TARGET_DEVICES += zyxel_wax300h
 
 define Device/zyxel_wx5600-t0-ubootmod
   DEVICE_VENDOR := Zyxel

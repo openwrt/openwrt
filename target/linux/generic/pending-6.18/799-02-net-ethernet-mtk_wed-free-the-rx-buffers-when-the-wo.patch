@@ -1,0 +1,58 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 26 Oct 2026 13:01:16 +0100
+Subject: [PATCH 2/3] net: ethernet: mtk_wed: do not leak the rx buffers in a
+ failed rx reset
+
+If the WO rejects either state change, mtk_wed_rx_reset() returns before
+it frees the rx buffers. The restart allocates them again in
+mtk_wed_rx_buffer_alloc() and overwrites the pointers, so the old buffers
+leak.
+
+If the change to the enable state fails, the hardware is already stopped.
+Reset the rings and free the buffers as on success, and return the error.
+If the change to the reset state fails, the hardware still fetches from
+the buffers, so keep them, and let the allocation skip buffers that
+exist.
+
+Fixes: b08134c6e109 ("net: ethernet: mtk_wed: add mtk_wed_rx_reset routine")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -782,7 +782,7 @@ mtk_wed_hwrro_buffer_alloc(struct mtk_we
+ 	dma_addr_t desc_phys;
+ 	int i, page_idx = 0;
+ 
+-	if (!dev->wlan.hw_rro)
++	if (!dev->wlan.hw_rro || dev->hw_rro.desc)
+ 		return 0;
+ 
+ 	page_list = kcalloc(n_pages, sizeof(*page_list), GFP_KERNEL);
+@@ -842,6 +842,9 @@ mtk_wed_rx_buffer_alloc(struct mtk_wed_d
+ 	struct mtk_wed_bm_desc *desc;
+ 	dma_addr_t desc_phys;
+ 
++	if (dev->rx_buf_ring.desc)
++		return mtk_wed_hwrro_buffer_alloc(dev);
++
+ 	dev->rx_buf_ring.size = dev->wlan.rx_nbuf;
+ 	desc = dma_alloc_coherent(dev->hw->dev,
+ 				  dev->wlan.rx_nbuf * sizeof(*desc),
+@@ -1746,8 +1749,6 @@ mtk_wed_rx_reset(struct mtk_wed_device *
+ 	ret = mtk_wed_mcu_send_msg(wo, MTK_WED_MODULE_ID_WO,
+ 				   MTK_WED_WO_CMD_CHANGE_STATE, &val,
+ 				   sizeof(val), true);
+-	if (ret)
+-		return ret;
+ 
+ 	/* wed_rx_ring_reset */
+ 	for (i = 0; i < ARRAY_SIZE(dev->rx_ring); i++) {
+@@ -1759,7 +1760,7 @@ mtk_wed_rx_reset(struct mtk_wed_device *
+ 	}
+ 	mtk_wed_free_rx_buffer(dev);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ static void

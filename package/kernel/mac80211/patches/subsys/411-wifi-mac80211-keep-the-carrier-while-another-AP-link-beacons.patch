@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2025,6 +2025,7 @@ static int ieee80211_stop_ap(struct wiph
+@@ -2032,6 +2032,7 @@ static int ieee80211_stop_ap(struct wiph
  	struct ieee80211_bss_conf *link_conf = link->conf;
  	u64 changes = BSS_CHANGED_BEACON_ENABLED;
  	LIST_HEAD(keys);
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	lockdep_assert_wiphy(local->hw.wiphy);
  
-@@ -2048,11 +2049,11 @@ static int ieee80211_stop_ap(struct wiph
+@@ -2055,11 +2056,11 @@ static int ieee80211_stop_ap(struct wiph
  
  	ieee80211_free_next_beacon(link);
  
@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		netif_carrier_off(dev);
  		sdata->u.ap.active = false;
  	}
-@@ -2095,9 +2096,11 @@ static int ieee80211_stop_ap(struct wiph
+@@ -2102,9 +2103,11 @@ static int ieee80211_stop_ap(struct wiph
  	RCU_INIT_POINTER(link_conf->tx_bss_conf, NULL);
  
  	link_conf->enable_beacon = false;

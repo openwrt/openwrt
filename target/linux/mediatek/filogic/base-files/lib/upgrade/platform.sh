@@ -187,6 +187,7 @@ platform_do_upgrade() {
 	cudy,wr3000h-v1-ubootmod|\
 	cudy,wr3000p-v1-ubootmod|\
 	gatonetworks,gdsp|\
+	glinet,gl-be10000-ubootmod|\
 	globitel,bt-r320|\
 	h3c,magic-nx30-pro|\
 	imou,hx21|\
@@ -232,6 +233,8 @@ platform_do_upgrade() {
 	acer,vero-w6m|\
 	airpi,ap3000m|\
 	arcadyan,mozart|\
+	benton,sn-r1|\
+	glinet,gl-be14000|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt6000|\
@@ -445,6 +448,7 @@ platform_check_image() {
 	cudy,wr3000h-v1-ubootmod|\
 	cudy,wr3000p-v1-ubootmod|\
 	gatonetworks,gdsp|\
+	glinet,gl-be10000-ubootmod|\
 	globitel,bt-r320|\
 	h3c,magic-nx30-pro|\
 	jcg,q30-pro|\
@@ -479,6 +483,7 @@ platform_check_image() {
 		fit_check_image "$1"
 		return $?
 		;;
+	benton,sn-r1|\
 	creatlentem,clt-r30b1|\
 	creatlentem,clt-r30b1-112m|\
 	hiveton,h5000m|\
@@ -524,6 +529,8 @@ platform_copy_config() {
 	acer,vero-w6m|\
 	airpi,ap3000m|\
 	arcadyan,mozart|\
+	benton,sn-r1|\
+	glinet,gl-be14000|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt6000|\

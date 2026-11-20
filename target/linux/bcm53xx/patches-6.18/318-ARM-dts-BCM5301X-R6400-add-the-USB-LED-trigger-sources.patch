@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Wed, 11 Nov 2026 15:00:00 +0100
+Subject: [PATCH] ARM: dts: BCM5301X: R6400: add the USB LED trigger sources
+
+The USB LEDs have no trigger-sources, so the usbport trigger warns once
+for every USB port when it starts:
+
+  leds white:usb-1: Failed to get trigger sources for /leds/led-usb1
+
+Name the ports as the other BCM5301X boards do (USB 1: OHCI, EHCI and
+XHCI port 1; USB 2: OHCI and EHCI port 2) and make usbport the default
+trigger. The R6400 v2 includes this file, so it covers both versions.
+
+Tested on the R6400 v1 and v2: the warning is gone, and a USB stick
+lights USB 1 in the front port (USB 3.0) and USB 2 in the back port.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+--- a/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6400-v1.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6400-v1.dts
+@@ -95,6 +95,9 @@
+ 			function = LED_FUNCTION_USB;
+ 			function-enumerator = <1>;
+ 			gpios = <&chipcommon 12 GPIO_ACTIVE_LOW>;
++			trigger-sources = <&ohci_port1>, <&ehci_port1>,
++					  <&xhci_port1>;
++			linux,default-trigger = "usbport";
+ 		};
+ 
+ 		led-usb2 {
+@@ -102,6 +105,8 @@
+ 			function = LED_FUNCTION_USB;
+ 			function-enumerator = <2>;
+ 			gpios = <&chipcommon 13 GPIO_ACTIVE_LOW>;
++			trigger-sources = <&ohci_port2>, <&ehci_port2>;
++			linux,default-trigger = "usbport";
+ 		};
+ 	};
+ 

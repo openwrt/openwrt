@@ -164,7 +164,7 @@
 			reg = <0x00010000 0 0 0 0>;
 
 			qcom,ath11k-fw-memory-mode = <0>;
-			qcom,ath11k-calibration-variant = "CambiumNetworks-XE34";
+			qcom,calibration-variant = "CambiumNetworks-XE34";
 		};
 	};
 };
@@ -446,7 +446,7 @@
 
 &wifi {
 	status = "okay";
-	qcom,ath11k-calibration-variant = "CambiumNetworks-XE34";
+	qcom,calibration-variant = "CambiumNetworks-XE34";
 
 	nvmem-cell-names = "mac-address";
 	nvmem-cells = <&eth2addr>;

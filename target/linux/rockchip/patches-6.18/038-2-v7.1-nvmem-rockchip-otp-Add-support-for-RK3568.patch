@@ -19,7 +19,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/nvmem/rockchip-otp.c
 +++ b/drivers/nvmem/rockchip-otp.c
-@@ -27,6 +27,7 @@
+@@ -28,6 +28,7 @@
  #define OTPC_USER_CTRL			0x0100
  #define OTPC_USER_ADDR			0x0104
  #define OTPC_USER_ENABLE		0x0108
@@ -27,7 +27,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  #define OTPC_USER_Q			0x0124
  #define OTPC_INT_STATUS			0x0304
  #define OTPC_SBPI_CMD0_OFFSET		0x1000
-@@ -184,6 +185,58 @@ read_end:
+@@ -187,6 +188,58 @@ read_end:
  	return ret;
  }
  
@@ -86,7 +86,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  static int rk3588_otp_read(void *context, unsigned int offset,
  			   void *val, size_t count)
  {
-@@ -280,6 +333,18 @@ static const struct rockchip_data px30_d
+@@ -288,6 +341,18 @@ static const struct rockchip_data px30_d
  	.reg_read = px30_otp_read,
  };
  
@@ -105,7 +105,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  static const struct rockchip_data rk3576_data = {
  	.size = 0x100,
  	.read_offset = 0x700,
-@@ -312,6 +377,10 @@ static const struct of_device_id rockchi
+@@ -320,6 +385,10 @@ static const struct of_device_id rockchi
  		.data = &px30_data,
  	},
  	{

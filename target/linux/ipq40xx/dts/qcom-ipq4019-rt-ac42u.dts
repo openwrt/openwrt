@@ -325,7 +325,7 @@
 
 &wifi0 {
 	status = "okay";
-	qcom,ath10k-calibration-variant = "ASUS-RT-AC42U";
+	qcom,calibration-variant = "ASUS-RT-AC42U";
 	nvmem-cells = <&precal_factory_1000>;
 	nvmem-cell-names = "pre-calibration";
 };
@@ -341,7 +341,7 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
-		qcom,ath10k-calibration-variant = "ASUS-RT-AC42U";
+		qcom,calibration-variant = "ASUS-RT-AC42U";
 		nvmem-cells = <&precal_factory_9000>;
 		nvmem-cell-names = "pre-calibration";
 	};

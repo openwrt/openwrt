@@ -18,6 +18,13 @@
 		]
 	],
 	[ "if",
+		[ "eq", "SUBSYSTEM", "dma_heap" ],
+		[
+			[ "makedev", "/dev/%DEVNAME%", "0660", "video" ],
+			[ "return" ]
+		]
+	],
+	[ "if",
 		[ "eq", "SUBSYSTEM", "video4linux" ],
 		[
 			[ "makedev", "/dev/%DEVNAME%", "0660" ],

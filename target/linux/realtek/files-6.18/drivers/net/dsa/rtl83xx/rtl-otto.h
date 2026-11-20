@@ -5,6 +5,7 @@
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <net/dsa.h>
+#include <net/pkt_cls.h>
 
 #include <linux/soc/realtek/otto_table.h>
 
@@ -89,6 +90,25 @@ struct rtldsa_tbf {
 	bool offloaded;
 };
 
+struct rtldsa_red {
+	u32 handle;
+	struct tc_red_qopt_offload_params params;
+	bool child;
+	bool offloaded;
+	u64 tx_bytes;
+	u64 tx_packets;
+	u64 drops;
+};
+
+struct rtldsa_ets {
+	u32 handle;
+	u16 children;
+	bool offloadable;
+	u8 weights[MAX_PRIOS];
+	struct rtldsa_tbf queue_tbf[MAX_PRIOS];
+	struct rtldsa_red queue_red[MAX_PRIOS];
+};
+
 struct rtldsa_port {
 	bool enable:1;
 	bool phy:1;
@@ -104,6 +124,14 @@ struct rtldsa_port {
 	u8 ets_weights[MAX_PRIOS];
 	struct rtldsa_tbf tbf;
 	struct rtldsa_tbf queue_tbf[MAX_PRIOS];
+	struct rtldsa_red red;
+	struct rtldsa_red red_prev;
+	struct rtldsa_red queue_red[MAX_PRIOS];
+	struct rtldsa_red queue_red_prev[MAX_PRIOS];
+	struct rtldsa_ets ets_prev;
+	u32 red_cfg[MAX_PRIOS];
+	u64 red_drops[MAX_PRIOS];
+	u16 red_drops_hw[MAX_PRIOS];
 	unsigned long cached_flags;
 	u64 pm;
 	u16 pvid;
@@ -111,7 +139,6 @@ struct rtldsa_port {
 	bool has_pcs;
 	bool inband;
 	int led_set;
-	enum rtldsa_flood_type flood_type;
 	int leds_on_this_port;
 	struct otto_stats_counter_state counters;
 	const struct dsa_port *dp;
@@ -134,7 +161,7 @@ struct rtldsa_l2_uc {
 	u16 l3_refcount:15;	/* routes forwarding through it */
 };
 
-struct rtl838x_l2_entry {
+struct otto_l2_entry {
 	u8 mac[6];
 	u16 vid;
 	u16 rvid;
@@ -336,12 +363,6 @@ struct otto_dsa_priv;
 struct rtldsa_config {
 	const struct dsa_switch_ops *switch_ops;
 	const struct phylink_mac_ops *phylink_mac_ops;
-	void (*mask_port_reg_be)(u64 clear, u64 set, int reg);
-	void (*set_port_reg_be)(u64 set, int reg);
-	u64 (*get_port_reg_be)(int reg);
-	void (*mask_port_reg_le)(u64 clear, u64 set, int reg);
-	void (*set_port_reg_le)(u64 set, int reg);
-	u64 (*get_port_reg_le)(int reg);
 	int stat_port_rst;
 	int stat_rst;
 	void (*stat_init)(struct otto_dsa_priv *priv);
@@ -365,15 +386,13 @@ struct rtldsa_config {
 	void (*stat_update_counters_atomically)(struct otto_dsa_priv *priv, int port);
 	unsigned long stat_counter_poll_interval;
 	int (*port_iso_ctrl)(int p);
-	void (*traffic_enable)(int source, int dest);
-	void (*traffic_disable)(int source, int dest);
-	void (*traffic_set)(int source, u64 dest_matrix);
-	int l2_ctrl_0;
+	void (*traffic_enable)(struct otto_dsa_priv *priv, int source, int dest);
+	void (*traffic_disable)(struct otto_dsa_priv *priv, int source, int dest);
+	void (*traffic_set)(struct otto_dsa_priv *priv, int source, u64 dest_matrix);
 	int l2_ctrl_1;
 	bool high_res_l2_age;
 	u32 self_mac_trap_ctrl;
 	u32 l2_port_aging_out;
-	int l2_tbl_flush_ctrl;
 	int isr_glb_src;
 	int isr_port_link_sts_chg;
 	int imr_port_link_sts_chg;
@@ -395,12 +414,15 @@ struct rtldsa_config {
 	enum otto_table_id l2_cam_tbl;
 	int trk_ctrl;
 	int trk_hash_ctrl;
-	void (*stp_init)(void);
+	int pri_sel_port_pri;
+	int pri_sel_remap_dscp;
+	int pri_sel_port_tbl_idx;
+	void (*stp_init)(struct otto_dsa_priv *priv);
 	void (*vlan_tables_read)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_tagged)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
 	int (*vlan_profile_get)(struct otto_dsa_priv *priv, int index,
-				struct rtldsa_vlan_profile *profile);
+				struct otto_vlan_profile *profile);
 	void (*vlan_profile_dump)(struct otto_dsa_priv *priv, int index);
 	void (*vlan_profile_setup)(struct otto_dsa_priv *priv, int profile);
 	void (*vlan_port_pvidmode_set)(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
@@ -410,13 +432,11 @@ struct rtldsa_config {
 	void (*vlan_port_keep_tag_set)(struct otto_dsa_priv *priv, int port, bool keep_outer,
 				       bool keep_inner);
 	int (*fast_age)(struct otto_dsa_priv *priv, int port, int vid);
-	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
-	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
+	void (*vlan_set_igr_filter)(struct otto_dsa_priv *priv, int port, enum igr_filter state);
+	void (*vlan_set_egr_filter)(struct otto_dsa_priv *priv, int port, enum egr_filter state);
 	void (*enable_learning)(struct otto_dsa_priv *priv, int port, bool enable);
-	void (*enable_l2_new_sa_fwd)(struct otto_dsa_priv *priv, int port,
-			      enum rtldsa_flood_type flood_type);
-	void (*enable_flood)(struct otto_dsa_priv *priv, int port,
-			    enum rtldsa_flood_type flood_type);
+	void (*set_l2_new_sa_trap)(struct otto_dsa_priv *priv, int port, bool trap);
+	void (*enable_flood)(struct otto_dsa_priv *priv, int port, bool enable);
 	void (*enable_mcast_flood)(struct otto_dsa_priv *priv, int port, bool enable);
 	void (*enable_bcast_flood)(struct otto_dsa_priv *priv, int port, bool enable);
 	void (*set_static_move_action)(struct otto_dsa_priv *priv, int port, bool forward);
@@ -466,19 +486,18 @@ struct rtldsa_config {
 	int max_frame;
 
 	int  (*l2_port_new_salrn)(int port);
-	int  (*l2_port_new_sa_fwd)(int port);
 	int (*set_ageing_time)(struct otto_dsa_priv *priv, unsigned long msec);
-	int (*get_mirror_config)(struct rtldsa_mirror_config *config, int group, int port);
+	int (*get_mirror_config)(struct otto_mirror_config *config, int group, int port);
 	int (*port_rate_police_add)(struct dsa_switch *ds, int port,
 				    const struct flow_action_entry *act, bool ingress);
 	int (*port_rate_police_del)(struct dsa_switch *ds, int port, struct flow_cls_offload *cls,
 				    bool ingress);
-	void (*print_matrix)(void);
-	u64 (*read_l2_entry_using_hash)(u32 hash, u32 position, struct rtl838x_l2_entry *e);
+	void (*print_matrix)(struct otto_dsa_priv *priv);
+	u64 (*read_l2_entry_using_hash)(u32 hash, u32 position, struct otto_l2_entry *e);
 	void (*write_l2_entry_using_hash)(struct otto_dsa_priv *priv, u32 hash, u32 pos,
-					struct rtl838x_l2_entry *e);
-	u64 (*read_cam)(int idx, struct rtl838x_l2_entry *e);
-	void (*write_cam)(int idx, struct rtl838x_l2_entry *e);
+					struct otto_l2_entry *e);
+	u64 (*read_cam)(int idx, struct otto_l2_entry *e);
+	void (*write_cam)(int idx, struct otto_l2_entry *e);
 	int rma_bpdu_fld_pmask;
 	int spcl_trap_eapol_ctrl;
 	void (*init_eee)(struct otto_dsa_priv *priv, bool enable);
@@ -499,18 +518,22 @@ struct rtldsa_config {
 	void (*l2_learning_setup)(struct otto_dsa_priv *priv);
 	u32 (*packet_cntr_read)(struct otto_dsa_priv *priv, int counter);
 	void (*packet_cntr_clear)(struct otto_dsa_priv *priv, int counter);
-	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
+	void (*set_receive_management_action)(struct otto_dsa_priv *priv, int port,
+					      rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct otto_dsa_priv *priv);
 	u32 (*get_egress_rate)(struct otto_dsa_priv *priv, int port);
 	int (*set_egress_rate)(struct otto_dsa_priv *priv, int port, u32 rate);
 	void (*queue_sched_set)(struct otto_dsa_priv *priv, int port, int queue, u32 weight,
 				bool strict);
+	int (*red_set)(struct otto_dsa_priv *priv, int port,
+		       const struct tc_red_qopt_offload_params **p);
+	void (*red_drops_update)(struct otto_dsa_priv *priv, int port);
 	int (*egress_shaper_set)(struct otto_dsa_priv *priv, int port, int queue,
 				 u64 rate_bytes_ps, u32 burst);
 	void (*qos_init)(struct otto_dsa_priv *priv);
 	int (*trk_mbr_ctr)(int group);
 	void (*lag_switch_init)(struct otto_dsa_priv *priv);
-	void (*prepare_lag_fdb)(struct rtl838x_l2_entry *e, int lag_group);
+	void (*prepare_lag_fdb)(struct otto_l2_entry *e, int lag_group);
 	int (*lag_set_port_members)(struct otto_dsa_priv *priv, int group, u64 members,
 				    struct netdev_lag_upper_info *info);
 	int (*lag_setup_algomask)(struct otto_dsa_priv *priv, int group,
@@ -568,6 +591,13 @@ struct otto_dsa_priv {
 
 	/** @lagmembers: Port (bit) is part of any LAG */
 	u64 lagmembers;
+
+	/** @red_ports: Port (bit) has RED offloaded */
+	u64 red_ports;
+
+	/** @red_cfg: RED setting of each queue, shared by all ports in @red_ports */
+	u32 red_cfg[MAX_PRIOS];
+	struct delayed_work red_work;
 	struct workqueue_struct *wq;
 	bool eee_enabled;
 	unsigned long mc_group_bm[MAX_MC_GROUPS >> 5];
@@ -606,34 +636,21 @@ struct fdb_update_work {
 
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
 int rtl83xx_port_is_under(const struct net_device *dev, struct otto_dsa_priv *priv);
-/* Port register accessor functions for the RTL839x and RTL931X SoCs */
-void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
-u64 rtl839x_get_port_reg_be(int reg);
-void rtl839x_set_port_reg_be(u64 set, int reg);
-void rtl839x_mask_port_reg_le(u64 clear, u64 set, int reg);
-void rtl839x_set_port_reg_le(u64 set, int reg);
-u64 rtl839x_get_port_reg_le(int reg);
-
-/* Port register accessor functions for the RTL838x and RTL930X SoCs */
-void rtl838x_mask_port_reg(u64 clear, u64 set, int reg);
-void rtl838x_set_port_reg(u64 set, int reg);
-u64 rtl838x_get_port_reg(int reg);
 
 /* RTL838x-specific */
 u32 rtl838x_hash(struct otto_dsa_priv *priv, u64 seed);
-void rtldsa_838x_print_matrix(void);
+void rtldsa_838x_print_matrix(struct otto_dsa_priv *priv);
 
 /* RTL839x-specific */
 u32 rtl839x_hash(struct otto_dsa_priv *priv, u64 seed);
-void rtl839x_exec_tbl2_cmd(struct otto_dsa_priv *priv, u32 cmd);
-void rtldsa_839x_print_matrix(void);
+void rtldsa_839x_print_matrix(struct otto_dsa_priv *priv);
 
 /* RTL930x-specific */
 u32 otto_l2_930x_hash(struct otto_dsa_priv *priv, u64 seed);
-void rtldsa_930x_print_matrix(void);
+void rtldsa_930x_print_matrix(struct otto_dsa_priv *priv);
 
 /* RTL931x-specific */
-void rtldsa_931x_print_matrix(void);
+void rtldsa_931x_print_matrix(struct otto_dsa_priv *priv);
 
 /*
  * TODO: The following functions are currently not in use. So compiler will complain if
@@ -641,13 +658,10 @@ void rtldsa_931x_print_matrix(void);
  * collect them in this section.
  */
 
-void rtl9300_dump_debug(void);
+void rtl9300_dump_debug(struct otto_dsa_priv *priv);
 
 extern const struct dsa_switch_ops rtldsa_83xx_switch_ops;
 extern const struct dsa_switch_ops rtldsa_93xx_switch_ops;
-
-extern const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops;
-extern const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops;
 
 extern const struct rtldsa_config rtldsa_838x_cfg;
 extern const struct rtldsa_config rtldsa_839x_cfg;

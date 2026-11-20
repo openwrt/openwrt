@@ -18,7 +18,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/nvmem/rockchip-otp.c
 +++ b/drivers/nvmem/rockchip-otp.c
-@@ -333,6 +333,18 @@ static const struct rockchip_data px30_d
+@@ -341,6 +341,18 @@ static const struct rockchip_data px30_d
  	.reg_read = px30_otp_read,
  };
  
@@ -37,7 +37,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  static const char * const rk3568_otp_clocks[] = {
  	"otp", "apb_pclk", "phy", "sbpi",
  };
-@@ -377,6 +389,10 @@ static const struct of_device_id rockchi
+@@ -385,6 +397,10 @@ static const struct of_device_id rockchi
  		.data = &px30_data,
  	},
  	{

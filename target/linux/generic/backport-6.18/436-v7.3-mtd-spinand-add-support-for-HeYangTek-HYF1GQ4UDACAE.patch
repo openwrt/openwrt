@@ -36,7 +36,7 @@ Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
  obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -1231,6 +1231,7 @@ static const struct spinand_manufacturer
+@@ -1250,6 +1250,7 @@ static const struct spinand_manufacturer
  	&fmsh_spinand_manufacturer,
  	&foresee_spinand_manufacturer,
  	&gigadevice_spinand_manufacturer,

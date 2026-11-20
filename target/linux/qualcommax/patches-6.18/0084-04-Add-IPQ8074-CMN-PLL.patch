@@ -1,0 +1,80 @@
+From: Robert Marko <robimarko@gmail.com>
+Date: Mon, 26 Oct 2026 13:08:15 +0100
+Subject: [PATCH] arm64: dts: qcom: ipq8074: Add CMN PLL
+
+Add the CMN PLL node, it will be used to feed the required fixed clocks
+to networking subsystem.
+
+CMN PLL provides bias_pll_cc and bias_pll_nss_noc to GCC.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Reviewed-by: Abel Vesa <abel.vesa@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20261026120920.1667982-4-robimarko@gmail.com
+---
+Changes in v2:
+- Drop the _clk suffix from the GCC CMN PLL input names.
+
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 27 +++++++++++++++++++++++++--
+ 1 file changed, 25 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -5,6 +5,7 @@
+ 
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/clock/qcom,gcc-ipq8074.h>
++#include <dt-bindings/clock/qcom,ipq8074-cmn-pll.h>
+ 
+ / {
+ 	#address-cells = <2>;
+@@ -15,6 +16,12 @@
+ 	interrupt-parent = <&intc>;
+ 
+ 	clocks {
++		ref_48mhz_clk: ref-48mhz-clk {
++			compatible = "fixed-clock";
++			clock-frequency = <48000000>;
++			#clock-cells = <0>;
++		};
++
+ 		sleep_clk: sleep_clk {
+ 			compatible = "fixed-clock";
+ 			clock-frequency = <32768>;
+@@ -257,6 +264,18 @@
+ 			status = "disabled";
+ 		};
+ 
++		cmn_pll: clock-controller@9b000 {
++			compatible = "qcom,ipq8074-cmn-pll";
++			reg = <0x0009b000 0x800>;
++			clocks = <&ref_48mhz_clk>,
++				 <&gcc GCC_CMN_12GPLL_AHB_CLK>,
++				 <&gcc GCC_CMN_12GPLL_SYS_CLK>;
++			clock-names = "ref", "ahb", "sys";
++			#clock-cells = <1>;
++			assigned-clocks = <&cmn_pll IPQ8074_CMN_PLL_CLK>;
++			assigned-clock-rates-u64 = /bits/ 64 <12000000000>;
++		};
++
+ 		qfprom: efuse@a4000 {
+ 			compatible = "qcom,ipq8074-qfprom", "qcom,qfprom";
+ 			reg = <0x000a4000 0x2000>;
+@@ -369,11 +388,15 @@
+ 			clocks = <&xo>,
+ 				 <&sleep_clk>,
+ 				 <&pcie_qmp0>,
+-				 <&pcie_qmp1>;
++				 <&pcie_qmp1>,
++				 <&cmn_pll IPQ8074_BIAS_PLL_CC_CLK>,
++				 <&cmn_pll IPQ8074_BIAS_PLL_NSS_NOC_CLK>;
+ 			clock-names = "xo",
+ 				      "sleep_clk",
+ 				      "pcie0_pipe",
+-				      "pcie1_pipe";
++				      "pcie1_pipe",
++				      "bias_pll_cc",
++				      "bias_pll_nss_noc";
+ 			#clock-cells = <1>;
+ 			#power-domain-cells = <1>;
+ 			#reset-cells = <1>;
