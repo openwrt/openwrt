@@ -1,0 +1,124 @@
+From d50b31434c7b88a59260a0b9e1ec03e92420b15d Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Fri, 6 Nov 2026 18:12:13 -0600
+Subject: [PATCH] hostapd: add [VHT160] for a channel switch to 160 MHz
+
+OpenWrt's wifi scripts leave [VHT160] and [SHORT-GI-160] out of vht_capab
+when a radio is set up narrower than 160 MHz (openwrt#22436): advertised at
+80 MHz they slowed some clients' uplink (openwrt#22435). But
+hostapd_set_freq_params() checks the configured vht_capab, so every channel
+switch to 160 MHz on such a radio (ubus switch_chan, CHAN_SWITCH) fails with
+"160 MHz channel width is not supported!".
+
+Add them to the running configuration for a switch to 160 MHz when the
+hardware has them, and take them out again on a later switch below 160 MHz
+or when the switch fails, so nothing advertises 160 MHz support while the
+radio runs narrower.
+
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+---
+ src/ap/hostapd.c | 58 ++++++++++++++++++++++++++++++++++++++++++++++--
+ src/ap/hostapd.h |  2 ++
+ 2 files changed, 58 insertions(+), 2 deletions(-)
+
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -6155,19 +6155,65 @@ void hostapd_chan_switch_config(struct h
+ }
+ 
+ 
++/*
++ * OpenWrt's wifi scripts leave [VHT160] and [SHORT-GI-160] out of the configured
++ * vht_capab when the radio is set up narrower than 160 MHz: advertised at 80 MHz
++ * they slowed some clients' uplink (openwrt#22435). hostapd then refuses any
++ * channel switch to 160 MHz, which checks the configured vht_capab. Add them for
++ * a switch to 160 MHz when the hardware has them, and take them out again on a
++ * later switch below 160 MHz, or when this switch fails.
++ */
++static bool hostapd_csa_vht160(struct hostapd_iface *iface,
++			       const struct csa_settings *settings)
++{
++	struct hostapd_config *conf = iface->conf;
++	struct hostapd_hw_modes *mode = iface->current_mode;
++	u32 hw_width;
++
++	if (!mode || !conf->ieee80211ac)
++		return false;
++
++	if (settings->freq_params.bandwidth != 160 ||
++	    settings->freq_params.center_freq2) {
++		if (iface->csa_vht160_added) {
++			conf->vht_capab &= ~(VHT_CAP_SUPP_CHAN_WIDTH_160MHZ |
++					     VHT_CAP_SHORT_GI_160);
++			iface->csa_vht160_added = false;
++			wpa_printf(MSG_DEBUG,
++				   "CSA: [VHT160] taken out again below 160 MHz");
++		}
++		return false;
++	}
++
++	hw_width = mode->vht_capab & VHT_CAP_SUPP_CHAN_WIDTH_MASK;
++	if (!hw_width || (conf->vht_capab & VHT_CAP_SUPP_CHAN_WIDTH_MASK))
++		return false;
++
++	conf->vht_capab |= VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
++	if (mode->vht_capab & VHT_CAP_SHORT_GI_160)
++		conf->vht_capab |= VHT_CAP_SHORT_GI_160;
++	iface->csa_vht160_added = true;
++	wpa_printf(MSG_DEBUG, "CSA: [VHT160] added for a switch to 160 MHz");
++	return true;
++}
++
++
+ int hostapd_switch_channel(struct hostapd_data *hapd,
+ 			   struct csa_settings *settings)
+ {
+ 	int ret;
++	bool vht160_now;
+ 
+ 	if (!(hapd->iface->drv_flags & WPA_DRIVER_FLAGS_AP_CSA)) {
+ 		wpa_printf(MSG_INFO, "CSA is not supported");
+ 		return -1;
+ 	}
+ 
++	vht160_now = hostapd_csa_vht160(hapd->iface, settings);
++
+ 	ret = hostapd_fill_csa_settings(hapd, settings);
+ 	if (ret)
+-		return ret;
++		goto undo_vht160;
+ 
+ 	ret = hostapd_drv_switch_channel(hapd, settings);
+ 	free_beacon_data(&settings->beacon_csa);
+@@ -6179,11 +6225,19 @@ int hostapd_switch_channel(struct hostap
+ 	if (ret) {
+ 		/* if we failed, clean cs parameters */
+ 		hostapd_cleanup_cs_params(hapd);
+-		return ret;
++		goto undo_vht160;
+ 	}
+ 
+ 	hapd->csa_in_progress = 1;
+ 	return 0;
++
++undo_vht160:
++	if (vht160_now) {
++		hapd->iface->conf->vht_capab &= ~(VHT_CAP_SUPP_CHAN_WIDTH_160MHZ |
++						  VHT_CAP_SHORT_GI_160);
++		hapd->iface->csa_vht160_added = false;
++	}
++	return ret;
+ }
+ 
+ 
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -639,6 +639,8 @@ struct hostapd_mld {
+  */
+ struct hostapd_iface {
+ 	struct hapd_interfaces *interfaces;
++	/* [VHT160] was added to conf->vht_capab for a channel switch to 160 MHz */
++	bool csa_vht160_added;
+ 	struct hostapd_ucode_iface ucode;
+ 	void *owner;
+ 	char *config_fname;
