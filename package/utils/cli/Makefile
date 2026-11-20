@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cli
-PKG_RELEASE:=14
+PKG_RELEASE:=15
 
 PKG_LICENSE:=GPL-2.0
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -21,7 +21,8 @@ define Package/cli
   TITLE:=OpenWrt CLI
   DEPENDS:=+ucode +ucode-mod-uline \
 	+ucode-mod-ubus +ucode-mod-uloop \
-	+ucode-mod-fs +ucode-mod-rtnl
+	+ucode-mod-fs +ucode-mod-rtnl \
+	+zoneinfo-all
 endef
 
 define Build/Compile
