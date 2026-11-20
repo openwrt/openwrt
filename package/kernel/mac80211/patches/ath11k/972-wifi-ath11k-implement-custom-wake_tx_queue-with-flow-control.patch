@@ -1,0 +1,125 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jose Ignacio Tornos Martinez <jtornosm@redhat.com>
+Date: Thu, 17 Sep 2026 08:48:24 +0200
+Subject: [PATCH v7 3/4] wifi: ath11k: implement custom wake_tx_queue with flow control
+
+Under heavy traffic, ath11k experiences frequent -ENOMEM errors
+("failed to transmit frame -12") when the hardware TCL ring fills up.
+This issue is more commonly observed in VMs with PCIe passthrough but
+also occurs on bare metal systems. It is particularly problematic on
+devices with a single shared TCL ring where all traffic classes
+compete for the same 512 descriptor slots.
+
+Implement a custom wake_tx_queue operation that:
+
+1. Checks hardware ring space before dequeuing packets from mac80211
+2. Uses per-ring locking (wake_tx_lock with spin_lock_bh) to serialize
+   concurrent wake_tx_queue calls targeting the same ring and to ensure
+   bottom halves are disabled as required by ieee80211_tx_dequeue()
+3. Syncs with hardware state to get accurate free slot count
+4. Resolves the target TCL ring using get_ring_selector(txq->ac),
+   which selects the ring based on the access category
+5. Returns early during firmware crash in the same way as other
+   tx paths
+
+This approach follows the pattern used in the iwlwifi driver, adapted
+for ath11k's hardware ring architecture.
+
+This eliminates -ENOMEM errors and improves throughput by optimizing
+resource usage and preventing unnecessary packet drops.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3.6510.41
+
+Link: https://lore.kernel.org/all/20260917064825.12747-1-jtornosm@redhat.com/
+Signed-off-by: Jose Ignacio Tornos Martinez <jtornosm@redhat.com>
+---
+v7: Address comments from Jeff Johnson:
+  - Add the defensive pattern _bh in both spinlocks
+v6: https://lore.kernel.org/all/20260811172435.616200-4-jtornosm@redhat.com/
+
+ drivers/net/wireless/ath/ath11k/dp.c  |  1 +
+ drivers/net/wireless/ath/ath11k/dp.h  |  2 ++
+ drivers/net/wireless/ath/ath11k/mac.c | 49 ++++++++++++++++++++++++++-
+ 3 files changed, 51 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -1087,6 +1087,7 @@ int ath11k_dp_alloc(struct ath11k_base *
+ 	for (i = 0; i < ab->hw_params.hal_params->num_tx_rings; i++) {
+ 		idr_init(&dp->tx_ring[i].txbuf_idr);
+ 		spin_lock_init(&dp->tx_ring[i].tx_idr_lock);
++		spin_lock_init(&dp->tx_ring[i].wake_tx_lock);
+ 		dp->tx_ring[i].tcl_data_ring_id = i;
+ 
+ 		dp->tx_ring[i].tx_status_head = 0;
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -87,6 +87,8 @@ struct dp_tx_ring {
+ 	struct idr txbuf_idr;
+ 	/* Protects txbuf_idr and num_pending */
+ 	spinlock_t tx_idr_lock;
++	/* Serializes wake_tx_queue operations for this ring */
++	spinlock_t wake_tx_lock;
+ 	struct hal_wbm_release_ring *tx_status;
+ 	int tx_status_head;
+ 	int tx_status_tail;
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10082,9 +10082,56 @@ static int ath11k_mac_op_sta_state(struc
+ 	return ret;
+ }
+ 
++static void ath11k_mac_op_wake_tx_queue(struct ieee80211_hw *hw,
++					struct ieee80211_txq *txq)
++{
++	struct ieee80211_tx_control control = {
++		.sta = txq->sta,
++	};
++	struct ath11k *ar = hw->priv;
++	struct dp_tx_ring *tx_ring;
++	struct hal_srng *tcl_ring;
++	struct sk_buff *skb;
++	u32 ring_selector;
++	int num_free;
++	u8 ring_id;
++
++	ring_selector = ar->ab->hw_params.hw_ops->get_ring_selector(txq->ac);
++	ring_id = ring_selector % ar->ab->hw_params.hal_params->num_tx_rings;
++	tx_ring = &ar->ab->dp.tx_ring[ring_id];
++	tcl_ring = &ar->ab->hal.srng_list[tx_ring->tcl_data_ring.ring_id];
++
++	while (1) {
++		if (unlikely(test_bit(ATH11K_FLAG_CRASH_FLUSH,
++				      &ar->ab->dev_flags)))
++			break;
++
++		spin_lock_bh(&tx_ring->wake_tx_lock);
++
++		spin_lock_bh(&tcl_ring->lock);
++		num_free = ath11k_hal_srng_src_num_free(ar->ab, tcl_ring, true);
++		spin_unlock_bh(&tcl_ring->lock);
++
++		if (num_free == 0) {
++			spin_unlock_bh(&tx_ring->wake_tx_lock);
++			break;
++		}
++
++		skb = ieee80211_tx_dequeue(hw, txq);
++		if (!skb) {
++			spin_unlock_bh(&tx_ring->wake_tx_lock);
++			break;
++		}
++
++		ath11k_mac_op_tx(hw, &control, skb);
++
++		spin_unlock_bh(&tx_ring->wake_tx_lock);
++	}
++}
++
+ static const struct ieee80211_ops ath11k_ops = {
+ 	.tx				= ath11k_mac_op_tx,
+-	.wake_tx_queue			= ieee80211_handle_wake_tx_queue,
++	.wake_tx_queue			= ath11k_mac_op_wake_tx_queue,
+ 	.start                          = ath11k_mac_op_start,
+ 	.stop                           = ath11k_mac_op_stop,
+ 	.reconfig_complete              = ath11k_mac_op_reconfig_complete,
