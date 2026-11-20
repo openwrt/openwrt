@@ -28,6 +28,7 @@ ramips_setup_interfaces()
 	zbtlink,zbt-we826-16m|\
 	zbtlink,zbt-we826-32m|\
 	zbtlink,zbt-we826-e|\
+	zbtlink,zbt-we826-t-32m|\
 	zbtlink,zbt-wr8305rt|\
 	zyxel,keenetic-lite-iii-a|\
 	zyxel,keenetic-omni)
@@ -328,7 +329,8 @@ ramips_setup_macs()
 		;;
 	alfa-network,ac1200rm|\
 	dlink,dir-810l|\
-	trendnet,tew-810dr)
+	trendnet,tew-810dr|\
+	zbtlink,zbt-we826-t-32m)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x28)" 1)
 		;;
 	alfa-network,r36m-e4g|\
