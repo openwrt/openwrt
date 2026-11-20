@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Sutcliffe <dansut@gmail.com>
+Date: Wed, 11 Nov 2026 18:00:00 -0500
+Subject: [PATCH] arm64: dts: rockchip: fix Hinlink H68K GMAC1 PHY reset pin
+ conflict
+
+In rk3568-hinlink-opc.dtsi, &i2s1_8ch lacks an explicit pinctrl definition,
+causing the audio driver to claim the default 8-channel i2s1m0 pin group.
+This conflicts with gmac1_rstn (GPIO1_B0), holding the RTL8211F PHY in
+reset and causing the probe to fail with -ENODEV.
+
+Add explicit pinctrl-0 to &i2s1_8ch in rk3568-hinlink-h68k.dts to release
+GPIO1_B0 and allow the GMAC1 PHY to initialize properly.
+
+Signed-off-by: Daniel Sutcliffe <dansut@gmail.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3568-hinlink-h68k.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3568-hinlink-h68k.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-hinlink-h68k.dts
+@@ -81,3 +81,14 @@
+ 		};
+ 	};
+ };
++
++/*
++ * The audio codec (&i2s1_8ch) in rk3568-hinlink-opc.dtsi lacks an explicit
++ * pinctrl definition, causing the driver to claim the default 8-channel
++ * i2s1m0 pin group. This group includes GPIO1_B0, which conflicts with
++ * gmac1_rstn above, holding the RTL8211F PHY in reset and failing probe (-ENODEV).
++ */
++&i2s1_8ch {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s1m0_sclkrx &i2s1m0_lrckrx &i2s1m0_sdi0 &i2s1m0_sdo0>;
++};
