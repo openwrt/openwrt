@@ -203,12 +203,19 @@ endef
 #   to manage their provides themselves.
 #
 # - When multiple variants inside the same package have the same provide, a
-#   default variant must be set using DEFAULT_VARIANT:=1.
+#   default variant is only required when the intended default provider is
+#   not the lexicographically first one: after the version stage settles the
+#   matches, the provider priority follows, so version cases can still have
+#   their default provider changed this way. The exception is a versioned
+#   provide against providers without a matching version, for which apk has
+#   no way to select another provider.
 #
-# - Cross-package provides must be virtual and a default variant must be set. If
-#   different packages provide the same versioned (i.e. non-virtual) provide the
-#   package with a higher version will be preferred, which results in unintended
-#   behavior, because the order might change with package updates.
+# - Cross-package provides must be virtual: not naming any provider as the
+#   shared provide is mandatory if the packages are to be installed
+#   side-by-side, to avoid the apk replacement behavior. If different
+#   packages provide the same versioned (i.e. non-virtual) provide the
+#   package with a higher version will be preferred, which results in
+#   unintended behavior, because the order might change with package updates.
 #
 #   Example:
 #   - both uclient-fetch and wget provide wget
@@ -249,22 +256,20 @@ endef
 #
 # - if a package is marked as a default variant, set it to 100.
 #
-# - if a package has an ABI version defined, set it to 10.
-#   The enables packages with an ABI version to be installed by their base name
-#   instead of a name and an ABI version, e.g.:
-#   libfoo3, where 3 is the ABI version can be installed by just libfoo.
-#   This affects manual installation only, as the dependency resolution takes
-#   care of ABI versions.
-#
-# - otherwise return nothing, i.e. package will have the default priority 0.
+# - otherwise set it to 1. Every provider then defines a non-default
+#   (non-zero) priority: apk requires at least one non-zero
+#   provider-priority among the providers of the same virtual
+#   (non-versioned) name, otherwise it fails with
+#   "unable to select packages". With the lowest non-zero priority for
+#   such names, the tie follows the repository scan: across different
+#   repository indexes the provider from the earlier index wins, and
+#   within one index the providers are seen in the sorted package-list
+#   order, hence the lexicographically first provider.
 #
 # 1: Default variant
-# 2: ABI version
 define GetProviderPriority
 $(strip
-  $(if $(1),100,
-    $(if $(2),10)
-  )
+  $(if $(1),100,1)
 )
 endef
 
@@ -424,7 +429,7 @@ endif
       Package/$(1)/PROVIDES := $$(filter-out $(1)$$(ABIV_$(1)),$$(Package/$(1)/PROVIDES)$$(if $$(ABIV_$(1)), $(1) $$(foreach provide,$$(Package/$(1)/PROVIDES),$$(provide)$$(ABIV_$(1)))))
     else
       Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(ABI_VERSION),$(PROVIDES))
-      Package/$(1)/PRIORITY := $$(call GetProviderPriority,$(DEFAULT_VARIANT),$(ABI_VERSION))
+      Package/$(1)/PRIORITY := $$(call GetProviderPriority,$(DEFAULT_VARIANT))
     endif
 
 $(_define) Package/$(1)/CONTROL
