@@ -18,7 +18,7 @@ define Package/openssl/engine/Default
 endef
 
 
-# 1 = moudule type (engine|provider)
+# 1 = module type (engine|provider)
 # 2 = module name
 # 3 = directory to save .so file
 # 4 = [ package name, defaults to libopenssl-$(2) ]
@@ -77,4 +77,3 @@ endef
 define Package/openssl/add-provider
   $(call Package/openssl/add-module,provider,$(1),/usr/lib/$(MODULES_DIR),$(2))
 endef
-
