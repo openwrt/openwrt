@@ -313,14 +313,6 @@
 		regulator-always-on;
 	};
 
-	sfp1: sfp1 {
-		compatible = "sff,sfp";
-	};
-
-	sfp2: sfp2 {
-		compatible = "sff,sfp";
-	};
-
 	soc {
 		compatible = "simple-bus";
 		#address-cells = <2>;
@@ -386,6 +378,12 @@
 			};
 		};
 
+		rng@1faa1000 {
+			compatible = "airoha,en7581-trng";
+			reg = <0x0 0x1faa1000 0x0 0xc04>;
+			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		system-controller@1fbf0200 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x0 0x1fbf0200 0x0 0xc0>;
@@ -413,7 +411,7 @@
 		};
 
 		i2c0: i2c0@1fbf8000 {
-			compatible = "airoha,an7581-i2c";
+			compatible = "mediatek,mt7621-i2c";
 			reg = <0x0 0x1fbf8000 0x0 0x100>;
 
 			clocks = <&i2cclock>;
@@ -427,7 +425,7 @@
 		};
 
 		i2c1: i2c1@1fbf8100 {
-			compatible = "airoha,an7581-i2c";
+			compatible = "mediatek,mt7621-i2c";
 			reg = <0x0 0x1fbf8100 0x0 0x100>;
 
 			clocks = <&i2cclock>;
