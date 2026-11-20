@@ -238,7 +238,6 @@ ath79_setup_interfaces()
 		;;
 	buffalo,wzr-hp-g300nh-rb|\
 	buffalo,wzr-hp-g300nh-s|\
-	dlink,dir-825-b1|\
 	trendnet,tew-673gru)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
@@ -345,6 +344,11 @@ ath79_setup_interfaces()
 	tplink,tl-wr1043n-v5)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
+		;;
+	dlink,dir-825-b1)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5@eth0"
 		;;
 	elecom,wrc-1750ghbk2-i|\
 	elecom,wrc-300ghbk2-i|\
