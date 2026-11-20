@@ -92,6 +92,16 @@
 #define RTL930X_SWRED_RATE_SCALE		1023
 #define RTL930X_SWRED_DROP_PRECEDENCES		3
 #define RTL930X_SWRED_QUEUES			12
+#define RTL931X_FC_PORT_EGR_DROP_CTRL(port)	(0xA800 + ((port) << 2))
+#define RTL931X_FC_PORT_EGR_DROP_REF_RXCNGST	BIT(1)
+#define RTL931X_FC_PORT_EGR_DROP_SWRED		BIT(2)
+#define RTL931X_FC_Q_EGR_DROP_THR(queue, set)	(0x2618 + ((((queue) * 3) + (set)) << 2))
+#define RTL931X_FC_Q_EGR_DROP_THR_ON_MASK	GENMASK(28, 16)
+#define RTL931X_FC_Q_EGR_DROP_THR_SETS		3
+#define RTL931X_SWRED_QUEUE_DROP_RATE(queue)	(0x27C4 + ((queue) << 2))
+#define RTL931X_SWRED_QUEUE_DROP_THR(queue, dp)	(0x27F4 + ((queue) * 12) + ((dp) << 2))
+#define RTL931X_SWRED_MAX_MASK			GENMASK(28, 16)
+#define RTL931X_SWRED_MIN_MASK			GENMASK(12, 0)
 #define RTL930X_STAT_PORT_E_DROP_CNTR0(port, queue) \
 						(0xB9A4 + ((port) << 5) + ((queue) << 2))
 #define RTL930X_STAT_PORT_E_DROP_CNTR1(port, queue) \
@@ -808,6 +818,52 @@ void otto_qos_931x_queue_drops_update(struct otto_dsa_priv *priv, int port)
 		pp->queues[queue].drops += (u16)(val - pp->queues[queue].drops_hw);
 		pp->queues[queue].drops_hw = val;
 	}
+}
+
+static u32 otto_qos_931x_red_tail_drop(struct otto_dsa_priv *priv, int queue)
+{
+	u32 thr = 0, v;
+
+	for (int set = 0; set < RTL931X_FC_Q_EGR_DROP_THR_SETS; set++) {
+		regmap_read(priv->map, RTL931X_FC_Q_EGR_DROP_THR(queue, set), &v);
+		thr = max(thr, FIELD_GET(RTL931X_FC_Q_EGR_DROP_THR_ON_MASK, v));
+	}
+
+	thr = min_t(u32, thr, FIELD_MAX(RTL930X_SWRED_MAX_MASK));
+
+	return FIELD_PREP(RTL930X_SWRED_MAX_MASK, thr) | FIELD_PREP(RTL930X_SWRED_MIN_MASK, thr);
+}
+
+static void otto_qos_931x_red_queue_set(struct otto_dsa_priv *priv, int queue, u32 cfg)
+{
+	u32 rate = FIELD_GET(RTL930X_SWRED_RATE_MASK, cfg);
+	u32 thr = FIELD_PREP(RTL931X_SWRED_MAX_MASK, FIELD_GET(RTL930X_SWRED_MAX_MASK, cfg)) |
+		  FIELD_PREP(RTL931X_SWRED_MIN_MASK, FIELD_GET(RTL930X_SWRED_MIN_MASK, cfg));
+
+	regmap_write(priv->map, RTL931X_SWRED_QUEUE_DROP_RATE(queue),
+		     rate | rate << 8 | rate << 16);
+	for (int dp = 0; dp < RTL930X_SWRED_DROP_PRECEDENCES; dp++)
+		regmap_write(priv->map, RTL931X_SWRED_QUEUE_DROP_THR(queue, dp), thr);
+}
+
+static void otto_qos_931x_red_port_set(struct otto_dsa_priv *priv, int port, bool enable)
+{
+	regmap_update_bits(priv->map, RTL931X_FC_PORT_EGR_DROP_CTRL(port),
+			   RTL931X_FC_PORT_EGR_DROP_REF_RXCNGST | RTL931X_FC_PORT_EGR_DROP_SWRED,
+			   enable ? RTL931X_FC_PORT_EGR_DROP_SWRED :
+				    RTL931X_FC_PORT_EGR_DROP_REF_RXCNGST);
+}
+
+static const struct otto_qos_red_ops otto_qos_931x_red_ops = {
+	.tail_drop = otto_qos_931x_red_tail_drop,
+	.queue_set = otto_qos_931x_red_queue_set,
+	.port_set = otto_qos_931x_red_port_set,
+};
+
+int otto_qos_931x_red_set(struct otto_dsa_priv *priv, int port,
+			  const struct tc_red_qopt_offload_params **p)
+{
+	return otto_qos_red_set(priv, port, p, &otto_qos_931x_red_ops);
 }
 
 static void otto_qos_931x_set_scheduling_queue_weights(struct otto_dsa_priv *priv)
