@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andy Boxer <andyboxer@gmail.com>
+Date: Sat, 4 Jul 2026 13:47:59 +0300
+Subject: [PATCH] bcm47xx: flush cache for BMIPS3300 DMA sync
+
+BMIPS3300 requires the same post-DMA cache synchronization treatment as
+the other noncoherent BMIPS CPUs handled by the common DMA code.
+
+Signed-off-by: Andy Boxer <andyboxer@gmail.com>
+---
+--- a/arch/mips/mm/dma-noncoherent.c
++++ b/arch/mips/mm/dma-noncoherent.c
+@@ -31,6 +31,7 @@ static inline bool cpu_needs_post_dma_fl
+ 	case CPU_R10000:
+ 	case CPU_R12000:
+ 	case CPU_BMIPS5000:
++	case CPU_BMIPS3300:
+ 	case CPU_LOONGSON2EF:
+ 	case CPU_XBURST:
+ 		return true;
