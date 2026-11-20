@@ -194,6 +194,7 @@ case "$FIRMWARE" in
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		ath11k_patch_mac $(macaddr_add $label_mac 4) 0
 		ath11k_remove_regdomain
+		ath11k_set_macflag
 		;;
 	wallys,dr5018s)
 		caldata_extract "0:ART" 0x4c000 0x20000
