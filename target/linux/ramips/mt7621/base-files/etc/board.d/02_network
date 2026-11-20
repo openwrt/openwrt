@@ -28,6 +28,7 @@ ramips_setup_interfaces()
 	sim,simax1800u|\
 	teltonika,rutm11|\
 	tplink,mr600-v2-eu|\
+	tplink,mr600-v5-eu|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-ac2100|\
 	xiaomi,mi-router-cr6606|\
@@ -301,6 +302,12 @@ ramips_setup_macs()
 	tplink,mr600-v2-eu)
 		wwan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
 		ucidef_set_interface "wwan0" device "/dev/cdc-wdm0" protocol "qmi" macaddr "$wwan_mac"
+		;;
+	tplink,mr600-v5-eu)
+		wwan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		ucidef_set_interface "wwan0" device "/dev/cdc-wdm0" protocol "qmi" macaddr "$wwan_mac"
+		uci -q del_list firewall.@zone[1].network='wwan0'
+		uci add_list firewall.@zone[1].network='wwan0'
 		;;
 	ruijie,rg-ew1200g-pro-v1.1|\
 	ruijie,rg-ew1300g-v1)

@@ -178,6 +178,22 @@ define Build/iodata-mstc-header2
 	mv $@.new $@
 endef
 
+define Build/tplink-mr600v5-tag
+	$(TOPDIR)/scripts/tplink-mr600v5-tag.py \
+		--load $(LZMA_TEXT_START) --entry $(LZMA_TEXT_START) $@ $@.new
+	@mv $@.new $@
+endef
+
+define Build/tplink-mr600v5-jffs2
+	rm -rf $@.jffs2dir && mkdir -p $@.jffs2dir && \
+		cp $@ $@.jffs2dir/linux && \
+		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 --little-endian --squash \
+			-e $(patsubst %k,%KiB,$(BLOCKSIZE)) --no-cleanmarkers \
+			--compression-mode=none -o $@.new -d $@.jffs2dir
+	rm -rf $@.jffs2dir
+	@mv $@.new $@
+endef
+
 define Build/znet-header
 	$(eval version=$(word 1,$(1)))
 	$(eval magic=$(if $(word 2,$(1)),$(word 2,$(1)),ZNET))
@@ -3235,6 +3251,23 @@ define Device/tplink_mr600-v2-eu
   IMAGE_SIZE := 16384k
 endef
 TARGET_DEVICES += tplink_mr600-v2-eu
+
+define Device/tplink_mr600-v5-eu
+  $(Device/nand)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Archer MR600
+  DEVICE_VARIANT := v5 (EU)
+  LOADER_TYPE := bin
+  LZMA_TEXT_START := 0x82000000
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	lzma-no-dict -lc3 -lp0 -pb2 | tplink-mr600v5-tag | tplink-mr600v5-jffs2
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel
+  IMAGE_SIZE := 179200k
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi \
+	-uboot-envtools
+endef
+TARGET_DEVICES += tplink_mr600-v5-eu
 
 define Device/tplink_re350-v1
   $(Device/dsa-migration)

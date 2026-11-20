@@ -18,6 +18,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/rawnand.h>
 #include <linux/mtd/partitions.h>
+#include <linux/of.h>
 #include <linux/mtd/mtk_bmt.h>
 #include <linux/platform_device.h>
 #include <asm/addrspace.h>
@@ -907,11 +908,22 @@ static int mt7621_nfc_set_page_format(struct mt7621_nfc *nfc)
 static int mt7621_nfc_attach_chip(struct nand_chip *nand)
 {
 	struct mt7621_nfc *nfc = nand_get_controller_data(nand);
+	struct mtd_info *mtd = nand_to_mtd(nand);
+	u32 oobsize;
 	int ret;
 
 	if (nand->options & NAND_BUSWIDTH_16) {
 		dev_err(nfc->dev, "16-bit buswidth is not supported");
 		return -EINVAL;
+	}
+
+	/* the vendor bootloader may use less OOB than the chip reports */
+	if (!of_property_read_u32(nfc->dev->of_node, "mediatek,oob-size",
+				  &oobsize) && oobsize && oobsize < mtd->oobsize) {
+		dev_info(nfc->dev, "OOB size forced to %u (chip reports %u)\n",
+			 oobsize, mtd->oobsize);
+		mtd->oobsize = oobsize;
+		nand->base.memorg.oobsize = oobsize;
 	}
 
 	ret = mt7621_nfc_ecc_init(nfc);
