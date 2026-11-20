@@ -9,7 +9,7 @@ PKG_NAME:=apex
 # This version was created from the stalled and unreleased v1.6.10
 # with some patches on top.
 PKG_VERSION:=1.6.10-openwrt
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/linusw/apex.git
@@ -40,6 +40,7 @@ define build_apex
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		KBUILD_HAVE_NLS=no \
+		KCFLAGS="-std=gnu17" \
 		ARCH=arm \
 		$(if $(SOURCE_DATE_EPOCH),BUILDDATE="$(shell LC_ALL=C date --utc --date="@$(SOURCE_DATE_EPOCH)" "+%Y.%b.%d-%R:%S")") \
 		clean all
