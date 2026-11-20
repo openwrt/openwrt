@@ -385,7 +385,7 @@ ifneq ($(CONFIG_USE_APK),)
 # apk del will be called without any packages to remove. This is fine, apk will
 # just return successfully in this case.
 	$(if $(mkfs_packages_remove), \
-		-$(apk_target) del --no-scripts \
+		$(apk_target) del --no-scripts \
 			$$($(apk_target) info | grep -xF $(foreach pkg,$(mkfs_packages_remove),-e '$(pkg)')))
 	$(if $(mkfs_packages_add), \
 		$(apk_target) add --no-scripts $(mkfs_packages_add))
