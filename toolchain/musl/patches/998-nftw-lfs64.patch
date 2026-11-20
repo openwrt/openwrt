@@ -1,0 +1,7 @@
+--- a/src/misc/nftw.c
++++ b/src/misc/nftw.c
+@@ -166,3 +166,4 @@ int nftw(const char *path, int (*fn)(con
+ }
+ 
+ #undef nftw64
++weak_alias(nftw, nftw64);
