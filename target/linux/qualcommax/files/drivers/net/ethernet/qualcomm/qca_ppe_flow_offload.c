@@ -66,6 +66,11 @@ struct ppe_flow_entry {
 	 * with, after translation, source first.
 	 */
 	u64 xdev;
+	/* The device xdev names, by pointer: set with the index and cleared by
+	 * the netdev notifier when the device unregisters, before the grace
+	 * period its readers are bound by.
+	 */
+	struct net_device __rcu *xndev;
 	unsigned long ct;
 	u16 vid;
 	u8 xport;
@@ -100,6 +105,7 @@ struct ppe_flow_entry {
 	int uplink;
 	int in_uplink;
 	int session;
+	struct ppe_vp_flow vpf;
 	u8 iport;
 	u8 oport;
 	u16 ivid;
@@ -978,6 +984,58 @@ static bool ppe_flow_shaper_path(struct qca_ppe_priv *priv)
 	return changed;
 }
 
+/* Takes the egress device of a flow handed to the host: its index goes where
+ * ppe_flow_xmit() reads the flags beside it, and the device itself where it
+ * reads it from. The netdev notifier clears the pointer when the device
+ * unregisters, and the entry is in the flow list that it walks by the time the
+ * flow lock this is called with is released.
+ */
+static void ppe_flow_xdev_set(struct qca_ppe_priv *priv,
+			      struct ppe_flow_entry *entry, int ifindex)
+{
+	lockdep_assert_held(&priv->flow_lock);
+
+	entry->xdev = ifindex;
+	rcu_read_lock();
+	rcu_assign_pointer(entry->xndev,
+			   dev_get_by_index_rcu(&init_net, ifindex));
+	rcu_read_unlock();
+}
+
+/* No flow hands a frame to a device that is unregistering. Frames already on
+ * their way to it hold it under RCU, which the unregistration waits out after
+ * this notification.
+ */
+static void ppe_flow_xdev_forget(struct qca_ppe_priv *priv,
+				 struct net_device *dev)
+{
+	struct ppe_flow_entry *entry;
+
+	lockdep_assert_held(&priv->flow_lock);
+
+	list_for_each_entry(entry, &priv->flow_list, list)
+		if (rcu_access_pointer(entry->xndev) == dev)
+			RCU_INIT_POINTER(entry->xndev, NULL);
+}
+
+/* The devices a frame is handed to by the indices that name them: the
+ * download shaper and the uplink. Called under the flow lock after either
+ * index changed.
+ */
+static void ppe_flow_ndev_refresh(struct qca_ppe_priv *priv)
+{
+	int dl = priv->dl_shaper, up = priv->uplink_dev;
+
+	lockdep_assert_held(&priv->flow_lock);
+
+	rcu_read_lock();
+	rcu_assign_pointer(priv->dl_ndev,
+			   dl ? dev_get_by_index_rcu(&init_net, dl) : NULL);
+	rcu_assign_pointer(priv->uplink_ndev,
+			   up ? dev_get_by_index_rcu(&init_net, up) : NULL);
+	rcu_read_unlock();
+}
+
 /* A shaper is named, and the device of that name can go and come back with
  * another ifindex: a PPPoE session that reconnects brings up a new ppp
  * device. While it is gone that direction is not shaped rather than sent
@@ -1029,6 +1087,11 @@ static void ppe_flow_shaper_track(struct qca_ppe_priv *priv,
 		}
 		ppe_flow_shaper_drop(priv, upload || uplink);
 	}
+
+	/* On every event: the devices of the names may have changed under an
+	 * unchanged index, and a device that is going must not be left behind.
+	 */
+	ppe_flow_ndev_refresh(priv);
 }
 
 /* Each half of the size check follows the device that owns it: the routing
@@ -1060,6 +1123,8 @@ static int ppe_flow_netdev_event(struct notifier_block *nb, unsigned long event,
 	    event == NETDEV_CHANGENAME || event == NETDEV_UP) {
 		guard(mutex)(&priv->flow_lock);
 		guard(mutex)(&priv->vlan_lock);
+		if (event == NETDEV_UNREGISTER)
+			ppe_flow_xdev_forget(priv, dev);
 		ppe_flow_shaper_track(priv, dev, event);
 		return NOTIFY_DONE;
 	}
@@ -1125,6 +1190,32 @@ static void ppe_flow_free_ingress(struct qca_ppe_priv *priv,
 	if (ppe_res_put(priv->my_mac, entry->my_mac))
 		ppe_tbl_clear(priv, PPE_MY_MAC_TBL(entry->my_mac),
 			      PPE_MY_MAC_WORDS);
+}
+
+/**
+ * ppe_flow_drop_vp - drop flows that ingress on a virtual port
+ * @priv: the switch
+ * @vp: the virtual port, or -1 for any
+ * @br: the bridge the flows were built for, or NULL for any
+ *
+ * Both locks held. The flowtable offers again whatever is still live.
+ */
+void ppe_flow_drop_vp(struct qca_ppe_priv *priv, int vp,
+		      const struct net_device *br)
+{
+	struct ppe_flow_entry *entry, *tmp;
+
+	lockdep_assert_held(&priv->flow_lock);
+	lockdep_assert_held(&priv->vlan_lock);
+
+	list_for_each_entry_safe(entry, tmp, &priv->flow_list, list) {
+		if (!entry->vpf.key.vp ||
+		    (vp >= 0 && entry->vpf.key.vp != vp) ||
+		    (br && priv->port_br_dev[entry->iport] != br))
+			continue;
+
+		ppe_flow_drop(priv, entry);
+	}
 }
 
 /* The routing domain a set of flows was built for is going away. Their entries
@@ -1238,7 +1329,8 @@ static int ppe_flow_shape(struct qca_ppe_priv *priv, struct ppe_flow_data *data,
 	    ppe_flow_on_uplink(priv, port,
 			       data->vlan_valid ? data->vlan_id : 0,
 			       data->pppoe_valid ? data->pppoe_sid : 0, true)) {
-		entry->xdev = ul | PPE_XDEV_UL;
+		ppe_flow_xdev_set(priv, entry, ul);
+		entry->xdev |= PPE_XDEV_UL;
 		entry->xport = port + 1;
 		return QCA_PPE_CPU_PORT;
 	}
@@ -1249,7 +1341,7 @@ static int ppe_flow_shape(struct qca_ppe_priv *priv, struct ppe_flow_data *data,
 	if (dl && !data->pppoe_valid &&
 	    ppe_flow_on_uplink(priv, entry->iport, data->ivid, 0, false)) {
 		if (port != QCA_PPE_CPU_PORT) {
-			entry->xdev = data->odev->ifindex;
+			ppe_flow_xdev_set(priv, entry, data->odev->ifindex);
 			entry->xport = port + 1;
 		}
 		entry->xdev |= PPE_XDEV_DL;
@@ -1322,6 +1414,49 @@ static void ppe_flow_dscp_apply(struct sk_buff *skb, u8 dscp)
 		ipv4_change_dsfield(ip_hdr(skb), INET_ECN_MASK, dscp << 2);
 	else if (skb->protocol == htons(ETH_P_IPV6))
 		ipv6_change_dsfield(ipv6_hdr(skb), INET_ECN_MASK, dscp << 2);
+}
+
+/* The small-packet rule of the switch classifier, for the egress it cannot
+ * reach: a frame to a Wi-Fi client leaves by the CPU port and mac80211 then
+ * picks its access category from skb->priority, which nothing on the way from
+ * the switch has set. The rule is the switch's own: a frame whose L3 length is
+ * at most small_pkt_len, and that is not a TCP segment with PSH, gets
+ * small_pkt_prio, here as the direct 802.1d tag cfg80211_classify8021d() reads
+ * from 256 to 263. A segment with PSH ends a write of a flow whose others are
+ * full size, and in a higher access category it would overtake them.
+ */
+static void ppe_flow_wifi_prio(struct sk_buff *skb)
+{
+	unsigned int len = READ_ONCE(ppe_small_pkt_len), l3, off = ETH_HLEN;
+	const u8 *nh = skb->data + ETH_HLEN;
+	u8 proto;
+
+	if (!len)
+		return;
+
+	if (skb->protocol == htons(ETH_P_IP)) {
+		const struct iphdr *iph = (const void *)nh;
+
+		l3 = ntohs(iph->tot_len);
+		proto = iph->protocol;
+		off += iph->ihl * 4;
+	} else {
+		const struct ipv6hdr *ip6h = (const void *)nh;
+
+		l3 = sizeof(*ip6h) + ntohs(ip6h->payload_len);
+		proto = ip6h->nexthdr;
+		off += sizeof(*ip6h);
+	}
+
+	if (l3 > len)
+		return;
+
+	if (proto == IPPROTO_TCP &&
+	    (skb_headlen(skb) < off + sizeof(struct tcphdr) ||
+	     tcp_flag_byte((const struct tcphdr *)(skb->data + off)) & TCPHDR_PSH))
+		return;
+
+	skb->priority = 256 + READ_ONCE(ppe_small_pkt_prio);
 }
 
 /* A slot is one pointer, so a poll finds a flow's egress, port, VLAN, DSCP
@@ -1708,6 +1843,72 @@ static bool ppe_flow_frame_is(const struct ppe_flow_entry *entry,
 }
 
 /**
+ * ppe_flow_gso - what the egress of a flow takes as one GSO frame
+ * @ds: the switch
+ * @skb: a frame of the flow, with skb->data at its Ethernet header
+ * @flow: the flow index from the frame's receive preheader
+ * @gso: filled with the limits of the devices the frame passes
+ *
+ * ppe_flow_xmit() sends a frame to the flow's device, or into the download
+ * shaper in front of it, by dev_queue_xmit(), so a merged frame meets the
+ * same qdiscs as a single one, and a qdisc that splits GSO frames splits it
+ * into the frames it was made of. The limits are those of the device and, for
+ * a download flow, of the shaper device too. A flow that leaves by the uplink
+ * or a switch port never takes a merged frame: the uplink is shaped per
+ * frame and a switch port is sent by the driver's own transmit.
+ *
+ * Called from the EDMA NAPI poll.
+ *
+ * Return: false when the flow has no egress that takes a merged frame, or
+ * @skb is not of the flow.
+ */
+bool ppe_flow_gso(struct dsa_switch *ds, const struct sk_buff *skb, u32 flow,
+		  struct qca_edma_gso *gso)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	const struct ppe_flow_entry *entry;
+	struct net_device *dev, *shaper;
+	u64 xdev;
+
+	if (flow >= priv->data->num_flow_entries)
+		return false;
+	entry = rcu_dereference_bh(priv->flow_slot[flow]);
+	if (!entry || entry->xport || !ppe_flow_frame_is(entry, skb))
+		return false;
+	xdev = entry->xdev;
+	if (xdev & (PPE_XDEV_UL | PPE_XDEV_PUSH))
+		return false;
+
+	dev = rcu_dereference_bh(entry->xndev);
+	if (!dev || !netif_running(dev))
+		return false;
+
+#if IS_ENABLED(CONFIG_CFG80211_HEADERS)
+	/* The segments of a frame that ppe_flow_wifi_prio() ranks by its own
+	 * length would be ranked by the length of the whole.
+	 */
+	if (dev->ieee80211_ptr &&
+	    skb->len - ETH_HLEN <= READ_ONCE(ppe_small_pkt_len))
+		return false;
+#endif
+
+	gso->features = dev->features;
+	gso->max_segs = dev->gso_max_segs;
+	gso->max_size = dev->gso_max_size;
+
+	if (xdev & PPE_XDEV_DL) {
+		shaper = rcu_dereference_bh(priv->dl_ndev);
+		if (shaper && netif_running(shaper)) {
+			gso->features &= shaper->features;
+			gso->max_segs = min(gso->max_segs, shaper->gso_max_segs);
+			gso->max_size = min(gso->max_size, shaper->gso_max_size);
+		}
+	}
+
+	return true;
+}
+
+/**
  * ppe_flow_xmit - send a frame the PPE routed to the CPU port for a flow
  * @ds: the switch
  * @skb: the frame, with skb->data at its Ethernet header
@@ -1741,7 +1942,7 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 	}
 	xdev = entry->xdev;
 
-	dev = dev_get_by_index_rcu(dev_net(skb->dev), xdev & PPE_XDEV_IFINDEX);
+	dev = rcu_dereference_bh(entry->xndev);
 	if (unlikely(!dev || !netif_running(dev)))
 		goto drop;
 
@@ -1754,7 +1955,7 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 	up = READ_ONCE(priv->uplink_dev);
 	if ((xdev & (PPE_XDEV_UL | PPE_XDEV_PUSH)) == PPE_XDEV_UL && up &&
 	    up != dev->ifindex) {
-		uplink = dev_get_by_index_rcu(dev_net(dev), up);
+		uplink = rcu_dereference_bh(priv->uplink_ndev);
 		if (unlikely(!uplink || !netif_running(uplink)))
 			goto drop;
 	}
@@ -1784,6 +1985,11 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 	if (entry->dscp)
 		ppe_flow_dscp_apply(skb, entry->dscp & 0x3f);
 
+#if IS_ENABLED(CONFIG_CFG80211_HEADERS)
+	if (dev->ieee80211_ptr)
+		ppe_flow_wifi_prio(skb);
+#endif
+
 	xport = entry->xport;
 
 	/* Into the download shaper the way act_mirred sends an egress frame
@@ -1793,8 +1999,7 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 	 * unshaped, not lost.
 	 */
 	if (xdev & PPE_XDEV_DL) {
-		shaper = dev_get_by_index_rcu(dev_net(dev),
-					      READ_ONCE(priv->dl_shaper));
+		shaper = rcu_dereference_bh(priv->dl_ndev);
 		if (likely(shaper && netif_running(shaper))) {
 			if (entry->vid)
 				__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
@@ -1874,6 +2079,7 @@ int ppe_flow_uplink_set(struct qca_ppe_priv *priv, const char *name)
 
 	WRITE_ONCE(priv->uplink_dev, ifindex);
 	strscpy(priv->uplink_name, name, IFNAMSIZ);
+	ppe_flow_ndev_refresh(priv);
 	ppe_flow_shaper_path(priv);
 	ppe_flow_shaper_drop(priv, false);
 	ppe_flow_shaper_drop(priv, true);
@@ -1933,6 +2139,7 @@ int ppe_flow_shaper_set(struct qca_ppe_priv *priv, bool upload,
 		} else {
 			WRITE_ONCE(priv->dl_shaper, ifindex);
 			strscpy(priv->dl_shaper_name, name, IFNAMSIZ);
+			ppe_flow_ndev_refresh(priv);
 		}
 
 		ppe_flow_shaper_drop(priv, upload);
@@ -2067,7 +2274,7 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 	port = ppe_flow_port_by_ifindex(priv, data->odev->ifindex);
 	if (port < 0 && ppe_cpu_xmit_ok(data)) {
 		port = QCA_PPE_CPU_PORT;
-		entry->xdev = data->odev->ifindex;
+		ppe_flow_xdev_set(priv, entry, data->odev->ifindex);
 	}
 	if (port < 0)
 		return port;
@@ -2262,6 +2469,7 @@ static void ppe_flow_entry_destroy(struct qca_ppe_priv *priv,
 	 * entry pointing at side tables about to be reused is the worse half of
 	 * that trade.
 	 */
+	ppe_vp_flow_del(priv, &entry->vpf);
 	age = ppe_flow_entry_age(priv, entry);
 	if (age >= 0) {
 		u32 pkts = ppe_flow_counter_delta(priv, entry, &bytes);
@@ -2366,6 +2574,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	struct flow_action_entry *act;
 	bool snat, dnat, v6, uplink_in = false;
 	int i, ret, nfw, nhw, iport;
+	u8 vp = 0;
 
 	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
@@ -2392,9 +2601,27 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 			data.ivid = priv->ul_vid;
 			uplink_in = true;
 		}
+		/* A bridge port outside the switch is classified into the
+		 * bridge's VSI by its virtual port, as the switch's own are.
+		 */
+		if (iport < 0) {
+			int vport;
+
+			if (!ppe_vp_ingress(priv, match.key->ingress_ifindex,
+					    &vport, &vp))
+				iport = vport;
+		}
 		if (iport < 0)
 			return ppe_flow_reject(priv, PPE_REJECT_INGRESS_PORT);
 	}
+
+	/* A virtual port has the bridge's VSI and no VLAN classification, so a
+	 * flow from one is only that of a bridge that does not filter, with no
+	 * tag in its key.
+	 */
+	if (vp && (priv->vlan_filtering & BIT(iport) ||
+		   flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN)))
+		return ppe_flow_reject(priv, PPE_REJECT_INGRESS_VLAN);
 
 	/* An ingress tag is matched by the VSI it is classified into - the
 	 * uplink's tag on a PPPoE port, a bridge VLAN the port is a member
@@ -2425,6 +2652,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 				       ppe_flow_ht_params);
 	if (entry) {
 		if (entry->src_if == ppe_flow_src_if(priv, iport, data.ivid) &&
+		    entry->vpf.key.vp == vp &&
 		    ppe_flow_entry_age(priv, entry) >= 0)
 			return 0;
 
@@ -2449,7 +2677,8 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 		data.l4proto = match.key->ip_proto;
 	}
 
-	if (ppe_flow_proto(data.l4proto) < 0)
+	if (ppe_flow_proto(data.l4proto) < 0 ||
+	    (vp && data.l4proto != IPPROTO_TCP && data.l4proto != IPPROTO_UDP))
 		return ppe_flow_reject(priv, PPE_REJECT_PROTO);
 
 	/* The entry matches any flags; a flag the rule excludes is only
@@ -2659,6 +2888,36 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 		goto err_ingress;
 	}
 
+	/* A flow that would leave through the CPU for a device outside the
+	 * switch gains nothing from a trip through the PPE: the frame comes
+	 * back to be queued on the host's interface, as it was received.
+	 */
+	if (vp && entry->xdev && !(entry->xdev & PPE_XDEV_UL)) {
+		priv->flow_reject[PPE_REJECT_VP_EGRESS]++;
+		ret = -EOPNOTSUPP;
+		goto err_egress;
+	}
+
+	/* The tuple as the frame arrives, which the egress half of the flow
+	 * has already rewritten in the entry.
+	 */
+	if (vp) {
+		struct ppe_vp_key *key = &entry->vpf.key;
+
+		key->vp = vp;
+		key->proto = data.l4proto;
+		key->v6 = v6;
+		key->port[0] = data.sport;
+		key->port[1] = data.dport;
+		if (v6) {
+			key->addr.v6[0] = data.v6_src;
+			key->addr.v6[1] = data.v6_dst;
+		} else {
+			key->addr.v4[0] = data.v4_src;
+			key->addr.v4[1] = data.v4_dst;
+		}
+	}
+
 	ppe_flow_encode(&data, v6, snat, dnat, entry->nexthop, entry->src_if,
 			fw, hw);
 
@@ -2705,6 +2964,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 
 	list_add_tail(&entry->list, &priv->flow_list);
 	priv->flow_offloaded++;
+	ppe_vp_flow_add(priv, &entry->vpf);
 
 	return 0;
 
@@ -2763,8 +3023,17 @@ static int ppe_flow_offload_stats(struct qca_ppe_priv *priv,
 	 * the hardware has aged out and handed to another flow.
 	 */
 	age = ppe_flow_entry_age(priv, entry);
-	if (age >= 0 && (entry->unread_packets || age == PPE_FLOW_AGE_MAX))
-		entry->last_used = jiffies;
+	if (age >= 0) {
+		u64 bytes;
+		u32 pkts = ppe_flow_counter_delta(priv, entry, &bytes);
+
+		/* What the sparse work has not yet read, so that the answer
+		 * is as current as the counter.
+		 */
+		ppe_flow_account(priv, entry, pkts, bytes);
+		if (entry->unread_packets || age == PPE_FLOW_AGE_MAX)
+			entry->last_used = jiffies;
+	}
 
 	flow_stats_update(&f->stats, entry->unread_bytes, entry->unread_packets,
 			  0, entry->last_used, FLOW_ACTION_HW_STATS_DELAYED);
@@ -2890,6 +3159,14 @@ int ppe_setup_ft_block(struct qca_ppe_priv *priv,
 #define PPE_SPARSE_PKTS		8
 #define PPE_SPARSE_QUIET	10
 
+/* A flow that is not ranked in a shaped queue has nothing to be promoted to,
+ * so its counter is read once in this many periods, each flow in the period
+ * its slot number falls in, rather than in every one. What it moved is
+ * banked a little later and the deltas stay exact; the flowtable's stats
+ * request and the removal of the flow read the counter themselves.
+ */
+#define PPE_SPARSE_SLICES	10
+
 static bool ppe_sparse_flows = true;
 module_param_named(sparse_flows, ppe_sparse_flows, bool, 0644);
 MODULE_PARM_DESC(sparse_flows,
@@ -2967,12 +3244,29 @@ static void ppe_sparse_work(struct work_struct *work)
 	struct qca_ppe_priv *priv = container_of(work, struct qca_ppe_priv,
 						 sparse_work.work);
 	struct ppe_flow_entry *entry;
-	u32 pkts, delta;
+	u32 pkts, delta, tick;
 	bool shaped;
 
 	mutex_lock(&priv->flow_lock);
+	tick = priv->sparse_tick++;
 	list_for_each_entry(entry, &priv->flow_list, list) {
 		u64 bytes;
+
+		/* The list is a queue of a shaped user port, so only a flow
+		 * that leaves by one has a use for it. Anywhere else the profile
+		 * buys nothing and costs the flow the DSCP its ACL rule writes,
+		 * which the switch stops applying once the flow's profile
+		 * outranks the ACL.
+		 */
+		shaped = entry->oport != QCA_PPE_CPU_PORT &&
+			 ppe_port_shaped(priv, entry->oport);
+
+		/* A promoted flow is looked at every period, so that it is
+		 * demoted at the end of the one it burst in.
+		 */
+		if ((!shaped || !ppe_sparse_flows) && !entry->sparse &&
+		    (entry->index + tick) % PPE_SPARSE_SLICES)
+			continue;
 
 		regmap_read(priv->regmap, PPE_IN_FLOW_CNT_TBL(entry->index),
 			    &pkts);
@@ -2987,15 +3281,6 @@ static void ppe_sparse_work(struct work_struct *work)
 
 			ppe_flow_account(priv, entry, acct, bytes);
 		}
-
-		/* The list is a queue of a shaped user port, so only a flow
-		 * that leaves by one has a use for it. Anywhere else the profile
-		 * buys nothing and costs the flow the DSCP its ACL rule writes,
-		 * which the switch stops applying once the flow's profile
-		 * outranks the ACL.
-		 */
-		shaped = entry->oport != QCA_PPE_CPU_PORT &&
-			 ppe_port_shaped(priv, entry->oport);
 
 		if (delta > PPE_SPARSE_PKTS || !ppe_sparse_flows || !shaped) {
 			entry->quiet = 0;

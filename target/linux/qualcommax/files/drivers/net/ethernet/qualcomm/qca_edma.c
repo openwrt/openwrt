@@ -6,6 +6,7 @@
 
 #include <linux/bitfield.h>
 #include <linux/clk.h>
+#include <linux/dim.h>
 #include <linux/ethtool.h>
 #include <linux/hash.h>
 #include <linux/if_vlan.h>
@@ -24,6 +25,8 @@
 #include <linux/reset.h>
 #include <net/dsa.h>
 #include <net/dst_metadata.h>
+#include <net/gso.h>
+#include <net/ip6_checksum.h>
 #include <net/netdev_queues.h>
 
 #include "qca_edma.h"
@@ -158,18 +161,57 @@ static irqreturn_t edma_misc_irq_handle(int irq, void *ctx)
 	return IRQ_HANDLED;
 }
 
+/* A ring the CPU only reads, the receive descriptors and the transmit
+ * completions, is cached memory: the engine writes it, and edma_ring_sync_cpu()
+ * discards what the CPU holds of the entries the engine has just produced, so
+ * that the loads that follow fill one line per EDMA_DESCS_PER_LINE entries
+ * instead of reading each entry from memory uncached. The CPU never stores to
+ * such a ring, so no line of it is ever dirty and an eviction cannot write a
+ * stale line over an entry the engine wrote. Memory from
+ * dma_alloc_noncoherent() belongs to the CPU, which just zeroed it into the
+ * cache: the sync for the device cleans those lines before the engine's rings
+ * are enabled. The rings the CPU writes, the transmit and fill descriptors,
+ * stay coherent (uncached) memory.
+ */
 static int edma_ring_alloc(struct edma_priv *priv, struct edma_ring *ring, int count,
-			   int desc_size)
+			   int desc_size, bool cached)
 {
 	struct device *dev = &priv->pdev->dev;
+	size_t size = count * desc_size;
 
 	ring->count = count;
-	ring->desc = dma_alloc_coherent(dev, count * desc_size, &ring->dma,
-					GFP_KERNEL);
+	ring->cached = cached;
+	if (cached) {
+		ring->desc = dma_alloc_noncoherent(dev, size, &ring->dma,
+						   DMA_FROM_DEVICE, GFP_KERNEL);
+		if (ring->desc)
+			dma_sync_single_for_device(dev, ring->dma, size,
+						   DMA_FROM_DEVICE);
+	} else {
+		ring->desc = dma_alloc_coherent(dev, size, &ring->dma,
+						GFP_KERNEL);
+	}
 	if (!ring->desc)
 		return -ENOMEM;
 
 	return 0;
+}
+
+static void edma_ring_free(struct edma_priv *priv, struct edma_ring *ring,
+			   int desc_size)
+{
+	size_t size = ring->count * desc_size;
+
+	if (!ring->desc)
+		return;
+
+	if (ring->cached)
+		dma_free_noncoherent(&priv->pdev->dev, size, ring->desc,
+				     ring->dma, DMA_FROM_DEVICE);
+	else
+		dma_free_coherent(&priv->pdev->dev, size, ring->desc,
+				  ring->dma);
+	ring->desc = NULL;
 }
 
 static int edma_tx_ring_alloc(struct edma_priv *priv, struct edma_ring *ring,
@@ -177,15 +219,13 @@ static int edma_tx_ring_alloc(struct edma_priv *priv, struct edma_ring *ring,
 {
 	int ret;
 
-	ret = edma_ring_alloc(priv, ring, count, desc_size);
+	ret = edma_ring_alloc(priv, ring, count, desc_size, false);
 	if (ret)
 		return ret;
 
 	ring->skb_store = kcalloc(count, sizeof(struct sk_buff *), GFP_KERNEL);
 	if (!ring->skb_store) {
-		dma_free_coherent(&priv->pdev->dev, count * desc_size,
-				  ring->desc, ring->dma);
-		ring->desc = NULL;
+		edma_ring_free(priv, ring, desc_size);
 		return -ENOMEM;
 	}
 
@@ -197,30 +237,46 @@ static int edma_rx_ring_alloc(struct edma_priv *priv, struct edma_ring *ring,
 {
 	int ret;
 
-	ret = edma_ring_alloc(priv, ring, count, desc_size);
+	ret = edma_ring_alloc(priv, ring, count, desc_size, false);
 	if (ret)
 		return ret;
 
-	ring->page_store = kcalloc(count, sizeof(*ring->page_store),
-				   GFP_KERNEL);
-	if (!ring->page_store) {
-		dma_free_coherent(&priv->pdev->dev, count * desc_size,
-				  ring->desc, ring->dma);
-		ring->desc = NULL;
+	ring->rx_store = kcalloc(count, sizeof(*ring->rx_store), GFP_KERNEL);
+	if (!ring->rx_store) {
+		edma_ring_free(priv, ring, desc_size);
 		return -ENOMEM;
 	}
 
 	return 0;
 }
 
-static void edma_ring_free(struct edma_priv *priv, struct edma_ring *ring,
-			   int desc_size)
+/* Takes from the engine the lines holding the @n entries of @ring from
+ * @first on, which the producer index just showed it has written. The
+ * range is whole lines, the first and last of which may hold entries the
+ * engine writes meanwhile or has not yet; that is harmless, since nothing
+ * reads those before the next sync discards them again.
+ */
+static void edma_ring_sync_cpu(struct edma_priv *priv, struct edma_ring *ring,
+			       u32 first, u32 n)
 {
-	if (ring->desc) {
-		dma_free_coherent(&priv->pdev->dev, ring->count * desc_size,
-				  ring->desc, ring->dma);
-		ring->desc = NULL;
+	size_t start, end;
+
+	BUILD_BUG_ON(sizeof(struct edma_rxdesc) != EDMA_DESC_SIZE ||
+		     sizeof(struct edma_txcmpl) != EDMA_DESC_SIZE);
+
+	if (!ring->cached || !n)
+		return;
+
+	if (first + n > ring->count) {
+		edma_ring_sync_cpu(priv, ring, first, ring->count - first);
+		edma_ring_sync_cpu(priv, ring, 0, first + n - ring->count);
+		return;
 	}
+
+	start = ALIGN_DOWN(first * EDMA_DESC_SIZE, L1_CACHE_BYTES);
+	end = ALIGN((first + n) * EDMA_DESC_SIZE, L1_CACHE_BYTES);
+	dma_sync_single_for_cpu(&priv->pdev->dev, ring->dma + start,
+				end - start, DMA_FROM_DEVICE);
 }
 
 static u32 edma_tx_release(struct edma_queue *q, u32 idx, struct sk_buff *skb,
@@ -250,8 +306,8 @@ static void edma_tx_ring_free(struct edma_queue *q, struct edma_ring *ring,
 /* The ring index registers are accessed per frame and per poll, which the
  * register map's checks would cost more than the access itself.
  */
-/* The rings are uncached, so both words of a descriptor, the address and the
- * status, are read in one access.
+/* Both words of a descriptor, the address and the status, are read in one
+ * access. The caller has synced the descriptor's line from the engine.
  */
 static u64 edma_desc_read(const void *desc)
 {
@@ -268,45 +324,51 @@ static void edma_idx_write(struct edma_priv *priv, u32 reg, u32 val)
 	writel(val, priv->base + reg);
 }
 
+/* Fills the ring with every buffer the ring has room for. The buffers the
+ * engine holds are the ones the shadow array still has: a buffer comes back
+ * only through a descriptor, which the engine writes after it read the fill
+ * descriptor of that buffer, so a slot without a page is a fill descriptor
+ * the engine is done with. The slot after the one filled is kept free, so
+ * that a full ring is never the producer meeting the consumer, which is how
+ * the engine tells an empty one. That bounds the ring by what the driver
+ * itself accounts for, without reading the engine's consumer index.
+ */
 static int edma_rx_fill(struct edma_queue *q)
 {
 	struct edma_ring *rxfill_ring = &q->rxfill_ring;
 	struct edma_priv *priv = q->priv;
 	struct edma_rxfill_desc *rxfill_desc;
-	struct edma_rx_preheader *rxph;
-	u16 prod, cons, next;
+	u16 prod, next;
 	struct page *page;
 	u16 filled = 0;
 	dma_addr_t dma;
+	unsigned int off, size;
 
 	prod = q->rxfill_prod;
-	cons = edma_idx_read(priv, EDMA_REG_RXFILL_CONS_IDX(q->rxfill)) &
-	       EDMA_RXFILL_CONS_IDX_MASK & (rxfill_ring->count - 1);
 
 	while (1) {
 		next = prod + 1;
 		if (next == rxfill_ring->count)
 			next = 0;
 
-		if (next == cons)
+		if (rxfill_ring->rx_store[next].page)
 			break;
 		/* The page may still be prefetched inside EDMA. */
-		if (unlikely(rxfill_ring->page_store[prod]))
+		if (unlikely(rxfill_ring->rx_store[prod].page))
 			break;
 
-		page = page_pool_dev_alloc_pages(q->page_pool);
+		size = priv->rx_truesize;
+		page = page_pool_dev_alloc(q->page_pool, &off, &size);
 		if (unlikely(!page))
 			break;
 
 		rxfill_desc = EDMA_RXFILL_DESC(rxfill_ring, prod);
 
-		dma = page_pool_get_dma_addr(page) + NET_SKB_PAD;
-		rxph = page_address(page) + NET_SKB_PAD;
-		rxph->opaque = cpu_to_le32(prod);
-		dma_sync_single_for_device(&priv->pdev->dev, dma,
-					   sizeof(rxph->opaque), DMA_FROM_DEVICE);
-		rxfill_ring->page_store[prod] = page;
-		rxfill_desc->buffer_addr = cpu_to_le32(dma);
+		dma = page_pool_get_dma_addr(page) + off;
+		rxfill_ring->rx_store[prod].page = page;
+		rxfill_ring->rx_store[prod].dma = dma;
+		rxfill_ring->rx_store[prod].off = off;
+		rxfill_desc->buffer_addr = cpu_to_le32(dma + NET_SKB_PAD);
 		rxfill_desc->word1 = cpu_to_le32(priv->rx_buffer_size &
 						 EDMA_RXFILL_BUF_SIZE_MASK);
 
@@ -323,35 +385,30 @@ static int edma_rx_fill(struct edma_queue *q)
 	return filled;
 }
 
-static bool edma_rx_page_take(struct edma_queue *q, struct page *page,
-			      u32 store_idx)
+/* The buffer the descriptor at @addr hands back. The engine returns the
+ * buffers of a fill ring in the order they were filled, so it is the one at
+ * the next slot, which the address names; the page is not read to find out.
+ * A buffer that comes back out of order is looked for in the whole ring, so
+ * that the order is only ever a matter of speed, and the next frame is
+ * expected after it.
+ */
+static struct edma_rx_buf *edma_rx_buf_find(struct edma_queue *q, u32 addr)
 {
 	struct edma_ring *ring = &q->rxfill_ring;
-	struct edma_priv *priv = q->priv;
 	int i;
 
-	if (likely(store_idx < ring->count &&
-		   ring->page_store[store_idx] == page)) {
-		ring->page_store[store_idx] = NULL;
-		return true;
-	}
-
 	for (i = 0; i < ring->count; i++) {
-		if (ring->page_store[i] != page)
+		struct edma_rx_buf *buf = &ring->rx_store[i];
+
+		if (!buf->page || lower_32_bits(buf->dma + NET_SKB_PAD) != addr)
 			continue;
 
-		ring->page_store[i] = NULL;
-		dev_warn_ratelimited(&priv->pdev->dev,
-				     "rx page has invalid store index %u, expected %d\n",
-				     store_idx, i);
-		return true;
+		q->stats.rx_fifo_miss++;
+		q->rx_slot = (i + 1) & (ring->count - 1);
+		return buf;
 	}
 
-	/* The page may already belong to an skb, so it cannot be freed safely. */
-	dev_warn_ratelimited(&priv->pdev->dev,
-			     "rx page with store index %u is not tracked\n",
-			     store_idx);
-	return false;
+	return NULL;
 }
 
 /* Descriptors the transmit ring has left, taken from the hardware rather than
@@ -418,6 +475,8 @@ static u32 edma_tx_release(struct edma_queue *q, u32 idx, struct sk_buff *skb,
 	return bytes;
 }
 
+static void edma_src_drain(struct edma_queue *q);
+
 /* @napi_budget is the NAPI budget the poll was given, or zero when the caller
  * is not a poll: the skb cache napi_consume_skb() recycles into is per-CPU and
  * is only safe to touch from softirq context.
@@ -436,6 +495,9 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 							    q->txcmpl)) &
 	       EDMA_TXCMPL_PROD_IDX_MASK;
 	cons = q->txcmpl_cons;
+	edma_ring_sync_cpu(priv, txcmpl_ring, cons,
+			   min_t(u32, (prod - cons) & (txcmpl_ring->count - 1),
+				 budget));
 
 	while (cons != prod && cleaned < budget) {
 		u64 desc = edma_desc_read(EDMA_TXCMPL_DESC(txcmpl_ring, cons));
@@ -489,6 +551,9 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	if (cleaned == 0)
 		return 0;
 
+	q->tx_pkts += pkts;
+	q->tx_bytes += bytes;
+
 	/* A drain runs with the queue deliberately stopped and the rings about
 	 * to be freed, so only a poll may wake it.
 	 */
@@ -500,7 +565,29 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	edma_idx_write(priv, EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base,
 						      q->txcmpl), cons);
 
+	/* The wake above does not order the check below after it: a frame
+	 * parked while the queue was still stopped is queued under the lock,
+	 * and either sees the queue running again and sends itself, or is
+	 * seen here.
+	 */
+	smp_mb();
+	if (napi_budget && !skb_queue_empty(&q->src_backlog))
+		edma_src_drain(q);
+
 	return cleaned;
+}
+
+/* The engine parsed the transport and found its checksum, and for IPv4 the
+ * header's, good.
+ */
+static bool edma_rx_l4_ok(u32 status)
+{
+	u8 pid = (status >> EDMA_RXDESC_PID_SHIFT) & EDMA_RXDESC_PID_MASK;
+
+	return (BIT(pid) & EDMA_RXDESC_PID_TCP_UDP) &&
+	       (status & EDMA_RXDESC_L4_CSUM_OK) &&
+	       ((pid & EDMA_RXDESC_PID_IPV6) ||
+		(status & EDMA_RXDESC_L3_CSUM_OK));
 }
 
 /* The engine verifies the transport checksum of a TCP or UDP frame and
@@ -526,14 +613,8 @@ static void edma_rx_csum(struct net_device *netdev, struct sk_buff *skb,
 	 * settles the frame without the stack reading it at all.
 	 */
 	if (BIT(pid) & EDMA_RXDESC_PID_TCP_UDP) {
-		if (!(status & EDMA_RXDESC_L4_CSUM_OK))
-			return;
-
-		if (!(pid & EDMA_RXDESC_PID_IPV6) &&
-		    !(status & EDMA_RXDESC_L3_CSUM_OK))
-			return;
-
-		skb->ip_summed = CHECKSUM_UNNECESSARY;
+		if (edma_rx_l4_ok(status))
+			skb->ip_summed = CHECKSUM_UNNECESSARY;
 		return;
 	}
 
@@ -618,26 +699,49 @@ static void edma_rx_vlan(struct net_device *netdev, struct sk_buff *skb,
 /* The switch routed the frame to the CPU port on a flow it holds, with no
  * exception: its driver may own the egress and send it on unchanged.
  */
-static bool edma_rx_flow(struct net_device *netdev, struct sk_buff *skb,
-			 const struct edma_rx_preheader *rxph)
+static bool edma_rx_is_flow(const struct edma_rx_preheader *rxph)
 {
-	u32 pre2 = le32_to_cpu(rxph->rx_pre2);
+	return ((le32_to_cpu(rxph->rx_pre2) >> EDMA_RXPH_HASH_FLAG_SHIFT) &
+		EDMA_RXPH_HASH_FLAG_MASK) == EDMA_RXPH_HASH_FLOW &&
+	       le16_to_cpu(rxph->dst_info) == EDMA_PREHDR_DSTINFO_PORTID_IND << 8 &&
+	       !FIELD_GET(EDMA_RXPH_CPU_CODE, le32_to_cpu(rxph->rx_pre4));
+}
+
+static u32 edma_rx_flow_id(const struct edma_rx_preheader *rxph)
+{
+	return le32_to_cpu(rxph->rx_pre2) & EDMA_RXPH_HASH_MASK;
+}
+
+static bool edma_rx_flow(struct net_device *netdev, struct sk_buff *skb,
+			 u32 flow)
+{
 	struct edma_priv *priv = netdev_priv(netdev);
 	const struct qca_edma_switch_ops *ops;
-
-	if (((pre2 >> EDMA_RXPH_HASH_FLAG_SHIFT) & EDMA_RXPH_HASH_FLAG_MASK) !=
-	    EDMA_RXPH_HASH_FLOW ||
-	    le16_to_cpu(rxph->dst_info) != EDMA_PREHDR_DSTINFO_PORTID_IND << 8 ||
-	    FIELD_GET(EDMA_RXPH_CPU_CODE, le32_to_cpu(rxph->rx_pre4)))
-		return false;
 
 	ops = READ_ONCE(priv->sw_ops);
 	if (!ops || !ops->flow_xmit)
 		return false;
 
 	skb->dev = netdev;
-	return ops->flow_xmit(READ_ONCE(priv->sw_ds), skb,
-			      pre2 & EDMA_RXPH_HASH_MASK);
+	return ops->flow_xmit(READ_ONCE(priv->sw_ds), skb, flow);
+}
+
+/* The switch returned a frame that the CPU sent with a virtual source port:
+ * an exception, such as a size limit or a flow entry that is gone. The
+ * switch's driver knows whose port it was.
+ */
+static bool edma_rx_vp(struct net_device *netdev, struct sk_buff *skb,
+		       u32 src_port)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+	const struct qca_edma_switch_ops *ops;
+
+	ops = READ_ONCE(priv->sw_ops);
+	if (!ops || !ops->vp_rx)
+		return false;
+
+	skb->dev = netdev;
+	return ops->vp_rx(READ_ONCE(priv->sw_ds), skb, src_port);
 }
 
 /* A frame the switch trapped to the CPU is the bridge's to forward, so it
@@ -669,24 +773,428 @@ static bool edma_rx_tag(struct sk_buff *skb, u32 src_port)
 	return true;
 }
 
-/* Reads a descriptor and hands its frame's lines to the CPU. The preheader
- * and the headers behind it are prefetched, which the caller does one frame
- * ahead so that they arrive while the frame before is processed.
+/* What a peek found: the descriptor, and the buffer of the slot it expected it
+ * in, NULL when the descriptor does not name that buffer.
  */
-static void edma_rx_peek(struct edma_queue *q, u16 idx, u32 *addr, u32 *status)
-{
-	u64 desc = edma_desc_read(EDMA_RXDESC_DESC(&q->rxdesc_ring, idx));
-	void *rxph;
+struct edma_rx_peek {
+	u32 addr;
+	u32 status;
+	u16 slot;
+	struct edma_rx_buf *buf;
+};
 
-	*addr = lower_32_bits(desc);
-	*status = upper_32_bits(desc);
-	rxph = phys_to_virt(*addr);
-	page_pool_dma_sync_for_cpu(q->page_pool, virt_to_head_page(rxph), 0,
-				   min_t(u32, EDMA_RX_PREHDR_SIZE +
-					 (*status & EDMA_RXDESC_PACKET_LEN_MASK),
-					 q->priv->rx_frame_len));
-	prefetch(rxph);
-	prefetch(rxph + L1_CACHE_BYTES);
+static u32 edma_rx_sync_len(struct edma_queue *q, u32 status)
+{
+	return min_t(u32, EDMA_RX_PREHDR_SIZE +
+		     (status & EDMA_RXDESC_PACKET_LEN_MASK),
+		     q->priv->rx_frame_len);
+}
+
+/* Reads a descriptor and, when it names the buffer of @slot, hands that
+ * buffer's lines to the CPU: the preheader and the headers behind it are
+ * prefetched, and so is the shared info the skb is built over, which the
+ * caller does one frame ahead so that they arrive while the frame before is
+ * processed. The buffer's shadow entry has its address, so nothing is read
+ * from the page's own struct.
+ */
+static void edma_rx_peek(struct edma_queue *q, u16 idx, u16 slot,
+			 struct edma_rx_peek *pk)
+{
+	struct edma_rx_buf *buf = &q->rxfill_ring.rx_store[slot];
+	u64 desc = edma_desc_read(EDMA_RXDESC_DESC(&q->rxdesc_ring, idx));
+	void *data;
+
+	pk->addr = lower_32_bits(desc);
+	pk->status = upper_32_bits(desc);
+	pk->slot = slot;
+	pk->buf = NULL;
+
+	if (unlikely(!buf->page ||
+		     lower_32_bits(buf->dma + NET_SKB_PAD) != pk->addr))
+		return;
+
+	pk->buf = buf;
+	__page_pool_dma_sync_for_cpu(q->page_pool, buf->dma, 0,
+				     edma_rx_sync_len(q, pk->status));
+	data = page_address(buf->page) + buf->off;
+	prefetch(data + NET_SKB_PAD);
+	prefetch(data + NET_SKB_PAD + L1_CACHE_BYTES);
+	prefetchw(data + q->priv->rx_truesize -
+		  SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
+}
+
+#define EDMA_GRO_SEGS	8
+
+static void edma_rx_netstats(struct net_device *netdev, u32 packets, u32 bytes)
+{
+	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev->tstats);
+
+	u64_stats_update_begin(&tstats->syncp);
+	u64_stats_add(&tstats->rx_packets, packets);
+	u64_stats_add(&tstats->rx_bytes, bytes);
+	u64_stats_update_end(&tstats->syncp);
+}
+
+/* A frame that the normal receive path takes: one the switch returned from a
+ * virtual port, or the rest. @segs frames of @bytes in all, which are more
+ * than one for an aggregate whose flow's egress went away before it was
+ * sent; its checksum is then the one the aggregate was given.
+ */
+static void edma_rx_slow(struct edma_queue *q, struct sk_buff *skb,
+			 const struct edma_rx_preheader *rxph, u32 status,
+			 u32 src_port, u32 segs, u32 bytes)
+{
+	struct edma_priv *priv = q->priv;
+	struct net_device *netdev = priv->netdev;
+	unsigned char *frame;
+
+	/* Only the CPU and the switch's ports send frames the PPE
+	 * can return, and a port above them is a virtual one.
+	 */
+	if (src_port >= EDMA_PORTS) {
+		if (edma_rx_vp(netdev, skb, src_port)) {
+			edma_rx_netstats(netdev, segs, bytes);
+		} else {
+			dev_kfree_skb_any(skb);
+			q->stats.rx_vp_unclaimed++;
+			DEV_STATS_INC(netdev, rx_dropped);
+		}
+		return;
+	}
+
+	edma_rx_vlan(netdev, skb, rxph);
+	frame = skb->data;
+	skb->protocol = eth_type_trans(skb, netdev);
+	if (!skb_is_gso(skb))
+		edma_rx_csum(netdev, skb, rxph, status, skb->data - frame);
+	edma_rx_hash(netdev, skb, rxph);
+
+	/* A forwarded frame names its port in a metadata dst, which
+	 * DSA reads without a tagger; a trapped one carries a tag.
+	 */
+	if (src_port < EDMA_PORTS && netdev_uses_dsa(netdev)) {
+		if (!FIELD_GET(EDMA_RXPH_CPU_CODE, le32_to_cpu(rxph->rx_pre4))) {
+			skb_dst_set_noref(skb, &priv->port_md[src_port]->dst);
+		} else if (unlikely(!edma_rx_tag(skb, src_port))) {
+			dev_kfree_skb_any(skb);
+			q->stats.rx_no_tag++;
+			DEV_STATS_INC(netdev, rx_dropped);
+			return;
+		}
+	}
+
+	edma_rx_netstats(netdev, segs, bytes);
+	if (skb_is_gso(skb))
+		netif_receive_skb(skb);
+	else
+		napi_gro_receive(&q->napi, skb);
+}
+
+/* The headers of a TCP data segment of an IPv4 or IPv6 frame that carries
+ * nothing the merge would lose: no VLAN or PPPoE header, no IP options or
+ * extension headers, no fragment, a length that is the frame's, flags of a
+ * plain acknowledgment, and a TCP checksum the engine found good, which the
+ * merged frame is given again.
+ */
+static bool edma_gro_parse(const struct net_device *netdev,
+			   struct sk_buff *skb, u32 status, struct edma_tcp *t)
+{
+	unsigned int len = skb_headlen(skb), thoff, thlen;
+	u8 *d = skb->data;
+	struct tcphdr *th;
+
+	if (!(netdev->features & NETIF_F_RXCSUM) || !edma_rx_l4_ok(status) ||
+	    len < ETH_HLEN + sizeof(struct iphdr) + sizeof(*th))
+		return false;
+
+	t->eth = (struct ethhdr *)d;
+	if (t->eth->h_proto == htons(ETH_P_IP)) {
+		struct iphdr *iph = (struct iphdr *)(d + ETH_HLEN);
+
+		if (*(u8 *)iph != 0x45 || iph->protocol != IPPROTO_TCP ||
+		    (iph->frag_off & htons(IP_MF | IP_OFFSET)) ||
+		    ETH_HLEN + ntohs(iph->tot_len) != len)
+			return false;
+		t->ip4 = iph;
+		t->v6 = false;
+		thoff = ETH_HLEN + sizeof(*iph);
+	} else if (t->eth->h_proto == htons(ETH_P_IPV6)) {
+		struct ipv6hdr *ip6h = (struct ipv6hdr *)(d + ETH_HLEN);
+
+		if (len < ETH_HLEN + sizeof(*ip6h) + sizeof(*th) ||
+		    ip6h->version != 6 || ip6h->nexthdr != IPPROTO_TCP ||
+		    ETH_HLEN + sizeof(*ip6h) + ntohs(ip6h->payload_len) != len)
+			return false;
+		t->ip6 = ip6h;
+		t->v6 = true;
+		thoff = ETH_HLEN + sizeof(*ip6h);
+	} else {
+		return false;
+	}
+
+	th = (struct tcphdr *)(d + thoff);
+	thlen = th->doff * 4;
+	if (thlen < sizeof(*th) || thoff + thlen >= len)
+		return false;
+
+	/* Only an acknowledgment, that may push; a segment with any other
+	 * flag, or an urgent pointer, ends a run.
+	 */
+	if (!th->ack || th->fin || th->syn || th->rst || th->urg ||
+	    th->ece || th->cwr || th->urg_ptr)
+		return false;
+
+	t->th = th;
+	t->hdr_len = thoff + thlen;
+	t->payload = len - t->hdr_len;
+
+	return true;
+}
+
+/* Whether segment @t follows the aggregate's last one as one segment of the
+ * same stream would: the same flow, link and IP header but for the ID, the
+ * same ports, acknowledgment, window and options, the next sequence
+ * number, and an ID that goes up by one, or is the same where the egress can
+ * keep it so. Sent again by the segmentation of the stack or the TCL, the
+ * frames are then the ones that came in.
+ */
+static bool edma_gro_fits(const struct edma_gro *g, const struct edma_tcp *t,
+			  u32 flow, bool *fixed)
+{
+	const struct edma_tcp *h = &g->t;
+	unsigned int optlen;
+
+	if (flow != g->flow || t->v6 != h->v6 || t->hdr_len != h->hdr_len ||
+	    t->payload > g->mss || ntohl(t->th->seq) != g->next_seq ||
+	    g->head->len + t->payload > g->gso.max_size ||
+	    memcmp(t->eth, h->eth, ETH_HLEN) ||
+	    memcmp(&t->th->source, &h->th->source, sizeof(__be32)) ||
+	    t->th->ack_seq != h->th->ack_seq || t->th->window != h->th->window)
+		return false;
+
+	optlen = t->hdr_len - ((u8 *)t->th - (u8 *)t->eth) - sizeof(*t->th);
+	if (memcmp(t->th + 1, h->th + 1, optlen))
+		return false;
+
+	if (t->v6) {
+		if (*(__be32 *)t->ip6 != *(__be32 *)h->ip6 ||
+		    t->ip6->hop_limit != h->ip6->hop_limit ||
+		    memcmp(&t->ip6->saddr, &h->ip6->saddr,
+			   2 * sizeof(t->ip6->saddr)))
+			return false;
+		return true;
+	}
+
+	if (t->ip4->tos != h->ip4->tos || t->ip4->ttl != h->ip4->ttl ||
+	    t->ip4->frag_off != h->ip4->frag_off ||
+	    memcmp(&t->ip4->saddr, &h->ip4->saddr, 2 * sizeof(__be32)))
+		return false;
+
+	if (g->segs > 1)
+		*fixed = g->fixedid;
+	else
+		*fixed = ntohs(t->ip4->id) == g->last_id;
+	if (*fixed)
+		return (t->ip4->frag_off & htons(IP_DF)) &&
+		       (g->gso.features & NETIF_F_TSO_MANGLEID);
+
+	return ntohs(t->ip4->id) == (u16)(g->last_id + 1);
+}
+
+/* Gives the aggregate what the TCP GRO of the stack gives its own: the
+ * length of the IP packet it has become, the pseudo-header sum its checksum
+ * is finished from by whoever segments it, and the size and number of the
+ * segments.
+ */
+static void edma_gro_complete(struct edma_gro *g)
+{
+	struct sk_buff *skb = g->head;
+	struct edma_tcp *t = &g->t;
+	unsigned int thoff = (u8 *)t->th - skb->data;
+	unsigned int l4len = skb->len - thoff;
+	struct skb_shared_info *shinfo = skb_shinfo(skb);
+
+	if (t->v6) {
+		t->ip6->payload_len = htons(skb->len - ETH_HLEN -
+					    sizeof(*t->ip6));
+		t->th->check = ~csum_ipv6_magic(&t->ip6->saddr, &t->ip6->daddr,
+						l4len, IPPROTO_TCP, 0);
+		shinfo->gso_type = SKB_GSO_TCPV6;
+	} else {
+		__be16 len = htons(skb->len - ETH_HLEN);
+
+		csum_replace2(&t->ip4->check, t->ip4->tot_len, len);
+		t->ip4->tot_len = len;
+		t->th->check = ~csum_tcpudp_magic(t->ip4->saddr, t->ip4->daddr,
+						  l4len, IPPROTO_TCP, 0);
+		shinfo->gso_type = SKB_GSO_TCPV4;
+		if (g->fixedid)
+			shinfo->gso_type |= SKB_GSO_TCP_FIXEDID;
+	}
+
+	skb_set_network_header(skb, ETH_HLEN);
+	skb_set_transport_header(skb, thoff);
+	skb->csum_start = (u8 *)t->th - skb->head;
+	skb->csum_offset = offsetof(struct tcphdr, check);
+	skb->ip_summed = CHECKSUM_PARTIAL;
+	shinfo->gso_size = g->mss;
+	shinfo->gso_segs = g->segs;
+}
+
+/* Sends the aggregate the poll holds. It is the frame of the flow that was
+ * first in the poll's order and every frame after it of the flow has been
+ * merged into it, so nothing of the flow waits behind or ahead of it.
+ */
+static void edma_gro_flush(struct edma_queue *q)
+{
+	struct net_device *netdev = q->priv->netdev;
+	struct edma_gro *g = &q->gro;
+	struct sk_buff *skb = g->head;
+
+	if (!skb)
+		return;
+
+	/* complete before the aggregate is let go: it reads g->head */
+	if (g->segs > 1)
+		edma_gro_complete(g);
+	g->head = NULL;
+
+	if (edma_rx_flow(netdev, skb, g->flow)) {
+		edma_rx_netstats(netdev, g->segs, g->bytes);
+		if (g->segs > 1) {
+			q->stats.rx_flow_merged += g->segs;
+			q->stats.rx_flow_aggs++;
+		} else {
+			q->stats.rx_flow_single++;
+		}
+		return;
+	}
+
+	edma_rx_slow(q, skb, g->rxph, g->desc_status, g->src_port, g->segs,
+		     g->bytes);
+}
+
+/* Appends the payload of @skb, a segment that fits, to the aggregate as a
+ * fragment, which takes the page it was received in and leaves the segment's
+ * own skb to be freed. The segment that cannot be taken is left as it was.
+ */
+static bool edma_gro_join(struct edma_queue *q, struct sk_buff *skb,
+			  const struct edma_tcp *t, u32 bytes, bool fixed)
+{
+	struct edma_gro *g = &q->gro;
+	u16 payload = t->payload, id = t->v6 ? 0 : ntohs(t->ip4->id);
+	u16 hdr_len = t->hdr_len;
+	bool push = t->th->psh, fragstolen;
+	int delta;
+
+	skb_pull(skb, hdr_len);
+	if (!skb_try_coalesce(g->head, skb, &fragstolen, &delta)) {
+		skb_push(skb, hdr_len);
+		return false;
+	}
+	kfree_skb_partial(skb, fragstolen);
+
+	if (g->segs == 1)
+		g->fixedid = fixed;
+	g->segs++;
+	g->bytes += bytes;
+	g->next_seq += payload;
+	g->last_id = id;
+	if (push)
+		g->t.th->psh = 1;
+
+	/* A segment that ends a write ends the run, as does a short one, and
+	 * the bound on its size.
+	 */
+	if (push || payload < g->mss || g->segs >= g->max_segs)
+		edma_gro_flush(q);
+
+	return true;
+}
+
+/* Starts an aggregate with @skb when its flow leaves by a device that takes
+ * a merged frame whole: with the segmentation offload for the frame's
+ * family and for the IP ID it carries, scatter-gather, and more than one
+ * segment.
+ */
+static bool edma_gro_open(struct edma_queue *q, struct sk_buff *skb,
+			  const struct edma_rx_preheader *rxph, u32 status,
+			  u32 src_port, u32 bytes, u32 flow,
+			  const struct edma_tcp *t)
+{
+	struct edma_priv *priv = q->priv;
+	const struct qca_edma_switch_ops *ops = READ_ONCE(priv->sw_ops);
+	struct edma_gro *g = &q->gro;
+	netdev_features_t need = NETIF_F_SG | (t->v6 ? NETIF_F_TSO6 :
+						      NETIF_F_TSO);
+
+	if (!ops || !ops->flow_gso)
+		return false;
+
+	skb->dev = priv->netdev;
+	if (!ops->flow_gso(READ_ONCE(priv->sw_ds), skb, flow, &g->gso) ||
+	    (g->gso.features & need) != need || g->gso.max_segs < 2)
+		return false;
+
+	g->head = skb;
+	g->rxph = rxph;
+	g->t = *t;
+	g->flow = flow;
+	g->desc_status = status;
+	g->src_port = src_port;
+	g->bytes = bytes;
+	g->mss = t->payload;
+	g->next_seq = ntohl(t->th->seq) + t->payload;
+	g->last_id = t->v6 ? 0 : ntohs(t->ip4->id);
+	g->segs = 1;
+	g->fixedid = false;
+	g->max_segs = min_t(u32, EDMA_GRO_SEGS, g->gso.max_segs);
+
+	return true;
+}
+
+/* A frame the switch routed on a flow: merged into the aggregate the poll
+ * holds when it is the next segment of it, else the aggregate is sent and the
+ * frame starts one, or is sent alone. The frames of one flow leave in the
+ * order they came in, and a frame never waits behind another flow's: any
+ * frame that does not join ends the aggregate before it is handled.
+ *
+ * Return: false when the flow's driver left the frame to the receive path.
+ */
+static bool edma_gro_rx(struct edma_queue *q, struct sk_buff *skb,
+			const struct edma_rx_preheader *rxph, u32 status,
+			u32 src_port, u32 pkt_len)
+{
+	struct net_device *netdev = q->priv->netdev;
+	u32 flow = edma_rx_flow_id(rxph);
+	struct edma_gro *g = &q->gro;
+	struct edma_tcp t;
+	bool fixed = false, ok;
+
+	ok = src_port < EDMA_PORTS &&
+	     !(rxph->rx_pre2 & cpu_to_le32(EDMA_RXPH_CTAG_FLAG)) &&
+	     edma_gro_parse(netdev, skb, status, &t);
+
+	if (g->head) {
+		if (ok && edma_gro_fits(g, &t, flow, &fixed) &&
+		    edma_gro_join(q, skb, &t, pkt_len, fixed))
+			return true;
+		edma_gro_flush(q);
+	}
+
+	if (ok && !t.th->psh && q->gro_skip != flow + 1) {
+		if (edma_gro_open(q, skb, rxph, status, src_port, pkt_len,
+				  flow, &t))
+			return true;
+		q->gro_skip = flow + 1;
+	}
+
+	if (!edma_rx_flow(netdev, skb, flow))
+		return false;
+
+	edma_rx_netstats(netdev, 1, pkt_len);
+	q->stats.rx_flow_single++;
+	return true;
 }
 
 static u32 edma_clean_rx(struct edma_queue *q, int budget)
@@ -696,50 +1204,84 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	struct net_device *netdev = priv->netdev;
 	struct platform_device *pdev = priv->pdev;
 	struct edma_rx_preheader *rxph;
-	u32 next_addr, next_status;
-	unsigned char *frame;
+	struct edma_rx_peek cur, nxt;
+	void *data;
 	bool ahead = false;
 	struct sk_buff *skb;
 	u16 prod, cons;
 	struct page *page;
-	u32 done = 0;
-	u32 src_port;
+	u32 done = 0, bytes = 0;
+	u32 src_port, desc_status;
 	int pkt_len;
 
 	prod = edma_idx_read(priv, EDMA_REG_RXDESC_PROD_IDX(q->rxdesc)) &
 	       EDMA_RXDESC_PROD_IDX_MASK;
 	cons = q->rxdesc_cons;
+	edma_ring_sync_cpu(priv, rxdesc_ring, cons,
+			   min_t(u32, (prod - cons) & (rxdesc_ring->count - 1),
+				 budget));
+
+	q->gro_skip = 0;
 
 	while (cons != prod && done < budget) {
-		u32 desc_addr, desc_status;
 		u16 next = cons + 1;
-		u32 store_idx;
+		struct edma_rx_buf *buf;
 
-		if (ahead) {
-			desc_addr = next_addr;
-			desc_status = next_status;
-		} else {
-			edma_rx_peek(q, cons, &desc_addr, &desc_status);
-		}
+		if (ahead)
+			cur = nxt;
+		else
+			edma_rx_peek(q, cons, q->rx_slot, &cur);
 
 		if (next == rxdesc_ring->count)
 			next = 0;
 		ahead = next != prod && done + 1 < budget;
 		if (ahead)
-			edma_rx_peek(q, next, &next_addr, &next_status);
+			edma_rx_peek(q, next, (q->rx_slot + 1) &
+				     (q->rxfill_ring.count - 1), &nxt);
 
-		rxph = phys_to_virt(desc_addr);
-		page = virt_to_head_page(rxph);
+		/* The buffer of the next slot, unless the peek of this frame
+		 * was made for a slot an earlier out-of-order buffer moved
+		 * the expectation from.
+		 */
+		buf = cur.buf;
+		if (likely(buf && cur.slot == q->rx_slot)) {
+			q->rx_slot = (q->rx_slot + 1) &
+				     (q->rxfill_ring.count - 1);
+		} else {
+			buf = edma_rx_buf_find(q, cur.addr);
+			if (unlikely(!buf)) {
+				dev_warn_ratelimited(&pdev->dev,
+						     "rx buffer %#x is not tracked\n",
+						     cur.addr);
+				q->stats.rx_untracked_page++;
+				DEV_STATS_INC(netdev, rx_errors);
+				goto next;
+			}
+			__page_pool_dma_sync_for_cpu(q->page_pool, buf->dma, 0,
+						     edma_rx_sync_len(q, cur.status));
+		}
+		page = buf->page;
+		buf->page = NULL;
+		data = page_address(page) + buf->off;
+		rxph = data + NET_SKB_PAD;
 
+		desc_status = cur.status;
 		pkt_len = desc_status & EDMA_RXDESC_PACKET_LEN_MASK;
+		bytes += pkt_len;
 
-		if (unlikely(desc_status & EDMA_RXDESC_MORE))
-			q->stats.rx_split_frame++;
-
-		store_idx = le32_to_cpu(rxph->opaque);
-		if (unlikely(!edma_rx_page_take(q, page, store_idx))) {
-			q->stats.rx_untracked_page++;
-			DEV_STATS_INC(netdev, rx_errors);
+		/* A frame longer than a buffer arrives in several descriptors,
+		 * which the driver cannot assemble, and the later ones are not
+		 * frames of their own. The whole run is dropped: the first
+		 * counts as the length error and the last, which has the bit
+		 * clear, ends it.
+		 */
+		if (unlikely(q->rx_more || (desc_status & EDMA_RXDESC_MORE))) {
+			if (desc_status & EDMA_RXDESC_MORE)
+				q->stats.rx_split_frame++;
+			if (!q->rx_more)
+				DEV_STATS_INC(netdev, rx_length_errors);
+			q->rx_more = desc_status & EDMA_RXDESC_MORE;
+			page_pool_put_full_page(q->page_pool, page, true);
 			goto next;
 		}
 
@@ -764,7 +1306,7 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 
 		src_port = rxph->src_info & EDMA_SRC_PORT_MASK;
 
-		skb = napi_build_skb(page_address(page), page_size(page));
+		skb = napi_build_skb(data, priv->rx_truesize);
 		if (unlikely(!skb)) {
 			page_pool_put_full_page(q->page_pool, page, true);
 			q->stats.rx_no_skb++;
@@ -780,36 +1322,15 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		 * the ring, so each ring's CPU feeds a queue of its own.
 		 */
 		skb_record_rx_queue(skb, q->idx);
-		if (edma_rx_flow(netdev, skb, rxph)) {
-			dev_sw_netstats_rx_add(netdev, pkt_len);
-			goto next;
-		}
-
-		edma_rx_vlan(netdev, skb, rxph);
-		frame = skb->data;
-		skb->protocol = eth_type_trans(skb, priv->netdev);
-		edma_rx_csum(netdev, skb, rxph, desc_status,
-			     skb->data - frame);
-		edma_rx_hash(netdev, skb, rxph);
-
-		/* A forwarded frame names its port in a metadata dst, which
-		 * DSA reads without a tagger; a trapped one carries a tag.
-		 */
-		if (src_port < EDMA_PORTS && netdev_uses_dsa(netdev)) {
-			if (!FIELD_GET(EDMA_RXPH_CPU_CODE,
-				       le32_to_cpu(rxph->rx_pre4))) {
-				skb_dst_set_noref(skb,
-						  &priv->port_md[src_port]->dst);
-			} else if (unlikely(!edma_rx_tag(skb, src_port))) {
-				dev_kfree_skb_any(skb);
-				q->stats.rx_no_tag++;
-				DEV_STATS_INC(netdev, rx_dropped);
+		if (edma_rx_is_flow(rxph)) {
+			if (edma_gro_rx(q, skb, rxph, desc_status, src_port,
+					pkt_len))
 				goto next;
-			}
+		} else {
+			edma_gro_flush(q);
 		}
 
-		dev_sw_netstats_rx_add(priv->netdev, pkt_len);
-		napi_gro_receive(&q->napi, skb);
+		edma_rx_slow(q, skb, rxph, desc_status, src_port, 1, pkt_len);
 
 next:
 		if (++cons == rxdesc_ring->count)
@@ -818,7 +1339,11 @@ next:
 		done++;
 	}
 
+	edma_gro_flush(q);
 	edma_rx_fill(q);
+
+	q->rx_pkts += done;
+	q->rx_bytes += bytes;
 
 	if (done) {
 		q->rxdesc_cons = cons;
@@ -830,6 +1355,110 @@ next:
 /* One poll serves a ring set's TX completions and its RX, so that each set
  * has a single NAPI context for the CPU its interrupts are on.
  */
+/* The timer and threshold a ring runs with on profile @ix of net DIM: the
+ * configured pair scaled, with the first profile an interrupt per frame.
+ */
+static void edma_coal_profile(u16 timer, u16 thre, unsigned int ix,
+			      u16 *ticks, u16 *ugt)
+{
+	static const u16 pct[NET_DIM_PARAMS_NUM_PROFILES] = {
+		10, 50, 100, 200, 400
+	};
+	u32 frames = ix ? ((u32)thre + 1) * pct[ix] / 100 : 1;
+	u32 t = timer ? max_t(u32, (u32)timer * pct[ix] / 100, 1) : 0;
+
+	*ticks = min_t(u32, t, EDMA_MOD_TIMER_MAX);
+	*ugt = clamp_t(u32, frames, 1, EDMA_UGT_THRE_MAX + 1) - 1;
+}
+
+static void edma_rx_coal_write(struct edma_queue *q)
+{
+	struct edma_priv *priv = q->priv;
+	unsigned int ix = EDMA_DIM_BASE_IX;
+	u16 ticks, ugt;
+
+	if (READ_ONCE(priv->rx_adaptive))
+		ix = READ_ONCE(q->rx_dim.profile_ix);
+	edma_coal_profile(priv->rx_mod_timer, priv->rx_ugt_thre, ix, &ticks,
+			  &ugt);
+	regmap_write(priv->regmap, EDMA_REG_RX_MOD_TIMER(q->rxdesc), ticks);
+	regmap_write(priv->regmap, EDMA_REG_RXDESC_UGT_THRE(q->rxdesc), ugt);
+}
+
+static void edma_tx_coal_write(struct edma_queue *q)
+{
+	struct edma_priv *priv = q->priv;
+	const struct edma_soc_data *soc = priv->soc;
+	unsigned int ix = EDMA_DIM_BASE_IX;
+	u16 ticks, ugt;
+
+	if (READ_ONCE(priv->tx_adaptive))
+		ix = READ_ONCE(q->tx_dim.profile_ix);
+	edma_coal_profile(priv->tx_mod_timer, priv->tx_ugt_thre, ix, &ticks,
+			  &ugt);
+	regmap_write(priv->regmap,
+		     EDMA_REG_TX_MOD_TIMER(soc->tx_int_base, q->txcmpl), ticks);
+	regmap_write(priv->regmap,
+		     EDMA_REG_TXCMPL_UGT_THRE(soc->txcmpl_base, q->txcmpl),
+		     ugt);
+}
+
+static void edma_rx_dim_work(struct work_struct *work)
+{
+	struct dim *dim = container_of(work, struct dim, work);
+	struct edma_queue *q = container_of(dim, struct edma_queue, rx_dim);
+
+	edma_rx_coal_write(q);
+	dim->state = DIM_START_MEASURE;
+}
+
+static void edma_tx_dim_work(struct work_struct *work)
+{
+	struct dim *dim = container_of(work, struct dim, work);
+	struct edma_queue *q = container_of(dim, struct edma_queue, tx_dim);
+
+	edma_tx_coal_write(q);
+	dim->state = DIM_START_MEASURE;
+}
+
+/* Back to the middle profile with no history, as a ring starts. */
+static void edma_dim_reset(struct dim *dim)
+{
+	dim->profile_ix = EDMA_DIM_BASE_IX;
+	dim->state = DIM_START_MEASURE;
+	dim->tune_state = DIM_PARKING_ON_TOP;
+	dim->steps_right = 0;
+	dim->steps_left = 0;
+	dim->tired = 0;
+	memset(&dim->prev_stats, 0, sizeof(dim->prev_stats));
+}
+
+/* Called as a poll completes, with the interrupts still masked: one event is
+ * one poll that went idle, which is what an interrupt starts.
+ */
+static void edma_dim_sample(struct edma_queue *q)
+{
+	struct edma_priv *priv = q->priv;
+	struct dim_sample sample;
+
+	q->dim_events++;
+
+	/* Pairs with the release in edma_set_coalesce(), which resets a dim
+	 * before it says the ring is adaptive.
+	 */
+	if (smp_load_acquire(&priv->rx_adaptive)) {
+		dim_update_sample(q->dim_events, q->rx_pkts, q->rx_bytes,
+				  &sample);
+		net_dim(&q->rx_dim, &sample);
+	}
+	/* As above, for the transmit side. */
+	if (smp_load_acquire(&priv->tx_adaptive)) {
+		dim_update_sample(q->dim_events, q->tx_pkts, q->tx_bytes,
+				  &sample);
+		net_dim(&q->tx_dim, &sample);
+	}
+}
+
 static int edma_napi(struct napi_struct *napi, int budget)
 {
 	struct edma_queue *q = container_of(napi, struct edma_queue, napi);
@@ -863,6 +1492,7 @@ static int edma_napi(struct napi_struct *napi, int budget)
 	}
 
 	if (napi_complete_done(napi, done)) {
+		edma_dim_sample(q);
 		edma_tx_irq_unmask(q);
 		edma_rx_irq_unmask(q);
 	}
@@ -962,12 +1592,14 @@ static bool edma_tx_map(struct device *dev, struct edma_ring *ring,
 	return true;
 }
 
-/* @dst_info names the switch port the frame leaves by, zero for the switch
- * to forward it; @tagged says the frame carries the QCA tag that named it,
- * which comes off once the frame is sure to be taken.
+/* @src_info names the port the switch is to take the frame as arriving on,
+ * zero for the CPU port; @dst_info names the switch port the frame leaves by,
+ * zero for the switch to forward it; @tagged says the frame carries the QCA
+ * tag that named it, which comes off once the frame is sure to be taken.
  */
 static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netdev,
-				  struct sk_buff *skb, u16 dst_info, bool tagged)
+				  struct sk_buff *skb, u16 src_info,
+				  u16 dst_info, bool tagged)
 {
 	struct netdev_queue *txq = netdev_get_tx_queue(netdev, q->idx);
 	const struct skb_shared_info *shinfo = skb_shinfo(skb);
@@ -1032,6 +1664,7 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	txph = (struct edma_tx_preheader *)skb_push(skb, EDMA_TX_PREHDR_SIZE);
 	memset((void *)txph, 0, EDMA_TX_PREHDR_SIZE);
 
+	txph->src_info = src_info;
 	txph->dst_info = dst_info;
 	edma_tx_csum(skb, txph, proto);
 	edma_tx_vlan(skb, txph);
@@ -1084,6 +1717,10 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 	stop = ((cons - prod - 1) & mask) < EDMA_TX_RING_THRESH;
 
 	dev_sw_netstats_tx_add(netdev, 1, bytes);
+	if (tso) {
+		q->stats.tx_gso_frames++;
+		q->stats.tx_gso_segs += shinfo->gso_segs;
+	}
 
 	/* A queue about to stop gets its frames now: nothing after the stop
 	 * would hand them over.
@@ -1153,19 +1790,19 @@ static void edma_rx_ring_free(struct edma_queue *q, struct edma_ring *ring,
 	struct edma_priv *priv = q->priv;
 	int i;
 
-	if (ring->page_store) {
+	if (ring->rx_store) {
 		/* Hardware indices do not account for prefetched RX pages. */
 		for (i = 0; i < ring->count; i++) {
-			if (!ring->page_store[i])
+			if (!ring->rx_store[i].page)
 				continue;
 
 			page_pool_put_full_page(q->page_pool,
-						ring->page_store[i], false);
-			ring->page_store[i] = NULL;
+						ring->rx_store[i].page, false);
+			ring->rx_store[i].page = NULL;
 		}
 
-		kfree(ring->page_store);
-		ring->page_store = NULL;
+		kfree(ring->rx_store);
+		ring->rx_store = NULL;
 	}
 
 	edma_ring_free(priv, ring, desc_size);
@@ -1182,7 +1819,7 @@ static int edma_queue_rings_alloc(struct edma_queue *q)
 		return ret;
 
 	ret = edma_ring_alloc(priv, &q->txcmpl_ring, priv->tx_ring_size,
-			      sizeof(struct edma_txcmpl));
+			      sizeof(struct edma_txcmpl), true);
 	if (ret)
 		goto err_txcmpl;
 
@@ -1192,7 +1829,7 @@ static int edma_queue_rings_alloc(struct edma_queue *q)
 		goto err_rxfill;
 
 	ret = edma_ring_alloc(priv, &q->rxdesc_ring, priv->rx_ring_size,
-			      sizeof(struct edma_rxdesc));
+			      sizeof(struct edma_rxdesc), true);
 	if (ret)
 		goto err_rxdesc;
 
@@ -1302,15 +1939,7 @@ static void edma_configure_txcmpl_ring(struct edma_queue *q)
 					  q->txcmpl),
 		     EDMA_TXCMPL_RETMODE_OPAQUE);
 
-	regmap_write(priv->regmap,
-		     EDMA_REG_TX_MOD_TIMER(soc->tx_int_base,
-					   q->txcmpl),
-		     priv->tx_mod_timer);
-
-	regmap_write(priv->regmap,
-		     EDMA_REG_TXCMPL_UGT_THRE(soc->txcmpl_base,
-					      q->txcmpl),
-		     priv->tx_ugt_thre);
+	edma_tx_coal_write(q);
 
 	regmap_write(priv->regmap,
 		     EDMA_REG_TX_INT_CTRL(soc->tx_int_base,
@@ -1340,13 +1969,7 @@ static void edma_configure_rxdesc_ring(struct edma_queue *q)
 		     EDMA_REG_RXDESC_RING_SIZE(q->rxdesc),
 		     val);
 
-	regmap_write(priv->regmap,
-		     EDMA_REG_RX_MOD_TIMER(q->rxdesc),
-		     priv->rx_mod_timer);
-
-	regmap_write(priv->regmap,
-		     EDMA_REG_RXDESC_UGT_THRE(q->rxdesc),
-		     priv->rx_ugt_thre);
+	edma_rx_coal_write(q);
 
 	regmap_write(priv->regmap,
 		     EDMA_REG_RX_INT_CTRL(q->rxdesc),
@@ -1371,6 +1994,8 @@ static void edma_configure_rxfill_ring(struct edma_queue *q)
 
 	q->rxfill_prod = edma_idx_read(priv, EDMA_REG_RXFILL_PROD_IDX(q->rxfill)) &
 			 EDMA_RXFILL_PROD_IDX_MASK & (rxfill_ring->count - 1);
+	q->rx_slot = q->rxfill_prod;
+	q->rx_more = false;
 	edma_rx_fill(q);
 }
 
@@ -1611,6 +2236,8 @@ static int edma_get_coalesce(struct net_device *netdev,
 	ec->tx_coalesce_usecs = edma_mod_timer_us(priv, priv->tx_mod_timer);
 	ec->rx_max_coalesced_frames = priv->rx_ugt_thre + 1;
 	ec->tx_max_coalesced_frames = priv->tx_ugt_thre + 1;
+	ec->use_adaptive_rx_coalesce = priv->rx_adaptive;
+	ec->use_adaptive_tx_coalesce = priv->tx_adaptive;
 
 	return 0;
 }
@@ -1621,7 +2248,6 @@ static int edma_set_coalesce(struct net_device *netdev,
 			     struct netlink_ext_ack *extack)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
-	const struct edma_soc_data *soc = priv->soc;
 	u64 rx_ticks, tx_ticks;
 	unsigned int i;
 
@@ -1648,20 +2274,32 @@ static int edma_set_coalesce(struct net_device *netdev,
 	priv->rx_ugt_thre = ec->rx_max_coalesced_frames - 1;
 	priv->tx_ugt_thre = ec->tx_max_coalesced_frames - 1;
 
+	/* A ring that turns adaptive starts from the middle profile. One that
+	 * turns fixed may still have a worker queued; it then writes the fixed
+	 * pair, as the loop below does.
+	 */
 	for (i = 0; i < priv->num_queues; i++) {
 		struct edma_queue *q = &priv->q[i];
 
-		regmap_write(priv->regmap, EDMA_REG_RX_MOD_TIMER(q->rxdesc),
-			     priv->rx_mod_timer);
-		regmap_write(priv->regmap, EDMA_REG_RXDESC_UGT_THRE(q->rxdesc),
-			     priv->rx_ugt_thre);
-		regmap_write(priv->regmap,
-			     EDMA_REG_TX_MOD_TIMER(soc->tx_int_base, q->txcmpl),
-			     priv->tx_mod_timer);
-		regmap_write(priv->regmap,
-			     EDMA_REG_TXCMPL_UGT_THRE(soc->txcmpl_base,
-						      q->txcmpl),
-			     priv->tx_ugt_thre);
+		if (ec->use_adaptive_rx_coalesce && !priv->rx_adaptive)
+			edma_dim_reset(&q->rx_dim);
+		if (ec->use_adaptive_tx_coalesce && !priv->tx_adaptive)
+			edma_dim_reset(&q->tx_dim);
+	}
+	/* Pairs with the acquire in edma_dim_sample(). */
+	smp_store_release(&priv->rx_adaptive, ec->use_adaptive_rx_coalesce);
+	/* And for the transmit side. */
+	smp_store_release(&priv->tx_adaptive, ec->use_adaptive_tx_coalesce);
+
+	for (i = 0; i < priv->num_queues; i++) {
+		struct edma_queue *q = &priv->q[i];
+
+		if (!priv->rx_adaptive)
+			cancel_work_sync(&q->rx_dim.work);
+		if (!priv->tx_adaptive)
+			cancel_work_sync(&q->tx_dim.work);
+		edma_rx_coal_write(q);
+		edma_tx_coal_write(q);
 	}
 
 	return 0;
@@ -1759,13 +2397,29 @@ static void edma_get_regs(struct net_device *netdev,
 
 static const char edma_stat_names[][ETH_GSTRING_LEN] = {
 	"rx_untracked_page",
+	"rx_fifo_miss",
 	"rx_bad_src_info",
 	"rx_no_skb",
 	"rx_no_tag",
+	"rx_vp_unclaimed",
 	"rx_split_frame",
 	"rx_fill_starved",
+	"rx_flow_single",
+	"rx_flow_merged",
+	"rx_flow_aggs",
 	"tx_desc_error",
 	"tx_unnamed_frame",
+	"tx_gso_frames",
+	"tx_gso_segs",
+	"tx_src_parked",
+	"tx_src_drained",
+	"tx_src_dropped",
+	"tx_src_park_drv",
+	"tx_src_park_stack",
+	"tx_src_park_ring",
+	"tx_src_park_order",
+	"tx_src_split",
+	"tx_src_split_segs",
 	"misc_error",
 };
 
@@ -1774,13 +2428,17 @@ static int edma_get_sset_count(struct net_device *netdev, int sset)
 	if (sset != ETH_SS_STATS)
 		return -EOPNOTSUPP;
 
-	return ARRAY_SIZE(edma_stat_names);
+	return ARRAY_SIZE(edma_stat_names) +
+	       page_pool_ethtool_stats_get_count();
 }
 
 static void edma_get_strings(struct net_device *netdev, u32 sset, u8 *data)
 {
-	if (sset == ETH_SS_STATS)
-		memcpy(data, edma_stat_names, sizeof(edma_stat_names));
+	if (sset != ETH_SS_STATS)
+		return;
+
+	memcpy(data, edma_stat_names, sizeof(edma_stat_names));
+	page_pool_ethtool_stats_get_strings(data + sizeof(edma_stat_names));
 }
 
 static void edma_get_ethtool_stats(struct net_device *netdev,
@@ -1800,6 +2458,22 @@ static void edma_get_ethtool_stats(struct net_device *netdev,
 			data[j] += READ_ONCE(s[j]);
 	}
 	data[ARRAY_SIZE(edma_stat_names) - 1] = READ_ONCE(priv->misc_error);
+
+	/* The pools' own counts, which say how often a buffer came back to
+	 * the pool's cache, through its ring or not at all. They exist when
+	 * the kernel counts them.
+	 */
+#ifdef CONFIG_PAGE_POOL_STATS
+	{
+		struct page_pool_stats ps = {};
+
+		for (i = 0; i < priv->num_queues; i++)
+			if (priv->q[i].page_pool)
+				page_pool_get_stats(priv->q[i].page_pool, &ps);
+		page_pool_ethtool_stats_get(data + ARRAY_SIZE(edma_stat_names),
+					    &ps);
+	}
+#endif
 }
 
 /* One transmit and one receive queue per ring set, as many sets as the tree
@@ -1876,7 +2550,9 @@ static int edma_set_rxfh(struct net_device *netdev,
 
 static const struct ethtool_ops edma_ethtool_ops = {
 	.supported_coalesce_params = ETHTOOL_COALESCE_USECS |
-				     ETHTOOL_COALESCE_MAX_FRAMES,
+				     ETHTOOL_COALESCE_MAX_FRAMES |
+				     ETHTOOL_COALESCE_USE_ADAPTIVE_RX |
+				     ETHTOOL_COALESCE_USE_ADAPTIVE_TX,
 	.get_coalesce = edma_get_coalesce,
 	.set_coalesce = edma_set_coalesce,
 	.get_sset_count = edma_get_sset_count,
@@ -1923,8 +2599,26 @@ static int edma_ndo_open(struct net_device *netdev)
 
 	edma_rx_vlan_strip(priv, netdev->features);
 
+	/* Every ring starts on the middle profile, whatever stop left. */
+	for (i = 0; i < priv->num_queues; i++) {
+		struct edma_queue *q = &priv->q[i];
+
+		edma_dim_reset(&q->rx_dim);
+		edma_dim_reset(&q->tx_dim);
+		edma_rx_coal_write(q);
+		edma_tx_coal_write(q);
+	}
+
 	for (i = 0; i < priv->num_queues; i++)
 		napi_enable(&priv->q[i].napi);
+
+	for (i = 0; i < priv->num_queues; i++) {
+		struct netdev_queue *txq = netdev_get_tx_queue(netdev, i);
+
+		__netif_tx_lock_bh(txq);
+		priv->q[i].src_up = true;
+		__netif_tx_unlock_bh(txq);
+	}
 
 	netif_tx_start_all_queues(netdev);
 	for (i = 0; i < priv->num_queues; i++) {
@@ -1945,8 +2639,27 @@ static int edma_ndo_stop(struct net_device *netdev)
 		edma_rx_irq_mask(&priv->q[i]);
 	}
 	netif_tx_stop_all_queues(netdev);
-	for (i = 0; i < priv->num_queues; i++)
+	for (i = 0; i < priv->num_queues; i++) {
 		napi_disable(&priv->q[i].napi);
+		cancel_work_sync(&priv->q[i].rx_dim.work);
+		cancel_work_sync(&priv->q[i].tx_dim.work);
+	}
+
+	/* A source-port frame parked for a queue is not sent once the rings
+	 * are gone, and none is parked once the queue says it is down, which
+	 * it does under the lock a transmit parks under.
+	 */
+	for (i = 0; i < priv->num_queues; i++) {
+		struct edma_queue *q = &priv->q[i];
+		struct netdev_queue *txq = netdev_get_tx_queue(netdev, i);
+
+		__netif_tx_lock_bh(txq);
+		q->src_up = false;
+		q->stats.tx_src_dropped += skb_queue_len(&q->src_backlog);
+		skb_queue_purge(&q->src_backlog);
+		q->src_backlog_desc = 0;
+		__netif_tx_unlock_bh(txq);
+	}
 
 	return 0;
 }
@@ -2046,7 +2759,7 @@ static u16 edma_tx_port(struct sk_buff *skb, struct net_device *netdev,
 }
 
 static netdev_tx_t edma_xmit(struct sk_buff *skb, struct net_device *netdev,
-			     u16 dst_info, bool tagged)
+			     u16 src_info, u16 dst_info, bool tagged)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
 	struct edma_queue *q = &priv->q[skb_get_queue_mapping(skb)];
@@ -2076,7 +2789,7 @@ static netdev_tx_t edma_xmit(struct sk_buff *skb, struct net_device *netdev,
 	if (skb_cow_head(skb, netdev->needed_headroom))
 		goto drop;
 
-	return edma_ring_xmit(q, netdev, skb, dst_info, tagged);
+	return edma_ring_xmit(q, netdev, skb, src_info, dst_info, tagged);
 
 drop:
 	dev_kfree_skb_any(skb);
@@ -2091,7 +2804,7 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 	bool tagged;
 	u16 dst_info = edma_tx_port(skb, netdev, &tagged);
 
-	return edma_xmit(skb, netdev, dst_info, tagged);
+	return edma_xmit(skb, netdev, 0, dst_info, tagged);
 }
 
 /**
@@ -2108,12 +2821,414 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 netdev_tx_t qca_edma_port_xmit(struct sk_buff *skb, struct net_device *conduit,
 			       unsigned int port)
 {
-	return edma_xmit(skb, conduit, (EDMA_DST_PORT_TYPE << 8) |
+	return edma_xmit(skb, conduit, 0, (EDMA_DST_PORT_TYPE << 8) |
 			 (port & EDMA_DST_PORT_ID_MASK), false);
 }
 EXPORT_SYMBOL_GPL(qca_edma_port_xmit);
 
 static const struct net_device_ops edma_netdev_ops;
+
+/* What a parked frame needs to be sent later, kept in its control buffer: the
+ * frame is the driver's from the moment it is parked.
+ */
+struct edma_src_cb {
+	u16 ndesc;
+	u16 src_info;
+};
+
+static struct edma_src_cb *edma_src_cb(struct sk_buff *skb)
+{
+	BUILD_BUG_ON(sizeof(struct edma_src_cb) > sizeof(skb->cb));
+
+	return (struct edma_src_cb *)skb->cb;
+}
+
+/* Sends the parked frames, oldest first, for as long as the queue takes them.
+ * Called with the queue's transmit lock held. A frame the ring refuses stays
+ * at the head, so nothing behind it overtakes it.
+ */
+static void edma_src_drain_locked(struct edma_queue *q,
+				  struct netdev_queue *txq)
+{
+	struct net_device *netdev = q->priv->netdev;
+	struct sk_buff *skb;
+
+	while (!netif_xmit_frozen_or_stopped(txq) &&
+	       (skb = __skb_dequeue(&q->src_backlog))) {
+		struct edma_src_cb cb = *edma_src_cb(skb);
+
+		q->src_backlog_desc -= cb.ndesc;
+		/* The doorbell rings once, for the last frame of the run. */
+		netdev_xmit_set_more(!skb_queue_empty(&q->src_backlog));
+		if (edma_xmit(skb, netdev, cb.src_info, 0, false) ==
+		    NETDEV_TX_BUSY) {
+			__skb_queue_head(&q->src_backlog, skb);
+			q->src_backlog_desc += cb.ndesc;
+			break;
+		}
+		q->stats.tx_src_drained++;
+	}
+	netdev_xmit_set_more(false);
+}
+
+/* The completion's side of the same: takes the lock a transmit would. */
+static void edma_src_drain(struct edma_queue *q)
+{
+	struct netdev_queue *txq = netdev_get_tx_queue(q->priv->netdev, q->idx);
+
+	__netif_tx_lock(txq, smp_processor_id());
+	edma_src_drain_locked(q, txq);
+	__netif_tx_unlock(txq);
+}
+
+/* A fraglist aggregate is the head, which has the headers of the first
+ * segment, and one skb per further segment that holds the payload only, so it
+ * is the byte stream the engine cuts at gso_size, as a TSO frame is. It differs
+ * in what the receive path left in it: the segments were verified whole, so
+ * it is CHECKSUM_UNNECESSARY with the first segment's checksum in the header,
+ * and the engine writes a checksum only when asked, over what the header
+ * holds as the stack seeds a TSO frame, the pseudo header of the whole
+ * length. Make it that frame. Called with the headers behind the Ethernet
+ * header and nothing else in front of them, as a source-port frame has.
+ *
+ * Return: 0, or a negative errno with the frame as it was.
+ */
+static int edma_tx_fraglist(struct sk_buff *skb)
+{
+	u32 type = skb_shinfo(skb)->gso_type;
+	unsigned int thoff;
+	struct tcphdr *th;
+	int err;
+
+	if (!(type & SKB_GSO_FRAGLIST))
+		return 0;
+
+	if (type & SKB_GSO_TCPV4) {
+		const struct iphdr *iph;
+
+		if (!pskb_may_pull(skb, ETH_HLEN + sizeof(*iph)))
+			return -EOPNOTSUPP;
+		iph = (const struct iphdr *)(skb->data + ETH_HLEN);
+		if (iph->version != 4 || iph->ihl < 5 || iph->protocol != IPPROTO_TCP)
+			return -EOPNOTSUPP;
+		thoff = ETH_HLEN + iph->ihl * 4;
+	} else if (type & SKB_GSO_TCPV6) {
+		const struct ipv6hdr *ip6h;
+
+		if (!pskb_may_pull(skb, ETH_HLEN + sizeof(*ip6h)))
+			return -EOPNOTSUPP;
+		ip6h = (const struct ipv6hdr *)(skb->data + ETH_HLEN);
+		if (ip6h->version != 6 || ip6h->nexthdr != IPPROTO_TCP)
+			return -EOPNOTSUPP;
+		thoff = ETH_HLEN + sizeof(*ip6h);
+	} else {
+		return -EOPNOTSUPP;
+	}
+
+	/* The checksum field is written, so a head shared with a clone is
+	 * copied first, and the headers read above are read again after it.
+	 */
+	err = skb_ensure_writable(skb, thoff + sizeof(*th));
+	if (err)
+		return err;
+
+	th = (struct tcphdr *)(skb->data + thoff);
+	if (type & SKB_GSO_TCPV4) {
+		const struct iphdr *iph = (const struct iphdr *)(skb->data + ETH_HLEN);
+
+		th->check = ~csum_tcpudp_magic(iph->saddr, iph->daddr,
+					       skb->len - thoff, IPPROTO_TCP, 0);
+	} else {
+		const struct ipv6hdr *ip6h = (const struct ipv6hdr *)(skb->data + ETH_HLEN);
+
+		th->check = ~csum_ipv6_magic(&ip6h->saddr, &ip6h->daddr,
+					     skb->len - thoff, IPPROTO_TCP, 0);
+	}
+
+	skb->ip_summed = CHECKSUM_PARTIAL;
+	skb->csum_level = 0;
+	skb->csum_start = skb_headroom(skb) + thoff;
+	skb->csum_offset = offsetof(struct tcphdr, check);
+	skb_shinfo(skb)->gso_type = type & ~SKB_GSO_FRAGLIST;
+
+	return 0;
+}
+
+/* The backlog holds the frames that arrive while the queue is stopped. It
+ * stops for its ring, when every descriptor is in use, or for the byte limit
+ * of the stack, when the bytes in flight reach it; either ends when the
+ * frames in flight complete, and they hold at most one ring of descriptors.
+ * What arrives meanwhile is of the same order, and a stop for the byte limit
+ * can follow one for the ring at once, so two rings are kept. The count is
+ * in descriptors because a frame takes one per fragment, and an aggregate
+ * takes up to EDMA_TX_MAX_SEGS of a ring of 128 by default, so a ring alone
+ * holds a handful of them. The bound stays one of the ring's size, at most
+ * 2 * EDMA_MAX_RING_SIZE descriptors of a queue, and with the default ring
+ * 256.
+ */
+#define EDMA_SRC_BACKLOG_RINGS	2
+
+/* Sends one frame of qca_edma_src_xmit() with the queue's transmit lock held:
+ * behind the frames already waiting, or parked when the ring, the stop or
+ * those frames hold it back.
+ */
+static int edma_src_send_locked(struct edma_queue *q, struct netdev_queue *txq,
+				struct sk_buff *skb, u16 src_info)
+{
+	struct net_device *conduit = q->priv->netdev;
+	struct edma_priv *priv = q->priv;
+	bool drv, stack;
+	u16 ndesc;
+
+	/* Frames already waiting go first. */
+	edma_src_drain_locked(q, txq);
+
+	drv = netif_tx_queue_stopped(txq);
+	stack = test_bit(__QUEUE_STATE_STACK_XOFF, &txq->state);
+	skb_set_queue_mapping(skb, q->idx);
+	skb->dev = conduit;
+
+	if (skb_queue_empty(&q->src_backlog) &&
+	    !netif_xmit_frozen_or_stopped(txq) &&
+	    edma_xmit(skb, conduit, src_info, 0, false) != NETDEV_TX_BUSY)
+		return QCA_EDMA_SRC_SENT;
+
+	/* The stop says why, or the ring refused, or the frames ahead. */
+	if (drv)
+		q->stats.tx_src_park_drv++;
+	if (stack)
+		q->stats.tx_src_park_stack++;
+	if (!drv && !stack) {
+		if (skb_queue_empty(&q->src_backlog))
+			q->stats.tx_src_park_ring++;
+		else
+			q->stats.tx_src_park_order++;
+	}
+
+	ndesc = edma_tx_ndesc(skb);
+	if (q->src_backlog_desc + ndesc >
+	    EDMA_SRC_BACKLOG_RINGS * priv->tx_ring_size) {
+		kfree_skb(skb);
+		q->stats.tx_src_dropped++;
+		DEV_STATS_INC(conduit, tx_dropped);
+		return QCA_EDMA_SRC_DROPPED;
+	}
+
+	edma_src_cb(skb)->ndesc = ndesc;
+	edma_src_cb(skb)->src_info = src_info;
+	q->src_backlog_desc += ndesc;
+	__skb_queue_tail(&q->src_backlog, skb);
+	q->stats.tx_src_parked++;
+
+	/* A completion that woke the queue before the frame was queued found
+	 * the backlog empty and left it, so the queue is looked at again.
+	 */
+	smp_mb();
+	edma_src_drain_locked(q, txq);
+
+	return QCA_EDMA_SRC_PARKED;
+}
+
+/* Where the TCP header of a frame with its Ethernet header at skb->data is,
+ * for the segmentation to find it, which the receive path did not set for a
+ * frame taken before the stack: the offsets of the headers the hook admits.
+ */
+static int edma_src_set_headers(struct sk_buff *skb)
+{
+	unsigned int thoff;
+
+	skb_reset_mac_header(skb);
+	skb_set_network_header(skb, ETH_HLEN);
+	skb_reset_mac_len(skb);
+
+	if (skb->protocol == htons(ETH_P_IP)) {
+		const struct iphdr *iph;
+
+		if (!pskb_may_pull(skb, ETH_HLEN + sizeof(*iph)))
+			return -EOPNOTSUPP;
+		iph = (const struct iphdr *)(skb->data + ETH_HLEN);
+		if (iph->version != 4 || iph->ihl < 5 ||
+		    iph->protocol != IPPROTO_TCP)
+			return -EOPNOTSUPP;
+		thoff = ETH_HLEN + iph->ihl * 4;
+	} else if (skb->protocol == htons(ETH_P_IPV6)) {
+		const struct ipv6hdr *ip6h;
+
+		if (!pskb_may_pull(skb, ETH_HLEN + sizeof(*ip6h)))
+			return -EOPNOTSUPP;
+		ip6h = (const struct ipv6hdr *)(skb->data + ETH_HLEN);
+		if (ip6h->version != 6 || ip6h->nexthdr != IPPROTO_TCP)
+			return -EOPNOTSUPP;
+		thoff = ETH_HLEN + sizeof(*ip6h);
+	} else {
+		return -EOPNOTSUPP;
+	}
+
+	skb_set_transport_header(skb, thoff);
+
+	return 0;
+}
+
+/**
+ * qca_edma_src_xmit - hand a finished frame to the switch as received on a port
+ * @skb: the frame, untagged, with skb->data at its Ethernet header
+ * @conduit: the EDMA conduit
+ * @port: the port number the switch takes the frame as coming from
+ *
+ * The descriptor carries @port as its source and no destination, so the
+ * switch looks the frame up as it would one received on @port instead of one
+ * from the CPU. The frame goes out on the transmit ring of the set the
+ * calling CPU's transmit queue maps to, under that queue's lock, as the
+ * conduit's own transmit would send it. For BH context.
+ *
+ * A frame the queue cannot take now, because its ring is full or the queue is
+ * stopped for the ring or for its byte limit, waits in a backlog of that
+ * queue, as long as two rings, and goes out, in order and ahead of later
+ * frames, when a completion makes room. Sending it another way instead would put it behind the frames
+ * the switch is still forwarding. A frame that finds the backlog full is
+ * dropped, as a full qdisc drops one.
+ *
+ * A GSO frame goes to the engine as one frame, which cuts it into segments.
+ * A fraglist aggregate is made a frame the engine can cut first, as
+ * edma_tx_fraglist() says. A GSO frame the engine cannot take whole is cut
+ * into its segments here, as the stack would before a device without GSO,
+ * and the segments are sent one after the other under the queue's lock, so
+ * they keep their order and nothing of the flow is sent another way.
+ *
+ * Return: %QCA_EDMA_SRC_SENT when the frame is on the ring,
+ * %QCA_EDMA_SRC_PARKED when it, or a segment of it, waits and
+ * %QCA_EDMA_SRC_DROPPED when it, or a segment of it, was freed for want of
+ * room or memory. -ENETDOWN when the conduit is not running and -ENODEV when
+ * it is not an EDMA conduit leave the frame the caller's, with its contents
+ * unchanged, to send another way.
+ */
+int qca_edma_src_xmit(struct sk_buff *skb, struct net_device *conduit,
+		      unsigned int port)
+{
+	u16 src_info = (EDMA_DST_PORT_TYPE << 8) | (port & EDMA_SRC_PORT_MASK);
+	struct sk_buff *segs = NULL, *next;
+	struct edma_priv *priv;
+	struct netdev_queue *txq;
+	struct edma_queue *q;
+	int rc = QCA_EDMA_SRC_SENT, one;
+	u16 qi, nsegs = 0;
+
+	if (unlikely(conduit->netdev_ops != &edma_netdev_ops))
+		return -ENODEV;
+	if (unlikely(!netif_running(conduit) ||
+		     !netif_device_present(conduit)))
+		return -ENETDOWN;
+
+	priv = netdev_priv(conduit);
+	qi = smp_processor_id() % conduit->real_num_tx_queues;
+	q = &priv->q[qi];
+	txq = netdev_get_tx_queue(conduit, qi);
+
+	/* The frame is changed from here on, so the queue is checked first;
+	 * it is checked again under its lock.
+	 */
+	if (unlikely(!READ_ONCE(q->src_up)))
+		return -ENETDOWN;
+
+	if (skb_is_gso(skb)) {
+		int err = -EOPNOTSUPP;
+
+		if (!edma_tx_needs_linearize(skb))
+			err = edma_tx_fraglist(skb);
+		if (err == -EOPNOTSUPP) {
+			netdev_features_t features = conduit->features &
+						     ~NETIF_F_GSO_MASK;
+
+			skb->dev = conduit;
+			err = edma_src_set_headers(skb);
+			if (!err) {
+				segs = skb_gso_segment(skb, features);
+				if (IS_ERR(segs)) {
+					err = PTR_ERR(segs);
+					segs = NULL;
+				} else if (segs) {
+					consume_skb(skb);
+				}
+			}
+		}
+		if (err) {
+			kfree_skb(skb);
+			__netif_tx_lock(txq, smp_processor_id());
+			q->stats.tx_src_dropped++;
+			__netif_tx_unlock(txq);
+			DEV_STATS_INC(conduit, tx_dropped);
+			return QCA_EDMA_SRC_DROPPED;
+		}
+	}
+
+	__netif_tx_lock(txq, smp_processor_id());
+	if (unlikely(!q->src_up)) {
+		/* Stopped meanwhile: the frame is changed, so it goes with
+		 * the queue's backlog.
+		 */
+		q->stats.tx_src_dropped++;
+		__netif_tx_unlock(txq);
+		if (segs)
+			kfree_skb_list(segs);
+		else
+			kfree_skb(skb);
+		DEV_STATS_INC(conduit, tx_dropped);
+		return QCA_EDMA_SRC_DROPPED;
+	}
+
+	if (!segs) {
+		rc = edma_src_send_locked(q, txq, skb, src_info);
+		goto out;
+	}
+
+	for (; segs; segs = next) {
+		next = segs->next;
+		skb_mark_not_on_list(segs);
+		one = edma_src_send_locked(q, txq, segs, src_info);
+		if (one > rc)
+			rc = one;
+		nsegs++;
+	}
+	q->stats.tx_src_split++;
+	q->stats.tx_src_split_segs += nsegs;
+
+out:
+	__netif_tx_unlock(txq);
+	return rc;
+}
+EXPORT_SYMBOL_GPL(qca_edma_src_xmit);
+
+/**
+ * qca_edma_src_stats - sum what the source-port transmits did, over all queues
+ * @conduit: the EDMA conduit
+ * @st: filled in, zero when @conduit is not an EDMA conduit
+ */
+void qca_edma_src_stats(struct net_device *conduit,
+			struct qca_edma_src_stats *st)
+{
+	struct edma_priv *priv;
+	unsigned int i;
+
+	memset(st, 0, sizeof(*st));
+	if (conduit->netdev_ops != &edma_netdev_ops)
+		return;
+
+	priv = netdev_priv(conduit);
+	for (i = 0; i < ARRAY_SIZE(priv->q); i++) {
+		const struct edma_stats *s = &priv->q[i].stats;
+
+		st->parked += READ_ONCE(s->tx_src_parked);
+		st->drained += READ_ONCE(s->tx_src_drained);
+		st->dropped += READ_ONCE(s->tx_src_dropped);
+		st->park_drv += READ_ONCE(s->tx_src_park_drv);
+		st->park_stack += READ_ONCE(s->tx_src_park_stack);
+		st->park_ring += READ_ONCE(s->tx_src_park_ring);
+		st->park_order += READ_ONCE(s->tx_src_park_order);
+		st->split += READ_ONCE(s->tx_src_split);
+		st->split_segs += READ_ONCE(s->tx_src_split_segs);
+	}
+}
+EXPORT_SYMBOL_GPL(qca_edma_src_stats);
 
 /**
  * qca_edma_switch_register - bind the switch behind an EDMA conduit
@@ -2265,30 +3380,51 @@ static u32 edma_rx_frame_len(int mtu)
 	return EDMA_RX_PREHDR_SIZE + mtu + ETH_HLEN + 2 * VLAN_HLEN;
 }
 
-static u8 edma_rx_page_order(int mtu)
+/* The memory a receive buffer takes: headroom, the longest frame and the
+ * shared info the skb is built with. One that fits half a page is a fragment
+ * of a page, one that does not takes whole pages.
+ */
+static u32 edma_rx_truesize(int mtu)
 {
-	return get_order(NET_SKB_PAD + edma_rx_frame_len(mtu) +
-			 SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
+	u32 need = NET_SKB_PAD + edma_rx_frame_len(mtu) +
+		   SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+
+	if (need <= EDMA_RX_FRAG_SIZE)
+		return EDMA_RX_FRAG_SIZE;
+
+	return PAGE_SIZE << get_order(need);
 }
 
-static u32 edma_rx_buffer_size(u8 order)
+static u32 edma_rx_buffer_size(u32 truesize)
 {
-	return (PAGE_SIZE << order) - NET_SKB_PAD -
+	return truesize - NET_SKB_PAD -
 	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 }
 
+/* The pool syncs, for the device, from the start of the first buffer's
+ * preheader to the end of the last buffer's longest frame, as a page comes
+ * back from its last user.
+ */
+static u32 edma_rx_sync_span(u32 truesize, u32 frame_len)
+{
+	u32 order_size = PAGE_SIZE << get_order(truesize);
+
+	return order_size - truesize + frame_len;
+}
+
 static struct page_pool *edma_page_pool_create(struct edma_priv *priv,
-					       u8 order, u32 len, u16 size,
+					       u32 truesize, u32 frame_len,
+					       u16 size,
 					       struct napi_struct *napi)
 {
 	struct page_pool_params pp = {
-		.order     = order,
+		.order     = get_order(truesize),
 		.pool_size = size,
 		.nid       = NUMA_NO_NODE,
 		.dev       = &priv->pdev->dev,
 		.dma_dir   = DMA_FROM_DEVICE,
 		.offset    = NET_SKB_PAD,
-		.max_len   = len,
+		.max_len   = edma_rx_sync_span(truesize, frame_len),
 		.flags     = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
 		.napi      = napi,
 	};
@@ -2304,14 +3440,15 @@ static void edma_page_pools_destroy(struct page_pool **pools, unsigned int n)
 		page_pool_destroy(pools[i]);
 }
 
-static int edma_page_pools_create(struct edma_priv *priv, int mtu, u16 size,
-				  struct page_pool **pools, unsigned int n)
+static int edma_page_pools_create(struct edma_priv *priv, int mtu, u32 truesize,
+				  u16 size, struct page_pool **pools,
+				  unsigned int n)
 {
 	unsigned int i;
 
 	memset(pools, 0, EDMA_MAX_QUEUES * sizeof(*pools));
 	for (i = 0; i < n; i++) {
-		pools[i] = edma_page_pool_create(priv, edma_rx_page_order(mtu),
+		pools[i] = edma_page_pool_create(priv, truesize,
 						 edma_rx_frame_len(mtu), size,
 						 &priv->q[i].napi);
 		if (IS_ERR(pools[i])) {
@@ -2355,15 +3492,16 @@ static int edma_reconfigure(struct edma_priv *priv, int mtu, unsigned int nq,
 	struct page_pool *pools[EDMA_MAX_QUEUES];
 	struct net_device *netdev = priv->netdev;
 	unsigned int old_nq = priv->num_queues;
-	u8 old_order = priv->rx_page_order;
+	u32 old_truesize = priv->rx_truesize;
 	u32 old_len = priv->rx_frame_len;
+	u32 truesize = edma_rx_truesize(mtu);
 	u16 old_tx = priv->tx_ring_size;
 	u16 old_rx = priv->rx_ring_size;
 	unsigned int i;
 	bool running;
 	int ret;
 
-	ret = edma_page_pools_create(priv, mtu, rx_size, pools, nq);
+	ret = edma_page_pools_create(priv, mtu, truesize, rx_size, pools, nq);
 	if (ret)
 		return ret;
 
@@ -2383,8 +3521,8 @@ static int edma_reconfigure(struct edma_priv *priv, int mtu, unsigned int nq,
 
 	edma_page_pools_swap(priv, pools);
 	priv->num_queues = nq;
-	priv->rx_page_order = edma_rx_page_order(mtu);
-	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
+	priv->rx_truesize = truesize;
+	priv->rx_buffer_size = edma_rx_buffer_size(truesize);
 	priv->rx_frame_len = edma_rx_frame_len(mtu);
 	priv->tx_ring_size = tx_size;
 	priv->rx_ring_size = rx_size;
@@ -2395,8 +3533,8 @@ static int edma_reconfigure(struct edma_priv *priv, int mtu, unsigned int nq,
 
 		edma_page_pools_swap(priv, pools);
 		priv->num_queues = old_nq;
-		priv->rx_page_order = old_order;
-		priv->rx_buffer_size = edma_rx_buffer_size(old_order);
+		priv->rx_truesize = old_truesize;
+		priv->rx_buffer_size = edma_rx_buffer_size(old_truesize);
 		priv->rx_frame_len = old_len;
 		priv->tx_ring_size = old_tx;
 		priv->rx_ring_size = old_rx;
@@ -2585,6 +3723,11 @@ static int edma_probe(struct platform_device *pdev)
 		q->rxfill = priv->soc->rxfill_ring - i;
 		q->rxdesc = priv->soc->rxdesc_ring - i;
 		spin_lock_init(&q->tx_lock);
+		skb_queue_head_init(&q->src_backlog);
+		INIT_WORK(&q->rx_dim.work, edma_rx_dim_work);
+		INIT_WORK(&q->tx_dim.work, edma_tx_dim_work);
+		q->rx_dim.mode = DIM_CQ_PERIOD_MODE_START_FROM_EQE;
+		q->tx_dim.mode = DIM_CQ_PERIOD_MODE_START_FROM_EQE;
 	}
 
 	ret = edma_get_mac_address(netdev, dev->of_node);
@@ -2607,11 +3750,13 @@ static int edma_probe(struct platform_device *pdev)
 						   USEC_PER_SEC);
 	priv->rx_ugt_thre = EDMA_COAL_FRAMES - 1;
 	priv->tx_ugt_thre = EDMA_COAL_FRAMES - 1;
-	priv->rx_page_order = edma_rx_page_order(netdev->mtu);
-	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
+	priv->rx_adaptive = true;
+	priv->tx_adaptive = true;
+	priv->rx_truesize = edma_rx_truesize(netdev->mtu);
+	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_truesize);
 	priv->rx_frame_len = edma_rx_frame_len(netdev->mtu);
-	ret = edma_page_pools_create(priv, netdev->mtu, priv->rx_ring_size,
-				     pools, nq);
+	ret = edma_page_pools_create(priv, netdev->mtu, priv->rx_truesize,
+				     priv->rx_ring_size, pools, nq);
 	if (ret)
 		return ret;
 	edma_page_pools_swap(priv, pools);
