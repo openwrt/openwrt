@@ -1,0 +1,35 @@
+From: Alexander Astrovsky <astrouski@google.com>
+Date: Mon, 24 Aug 2026 10:42:00 +0000
+Subject: [PATCH] AP: MLD: free stale partner link station entries on re-association
+
+When an MLO client re-associates or roams, existing partner link station
+entries from the prior session may still be present in hapd->sta_list.
+Previously, hostapd saw existing partner link entries and aborted with
+WLAN_STATUS_UNSPECIFIED_FAILURE.
+
+Free stale partner link station entries via ap_free_sta() before
+allocating a fresh partner link STA for the new association.
+
+Signed-off-by: Alexander Astrovsky <astrouski@google.com>
+---
+Index: hostapd-2026.08.07~831364bf/src/ap/ieee802_11.c
+===================================================================
+--- hostapd-2026.08.07~831364bf.orig/src/ap/ieee802_11.c
++++ hostapd-2026.08.07~831364bf/src/ap/ieee802_11.c
+@@ -6294,10 +6294,13 @@ int ieee80211_ml_process_link(struct hos
+ 	}
+ 
+ 	sta = ap_get_sta(hapd, origin_sta->addr);
+-	if (sta || TEST_FAIL()) {
+-		wpa_printf(MSG_INFO, "MLD: link: Station already exists");
+-		status = WLAN_STATUS_UNSPECIFIED_FAILURE;
++	if (sta) {
++		wpa_printf(MSG_DEBUG, "MLD: link: Station already exists, freeing stale entry");
++		ap_free_sta(hapd, sta);
+ 		sta = NULL;
++	}
++	if (TEST_FAIL()) {
++		status = WLAN_STATUS_UNSPECIFIED_FAILURE;
+ 		goto out;
+ 	}
+ 
