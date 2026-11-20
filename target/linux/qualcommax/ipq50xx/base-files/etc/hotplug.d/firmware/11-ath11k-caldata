@@ -27,6 +27,7 @@ case "$FIRMWARE" in
 	elecom,wrc-x3000gs2|\
 	elecom,wrc-x3000gst2|\
 	iodata,wn-dax3000gr|\
+	iodata,wn-dax5400qr|\
 	zyxel,scr50axe)
 		caldata_extract "0:art" 0x1000 0x20000
 		wlan_mac=$(mtd_get_mac_ascii 0:appsblenv wifi0)
@@ -209,6 +210,12 @@ case "$FIRMWARE" in
 	;;
 "ath11k/QCN9074/hw1.0/cal-pci-0000:01:00.0.bin")
 	case "$board" in
+	iodata,wn-dax5400qr)
+		caldata_extract "0:art" 0x26800 0x20000
+		wlan_mac=$(mtd_get_mac_ascii 0:appsblenv wifi1)
+		ath11k_patch_mac $wlan_mac 0
+		ath11k_set_macflag
+		;;
 	linksys,mr5500|\
 	linksys,mx5500|\
 	linksys,spnmx56)
