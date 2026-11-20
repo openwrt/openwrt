@@ -1,0 +1,189 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 12 Nov 2026 15:45:42 -0800
+Subject: [PATCH] net: ag71xx: set up the switch PHY swap
+
+The ETH_CFG register in the GMAC block of the AR933x, AR934x, QCA953x
+and QCA956x can swap PHY0 and PHY4 of the built-in switch, so that the
+first MAC uses PHY0 and switch port 1 PHY4, and on all of them but the
+AR934x also swap the MDIO addresses of the two PHYs (AR9344 datasheet,
+9.7.1). Which one a board needs depends on where its WAN jack is wired.
+The driver leaves the register as the bootloader set it up, which
+leaves the WAN port dead when the bootloader does not use it.
+
+Take the swap from qca,switch-phy-swap and qca,switch-phy-addr-swap on
+the first MAC when it has the GMAC block. The switch PHYs are on the
+MDIO bus of the second MAC, so the address swap is only in place for
+them if the first MAC probes first, as it does in device tree order.
+
+Move the interface setup of the AR934x and QCA955x into its own
+function, so that both can update ETH_CFG in one go.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/ethernet/atheros/ag71xx.c | 90 +++++++++++++++++++--------
+ 1 file changed, 64 insertions(+), 26 deletions(-)
+
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -67,13 +67,18 @@
+ #define AG71XX_MDIO_DELAY	5
+ #define AG71XX_MDIO_MAX_CLK	5000000
+ 
+-/* ETH_CFG in the GMAC block of AR934x and QCA955x */
++/* ETH_CFG in the GMAC block */
+ #define AG71XX_GMAC_REG_ETH_CFG		0x00
+ #define AR934X_ETH_CFG_RGMII_GMAC0	BIT(0)
+ #define AR934X_ETH_CFG_MII_GMAC0	BIT(1)
+ #define AR934X_ETH_CFG_GMII_GMAC0	BIT(2)
+ #define QCA955X_ETH_CFG_RGMII_EN	BIT(0)
+ #define QCA955X_ETH_CFG_GE0_SGMII	BIT(6)
++/* AR933x and QCA953x, the AR934x has no address swap */
++#define AR933X_ETH_CFG_SW_PHY_SWAP	BIT(7)
++#define AR933X_ETH_CFG_SW_PHY_ADDR_SWAP	BIT(8)
++#define QCA956X_ETH_CFG_SW_PHY_SWAP	BIT(8)
++#define QCA956X_ETH_CFG_SW_PHY_ADDR_SWAP	BIT(9)
+ 
+ /* ETH_XMII_CONTROL in the PLL block of AR934x and QCA955x */
+ #define ETH_XMII_GIGE_QUAD		BIT(30)
+@@ -366,6 +371,9 @@ struct ag71xx_dcfg {
+ 	enum ag71xx_type type;
+ 	/* ETH_XMII_CONTROL in the PLL block, 0 if not supported */
+ 	unsigned int xmii_reg;
++	/* ETH_CFG bits of the switch PHY swap, 0 if not supported */
++	u32 phy_swap;
++	u32 phy_addr_swap;
+ };
+ 
+ struct ag71xx {
+@@ -1850,47 +1858,70 @@ static const u32 ar71xx_addr_ar7100[] =
+  * SerDes. On AR934x, that is GMAC0. On QCA955x, the RGMII/MII side and the
+  * SGMII side can be swapped between the MACs.
+  */
+-static int ag71xx_gmac_init(struct ag71xx *ag)
++static void ag71xx_gmac_if_cfg(struct ag71xx *ag, u32 *mask, u32 *val)
+ {
+-	struct device_node *np = ag->pdev->dev.of_node;
+ 	phy_interface_t mode = ag->phy_if_mode;
+-	u32 mask, val;
+-
+-	if (!ag->dcfg->xmii_reg)
+-		return 0;
+-
+-	ag->gmac = syscon_regmap_lookup_by_phandle_optional(np, "qca,gmac");
+-	if (IS_ERR(ag->gmac))
+-		return dev_err_probe(&ag->pdev->dev, PTR_ERR(ag->gmac),
+-				     "failed to get the GMAC block\n");
+-	if (!ag->gmac)
+-		return 0;
+ 
+ 	if (ag71xx_is(ag, AR9340)) {
+ 		if (ag->mac_idx != 0)
+-			return 0;
++			return;
+ 
+-		mask = AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
+-		       AR934X_ETH_CFG_GMII_GMAC0;
+ 		if (phy_interface_mode_is_rgmii(mode))
+-			val = AR934X_ETH_CFG_RGMII_GMAC0;
++			*val |= AR934X_ETH_CFG_RGMII_GMAC0;
+ 		else if (mode == PHY_INTERFACE_MODE_MII)
+-			val = AR934X_ETH_CFG_MII_GMAC0;
++			*val |= AR934X_ETH_CFG_MII_GMAC0;
+ 		else if (mode == PHY_INTERFACE_MODE_GMII)
+-			val = AR934X_ETH_CFG_GMII_GMAC0;
++			*val |= AR934X_ETH_CFG_GMII_GMAC0;
+ 		else
+-			return 0;
++			return;
++
++		*mask |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
++			 AR934X_ETH_CFG_GMII_GMAC0;
+ 	} else {
+-		mask = QCA955X_ETH_CFG_GE0_SGMII;
++		*mask |= QCA955X_ETH_CFG_GE0_SGMII;
+ 		if (mode == PHY_INTERFACE_MODE_SGMII) {
+-			val = ag->mac_idx == 0 ? QCA955X_ETH_CFG_GE0_SGMII : 0;
++			if (ag->mac_idx == 0)
++				*val |= QCA955X_ETH_CFG_GE0_SGMII;
+ 		} else {
+-			mask |= QCA955X_ETH_CFG_RGMII_EN;
+-			val = ag->mac_idx == 1 ? QCA955X_ETH_CFG_GE0_SGMII : 0;
++			*mask |= QCA955X_ETH_CFG_RGMII_EN;
++			if (ag->mac_idx == 1)
++				*val |= QCA955X_ETH_CFG_GE0_SGMII;
+ 			if (phy_interface_mode_is_rgmii(mode))
+-				val |= QCA955X_ETH_CFG_RGMII_EN;
++				*val |= QCA955X_ETH_CFG_RGMII_EN;
+ 		}
+ 	}
++}
++
++static int ag71xx_gmac_init(struct ag71xx *ag)
++{
++	const struct ag71xx_dcfg *dcfg = ag->dcfg;
++	struct device_node *np = ag->pdev->dev.of_node;
++	u32 mask = 0, val = 0;
++
++	if (!dcfg->xmii_reg && !dcfg->phy_swap)
++		return 0;
++
++	ag->gmac = syscon_regmap_lookup_by_phandle_optional(np, "qca,gmac");
++	if (IS_ERR(ag->gmac))
++		return dev_err_probe(&ag->pdev->dev, PTR_ERR(ag->gmac),
++				     "failed to get the GMAC block\n");
++	if (!ag->gmac)
++		return 0;
++
++	/* The swap moves PHY0 of the switch to the first MAC */
++	if (ag->mac_idx == 0) {
++		mask |= dcfg->phy_swap | dcfg->phy_addr_swap;
++		if (of_property_read_bool(np, "qca,switch-phy-swap"))
++			val |= dcfg->phy_swap;
++		if (of_property_read_bool(np, "qca,switch-phy-addr-swap"))
++			val |= dcfg->phy_addr_swap;
++	}
++
++	if (dcfg->xmii_reg)
++		ag71xx_gmac_if_cfg(ag, &mask, &val);
++
++	if (!mask)
++		return 0;
+ 
+ 	return regmap_update_bits(ag->gmac, AG71XX_GMAC_REG_ETH_CFG, mask, val);
+ }
+@@ -2139,6 +2170,8 @@ static const struct ag71xx_dcfg ag71xx_d
+ 
+ static const struct ag71xx_dcfg ag71xx_dcfg_ar9330 = {
+ 	.type = AR9330,
++	.phy_swap = AR933X_ETH_CFG_SW_PHY_SWAP,
++	.phy_addr_swap = AR933X_ETH_CFG_SW_PHY_ADDR_SWAP,
+ 	.fifodata = ar71xx_fifo_ar9330,
+ 	.max_frame_len = 1540,
+ 	.desc_pktlen_mask = SZ_4K - 1,
+@@ -2147,6 +2180,7 @@ static const struct ag71xx_dcfg ag71xx_d
+ 
+ static const struct ag71xx_dcfg ag71xx_dcfg_ar9340 = {
+ 	.type = AR9340,
++	.phy_swap = AR933X_ETH_CFG_SW_PHY_SWAP,
+ 	.xmii_reg = 0x2c,
+ 	.fifodata = ar71xx_fifo_ar9330,
+ 	.max_frame_len = SZ_16K - 1,
+@@ -2156,6 +2190,8 @@ static const struct ag71xx_dcfg ag71xx_d
+ 
+ static const struct ag71xx_dcfg ag71xx_dcfg_qca9530 = {
+ 	.type = QCA9530,
++	.phy_swap = AR933X_ETH_CFG_SW_PHY_SWAP,
++	.phy_addr_swap = AR933X_ETH_CFG_SW_PHY_ADDR_SWAP,
+ 	.fifodata = ar71xx_fifo_ar9330,
+ 	.max_frame_len = SZ_16K - 1,
+ 	.desc_pktlen_mask = SZ_16K - 1,
+@@ -2174,6 +2210,8 @@ static const struct ag71xx_dcfg ag71xx_d
+ /* QCA956x has a different ETH_CFG and ETH_XMII_CONTROL */
+ static const struct ag71xx_dcfg ag71xx_dcfg_qca9560 = {
+ 	.type = QCA9550,
++	.phy_swap = QCA956X_ETH_CFG_SW_PHY_SWAP,
++	.phy_addr_swap = QCA956X_ETH_CFG_SW_PHY_ADDR_SWAP,
+ 	.fifodata = ar71xx_fifo_ar9330,
+ 	.max_frame_len = 1540,
+ 	.desc_pktlen_mask = SZ_16K - 1,

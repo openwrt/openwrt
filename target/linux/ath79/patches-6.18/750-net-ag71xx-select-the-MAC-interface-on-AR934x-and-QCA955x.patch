@@ -1,0 +1,172 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 5 Nov 2026 19:21:45 -0800
+Subject: [PATCH] net: ag71xx: select the MAC interface on AR934x and QCA955x
+
+On AR934x and QCA955x, the ETH_CFG register in the GMAC block decides
+how the MAC that is not on the internal switch or the SerDes comes out
+of the SoC (AR9344 datasheet, 9.7.1, QCA9558 datasheet, 10.8.1):
+
+- On AR934x, GMAC0 is attached to RGMII, MII or GMII.
+- On QCA955x, GE0_SGMII decides which MAC gets the RGMII/MII interface
+  and which the SGMII one, and RGMII_EN enables RGMII.
+
+The driver leaves it as the bootloader set it up, which only works if
+the bootloader used the same interface.
+
+Take the GMAC block from the "qca,gmac" syscon, and set ETH_CFG from
+the PHY mode. QCA956x gets its own configuration, as its ETH_CFG has a
+different layout.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/ethernet/atheros/Kconfig  |  1 +
+ drivers/net/ethernet/atheros/ag71xx.c | 79 ++++++++++++++++++++++++++-
+ 2 files changed, 79 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/atheros/Kconfig
++++ b/drivers/net/ethernet/atheros/Kconfig
+@@ -20,6 +20,7 @@ if NET_VENDOR_ATHEROS
+ config AG71XX
+ 	tristate "Atheros AR7XXX/AR9XXX built-in ethernet mac support"
+ 	depends on ATH79 || COMPILE_TEST
++	select MFD_SYSCON
+ 	select PHYLINK
+ 	imply NET_SELFTESTS
+ 	help
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -66,6 +66,14 @@
+ #define AG71XX_MDIO_DELAY	5
+ #define AG71XX_MDIO_MAX_CLK	5000000
+ 
++/* ETH_CFG in the GMAC block of AR934x and QCA955x */
++#define AG71XX_GMAC_REG_ETH_CFG		0x00
++#define AR934X_ETH_CFG_RGMII_GMAC0	BIT(0)
++#define AR934X_ETH_CFG_MII_GMAC0	BIT(1)
++#define AR934X_ETH_CFG_GMII_GMAC0	BIT(2)
++#define QCA955X_ETH_CFG_RGMII_EN	BIT(0)
++#define QCA955X_ETH_CFG_GE0_SGMII	BIT(6)
++
+ /* Register offsets */
+ #define AG71XX_REG_MAC_CFG1	0x0000
+ #define MAC_CFG1_TXE		BIT(0)	/* Tx Enable */
+@@ -343,6 +351,8 @@ struct ag71xx_dcfg {
+ 	u16 desc_pktlen_mask;
+ 	bool tx_hang_workaround;
+ 	enum ag71xx_type type;
++	/* ETH_XMII_CONTROL in the PLL block, 0 if not supported */
++	unsigned int xmii_reg;
+ };
+ 
+ struct ag71xx {
+@@ -380,6 +390,8 @@ struct ag71xx {
+ 	int mac_idx;
+ 
+ 	struct clk *clk_mdio;
++
++	struct regmap *gmac;
+ };
+ 
+ static int ag71xx_desc_empty(struct ag71xx_desc *desc)
+@@ -1791,6 +1803,56 @@ static const u32 ar71xx_addr_ar7100[] =
+ 	0x19000000, 0x1a000000,
+ };
+ 
++/*
++ * Select the interface of the MAC that is not on the internal switch or the
++ * SerDes. On AR934x, that is GMAC0. On QCA955x, the RGMII/MII side and the
++ * SGMII side can be swapped between the MACs.
++ */
++static int ag71xx_gmac_init(struct ag71xx *ag)
++{
++	struct device_node *np = ag->pdev->dev.of_node;
++	phy_interface_t mode = ag->phy_if_mode;
++	u32 mask, val;
++
++	if (!ag->dcfg->xmii_reg)
++		return 0;
++
++	ag->gmac = syscon_regmap_lookup_by_phandle_optional(np, "qca,gmac");
++	if (IS_ERR(ag->gmac))
++		return dev_err_probe(&ag->pdev->dev, PTR_ERR(ag->gmac),
++				     "failed to get the GMAC block\n");
++	if (!ag->gmac)
++		return 0;
++
++	if (ag71xx_is(ag, AR9340)) {
++		if (ag->mac_idx != 0)
++			return 0;
++
++		mask = AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
++		       AR934X_ETH_CFG_GMII_GMAC0;
++		if (phy_interface_mode_is_rgmii(mode))
++			val = AR934X_ETH_CFG_RGMII_GMAC0;
++		else if (mode == PHY_INTERFACE_MODE_MII)
++			val = AR934X_ETH_CFG_MII_GMAC0;
++		else if (mode == PHY_INTERFACE_MODE_GMII)
++			val = AR934X_ETH_CFG_GMII_GMAC0;
++		else
++			return 0;
++	} else {
++		mask = QCA955X_ETH_CFG_GE0_SGMII;
++		if (mode == PHY_INTERFACE_MODE_SGMII) {
++			val = ag->mac_idx == 0 ? QCA955X_ETH_CFG_GE0_SGMII : 0;
++		} else {
++			mask |= QCA955X_ETH_CFG_RGMII_EN;
++			val = ag->mac_idx == 1 ? QCA955X_ETH_CFG_GE0_SGMII : 0;
++			if (phy_interface_mode_is_rgmii(mode))
++				val |= QCA955X_ETH_CFG_RGMII_EN;
++		}
++	}
++
++	return regmap_update_bits(ag->gmac, AG71XX_GMAC_REG_ETH_CFG, mask, val);
++}
++
+ static int ag71xx_probe(struct platform_device *pdev)
+ {
+ 	struct device_node *np = pdev->dev.of_node;
+@@ -1914,6 +1976,10 @@ static int ag71xx_probe(struct platform_
+ 		return err;
+ 	}
+ 
++	err = ag71xx_gmac_init(ag);
++	if (err)
++		return err;
++
+ 	netif_napi_add_weight(ndev, &ag->napi, ag71xx_poll,
+ 			      AG71XX_NAPI_WEIGHT);
+ 
+@@ -1989,6 +2055,7 @@ static const struct ag71xx_dcfg ag71xx_d
+ 
+ static const struct ag71xx_dcfg ag71xx_dcfg_ar9340 = {
+ 	.type = AR9340,
++	.xmii_reg = 0x2c,
+ 	.fifodata = ar71xx_fifo_ar9330,
+ 	.max_frame_len = SZ_16K - 1,
+ 	.desc_pktlen_mask = SZ_16K - 1,
+@@ -2005,6 +2072,16 @@ static const struct ag71xx_dcfg ag71xx_d
+ 
+ static const struct ag71xx_dcfg ag71xx_dcfg_qca9550 = {
+ 	.type = QCA9550,
++	.xmii_reg = 0x28,
++	.fifodata = ar71xx_fifo_ar9330,
++	.max_frame_len = 1540,
++	.desc_pktlen_mask = SZ_16K - 1,
++	.tx_hang_workaround = true,
++};
++
++/* QCA956x has a different ETH_CFG and ETH_XMII_CONTROL */
++static const struct ag71xx_dcfg ag71xx_dcfg_qca9560 = {
++	.type = QCA9550,
+ 	.fifodata = ar71xx_fifo_ar9330,
+ 	.max_frame_len = 1540,
+ 	.desc_pktlen_mask = SZ_16K - 1,
+@@ -2021,7 +2098,7 @@ static const struct of_device_id ag71xx_
+ 	{ .compatible = "qca,ar9340-eth", .data = &ag71xx_dcfg_ar9340 },
+ 	{ .compatible = "qca,qca9530-eth", .data = &ag71xx_dcfg_qca9530 },
+ 	{ .compatible = "qca,qca9550-eth", .data = &ag71xx_dcfg_qca9550 },
+-	{ .compatible = "qca,qca9560-eth", .data = &ag71xx_dcfg_qca9550 },
++	{ .compatible = "qca,qca9560-eth", .data = &ag71xx_dcfg_qca9560 },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, ag71xx_match);

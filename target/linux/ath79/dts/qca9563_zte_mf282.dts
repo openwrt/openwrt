@@ -135,3 +135,28 @@
 	nvmem-cells = <&macaddr_mac_0 0>, <&cal_caldata_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
 };
+
+&switch_port1 {
+	status = "okay";
+	label = "lan1";
+};
+
+&switch_port2 {
+	status = "okay";
+	label = "lan2";
+};
+
+&switch_port3 {
+	status = "okay";
+	label = "lan3";
+};
+
+&switch_port4 {
+	status = "okay";
+	label = "lan4";
+};
+
+&switch_port5 {
+	status = "okay";
+	label = "lan5";
+};

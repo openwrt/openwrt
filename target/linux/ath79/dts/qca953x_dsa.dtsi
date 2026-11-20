@@ -1,0 +1,126 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/*
+ * The built-in switch for the ar9331 DSA driver, to be included after
+ * qca953x_ag71xx.dtsi. Switch ports 1-4 use PHY0-3, port 5 shares PHY4
+ * with GMAC0.
+ */
+
+&mdio1 {
+	/delete-property/ builtin-switch;
+	/delete-property/ resets;
+	/delete-property/ reset-names;
+
+	/delete-node/ switch0@1f;
+
+	builtin_switch: switch@1f {
+		compatible = "qca,ar9340-switch";
+		reg = <0x1f>;
+
+		resets = <&rst 8>;
+		reset-names = "switch";
+
+		interrupt-parent = <&miscintc>;
+		interrupts = <12>;
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch_port0: ethernet-port@0 {
+				reg = <0>;
+				ethernet = <&eth1>;
+				phy-mode = "gmii";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+					pause;
+				};
+			};
+
+			switch_port1: ethernet-port@1 {
+				reg = <1>;
+				phy-handle = <&swphy0>;
+				phy-mode = "internal";
+
+				status = "disabled";
+			};
+
+			switch_port2: ethernet-port@2 {
+				reg = <2>;
+				phy-handle = <&swphy1>;
+				phy-mode = "internal";
+
+				status = "disabled";
+			};
+
+			switch_port3: ethernet-port@3 {
+				reg = <3>;
+				phy-handle = <&swphy2>;
+				phy-mode = "internal";
+
+				status = "disabled";
+			};
+
+			switch_port4: ethernet-port@4 {
+				reg = <4>;
+				phy-handle = <&swphy3>;
+				phy-mode = "internal";
+
+				status = "disabled";
+			};
+
+			/* PHY4 goes to GMAC0 (eth0) while this port is unused */
+			switch_port5: ethernet-port@5 {
+				reg = <5>;
+				phy-handle = <&swphy4>;
+				phy-mode = "internal";
+
+				status = "disabled";
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			interrupt-parent = <&builtin_switch>;
+
+			swphy0: ethernet-phy@0 {
+				reg = <0>;
+				interrupts = <0>;
+			};
+
+			swphy1: ethernet-phy@1 {
+				reg = <1>;
+				interrupts = <0>;
+			};
+
+			swphy2: ethernet-phy@2 {
+				reg = <2>;
+				interrupts = <0>;
+			};
+
+			swphy3: ethernet-phy@3 {
+				reg = <3>;
+				interrupts = <0>;
+			};
+
+			swphy4: ethernet-phy@4 {
+				reg = <4>;
+				interrupts = <0>;
+			};
+		};
+	};
+};
+
+&eth1 {
+	resets = <&rst 13>, <&rst 23>;
+	reset-names = "mac", "mdio";
+	clocks = <&pll ATH79_CLK_AHB>, <&pll ATH79_CLK_MDIO>;
+	clock-names = "eth", "mdio";
+};

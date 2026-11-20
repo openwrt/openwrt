@@ -1,0 +1,51 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 12 Nov 2026 15:53:47 -0800
+Subject: [PATCH] net: ag71xx: support the switch PHY on the first MAC
+
+On the AR933x, AR934x, QCA953x and QCA956x, the first MAC can be
+attached to PHY4 of the built-in switch, or with the PHY swap to PHY0,
+instead of an external PHY. On the AR934x, the RGMII, MII and GMII bits
+of ETH_CFG select the external interface of the first MAC, and the
+OpenWrt device trees only set one of them on boards with an external
+PHY. Boards describe the switch PHY as an MII PHY, so with qca,gmac the
+driver would move the MAC to the MII pins.
+
+Accept phy-mode "internal" on the first MAC of these SoCs, and clear the
+interface bits for it on the AR934x.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/ethernet/atheros/ag71xx.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -1167,6 +1167,11 @@ static int ag71xx_phylink_setup(struct a
+ 		__set_bit(PHY_INTERFACE_MODE_SGMII,
+ 			  ag->phylink_config.supported_interfaces);
+ 
++	/* The SoCs with a switch PHY swap can attach PHY4 of the switch */
++	if (ag->dcfg->phy_swap && ag->mac_idx == 0)
++		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
++			  ag->phylink_config.supported_interfaces);
++
+ 	if (ag71xx_is(ag, AR9340) && ag->mac_idx == 0)
+ 		__set_bit(PHY_INTERFACE_MODE_RMII,
+ 			  ag->phylink_config.supported_interfaces);
+@@ -1872,13 +1877,14 @@ static void ag71xx_gmac_if_cfg(struct ag
+ 		if (ag->mac_idx != 0)
+ 			return;
+ 
++		/* None of them attaches GMAC0 to the switch PHY */
+ 		if (phy_interface_mode_is_rgmii(mode))
+ 			*val |= AR934X_ETH_CFG_RGMII_GMAC0;
+ 		else if (mode == PHY_INTERFACE_MODE_MII)
+ 			*val |= AR934X_ETH_CFG_MII_GMAC0;
+ 		else if (mode == PHY_INTERFACE_MODE_GMII)
+ 			*val |= AR934X_ETH_CFG_GMII_GMAC0;
+-		else
++		else if (mode != PHY_INTERFACE_MODE_INTERNAL)
+ 			return;
+ 
+ 		*mask |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |

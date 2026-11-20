@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include "qca953x.dtsi"
+#include "qca953x_ag71xx.dtsi"
+#include "qca953x_dsa.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -177,4 +179,9 @@
 		led-sources = <12>;
 		led-active-low;
 	};
+};
+
+&switch_port4 {
+	status = "okay";
+	label = "lan";
 };
