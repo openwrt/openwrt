@@ -225,6 +225,23 @@ define Kernel/AppendInitrdInit
 			-A -F $(KERNEL_BUILD_DIR)/initrd$(1).cpio )
 endef
 
+# The kmod packages read modules.builtin, and out of tree modules use the
+# config of $(LINUX_DIR). The initramfs kernel changes the ramdisk options,
+# which can turn a built-in symbol into a module. Keep the state of the
+# regular kernel, if the initramfs kernel is built in $(LINUX_DIR).
+KERNEL_REGULAR_STATE := .config modules.builtin modules.builtin.modinfo
+
+define Kernel/SaveRegularState
+	$(foreach f,$(KERNEL_REGULAR_STATE), \
+		[ ! -f $(LINUX_DIR)/$(f) ] || $(CP) $(LINUX_DIR)/$(f) $(LINUX_DIR)/$(f).regular;)
+endef
+
+define Kernel/RestoreRegularState
+	$(foreach f,$(KERNEL_REGULAR_STATE), \
+		[ ! -f $(LINUX_DIR)/$(f).regular ] || mv -f $(LINUX_DIR)/$(f).regular $(LINUX_DIR)/$(f);) \
+	$(KERNEL_MAKE) syncconfig;
+endef
+
 # $1: Custom TARGET_DIR. If omitted TARGET_DIR is used.
 # $2: If defined Generate Per Rootfs Kernel Directory and use it
 # For Separate Initramfs, the regular kernel is used as is, as its config
@@ -233,6 +250,7 @@ define Kernel/CompileImage/Initramfs
 	$(call locked,{ \
 		$(if $(2),$(call Kernel/PrepareConfigPerRootfs,$(LINUX_DIR)$(2));) \
 		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),, \
+			$(if $(2),,$(call Kernel/SaveRegularState)) \
 			$(call Kernel/Configure/Initramfs,$(if $(1),$(1),$(TARGET_DIR)),$(LINUX_DIR)$(2)); \
 			rm -rf $(LINUX_DIR)$(2)/usr/initramfs_data.cpio*;) \
 		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE), \
@@ -265,6 +283,8 @@ define Kernel/CompileImage/Initramfs
 			}, gen-cpio$(2));,\
 			$(KERNEL_MAKE) $(if $(2),-C $(LINUX_DIR)$(2)) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all);) \
 		$(call Kernel/CopyImage,-initramfs,$(2)); \
+		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),, \
+			$(if $(2),,$(call Kernel/RestoreRegularState))) \
 		$(if $(2),rm -rf $(LINUX_DIR)$(2);) \
 	}, gen-initramfs$(2));
 endef
