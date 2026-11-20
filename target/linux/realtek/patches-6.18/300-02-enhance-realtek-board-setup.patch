@@ -21,7 +21,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  load-$(CONFIG_MIPS_GENERIC)	+= 0xffffffff80100000
 --- a/arch/mips/generic/board-realtek.c
 +++ b/arch/mips/generic/board-realtek.c
-@@ -11,6 +11,312 @@
+@@ -11,6 +11,303 @@
  #include <asm/fw/fw.h>
  #include <asm/machine.h>
  
@@ -52,7 +52,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +	u32 family;
 +	int cpu_port;
 +	void (*read_details)(u32 model);
-+	void (*apply_quirks)(void);
++	void (*apply_quirks)(const void *fdt);
 +	void (*get_memory)(void);
 +	void (*prepare_highmem)(void);
 +};
@@ -78,26 +78,17 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +	return freq / 2;
 +}
 +
-+static int __init realtek_apply_dts_quirks(void)
++static void __init rtl931x_apply_early_quirks(const void *fdt)
 +{
-+	struct device_node *node;
++	if (fdt_node_offset_by_compatible(fdt, -1, "diodes,pt7a75xx-wdt") < 0)
++		return;
 +
-+	node = of_find_compatible_node(NULL, NULL, "diodes,pt7a75xx-wdt");
-+	if (node) {
-+		if (soc_info.family == RTL9310_FAMILY_ID) {
-+			pr_info("apply quirk for diodes pt7a75xx watchdog\n");
-+			sw_w32_mask(GENMASK(13, 12), BIT(12), RTL931X_LED_GLB_CTRL);
-+			sw_w32_mask(0x0, BIT(8), RTL931X_MAC_L2_GLOBAL_CTRL2);
-+		};
-+		of_node_put(node);
-+	}
-+
-+	return 0;
++	pr_info("apply quirk for diodes pt7a75xx watchdog\n");
++	sw_w32_mask(GENMASK(13, 12), BIT(12), RTL931X_LED_GLB_CTRL);
++	sw_w32_mask(0x0, BIT(8), RTL931X_MAC_L2_GLOBAL_CTRL2);
 +}
 +
-+arch_initcall(realtek_apply_dts_quirks);
-+
-+static void __init rtl838x_apply_early_quirks(void)
++static void __init rtl838x_apply_early_quirks(const void *fdt)
 +{
 +	/*
 +	 * Open up write protected registers. SDK opens/closes this whenever needed. For
@@ -294,7 +285,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +	__sync();
 +}
 +
-+static void __init realtek_prom_init(const void *match_data)
++static void __init realtek_prom_init(const void *fdt, const void *match_data)
 +{
 +	const struct realtek_soc_data *cfg = match_data;
 +	u32 model;
@@ -309,7 +300,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +	soc_info.cpu_port = cfg->cpu_port;
 +
 +	if (cfg->apply_quirks)
-+		cfg->apply_quirks();
++		cfg->apply_quirks(fdt);
 +
 +	cfg->read_details(model);
 +	realtek_parse_model(model);
@@ -334,7 +325,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  static __init int realtek_add_initrd(void *fdt)
  {
  	int node, err;
-@@ -55,6 +361,19 @@ static __init const void *realtek_fixup_
+@@ -55,9 +352,22 @@ static __init const void *realtek_fixup_
  	static unsigned char fdt_buf[16 << 10] __initdata;
  	int err;
  
@@ -349,12 +340,15 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +	 */
 +	set_io_port_base(KSEG1);
 +
-+	realtek_prom_init(match_data);
-+
  	if (fdt_check_header(fdt))
  		panic("Corrupt DT");
  
-@@ -68,12 +387,77 @@ static __init const void *realtek_fixup_
++	realtek_prom_init(fdt, match_data);
++
+ 	fw_init_cmdline();
+ 
+ 	err = apply_mips_fdt_fixups(fdt_buf, sizeof(fdt_buf), fdt, realtek_fdt_fixups);
+@@ -68,12 +378,78 @@ static __init const void *realtek_fixup_
  
  }
  
@@ -389,6 +383,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +	.family = RTL9310_FAMILY_ID,
 +	.cpu_port = RTL931X_CPU_PORT,
 +	.read_details = rtl93xx_read_details,
++	.apply_quirks = rtl931x_apply_early_quirks,
 +	.get_memory = rtl931x_get_system_memory,
 +};
 +
