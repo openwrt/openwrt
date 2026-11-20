@@ -235,6 +235,33 @@ endef
 $(eval $(call KernelPackage,sound-soc-imx))
 
 
+define KernelPackage/sound-soc-meson-gx
+  TITLE:=Amlogic Meson GX sound support
+  KCONFIG:= \
+	CONFIG_SND_MESON_AIU \
+	CONFIG_SND_MESON_GX_SOUND_CARD \
+	CONFIG_SND_SOC_MESON_T9015 \
+	CONFIG_SND_MESON_CARD_UTILS \
+	CONFIG_SND_MESON_CODEC_GLUE
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/meson/snd-soc-meson-aiu.ko \
+	$(LINUX_DIR)/sound/soc/meson/snd-soc-meson-card-utils.ko \
+	$(LINUX_DIR)/sound/soc/meson/snd-soc-meson-codec-glue.ko \
+	$(LINUX_DIR)/sound/soc/meson/snd-soc-meson-gx-sound-card.ko \
+	$(LINUX_DIR)/sound/soc/meson/snd-soc-meson-t9015.ko
+  AUTOLOAD:=$(call AutoLoad,56,snd-soc-meson-aiu snd-soc-meson-codec-glue snd-soc-meson-t9015 snd-soc-meson-card-utils snd-soc-meson-gx-sound-card)
+  DEPENDS:=@TARGET_meson +kmod-sound-soc-core +kmod-sound-soc-hdmi-codec \
+	+kmod-drm-meson +kmod-drm-dw-hdmi-i2s-audio
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-meson-gx/description
+  Support for audio on Amlogic Meson GX (S905) SoCs.
+endef
+
+$(eval $(call KernelPackage,sound-soc-meson-gx))
+
+
 define KernelPackage/sound-soc-mt7986
   TITLE:=MediaTek MT7986 Audio support
   KCONFIG:=CONFIG_SND_SOC_MT7986 CONFIG_SND_SOC_MT7986_WM8960
