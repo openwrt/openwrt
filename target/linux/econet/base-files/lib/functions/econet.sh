@@ -2,7 +2,7 @@
 
 get_mac_gs3101() {
 	local part_name="romfile"
-	local idx;
+	local idx
 
 	idx=$(find_mtd_index "$part_name")
 	if [ -z "$idx" ]; then
