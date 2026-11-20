@@ -1,24 +1,39 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-#include <net/dsa.h>
 #include <linux/bitops.h>
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
+#include <linux/inetdevice.h>
+#include <linux/mfd/syscon.h>
+#include <linux/of_mdio.h>
+#include <linux/of_net.h>
+#include <linux/of_platform.h>
+#include <linux/platform_device.h>
 #include <linux/regmap.h>
+#include <linux/rhashtable.h>
+
+#include <net/arp.h>
+#include <net/dsa.h>
+#include <net/neighbour.h>
+#include <net/netevent.h>
+#include <net/nexthop.h>
+
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "fdb.h"
-#include "lag.h"
-#include "mirror.h"
-#include "mac.h"
 #include "l2.h"
-#include "qos.h"
+#include "l3.h"
+#include "lag.h"
+#include "mac.h"
+#include "mirror.h"
 #include "otto_dsa.h"
+#include "pie.h"
+#include "qos.h"
 #include "stats.h"
+#include "stp.h"
 #include "tc.h"
 #include "vlan.h"
-#include "stp.h"
 
 static const u8 ipv4_ll_mcast_addr_base[ETH_ALEN] = {
 	0x01, 0x00, 0x5e, 0x00, 0x00, 0x00
@@ -35,6 +50,28 @@ static const u8 ipv6_all_hosts_mcast_addr_base[ETH_ALEN] = {
 static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] = {
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 };
+
+int rtl83xx_port_is_under(const struct net_device *dev, struct otto_dsa_priv *priv)
+{
+	/* Is the lower network device a DSA user network device of our RTL930X-switch?
+	 * Unfortunately we cannot just follow dev->dsa_prt as this is only set for the
+	 * DSA conduit device. TODO: since 6.12:
+	 *
+	 * if(!dsa_user_dev_check(dev)) {
+	 *   netdev_info(dev, "%s: not a DSA device.\n", __func__);
+	 *   return -EINVAL;
+	 * }
+	 */
+
+	for (int i = 0; i < priv->r->cpu_port; i++) {
+		if (!priv->ports[i].dp)
+			continue;
+		if (priv->ports[i].dp->user == dev)
+			return i;
+	}
+
+	return -EINVAL;
+}
 
 /* DSA callbacks */
 
@@ -202,47 +239,6 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	otto_qos_setup(ds);
 
 	return 0;
-}
-
-static int rtldsa_mc_group_alloc(struct otto_dsa_priv *priv, int port)
-{
-	int mc_group = find_first_zero_bit(priv->mc_group_bm, MAX_MC_GROUPS - 1);
-	u64 portmask;
-
-	if (mc_group >= MAX_MC_GROUPS - 1)
-		return -1;
-
-	set_bit(mc_group, priv->mc_group_bm);
-	portmask = BIT_ULL(port);
-	priv->r->write_mcast_pmask(mc_group, portmask);
-
-	return mc_group;
-}
-
-static u64 rtldsa_mc_group_add_port(struct otto_dsa_priv *priv, int mc_group, int port)
-{
-	u64 portmask = priv->r->read_mcast_pmask(mc_group);
-
-	pr_debug("%s: %d\n", __func__, port);
-
-	portmask |= BIT_ULL(port);
-	priv->r->write_mcast_pmask(mc_group, portmask);
-
-	return portmask;
-}
-
-static u64 rtldsa_mc_group_del_port(struct otto_dsa_priv *priv, int mc_group, int port)
-{
-	u64 portmask = priv->r->read_mcast_pmask(mc_group);
-
-	pr_debug("%s: %d\n", __func__, port);
-
-	portmask &= ~BIT_ULL(port);
-	priv->r->write_mcast_pmask(mc_group, portmask);
-	if (!portmask)
-		clear_bit(mc_group, priv->mc_group_bm);
-
-	return portmask;
 }
 
 static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device *phydev)
@@ -429,6 +425,47 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
+static int rtldsa_mc_group_alloc(struct otto_dsa_priv *priv, int port)
+{
+	int mc_group = find_first_zero_bit(priv->mc_group_bm, MAX_MC_GROUPS - 1);
+	u64 portmask;
+
+	if (mc_group >= MAX_MC_GROUPS - 1)
+		return -1;
+
+	set_bit(mc_group, priv->mc_group_bm);
+	portmask = BIT_ULL(port);
+	priv->r->write_mcast_pmask(mc_group, portmask);
+
+	return mc_group;
+}
+
+static u64 rtldsa_mc_group_add_port(struct otto_dsa_priv *priv, int mc_group, int port)
+{
+	u64 portmask = priv->r->read_mcast_pmask(mc_group);
+
+	pr_debug("%s: %d\n", __func__, port);
+
+	portmask |= BIT_ULL(port);
+	priv->r->write_mcast_pmask(mc_group, portmask);
+
+	return portmask;
+}
+
+static u64 rtldsa_mc_group_del_port(struct otto_dsa_priv *priv, int mc_group, int port)
+{
+	u64 portmask = priv->r->read_mcast_pmask(mc_group);
+
+	pr_debug("%s: %d\n", __func__, port);
+
+	portmask &= ~BIT_ULL(port);
+	priv->r->write_mcast_pmask(mc_group, portmask);
+	if (!portmask)
+		clear_bit(mc_group, priv->mc_group_bm);
+
+	return portmask;
+}
+
 static void rtldsa_setup_l2_mc_entry(struct otto_l2_entry *e, int vid, u64 mac, int mc_group)
 {
 	memset(e, 0, sizeof(*e));
@@ -540,6 +577,7 @@ out:
 
 	return err;
 }
+
 static int rtldsa_93xx_port_mdb_add(struct dsa_switch *ds, int port,
 				    const struct switchdev_obj_port_mdb *mdb,
 				    const struct dsa_db db)
@@ -834,3 +872,473 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_get_apptrust	= otto_qos_port_get_apptrust,
 	.port_set_apptrust	= otto_qos_port_set_apptrust,
 };
+
+/*
+ * A port with a PHY and without in-band status takes its link state from
+ * phylib, which polls the PHY once a second. Reporting a MAC link loss to
+ * phylink would make it take the link down and then straight back up from the
+ * PHY state of the last poll, until the next poll reads the link as down. Let
+ * phylib read the PHY now instead, which also reports a new link without
+ * waiting for the poll.
+ *
+ * With in-band status, phylink takes the link state also from the PCS, and
+ * needs the MAC link change to resolve the link again when the PCS comes up
+ * after the PHY. The SFP ports have no PHY in the device tree, so the PHY of
+ * an SFP module, which goes away with the module, is not used here.
+ */
+static void rtldsa_port_link_change(struct dsa_switch *ds, int port,
+				    const struct rtldsa_port *p, bool up)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+
+	if (p->phy && !p->inband && dp->user && dp->user->phydev)
+		phy_mac_interrupt(dp->user->phydev);
+	else
+		dsa_port_phylink_mac_change(ds, port, up);
+}
+
+static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
+{
+	struct dsa_switch *ds = dev_id;
+	struct otto_dsa_priv *priv;
+	u32 link, ports;
+
+	priv = ds->priv;
+
+	for (int i = 0; i < DIV_ROUND_UP(priv->r->cpu_port + 1, 32); i++) {
+		if (regmap_read(priv->map, priv->r->isr_port_link_sts_chg + i * 4,
+				&ports))
+			break;
+
+		/* Acknowledge only the status bits read above. */
+		if (regmap_write(priv->map, priv->r->isr_port_link_sts_chg + i * 4,
+				 ports))
+			break;
+
+		/* read latched */
+		if (regmap_read(priv->map, priv->r->mac_link_sts + i * 4, &link))
+			break;
+		if (regmap_read(priv->map, priv->r->mac_link_sts + i * 4, &link))
+			break;
+
+		for (int port = i * 32; port < (i + 1) * 32 && port < priv->r->cpu_port; port++)
+			if (ports & BIT(port % 32))
+				rtldsa_port_link_change(ds, port, &priv->ports[port],
+							link & BIT(port % 32));
+	}
+
+	return IRQ_HANDLED;
+}
+
+static void rtldsa_switch_irq_disable(struct otto_dsa_priv *priv)
+{
+	const u32 masks[2] = { 0 };
+
+	/* Stop the device from asserting the shared IRQ before releasing it. */
+	regmap_bulk_write(priv->map, priv->r->imr_port_link_sts_chg, masks,
+			  DIV_ROUND_UP(priv->r->cpu_port + 1, 32));
+
+	if (priv->r->imr_glb)
+		regmap_write(priv->map, priv->r->imr_glb, 0);
+}
+
+static bool rtldsa_phy_load_deferred(struct phy_device *phydev)
+{
+	struct device *d = &phydev->mdio.dev;
+
+	if (d->driver)
+		return false;
+
+	return driver_deferred_probe_check_state(d) == -EPROBE_DEFER;
+}
+
+static bool rtldsa_phys_load_deferred(void)
+{
+	struct device_node *phy_node;
+	struct phy_device *phydev;
+	struct device_node *dn;
+	bool deferred;
+
+	for_each_node_by_name(dn, "port") {
+		if (!of_device_is_available(dn))
+			continue;
+
+		phy_node = of_parse_phandle(dn, "phy-handle", 0);
+		if (!phy_node)
+			continue;
+
+		phydev = of_phy_find_device(phy_node);
+		of_node_put(phy_node);
+		if (!phydev)
+			continue;
+
+		deferred = rtldsa_phy_load_deferred(phydev);
+		put_device(&phydev->mdio.dev);
+
+		if (deferred) {
+			of_node_put(dn);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*
+ * TODO: This check is usually built into the DSA initialization functions. After carving
+ * out the mdio driver from the ethernet driver, there are two drivers that must be loaded
+ * before the DSA setup can start. This driver has severe issues with handling of deferred
+ * probing. For now provide this function for early dependency checks.
+ */
+static int rtldsa_ethernet_loaded(struct platform_device *pdev)
+{
+	struct platform_device *eth_pdev;
+	struct device_node *port_np;
+	struct device_node *eth_np;
+	int ret = -EPROBE_DEFER;
+
+	for_each_node_with_property(port_np, "ethernet") {
+		eth_np = of_parse_phandle(port_np, "ethernet", 0);
+		if (!eth_np)
+			continue;
+
+		eth_pdev = of_find_device_by_node(eth_np);
+		of_node_put(eth_np);
+
+		if (!eth_pdev)
+			continue;
+
+		if (eth_pdev->dev.driver)
+			ret = 0;
+
+		put_device(&eth_pdev->dev);
+	}
+
+	return ret;
+}
+
+static int rtldsa_mdio_loaded(void)
+{
+	struct device_node *dn;
+
+	/* Check if all buses of the Realtek MDIO controller are registered. */
+	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-mdio");
+	if (!of_device_is_available(dn)) {
+		of_node_put(dn);
+		return -ENODEV;
+	}
+
+	for_each_child_of_node_scoped(dn, bn) {
+		struct mii_bus *bus = of_mdio_find_bus(bn);
+
+		if (!bus) {
+			of_node_put(dn);
+			return -EPROBE_DEFER;
+		}
+		put_device(&bus->dev);
+	}
+	of_node_put(dn);
+
+	return 0;
+}
+
+static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
+{
+	struct device_node *dn, *phy_node, *led_node;
+	u32 pn;
+
+	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-switch");
+	if (!dn) {
+		dev_err(priv->dev, "No RTL switch node in DTS\n");
+		return -ENODEV;
+	}
+
+	led_node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
+
+	for_each_node_by_name(dn, "port") {
+		const char *managed;
+		u32 led_set;
+		char led_set_str[16] = {0};
+
+		if (!of_device_is_available(dn))
+			continue;
+
+		if (of_property_read_u32(dn, "reg", &pn))
+			continue;
+
+		phy_node = of_parse_phandle(dn, "phy-handle", 0);
+		priv->ports[pn].has_pcs = fwnode_property_present(of_fwnode_handle(dn),
+								  "pcs-handle");
+		if (pn != priv->r->cpu_port && !phy_node && !priv->ports[pn].has_pcs) {
+			dev_err(priv->dev, "Port node %d has neither pcs-handle nor phy-handle\n", pn);
+			continue;
+		}
+
+		priv->ports[pn].leds_on_this_port = 0;
+		if (led_node) {
+			if (of_property_read_u32(dn, "led-set", &led_set))
+				led_set = 0;
+			priv->ports[pn].led_set = led_set;
+			sprintf(led_set_str, "led_set%d", led_set);
+			priv->ports[pn].leds_on_this_port = of_property_count_u32_elems(led_node, led_set_str);
+			if (priv->ports[pn].leds_on_this_port > 4) {
+				of_node_put(dn);
+				dev_err(priv->dev, "led_set %d for port %d configuration is invalid\n", led_set, pn);
+				return -ENODEV;
+			}
+		}
+
+		priv->ports[pn].phy = !!phy_node;
+		/* In-band status as phylink reads it */
+		if (!of_property_read_string(dn, "managed", &managed) &&
+		    !strcmp(managed, "in-band-status"))
+			priv->ports[pn].inband = true;
+	}
+
+	return 0;
+}
+
+static int rtl83xx_sw_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	const struct rtldsa_config *r;
+	struct otto_dsa_priv *priv;
+	int bpdu_reg, err = 0;
+	u64 bpdu_mask;
+
+	pr_debug("Probing RTL838X switch device\n");
+	if (!pdev->dev.of_node) {
+		dev_err(dev, "No DT found\n");
+		return -EINVAL;
+	}
+
+	if (rtldsa_phys_load_deferred())
+		return -EPROBE_DEFER;
+
+	err = rtldsa_ethernet_loaded(pdev);
+	if (err)
+		return err;
+
+	err = otto_table_loaded();
+	if (err)
+		return dev_err_probe(dev, err, "no switch table access\n");
+
+	r = device_get_match_data(&pdev->dev);
+	priv = devm_kzalloc(dev, struct_size(priv, msts, r->n_mst - 1), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	priv->r = r;
+	priv->map = syscon_node_to_regmap(dev->of_node);
+	if (IS_ERR(priv->map))
+		return dev_err_probe(dev, PTR_ERR(priv->map),
+				     "no switch register map\n");
+
+	memset(priv->lag_primary, -1, sizeof(priv->lag_primary));
+	priv->l2_uc_map = devm_kcalloc(dev, r->fib_entries, sizeof(*priv->l2_uc_map),
+				       GFP_KERNEL);
+	if (!priv->l2_uc_map)
+		return -ENOMEM;
+
+	priv->ds = devm_kzalloc(dev, sizeof(*priv->ds), GFP_KERNEL);
+	if (!priv->ds)
+		return -ENOMEM;
+
+	priv->ds->dev = dev;
+	priv->ds->priv = priv;
+	priv->ds->needs_standalone_vlan_filtering = true;
+	priv->ds->ops = priv->r->switch_ops;
+	priv->ds->phylink_mac_ops = priv->r->phylink_mac_ops;
+	priv->ds->num_lag_ids = priv->r->num_lag_ids;
+	priv->ds->num_ports = priv->r->cpu_port + 1;
+
+	priv->dev = dev;
+	dev_set_drvdata(dev, priv);
+
+	err = devm_mutex_init(dev, &priv->reg_mutex);
+	if (err)
+		return err;
+
+	err = devm_mutex_init(dev, &priv->counters_lock);
+	if (err)
+		return err;
+
+	priv->family_id = soc_info.family;
+	priv->r->stp_init(priv);
+	priv->irq_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0);
+
+	err = rtldsa_mdio_loaded();
+	if (err)
+		return err;
+
+	err = rtldsa_ports_probe(priv);
+	if (err)
+		return err;
+
+	priv->wq = create_singlethread_workqueue("rtl83xx");
+	if (!priv->wq) {
+		dev_err(dev, "Error creating workqueue: %d\n", err);
+		return -ENOMEM;
+	}
+
+	err = dsa_register_switch(priv->ds);
+	if (err) {
+		dev_err(dev, "Error registering switch: %d\n", err);
+		goto err_register_switch;
+	}
+
+	/* dsa_to_port returns dsa_port from the port list in
+	 * dsa_switch_tree, the tree is built when the switch
+	 * is registered by dsa_register_switch
+	 */
+	for (int i = 0; i <= priv->r->cpu_port; i++)
+		priv->ports[i].dp = dsa_to_port(priv->ds, i);
+
+	/* Enable link and media change interrupts. Are the SERDES masks needed? */
+	regmap_write_bits(priv->map, priv->r->isr_glb_src, 3, 3);
+
+	for (int i = 0; i < DIV_ROUND_UP(priv->r->cpu_port + 1, 32); i++) {
+		u32 mask = priv->irq_mask >> (i * 32);
+
+		regmap_write(priv->map, priv->r->isr_port_link_sts_chg + i * 4, mask);
+		regmap_write(priv->map, priv->r->imr_port_link_sts_chg + i * 4, mask);
+	}
+
+	priv->link_state_irq = platform_get_irq(pdev, 0);
+	pr_info("LINK state irq: %d\n", priv->link_state_irq);
+	err = request_irq(priv->link_state_irq, rtldsa_switch_irq,
+			  IRQF_SHARED, "rtldsa-link-state", priv->ds);
+	if (err) {
+		dev_err(dev, "Error setting up switch interrupt.\n");
+		/* Need to free allocated switch here */
+	} else {
+		priv->link_state_irq_requested = true;
+	}
+
+	/* Enable the global interrupt mask where one exists. */
+	if (priv->r->imr_glb)
+		regmap_write(priv->map, priv->r->imr_glb, 1);
+
+	otto_l2_get_ageing_time(priv);
+
+	if (priv->r->qos_init)
+		priv->r->qos_init(priv);
+
+	/* Clear all destination ports for mirror groups */
+	for (int i = 0; i < 4; i++)
+		priv->mirror_group_ports[i] = -1;
+
+	err = otto_l3_probe(dev, priv);
+	if (err)
+		goto err_register_l3;
+
+	/* TODO: put this into l2_setup() */
+	if (priv->r->spcl_trap_eapol_ctrl) {
+		/* Flood BPDUs to all ports including cpu-port */
+		bpdu_mask = GENMASK_ULL(priv->r->cpu_port, 0);
+		bpdu_reg = priv->r->rma_bpdu_fld_pmask;
+		if (priv->r->cpu_port >= 32) {
+			regmap_write(priv->map, bpdu_reg, upper_32_bits(bpdu_mask));
+			bpdu_reg += 4;
+		}
+		regmap_write(priv->map, bpdu_reg, lower_32_bits(bpdu_mask));
+
+		/* TRAP 802.1X frames (EAPOL) to the CPU-Port, bypass STP and VLANs */
+		regmap_write(priv->map, priv->r->spcl_trap_eapol_ctrl, 7);
+
+		rtl838x_dbgfs_init(priv);
+	} else {
+		rtl930x_dbgfs_init(priv);
+	}
+
+	otto_fdb_dbgfs_init(priv);
+
+	if (priv->r->lag_switch_init)
+		priv->r->lag_switch_init(priv);
+
+	otto_stats_dbgfs_init(priv);
+
+	return 0;
+
+err_register_l3:
+	rtldsa_switch_irq_disable(priv);
+	if (priv->link_state_irq_requested)
+		free_irq(priv->link_state_irq, priv->ds);
+	cancel_delayed_work_sync(&priv->counters_work);
+	dsa_unregister_switch(priv->ds);
+err_register_switch:
+	otto_tc_cleanup(priv);
+	destroy_workqueue(priv->wq);
+
+	return err;
+}
+
+static void rtl83xx_sw_remove(struct platform_device *pdev)
+{
+	struct otto_dsa_priv *priv = platform_get_drvdata(pdev);
+
+	if (!priv)
+		return;
+
+	pr_debug("Removing platform driver for rtl83xx-sw\n");
+
+	/* Stop debugfs readers before tearing down the switch. */
+	otto_stats_dbgfs_remove(priv);
+
+	/* unregister notifiers which will create workqueue entries with
+	 * references to the switch structures. Also stop self-arming delayed
+	 * work items to avoid them still accessing the DSA structures
+	 * when they are getting shut down.
+	 */
+	otto_l3_remove(priv);
+	cancel_delayed_work_sync(&priv->counters_work);
+
+	rtldsa_switch_irq_disable(priv);
+	if (priv->link_state_irq_requested)
+		free_irq(priv->link_state_irq, priv->ds);
+	dsa_unregister_switch(priv->ds);
+
+	otto_tc_cleanup(priv);
+
+	destroy_workqueue(priv->wq);
+
+	dev_set_drvdata(&pdev->dev, NULL);
+}
+
+static const struct of_device_id rtl83xx_switch_of_ids[] = {
+	{
+		.compatible = "realtek,rtl8380-switch",
+		.data = &rtldsa_838x_cfg,
+	},
+	{
+		.compatible = "realtek,rtl8392-switch",
+		.data = &rtldsa_839x_cfg,
+	},
+	{
+		.compatible = "realtek,rtl9301-switch",
+		.data = &rtldsa_930x_cfg,
+	},
+	{
+		.compatible = "realtek,rtl9311-switch",
+		.data = &rtldsa_931x_cfg,
+	},
+	{ /* sentinel */ }
+};
+
+MODULE_DEVICE_TABLE(of, rtl83xx_switch_of_ids);
+
+static struct platform_driver rtl83xx_switch_driver = {
+	.probe  = rtl83xx_sw_probe,
+	.remove = rtl83xx_sw_remove,
+	.driver = {
+		.name = "rtl83xx-switch",
+		.pm = NULL,
+		.of_match_table = rtl83xx_switch_of_ids,
+	},
+};
+
+module_platform_driver(rtl83xx_switch_driver);
+
+MODULE_AUTHOR("B. Koblitz");
+MODULE_DESCRIPTION("RTL83XX SoC Switch Driver");
+MODULE_LICENSE("GPL");
