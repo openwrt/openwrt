@@ -6,12 +6,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=grub
-PKG_VERSION:=2.12
+PKG_VERSION:=2.16
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@GNU/grub
-PKG_HASH:=f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa
+PKG_SOURCE_URL:=https://gitlab.freedesktop.org/api/v4/projects/26558/packages/generic/source-assets/$(PKG_NAME)-$(PKG_VERSION)
+PKG_HASH:=f0db0104927df0b9a48bc41b735c702936190d17eb2d73d3018fa77474a0cabe
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_CPE_ID:=cpe:/a:gnu:grub2
@@ -106,6 +106,8 @@ HOST_MAKE_FLAGS += \
 
 ifneq ($(BUILD_VARIANT),none)
   TARGET_CFLAGS := $(filter-out -O2 -O3 -fno-plt,$(TARGET_CFLAGS))
+  # grub-core is freestanding; keep libc headers (e.g. musl stddef.h) out
+  TARGET_CPPFLAGS := $(filter-out $(patsubst %,-I%,$(TOOLCHAIN_INC_DIRS)),$(TARGET_CPPFLAGS))
   MAKE_PATH := grub-core
 endif
 
@@ -161,14 +163,14 @@ define Package/grub2-efi/install
 		-O $(CONFIG_ARCH)-efi \
 		-c $(PKG_BUILD_DIR)/grub-early.cfg \
 		-o $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi \
-		at_keyboard boot chain configfile fat linux ls part_gpt reboot serial test efi_gop efi_uga
+		at_keyboard boot chain configfile fat linux ls part_gpt reboot serial test efi_gop
 	$(STAGING_DIR_HOST)/bin/grub-mkimage \
 		-d $(PKG_BUILD_DIR)/grub-core \
 		-p /boot/grub \
 		-O $(CONFIG_ARCH)-efi \
 		-c ./files/grub-early.cfg \
 		-o $(STAGING_DIR_IMAGE)/grub2/iso-boot$(if $(CONFIG_x86_64),x64,ia32).efi \
-		boot chain configfile fat iso9660 linux ls part_msdos part_gpt reboot serial test efi_gop efi_uga
+		boot chain configfile fat iso9660 linux ls part_msdos part_gpt reboot serial test efi_gop
 endef
 
 define Package/grub2-efi-arm/install
