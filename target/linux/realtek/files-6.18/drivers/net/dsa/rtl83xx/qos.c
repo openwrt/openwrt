@@ -595,6 +595,12 @@ static void otto_qos_930x_set_fc_thresholds(struct otto_dsa_priv *priv)
 			   RTL930X_FC_GLB_SYS_UTIL_THR_MASK, 1);
 }
 
+struct otto_qos_red_ops {
+	u32 (*tail_drop)(struct otto_dsa_priv *priv, int queue);
+	void (*queue_set)(struct otto_dsa_priv *priv, int queue, u32 cfg);
+	void (*port_set)(struct otto_dsa_priv *priv, int port, bool enable);
+};
+
 static u32 otto_qos_930x_red_tail_drop(struct otto_dsa_priv *priv, int queue)
 {
 	u32 thr = 0, v;
@@ -624,7 +630,35 @@ void otto_qos_930x_queue_drops_update(struct otto_dsa_priv *priv, int port)
 	}
 }
 
-static int otto_qos_930x_red_apply(struct otto_dsa_priv *priv, int port)
+static void otto_qos_930x_red_queue_set(struct otto_dsa_priv *priv, int queue, u32 cfg)
+{
+	for (int dp = 0; dp < RTL930X_SWRED_DROP_PRECEDENCES; dp++)
+		regmap_write(priv->map, RTL930X_SWRED_QUEUE_DROP_CTRL(queue, dp), cfg);
+}
+
+static void otto_qos_930x_red_port_set(struct otto_dsa_priv *priv, int port, bool enable)
+{
+	if (!enable) {
+		regmap_clear_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
+		regmap_set_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
+				RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
+		return;
+	}
+
+	/* RED only drops while the egress drop stage looks at the egress queue */
+	regmap_clear_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
+			  RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
+	regmap_set_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
+}
+
+static const struct otto_qos_red_ops otto_qos_930x_red_ops = {
+	.tail_drop = otto_qos_930x_red_tail_drop,
+	.queue_set = otto_qos_930x_red_queue_set,
+	.port_set = otto_qos_930x_red_port_set,
+};
+
+static int otto_qos_red_apply(struct otto_dsa_priv *priv, int port,
+			      const struct otto_qos_red_ops *ops)
 {
 	u32 *wanted = priv->ports[port].red_cfg;
 	int ret = 0;
@@ -642,38 +676,29 @@ static int otto_qos_930x_red_apply(struct otto_dsa_priv *priv, int port)
 		for (int queue = 0; queue < RTL930X_SWRED_QUEUES; queue++) {
 			u32 cfg = queue < MAX_PRIOS ? wanted[queue] : 0;
 
-			if (!cfg)
-				cfg = otto_qos_930x_red_tail_drop(priv, queue);
-
-			for (int dp = 0; dp < RTL930X_SWRED_DROP_PRECEDENCES; dp++)
-				regmap_write(priv->map,
-					     RTL930X_SWRED_QUEUE_DROP_CTRL(queue, dp), cfg);
+			ops->queue_set(priv, queue, cfg ?: ops->tail_drop(priv, queue));
 		}
 
 		memcpy(priv->red_cfg, wanted, sizeof(priv->red_cfg));
 	}
 
-	/* RED only drops while the egress drop stage looks at the egress queue */
-	regmap_clear_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
-			  RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
-	regmap_set_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
+	ops->port_set(priv, port, true);
 	priv->red_ports |= BIT_ULL(port);
 
 	return 0;
 
 disable:
 	if (priv->red_ports & BIT_ULL(port)) {
-		regmap_clear_bits(priv->map, RTL930X_SWRED_PORT_CTRL, BIT(port));
-		regmap_set_bits(priv->map, RTL930X_FC_PORT_EGR_DROP_CTRL(port),
-				RTL930X_FC_PORT_EGR_DROP_REF_RXCNGST);
+		ops->port_set(priv, port, false);
 		priv->red_ports &= ~BIT_ULL(port);
 	}
 
 	return ret;
 }
 
-int otto_qos_930x_red_set(struct otto_dsa_priv *priv, int port,
-			  const struct tc_red_qopt_offload_params **p)
+static int otto_qos_red_set(struct otto_dsa_priv *priv, int port,
+			    const struct tc_red_qopt_offload_params **p,
+			    const struct otto_qos_red_ops *ops)
 {
 	u32 *wanted = priv->ports[port].red_cfg;
 	int ret, err = 0;
@@ -702,9 +727,15 @@ int otto_qos_930x_red_set(struct otto_dsa_priv *priv, int port,
 	if (err)
 		memset(wanted, 0, sizeof(priv->red_cfg));
 
-	ret = otto_qos_930x_red_apply(priv, port);
+	ret = otto_qos_red_apply(priv, port, ops);
 
 	return err ?: ret;
+}
+
+int otto_qos_930x_red_set(struct otto_dsa_priv *priv, int port,
+			  const struct tc_red_qopt_offload_params **p)
+{
+	return otto_qos_red_set(priv, port, p, &otto_qos_930x_red_ops);
 }
 
 void otto_qos_930x_init(struct otto_dsa_priv *priv)
