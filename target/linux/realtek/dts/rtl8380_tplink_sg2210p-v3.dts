@@ -7,6 +7,54 @@
 	model = "TP-Link SG2210P v3";
 };
 
+&tps23861_20 {
+	pse-pis {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		tps23861_20_pi0: pse-pi@0 {
+			reg = <0>;
+			#pse-cells = <0>;
+		};
+		tps23861_20_pi1: pse-pi@1 {
+			reg = <1>;
+			#pse-cells = <0>;
+		};
+		tps23861_20_pi2: pse-pi@2 {
+			reg = <2>;
+			#pse-cells = <0>;
+		};
+		tps23861_20_pi3: pse-pi@3 {
+			reg = <3>;
+			#pse-cells = <0>;
+		};
+	};
+};
+
+&tps23861_28 {
+	pse-pis {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		tps23861_28_pi0: pse-pi@0 {
+			reg = <0>;
+			#pse-cells = <0>;
+		};
+		tps23861_28_pi1: pse-pi@1 {
+			reg = <1>;
+			#pse-cells = <0>;
+		};
+		tps23861_28_pi2: pse-pi@2 {
+			reg = <2>;
+			#pse-cells = <0>;
+		};
+		tps23861_28_pi3: pse-pi@3 {
+			reg = <3>;
+			#pse-cells = <0>;
+		};
+	};
+};
+
 &switch0 {
 	ethernet-ports {
 		port24: port@24 {
@@ -33,3 +81,11 @@
 	};
 };
 
+&phy8  { pses = <&tps23861_20_pi0>; };
+&phy9  { pses = <&tps23861_20_pi1>; };
+&phy10 { pses = <&tps23861_20_pi2>; };
+&phy11 { pses = <&tps23861_20_pi3>; };
+&phy12 { pses = <&tps23861_28_pi0>; };
+&phy13 { pses = <&tps23861_28_pi1>; };
+&phy14 { pses = <&tps23861_28_pi2>; };
+&phy15 { pses = <&tps23861_28_pi3>; };
