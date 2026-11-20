@@ -120,6 +120,7 @@ define KernelPackage/ath/config
 	config PACKAGE_ATH_DYNACK
 		bool "Enable Dynack support"
 		depends on PACKAGE_kmod-ath9k-common
+		default y
 		help
 		  Enables support for Dynamic ACK estimation, which allows the fastest possible speed
 		  at any distance automatically by increasing/decreasing the max frame ACK time for
