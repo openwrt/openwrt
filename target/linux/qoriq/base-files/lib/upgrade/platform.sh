@@ -4,22 +4,22 @@ PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
 platform_get_rootfs_device() {
-    local majmin sys path
+	local majmin sys path
 
-    majmin="$(awk '$5=="/rom"{print $3; exit}' /proc/self/mountinfo 2>/dev/null)"
-    [ -n "$majmin" ] || {
+	majmin="$(awk '$5=="/rom"{print $3; exit}' /proc/self/mountinfo 2>/dev/null)"
+	[ -n "$majmin" ] || {
 		echo "Unable to determine upgrade device"
 		return 1
 	}
 
-    sys="/sys/dev/block/$majmin"
-    [ -e "$sys" ] || {
+	sys="/sys/dev/block/$majmin"
+	[ -e "$sys" ] || {
 		echo "Unable to determine upgrade device"
 		return 1
 	}
 
-    path="$(readlink -f "$sys" 2>/dev/null)" || return 1
-    basename "$path"
+	path="$(readlink -f "$sys" 2>/dev/null)" || return 1
+	basename "$path"
 }
 
 platform_copy_config_sdboot() {
@@ -59,8 +59,7 @@ platform_do_upgrade_sdboot() {
 	echo "Erasing rootfs..."
 	dd if=/dev/zero of=/dev/mmcblk0p2 bs=1M > /dev/null 2>&1
 	echo "Writing rootfs..."
-	tar xf $tar_file ${board_dir}/root -O  | dd of=/dev/mmcblk0p2 bs=512k > /dev/null 2>&1
-
+	tar xf $tar_file ${board_dir}/root -O | dd of=/dev/mmcblk0p2 bs=512k > /dev/null 2>&1
 }
 
 platform_do_upgrade_nor() {
@@ -70,8 +69,8 @@ platform_do_upgrade_nor() {
 	board_dir=${board_dir%/}
 	local temp_sysupgrade="/tmp/sysupgrade.bin"
 
-	tar xf $tar_file ${board_dir}/kernel -O  > $temp_sysupgrade.tmp || return 1
-	tar xf $tar_file ${board_dir}/root -O >> $temp_sysupgrade.tmp  || return 1
+	tar xf $tar_file ${board_dir}/kernel -O > $temp_sysupgrade.tmp || return 1
+	tar xf $tar_file ${board_dir}/root -O >> $temp_sysupgrade.tmp || return 1
 	dd if=$temp_sysupgrade.tmp of=$temp_sysupgrade bs=128k conv=sync > /dev/null 2>&1 || return 1
 	printf '\xDE\xAD\xC0\xDE' | dd of=$temp_sysupgrade bs=128k oflag=append conv=notrunc,sync > /dev/null 2>&1 || return 1
 
@@ -86,18 +85,19 @@ platform_check_image() {
 		echo "$T4240_ROOTFS" > /tmp/t4240_rootfs_device
 
 		case "$T4240_ROOTFS" in
-			mmcblk*)
-				export_bootdevice && export_partdevice diskdev 0 || {
-					echo "Unable to determine upgrade device"
-					return 1
-				}
-			;;
-			mtdblock*)
-				return 0
-			;;
-			*)
+		mmcblk*)
+			export_bootdevice && export_partdevice diskdev 0 || {
 				echo "Unable to determine upgrade device"
 				return 1
+			}
+			;;
+		mtdblock*)
+			return 0
+			;;
+		*)
+			echo "Unable to determine upgrade device"
+			return 1
+			;;
 		esac
 		;;
 	watchguard,firebox-m300)
@@ -115,11 +115,12 @@ platform_copy_config() {
 		T4240_ROOTFS="$(cat /tmp/t4240_rootfs_device 2>/dev/null)"
 
 		case "$T4240_ROOTFS" in
-			mmcblk*)
+		mmcblk*)
 			platform_copy_config_sdboot
 			;;
-			*)
+		*)
 			return 0
+			;;
 		esac
 		;;
 	watchguard,firebox-m300)
@@ -127,6 +128,7 @@ platform_copy_config() {
 		;;
 	*)
 		return 0
+		;;
 	esac
 }
 
@@ -136,15 +138,16 @@ platform_do_upgrade() {
 		T4240_ROOTFS="$(cat /tmp/t4240_rootfs_device 2>/dev/null)"
 
 		case "$T4240_ROOTFS" in
-			mmcblk*)
-				platform_do_upgrade_sdboot "$1"
+		mmcblk*)
+			platform_do_upgrade_sdboot "$1"
 			;;
-			mtdblock*)
-				platform_do_upgrade_nor "$1"
+		mtdblock*)
+			platform_do_upgrade_nor "$1"
 			;;
-			*)
-				echo "Unable to determine upgrade device"
-				return 1
+		*)
+			echo "Unable to determine upgrade device"
+			return 1
+			;;
 		esac
 		;;
 	watchguard,firebox-m300)
