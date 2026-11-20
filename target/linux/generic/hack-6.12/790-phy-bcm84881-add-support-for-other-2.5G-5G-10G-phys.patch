@@ -1,0 +1,1315 @@
+From 9cacf6bc647e697868b1f43232aefb232b198598 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bal=C3=A1zs=20Triszka?= <info@balika011.hu>
+Date: Sat, 18 Oct 2025 23:09:23 +0200
+Subject: [PATCH] phy-bcm84881: add support for other 2.5G / 5G / 10G phys
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch add support for mako, orca, blackfin, shortfin and
+longfin phys to bcm84881 driver.
+
+Signed-off-by: Balázs Triszka <info@balika011.hu>
+
+---
+ drivers/net/phy/bcm84881.c | 1140 +++++++++++++++++++++++++++++++++++-
+ 1 file changed, 1118 insertions(+), 22 deletions(-)
+
+--- a/drivers/net/phy/bcm84881.c
++++ b/drivers/net/phy/bcm84881.c
+@@ -16,6 +16,109 @@
+ #include <linux/module.h>
+ #include <linux/phy.h>
+ 
++// 2.5G
++#define PHYID_BCM4912			0x359050cd
++#define PHYID_BCM4912M			0x359051cd
++#define PHYID_BCM50991EL_A0		0x359050c8
++#define PHYID_BCM50991EL_B0		0x359050c9
++#define PHYID_BCM50991ELM_B0	0x3590518d
++#define PHYID_BCM50994E_A0		0x359050f8
++#define PHYID_BCM50994E_B0		0x359050f9
++#define PHYID_BCM54991E_A0		0x35905098
++#define PHYID_BCM54991E_B0		0x35905099
++#define PHYID_BCM54991EL_A0		0x35905088
++#define PHYID_BCM54991EL_B0		0x35905089
++#define PHYID_BCM54991ELM_A0	0x35905188
++#define PHYID_BCM54991ELM_B0	0x35905189
++#define PHYID_BCM54991EM_A0		0x35905198
++#define PHYID_BCM54991EM_B0		0x35905199
++#define PHYID_BCM54992E_A0		0x359050a8
++#define PHYID_BCM54992E_B0		0x359050a9
++#define PHYID_BCM54992EM_A0		0x359051a8
++#define PHYID_BCM54992EM_B0		0x359051a9
++#define PHYID_BCM54994E_A0		0x359050b8
++#define PHYID_BCM54994E_B0		0x359050b9
++#define PHYID_BCM54994EM_A0		0x359051b8
++#define PHYID_BCM54994EM_B0		0x359051b9
++
++// 5G
++#define PHYID_BCM49418			0x359050c1
++#define PHYID_BCM49418M			0x359051c1
++#define PHYID_BCM54991_A0		0x35905094
++#define PHYID_BCM54991_B0		0x35905095
++#define PHYID_BCM54991L_A0		0x35905084
++#define PHYID_BCM54991L_B0		0x35905085
++#define PHYID_BCM54991M_A0		0x35905194
++#define PHYID_BCM54991M_B0		0x35905195
++#define PHYID_BCM54992_A0		0x359050a4
++#define PHYID_BCM54992_B0		0x359050a5
++#define PHYID_BCM54992M_A0		0x359051a4
++#define PHYID_BCM54992M_B0		0x359051a5
++#define PHYID_BCM54994_A0		0x359050b4
++#define PHYID_BCM54994_B0		0x359050b5
++#define PHYID_BCM54994M_A0		0x359051b4
++#define PHYID_BCM54994M_B0		0x359051b5
++#define PHYID_BCM84860_A0		0xae025048
++#define PHYID_BCM84861_A0		0xae025040
++#define PHYID_BCM84880_A0		0xae025158
++#define PHYID_BCM84880_B0		0xae025159
++#define PHYID_BCM84884_A0		0xae025148
++#define PHYID_BCM84884_B0		0xae025149
++#define PHYID_BCM84884E_A0		0xae025168
++#define PHYID_BCM84884E_B0		0xae025169
++#define PHYID_BCM84885_A0		0xae025178
++#define PHYID_BCM84885_B0		0xae025179
++
++// 10G
++#define PHYID_BCM54991H_A0		0x359050d0
++#define PHYID_BCM54991H_A1		0x359051d0
++#define PHYID_BCM54991H_B0		0x359050d1
++#define PHYID_BCM54991H_B1		0x359051d1
++#define PHYID_BCM54991LM_A0		0x35905184
++#define PHYID_BCM54991LM_B0		0x35905185
++#define PHYID_BCM54991SK_B0		0x359051d5
++#define PHYID_BCM54994EL_B0		0x3590501d
++#define PHYID_BCM54994H_A0		0x359050f0
++#define PHYID_BCM54994H_A1		0x359051f0
++#define PHYID_BCM54994H_B0		0x359050f1
++#define PHYID_BCM54994H_B1		0x359051f1
++#define PHYID_BCM54994L_B0		0x35905019
++#define PHYID_BCM54994SK_B0		0x359051f5
++#define PHYID_BCM54998_B0		0x35905011
++#define PHYID_BCM54998E_B0		0x35905015
++#define PHYID_BCM54998ES_B0		0x3590500d
++#define PHYID_BCM54998S_B0		0x35905009
++#define PHYID_BCM84881_A0		0xae025150
++#define PHYID_BCM84881_B0		0xae025151
++#define PHYID_BCM84886_A0		0xae025170
++#define PHYID_BCM84886_B0		0xae025171
++#define PHYID_BCM84887_A0		0xae025144
++#define PHYID_BCM84887_B0		0xae025145
++#define PHYID_BCM84888_A0		0xae025140
++#define PHYID_BCM84888_B0		0xae025141
++#define PHYID_BCM84888E_A0		0xae025160
++#define PHYID_BCM84888E_B0		0xae025161
++#define PHYID_BCM84888S_A0		0xae025174
++#define PHYID_BCM84888S_B0		0xae025175
++#define PHYID_BCM84891_A0		0x35905090
++#define PHYID_BCM84891_B0		0x35905091
++#define PHYID_BCM84891L_A0		0x35905080
++#define PHYID_BCM84891L_B0		0x35905081
++#define PHYID_BCM84891LM_A0		0x35905180
++#define PHYID_BCM84891LM_B0		0x35905181
++#define PHYID_BCM84891M_A0		0x35905190
++#define PHYID_BCM84891M_B0		0x35905191
++#define PHYID_BCM84892_A0		0x359050a0
++#define PHYID_BCM84892_B0		0x359050a1
++#define PHYID_BCM84892M_A0		0x359051a0
++#define PHYID_BCM84892M_B0		0x359051a1
++#define PHYID_BCM84894_A0		0x359050b0
++#define PHYID_BCM84894_B0		0x359050b1
++#define PHYID_BCM84894M_A0		0x359051b0
++#define PHYID_BCM84894M_B0		0x359051b1
++#define PHYID_BCM84896_B0		0x35905005
++#define PHYID_BCM84898_B0		0x35905001
++
+ enum {
+ 	MDIO_AN_C22 = 0xffe0,
+ };
+@@ -29,22 +132,57 @@ static int bcm84881_wait_init(struct phy
+ 					 100000, 2000000, false);
+ }
+ 
+-static void bcm84881_fill_possible_interfaces(struct phy_device *phydev)
++static int bcm84881_config_init_2500(struct phy_device *phydev)
+ {
+ 	unsigned long *possible = phydev->possible_interfaces;
+ 
+ 	__set_bit(PHY_INTERFACE_MODE_SGMII, possible);
+ 	__set_bit(PHY_INTERFACE_MODE_2500BASEX, possible);
+-	__set_bit(PHY_INTERFACE_MODE_10GBASER, possible);
++
++	switch (phydev->interface) {
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_2500BASEX:
++		break;
++	default:
++		return -ENODEV;
++	}
++
++	return 0;
++}
++
++static int bcm84881_config_init_5G(struct phy_device *phydev)
++{
++	unsigned long *possible = phydev->possible_interfaces;
++
++	__set_bit(PHY_INTERFACE_MODE_SGMII, possible);
++	__set_bit(PHY_INTERFACE_MODE_2500BASEX, possible);
++	__set_bit(PHY_INTERFACE_MODE_5GBASER, possible);
++
++	switch (phydev->interface) {
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_2500BASEX:
++	case PHY_INTERFACE_MODE_5GBASER:
++		break;
++	default:
++		return -ENODEV;
++	}
++
++	return 0;
+ }
+ 
+-static int bcm84881_config_init(struct phy_device *phydev)
++static int bcm84881_config_init_10G(struct phy_device *phydev)
+ {
+-	bcm84881_fill_possible_interfaces(phydev);
++	unsigned long *possible = phydev->possible_interfaces;
++
++	__set_bit(PHY_INTERFACE_MODE_SGMII, possible);
++	__set_bit(PHY_INTERFACE_MODE_2500BASEX, possible);
++	__set_bit(PHY_INTERFACE_MODE_5GBASER, possible);
++	__set_bit(PHY_INTERFACE_MODE_10GBASER, possible);
+ 
+ 	switch (phydev->interface) {
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_2500BASEX:
++	case PHY_INTERFACE_MODE_5GBASER:
+ 	case PHY_INTERFACE_MODE_10GBASER:
+ 		break;
+ 	default:
+@@ -208,26 +346,25 @@ static int bcm84881_read_status(struct p
+ 	 */
+ 	val = phy_read_mmd(phydev, MDIO_MMD_VEND1, 0x4011);
+ 	mode = (val & 0x1e) >> 1;
+-	if (mode == 1 || mode == 2)
+-		phydev->interface = PHY_INTERFACE_MODE_SGMII;
+-	else if (mode == 3)
+-		phydev->interface = PHY_INTERFACE_MODE_10GBASER;
+-	else if (mode == 4)
+-		phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
+ 	switch (mode & 7) {
+ 	case 1:
++		phydev->interface = PHY_INTERFACE_MODE_SGMII;
+ 		phydev->speed = SPEED_100;
+ 		break;
+ 	case 2:
++		phydev->interface = PHY_INTERFACE_MODE_SGMII;
+ 		phydev->speed = SPEED_1000;
+ 		break;
+ 	case 3:
++		phydev->interface = PHY_INTERFACE_MODE_10GBASER;
+ 		phydev->speed = SPEED_10000;
+ 		break;
+ 	case 4:
++		phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
+ 		phydev->speed = SPEED_2500;
+ 		break;
+ 	case 5:
++		phydev->interface = PHY_INTERFACE_MODE_5GBASER;
+ 		phydev->speed = SPEED_5000;
+ 		break;
+ 	}
+@@ -246,24 +383,1079 @@ static unsigned int bcm84881_inband_caps
+ 
+ static struct phy_driver bcm84881_drivers[] = {
+ 	{
+-		.phy_id		= 0xae025150,
+-		.phy_id_mask	= 0xfffffff0,
+-		.name		= "Broadcom BCM84881",
+-		.inband_caps	= bcm84881_inband_caps,
+-		.config_init	= bcm84881_config_init,
+-		.probe		= bcm84881_probe,
+-		.get_features	= bcm84881_get_features,
+-		.config_aneg	= bcm84881_config_aneg,
+-		.aneg_done	= bcm84881_aneg_done,
+-		.read_status	= bcm84881_read_status,
++		PHY_ID_MATCH_EXACT(PHYID_BCM4912),
++		.name = "Broadcom BCM4912",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM4912M),
++		.name = "Broadcom BCM4912M",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM50991EL_A0),
++		.name = "Broadcom BCM50991EL A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM50991EL_B0),
++		.name = "Broadcom BCM50991EL B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM50991ELM_B0),
++		.name = "Broadcom BCM50991ELM B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM50994E_A0),
++		.name = "Broadcom BCM50994E A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM50994E_B0),
++		.name = "Broadcom BCM50994E B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991E_A0),
++		.name = "Broadcom BCM54991E A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991E_B0),
++		.name = "Broadcom BCM54991E B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991EL_A0),
++		.name = "Broadcom BCM54991EL A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991EL_B0),
++		.name = "Broadcom BCM54991EL B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991ELM_A0),
++		.name = "Broadcom BCM54991ELM A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991ELM_B0),
++		.name = "Broadcom BCM54991ELM B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991EM_A0),
++		.name = "Broadcom BCM54991EM A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991EM_B0),
++		.name = "Broadcom BCM54991EM B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54992E_A0),
++		.name = "Broadcom BCM54992E A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54992E_B0),
++		.name = "Broadcom BCM54992E B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54992EM_A0),
++		.name = "Broadcom BCM54992EM A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54992EM_B0),
++		.name = "Broadcom BCM54992EM B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994E_A0),
++		.name = "Broadcom BCM54994E A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994E_B0),
++		.name = "Broadcom BCM54994E B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994EM_A0),
++		.name = "Broadcom BCM54994EM A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994EM_B0),
++		.name = "Broadcom BCM54994EM B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_2500,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM49418),
++		.name = "Broadcom BCM49418",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM49418M),
++		.name = "Broadcom BCM49418M",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991_A0),
++		.name = "Broadcom BCM54991 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991_B0),
++		.name = "Broadcom BCM54991 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991L_A0),
++		.name = "Broadcom BCM54991L A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991L_B0),
++		.name = "Broadcom BCM54991L B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991M_A0),
++		.name = "Broadcom BCM54991M A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991M_B0),
++		.name = "Broadcom BCM54991M B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54992_A0),
++		.name = "Broadcom BCM54992 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54992_B0),
++		.name = "Broadcom BCM54992 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54992M_A0),
++		.name = "Broadcom BCM54992M A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54992M_B0),
++		.name = "Broadcom BCM54992M B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994_A0),
++		.name = "Broadcom BCM54994 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994_B0),
++		.name = "Broadcom BCM54994 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994M_A0),
++		.name = "Broadcom BCM54994M A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994M_B0),
++		.name = "Broadcom BCM54994M B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84860_A0),
++		.name = "Broadcom BCM84860 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84861_A0),
++		.name = "Broadcom BCM84861 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84880_A0),
++		.name = "Broadcom BCM84880 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84880_B0),
++		.name = "Broadcom BCM84880 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84884_A0),
++		.name = "Broadcom BCM84884 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84884_B0),
++		.name = "Broadcom BCM84884 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84884E_A0),
++		.name = "Broadcom BCM84884E A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84884E_B0),
++		.name = "Broadcom BCM84884E B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84885_A0),
++		.name = "Broadcom BCM84885 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84885_B0),
++		.name = "Broadcom BCM84885 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_5G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991H_A1),
++		.name = "Broadcom BCM54991H A1",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991H_A0),
++		.name = "Broadcom BCM54991H A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991H_B0),
++		.name = "Broadcom BCM54991H B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991H_B1),
++		.name = "Broadcom BCM54991H B1",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991LM_A0),
++		.name = "Broadcom BCM54991LM A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991LM_B0),
++		.name = "Broadcom BCM54991LM B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54991SK_B0),
++		.name = "Broadcom BCM54991SK B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994EL_B0),
++		.name = "Broadcom BCM54994EL B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994H_A0),
++		.name = "Broadcom BCM54994H A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994H_A1),
++		.name = "Broadcom BCM54994H A1",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994H_B0),
++		.name = "Broadcom BCM54994H B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994H_B1),
++		.name = "Broadcom BCM54994H B1",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994L_B0),
++		.name = "Broadcom BCM54994L B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54994SK_B0),
++		.name = "Broadcom BCM54994SK B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54998_B0),
++		.name = "Broadcom BCM54998 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54998E_B0),
++		.name = "Broadcom BCM54998E B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54998ES_B0),
++		.name = "Broadcom BCM54998ES B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM54998S_B0),
++		.name = "Broadcom BCM54998S B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84881_A0),
++		.name = "Broadcom BCM84881 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84881_B0),
++		.name = "Broadcom BCM84881 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84886_A0),
++		.name = "Broadcom BCM84886 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84886_B0),
++		.name = "Broadcom BCM84886 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84887_A0),
++		.name = "Broadcom BCM84887 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84887_B0),
++		.name = "Broadcom BCM84887 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84888_A0),
++		.name = "Broadcom BCM84888 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84888_B0),
++		.name = "Broadcom BCM84888 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84888E_A0),
++		.name = "Broadcom BCM84888E A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84888E_B0),
++		.name = "Broadcom BCM84888E B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84888S_A0),
++		.name = "Broadcom BCM84888S A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84888S_B0),
++		.name = "Broadcom BCM84888S B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84891_A0),
++		.name = "Broadcom BCM84891 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84891_B0),
++		.name = "Broadcom BCM84891 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84891L_A0),
++		.name = "Broadcom BCM84891L A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84891L_B0),
++		.name = "Broadcom BCM84891L B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84891LM_A0),
++		.name = "Broadcom BCM84891LM A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84891LM_B0),
++		.name = "Broadcom BCM84891LM B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84891M_A0),
++		.name = "Broadcom BCM84891M A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84891M_B0),
++		.name = "Broadcom BCM84891M B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84892_A0),
++		.name = "Broadcom BCM84892 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84892_B0),
++		.name = "Broadcom BCM84892 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84892M_A0),
++		.name = "Broadcom BCM84892M A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84892M_B0),
++		.name = "Broadcom BCM84892M B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84894_A0),
++		.name = "Broadcom BCM84894 A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84894_B0),
++		.name = "Broadcom BCM84894 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84894M_A0),
++		.name = "Broadcom BCM84894M A0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84894M_B0),
++		.name = "Broadcom BCM84894M B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84896_B0),
++		.name = "Broadcom BCM84896 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
++	},
++	{
++		PHY_ID_MATCH_EXACT(PHYID_BCM84898_B0),
++		.name = "Broadcom BCM84898 B0",
++		.inband_caps	= bcm84881_inband_caps,
++		.config_init = bcm84881_config_init_10G,
++		.probe = bcm84881_probe,
++		.get_features = bcm84881_get_features,
++		.config_aneg = bcm84881_config_aneg,
++		.aneg_done = bcm84881_aneg_done,
++		.read_status = bcm84881_read_status,
+ 	},
+ };
+ 
+ module_phy_driver(bcm84881_drivers);
+ 
+-/* FIXME: module auto-loading for Clause 45 PHYs seems non-functional */
+ static const struct mdio_device_id __maybe_unused bcm84881_tbl[] = {
+-	{ 0xae025150, 0xfffffff0 },
++	{ PHY_ID_MATCH_VENDOR(0x35905000) },
++	{ PHY_ID_MATCH_VENDOR(0xAE025000) },
+ 	{ },
+ };
+ MODULE_AUTHOR("Russell King");
