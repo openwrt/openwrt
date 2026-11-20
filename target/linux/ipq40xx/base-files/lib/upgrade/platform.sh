@@ -189,9 +189,9 @@ platform_do_upgrade() {
 	linksys,whw03)
 		platform_do_upgrade_linksys_emmc "$1"
 		;;
+	meraki,gx20|\
 	meraki,mr20|\
 	meraki,mr70|\
-	meraki,gx20|\
 	meraki,z3|\
 	meraki,z3c)
 		# DO NOT set CI_KERNPART to part.safe,
@@ -221,8 +221,8 @@ platform_do_upgrade() {
 		platform_do_upgrade_mikrotik_nand "$1"
 		;;
 	netgear,rbr40|\
-	netgear,rbs40|\
 	netgear,rbr50|\
+	netgear,rbs40|\
 	netgear,rbs50|\
 	netgear,srr60|\
 	netgear,srs60)
