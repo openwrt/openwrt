@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "mt7981b-zbtlink-zbt-z8103ax.dtsi"
+
+/ {
+	model = "Zbtlink ZBT-Z8103AX-PRO";
+	compatible = "zbtlink,zbt-z8103ax-pro", "mediatek,mt7981b";
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_5v: regulator-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-5V";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&int_gbe_phy {
+	status = "disabled";
+};
+
+/* Fix MAC addr conflicts */
+&spi0 {
+	spi_nand@0 {
+		partitions {
+			partition@180000 {
+				nvmem-layout {
+					macaddr_factory_24: macaddr@24 {
+						reg = <0x24 0x6>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&wifi {
+	band@1 {
+		nvmem-cells = <&macaddr_factory_a 0>;
+	};
+};
+
+&switch {
+	ports {
+		port@0 {
+			nvmem-cells = <&macaddr_factory_24 0>;
+		};
+
+		port@1 {
+			nvmem-cells = <&macaddr_factory_24 1>;
+		};
+
+		port@2 {
+			nvmem-cells = <&macaddr_factory_24 2>;
+		};
+	};
+};
+
+/* WAN via external 2.5G PHY (Maxlinear Ethernet GPY211C) */
+&mdio_bus {
+	reset-gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <600>;
+	reset-post-delay-us = <20000>;
+
+	phy5: phy@5 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <5>;
+	};
+};
+
+&gmac1 {
+	phy-mode = "2500base-x";
+	phy-handle = <&phy5>;
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&xhci {
+	/* Only a physical USB2 Port */
+	phys = <&u2port0 PHY_TYPE_USB2>;
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_5v>;
+	mediatek,u3p-dis-msk = <0x01>;
+	status = "okay";
+};
