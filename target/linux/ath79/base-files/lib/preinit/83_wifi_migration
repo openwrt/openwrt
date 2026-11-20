@@ -16,11 +16,11 @@ wifi_migration_pci_path() {
 
 	bridge="${bridge#/sys/devices/}"
 	case "${bridge}" in
-		platform/*)
-			bridge="${bridge#platform/}"
+	platform/*)
+		bridge="${bridge#platform/}"
 		;;
-		*)
-			return 1
+	*)
+		return 1
 		;;
 	esac
 
@@ -45,35 +45,35 @@ wifi_migration_section() {
 	orig="${path}"
 
 	case ${path} in
-		"pci0000:01/0000:01:00.0")
-			case "$(board_name)" in
-				tplink,archer-c5-v1|\
-				tplink,archer-c7-v1|\
-				tplink,archer-c7-v2|\
-				zyxel,emg2926-q10a|\
-				zyxel,nbg6716)
-					path="pci0000:00/0000:00:00.0"
-				;;
-			esac
+	"pci0000:01/0000:01:00.0")
+		case "$(board_name)" in
+		tplink,archer-c5-v1|\
+		tplink,archer-c7-v1|\
+		tplink,archer-c7-v2|\
+		zyxel,emg2926-q10a|\
+		zyxel,nbg6716)
+			path="pci0000:00/0000:00:00.0"
+			;;
+		esac
 		;;
-		"platform/ahb/ahb:apb/18100000.wmac"|\
-		"platform/ar933x_wmac"|\
-		"platform/ar934x_wmac"|\
-		"platform/qca953x_wmac"|\
-		"platform/qca955x_wmac"|\
-		"platform/qca956x_wmac")
-			path="platform/ahb/18100000.wmac"
+	"platform/ahb/ahb:apb/18100000.wmac"|\
+	"platform/ar933x_wmac"|\
+	"platform/ar934x_wmac"|\
+	"platform/qca953x_wmac"|\
+	"platform/qca955x_wmac"|\
+	"platform/qca956x_wmac")
+		path="platform/ahb/18100000.wmac"
 		;;
-		"platform/ath9k")
-			path="platform/ahb/180c0000.wmac"
+	"platform/ath9k")
+		path="platform/ahb/180c0000.wmac"
 		;;
 	esac
 
 	case ${path} in
-		pci*)
-			dev="${path%%/*}"
-			bridge=$(wifi_migration_pci_path "${dev}") && \
-				path="${bridge}${path#"${dev}"}"
+	pci*)
+		dev="${path%%/*}"
+		bridge=$(wifi_migration_pci_path "${dev}") && \
+			path="${bridge}${path#"${dev}"}"
 		;;
 	esac
 
