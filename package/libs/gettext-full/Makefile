@@ -115,6 +115,8 @@ define Host/Bootstrap
 	( \
 		cd $(HOST_BUILD_DIR); \
 		$(AM_TOOL_PATHS) \
+		$(STAGING_DIR_HOST)/bin/libtoolize --copy --force && \
+		$(AM_TOOL_PATHS) \
 		./autogen.sh \
 	)
 endef
@@ -137,6 +139,8 @@ endef
 define Build/Bootstrap
 	( \
 		cd $(PKG_BUILD_DIR); \
+		$(AM_TOOL_PATHS) \
+		$(STAGING_DIR_HOST)/bin/libtoolize --copy --force && \
 		$(AM_TOOL_PATHS) \
 		./autogen.sh \
 	)
