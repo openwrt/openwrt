@@ -1,0 +1,43 @@
+diff --git a/drivers/net/wireless/ath/ath9k/init.c b/drivers/net/wireless/ath/ath9k/init.c
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -22,6 +22,7 @@
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/of_net.h>
++#include <linux/pci.h>
+ #include <linux/nvmem-consumer.h>
+ #include <linux/relay.h>
+ #include <linux/dmi.h>
+@@ -577,6 +578,31 @@ static int ath9k_nvmem_request_eeprom(struct ath_softc *sc)
+ 	size_t len;
+ 	int err;
+ 
++	/* devm_nvmem_cell_get() will get a cell first from the OF
++	 * DT node representing the given device with nvmem-cell-name
++	 * "calibration", and from the global lookup table as a fallback,
++	 * and an ath9k device could be either a pci one or a platform one.
++	 *
++	 * If the OF DT node is not compatible with the real device, the
++	 * calibration data got from the node should not be applied.
++	 *
++	 * dev_is_pci(sc->dev) && ( no OF node || caldata not from node
++	 * || not compatible ) -> do not use caldata .
++	 *
++	 * !dev_is_pci(sc->dev) -> always use caldata .
++	 */
++	if (dev_is_pci(sc->dev) &&
++	    (!sc->dev->of_node ||
++	     !of_property_match_string(sc->dev->of_node,
++				       "nvmem-cell-names",
++				       "calibration") ||
++	     !of_pci_node_match_device(sc->dev->of_node,
++				       to_pci_dev(sc->dev))))
++		/* follow the "just return 0;" convention as
++		 * noted below.
++		 */
++		return 0;
++
+ 	cell = devm_nvmem_cell_get(sc->dev, "calibration");
+ 	if (IS_ERR(cell)) {
+ 		err = PTR_ERR(cell);
