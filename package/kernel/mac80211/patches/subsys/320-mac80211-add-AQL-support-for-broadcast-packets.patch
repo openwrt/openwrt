@@ -127,7 +127,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			atomic_add(tx_airtime,
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -2584,7 +2584,7 @@ static u16 ieee80211_store_ack_skb(struc
+@@ -2587,7 +2587,7 @@ static u16 ieee80211_store_ack_skb(struc
  
  		spin_lock_irqsave(&local->ack_status_lock, flags);
  		id = idr_alloc(&local->ack_status_frames, ack_skb,
@@ -136,7 +136,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		spin_unlock_irqrestore(&local->ack_status_lock, flags);
  
  		if (id >= 0) {
-@@ -4032,20 +4032,20 @@ begin:
+@@ -4035,20 +4035,20 @@ begin:
  encap_out:
  	info->control.vif = vif;
  
@@ -167,7 +167,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	return skb;
-@@ -4097,6 +4097,7 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -4100,6 +4100,7 @@ struct ieee80211_txq *ieee80211_next_txq
  	struct ieee80211_txq *ret = NULL;
  	struct txq_info *txqi = NULL, *head = NULL;
  	bool found_eligible_txq = false;
@@ -175,7 +175,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	spin_lock_bh(&local->active_txq_lock[ac]);
  
-@@ -4120,26 +4121,26 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -4123,26 +4124,26 @@ struct ieee80211_txq *ieee80211_next_txq
  	if (!head)
  		head = txqi;
  
@@ -214,7 +214,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (txqi->schedule_round == local->schedule_round[ac])
  		goto out;
  
-@@ -4206,7 +4207,8 @@ bool ieee80211_txq_airtime_check(struct
+@@ -4209,7 +4210,8 @@ bool ieee80211_txq_airtime_check(struct
  		return true;
  
  	if (!txq->sta)
@@ -224,7 +224,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (unlikely(txq->tid == IEEE80211_NUM_TIDS))
  		return true;
-@@ -4255,15 +4257,15 @@ bool ieee80211_txq_may_transmit(struct i
+@@ -4258,15 +4260,15 @@ bool ieee80211_txq_may_transmit(struct i
  
  	spin_lock_bh(&local->active_txq_lock[ac]);
  
