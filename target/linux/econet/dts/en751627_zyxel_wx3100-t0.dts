@@ -1,0 +1,239 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751627.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Zyxel WX3100-T0";
+	compatible = "zyxel,wx3100-t0", "econet,en751627";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_green: power-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_power_red: power-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led_internet_green: internet-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "internet";
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_internet_red: internet-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "internet";
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan: wlan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		key-reset {
+			label = "reset";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		key-wps {
+			label = "wps";
+			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+};
+
+&ethernet {
+	status = "okay";
+};
+
+&gmac0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port0 {
+	label = "lan0";
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0all {
+			label = "all_of_flash";
+			reg = <0x0 0x8000000>;
+			read-only;
+		};
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr: macaddr@ff48 {
+					compatible = "mac-base";
+					reg = <0xff48 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@40000 {
+			label = "romfile";
+			reg = <0x40000 0x40000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "tclinux";
+			reg = <0x80000 0x2800000>;
+			read-only;
+			econet,enable-remap;
+		};
+
+		/* Nested inside of tclinux */
+		partition@480000 {
+			label = "rootfs";
+			reg = <0x480000 0x2400000>;
+			linux,rootfs;
+			read-only;
+		};
+
+		partition@2880000 {
+			label = "tclinux_alt";
+			reg = <0x2880000 0x2620000>;
+		};
+
+		partition@4ea0000 {
+			label = "wwan";
+			reg = <0x4ea0000 0x100000>;
+		};
+
+		partition@4fa0000 {
+			label = "factory_data";
+			reg = <0x4fa0000 0x400000>;
+		};
+
+		partition@53a0000 {
+			label = "rom-d";
+			reg = <0x53a0000 0x100000>;
+		};
+
+		partition@54a0000 {
+			label = "misc";
+			reg = <0x54a0000 0x2000000>;
+		};
+
+		factory: partition@74a0000 {
+			label = "factory";
+			reg = <0x74a0000 0x80000>;
+		};
+
+		partition@7520000 {
+			label = "reservearea";
+			reg = <0x7520000 0xc0000>;
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&slot0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		/* mt76 nvmem EEPROM loading lacks the big-endian word
+		 * swap the MTD path applies for "big-endian" (the
+		 * stored EEPROM then fails mt7915_check_eeprom), so
+		 * keep mediatek,mtd-eeprom as on the EX3301-T0.
+		 */
+		mediatek,mtd-eeprom = <&factory 0x0>;
+		big-endian;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr 1>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr 2>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+
+	/* Slot 1 is a second link to the same wifi chip */
+};
