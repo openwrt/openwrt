@@ -122,7 +122,7 @@
 		reg = <1>;
 		phy-mode = "gmii";
 		phy-handle = <&int_gbe_phy>;
-		label = "wan";
+		openwrt,netdev-name = "wan";
 
 		nvmem-cell-names = "mac-address";
 		nvmem-cells = <&macaddr_factory_a>;

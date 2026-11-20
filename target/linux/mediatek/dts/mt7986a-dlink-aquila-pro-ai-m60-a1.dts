@@ -77,7 +77,7 @@
 		phy-handle = <&phy6>;
 		nvmem-cells = <&macaddr_odm 0>;
 		nvmem-cell-names = "mac-address";
-		label = "internet";
+		openwrt,netdev-name = "internet";
 	};
 
 	mdio: mdio-bus {

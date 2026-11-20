@@ -99,7 +99,7 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 		phy-handle = <&phy10>;
-		label = "lan";
+		openwrt,netdev-name = "lan";
 
 		nvmem-cell-names = "mac-address";
 		nvmem-cells = <&macaddr_factory_4>;
@@ -110,7 +110,7 @@
 		reg = <1>;
 		phy-mode = "2500base-x";
 		phy-handle = <&phy11>;
-		label = "wan";
+		openwrt,netdev-name = "wan";
 
 		nvmem-cell-names = "mac-address";
 		nvmem-cells = <&macaddr_factory_a>;

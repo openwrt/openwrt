@@ -78,7 +78,7 @@
 		reg = <1>;
 		phy-mode = "gmii";
 		phy-handle = <&int_gbe_phy>;
-		label = "internet";
+		openwrt,netdev-name = "internet";
 
 		nvmem-cells = <&macaddr_odm 0>;
 		nvmem-cell-names = "mac-address";

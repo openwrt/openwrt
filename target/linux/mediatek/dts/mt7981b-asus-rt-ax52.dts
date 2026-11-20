@@ -104,7 +104,7 @@
 		nvmem-cell-names = "mac-address";
 		phy-mode = "gmii";
 		phy-handle = <&phy0>;
-		label = "wan";
+		openwrt,netdev-name = "wan";
 	};
 
 	mdio: mdio-bus {

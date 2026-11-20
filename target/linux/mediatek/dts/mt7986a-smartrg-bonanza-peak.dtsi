@@ -196,7 +196,7 @@
 	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
-		label = "wan";
+		openwrt,netdev-name = "wan";
 		nvmem-cells = <&macaddr 0>;
 		nvmem-cell-names = "mac-address";
 		phy-mode = "2500base-x";
