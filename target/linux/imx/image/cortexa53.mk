@@ -37,7 +37,7 @@ define Device/Default
   FILESYSTEMS := squashfs ubifs ext4
   DEVICE_DTS_DIR := $(DTS_DIR)/freescale
   KERNEL_INSTALL := 1
-  KERNEL_NAME := Image
+  KERNEL_NAME := Image.gz
   KERNEL := kernel-bin
 endef
 
