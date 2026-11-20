@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Feiyang Yu <2541290956@qq.com>
+Date: Mon, 2 Nov 2026 22:53:41 +0800
+Subject: [PATCH] spi: spi-qpic-snand: use the ECC strength from the boot loader
+
+H3C Magic routers come with SPI-NAND written with 4- or 8-bit ECC,
+depending on the unit (even with the same flash chip). Their QSDK boot
+loader passes the strength it used as "nandeccbits=" on the kernel
+command line. Use it when the device tree does not set the strength, so
+one device tree works for all units.
+
+Signed-off-by: Feiyang Yu <2541290956@qq.com>
+---
+--- a/drivers/spi/spi-qpic-snand.c
++++ b/drivers/spi/spi-qpic-snand.c
+@@ -245,6 +245,19 @@ static const struct mtd_ooblayout_ops qc
+ 	.free = qcom_spi_ooblayout_free,
+ };
+ 
++/*
++ * The QSDK boot loader of some routers (e.g. H3C Magic) uses a different
++ * ECC strength depending on the unit and tells the kernel about it with
++ * "nandeccbits=". Use it when the device tree does not set the strength.
++ */
++static unsigned int qcom_spi_boot_ecc_strength;
++
++static int __init qcom_spi_boot_ecc_setup(char *str)
++{
++	return !kstrtouint(str, 0, &qcom_spi_boot_ecc_strength);
++}
++__setup("nandeccbits=", qcom_spi_boot_ecc_setup);
++
+ static int qcom_spi_ecc_init_ctx_pipelined(struct nand_device *nand)
+ {
+ 	struct qcom_nand_controller *snandc = nand_to_qcom_snand(nand);
+@@ -265,6 +278,10 @@ static int qcom_spi_ecc_init_ctx_pipelin
+ 	if (user->step_size && user->strength) {
+ 		ecc_cfg->step_size = user->step_size;
+ 		ecc_cfg->strength = user->strength;
++	} else if (qcom_spi_boot_ecc_strength == 4 ||
++		   qcom_spi_boot_ecc_strength == 8) {
++		ecc_cfg->step_size = NANDC_STEP_SIZE;
++		ecc_cfg->strength = qcom_spi_boot_ecc_strength;
+ 	} else if (reqs->step_size && reqs->strength) {
+ 		ecc_cfg->step_size = reqs->step_size;
+ 		ecc_cfg->strength = reqs->strength;
