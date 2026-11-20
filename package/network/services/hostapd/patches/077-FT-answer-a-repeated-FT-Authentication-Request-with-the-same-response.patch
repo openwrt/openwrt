@@ -1,0 +1,167 @@
+From ab6a4498fe94e0eb072f12c731a51149b3e9181a Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Sun, 1 Nov 2026 11:32:49 -0600
+Subject: [PATCH] FT: Answer a repeated FT Authentication Request with the same
+ response
+
+A STA that gets no FT Authentication Response in time sends its request
+again, as a new frame: mac80211 retransmits it 100 ms after the AP
+acknowledged it without answering. hostapd takes the repeat for a new
+exchange: it draws a new ANonce, derives a new PTK and installs it. If
+the STA goes on with the response to its first request, its
+Reassociation Request carries the first ANonce while hostapd has the
+second, and hostapd refuses it with status 55 (Invalid FTE, ANonce
+mismatch). The STA gets on only after a new exchange.
+
+An AP that is slow to answer makes this common. One such case is a STA
+that roams back to an AP that still has it as associated without PMF:
+the response waits until hostapd has removed the STA from the driver
+and added it again. On OpenWrt APs about 5% of FT roams back to the AP
+a STA had just left were refused with status 55, after an Authentication
+frame retransmission, on FT-SAE and FT-EAP.
+
+Reproduced with two FT-PSK BSSes on one ath10k radio and a mac80211
+STA, with hostapd stopped for 400 ms as the STA started the roam: every
+roam where the STA retransmitted its request was refused with status 55
+(5 of 5). With this change, 10 of 10 such roams completed, with one PTK
+installation each.
+
+Keep the last FT Authentication Request and its successful response per
+STA, and answer an identical request with the same response, without
+deriving or installing anything. Forget them on any WPA state machine
+event except the FT reassociation that completes the exchange, so that
+a late copy of a completed request does not install a new PTK either.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+---
+ src/ap/wpa_auth.c    |  9 ++++++++
+ src/ap/wpa_auth_ft.c | 49 +++++++++++++++++++++++++++++++++++++++++++-
+ src/ap/wpa_auth_i.h  |  3 +++
+ 3 files changed, 60 insertions(+), 1 deletion(-)
+
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -1202,6 +1202,7 @@ static void wpa_free_sta_sm(struct wpa_s
+ #ifdef CONFIG_IEEE80211R_AP
+ 	os_free(sm->assoc_resp_ftie);
+ 	wpabuf_free(sm->ft_pending_req_ies);
++	wpa_ft_auth_forget(sm);
+ #endif /* CONFIG_IEEE80211R_AP */
+ 	os_free(sm->last_rx_eapol_key);
+ 	os_free(sm->wpa_ie);
+@@ -2481,6 +2482,14 @@ int wpa_auth_sm_event(struct wpa_state_m
+ 	wpa_auth_vlogger(sm->wpa_auth, wpa_auth_get_spa(sm), LOGGER_DEBUG,
+ 			 "event %d notification", event);
+ 
++#ifdef CONFIG_IEEE80211R_AP
++	/* After anything but the reassociation that completes it, a later FT
++	 * Authentication Request starts a new exchange. A late copy of the
++	 * completed one still gets its response and changes nothing. */
++	if (event != WPA_ASSOC_FT)
++		wpa_ft_auth_forget(sm);
++#endif /* CONFIG_IEEE80211R_AP */
++
+ 	switch (event) {
+ 	case WPA_AUTH:
+ #ifdef CONFIG_MESH
+--- a/src/ap/wpa_auth_ft.c
++++ b/src/ap/wpa_auth_ft.c
+@@ -3424,6 +3424,29 @@ out:
+ }
+ 
+ 
++void wpa_ft_auth_forget(struct wpa_state_machine *sm)
++{
++	wpabuf_free(sm->ft_auth_req);
++	sm->ft_auth_req = NULL;
++	wpabuf_free(sm->ft_auth_resp);
++	sm->ft_auth_resp = NULL;
++}
++
++
++static void wpa_ft_auth_remember(struct wpa_state_machine *sm,
++				 const u8 *req, size_t req_len, u16 status,
++				 const u8 *resp, size_t resp_len)
++{
++	wpa_ft_auth_forget(sm);
++	if (status != WLAN_STATUS_SUCCESS)
++		return;
++	sm->ft_auth_req = wpabuf_alloc_copy(req, req_len);
++	sm->ft_auth_resp = wpabuf_alloc_copy(resp, resp_len);
++	if (!sm->ft_auth_req || !sm->ft_auth_resp)
++		wpa_ft_auth_forget(sm);
++}
++
++
+ void wpa_ft_process_auth(struct wpa_state_machine *sm,
+ 			 u16 auth_transaction, const u8 *ies, size_t ies_len,
+ 			 void (*cb)(void *ctx, const u8 *dst,
+@@ -3450,6 +3473,26 @@ void wpa_ft_process_auth(struct wpa_stat
+ 	sm->ft_pending_cb_ctx = ctx;
+ 	sm->ft_pending_auth_transaction = auth_transaction;
+ 	sm->ft_pending_pull_left_retries = sm->wpa_auth->conf.rkh_pull_retries;
++
++	/*
++	 * A STA that got no response in time sends the same request again,
++	 * as a new frame. It may then go on with the response to either, so
++	 * answer a repeat with the same response: a new ANonce and PTK would
++	 * make the Reassociation Request that follows the first response fail
++	 * with an ANonce mismatch, and would replace the PTK in the driver.
++	 */
++	if (sm->ft_auth_req && wpabuf_len(sm->ft_auth_req) == ies_len &&
++	    os_memcmp(wpabuf_head(sm->ft_auth_req), ies, ies_len) == 0) {
++		wpa_printf(MSG_DEBUG,
++			   "FT: Repeated authentication request from " MACSTR
++			   " - send the same response again",
++			   MAC2STR(sm->addr));
++		cb(ctx, sm->addr, auth_transaction + 1, WLAN_STATUS_SUCCESS,
++		   wpabuf_head(sm->ft_auth_resp),
++		   wpabuf_len(sm->ft_auth_resp));
++		return;
++	}
++
+ 	res = wpa_ft_process_auth_req(sm, ies, ies_len, &resp_ies,
+ 				      &resp_ies_len);
+ 	if (res < 0) {
+@@ -3457,6 +3500,7 @@ void wpa_ft_process_auth(struct wpa_stat
+ 		return;
+ 	}
+ 	status = res;
++	wpa_ft_auth_remember(sm, ies, ies_len, status, resp_ies, resp_ies_len);
+ 
+ 	wpa_printf(MSG_DEBUG, "FT: FT authentication response: dst=" MACSTR
+ 		   " auth_transaction=%d status=%u (%s)",
+@@ -4315,9 +4359,12 @@ static void ft_finish_pull(struct wpa_st
+ 			   "FT: Callback postponed until response is available");
+ 		return;
+ 	}
++	status = res;
++	wpa_ft_auth_remember(sm, wpabuf_head(sm->ft_pending_req_ies),
++			     wpabuf_len(sm->ft_pending_req_ies), status,
++			     resp_ies, resp_ies_len);
+ 	wpabuf_free(sm->ft_pending_req_ies);
+ 	sm->ft_pending_req_ies = NULL;
+-	status = res;
+ 	wpa_printf(MSG_DEBUG, "FT: Postponed auth callback result for " MACSTR
+ 		   " - status %u", MAC2STR(sm->addr), status);
+ 
+--- a/src/ap/wpa_auth_i.h
++++ b/src/ap/wpa_auth_i.h
+@@ -148,6 +148,8 @@ struct wpa_state_machine {
+ 			      const u8 *ies, size_t ies_len);
+ 	void *ft_pending_cb_ctx;
+ 	struct wpabuf *ft_pending_req_ies;
++	struct wpabuf *ft_auth_req; /* last FT Authentication Request */
++	struct wpabuf *ft_auth_resp; /* and its successful response */
+ 	u8 ft_pending_pull_nonce[FT_RRB_NONCE_LEN];
+ 	u8 ft_pending_auth_transaction;
+ 	u8 ft_pending_current_ap[ETH_ALEN];
+@@ -353,6 +355,7 @@ void wpa_auth_ft_store_keys(struct wpa_s
+ struct wpa_ft_pmk_cache * wpa_ft_pmk_cache_init(void);
+ void wpa_ft_pmk_cache_deinit(struct wpa_ft_pmk_cache *cache);
+ void wpa_ft_install_ptk(struct wpa_state_machine *sm, int retry);
++void wpa_ft_auth_forget(struct wpa_state_machine *sm);
+ int wpa_ft_store_pmk_fils(struct wpa_state_machine *sm, const u8 *pmk_r0,
+ 			  const u8 *pmk_r0_name);
+ #endif /* CONFIG_IEEE80211R_AP */
