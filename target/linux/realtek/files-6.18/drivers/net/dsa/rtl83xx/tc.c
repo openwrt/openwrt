@@ -1198,8 +1198,9 @@ static void otto_tc_ets_apply(struct otto_dsa_priv *priv, int port)
 	for (int queue = 0; queue < MAX_PRIOS; queue++) {
 		if (!offload)
 			otto_tc_tbf_apply(priv, port, queue, false);
-		else if (pp->ets_weights[queue])
-			priv->r->queue_sched_set(priv, port, queue, pp->ets_weights[queue], false);
+		else if (pp->queues[queue].ets_weight)
+			priv->r->queue_sched_set(priv, port, queue,
+						 pp->queues[queue].ets_weight, false);
 		else
 			priv->r->queue_sched_set(priv, port, queue, 1, true);
 
@@ -1238,7 +1239,8 @@ static void otto_tc_ets_save(struct rtldsa_port *pp)
 	prev->children = pp->ets_children;
 	prev->offloadable = pp->ets_offloadable;
 	prev->offloaded = pp->ets_offloaded;
-	memcpy(prev->weights, pp->ets_weights, sizeof(prev->weights));
+	for (int queue = 0; queue < MAX_PRIOS; queue++)
+		prev->weights[queue] = pp->queues[queue].ets_weight;
 	prev->stats = pp->ets_stats;
 	memcpy(prev->queue_tbf, pp->queue_tbf, sizeof(prev->queue_tbf));
 	memcpy(prev->queue_red, pp->queue_red, sizeof(prev->queue_red));
@@ -1252,7 +1254,8 @@ static void otto_tc_ets_restore(struct rtldsa_port *pp)
 	pp->ets_children = prev->children;
 	pp->ets_offloadable = prev->offloadable;
 	pp->ets_offloaded = prev->offloaded;
-	memcpy(pp->ets_weights, prev->weights, sizeof(pp->ets_weights));
+	for (int queue = 0; queue < MAX_PRIOS; queue++)
+		pp->queues[queue].ets_weight = prev->weights[queue];
 	pp->ets_stats = prev->stats;
 	memcpy(pp->queue_tbf, prev->queue_tbf, sizeof(pp->queue_tbf));
 	memcpy(pp->queue_red, prev->queue_red, sizeof(pp->queue_red));
@@ -1289,7 +1292,7 @@ static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
 
 			pp->ets_offloadable = p->priomap[queue] == band &&
 					      (!p->quanta[band] || p->weights[band]);
-			pp->ets_weights[queue] = p->quanta[band] ? p->weights[band] : 0;
+			pp->queues[queue].ets_weight = p->quanta[band] ? p->weights[band] : 0;
 		}
 		break;
 	case TC_ETS_DESTROY:
