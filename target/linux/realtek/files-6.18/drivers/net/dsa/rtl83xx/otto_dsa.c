@@ -75,9 +75,9 @@ int rtl83xx_port_is_under(const struct net_device *dev, struct otto_dsa_priv *pr
 
 /* DSA callbacks */
 
-static enum dsa_tag_protocol rtldsa_get_tag_protocol(struct dsa_switch *ds,
-						     int port,
-						     enum dsa_tag_protocol mprot)
+static enum dsa_tag_protocol otto_dsa_get_tag_protocol(struct dsa_switch *ds,
+						       int port,
+						       enum dsa_tag_protocol mprot)
 {
 	/* The switch does not tag the frames, instead internally the header
 	 * structure for each packet is tagged accordingly.
@@ -85,7 +85,7 @@ static enum dsa_tag_protocol rtldsa_get_tag_protocol(struct dsa_switch *ds,
 	return DSA_TAG_PROTO_RTL_OTTO;
 }
 
-static void rtldsa_83xx_mc_pmasks_setup(struct otto_dsa_priv *priv)
+static void otto_dsa_83xx_mc_pmasks_setup(struct otto_dsa_priv *priv)
 {
 	/* RTL8380 and RTL8390 use an index into the portmask table to set the
 	 * unknown multicast portmask, setup a default at a safe location
@@ -95,26 +95,26 @@ static void rtldsa_83xx_mc_pmasks_setup(struct otto_dsa_priv *priv)
 	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, ~0);
 }
 
-static void rtldsa_setup_bpdu_traps(struct otto_dsa_priv *priv)
+static void otto_dsa_setup_bpdu_traps(struct otto_dsa_priv *priv)
 {
 	for (int i = 0; i < priv->r->cpu_port; i++)
 		priv->r->set_receive_management_action(priv, i, BPDU, TRAP2CPU);
 }
 
-static void rtldsa_setup_lldp_traps(struct otto_dsa_priv *priv)
+static void otto_dsa_setup_lldp_traps(struct otto_dsa_priv *priv)
 {
 	for (int i = 0; i < priv->r->cpu_port; i++)
 		priv->r->set_receive_management_action(priv, i, LLDP, TRAP2CPU);
 }
 
-static void rtldsa_setup_eapol_traps(struct otto_dsa_priv *priv)
+static void otto_dsa_93xx_setup_eapol_traps(struct otto_dsa_priv *priv)
 {
 	for (int i = 0; i < priv->r->cpu_port; i++)
 		priv->r->set_receive_management_action(priv, i, EAPOL, TRAP2CPU);
 }
 
-static void rtldsa_port_set_salrn(struct otto_dsa_priv *priv,
-				  int port, bool enable)
+static void otto_dsa_port_set_salrn(struct otto_dsa_priv *priv,
+				    int port, bool enable)
 {
 	int shift = SALRN_PORT_SHIFT(port);
 	int val = enable ? SALRN_MODE_HARDWARE : SALRN_MODE_DISABLED;
@@ -123,7 +123,7 @@ static void rtldsa_port_set_salrn(struct otto_dsa_priv *priv,
 			  SALRN_MODE_MASK << shift, val << shift);
 }
 
-static int rtldsa_83xx_setup(struct dsa_switch *ds)
+static int otto_dsa_83xx_setup(struct dsa_switch *ds)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	int err;
@@ -157,17 +157,17 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	otto_stats_init(priv);
 	otto_stats_init_counters(priv);
 
-	rtldsa_83xx_mc_pmasks_setup(priv);
+	otto_dsa_83xx_mc_pmasks_setup(priv);
 	otto_vlan_setup(priv);
 
-	rtldsa_setup_bpdu_traps(priv);
-	rtldsa_setup_lldp_traps(priv);
+	otto_dsa_setup_bpdu_traps(priv);
+	otto_dsa_setup_lldp_traps(priv);
 
 	ds->configure_vlan_while_not_filtering = true;
 
 	priv->r->l2_learning_setup(priv);
 
-	rtldsa_port_set_salrn(priv, priv->r->cpu_port, false);
+	otto_dsa_port_set_salrn(priv, priv->r->cpu_port, false);
 	ds->assisted_learning_on_cpu_port = true;
 
 	/* Make sure all frames sent to the switch's MAC are trapped to the CPU-port
@@ -186,7 +186,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	return 0;
 }
 
-static int rtldsa_93xx_setup(struct dsa_switch *ds)
+static int otto_dsa_93xx_setup(struct dsa_switch *ds)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	int err;
@@ -215,15 +215,15 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 
 	otto_vlan_setup(priv);
 
-	rtldsa_setup_bpdu_traps(priv);
-	rtldsa_setup_lldp_traps(priv);
-	rtldsa_setup_eapol_traps(priv);
+	otto_dsa_setup_bpdu_traps(priv);
+	otto_dsa_setup_lldp_traps(priv);
+	otto_dsa_93xx_setup_eapol_traps(priv);
 
 	ds->configure_vlan_while_not_filtering = true;
 
 	priv->r->l2_learning_setup(priv);
 
-	rtldsa_port_set_salrn(priv, priv->r->cpu_port, false);
+	otto_dsa_port_set_salrn(priv, priv->r->cpu_port, false);
 	ds->assisted_learning_on_cpu_port = true;
 
 	priv->r->pie_init(priv);
@@ -241,7 +241,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	return 0;
 }
 
-static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device *phydev)
+static int otto_dsa_port_enable(struct dsa_switch *ds, int port, struct phy_device *phydev)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 
@@ -265,7 +265,7 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 	return 0;
 }
 
-static void rtldsa_port_disable(struct dsa_switch *ds, int port)
+static void otto_dsa_port_disable(struct dsa_switch *ds, int port)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 
@@ -284,16 +284,16 @@ static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 	priv->ports[port].enable = false;
 }
 
-static int rtldsa_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
+static int otto_dsa_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 
 	return priv->r->set_ageing_time(priv, msec);
 }
 
-static void rtldsa_update_port_member(struct otto_dsa_priv *priv, int port,
-				      const struct net_device *bridge_dev, bool join)
-				      __must_hold(&priv->reg_mutex)
+static void otto_dsa_update_port_member(struct otto_dsa_priv *priv, int port,
+					const struct net_device *bridge_dev, bool join)
+					__must_hold(&priv->reg_mutex)
 {
 	struct dsa_port *dp = dsa_to_port(priv->ds, port);
 	struct rtldsa_port *p = &priv->ports[port];
@@ -333,8 +333,8 @@ static void rtldsa_update_port_member(struct otto_dsa_priv *priv, int port,
 		priv->r->traffic_set(priv, port, port_mask);
 }
 
-static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_bridge bridge,
-				   bool *tx_fwd_offload, struct netlink_ext_ack *extack)
+static int otto_dsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_bridge bridge,
+				     bool *tx_fwd_offload, struct netlink_ext_ack *extack)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u16 proto = ETH_P_8021Q;
@@ -361,7 +361,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 	priv->ports[port].bridged = true;
 	otto_vlan_port_untagged_set(priv, port);
 
-	rtldsa_update_port_member(priv, port, bridge.dev, true);
+	otto_dsa_update_port_member(priv, port, bridge.dev, true);
 
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(priv, port, false);
@@ -374,7 +374,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 	return 0;
 }
 
-static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge)
+static void otto_dsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 
@@ -382,7 +382,7 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 
 	mutex_lock(&priv->reg_mutex);
 
-	rtldsa_update_port_member(priv, port, bridge.dev, false);
+	otto_dsa_update_port_member(priv, port, bridge.dev, false);
 
 	if (priv->ports[port].qinq) {
 		priv->r->vlan_port_qinq_set(priv, port, false);
@@ -401,8 +401,8 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static int rtldsa_port_vlan_protocol(struct dsa_switch *ds, int port, u16 proto,
-				     struct netlink_ext_ack *extack)
+static int otto_dsa_port_vlan_protocol(struct dsa_switch *ds, int port, u16 proto,
+				       struct netlink_ext_ack *extack)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 
@@ -425,7 +425,7 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static int rtldsa_mc_group_alloc(struct otto_dsa_priv *priv, int port)
+static int otto_dsa_83xx_mc_group_alloc(struct otto_dsa_priv *priv, int port)
 {
 	int mc_group = find_first_zero_bit(priv->mc_group_bm, MAX_MC_GROUPS - 1);
 	u64 portmask;
@@ -440,7 +440,7 @@ static int rtldsa_mc_group_alloc(struct otto_dsa_priv *priv, int port)
 	return mc_group;
 }
 
-static u64 rtldsa_mc_group_add_port(struct otto_dsa_priv *priv, int mc_group, int port)
+static u64 otto_dsa_83xx_mc_group_add_port(struct otto_dsa_priv *priv, int mc_group, int port)
 {
 	u64 portmask = priv->r->read_mcast_pmask(mc_group);
 
@@ -452,7 +452,7 @@ static u64 rtldsa_mc_group_add_port(struct otto_dsa_priv *priv, int mc_group, in
 	return portmask;
 }
 
-static u64 rtldsa_mc_group_del_port(struct otto_dsa_priv *priv, int mc_group, int port)
+static u64 otto_dsa_mc_group_del_port(struct otto_dsa_priv *priv, int mc_group, int port)
 {
 	u64 portmask = priv->r->read_mcast_pmask(mc_group);
 
@@ -466,7 +466,7 @@ static u64 rtldsa_mc_group_del_port(struct otto_dsa_priv *priv, int mc_group, in
 	return portmask;
 }
 
-static void rtldsa_setup_l2_mc_entry(struct otto_l2_entry *e, int vid, u64 mac, int mc_group)
+static void otto_dsa_83xx_setup_l2_mc_entry(struct otto_l2_entry *e, int vid, u64 mac, int mc_group)
 {
 	memset(e, 0, sizeof(*e));
 
@@ -480,7 +480,7 @@ static void rtldsa_setup_l2_mc_entry(struct otto_l2_entry *e, int vid, u64 mac, 
 	u64_to_ether_addr(mac, e->mac);
 }
 
-static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)
+static bool otto_dsa_mac_is_unsnoop(const unsigned char *addr)
 {
 	/*
 	 * RFC4541, section 2.1.2.2 + section 3:
@@ -498,9 +498,9 @@ static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)
 	return false;
 }
 
-static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
-				    const struct switchdev_obj_port_mdb *mdb,
-				    const struct dsa_db db)
+static int otto_dsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
+				      const struct switchdev_obj_port_mdb *mdb,
+				      const struct dsa_db db)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
@@ -517,7 +517,7 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 		return -EINVAL;
 	}
 
-	if (rtldsa_mac_is_unsnoop(mdb->addr)) {
+	if (otto_dsa_mac_is_unsnoop(mdb->addr)) {
 		dev_dbg(priv->dev,
 			"%s: %pM might belong to an unsnoopable IP. ignore\n",
 			__func__, mdb->addr);
@@ -533,15 +533,15 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 		if (e.valid) {
 			pr_debug("Found an existing entry %016llx, mc_group %d\n",
 				 ether_addr_to_u64(e.mac), e.mc_portmask_index);
-			rtldsa_mc_group_add_port(priv, e.mc_portmask_index, port);
+			otto_dsa_83xx_mc_group_add_port(priv, e.mc_portmask_index, port);
 		} else {
 			pr_debug("New entry for seed %016llx\n", seed);
-			mc_group = rtldsa_mc_group_alloc(priv, port);
+			mc_group = otto_dsa_83xx_mc_group_alloc(priv, port);
 			if (mc_group < 0) {
 				err = -ENOTSUPP;
 				goto out;
 			}
-			rtldsa_setup_l2_mc_entry(&e, vid, mac, mc_group);
+			otto_dsa_83xx_setup_l2_mc_entry(&e, vid, mac, mc_group);
 			priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
 		}
 		goto out;
@@ -554,15 +554,15 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 		if (e.valid) {
 			pr_debug("Found existing CAM entry %016llx, mc_group %d\n",
 				 ether_addr_to_u64(e.mac), e.mc_portmask_index);
-			rtldsa_mc_group_add_port(priv, e.mc_portmask_index, port);
+			otto_dsa_83xx_mc_group_add_port(priv, e.mc_portmask_index, port);
 		} else {
 			pr_debug("New entry\n");
-			mc_group = rtldsa_mc_group_alloc(priv, port);
+			mc_group = otto_dsa_83xx_mc_group_alloc(priv, port);
 			if (mc_group < 0) {
 				err = -ENOTSUPP;
 				goto out;
 			}
-			rtldsa_setup_l2_mc_entry(&e, vid, mac, mc_group);
+			otto_dsa_83xx_setup_l2_mc_entry(&e, vid, mac, mc_group);
 			priv->r->write_cam(idx, &e);
 		}
 		goto out;
@@ -578,16 +578,16 @@ out:
 	return err;
 }
 
-static int rtldsa_93xx_port_mdb_add(struct dsa_switch *ds, int port,
-				    const struct switchdev_obj_port_mdb *mdb,
-				    const struct dsa_db db)
+static int otto_dsa_93xx_port_mdb_add(struct dsa_switch *ds, int port,
+				      const struct switchdev_obj_port_mdb *mdb,
+				      const struct dsa_db db)
 {
 	return -EOPNOTSUPP;
 }
 
-static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
-			       const struct switchdev_obj_port_mdb *mdb,
-			       const struct dsa_db db)
+static int otto_dsa_port_mdb_del(struct dsa_switch *ds, int port,
+				 const struct switchdev_obj_port_mdb *mdb,
+				 const struct dsa_db db)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
@@ -604,7 +604,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 		return 0;
 	}
 
-	if (rtldsa_mac_is_unsnoop(mdb->addr)) {
+	if (otto_dsa_mac_is_unsnoop(mdb->addr)) {
 		dev_dbg(priv->dev,
 			"%s: %pM might belong to an unsnoopable IP. ignore\n",
 			__func__, mdb->addr);
@@ -617,7 +617,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 
 	if (idx >= 0) {
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
-		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
+		portmask = otto_dsa_mc_group_del_port(priv, e.mc_portmask_index, port);
 		if (!portmask) {
 			e.valid = false;
 			priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
@@ -629,7 +629,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 	idx = otto_l2_find_cam_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
-		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
+		portmask = otto_dsa_mc_group_del_port(priv, e.mc_portmask_index, port);
 		if (!portmask) {
 			e.valid = false;
 			priv->r->write_cam(idx, &e);
@@ -644,9 +644,9 @@ out:
 	return err;
 }
 
-static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
-					struct switchdev_brport_flags flags,
-					struct netlink_ext_ack *extack)
+static int otto_dsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
+					  struct switchdev_brport_flags flags,
+					  struct netlink_ext_ack *extack)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	unsigned long features = BR_ISOLATED | BR_PORT_LOCKED;
@@ -669,7 +669,7 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 }
 
 /* dsa_port_fast_age() is DSA internal, repeat its bridge notification here. */
-static void rtldsa_port_fast_age_notify(struct dsa_port *dp)
+static void otto_dsa_port_fast_age_notify(struct dsa_port *dp)
 {
 	struct net_device *brport_dev = dsa_port_to_bridge_port(dp);
 	struct switchdev_notifier_fdb_info info = {
@@ -685,9 +685,9 @@ static void rtldsa_port_fast_age_notify(struct dsa_port *dp)
 				 &info.info, NULL);
 }
 
-static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
-				    struct switchdev_brport_flags flags,
-				    struct netlink_ext_ack *extack)
+static int otto_dsa_port_bridge_flags(struct dsa_switch *ds, int port,
+				      struct switchdev_brport_flags flags,
+				      struct netlink_ext_ack *extack)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 	struct dsa_port *dp = dsa_to_port(ds, port);
@@ -704,12 +704,12 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 		/* A locked port must not learn addresses on its own, and the
 		 * entries it learned before are no longer authorized.
 		 */
-		rtldsa_port_set_salrn(priv, port, false);
+		otto_dsa_port_set_salrn(priv, port, false);
 
 		if (flags.mask & BR_PORT_LOCKED)
-			rtldsa_port_fast_age_notify(dp);
+			otto_dsa_port_fast_age_notify(dp);
 	} else {
-		rtldsa_port_set_salrn(priv, port, !!(cached_flags & BR_LEARNING));
+		otto_dsa_port_set_salrn(priv, port, !!(cached_flags & BR_LEARNING));
 	}
 
 	if (priv->r->enable_flood)
@@ -735,7 +735,7 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 		priv->ports[port].isolated = !!(cached_flags & BR_ISOLATED);
 
 		mutex_lock(&priv->reg_mutex);
-		rtldsa_update_port_member(priv, port, bridge_dev, true);
+		otto_dsa_update_port_member(priv, port, bridge_dev, true);
 		mutex_unlock(&priv->reg_mutex);
 	}
 
@@ -743,8 +743,8 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 }
 
 const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
-	.get_tag_protocol	= rtldsa_get_tag_protocol,
-	.setup			= rtldsa_83xx_setup,
+	.get_tag_protocol	= otto_dsa_get_tag_protocol,
+	.setup			= otto_dsa_83xx_setup,
 
 	.phylink_get_caps	= otto_mac_phylink_get_caps,
 
@@ -758,8 +758,8 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.get_stats64		= otto_stats_get64,
 	.get_pause_stats	= otto_stats_get_pause,
 
-	.port_enable		= rtldsa_port_enable,
-	.port_disable		= rtldsa_port_disable,
+	.port_enable		= otto_dsa_port_enable,
+	.port_disable		= otto_dsa_port_disable,
 
 	.port_change_mtu	= otto_mac_port_change_mtu,
 	.port_max_mtu		= otto_mac_port_max_mtu,
@@ -767,15 +767,15 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.support_eee		= otto_mac_support_eee,
 	.set_mac_eee		= otto_mac_set_eee,
 
-	.set_ageing_time	= rtldsa_set_ageing_time,
-	.port_bridge_join	= rtldsa_port_bridge_join,
-	.port_bridge_leave	= rtldsa_port_bridge_leave,
+	.set_ageing_time	= otto_dsa_set_ageing_time,
+	.port_bridge_join	= otto_dsa_port_bridge_join,
+	.port_bridge_leave	= otto_dsa_port_bridge_leave,
 	.port_stp_state_set	= otto_stp_port_state_set,
 	.port_fast_age		= rtldsa_port_fast_age,
 	.port_mst_state_set	= otto_stp_port_mst_state_set,
 
 	.port_vlan_filtering	= otto_vlan_port_filtering,
-	.port_vlan_protocol	= rtldsa_port_vlan_protocol,
+	.port_vlan_protocol	= otto_dsa_port_vlan_protocol,
 	.port_vlan_add		= otto_vlan_port_add,
 	.port_vlan_del		= otto_vlan_port_del,
 	.port_vlan_fast_age	= otto_vlan_port_fast_age,
@@ -785,8 +785,8 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_fdb_del		= otto_fdb_port_del,
 	.port_fdb_dump		= otto_fdb_port_dump,
 
-	.port_mdb_add		= rtldsa_83xx_port_mdb_add,
-	.port_mdb_del		= rtldsa_port_mdb_del,
+	.port_mdb_add		= otto_dsa_83xx_port_mdb_add,
+	.port_mdb_del		= otto_dsa_port_mdb_del,
 
 	.port_mirror_add	= otto_mirror_port_add,
 	.port_mirror_del	= otto_mirror_port_del,
@@ -795,8 +795,8 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_lag_join		= otto_lag_port_join,
 	.port_lag_leave		= otto_lag_port_leave,
 
-	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
-	.port_bridge_flags	= rtldsa_port_bridge_flags,
+	.port_pre_bridge_flags	= otto_dsa_port_pre_bridge_flags,
+	.port_bridge_flags	= otto_dsa_port_bridge_flags,
 
 	.cls_flower_add		= otto_tc_cls_flower_add,
 	.cls_flower_del		= otto_tc_cls_flower_del,
@@ -804,8 +804,8 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 };
 
 const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
-	.get_tag_protocol	= rtldsa_get_tag_protocol,
-	.setup			= rtldsa_93xx_setup,
+	.get_tag_protocol	= otto_dsa_get_tag_protocol,
+	.setup			= otto_dsa_93xx_setup,
 
 	.phylink_get_caps	= otto_mac_phylink_get_caps,
 
@@ -819,8 +819,8 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.get_stats64		= otto_stats_get64,
 	.get_pause_stats	= otto_stats_get_pause,
 
-	.port_enable		= rtldsa_port_enable,
-	.port_disable		= rtldsa_port_disable,
+	.port_enable		= otto_dsa_port_enable,
+	.port_disable		= otto_dsa_port_disable,
 
 	.port_change_mtu	= otto_mac_port_change_mtu,
 	.port_max_mtu		= otto_mac_port_max_mtu,
@@ -828,15 +828,15 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.support_eee		= otto_mac_support_eee,
 	.set_mac_eee		= otto_mac_set_eee,
 
-	.set_ageing_time	= rtldsa_set_ageing_time,
-	.port_bridge_join	= rtldsa_port_bridge_join,
-	.port_bridge_leave	= rtldsa_port_bridge_leave,
+	.set_ageing_time	= otto_dsa_set_ageing_time,
+	.port_bridge_join	= otto_dsa_port_bridge_join,
+	.port_bridge_leave	= otto_dsa_port_bridge_leave,
 	.port_stp_state_set	= otto_stp_port_state_set,
 	.port_fast_age		= rtldsa_port_fast_age,
 	.port_mst_state_set	= otto_stp_port_mst_state_set,
 
 	.port_vlan_filtering	= otto_vlan_port_filtering,
-	.port_vlan_protocol	= rtldsa_port_vlan_protocol,
+	.port_vlan_protocol	= otto_dsa_port_vlan_protocol,
 	.port_vlan_add		= otto_vlan_port_add,
 	.port_vlan_del		= otto_vlan_port_del,
 	.port_vlan_fast_age	= otto_vlan_port_fast_age,
@@ -846,8 +846,8 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_fdb_del		= otto_fdb_port_del,
 	.port_fdb_dump		= otto_fdb_port_dump,
 
-	.port_mdb_add		= rtldsa_93xx_port_mdb_add,
-	.port_mdb_del		= rtldsa_port_mdb_del,
+	.port_mdb_add		= otto_dsa_93xx_port_mdb_add,
+	.port_mdb_del		= otto_dsa_port_mdb_del,
 
 	.port_mirror_add	= otto_mirror_port_add,
 	.port_mirror_del	= otto_mirror_port_del,
@@ -856,8 +856,8 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_lag_join		= otto_lag_port_join,
 	.port_lag_leave		= otto_lag_port_leave,
 
-	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
-	.port_bridge_flags	= rtldsa_port_bridge_flags,
+	.port_pre_bridge_flags	= otto_dsa_port_pre_bridge_flags,
+	.port_bridge_flags	= otto_dsa_port_bridge_flags,
 
 	.port_setup_tc		= otto_tc_port_setup_tc,
 	.cls_flower_add		= otto_tc_cls_flower_add,
@@ -886,8 +886,8 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
  * after the PHY. The SFP ports have no PHY in the device tree, so the PHY of
  * an SFP module, which goes away with the module, is not used here.
  */
-static void rtldsa_port_link_change(struct dsa_switch *ds, int port,
-				    const struct rtldsa_port *p, bool up)
+static void otto_dsa_port_link_change(struct dsa_switch *ds, int port,
+				      const struct rtldsa_port *p, bool up)
 {
 	struct dsa_port *dp = dsa_to_port(ds, port);
 
@@ -897,7 +897,7 @@ static void rtldsa_port_link_change(struct dsa_switch *ds, int port,
 		dsa_port_phylink_mac_change(ds, port, up);
 }
 
-static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
+static irqreturn_t otto_dsa_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
 	struct otto_dsa_priv *priv;
@@ -923,14 +923,14 @@ static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 
 		for (int port = i * 32; port < (i + 1) * 32 && port < priv->r->cpu_port; port++)
 			if (ports & BIT(port % 32))
-				rtldsa_port_link_change(ds, port, &priv->ports[port],
-							link & BIT(port % 32));
+				otto_dsa_port_link_change(ds, port, &priv->ports[port],
+							  link & BIT(port % 32));
 	}
 
 	return IRQ_HANDLED;
 }
 
-static void rtldsa_switch_irq_disable(struct otto_dsa_priv *priv)
+static void otto_dsa_switch_irq_disable(struct otto_dsa_priv *priv)
 {
 	const u32 masks[2] = { 0 };
 
@@ -942,7 +942,7 @@ static void rtldsa_switch_irq_disable(struct otto_dsa_priv *priv)
 		regmap_write(priv->map, priv->r->imr_glb, 0);
 }
 
-static bool rtldsa_phy_load_deferred(struct phy_device *phydev)
+static bool otto_dsa_phy_load_deferred(struct phy_device *phydev)
 {
 	struct device *d = &phydev->mdio.dev;
 
@@ -952,7 +952,7 @@ static bool rtldsa_phy_load_deferred(struct phy_device *phydev)
 	return driver_deferred_probe_check_state(d) == -EPROBE_DEFER;
 }
 
-static bool rtldsa_phys_load_deferred(void)
+static bool otto_dsa_phys_load_deferred(void)
 {
 	struct device_node *phy_node;
 	struct phy_device *phydev;
@@ -972,7 +972,7 @@ static bool rtldsa_phys_load_deferred(void)
 		if (!phydev)
 			continue;
 
-		deferred = rtldsa_phy_load_deferred(phydev);
+		deferred = otto_dsa_phy_load_deferred(phydev);
 		put_device(&phydev->mdio.dev);
 
 		if (deferred) {
@@ -990,7 +990,7 @@ static bool rtldsa_phys_load_deferred(void)
  * before the DSA setup can start. This driver has severe issues with handling of deferred
  * probing. For now provide this function for early dependency checks.
  */
-static int rtldsa_ethernet_loaded(struct platform_device *pdev)
+static int otto_dsa_ethernet_loaded(struct platform_device *pdev)
 {
 	struct platform_device *eth_pdev;
 	struct device_node *port_np;
@@ -1017,7 +1017,7 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 	return ret;
 }
 
-static int rtldsa_mdio_loaded(void)
+static int otto_dsa_mdio_loaded(void)
 {
 	struct device_node *dn;
 
@@ -1042,7 +1042,7 @@ static int rtldsa_mdio_loaded(void)
 	return 0;
 }
 
-static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
+static int otto_dsa_ports_probe(struct otto_dsa_priv *priv)
 {
 	struct device_node *dn, *phy_node, *led_node;
 	u32 pn;
@@ -1098,7 +1098,7 @@ static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
 	return 0;
 }
 
-static int rtl83xx_sw_probe(struct platform_device *pdev)
+static int otto_dsa_sw_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	const struct rtldsa_config *r;
@@ -1112,10 +1112,10 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	if (rtldsa_phys_load_deferred())
+	if (otto_dsa_phys_load_deferred())
 		return -EPROBE_DEFER;
 
-	err = rtldsa_ethernet_loaded(pdev);
+	err = otto_dsa_ethernet_loaded(pdev);
 	if (err)
 		return err;
 
@@ -1167,11 +1167,11 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	priv->r->stp_init(priv);
 	priv->irq_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0);
 
-	err = rtldsa_mdio_loaded();
+	err = otto_dsa_mdio_loaded();
 	if (err)
 		return err;
 
-	err = rtldsa_ports_probe(priv);
+	err = otto_dsa_ports_probe(priv);
 	if (err)
 		return err;
 
@@ -1206,7 +1206,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
-	err = request_irq(priv->link_state_irq, rtldsa_switch_irq,
+	err = request_irq(priv->link_state_irq, otto_dsa_switch_irq,
 			  IRQF_SHARED, "rtldsa-link-state", priv->ds);
 	if (err) {
 		dev_err(dev, "Error setting up switch interrupt.\n");
@@ -1261,7 +1261,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	return 0;
 
 err_register_l3:
-	rtldsa_switch_irq_disable(priv);
+	otto_dsa_switch_irq_disable(priv);
 	if (priv->link_state_irq_requested)
 		free_irq(priv->link_state_irq, priv->ds);
 	cancel_delayed_work_sync(&priv->counters_work);
@@ -1273,7 +1273,7 @@ err_register_switch:
 	return err;
 }
 
-static void rtl83xx_sw_remove(struct platform_device *pdev)
+static void otto_dsa_sw_remove(struct platform_device *pdev)
 {
 	struct otto_dsa_priv *priv = platform_get_drvdata(pdev);
 
@@ -1293,7 +1293,7 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	otto_l3_remove(priv);
 	cancel_delayed_work_sync(&priv->counters_work);
 
-	rtldsa_switch_irq_disable(priv);
+	otto_dsa_switch_irq_disable(priv);
 	if (priv->link_state_irq_requested)
 		free_irq(priv->link_state_irq, priv->ds);
 	dsa_unregister_switch(priv->ds);
@@ -1328,8 +1328,8 @@ static const struct of_device_id rtl83xx_switch_of_ids[] = {
 MODULE_DEVICE_TABLE(of, rtl83xx_switch_of_ids);
 
 static struct platform_driver rtl83xx_switch_driver = {
-	.probe  = rtl83xx_sw_probe,
-	.remove = rtl83xx_sw_remove,
+	.probe  = otto_dsa_sw_probe,
+	.remove = otto_dsa_sw_remove,
 	.driver = {
 		.name = "rtl83xx-switch",
 		.pm = NULL,
