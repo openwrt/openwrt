@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolò Veronese <nicveronese@gmail.com>
+Date: Mon, 31 Aug 2026 00:00:00 +0200
+Subject: [PATCH] net: dsa: Create device link to external PHY referenced by
+ phy-handle
+
+When a DSA switch port references an external PHY (e.g. the Airoha
+EN8811H 2.5G PHY) via phy-handle, and that PHY's driver defers its
+probe (firmware not yet available), the -EPROBE_DEFER propagation in
+dsa_tree_setup_ports() alone causes a self-reinforcing deferred-probe
+feedback loop: every switch re-probe re-registers the internal MDIO
+bus and PHYs, each internal PHY binding fires
+driver_deferred_probe_trigger(), and the switch is re-probed
+immediately (~520ms per cycle, flooding the log and stalling boot).
+
+Create a managed device link from the switch to the external PHY
+during port DT parsing. The link carries DL_FLAG_AUTOPROBE_CONSUMER
+(NOT DL_FLAG_SYNC_STATE_ONLY, which fw_devlink uses in permissive
+mode and which device_links_check_suppliers ignores), so after the
+first failed probe the driver core defers subsequent switch probes in
+really_probe() -> device_links_check_suppliers() WITHOUT calling the
+switch driver's ->probe(). The internal MDIO bus is therefore never
+re-registered and the loop cannot sustain itself.
+
+When the PHY finally binds (firmware loaded), the device link
+triggers an automatic switch re-probe via device_links_driver_bound()
+and the tree comes up normally.
+
+Complements pending-6.18/704 ("net: dsa: support EPROBE_DEFER when
+reading the port MAC address"), which propagates -EPROBE_DEFER from
+dsa_port_setup() through dsa_tree_setup_ports().
+
+Signed-off-by: Nicolò Veronese <nicveronese@gmail.com>
+---
+--- a/net/dsa/dsa.c
++++ b/net/dsa/dsa.c
+@@ -16,6 +16,7 @@
+ #include <linux/rtnetlink.h>
+ #include <linux/of.h>
+ #include <linux/of_net.h>
++#include <linux/of_mdio.h>
+ #include <net/dsa_stubs.h>
+ #include <net/sch_generic.h>
+ 
+@@ -1243,11 +1244,24 @@ static int dsa_port_parse_cpu(struct dsa
+ static int dsa_port_parse_of(struct dsa_port *dp, struct device_node *dn)
+ {
+ 	struct device_node *ethernet = of_parse_phandle(dn, "ethernet", 0);
++	struct device_node *phy_np;
+ 	const char *name = of_get_property(dn, "label", NULL);
+ 	bool link = of_property_read_bool(dn, "link");
+ 
+ 	dp->dn = dn;
+ 
++	phy_np = of_parse_phandle(dn, "phy-handle", 0);
++	if (phy_np) {
++		struct phy_device *phydev = of_phy_find_device(phy_np);
++
++		if (phydev) {
++			device_link_add(dp->ds->dev, &phydev->mdio.dev,
++					DL_FLAG_AUTOPROBE_CONSUMER);
++			put_device(&phydev->mdio.dev);
++		}
++		of_node_put(phy_np);
++	}
++
+ 	if (ethernet) {
+ 		struct net_device *conduit;
+ 		const char *user_protocol;
