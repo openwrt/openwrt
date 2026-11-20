@@ -12,7 +12,7 @@
 #include "l2.h"
 #include "l3.h"
 #include "lag.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 
 #define OTTO_FDB_L3_REFCOUNT_MAX	0x7fff
 

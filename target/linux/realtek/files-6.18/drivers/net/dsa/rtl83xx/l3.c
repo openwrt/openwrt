@@ -98,7 +98,7 @@
 #include "l2.h"
 #include "l3.h"
 #include "pie.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 #include "stats.h"
 
 /* Route entry types */

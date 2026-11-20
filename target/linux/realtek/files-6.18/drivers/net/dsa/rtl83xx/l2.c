@@ -7,7 +7,7 @@
 #include <linux/string.h>
 
 #include "l2.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 
 /* Hardware encodings for L2 action fields. */
 enum otto_l2_action {

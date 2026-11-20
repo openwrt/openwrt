@@ -9,7 +9,7 @@
 #include <linux/regmap.h>
 
 #include "pie.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 
 /* Packet Inspection Engine
  * pie_mutex serializes rule allocation, deletion and block configuration.

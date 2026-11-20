@@ -14,7 +14,7 @@
 #include <net/dsa.h>
 
 #include "pie.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 #include "stats.h"
 
 #define MIB_ITEM(_reg, _offset, _size) \

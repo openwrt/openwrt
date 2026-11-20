@@ -12,7 +12,7 @@
 #include <net/dsa.h>
 
 #include "mac.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 
 /* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
 #define RTLDSA_MAC_MAX_LEN_FIELD		GENMASK(13, 0)

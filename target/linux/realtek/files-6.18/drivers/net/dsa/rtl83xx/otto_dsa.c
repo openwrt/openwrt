@@ -14,7 +14,7 @@
 #include "mac.h"
 #include "l2.h"
 #include "qos.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 #include "stats.h"
 #include "tc.h"
 #include "vlan.h"

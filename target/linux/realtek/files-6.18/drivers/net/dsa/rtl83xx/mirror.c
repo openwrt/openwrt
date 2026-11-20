@@ -6,7 +6,7 @@
 #include <net/dsa.h>
 
 #include "mirror.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 
 #define RTL930X_MIR_CTRL			(0xA2A0)
 #define RTL930X_MIR_DPM_CTRL			(0xA2C0)

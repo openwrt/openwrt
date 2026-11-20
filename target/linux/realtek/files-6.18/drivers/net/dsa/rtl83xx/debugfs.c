@@ -7,7 +7,7 @@
 
 #include "mac.h"
 #include "l2.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 #include "vlan.h"
 #include "stp.h"
 

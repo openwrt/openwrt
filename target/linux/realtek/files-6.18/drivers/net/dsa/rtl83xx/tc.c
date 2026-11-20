@@ -13,7 +13,7 @@
 #include "mirror.h"
 #include "pie.h"
 #include "qos.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 #include "stats.h"
 #include "tc.h"
 

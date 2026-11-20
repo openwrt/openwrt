@@ -9,7 +9,7 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "qos.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 
 #define RTL838X_SCHED_P_EGR_RATE_CTRL(p)	(0xC008 + (((p) << 7)))
 

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#ifndef _RTL838X_H
-#define _RTL838X_H
+#ifndef _OTTO_DSA_H
+#define _OTTO_DSA_H
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <net/dsa.h>
@@ -674,4 +674,4 @@ extern struct rtl83xx_soc_info soc_info;
 void rtl838x_dbgfs_init(struct otto_dsa_priv *priv);
 void rtl930x_dbgfs_init(struct otto_dsa_priv *priv);
 
-#endif /* _RTL838X_H */
+#endif /* _OTTO_DSA_H */

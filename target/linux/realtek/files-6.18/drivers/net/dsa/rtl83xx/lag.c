@@ -9,7 +9,7 @@
 #include <net/dsa.h>
 
 #include "lag.h"
-#include "rtl-otto.h"
+#include "otto_dsa.h"
 
 /* Link aggregation (Trunking) */
 #define TRUNK_DISTRIBUTION_ALGO_SPA_BIT         BIT(0)
