@@ -91,6 +91,16 @@ static int rtldsa_mdio_loaded(void)
 	return 0;
 }
 
+/* Number of LEDs in LED set @set, or a negative error */
+static int rtldsa_led_set_size(struct device_node *led_node, u32 set)
+{
+	char name[sizeof("led_set4294967295")];
+
+	snprintf(name, sizeof(name), "led_set%u", set);
+
+	return of_property_count_u32_elems(led_node, name);
+}
+
 static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
 {
 	struct device_node *dn, *phy_node, *led_node;
@@ -106,8 +116,7 @@ static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
 
 	for_each_node_by_name(dn, "port") {
 		const char *managed;
-		u32 led_set;
-		char led_set_str[16] = {0};
+		u32 led_set, led_set_fiber;
 
 		if (!of_device_is_available(dn))
 			continue;
@@ -128,13 +137,26 @@ static int rtldsa_ports_probe(struct otto_dsa_priv *priv)
 			if (of_property_read_u32(dn, "led-set", &led_set))
 				led_set = 0;
 			priv->ports[pn].led_set = led_set;
-			sprintf(led_set_str, "led_set%d", led_set);
-			priv->ports[pn].leds_on_this_port = of_property_count_u32_elems(led_node, led_set_str);
+			priv->ports[pn].leds_on_this_port = rtldsa_led_set_size(led_node, led_set);
 			if (priv->ports[pn].leds_on_this_port > 4) {
 				of_node_put(dn);
 				dev_err(priv->dev, "led_set %d for port %d configuration is invalid\n", led_set, pn);
 				return -ENODEV;
 			}
+
+			/* Fiber medium LED set, if it differs; both media share the LED count */
+			if (of_property_read_u32(dn, "realtek,led-set-fiber", &led_set_fiber))
+				led_set_fiber = led_set;
+			if (led_set_fiber != led_set &&
+			    (priv->ports[pn].leds_on_this_port <= 0 ||
+			     rtldsa_led_set_size(led_node, led_set_fiber) !=
+			     priv->ports[pn].leds_on_this_port)) {
+				of_node_put(dn);
+				dev_err(priv->dev, "fiber led_set %u for port %u does not match led_set %u\n",
+					led_set_fiber, pn, led_set);
+				return -ENODEV;
+			}
+			priv->ports[pn].led_set_fiber = led_set_fiber;
 		}
 
 		priv->ports[pn].phy = !!phy_node;

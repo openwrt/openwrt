@@ -2,6 +2,16 @@
 
 include ./common.mk
 
+define Device/acorid_gls7700-24f8g-4x
+  SOC := rtl9301
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := Acorid
+  DEVICE_MODEL := GLS7700-24F8G-4X
+  IMAGE_SIZE := 13824k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += acorid_gls7700-24f8g-4x
+
 define Device/d-link_dgs-1250-28x
   SOC := rtl9301
   DEVICE_VENDOR := D-Link

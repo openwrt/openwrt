@@ -47,6 +47,7 @@
 #define RTL931X_LED_PORT_COPR_MASK_CTRL		(0x0654)
 #define RTL931X_LED_PORT_FIB_MASK_CTRL		(0x065c)
 #define RTL931X_LED_PORT_COMBO_MASK_CTRL	(0x0664)
+#define RTL931X_LED_PORT_MASK			GENMASK_ULL(RTL931X_CPU_PORT - 1, 0)
 
 #define RTL931X_LED_GLB_ACTIVE_LOW BIT(21)
 
@@ -226,7 +227,7 @@ static u32 rtl931x_read_debug_reg(struct otto_dsa_priv *priv, u32 reg)
 static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 {
 	u8 forced_leds_per_port[RTL931X_CPU_PORT] = {};
-	u64 pm_copper = 0, pm_fiber = 0;
+	u64 pm_copper = 0, pm_fiber = 0, pm_combo;
 	struct device *dev = priv->dev;
 	struct device_node *node;
 	u8 leds_in_set[4] = {};
@@ -336,6 +337,7 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 		set = priv->ports[i].led_set;
 		regmap_write_bits(priv->map, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i),
 				  GENMASK(1, 0) << pos, (set & 0x3) << pos);
+		set = priv->ports[i].led_set_fiber;
 		regmap_write_bits(priv->map, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i),
 				  GENMASK(1, 0) << pos, (set & 0x3) << pos);
 	}
@@ -354,14 +356,20 @@ static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 		regmap_write_bits(priv->map, RTL931X_LED_GLB_CTRL, RTL931X_LED_GLB_ACTIVE_LOW,
 				  RTL931X_LED_GLB_ACTIVE_LOW);
 
+	/* Port type masks, see rtl930x_led_init() */
+	pm_combo = pm_copper | pm_fiber;
+	of_property_read_u64(node, "realtek,led-copper-port-mask", &pm_copper);
+	of_property_read_u64(node, "realtek,led-fiber-port-mask", &pm_fiber);
+	of_property_read_u64(node, "realtek,led-combo-port-mask", &pm_combo);
+	pm_copper &= RTL931X_LED_PORT_MASK;
+	pm_fiber &= RTL931X_LED_PORT_MASK;
+	pm_combo &= RTL931X_LED_PORT_MASK;
 	regmap_write(priv->map, RTL931X_LED_PORT_COPR_MASK_CTRL, lower_32_bits(pm_copper));
 	regmap_write(priv->map, RTL931X_LED_PORT_COPR_MASK_CTRL + 4, upper_32_bits(pm_copper));
 	regmap_write(priv->map, RTL931X_LED_PORT_FIB_MASK_CTRL, lower_32_bits(pm_fiber));
 	regmap_write(priv->map, RTL931X_LED_PORT_FIB_MASK_CTRL + 4, upper_32_bits(pm_fiber));
-	regmap_write(priv->map, RTL931X_LED_PORT_COMBO_MASK_CTRL,
-		     lower_32_bits(pm_copper | pm_fiber));
-	regmap_write(priv->map, RTL931X_LED_PORT_COMBO_MASK_CTRL + 4,
-		     upper_32_bits(pm_copper | pm_fiber));
+	regmap_write(priv->map, RTL931X_LED_PORT_COMBO_MASK_CTRL, lower_32_bits(pm_combo));
+	regmap_write(priv->map, RTL931X_LED_PORT_COMBO_MASK_CTRL + 4, upper_32_bits(pm_combo));
 
 	for (int i = 0; i < 32; i++)
 		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4,
