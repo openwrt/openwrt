@@ -1,0 +1,187 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] wifi: rt2x00: use page_pool for RX buffers
+
+Allocate RX buffers from a page_pool instead of allocating a new skb
+for every received frame, and recycle them once the stack is done
+with them.
+
+A buffer for an aggregated frame plus skb_shared_info does not fit
+into a page, so __dev_alloc_skb() took 8 KiB from kmalloc for each of
+them. The pool uses pages large enough to be shared by three buffers.
+
+The pool does not map the buffers. USB host controllers map each URB
+themselves, and buses that need DMA keep mapping the buffer as
+before.
+
+On a Meraki MX60 (APM82181) with an RT3070 USB stick on the DWC2
+controller, forwarding 28 Mbit/s of UDP from a wireless client to the
+WAN port, the CPU load drops from 37.0% to 36.0% (mean of 6 profiles
+each, in-boot A/B). The allocation and free paths go from 0.97% to
+0.56% of the samples.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/ralink/rt2x00/Kconfig
++++ b/drivers/net/wireless/ralink/rt2x00/Kconfig
+@@ -3,6 +3,7 @@
+ 	tristate "Ralink driver support"
+ 	depends on m
+ 	depends on MAC80211 && HAS_DMA
++	depends on PAGE_POOL
+ 	help
+ 	  This will enable the support for the Ralink drivers,
+ 	  developed in the rt2x00 project <http://rt2x00.serialmonkey.com>.
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
+@@ -16,55 +16,78 @@
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/dma-mapping.h>
++#include <net/page_pool/helpers.h>
+ 
+ #include "rt2x00.h"
+ #include "rt2x00lib.h"
+ 
+-struct sk_buff *rt2x00queue_alloc_rxskb(struct queue_entry *entry, gfp_t gfp)
++static unsigned int rt2x00queue_rx_buf_size(struct data_queue *queue,
++					    unsigned int *frame_size,
++					    unsigned int *head_size)
+ {
+-	struct data_queue *queue = entry->queue;
+-	struct rt2x00_dev *rt2x00dev = queue->rt2x00dev;
+-	struct sk_buff *skb;
+-	struct skb_frame_desc *skbdesc;
+-	unsigned int frame_size;
+-	unsigned int head_size = 0;
+ 	unsigned int tail_size = 0;
+ 
+ 	/*
+ 	 * The frame size includes descriptor size, because the
+ 	 * hardware directly receive the frame into the skbuffer.
+ 	 */
+-	frame_size = queue->data_size + queue->desc_size + queue->winfo_size;
++	*frame_size = queue->data_size + queue->desc_size + queue->winfo_size;
+ 
+ 	/*
+ 	 * The payload should be aligned to a 4-byte boundary,
+ 	 * this means we need at least 3 bytes for moving the frame
+ 	 * into the correct offset.
+ 	 */
+-	head_size = 4;
++	*head_size = 4;
+ 
+ 	/*
+ 	 * For IV/EIV/ICV assembly we must make sure there is
+ 	 * at least 8 bytes available in headroom for IV/EIV
+ 	 * and 8 bytes for ICV data as tailroon.
+ 	 */
+-	if (rt2x00_has_cap_hw_crypto(rt2x00dev)) {
+-		head_size += 8;
++	if (rt2x00_has_cap_hw_crypto(queue->rt2x00dev)) {
++		*head_size += 8;
+ 		tail_size += 8;
+ 	}
+ 
++	return SKB_DATA_ALIGN(NET_SKB_PAD + *head_size + *frame_size +
++			      tail_size) +
++	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
++}
++
++struct sk_buff *rt2x00queue_alloc_rxskb(struct queue_entry *entry, gfp_t gfp)
++{
++	struct data_queue *queue = entry->queue;
++	struct rt2x00_dev *rt2x00dev = queue->rt2x00dev;
++	struct sk_buff *skb;
++	struct skb_frame_desc *skbdesc;
++	unsigned int frame_size;
++	unsigned int head_size;
++	unsigned int size;
++	void *data;
++
++	size = rt2x00queue_rx_buf_size(queue, &frame_size, &head_size);
++
+ 	/*
+ 	 * Allocate skbuffer.
+ 	 */
+-	skb = __dev_alloc_skb(frame_size + head_size + tail_size, gfp);
+-	if (!skb)
++	data = page_pool_alloc_va(queue->page_pool, &size, gfp);
++	if (!data)
+ 		return NULL;
+ 
++	skb = build_skb(data, size);
++	if (!skb) {
++		page_pool_free_va(queue->page_pool, data, false);
++		return NULL;
++	}
++
++	skb_mark_for_recycle(skb);
++
+ 	/*
+ 	 * Make sure we not have a frame with the requested bytes
+ 	 * available in the head and tail.
+ 	 */
+-	skb_reserve(skb, head_size);
++	skb_reserve(skb, NET_SKB_PAD + head_size);
+ 	skb_put(skb, frame_size);
+ 
+ 	/*
+@@ -1145,8 +1168,28 @@
+ 
+ static int rt2x00queue_alloc_rxskbs(struct data_queue *queue)
+ {
++	struct page_pool_params pp_params = {};
++	unsigned int frame_size, head_size;
+ 	unsigned int i;
+ 	struct sk_buff *skb;
++	struct page_pool *pp;
++
++	/*
++	 * Buffers for aggregated frames do not fit into a single page,
++	 * use pages large enough to be shared by three buffers.
++	 */
++	pp_params.order = get_order(3 * rt2x00queue_rx_buf_size(queue,
++								&frame_size,
++								&head_size));
++	pp_params.pool_size = queue->limit;
++	pp_params.nid = NUMA_NO_NODE;
++	pp_params.dev = queue->rt2x00dev->dev;
++
++	pp = page_pool_create(&pp_params);
++	if (IS_ERR(pp))
++		return PTR_ERR(pp);
++
++	queue->page_pool = pp;
+ 
+ 	for (i = 0; i < queue->limit; i++) {
+ 		skb = rt2x00queue_alloc_rxskb(&queue->entries[i], GFP_KERNEL);
+@@ -1203,6 +1246,9 @@
+ 
+ 	rt2x00queue_free_skbs(rt2x00dev->rx);
+ 
++	page_pool_destroy(rt2x00dev->rx->page_pool);
++	rt2x00dev->rx->page_pool = NULL;
++
+ 	queue_for_each(rt2x00dev, queue) {
+ 		kfree(queue->entries);
+ 		queue->entries = NULL;
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00queue.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00queue.h
+@@ -467,6 +467,7 @@
+  * @priv_size: Size of per-queue_entry private data.
+  * @usb_endpoint: Device endpoint used for communication (USB only)
+  * @usb_maxpacket: Max packet size for given endpoint (USB only)
++ * @page_pool: Pool the RX buffers are allocated from (RX queue only)
+  */
+ struct data_queue {
+ 	struct rt2x00_dev *rt2x00dev;
+@@ -500,6 +501,8 @@
+ 
+ 	unsigned short usb_endpoint;
+ 	unsigned short usb_maxpacket;
++
++	struct page_pool *page_pool;
+ };
+ 
+ /**
