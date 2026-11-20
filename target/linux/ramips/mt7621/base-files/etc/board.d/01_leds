@@ -59,8 +59,21 @@ wifire,s1500-nbn)
 	ucidef_set_led_netdev "lan4" "lan4" "green:lan-4" "lan4" "link tx rx"
 	ucidef_set_led_netdev "wan"  "wan"  "green:wan"  "wan"  "link tx rx"
 	;;
-belkin,rt1800)
+belkin,rt1800|\
+dlink,dir-1960-a1|\
+dlink,dir-2055-a1|\
+dlink,dir-2150-a1|\
+dlink,dir-2150-r1|\
+dlink,dir-2640-a1|\
+dlink,dir-2660-a1|\
+xiaomi,redmi-router-ac2100)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
+	;;
+confiabits,mt7621-v1|\
+edup,ep-rt2983|\
+genexis,pulse-ex400|\
+netis,n6)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	;;
 cudy,ap1300-outdoor-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
@@ -68,12 +81,6 @@ cudy,ap1300-outdoor-v1)
 cudy,lt700-outdoor-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
 	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "usb0"
-	;;
-confiabits,mt7621-v1|\
-edup,ep-rt2983|\
-genexis,pulse-ex400|\
-netis,n6)
-	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	;;
 cudy,wr2100)
 	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1"
@@ -112,19 +119,6 @@ dlink,dir-1360-a1)
 	ucidef_set_led_default "power" "Power" "white:power" "1"
 	ucidef_set_led_netdev "internet" "Internet" "white:wan" "wan"
 	;;
-dlink,dir-1960-a1|\
-dlink,dir-2055-a1|\
-dlink,dir-2150-a1|\
-dlink,dir-2150-r1|\
-dlink,dir-2640-a1|\
-dlink,dir-2660-a1)
-	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
-	;;
-dlink,dir-3040-a1|\
-dlink,dir-3060-a1)
-	ucidef_set_led_netdev "net_white" "WAN Link" "white:wan" "wan" "link"
-	ucidef_set_led_netdev "net_orange" "WAN Activity" "orange:wan" "wan" "tx rx"
-	;;
 dlink,dir-853-a1|\
 dlink,dir-853-a3)
 	ucidef_set_led_netdev "wan" "wan" "blue:net" "wan"
@@ -139,6 +133,11 @@ dlink,dir-878-a1|\
 dlink,dir-882-a1|\
 dlink,dir-882-r1)
 	ucidef_set_led_netdev "wan" "wan" "green:net" "wan"
+	;;
+dlink,dir-3040-a1|\
+dlink,dir-3060-a1)
+	ucidef_set_led_netdev "net_white" "WAN Link" "white:wan" "wan" "link"
+	ucidef_set_led_netdev "net_orange" "WAN Activity" "orange:wan" "wan" "tx rx"
 	;;
 gnubee,gb-pc2)
 	ucidef_set_led_netdev "ethyellow" "ethyellow" "orange:ethyellow" "ethyellow" "link tx rx"
@@ -169,9 +168,6 @@ meig,slt866)
 	ucidef_set_led_netdev "lan" "eth" "blue:lanwan" "lan" "link tx rx"
 	ucidef_set_led_netdev "wwan0" "net" "blue:internet" "wwan0" "link tx rx"
 	;;
-mikrotik,routerboard-760igs)
-	ucidef_set_led_netdev "sfp" "SFP" "blue:sfp" "sfp"
-	;;
 mikrotik,ltap-2hnd|\
 mikrotik,routerboard-m11g)
 	ucidef_set_rssimon "wlan0" "200000" "1"
@@ -180,6 +176,9 @@ mikrotik,routerboard-m11g)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssi2" "wlan0" "40" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssi3" "wlan0" "60" "100"
 	ucidef_set_led_rssi "rssiveryhigh" "RSSIVERYHIGH" "green:rssi4" "wlan0" "80" "100"
+	;;
+mikrotik,routerboard-760igs)
+	ucidef_set_led_netdev "sfp" "SFP" "blue:sfp" "sfp"
 	;;
 mofinetwork,mofi5500-5gxelte)
 	ucidef_set_led_netdev "internet" "Internet" "green:wan-online" "wan"
@@ -230,7 +229,8 @@ tplink,ex220-v1-nand)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
-tplink,deco-m4r-v4)
+tplink,deco-m4r-v4|\
+tplink,tl-wpa8631p-v3)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	;;
 tplink,ec330-g5u-v1)
@@ -238,25 +238,22 @@ tplink,ec330-g5u-v1)
 	ucidef_set_led_netdev "wan" "Internet" "blue:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "Internet-off" "amber:wan" "wan" "link"
 	;;
+tplink,mr600-v2-eu)
+	ucidef_set_led_netdev "lan" "LAN" "white:lan" "br-lan"
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan"
+	ucidef_set_led_netdev "4g" "4G" "white:4g" "wwan0"
+	;;
 tplink,re350-v1)
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "blue:wifi2G" "wlan0"
 	ucidef_set_led_netdev "wifi5g" "Wifi 5G" "blue:wifi5G" "wlan1"
 	ucidef_set_led_netdev "eth_act" "LAN act" "green:eth_act" "lan" "tx rx"
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "lan" "link"
 	;;
-tplink,mr600-v2-eu)
-	ucidef_set_led_netdev "lan" "LAN" "white:lan" "br-lan"
-	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan"
-	ucidef_set_led_netdev "4g" "4G" "white:4g" "wwan0"
-	;;
 tplink,re500-v1|\
 tplink,re650-v1|\
 tplink,re650-v2)
 	ucidef_set_led_netdev "eth_act" "LAN act" "green:eth_act" "lan" "tx rx"
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "lan" "link"
-	;;
-tplink,tl-wpa8631p-v3)
-	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	;;
 xiaomi,mi-router-4a-gigabit-v2)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link"
@@ -269,18 +266,15 @@ xiaomi,mi-router-cr6608|\
 xiaomi,mi-router-cr6609)
 	ucidef_set_led_netdev "internet" "Internet" "blue:net" "wan"
 	;;
-xiaomi,redmi-router-ac2100)
-	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
-	;;
 youhua,wr1200js)
 	ucidef_set_led_netdev "internet" "INTERNET" "green:wan" "wan"
-	;;
-yuncore,fap690)
-	ucidef_set_led_netdev "eth_link" "LAN link" "blue:status" "lan" "link"
 	;;
 yuncore,ax820)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	;;
+yuncore,fap690)
+	ucidef_set_led_netdev "eth_link" "LAN link" "blue:status" "lan" "link"
 	;;
 z-router,zr-2660)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan" "link tx rx"
