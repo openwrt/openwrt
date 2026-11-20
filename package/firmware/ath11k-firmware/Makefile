@@ -11,7 +11,7 @@ PKG_NAME:=ath11k-firmware
 PKG_SOURCE_DATE:=2024-10-14
 PKG_SOURCE_VERSION:=15f050122da5ef5bef2cc8c7c19dfb7f98060a49
 PKG_MIRROR_HASH:=e7a89d1570f32552ade539376181494724b5eafb31d00451ff2dcf5a2922a0cb
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.codelinaro.org/clo/ath-firmware/ath11k-firmware.git
@@ -52,6 +52,7 @@ endef
 define Package/ath11k-firmware-ipq5018-qcn6122
 $(Package/ath11k-firmware-default)
   TITLE:=IPQ5018/QCN6122 ath11k firmware
+  CONFLICTS:=ath11k-firmware-ipq5018
 endef
 
 define Package/ath11k-firmware-ipq6018
