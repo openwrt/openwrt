@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 PKG_NAME:=toolchain
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-3.0-with-GCC-exception
@@ -266,6 +266,7 @@ endef
 define Package/libc
 $(call Package/libc/Default)
   TITLE:=C library
+  PROVIDES:=libpthread librt
 endef
 
 define Package/libc/config
@@ -283,33 +284,7 @@ define Package/libc/config
 		string
 		prompt "libc shared library files (use wildcards)"
 		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libc
-		default "./lib/ld{*.so*,-linux*.so.*} ./lib/lib{anl,c,cidn,crypt,dl,m,nsl,nss_dns,nss_files,resolv,util}{-*.so,.so.*,.so}"
-
-	endmenu
-endef
-
-
-define Package/libpthread
-$(call Package/libc/Default)
-  TITLE:=POSIX thread library
-endef
-
-define Package/libpthread/config
-	menu "Configuration"
-	depends on EXTERNAL_TOOLCHAIN && PACKAGE_libpthread
-
-	config LIBPTHREAD_ROOT_DIR
-		string
-		prompt "libpthread shared library base directory"
-		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libpthread
-		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
-		default "/"  if NATIVE_TOOLCHAIN
-
-	config LIBPTHREAD_FILE_SPEC
-		string
-		prompt "libpthread shared library files (use wildcards)"
-		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libpthread
-		default "./lib/libpthread{-*.so,.so.*}"
+		default "./lib/ld{*.so*,-linux*.so.*} ./lib/lib{anl,c,cidn,crypt,dl,m,nsl,nss_dns,nss_files,pthread,resolv,rt,util}{-*.so,.so.*,.so}"
 
 	endmenu
 endef
@@ -340,33 +315,6 @@ define Package/libthread-db/config
 
 	endmenu
 endef
-
-define Package/librt
-$(call Package/libc/Default)
-  TITLE:=POSIX.1b RealTime extension library
-  DEPENDS:=+libpthread
-endef
-
-define Package/librt/config
-	menu "Configuration"
-	depends on EXTERNAL_TOOLCHAIN && PACKAGE_librt
-
-	config LIBRT_ROOT_DIR
-		string
-		prompt "librt shared library base directory"
-		depends on EXTERNAL_TOOLCHAIN && PACKAGE_librt
-		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
-		default "/"  if NATIVE_TOOLCHAIN
-
-	config LIBRT_FILE_SPEC
-		string
-		prompt "librt shared library files (use wildcards)"
-		depends on EXTERNAL_TOOLCHAIN && PACKAGE_librt
-		default "./lib/librt{-*.so,.so.*}"
-
-	endmenu
-endef
-
 
 define Package/libgfortran
 $(call Package/gcc/Default)
@@ -555,7 +503,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
 		$(1)/lib/
-	for file in libanl libc libcidn libdl libm libnsl libnss_dns libnss_files libresolv libutil; do \
+	for file in libanl libc libcidn libdl libm libnsl libnss_dns libnss_files libpthread libresolv librt libutil; do \
 		for file in $(TOOLCHAIN_DIR)/lib/$$$$file.so.*; do \
 			if [ -e "$$$$file" ]; then \
 				$(CP) $$$$file $(1)/lib/; \
@@ -585,38 +533,17 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/libc/install_lib
 	$(CP) $(filter-out %/libdl_pic.a %/libpthread_pic.a %/libresolv_pic.a,$(wildcard $(TOOLCHAIN_DIR)/lib/lib*.a)) $(1)/lib/
 	$(if $(wildcard $(TOOLCHAIN_DIR)/lib/libc_so.a),$(CP) $(TOOLCHAIN_DIR)/lib/libc_so.a $(1)/lib/libc_pic.a)
+	$(if $(wildcard $(TOOLCHAIN_DIR)/lib/libpthread_so.a),$(CP) $(TOOLCHAIN_DIR)/lib/libpthread_so.a $(1)/lib/libpthread_pic.a)
 	$(if $(LIBGCC_MAP), \
 		$(CP) $(LIBGCC_A) $(1)/lib/libgcc_s_pic.a; \
 		$(CP) $(LIBGCC_MAP) $(1)/lib/libgcc_s_pic.map \
 	)
   endef
 
-  define Package/libpthread/install
-	$(INSTALL_DIR) $(1)/lib
-  ifneq ($(CONFIG_USE_MUSL),y)
-	$(CP) \
-		$(TOOLCHAIN_DIR)/lib/libpthread.so.* \
-		$(1)/lib/
-  endif
-  endef
-
   define Package/libthread-db/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/libthread_db.so.* $(1)/lib
-  endef
-
-  define Package/libpthread/install_lib
-	$(if $(wildcard $(TOOLCHAIN_DIR)/lib/libpthread_so.a),$(CP) $(TOOLCHAIN_DIR)/lib/libpthread_so.a $(1)/lib/libpthread_pic.a)
-  endef
-
-  define Package/librt/install
-	$(INSTALL_DIR) $(1)/lib
-  ifneq ($(CONFIG_USE_MUSL),y)
-	$(CP) \
-		$(TOOLCHAIN_DIR)/lib/librt.so.* \
-		$(1)/lib/
-  endif
   endef
 
   define Package/ldd/install
@@ -713,26 +640,10 @@ else
 	$(call Package/$(LIBC)/install,$1)
   endef
 
-  define Package/libpthread/install
-	for file in $(call qstrip,$(CONFIG_LIBPTHREAD_FILE_SPEC)); do \
-		$(INSTALL_DIR) $(1)/lib ; \
-		$(CP) $(call qstrip,$(CONFIG_LIBPTHREAD_ROOT_DIR))/$$$$file $(1)/lib/ ; \
-	done ; \
-	exit 0
-  endef
-
   define Package/libthread-db/install
 	for file in $(call qstrip,$(CONFIG_LIBTHREAD_DB_FILE_SPEC)); do \
 		$(INSTALL_DIR) $(1)/lib ; \
 		$(CP) $(call qstrip,$(CONFIG_LIBTHREAD_DB_ROOT_DIR))/$$$$file $(1)/lib/ ; \
-	done ; \
-	exit 0
-  endef
-
-  define Package/librt/install
-	for file in $(call qstrip,$(CONFIG_LIBRT_FILE_SPEC)); do \
-		$(INSTALL_DIR) $(1)/lib ; \
-		$(CP) $(call qstrip,$(CONFIG_LIBRT_ROOT_DIR))/$$$$file $(1)/lib/ ; \
 	done ; \
 	exit 0
   endef
@@ -791,9 +702,7 @@ $(eval $(call BuildPackage,libasan))
 $(eval $(call BuildPackage,libtsan))
 $(eval $(call BuildPackage,liblsan))
 $(eval $(call BuildPackage,libubsan))
-$(eval $(call BuildPackage,libpthread))
 $(eval $(call BuildPackage,libthread-db))
-$(eval $(call BuildPackage,librt))
 $(eval $(call BuildPackage,libgfortran))
 $(eval $(call BuildPackage,libgomp))
 $(eval $(call BuildPackage,ldd))
