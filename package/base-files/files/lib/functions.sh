@@ -545,6 +545,64 @@ cmdline_get_var() {
 	done
 }
 
+profile_d_retire() {
+	local file="/etc/profile.d/$1"
+	local hash sum
+
+	[ -f "$file" ] || return 0
+	shift
+
+	hash="$(sha256sum "$file")"
+	hash="${hash%% *}"
+
+	for sum in "$@"; do
+		[ -n "$sum" ] || continue
+		case "$hash" in
+		"$sum"*)
+			rm -f "$file"
+			return 0
+			;;
+		esac
+	done
+}
+
+profile_migrate() {
+	local new="$1"
+	local hash
+
+	grep -qs /usr/lib/profile.d "$new" || return 0
+	grep -qs /usr/lib/profile.d /etc/profile && return 0
+
+	if [ -f /etc/profile ]; then
+		hash="$(sed 's|^export PATH=.*|export PATH="%PATH%"|' /etc/profile | sha256sum)"
+
+		# Start of the SHA-256 of every /etc/profile base-files has shipped
+		# since 18.06.2. 64 bits are plenty to tell an edited file from these.
+		case "${hash%% *}" in
+		# 1bd6b91e0f9f ("base-files: provide more tolerant xterm detection")
+		57d8cc95dad86bc0*) ;;
+		# 12020f8a95d2 ("base-files: Add /etc/shinit for non-login shell init")
+		e54cc63c8aad2a14*) ;;
+		# 7994461a5a1c ("base-files: replace fgrep with grep -F")
+		dbc7610b82221169*) ;;
+		# c19c31f7aa6f ("base-files: add migration information for APK")
+		be3494f6e207c57e*) ;;
+		# 6f9384f4a495 ("base-files: fix manger->manager typo")
+		efefdb102bde901f*) ;;
+		# eb71d1000968 ("base-files: split /etc/profile")
+		15b1b38c078682d8*) ;;
+		# 9b7ffed9ebbc ("base-files: allow to skip unwanted scripts")
+		5c0caa00f7c791af*) ;;
+		*)
+			mkdir -p /etc/profile.d
+			mv -f /etc/profile /etc/profile.d/profile.legacy
+			;;
+		esac
+	fi
+
+	cp "$new" /etc/profile
+}
+
 # lexically, without looking at the file system or following links
 path_normalize() {
 	local IFS=/

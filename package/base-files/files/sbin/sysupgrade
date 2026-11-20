@@ -363,12 +363,16 @@ if [ -n "$CONF_RESTORE" ]; then
 
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
 	v "Restoring config files..."
+	cp /etc/profile /tmp/profile.new
 	if [ "$(type -t platform_restore_backup)" == 'platform_restore_backup' ]; then
 		platform_restore_backup "$TAR_V"
 	else
 		tar -C / -x${TAR_V}zf "$CONF_RESTORE"
 	fi
-	exit $?
+	ret=$?
+	profile_migrate /tmp/profile.new
+	rm -f /tmp/profile.new
+	exit $ret
 fi
 
 type platform_check_image >/dev/null 2>/dev/null || {

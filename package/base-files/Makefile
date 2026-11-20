@@ -64,7 +64,6 @@ define Package/base-files/conffiles
 /etc/iproute2/rt_protos
 /etc/iproute2/rt_tables
 /etc/passwd
-/etc/profile
 /etc/profile.d
 /etc/protocols
 /etc/rc.local
@@ -206,13 +205,14 @@ define Package/base-files/install
 		$(1)/dev \
 		$(1)/etc/config \
 		$(1)/etc/crontabs \
+		$(1)/etc/profile.d \
 		$(1)/etc/rc.d \
 		$(1)/overlay \
 		$(1)/lib/firmware \
 		$(1)/mnt \
 		$(1)/proc \
 		$(1)/tmp \
-		$(1)/usr/lib \
+		$(1)/usr/lib/profile.d \
 		$(1)/usr/bin \
 		$(1)/sys \
 		$(1)/www
