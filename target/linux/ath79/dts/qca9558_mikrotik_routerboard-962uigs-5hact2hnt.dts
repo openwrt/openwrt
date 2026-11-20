@@ -34,4 +34,20 @@
 
 &pcie1 {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+
+		/* bicolour WLAN LED on the radio GPIOs */
+		led {
+			led-sources = <1>;
+			led-active-low;
+		};
+
+		led-red {
+			led-sources = <2>;
+			led-active-low;
+		};
+	};
 };
