@@ -1,6 +1,16 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 25 Jul 2023 01:56:01 +0000
+Subject: [PATCH] arm: mediatek: add support for the Bananapi BPi-R4
+
+Downstream OpenWrt patch adding BPi-R4 defconfigs, device trees and
+default environment. Git headers added retroactively for git-am
+compatibility (introduced in OpenWrt commit 54f99ebe5c, "uboot-mediatek:
+add build for BPi-R4").
+---
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-emmc_defconfig
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,151 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -69,7 +79,13 @@
 +CONFIG_CMD_PXE=y
 +CONFIG_CMD_CACHE=y
 +CONFIG_CMD_PSTORE=y
-+CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42f00000
++CONFIG_CMD_PSTORE_MEM_SIZE=0x100000
++CONFIG_CMD_PSTORE_RECORD_SIZE=0x20000
++CONFIG_CMD_PSTORE_CONSOLE_SIZE=0x40000
++CONFIG_CMD_PSTORE_FTRACE_SIZE=0x10000
++CONFIG_CMD_PSTORE_PMSG_SIZE=0x10000
++CONFIG_CMD_PSTORE_ECC_SIZE=16
 +CONFIG_CMD_UUID=y
 +CONFIG_CMD_HASH=y
 +CONFIG_CMD_SMC=y
@@ -148,7 +164,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-sdmmc_defconfig
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,149 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -215,7 +231,13 @@
 +CONFIG_CMD_PXE=y
 +CONFIG_CMD_CACHE=y
 +CONFIG_CMD_PSTORE=y
-+CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42f00000
++CONFIG_CMD_PSTORE_MEM_SIZE=0x100000
++CONFIG_CMD_PSTORE_RECORD_SIZE=0x20000
++CONFIG_CMD_PSTORE_CONSOLE_SIZE=0x40000
++CONFIG_CMD_PSTORE_FTRACE_SIZE=0x10000
++CONFIG_CMD_PSTORE_PMSG_SIZE=0x10000
++CONFIG_CMD_PSTORE_ECC_SIZE=16
 +CONFIG_CMD_UUID=y
 +CONFIG_CMD_HASH=y
 +CONFIG_CMD_SMC=y
@@ -294,7 +316,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-snand_defconfig
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,151 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -360,7 +382,13 @@
 +CONFIG_CMD_PXE=y
 +CONFIG_CMD_CACHE=y
 +CONFIG_CMD_PSTORE=y
-+CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42f00000
++CONFIG_CMD_PSTORE_MEM_SIZE=0x100000
++CONFIG_CMD_PSTORE_RECORD_SIZE=0x20000
++CONFIG_CMD_PSTORE_CONSOLE_SIZE=0x40000
++CONFIG_CMD_PSTORE_FTRACE_SIZE=0x10000
++CONFIG_CMD_PSTORE_PMSG_SIZE=0x10000
++CONFIG_CMD_PSTORE_ECC_SIZE=16
 +CONFIG_CMD_UUID=y
 +CONFIG_CMD_HASH=y
 +CONFIG_CMD_SMC=y
@@ -643,7 +671,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/arch/arm/dts/mt7988a-bananapi-bpi-r4.dtsi
-@@ -0,0 +1,199 @@
+@@ -0,0 +1,218 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2022 MediaTek Inc.
@@ -666,6 +694,25 @@
 +	memory@40000000 {
 +		device_type = "memory";
 +		reg = <0 0x40000000 0 0x10000000>;
++	};
++
++	reserved-memory {
++		/delete-node/ ramoops@42ff0000;
++
++		/* 1 MiB reserved for ramoops/pstore. Keep in sync with the
++		 * kernel's 191-dts-mt7988a-bpi-r4-add-ramoops.patch and the
++		 * CMD_PSTORE_* values in the BPI-R4 defconfigs.
++		 */
++		ramoops@42f00000 {
++			compatible = "ramoops";
++			reg = <0 0x42f00000 0 0x100000>;
++			no-map;
++			record-size = <0x20000>;
++			console-size = <0x40000>;
++			ftrace-size = <0x10000>;
++			pmsg-size = <0x10000>;
++			ecc-size = <16>;
++		};
 +	};
 +
 +	reg_3p3v: regulator-3p3v {
@@ -891,7 +938,7 @@
 +};
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-emmc_defconfig
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,151 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -960,7 +1007,13 @@
 +CONFIG_CMD_PXE=y
 +CONFIG_CMD_CACHE=y
 +CONFIG_CMD_PSTORE=y
-+CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42f00000
++CONFIG_CMD_PSTORE_MEM_SIZE=0x100000
++CONFIG_CMD_PSTORE_RECORD_SIZE=0x20000
++CONFIG_CMD_PSTORE_CONSOLE_SIZE=0x40000
++CONFIG_CMD_PSTORE_FTRACE_SIZE=0x10000
++CONFIG_CMD_PSTORE_PMSG_SIZE=0x10000
++CONFIG_CMD_PSTORE_ECC_SIZE=16
 +CONFIG_CMD_UUID=y
 +CONFIG_CMD_HASH=y
 +CONFIG_CMD_SMC=y
@@ -1039,7 +1092,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-sdmmc_defconfig
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,149 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -1106,7 +1159,13 @@
 +CONFIG_CMD_PXE=y
 +CONFIG_CMD_CACHE=y
 +CONFIG_CMD_PSTORE=y
-+CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42f00000
++CONFIG_CMD_PSTORE_MEM_SIZE=0x100000
++CONFIG_CMD_PSTORE_RECORD_SIZE=0x20000
++CONFIG_CMD_PSTORE_CONSOLE_SIZE=0x40000
++CONFIG_CMD_PSTORE_FTRACE_SIZE=0x10000
++CONFIG_CMD_PSTORE_PMSG_SIZE=0x10000
++CONFIG_CMD_PSTORE_ECC_SIZE=16
 +CONFIG_CMD_UUID=y
 +CONFIG_CMD_HASH=y
 +CONFIG_CMD_SMC=y
@@ -1185,7 +1244,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-snand_defconfig
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,151 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -1251,7 +1310,13 @@
 +CONFIG_CMD_PXE=y
 +CONFIG_CMD_CACHE=y
 +CONFIG_CMD_PSTORE=y
-+CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42f00000
++CONFIG_CMD_PSTORE_MEM_SIZE=0x100000
++CONFIG_CMD_PSTORE_RECORD_SIZE=0x20000
++CONFIG_CMD_PSTORE_CONSOLE_SIZE=0x40000
++CONFIG_CMD_PSTORE_FTRACE_SIZE=0x10000
++CONFIG_CMD_PSTORE_PMSG_SIZE=0x10000
++CONFIG_CMD_PSTORE_ECC_SIZE=16
 +CONFIG_CMD_UUID=y
 +CONFIG_CMD_HASH=y
 +CONFIG_CMD_SMC=y
