@@ -86,6 +86,7 @@ else
 endif
 
 GCC_CONFIGURE:= \
+	acx_cv_cc_gcc_supports_ada=no \
 	SHELL="$(BASH)" \
 	$(HOST_SOURCE_DIR)/configure \
 		--with-bugurl=$(BUGURL) \
