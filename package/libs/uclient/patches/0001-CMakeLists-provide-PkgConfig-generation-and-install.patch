@@ -1,0 +1,55 @@
+From 94f509365aa7549460f6eaa26719351cf7d40222 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 19 Oct 2026 23:35:34 +0200
+Subject: [PATCH] CMakeLists: provide PkgConfig generation and install
+
+Provide PkgConfig generation and install to permit usage of libuclient on
+other project.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ CMakeLists.txt |  9 +++++++++
+ uclient.pc.in  | 11 +++++++++++
+ 2 files changed, 20 insertions(+)
+ create mode 100644 uclient.pc.in
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index cb2126407233..dbbc98459236 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -62,6 +62,15 @@ IF(BUILD_UCODE)
+   )
+ ENDIF()
+ 
++CONFIGURE_FILE(
++    uclient.pc.in
++    uclient.pc
++    @ONLY
++)
++
++INSTALL(FILES uclient.pc
++	DESTINATION lib/pkgconfig
++)
+ INSTALL(FILES uclient.h uclient-utils.h
+ 	DESTINATION include/libubox
+ )
+diff --git a/uclient.pc.in b/uclient.pc.in
+new file mode 100644
+index 000000000000..f4c4518eb20f
+--- /dev/null
++++ b/uclient.pc.in
+@@ -0,0 +1,11 @@
++prefix=/usr
++exec_prefix=${prefix}
++libdir=${exec_prefix}/lib
++includedir=${prefix}/include
++
++Name: uclient
++Description: OpenWrt HTTP client library
++Requires: ubox
++Version:
++Libs: -L${libdir} -luclient
++Cflags: -I${includedir}
+-- 
+2.55.0
+
