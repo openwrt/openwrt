@@ -1,3 +1,11 @@
+From 6a2e17d5c1451025396ba523e9f2d112212c7261 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 3 Oct 2023 02:32:35 +0100
+Subject: [PATCH] PCI: mediatek-gen3: keep PERST# asserted for 100ms
+
+De-assert PERST# only 100 ms after the other reset signals, so that the
+connected card has enough time to power up and is detected reliably.
+---
 --- a/drivers/pci/controller/pcie-mediatek-gen3.c
 +++ b/drivers/pci/controller/pcie-mediatek-gen3.c
 @@ -416,7 +416,13 @@ static int mtk_pcie_startup_port(struct

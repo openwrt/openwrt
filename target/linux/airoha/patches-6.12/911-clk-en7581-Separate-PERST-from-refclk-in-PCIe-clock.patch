@@ -1,4 +1,6 @@
+From 150d05f8c69b7c9825e83f5600d76402cc7effc6 Mon Sep 17 00:00:00 2001
 From: Ryan Chen <rchen14b@gmail.com>
+Date: Tue, 10 Feb 2026 22:25:01 -0600
 Subject: clk: en7581: Separate PERST from refclk in PCIe clock callbacks
 
 The EN7581 PCIe clock enable/disable callbacks currently toggle both
@@ -11,6 +13,7 @@ Separate the two concerns: clock callbacks only manage reference clocks
 to the PCIe controller driver to manage directly via the NP_SCU regmap.
 
 Signed-off-by: Ryan Chen <rchen14b@gmail.com>
+---
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
 @@ -960,9 +960,11 @@ static int en7581_pci_enable(struct clk_

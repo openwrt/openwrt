@@ -1,4 +1,6 @@
+From 7b8931678c36c8d8c333b446258a653b1358bf70 Mon Sep 17 00:00:00 2001
 From: Denis Kalashnikov <denis281089@gmail.com>
+Date: Thu, 27 May 2021 11:16:44 +0300
 Subject: [PATCH] ath79: add support for reset key on MikroTik RB912UAG-2HPnD
 
 On MikroTik RB91x board series a reset key shares SoC gpio
@@ -73,7 +75,7 @@ Tested-by: Koen Vandeputte <koen.vandeputte@ncentric.com>
  obj-$(CONFIG_GPIO_RDA)			+= gpio-rda.o
 --- a/drivers/mtd/nand/raw/Kconfig
 +++ b/drivers/mtd/nand/raw/Kconfig
-@@ -563,4 +563,10 @@ config MTD_NAND_RB4XX
+@@ -564,4 +564,10 @@ config MTD_NAND_RB4XX
  	  Enables support for the NAND flash chip on Mikrotik Routerboard
  	  RB4xx series.
  

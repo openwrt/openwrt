@@ -1,3 +1,12 @@
+From dc7efaefb53d4671893add07934839eb8d44934d Mon Sep 17 00:00:00 2001
+From: Christian Lamparter <chunkeey@googlemail.com>
+Date: Wed, 20 Jul 2016 15:44:54 +0200
+Subject: [PATCH] powerpc: 44x: add AMCC Apollo3G support
+
+Add the APOLLO3G Kconfig option and add the AMCC Apollo3G board, which
+is used by the Western Digital My Book Live series, to the boards
+handled by ppc44x_simple.
+---
 --- a/arch/powerpc/platforms/44x/Kconfig
 +++ b/arch/powerpc/platforms/44x/Kconfig
 @@ -118,6 +118,17 @@ config CANYONLANDS

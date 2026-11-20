@@ -1,4 +1,6 @@
+From ee6b5c600751b7e744faf3d5114e6f9cc1715a86 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 12 Dec 2014 20:24:21 +0000
 Subject: libata: add ledtrig support
 
 This adds a LED trigger for each ATA port indicating disk activity.
@@ -96,7 +98,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	kfree(ap);
  }
  EXPORT_SYMBOL_GPL(ata_port_free);
-@@ -6011,7 +6034,23 @@ int ata_host_register(struct ata_host *h
+@@ -6057,7 +6080,23 @@ int ata_host_register(struct ata_host *h
  		WARN_ON(1);
  		return -EINVAL;
  	}

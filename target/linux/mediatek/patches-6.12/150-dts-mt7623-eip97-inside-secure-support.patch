@@ -1,3 +1,12 @@
+From 127ad76311079a842578e788a8af364f3910c676 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Thu, 4 Jun 2020 14:20:34 +0200
+Subject: [PATCH] ARM: dts: mediatek: mt7623: use inside-secure EIP97 driver
+
+Change the crypto node of the MT7623 to the inside-secure,safexcel-eip97
+compatible, so that the upstream SafeXcel driver is used for the EIP97
+crypto engine.
+---
 --- a/arch/arm/boot/dts/mediatek/mt7623.dtsi
 +++ b/arch/arm/boot/dts/mediatek/mt7623.dtsi
 @@ -995,17 +995,15 @@

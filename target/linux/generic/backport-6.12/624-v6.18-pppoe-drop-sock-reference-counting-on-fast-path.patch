@@ -28,7 +28,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ppp/pppoe.c
 +++ b/drivers/net/ppp/pppoe.c
-@@ -237,8 +237,8 @@ static inline struct pppox_sock *get_ite
+@@ -235,8 +235,8 @@ static inline struct pppox_sock *get_ite
  	return po;
  }
  
@@ -39,7 +39,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  {
  	struct net_device *dev;
  	struct pppoe_net *pn;
-@@ -246,15 +246,13 @@ static inline struct pppox_sock *get_ite
+@@ -244,15 +244,13 @@ static inline struct pppox_sock *get_ite
  
  	int ifindex;
  
@@ -57,7 +57,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	return pppox_sock;
  }
  
-@@ -384,18 +382,16 @@ static int pppoe_rcv_core(struct sock *s
+@@ -381,18 +379,16 @@ static int pppoe_rcv_core(struct sock *s
  	if (sk->sk_state & PPPOX_BOUND) {
  		ppp_input(&po->chan, skb);
  	} else if (sk->sk_state & PPPOX_RELAY) {
@@ -80,7 +80,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	} else {
  		if (sock_queue_rcv_skb(sk, skb))
  			goto abort_kfree;
-@@ -403,9 +399,6 @@ static int pppoe_rcv_core(struct sock *s
+@@ -400,9 +396,6 @@ static int pppoe_rcv_core(struct sock *s
  
  	return NET_RX_SUCCESS;
  
@@ -90,7 +90,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  abort_kfree:
  	kfree_skb(skb);
  	return NET_RX_DROP;
-@@ -453,14 +446,11 @@ static int pppoe_rcv(struct sk_buff *skb
+@@ -450,14 +443,11 @@ static int pppoe_rcv(struct sk_buff *skb
  	ph = pppoe_hdr(skb);
  	pn = pppoe_pernet(dev_net(dev));
  
@@ -107,7 +107,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  drop:
  	kfree_skb(skb);
-@@ -826,11 +816,12 @@ static int pppoe_ioctl(struct socket *so
+@@ -820,11 +810,12 @@ static int pppoe_ioctl(struct socket *so
  
  		/* Check that the socket referenced by the address
  		   actually exists. */

@@ -1,8 +1,13 @@
+From 4e797b62787c7fbb36d5b4c936cf8bc9a382f4d4 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 7 Nov 2010 13:44:48 +0000
+Subject: [PATCH] firmware: bcm47xx_nvram: add support for the Netgear WGT634U
+
 The Netgear wgt634u uses a different format for storing the 
 configuration. This patch is needed to read out the correct 
 configuration. The cfe_env.c file uses a different method way to read 
 out the configuration than the in kernel cfe config reader.
-
+---
 --- a/drivers/firmware/broadcom/Makefile
 +++ b/drivers/firmware/broadcom/Makefile
 @@ -1,4 +1,4 @@

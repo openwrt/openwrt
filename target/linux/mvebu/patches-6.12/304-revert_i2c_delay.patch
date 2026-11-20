@@ -1,3 +1,12 @@
+From d775e4ef00e08c839a41e101552be171ff638d3d Mon Sep 17 00:00:00 2001
+From: Imre Kaloz <kaloz@openwrt.org>
+Date: Tue, 17 Jun 2014 15:13:10 +0000
+Subject: [PATCH] ARM: dts: armada-xp: drop mv78230-i2c compatible
+
+Remove the marvell,mv78230-i2c compatible from the I2C controllers of
+the Armada XP, so that the generic marvell,mv64xxx-i2c handling without
+the additional delay is used.
+---
 --- a/arch/arm/boot/dts/marvell/armada-xp.dtsi
 +++ b/arch/arm/boot/dts/marvell/armada-xp.dtsi
 @@ -237,12 +237,10 @@

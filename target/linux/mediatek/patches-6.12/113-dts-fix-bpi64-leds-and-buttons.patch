@@ -1,3 +1,12 @@
+From dfa0a38d1f4d5bbac768569e3769ae4438a57e73 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 27 Feb 2021 14:17:09 +0000
+Subject: [PATCH] arm64: dts: mediatek: bpi-r64: update LEDs and buttons
+
+Rename the LEDs and buttons of the BananaPi BPI-R64, update their GPIOs
+and key codes and add the LED aliases used by OpenWrt to indicate the
+boot, failsafe, running and upgrade states.
+---
 --- a/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
 @@ -21,6 +21,12 @@

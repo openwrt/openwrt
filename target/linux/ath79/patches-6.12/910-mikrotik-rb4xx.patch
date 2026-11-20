@@ -1,4 +1,6 @@
+From fa70b3a4bbc65d372d735004d9df894bd1c89c81 Mon Sep 17 00:00:00 2001
 From: Christopher Hill <ch6574@gmail.com>
+Date: Mon, 25 May 2020 21:05:00 -0400
 Subject: [PATCH] ath79: add Mikrotik rb4xx series drivers
 
 This adds 3 Mikrotik rb4xx series drivers as follows:
@@ -97,7 +99,7 @@ Submitted-by: Christopher Hill <ch6574@gmail.com>
  obj-$(CONFIG_GPIO_RDA)			+= gpio-rda.o
 --- a/drivers/mtd/nand/raw/Kconfig
 +++ b/drivers/mtd/nand/raw/Kconfig
-@@ -556,4 +556,11 @@ config MTD_NAND_AR934X
+@@ -557,4 +557,11 @@ config MTD_NAND_AR934X
  	  Enables support for NAND controller on Qualcomm Atheros SoCs.
  	  This controller is found on AR934x and QCA955x SoCs.
  

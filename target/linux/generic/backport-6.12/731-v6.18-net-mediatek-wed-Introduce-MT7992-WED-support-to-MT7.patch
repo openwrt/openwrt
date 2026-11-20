@@ -1,3 +1,4 @@
+From 2eb42969a79162d29a1dc77ba8254ef1f769cb6b Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Tue, 12 Aug 2025 06:57:23 +0200
 Subject: [PATCH] net: mediatek: wed: Introduce MT7992 WED support to MT7988
@@ -75,7 +76,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (!dev->wlan.hw_rro)
  		return;
-@@ -2335,6 +2346,16 @@ mtk_wed_start(struct mtk_wed_device *dev
+@@ -2340,6 +2351,16 @@ mtk_wed_start(struct mtk_wed_device *dev
  		if (!dev->rx_wdma[i].desc)
  			mtk_wed_wdma_rx_ring_setup(dev, i, 16, false);
  

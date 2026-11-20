@@ -1,3 +1,4 @@
+From 3632c0d3ce92802867b4aca9062c1d9b20f7b675 Mon Sep 17 00:00:00 2001
 From: Rex Lu <rex.lu@mediatek.com>
 Date: Thu, 9 Oct 2025 08:29:34 +0200
 Subject: [PATCH] net: mtk: wed: add dma mask limitation and GFP_DMA32 for
@@ -37,7 +38,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (!page)
  			return -ENOMEM;
  
-@@ -2438,6 +2438,10 @@ mtk_wed_attach(struct mtk_wed_device *de
+@@ -2443,6 +2443,10 @@ mtk_wed_attach(struct mtk_wed_device *de
  	dev->version = hw->version;
  	dev->hw->pcie_base = mtk_wed_get_pcie_base(dev);
  

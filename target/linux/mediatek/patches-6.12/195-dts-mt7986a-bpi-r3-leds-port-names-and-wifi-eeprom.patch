@@ -1,3 +1,12 @@
+From 7a0ec001ff79b12beefb8f3773820bfedebbb340 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 4 Jun 2023 15:56:15 +0100
+Subject: [PATCH] arm64: dts: mediatek: bpi-r3: add LED aliases, port names and WiFi EEPROM
+
+Add the LED aliases used by OpenWrt to indicate the boot, failsafe,
+running and upgrade states, name the switch ports lan0 to lan4 and sfp2
+and provide the WiFi EEPROM data on the BananaPi BPI-R3.
+---
 --- a/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3.dts
 @@ -23,6 +23,10 @@

@@ -1,3 +1,4 @@
+From 480268596fac7f9e4b8e9b544ac5aecff5abca2d Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
 Date: Fri, 30 May 2025 09:12:23 +0400
 Subject: [PATCH] clk: qcom: gcc-ipq5018: fix UNIPHY soft reset issue
@@ -9,9 +10,10 @@ definition accordingly in the GCC as per the downstream driver.
 Link: https://git.codelinaro.org/clo/qsdk/oss/kernel/linux-ipq-5.4/-/commit/036bdc62aca561e8ff94a29c447fc400de2b7304
 
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
 --- a/drivers/clk/qcom/gcc-ipq5018.c
 +++ b/drivers/clk/qcom/gcc-ipq5018.c
-@@ -3648,7 +3648,7 @@ static const struct qcom_reset_map gcc_i
+@@ -3658,7 +3658,7 @@ static const struct qcom_reset_map gcc_i
  	[GCC_UNIPHY_SYS_ARES] = { 0x56104, 1 },
  	[GCC_UNIPHY_RX_ARES] = { 0x56104, 4 },
  	[GCC_UNIPHY_TX_ARES] = { 0x56104, 5 },

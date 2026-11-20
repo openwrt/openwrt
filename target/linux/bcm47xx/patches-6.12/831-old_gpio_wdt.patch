@@ -1,7 +1,12 @@
+From 0294358e11cbcb9c754f4c6056a070e8b36b5dd8 Mon Sep 17 00:00:00 2001
+From: Mathias Adam <m.adam--openwrt@adamis.de>
+Date: Mon, 16 Sep 2013 21:07:52 +0000
+Subject: [PATCH] watchdog: add generic GPIO watchdog driver
+
 This generic GPIO watchdog is used on Huawei E970 (bcm47xx)
 
 Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
-
+---
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
 @@ -1803,6 +1803,15 @@ config WDT_MTX1
