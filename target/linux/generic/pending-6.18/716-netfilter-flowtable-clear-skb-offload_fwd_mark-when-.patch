@@ -1,0 +1,70 @@
+From: Junfeng Yang <didiglobalusa@gmail.com>
+Date: Fri, 13 Nov 2026 01:44:33 -0800
+Subject: [PATCH] netfilter: flowtable: clear skb->offload_fwd_mark when
+ forwarding
+
+DSA taggers set skb->offload_fwd_mark on frames received on a port that
+offloads a bridge, so that the software bridge does not forward them a
+second time. When such a frame leaves the bridge towards the IP stack,
+br_pass_frame_up() clears the mark again.
+
+The flowtable ingress hook runs before the bridge rx handler. If the
+flowtable is bound to the bridge port itself, a frame taken by the fast
+path is routed and transmitted without ever passing br_pass_frame_up(),
+and reaches the egress device with the mark still set.
+
+On transmit the mark has a different meaning: it asks the driver to let
+the hardware forward the frame on behalf of a bridge. tag_dsa acts on it
+and builds a FORWARD tag. If the egress device is a standalone port of
+the same switch, the frame goes out on the conduit with a FORWARD tag
+that addresses no bridge, and it never arrives at the next hop.
+
+This is seen on a Marvell 88E6176 (mv88e6xxx, EDSA tagging) with lan1 in
+a bridge and wan standalone, and a flowtable bound to both ports. The
+TCP handshake completes through the slow path; once the flow is added to
+the flowtable every lan1->wan packet is sent with a FORWARD tag instead
+of FROM_CPU and the connection stalls.
+
+Clear the mark in the IPv4 and IPv6 forward paths, as the bridge does.
+
+Signed-off-by: Junfeng Yang <didiglobalusa@gmail.com>
+---
+
+--- a/net/netfilter/nf_flow_table_ip.c
++++ b/net/netfilter/nf_flow_table_ip.c
+@@ -376,6 +376,19 @@ nf_flow_offload_lookup(struct nf_flowtab
+ 	return flow_offload_lookup(flow_table, &tuple);
+ }
+ 
++/* The flowtable ingress hook runs before the bridge rx handler, so a frame
++ * received on a switchdev bridge port never reaches br_pass_frame_up(), which
++ * is where the bridge clears skb->offload_fwd_mark before handing a frame to
++ * the IP stack. Clear it here as well: the frame is being routed, and must
++ * not be mistaken for one that the egress driver may forward in hardware.
++ */
++static void nf_flow_switchdev_frame_unmark(struct sk_buff *skb)
++{
++#ifdef CONFIG_NET_SWITCHDEV
++	skb->offload_fwd_mark = 0;
++#endif
++}
++
+ static int nf_flow_offload_forward(struct nf_flowtable_ctx *ctx,
+ 				   struct nf_flowtable *flow_table,
+ 				   struct flow_offload_tuple_rhash *tuplehash,
+@@ -416,6 +429,7 @@ static int nf_flow_offload_forward(struc
+ 
+ 	ip_decrease_ttl(iph);
+ 	skb_clear_tstamp(skb);
++	nf_flow_switchdev_frame_unmark(skb);
+ 
+ 	/* As ip_forward() does for the packets the flow did not take. */
+ 	if (flow->priority)
+@@ -710,6 +724,7 @@ static int nf_flow_offload_ipv6_forward(
+ 
+ 	ip6h->hop_limit--;
+ 	skb_clear_tstamp(skb);
++	nf_flow_switchdev_frame_unmark(skb);
+ 
+ 	if (flow->priority)
+ 		skb->priority = flow->priority;
