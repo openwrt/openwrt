@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Sun, 1 Nov 2026 22:20:32 -0600
+Subject: [PATCH] FT: Set RSNXE Used only when the AP advertises an RSNXE
+
+RSNXE Used in the FTE of an FT Reassociation Response indicates that the
+AP uses the RSNXE in other frames (commit 51d1924bd), and wpa_supplicant
+checks it against the RSNXE of the Beacon and Probe Response frames. The
+AP set it whenever sae_pwe was 1 or 2. A BSS without an SAE AKM, for
+example FT-EAP or FT-PSK, usually has no extended RSN capability to
+advertise and thus no RSNXE, but with sae_pwe set its responses still
+announced one. wpa_supplicant then rejected every FT Reassociation
+Response ("FT: FTE indicated that AP uses RSNXE, but RSNXE was not
+included in Beacon/Probe Response frames") and deauthenticated with
+reason 13 (invalid element). OpenWrt 25.12.2 sets sae_pwe=2 on WPA3 and
+WPA2/WPA3 Enterprise BSSs, so FT-EAP roams to such APs failed.
+
+Set RSNXE Used only when the Beacon and Probe Response frames carry an
+RSNXE: it is not omitted with rsn_override_omit_rsnxe, and the AP has an
+extended RSN capability to advertise. The response to a STA that sent no
+RSNXE is unchanged.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+---
+ src/ap/wpa_auth_ft.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/src/ap/wpa_auth_ft.c
++++ b/src/ap/wpa_auth_ft.c
+@@ -2710,7 +2710,12 @@ u8 * wpa_sm_write_assoc_resp_ies(struct
+ 		anonce = NULL;
+ 		snonce = NULL;
+ 	}
++	/* RSNXE Used indicates that the AP uses the RSNXE in other frames, so
++	 * only an AP whose Beacon and Probe Response frames carry an RSNXE
++	 * may set it. */
+ 	rsnxe_used = (auth_alg == WLAN_AUTH_FT) &&
++		!conf->rsn_override_omit_rsnxe &&
++		wpa_write_rsnxe(conf, rsnxe_buf, sizeof(rsnxe_buf)) > 0 &&
+ 		(conf->sae_pwe == SAE_PWE_HASH_TO_ELEMENT ||
+ 		 conf->sae_pwe == SAE_PWE_BOTH);
+ #ifdef CONFIG_TESTING_OPTIONS
