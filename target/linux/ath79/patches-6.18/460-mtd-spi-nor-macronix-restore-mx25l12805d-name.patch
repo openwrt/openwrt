@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Salah Ahmed <haddad2inc@gmail.com>
+Date: Mon, 05 Oct 2026 02:32:11 +0300
+Subject: [PATCH] mtd: spi-nor: macronix: restore MX25L12805D name
+
+The backport of the upstream fix for this part (d9f8ecc394,
+439-v7.4-mtd-spi-nor-macronix-Restore-fallback-parameters-for.patch,
+upstream 01739ccea21b) restored the static .size and .no_sfdp_flags of
+the SNOR_ID(0xc2, 0x20, 0x18) entry, but not its .name.
+
+Without .name, spi_nor_sysfs_is_visible() returns 0 for partname, so the
+attribute is not exposed at all and a running board cannot report which
+name the driver matched. Restore that one field, as the neighbouring
+mx25l3205d and mx25l6405d entries still carry theirs, keeping the same
+".id then .name" order they use.
+
+This labels the table entry, not the die: any part reporting JEDEC id
+c22018 shows partname=mx25l12805d, so partname alone cannot tell them
+apart. The sfdp blob can, and its absence is itself the answer for the
+part this patch is about - 01739ccea21b records that the legacy
+MX25L12805D "lacks SFDP support entirely", while the newer MX25L12833F
+shares the same id and does support SFDP. On such a board sfdp is not
+exposed either, so partname is the only positive label it gets.
+
+Data-only: probing is unchanged, since JEDEC detection still overrides
+a name match for entries with an id, and spi_nor_scan() falls back to
+dev_name(dev) for mtd->name, so mtd device names and partitions are
+unaffected.
+
+Tested on a COMFAST CF-WA350 (QCA9563, 16 MiB Macronix, jedec_id c22018,
+Linux 6.18.54, GCC 14.4.0): /sys/bus/spi/devices/spi0.0/spi-nor/ exposes
+partname=mx25l12805d, manufacturer=macronix and jedec_id=c22018, and no
+sfdp attribute. The board boots and the mtd layout is intact (u-boot,
+art, firmware, kernel, rootfs, rootfs_data, art-backup).
+
+Fixes: 947c86e481a0 ("mtd: spi-nor: macronix: Drop the redundant flash info fields")
+Signed-off-by: Salah Ahmed <haddad2inc@gmail.com>
+---
+ drivers/mtd/spi-nor/macronix.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mtd/spi-nor/macronix.c
++++ b/drivers/mtd/spi-nor/macronix.c
+@@ -143,6 +143,7 @@ static const struct flash_info macronix_
+ 	}, {
+ 		/* MX25L12805D */
+ 		.id = SNOR_ID(0xc2, 0x20, 0x18),
++		.name = "mx25l12805d",
+ 		.size = SZ_16M,
+ 		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_4BIT_BP,
+ 		.no_sfdp_flags = SECT_4K,
