@@ -141,7 +141,7 @@ define Build/iodata-mstc-header
 	dd if=/dev/zero of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null
 	( \
 		header_crc="$$(dd if=$@ bs=64 count=1 2>/dev/null | gzip -c | \
-			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
+			tail -c 8 | od -An -tx4 --endian little | tr -d ' \n' | cut -c1-8)"; \
 		echo -ne "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
 			dd of=$@ bs=4 count=1 seek=1 conv=notrunc iflag=fullblock 2>/dev/null; \
 	)
@@ -171,7 +171,7 @@ define Build/iodata-mstc-header2
 	) > $@.new
 	( \
 		header_crc="$$(head -c116 $@.new | gzip -c | tail -c8 | \
-			od -An -tx4 -N4 --endian little)"; \
+			od -An -tx4 --endian little | tr -d ' \n' | cut -c1-8)"; \
 		printf "$$(echo $$header_crc | sed 's/../\\x&/g')"; \
 	) | dd of=$@.new bs=4 oflag=seek_bytes seek=110 conv=notrunc
 
@@ -184,10 +184,10 @@ define Build/znet-header
 	$(eval hdrlen=$(if $(word 3,$(1)),$(word 3,$(1)),0x30))
 	( \
 		data_size_crc="$$(dd if=$@ 2>/dev/null | gzip -c | \
-			tail -c 8 | od -An -N4 -tx4 --endian big | tr -d ' \n')"; \
+			tail -c 8 | od -An -tx4 --endian big | tr -d ' \n' | cut -c1-8)"; \
 		payload_len="$$(dd if=$@ bs=4 count=1 skip=1 2>/dev/null | od -An -tdI --endian big | tr -d ' \n')"; \
 		payload_size_crc="$$(dd if=$@ ibs=1 count=$$payload_len 2>/dev/null | gzip -c | \
-			tail -c 8 | od -An -N4 -tx4 --endian big | tr -d ' \n')"; \
+			tail -c 8 | od -An -tx4 --endian big | tr -d ' \n' | cut -c1-8)"; \
 		echo -ne "$(magic)" | dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -w2 | xargs -I {} echo \\x{} | tac | tr -d '\n')" | \
 			dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
