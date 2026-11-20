@@ -69,7 +69,8 @@ platform_do_upgrade() {
 		;;
 	fortinet,fap-220-b|\
 	fortinet,fap-221-b|\
-	fortinet,fap-221-c)
+	fortinet,fap-221-c|\
+	fortinet,fap-321-c)
 		SKIP_HASH="1"
 		ENV_SCRIPT="/dev/null"
 		IMAGE_LIST="tar tzf $1"
