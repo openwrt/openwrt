@@ -408,6 +408,11 @@ endif
 	touch $$@
 
     Package/$(1)/DEPENDS := $$(foreach dep,$$(filter-out @%,$$(IDEPEND_$(1))),$$(dep)$$(call GetABISuffix,$$(dep)))
+    ifneq ($(CONFIG_USE_APK),)
+      # apk has no conflicts field. A dependency prefixed with "!" is a
+      # conflict, see apk-world(5).
+      Package/$(1)/DEPENDS += $$(addprefix !,$(CONFLICTS))
+    endif
     ifneq ($$(EXTRA_DEPENDS),)
       ifeq ($(CONFIG_USE_APK),)
         Package/$(1)/DEPENDS := $$(call mergelist,$$(Package/$(1)/DEPENDS))
