@@ -31,7 +31,7 @@ Link: https://lore.kernel.org/r/20261112155801.610730-1-david@dsg.is
 Signed-off-by: Davíð Steinn Geirsson <david@dsg.is>
 --- a/drivers/clk/qcom/gcc-ipq5018.c
 +++ b/drivers/clk/qcom/gcc-ipq5018.c
-@@ -1980,9 +1980,9 @@ static struct clk_branch gcc_lpass_sway_
+@@ -1971,9 +1971,9 @@ static struct clk_branch gcc_lpass_sway_
  };
  
  static struct clk_branch gcc_mdio0_ahb_clk = {
@@ -43,7 +43,7 @@ Signed-off-by: Davíð Steinn Geirsson <david@dsg.is>
  		.enable_mask = BIT(0),
  		.hw.init = &(struct clk_init_data) {
  			.name = "gcc_mdioi0_ahb_clk",
-@@ -1997,9 +1997,9 @@ static struct clk_branch gcc_mdio0_ahb_c
+@@ -1988,9 +1988,9 @@ static struct clk_branch gcc_mdio0_ahb_c
  };
  
  static struct clk_branch gcc_mdio1_ahb_clk = {
@@ -55,7 +55,7 @@ Signed-off-by: Davíð Steinn Geirsson <david@dsg.is>
  		.enable_mask = BIT(0),
  		.hw.init = &(struct clk_init_data) {
  			.name = "gcc_mdio1_ahb_clk",
-@@ -3599,8 +3599,8 @@ static const struct qcom_reset_map gcc_i
+@@ -3590,8 +3590,8 @@ static const struct qcom_reset_map gcc_i
  	[GCC_GMAC1_SYS_ARES] = { 0x68438, 1 },
  	[GCC_IMEM_BCR] = { 0x0e000, 0 },
  	[GCC_LPASS_BCR] = { 0x2e000, 0 },
