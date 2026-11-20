@@ -1,0 +1,256 @@
+From 99a88f2dbe68a49f3a68d57ab6be5974082c89ef Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 15:21:39 +0100
+Subject: [PATCH] net: dsa: b53: keep VLAN members for the Northstar flow
+ accelerator
+
+The flow accelerator of the BCM470x/5301x sends the frames that it
+forwards back into the switch on port 8. When the egress port is an
+802.1Q upper of a user port, such as wan.10 for a WAN behind a tagged
+uplink, the accelerator adds the tag, and the frame goes through the
+VLAN lookup of the switch. The host's own frames do not: they carry a
+Broadcom tag that names the egress port.
+
+This driver writes the VLAN table only while VLAN filtering is on. The
+upper of a standalone port is no member of any VLAN, so the switch drops
+every frame that the accelerator forwards towards it. Measured on a
+BCM4708 (Linksys EA6900): the entry for VLAN 10 read back as 0x00000000,
+and the frames the accelerator found showed up as discards on port 8.
+
+Add b53_fa_vlan() for the accelerator's driver. It keeps the egress port
+and port 8 as tagged members of the VLAN while the accelerator has a
+next hop that adds that tag, and takes them out again with the last one.
+These members are kept apart from the bridge's, in fa_members, and are
+written along with them on every change of the entry, so that neither
+removes the other. With VLAN filtering off the entry holds only these
+members, and b53_configure_vlan() puts them back after it clears the
+table.
+
+The accelerator's driver calls this from its flow work, without the
+RTNL lock, so the table access gets a mutex of its own.
+
+EA6900, WAN on wan.10 behind a switch port tagged with VLAN 10: the
+entry for VLAN 10 reads 0x00000101 (ports 0 and 8, tagged) while flows
+are in the accelerator, and 0x00000000 again after the last one; the
+entry of VLAN 1 is not touched. TCP through the accelerator in Mbit/s,
+up / down: IPv4 939 / 935, IPv6 925 / 920 (941 / 941 and 928 / 928
+without the VLAN).
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 81 ++++++++++++++++++++++++++++----
+ drivers/net/dsa/b53/b53_priv.h   |  2 +
+ include/linux/dsa/b53.h          |  8 ++++
+ 3 files changed, 82 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -252,15 +252,19 @@ static int b53_do_vlan_op(struct b53_dev
+ 	return -EIO;
+ }
+ 
+-static void b53_set_vlan_entry(struct b53_device *dev, u16 vid,
+-			       struct b53_vlan *vlan)
++/* with dev->vlan_mutex held */
++static void __b53_set_vlan_entry(struct b53_device *dev, u16 vid,
++				 struct b53_vlan *vlan)
+ {
++	/* the flow accelerator's members are in the table whatever else is */
++	u16 members = vlan->members | dev->vlans[vid].fa_members;
++
+ 	if (is5325(dev)) {
+ 		u32 entry = 0;
+ 
+-		if (vlan->members) {
++		if (members) {
+ 			entry = ((vlan->untag & VA_UNTAG_MASK_25) <<
+-				 VA_UNTAG_S_25) | vlan->members;
++				 VA_UNTAG_S_25) | members;
+ 			if (dev->core_rev >= 3)
+ 				entry |= VA_VALID_25_R4 | vid << VA_VID_HIGH_S;
+ 			else
+@@ -273,9 +277,9 @@ static void b53_set_vlan_entry(struct b5
+ 	} else if (is5365(dev)) {
+ 		u16 entry = 0;
+ 
+-		if (vlan->members)
++		if (members)
+ 			entry = ((vlan->untag & VA_UNTAG_MASK_65) <<
+-				 VA_UNTAG_S_65) | vlan->members | VA_VALID_65;
++				 VA_UNTAG_S_65) | members | VA_VALID_65;
+ 
+ 		b53_write16(dev, B53_VLAN_PAGE, B53_VLAN_WRITE_65, entry);
+ 		b53_write16(dev, B53_VLAN_PAGE, B53_VLAN_TABLE_ACCESS_65, vid |
+@@ -283,18 +287,28 @@ static void b53_set_vlan_entry(struct b5
+ 	} else {
+ 		b53_write16(dev, B53_ARLIO_PAGE, dev->vta_regs[1], vid);
+ 		b53_write32(dev, B53_ARLIO_PAGE, dev->vta_regs[2],
+-			    (vlan->untag << VTE_UNTAG_S) | vlan->members);
++			    (vlan->untag << VTE_UNTAG_S) | members);
+ 
+ 		b53_do_vlan_op(dev, VTA_CMD_WRITE);
+ 	}
+ 
+ 	dev_dbg(dev->ds->dev, "VID: %d, members: 0x%04x, untag: 0x%04x\n",
+-		vid, vlan->members, vlan->untag);
++		vid, members, vlan->untag);
++}
++
++static void b53_set_vlan_entry(struct b53_device *dev, u16 vid,
++			       struct b53_vlan *vlan)
++{
++	mutex_lock(&dev->vlan_mutex);
++	__b53_set_vlan_entry(dev, vid, vlan);
++	mutex_unlock(&dev->vlan_mutex);
+ }
+ 
+ static void b53_get_vlan_entry(struct b53_device *dev, u16 vid,
+ 			       struct b53_vlan *vlan)
+ {
++	mutex_lock(&dev->vlan_mutex);
++
+ 	if (is5325(dev)) {
+ 		u32 entry = 0;
+ 
+@@ -329,6 +343,8 @@ static void b53_get_vlan_entry(struct b5
+ 		vlan->untag = (entry >> VTE_UNTAG_S) & VTE_MEMBERS;
+ 		vlan->valid = true;
+ 	}
++
++	mutex_unlock(&dev->vlan_mutex);
+ }
+ 
+ static void b53_set_eap_mode(struct b53_device *dev, int port, int mode)
+@@ -1216,7 +1232,9 @@ int b53_configure_vlan(struct dsa_switch
+ 		for (i = def_vid; i < dev->num_vlans; i++)
+ 			b53_set_vlan_entry(dev, i, &vl);
+ 	} else {
++		mutex_lock(&dev->vlan_mutex);
+ 		b53_do_vlan_op(dev, VTA_CMD_CLEAR);
++		mutex_unlock(&dev->vlan_mutex);
+ 	}
+ 
+ 	b53_enable_vlan(dev, -1, dev->vlan_enabled, dev->vlan_filtering);
+@@ -1247,7 +1265,7 @@ int b53_configure_vlan(struct dsa_switch
+ 		for (vid = def_vid + 1; vid < dev->num_vlans; vid++) {
+ 			v = &dev->vlans[vid];
+ 
+-			if (!v->members)
++			if (!v->members && !v->fa_members)
+ 				continue;
+ 
+ 			b53_set_vlan_entry(dev, vid, v);
+@@ -1260,6 +1278,13 @@ int b53_configure_vlan(struct dsa_switch
+ 					    B53_VLAN_PORT_DEF_TAG(i),
+ 					    dev->ports[i].pvid);
+ 		}
++	} else {
++		struct b53_vlan none = {};
++
++		/* the flow accelerator's VLANs, see b53_fa_vlan() */
++		for (vid = def_vid + 1; vid < dev->num_vlans; vid++)
++			if (dev->vlans[vid].fa_members)
++				b53_set_vlan_entry(dev, vid, &none);
+ 	}
+ 
+ 	return 0;
+@@ -3122,6 +3147,43 @@ bool b53_fa_trap_active(struct dsa_switc
+ }
+ EXPORT_SYMBOL(b53_fa_trap_active);
+ 
++/* For the driver of the flow accelerator: the frames that it forwards
++ * come back into the switch on port 8, with the tag of an 802.1Q upper
++ * of their egress port pushed, and go through the VLAN lookup, unlike the
++ * host's own frames, which name their egress port. This driver writes
++ * the VLAN table only while VLAN filtering is on, and the upper of a
++ * standalone port is no member of a VLAN at all: the frames would be
++ * dropped. Keep @port and port 8 in the table as tagged members of @vid,
++ * until the driver takes them out again.
++ */
++int b53_fa_vlan(struct dsa_switch *ds, int port, u16 vid, bool add)
++{
++	struct b53_device *dev = ds->priv;
++	struct b53_vlan none = {};
++	struct b53_vlan *vl;
++
++	if (ds->ops != &b53_switch_ops)
++		return -EOPNOTSUPP;
++	if (!vid || vid >= dev->num_vlans)
++		return -EINVAL;
++
++	vl = &dev->vlans[vid];
++
++	mutex_lock(&dev->vlan_mutex);
++	if (add) {
++		vl->fa_members |= BIT(port) | BIT(B53_CPU_PORT);
++	} else {
++		vl->fa_members &= ~BIT(port);
++		if (vl->fa_members == BIT(B53_CPU_PORT))
++			vl->fa_members = 0;
++	}
++	__b53_set_vlan_entry(dev, vid, dev->vlan_filtering ? vl : &none);
++	mutex_unlock(&dev->vlan_mutex);
++
++	return 0;
++}
++EXPORT_SYMBOL(b53_fa_vlan);
++
+ static const struct b53_arl_ops b53_arl_ops_25 = {
+ 	.arl_read_entry = b53_arl_read_entry_25,
+ 	.arl_write_entry = b53_arl_write_entry_25,
+@@ -3608,6 +3670,7 @@ struct b53_device *b53_switch_alloc(stru
+ 	mutex_init(&dev->reg_mutex);
+ 	mutex_init(&dev->stats_mutex);
+ 	mutex_init(&dev->arl_mutex);
++	mutex_init(&dev->vlan_mutex);
+ 
+ 	return dev;
+ }
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -126,6 +126,7 @@ struct b53_port {
+ struct b53_vlan {
+ 	u16 members;
+ 	u16 untag;
++	u16 fa_members;		/* tagged, for the flow accelerator */
+ 	bool valid;
+ };
+ 
+@@ -137,6 +138,7 @@ struct b53_device {
+ 	struct mutex reg_mutex;
+ 	struct mutex stats_mutex;
+ 	struct mutex arl_mutex;
++	struct mutex vlan_mutex;	/* VLAN table access */
+ 	const struct b53_io_ops *ops;
+ 	const struct b53_arl_ops *arl_ops;
+ 
+--- a/include/linux/dsa/b53.h
++++ b/include/linux/dsa/b53.h
+@@ -7,6 +7,7 @@
+ #ifndef _LINUX_DSA_B53_H
+ #define _LINUX_DSA_B53_H
+ 
++#include <linux/errno.h>
+ #include <linux/kconfig.h>
+ #include <linux/types.h>
+ 
+@@ -14,11 +15,18 @@ struct dsa_switch;
+ 
+ #if IS_REACHABLE(CONFIG_B53)
+ bool b53_fa_trap_active(struct dsa_switch *ds, int port);
++int b53_fa_vlan(struct dsa_switch *ds, int port, u16 vid, bool add);
+ #else
+ static inline bool b53_fa_trap_active(struct dsa_switch *ds, int port)
+ {
+ 	return false;
+ }
++
++static inline int b53_fa_vlan(struct dsa_switch *ds, int port, u16 vid,
++			      bool add)
++{
++	return -EOPNOTSUPP;
++}
+ #endif
+ 
+ #endif /* _LINUX_DSA_B53_H */
