@@ -1,0 +1,92 @@
+From 3fda367a8c4e0746e64a654a1c29eabbba22b797 Mon Sep 17 00:00:00 2001
+From: Akshat Singh <automobilehacks@gmail.com>
+Date: Sun, 15 Nov 2026 08:21:02 +0000
+Subject: [PATCH] irqchip/econet-en751221: chain to every CPU interrupt line
+
+In the MIPS interrupt compatibility mode, the EN751221 interrupt
+controller does not drive one CPU interrupt line per source. It presents
+the number of the pending interrupt plus one, in binary, on IP2-IP7. The
+vendor kernel dispatches with:
+
+	int irq = ((read_c0_cause() & ST0_IM) >> 10);
+
+The driver is chained to IP2 alone, so only the even-numbered IRQs
+interrupt the CPU. An odd-numbered one, such as the QDMA of the frame
+engine (21), xHCI (17) or the first PCIe port (23), is handled only when
+an even-numbered one runs the handler, which on a quiet system is the
+next timer interrupt. On the EN7526G this delayed received packets by up
+to 10 ms, and ping round-trip times to the router cycled through 1-11 ms.
+
+Chain the handler to every CPU line listed in the "interrupts" property.
+Don't count the calls that find nothing pending as spurious, since one
+interrupt usually raises several lines.
+
+Signed-off-by: Akshat Singh <automobilehacks@gmail.com>
+---
+ drivers/irqchip/irq-econet-en751221.c | 34 +++++++++++++++++++++++----
+ 1 file changed, 30 insertions(+), 4 deletions(-)
+
+--- a/drivers/irqchip/irq-econet-en751221.c
++++ b/drivers/irqchip/irq-econet-en751221.c
+@@ -18,6 +18,15 @@
+  * When VPE#1 requests IRQ 30, the driver manipulates the mask bit for IRQ 29,
+  * telling the hardware to mask VPE#1's view of IRQ 30.
+  *
++ * The controller does not give each source its own CPU interrupt line. In
++ * the interrupt compatibility mode that Linux uses, it presents the number of
++ * the pending interrupt plus one, in binary, on the CPU interrupt lines
++ * IP2-IP7. IRQ 21, for example, shows up as 22 = 0b010110 on IP3, IP4 and
++ * IP6. The controller is therefore chained to every CPU line listed in its
++ * "interrupts" property. Chained to IP2 alone, it would see the odd-numbered
++ * IRQs only when an even-numbered one, such as the timer, happened to run
++ * the handler.
++ *
+  * Copyright (C) 2025 Caleb James DeLisle <cjd@cjdns.fr>
+  */
+ 
+@@ -139,9 +148,12 @@ static void econet_intc_from_parent(stru
+ 	pending0 = ioread32(econet_intc.membase + REG_PENDING0);
+ 	pending1 = ioread32(econet_intc.membase + REG_PENDING1);
+ 
+-	if (unlikely(!(pending0 | pending1))) {
+-		spurious_interrupt();
+-	} else {
++	/*
++	 * An interrupt usually raises several CPU lines. It is handled when
++	 * the first of them runs this function, and the others find nothing
++	 * pending.
++	 */
++	if (pending0 | pending1) {
+ 		domain = irq_desc_get_handler_data(desc);
+ 		econet_intc_handle_pending(domain, pending0, 0);
+ 		econet_intc_handle_pending(domain, pending1, 32);
+@@ -253,7 +265,7 @@ static int __init econet_intc_of_init(st
+ {
+ 	struct irq_domain *domain;
+ 	struct resource res;
+-	int ret, irq;
++	int ret, irq, i, nr_parents;
+ 
+ 	ret = get_shadow_interrupts(node);
+ 	if (ret)
+@@ -296,6 +308,20 @@ static int __init econet_intc_of_init(st
+ 
+ 	irq_set_chained_handler_and_data(irq, econet_intc_from_parent, domain);
+ 
++	nr_parents = of_irq_count(node);
++	for (i = 1; i < nr_parents; i++) {
++		int parent = irq_of_parse_and_map(node, i);
++
++		if (!parent) {
++			pr_warn("%pOF: DT: Failed to get IRQ %d from 'interrupts'\n",
++				node, i);
++			continue;
++		}
++
++		irq_set_chained_handler_and_data(parent, econet_intc_from_parent,
++						 domain);
++	}
++
+ 	return 0;
+ 
+ err_unmap:
