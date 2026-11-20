@@ -1,0 +1,51 @@
+From 3531c2cd7d745bbd9741832da6309ca500066848 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Fri, 20 Nov 2026 18:40:53 +0000
+Subject: [PATCH] crypto: eip93 - return request validation errors
+ synchronously
+
+The skcipher and AEAD paths validate requests before submitting them
+to the hardware. On validation failure they invoke the completion
+callback and return the same error. Callers handle that return value
+as a synchronous failure and can complete the request a second time.
+
+Return the validation error directly in both paths. Keep completion
+callbacks in the hardware result handlers.
+
+Codex (gpt-6.2-sol) assisted with comparing the two paths, preparing the
+change and writing the changelog. The corresponding OpenWrt 6.18.64
+driver object was cross-compiled on MIPS.
+
+Fixes: 9739f5f93b78 ("crypto: eip93 - Add Inside Secure SafeXcel EIP-93 crypto engine support")
+Reported-by: Herbert Xu <herbert@gondor.apana.org.au>
+Closes: https://lore.kernel.org/linux-crypto/aXxmIuU9PKJiDs7n@gondor.apana.org.au/
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+--- a/drivers/crypto/inside-secure/eip93/eip93-aead.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-aead.c
+@@ -47,10 +47,8 @@ static int eip93_aead_send_req(struct cr
+ 	int err;
+ 
+ 	err = check_valid_request(rctx);
+-	if (err) {
+-		aead_request_complete(req, err);
++	if (err)
+ 		return err;
+-	}
+ 
+ 	return eip93_send_req(async, req->iv, rctx);
+ }
+--- a/drivers/crypto/inside-secure/eip93/eip93-cipher.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-cipher.c
+@@ -38,10 +38,8 @@ static int eip93_skcipher_send_req(struc
+ 
+ 	err = check_valid_request(rctx);
+ 
+-	if (err) {
+-		skcipher_request_complete(req, err);
++	if (err)
+ 		return err;
+-	}
+ 
+ 	return eip93_send_req(async, req->iv, rctx);
+ }
