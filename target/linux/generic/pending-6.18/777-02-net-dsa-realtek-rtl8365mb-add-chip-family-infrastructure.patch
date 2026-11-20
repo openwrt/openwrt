@@ -1,0 +1,224 @@
+From 4ecea07c9dd6473cdb987ec7755e2327f7226103 Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sat, 13 Jun 2026 00:19:37 +0200
+Subject: [PATCH net-next v10 02/12] net: dsa: realtek: rtl8365mb: add chip
+ family infrastructure
+
+Add enum rtl8365mb_family and struct rtl8365mb_family_info, which holds
+the data shared by all chips of one family: the family id, the port
+count and the init jam table. struct rtl8365mb_chip_info now points to
+it through a family_info member, and all existing chips use the
+RTL8365MB_FAMILY_C instance. rtl8365mb_get_family_info() and
+rtl8365mb_is_d() are declared in a new rtl8365mb.h so that the VLAN
+code can use them too.
+
+Use num_ports from the family info in rtl8365mb_detect() instead of a
+fixed constant, so that a family with a different port count can be
+described by its own entry.
+
+RTL8365MB_FAMILY_D is defined here but no chip uses it yet; it is
+needed by the following patches, which add family D handling for chips
+whose register layout differs from the existing ones.
+
+No functional change.
+
+Tested-by: Gustavo Foletto Mora <gusfmora@gmail.com>
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+---
+ drivers/net/dsa/realtek/rtl8365mb.h      | 29 +++++++++++++
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 54 +++++++++++++++---------
+ 2 files changed, 62 insertions(+), 21 deletions(-)
+ create mode 100644 drivers/net/dsa/realtek/rtl8365mb.h
+
+--- /dev/null
++++ b/drivers/net/dsa/realtek/rtl8365mb.h
+@@ -0,0 +1,29 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _RTL8365MB_H
++#define _RTL8365MB_H
++
++#include "realtek.h"
++
++enum rtl8365mb_family {
++	RTL8365MB_FAMILY_C,
++	RTL8365MB_FAMILY_D,
++};
++
++struct rtl8365mb_jam_tbl_entry;
++
++struct rtl8365mb_family_info {
++	enum rtl8365mb_family family;
++	unsigned int num_ports;
++	const struct rtl8365mb_jam_tbl_entry *jam_table;
++	size_t jam_size;
++};
++
++const struct rtl8365mb_family_info *
++rtl8365mb_get_family_info(struct realtek_priv *priv);
++
++static inline bool rtl8365mb_is_d(struct realtek_priv *priv)
++{
++	return rtl8365mb_get_family_info(priv)->family == RTL8365MB_FAMILY_D;
++}
++
++#endif /* _RTL8365MB_H */
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -109,12 +109,15 @@
+ #include "rtl83xx.h"
+ #include "rtl8365mb_l2.h"
+ #include "rtl8365mb_vlan.h"
++#include "rtl8365mb.h"
+ 
+ /* Family-specific data and limits */
+ #define RTL8365MB_PHYADDRMAX		7
+ #define RTL8365MB_NUM_PHYREGS		32
+ #define RTL8365MB_PHYREGMAX		(RTL8365MB_NUM_PHYREGS - 1)
+-#define RTL8365MB_MAX_NUM_PORTS		11
++#define RTL8365MB_C_MAX_NUM_PORTS	11
++/* Highest port count of any supported chip, used for sizing */
++#define RTL8365MB_MAX_NUM_PORTS		RTL8365MB_C_MAX_NUM_PORTS
+ /* Valid for the whole family except RTL8370B, which has 4160 entries.
+  * RTL8370B is mentioned in vendor code but it might not even belong
+  * to the same RTL8367C family.
+@@ -689,14 +692,20 @@ struct rtl8365mb_extint {
+ 	unsigned int supported_interfaces;
+ };
+ 
++static const struct rtl8365mb_family_info rtl8365mb_family_c = {
++	.family = RTL8365MB_FAMILY_C,
++	.num_ports = RTL8365MB_C_MAX_NUM_PORTS,
++	.jam_table = rtl8365mb_init_jam_8365mb_vc,
++	.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
++};
++
+ /**
+  * struct rtl8365mb_chip_info - static chip-specific info
+  * @name: human-readable chip name
+  * @chip_id: chip identifier
+  * @chip_ver: chip silicon revision
++ * @family_info: data shared by all chips of the same family
+  * @extints: available external interfaces
+- * @jam_table: chip-specific initialization jam table
+- * @jam_size: size of the chip's jam table
+  *
+  * These data are specific to a given chip in the family of switches supported
+  * by this driver. When adding support for another chip in the family, a new
+@@ -706,9 +715,8 @@ struct rtl8365mb_chip_info {
+ 	const char *name;
+ 	u32 chip_id;
+ 	u32 chip_ver;
++	const struct rtl8365mb_family_info *family_info;
+ 	const struct rtl8365mb_extint extints[RTL8365MB_MAX_NUM_EXTINTS];
+-	const struct rtl8365mb_jam_tbl_entry *jam_table;
+-	size_t jam_size;
+ };
+ 
+ /* Chip info for each supported switch in the family */
+@@ -718,29 +726,28 @@ static const struct rtl8365mb_chip_info
+ 		.name = "RTL8365MB-VC",
+ 		.chip_id = 0x6367,
+ 		.chip_ver = 0x0040,
++		.family_info = &rtl8365mb_family_c,
+ 		.extints = {
+ 			{ 6, 1, PHY_INTF(MII) | PHY_INTF(TMII) |
+ 				PHY_INTF(RMII) | PHY_INTF(RGMII) },
+ 		},
+-		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+-		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
+ 	},
+ 	{
+ 		.name = "RTL8367S",
+ 		.chip_id = 0x6367,
+ 		.chip_ver = 0x00A0,
++		.family_info = &rtl8365mb_family_c,
+ 		.extints = {
+ 			{ 6, 1, PHY_INTF(SGMII) | PHY_INTF(HSGMII) },
+ 			{ 7, 2, PHY_INTF(MII) | PHY_INTF(TMII) |
+ 				PHY_INTF(RMII) | PHY_INTF(RGMII) },
+ 		},
+-		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+-		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
+ 	},
+ 	{
+ 		.name = "RTL8367SB",
+ 		.chip_id = 0x6367,
+ 		.chip_ver = 0x0010,
++		.family_info = &rtl8365mb_family_c,
+ 		.extints = {
+ 			{ 6, 1, PHY_INTF(MII) | PHY_INTF(TMII) |
+ 				PHY_INTF(RMII) | PHY_INTF(RGMII) |
+@@ -748,21 +755,18 @@ static const struct rtl8365mb_chip_info
+ 			{ 7, 2, PHY_INTF(MII) | PHY_INTF(TMII) |
+ 				PHY_INTF(RMII) | PHY_INTF(RGMII) },
+ 		},
+-		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+-		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
+ 	},
+ 	{
+ 		.name = "RTL8367RB-VB",
+ 		.chip_id = 0x6367,
+ 		.chip_ver = 0x0020,
++		.family_info = &rtl8365mb_family_c,
+ 		.extints = {
+ 			{ 6, 1, PHY_INTF(MII) | PHY_INTF(TMII) |
+ 				PHY_INTF(RMII) | PHY_INTF(RGMII) },
+ 			{ 7, 2, PHY_INTF(MII) | PHY_INTF(TMII) |
+ 				PHY_INTF(RMII) | PHY_INTF(RGMII) },
+ 		},
+-		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+-		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
+ 	},
+ };
+ 
+@@ -861,6 +865,14 @@ struct rtl8365mb {
+ 
+ #define pcs_to_rtl8365mb(_pcs) container_of((_pcs), struct rtl8365mb, pcs)
+ 
++const struct rtl8365mb_family_info *
++rtl8365mb_get_family_info(struct realtek_priv *priv)
++{
++	struct rtl8365mb *mb = priv->chip_data;
++
++	return mb->chip_info->family_info;
++}
++
+ static int rtl8365mb_phy_poll_busy(struct realtek_priv *priv)
+ {
+ 	u32 val;
+@@ -2953,17 +2965,17 @@ static int rtl8365mb_change_tag_protocol
+ static int rtl8365mb_switch_init(struct realtek_priv *priv)
+ {
+ 	struct rtl8365mb *mb = priv->chip_data;
+-	const struct rtl8365mb_chip_info *ci;
++	const struct rtl8365mb_family_info *fi;
+ 	int ret;
+ 	int i;
+ 
+-	ci = mb->chip_info;
++	fi = mb->chip_info->family_info;
+ 
+-	/* Do any chip-specific init jam before getting to the common stuff */
+-	if (ci->jam_table) {
+-		for (i = 0; i < ci->jam_size; i++) {
+-			ret = regmap_write(priv->map, ci->jam_table[i].reg,
+-					   ci->jam_table[i].val);
++	/* Do any family-specific init jam before getting to the common stuff */
++	if (fi->jam_table) {
++		for (i = 0; i < fi->jam_size; i++) {
++			ret = regmap_write(priv->map, fi->jam_table[i].reg,
++					   fi->jam_table[i].val);
+ 			if (ret)
+ 				return ret;
+ 		}
+@@ -3266,7 +3278,7 @@ static int rtl8365mb_detect(struct realt
+ 
+ 	dev_info(priv->dev, "found an %s switch\n", mb->chip_info->name);
+ 
+-	priv->num_ports = RTL8365MB_MAX_NUM_PORTS;
++	priv->num_ports = mb->chip_info->family_info->num_ports;
+ 	mb->priv = priv;
+ 	mb->cpu.trap_port = RTL8365MB_MAX_NUM_PORTS;
+ 	mb->cpu.insert = RTL8365MB_CPU_INSERT_TO_ALL;
