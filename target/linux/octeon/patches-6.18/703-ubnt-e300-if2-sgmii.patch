@@ -1,0 +1,25 @@
+From: tusker <tusker@wildduck.tusker.net.au>
+Date: Mon, 23 Feb 2026 09:00:00 +0000
+Subject: [PATCH] mips: octeon: map UBNT E300 interface 2 to SGMII
+
+EdgeRouter E300/ER-12 boards wire interface 2 through the QCA8511 switch path. Use SGMII mode for this board instead of NPI so the datapath is initialized correctly.
+
+Signed-off-by: tusker <tusker@wildduck.tusker.net.au>
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper.c
+@@ -268,6 +268,15 @@ static cvmx_helper_interface_mode_t __cv
+ 			return CVMX_HELPER_INTERFACE_MODE_SGMII;
+ 		}
+ 	case 2:
++		/*
++		 * EdgeRouter E300/ER-12 uses interface 2 for the front-panel
++		 *
++		 * copper path behind QCA8511. Keep it on the SGMII datapath
++		 * instead of exposing these ports as raw NPI netdevs.
++		 */
++		if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E300)
++			return CVMX_HELPER_INTERFACE_MODE_SGMII;
++
+ 		return CVMX_HELPER_INTERFACE_MODE_NPI;
+ 	case 3:
+ 		return CVMX_HELPER_INTERFACE_MODE_LOOP;
