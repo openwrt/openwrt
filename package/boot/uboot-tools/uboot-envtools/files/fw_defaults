@@ -1,5 +1,15 @@
 . /lib/functions/uci-defaults.sh
 
+# fw_printenv finds the environment via /etc/fw_env.config or an NVMEM device
+# with the "u-boot,env" compatible. The config created by 30_uboot-envtools
+# is not available in the early board_detect run from 10_indicate_preinit
+# before mount_root, and some devices have none at all: don't try to load
+# the environment then, as fw_printenv would only fail with error messages.
+[ -s /etc/fw_env.config ] ||
+	grep -qs u-boot,env /sys/bus/nvmem/devices/*/of_node/compatible \
+		/sys/bus/nvmem/devices/*/of_node/nvmem-layout/compatible ||
+	exit 0
+
 fw_loadenv
 
 board_config_update
