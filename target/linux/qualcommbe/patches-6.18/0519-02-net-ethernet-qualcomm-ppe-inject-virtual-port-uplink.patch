@@ -1,0 +1,447 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Mon, 06 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: inject a virtual port's uplink into the PPE
+
+Offload the wireless-to-wired direction. A routed flow's downlink is
+already hardware-forwarded to a virtual port; its uplink still runs on
+the netfilter software fast path because packets the wireless radio
+receives never traverse the PPE. Add the primitive that puts them
+there: edma_tx_vp_inject() submits a received frame on a Tx descriptor
+ring tagged with the virtual port as its SOURCE, so the PPE runs the
+L3 ingress pipeline - flow lookup, NAT, forward-to-WAN - in hardware.
+
+The inject reuses the ordinary port transmit path rather than a
+separate one: edma_tx_ring_xmit() gains a source-virtual-port argument
+(EDMA_TX_VP_NONE for an ordinary destination-tagged transmit) that, when
+set, makes the first descriptor tag word4 with the SOURCE instead of the
+destination (a new EDMA_SRC_INFO macro, mirroring the receive
+descriptor's SRC_INFO and the destination macro) and omit the CPU-bypass
+service code, so the PPE routes the frame by a flow entry instead of
+forwarding it straight out a port. Everything else - descriptor fill,
+DMA map, scatter-gather, endian, and Tx-completion reaping by
+edma_tx_complete() - is shared with the port path. The source-tag layout
+is taken from the vendor descriptor fill; NAT checksum fixup is done by
+the flow action.
+
+The PPE has no dedicated virtual-port Tx ring - the ring pool is fully
+assigned to the physical ports - so the inject carries the frame on a
+running physical port's ring. Any port's ring reaches the PPE (the
+descriptor's source tag and the flow entry decide egress, not the ring),
+and requiring the port to be up guarantees its Tx-completion NAPI is
+active to reap the frame. The inject takes that port's per-CPU Tx queue
+lock, so it serialises against the port's own transmits on the ring
+exactly as the stack does around ndo_start_xmit; that lock, not any
+CPU-pinning assumption, is what makes the shared ring safe. If no port
+is up it returns -ENETDOWN and the caller keeps the frame.
+
+A source-tagged inject runs the ingress route and NAT pipeline, whose
+interaction with hardware TSO is unverified, so the inject segments
+every GSO frame in software rather than let one carry a TSO descriptor
+into that pipeline. The port transmit and the inject share the
+segment-drain helper.
+
+Nothing calls the primitive yet - the wireless receive interception that
+drives it follows - so this is dormant on its own.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -18,6 +18,7 @@
+ #include <linux/reset.h>
+ 
+ #include "edma.h"
++#include "edma_port.h"
+ #include "edma_cfg_tx.h"
+ #include "edma_cfg_rx.h"
+ #include "ppe_regs.h"
+@@ -205,6 +206,24 @@ int edma_err_stats_alloc(void)
+ 		u64_stats_init(&stats->syncp);
+ 	}
+ 
++	/* Virtual-port injected frames borrow a physical port's Tx ring to
++	 * reach the PPE, so they must not be charged to that port's stats;
++	 * account them to a dedicated per-CPU counter instead.
++	 */
++	edma_ctx->vp_tx_stats = alloc_percpu(*edma_ctx->vp_tx_stats);
++	if (!edma_ctx->vp_tx_stats) {
++		free_percpu(edma_ctx->err_stats);
++		edma_ctx->err_stats = NULL;
++		return -ENOMEM;
++	}
++
++	for_each_possible_cpu(i) {
++		struct edma_port_tx_stats *stats;
++
++		stats = per_cpu_ptr(edma_ctx->vp_tx_stats, i);
++		u64_stats_init(&stats->syncp);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -219,6 +238,11 @@ void edma_err_stats_free(void)
+ 		free_percpu(edma_ctx->err_stats);
+ 		edma_ctx->err_stats = NULL;
+ 	}
++
++	if (edma_ctx->vp_tx_stats) {
++		free_percpu(edma_ctx->vp_tx_stats);
++		edma_ctx->vp_tx_stats = NULL;
++	}
+ }
+ 
+ /**
+@@ -853,6 +877,7 @@ int edma_setup(struct ppe_device *ppe_de
+ 	edma_ctx->hw_info = &ipq9574_hw_info;
+ 	edma_ctx->ppe_dev = ppe_dev;
+ 	edma_ctx->has_vports = ppe_dev->variant->has_vports;
++	edma_ctx->vp_q_mask = num_possible_cpus() - 1;
+ 	edma_ctx->rx_buf_size = rx_buff_size;
+ 
+ 	edma_ctx->tx_requeue_stop = false;
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.h
+@@ -122,11 +122,14 @@ struct edma_intr_info {
+  * @tx_rings: Tx Descriptor Ring, SW is producer
+  * @txcmpl_rings: Tx complete Ring, SW is consumer
+  * @err_stats: Per CPU error statistics
++ * @vp_tx_stats: Per CPU virtual-port inject Tx statistics
+  * @rx_rps_ctl_table_hdr: Rx RPS sysctl table
+  * @rx_page_mode: Page mode enabled or disabled
+  * @rx_buf_size: Rx buffer size for Jumbo MRU
+  * @tx_requeue_stop: Tx requeue stop enabled or disabled
+  * @has_vports: Virtual ports exist, cached from the PPE variant
++ * @vp_inject_port: netdev_arr index that carried the last VP inject
++ * @vp_q_mask: CPU-to-Tx-queue mask of the VP inject
+  */
+ struct edma_context {
+ 	struct net_device **netdev_arr;
+@@ -139,13 +142,18 @@ struct edma_context {
+ 	struct edma_txdesc_ring *tx_rings;
+ 	struct edma_txcmpl_ring *txcmpl_rings;
+ 	struct edma_err_stats __percpu *err_stats;
++	struct edma_port_tx_stats __percpu *vp_tx_stats;
+ 	struct ctl_table_header *rx_rps_ctl_table_hdr;
+ 	u32 rx_page_mode;
+ 	u32 rx_buf_size;
+ 	bool tx_requeue_stop;
+ 	bool has_vports;
++	int vp_inject_port;
++	u32 vp_q_mask;
+ };
+ 
++struct edma_port_tx_stats;
++
+ /* Global EDMA context. */
+ extern struct edma_context *edma_ctx;
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -234,7 +234,7 @@ static netdev_tx_t edma_port_xmit(struct
+ 	result = edma_tx_gso_segment(skb, dev, &segs);
+ 	if (likely(result == EDMA_TX_GSO_NOT_NEEDED)) {
+ 		/* Transmit the packet. */
+-		ret = edma_tx_ring_xmit(dev, skb, txdesc_ring, stats);
++		ret = edma_tx_ring_xmit(dev, skb, txdesc_ring, stats, EDMA_TX_VP_NONE);
+ 
+ 		if (unlikely(ret == EDMA_TX_FAIL_NO_DESC)) {
+ 			if (likely(!edma_ctx->tx_requeue_stop)) {
+@@ -271,19 +271,7 @@ static netdev_tx_t edma_port_xmit(struct
+ 	u64_stats_update_end(&stats->syncp);
+ 
+ 	dev_kfree_skb_any(skb);
+-	while (segs) {
+-		skb = segs;
+-		segs = segs->next;
+-
+-		/* Transmit the packet. */
+-		ret = edma_tx_ring_xmit(dev, skb, txdesc_ring, stats);
+-		if (unlikely(ret != EDMA_TX_OK)) {
+-			dev_kfree_skb_any(skb);
+-			u64_stats_update_begin(&stats->syncp);
+-			++stats->tx_drops;
+-			u64_stats_update_end(&stats->syncp);
+-		}
+-	}
++	edma_tx_xmit_segs(dev, segs, txdesc_ring, stats, EDMA_TX_VP_NONE);
+ 
+ 	return NETDEV_TX_OK;
+ }
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
+@@ -86,6 +86,30 @@ enum edma_tx_gso_status edma_tx_gso_segm
+ 	return EDMA_TX_GSO_SUCCEED;
+ }
+ 
++/* Transmit a list of GSO segments on a ring, freeing and counting any
++ * the ring cannot take, and consuming the whole list. Shared by the port
++ * transmit and the virtual-port inject, which both software-segment a
++ * frame the hardware cannot.
++ */
++void edma_tx_xmit_segs(struct net_device *dev, struct sk_buff *segs,
++		       struct edma_txdesc_ring *txdesc_ring,
++		       struct edma_port_tx_stats *stats, int src_vp)
++{
++	while (segs) {
++		struct sk_buff *skb = segs;
++
++		segs = segs->next;
++		skb->next = NULL;
++		if (unlikely(edma_tx_ring_xmit(dev, skb, txdesc_ring, stats,
++					       src_vp) != EDMA_TX_OK)) {
++			dev_kfree_skb_any(skb);
++			u64_stats_update_begin(&stats->syncp);
++			++stats->tx_drops;
++			u64_stats_update_end(&stats->syncp);
++		}
++	}
++}
++
+ /**
+  * edma_tx_complete - Reap Tx completion descriptors.
+  * @work_to_do: Work to do.
+@@ -388,7 +412,7 @@ static u32 edma_tx_skb_nr_frags(struct e
+ 
+ static void edma_tx_fill_desc(struct edma_port_priv *port_priv,
+ 				 struct edma_txdesc_pri *txd, struct sk_buff *skb,
+-	struct edma_port_tx_stats *stats)
++	struct edma_port_tx_stats *stats, int src_vp)
+ {
+ 	struct ppe_port *port = port_priv->ppe_port;
+ 	int port_id = port->port_id;
+@@ -403,6 +427,20 @@ static void edma_tx_fill_desc(struct edm
+ 	/* Check if the packet needs TSO
+ 	 * This will be mostly true for SG packets.
+ 	 */
++	/* A virtual-port inject tags the SOURCE with the virtual port and
++	 * carries no bypass service code, so the PPE runs the L3 ingress
++	 * pipeline (flow lookup, NAT) and routes the frame by a flow entry
++	 * instead of forwarding it straight out a destination port. This is
++	 * the wireless-to-wired uplink; see edma_tx_vp_inject(). It is handled
++	 * before TSO so a source-tagged descriptor never also carries hardware
++	 * TSO, an unvalidated combination; the inject software-segments every
++	 * GSO frame upstream, so this path only ever sees non-GSO injects.
++	 */
++	if (src_vp >= 0) {
++		EDMA_SRC_INFO_SET(txd, src_vp);
++		return;
++	}
++
+ 	if (unlikely(skb_is_gso(skb))) {
+ 		if ((skb_shinfo(skb)->gso_type == SKB_GSO_TCPV4) ||
+ 		    (skb_shinfo(skb)->gso_type == SKB_GSO_TCPV6)) {
+@@ -458,7 +496,8 @@ static void edma_tx_fill_desc(struct edm
+ static struct edma_txdesc_pri *edma_tx_skb_first_desc(struct edma_port_priv *port_priv,
+ 						      struct edma_txdesc_ring *txdesc_ring,
+ 						      struct sk_buff *skb, u32 *hw_next_to_use,
+-						      struct edma_port_tx_stats *stats)
++						      struct edma_port_tx_stats *stats,
++						      int src_vp)
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+ 	struct edma_txdesc_pri *txd = NULL;
+@@ -480,7 +519,7 @@ static struct edma_txdesc_pri *edma_tx_s
+ 
+ 	EDMA_TXDESC_BUFFER_ADDR_SET(txd, buff_addr);
+ 	EDMA_TXDESC_POOL_ID_SET(txd, 0);
+-	edma_tx_fill_desc(port_priv, txd, skb, stats);
++	edma_tx_fill_desc(port_priv, txd, skb, stats, src_vp);
+ 
+ 	/* Set packet length in the descriptor. */
+ 	EDMA_TXDESC_DATA_LEN_SET(txd, buf_len);
+@@ -696,7 +735,7 @@ static u32 edma_tx_avail_desc(struct edm
+  */
+ enum edma_tx_status edma_tx_ring_xmit(struct net_device *netdev,
+ 				      struct sk_buff *skb, struct edma_txdesc_ring *txdesc_ring,
+-				struct edma_port_tx_stats *stats)
++				struct edma_port_tx_stats *stats, int src_vp)
+ {
+ 	struct edma_txdesc_stats *txdesc_stats = &txdesc_ring->txdesc_stats;
+ 	struct edma_port_priv *port_priv = netdev_priv(netdev);
+@@ -731,7 +770,7 @@ enum edma_tx_status edma_tx_ring_xmit(st
+ 	 */
+ 	if (likely(!skb_is_nonlinear(skb))) {
+ 		txdesc = edma_tx_skb_first_desc(port_priv, txdesc_ring, skb,
+-						&hw_next_to_use, stats);
++						&hw_next_to_use, stats, src_vp);
+ 		if (unlikely(!txdesc)) {
+ 			netdev_dbg(netdev, "No descriptor available for ring %d\n",
+ 				   txdesc_ring->id);
+@@ -779,7 +818,7 @@ enum edma_tx_status edma_tx_ring_xmit(st
+ 		}
+ 
+ 		txdesc = edma_tx_skb_first_desc(port_priv, txdesc_ring, skb,
+-						&hw_next_to_use, stats);
++						&hw_next_to_use, stats, src_vp);
+ 		if (unlikely(!txdesc)) {
+ 			netdev_dbg(netdev, "No non-linear descriptor available for ring %d\n",
+ 				   txdesc_ring->id);
+@@ -828,3 +867,116 @@ enum edma_tx_status edma_tx_ring_xmit(st
+ 
+ 	return EDMA_TX_OK;
+ }
++
++/**
++ * edma_tx_vp_inject - Inject a received packet into the PPE as a virtual port.
++ * @vp_id: Source virtual port to tag the frame with.
++ * @skb: Socket buffer to inject.
++ *
++ * Push a packet the wireless driver received into the PPE tagged with @vp_id
++ * as its source, so the hardware runs the L3 ingress pipeline - flow lookup,
++ * NAT and forward-to-WAN - instead of the netfilter software fast path. This
++ * is the wireless-to-wired uplink counterpart of the routed downlink delivery
++ * (edma_rx_deliver_vp()).
++ *
++ * The frame rides the ordinary port transmit path (edma_tx_ring_xmit with a
++ * source virtual port), so it inherits that path's descriptor fill, DMA map,
++ * scatter-gather handling and Tx-completion reaping. The PPE has no dedicated
++ * virtual-port Tx ring (the ring pool is fully assigned to the physical
++ * ports), so the inject carries the frame on a running physical port's ring:
++ * any port's ring reaches the PPE - the descriptor's source tag and the flow
++ * entry decide egress, not the ring - and a *running* port guarantees its
++ * Tx-completion NAPI is active to reap the frame. It takes that port's
++ * per-CPU Tx queue lock so the inject serialises against the port's own
++ * transmits on the same ring exactly as the stack does around ndo_start_xmit;
++ * this is the correctness anchor, not any CPU-pinning assumption.
++ *
++ * Runs from the wireless receive softirq. Return 0 on success (the skb is
++ * freed at Tx completion), a negative error code on failure (the caller still
++ * owns the skb): -ENETDOWN if no physical port is up to carry the inject.
++ */
++int edma_tx_vp_inject(u32 vp_id, struct sk_buff *skb)
++{
++	struct edma_hw_info *hw_info = edma_ctx->hw_info;
++	struct edma_port_priv *port_priv;
++	struct edma_txdesc_ring *txdesc_ring;
++	struct edma_port_tx_stats *stats;
++	struct net_device *dev = NULL;
++	struct netdev_queue *txq;
++	enum edma_tx_status ret;
++	u32 skbq;
++	int i, cpu;
++
++	/* Carry the inject on any running physical port: its ring reaches the
++	 * PPE and its Tx-completion NAPI is active to reap the frame. The port
++	 * that carried the last inject is preferred so the per-packet cost is
++	 * one load; a stopped or vanished port falls back to a rescan. Hold the
++	 * RCU read lock across selection and transmit so a concurrent netdevice
++	 * teardown cannot free the borrowed port underneath the descriptor
++	 * fill (unregister waits an RCU grace period before the port is freed).
++	 */
++	rcu_read_lock();
++	i = READ_ONCE(edma_ctx->vp_inject_port);
++	dev = edma_ctx->netdev_arr[i];
++	if (unlikely(!dev || !netif_running(dev))) {
++		dev = NULL;
++		for (i = 0; i < hw_info->max_ports; i++) {
++			struct net_device *cand = edma_ctx->netdev_arr[i];
++
++			if (cand && netif_running(cand)) {
++				dev = cand;
++				WRITE_ONCE(edma_ctx->vp_inject_port, i);
++				break;
++			}
++		}
++	}
++	if (unlikely(!dev)) {
++		rcu_read_unlock();
++		return -ENETDOWN;
++	}
++
++	port_priv = netdev_priv(dev);
++	cpu = smp_processor_id();
++	skbq = cpu & edma_ctx->vp_q_mask;
++	txdesc_ring = port_priv->txr_map[skbq];
++	/* Keep injected wireless-uplink bytes off the borrowed physical
++	 * port's Tx counters; charge them to the dedicated VP counter.
++	 */
++	stats = this_cpu_ptr(edma_ctx->vp_tx_stats);
++	txq = netdev_get_tx_queue(dev, skbq);
++
++	/* A source-tagged inject runs the ingress route and NAT pipeline,
++	 * whose interaction with hardware TSO is unverified; segment every
++	 * GSO frame in software so each segment rides a plain descriptor.
++	 * The port path only segments frames past the descriptor limit,
++	 * a subset of this.
++	 */
++	if (skb_is_gso(skb)) {
++		struct sk_buff *segs;
++
++		segs = skb_gso_segment(skb, dev->features &
++					    ~(NETIF_F_TSO | NETIF_F_TSO6));
++		if (IS_ERR_OR_NULL(segs)) {
++			rcu_read_unlock();
++			return -ENOMEM;
++		}
++		dev_kfree_skb_any(skb);
++
++		__netif_tx_lock(txq, cpu);
++		edma_tx_xmit_segs(dev, segs, txdesc_ring, stats, vp_id);
++		__netif_tx_unlock(txq);
++
++		rcu_read_unlock();
++		return 0;
++	}
++
++	/* Serialise against the carrier port's own transmits on this ring,
++	 * exactly as the stack serialises ndo_start_xmit.
++	 */
++	__netif_tx_lock(txq, cpu);
++	ret = edma_tx_ring_xmit(dev, skb, txdesc_ring, stats, vp_id);
++	__netif_tx_unlock(txq);
++
++	rcu_read_unlock();
++	return ret == EDMA_TX_OK ? 0 : -EBUSY;
++}
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
+@@ -53,6 +53,35 @@
+ 	(EDMA_DST_PORT_TYPE_SET(EDMA_DST_PORT_BITMAP_TYPE) | \
+ 	 EDMA_DST_PORT_ID_SET(x)))
+ 
++/* A virtual-port inject tags the frame's SOURCE (not its destination) with
++ * the virtual port, so the PPE runs the L3 ingress pipeline (flow lookup and
++ * NAT) and routes the packet in hardware instead of forwarding it straight
++ * out a destination port. word4 carries the source the same way the receive
++ * descriptor's SRC_INFO does: type 2 in bits 12..15, port in bits 0..11. The
++ * vendor descriptor fill also leaves a dst type-2 marker with no port (the
++ * routing result overrides the destination); reproduce it so the layout is
++ * byte-for-byte what the hardware expects.
++ */
++#define EDMA_SRC_PORT_TYPE		2
++#define EDMA_SRC_PORT_TYPE_SHIFT	12
++#define EDMA_SRC_PORT_TYPE_MASK		(0xf << EDMA_SRC_PORT_TYPE_SHIFT)
++#define EDMA_SRC_PORT_ID_SHIFT		0
++#define EDMA_SRC_PORT_ID_MASK		(0xfff << EDMA_SRC_PORT_ID_SHIFT)
++
++#define EDMA_SRC_PORT_TYPE_SET(x)	(((x) << EDMA_SRC_PORT_TYPE_SHIFT) & \
++							EDMA_SRC_PORT_TYPE_MASK)
++#define EDMA_SRC_PORT_ID_SET(x)		(((x) << EDMA_SRC_PORT_ID_SHIFT) & \
++							EDMA_SRC_PORT_ID_MASK)
++#define EDMA_SRC_INFO_SET(desc, x)	((desc)->word4 |= \
++	(EDMA_DST_PORT_TYPE_SET(EDMA_DST_PORT_TYPE) | \
++	 EDMA_SRC_PORT_TYPE_SET(EDMA_SRC_PORT_TYPE) | EDMA_SRC_PORT_ID_SET(x)))
++
++/* Passed as the source virtual port to edma_tx_ring_xmit() for an ordinary
++ * port transmit (destination-tagged); a value >= 0 requests a virtual-port
++ * inject (source-tagged) instead.
++ */
++#define EDMA_TX_VP_NONE			(-1)
++
+ #define EDMA_TXDESC_TSO_ENABLE_MASK		BIT(24)
+ #define EDMA_TXDESC_TSO_ENABLE_SET(desc, x)	((desc)->word5 |= \
+ 				FIELD_PREP(EDMA_TXDESC_TSO_ENABLE_MASK, x))
+@@ -303,7 +332,11 @@ extern int edma_tx_mitigation_pkt_cnt;
+ enum edma_tx_status edma_tx_ring_xmit(struct net_device *netdev,
+ 				      struct sk_buff *skb,
+ 			       struct edma_txdesc_ring *txdesc_ring,
+-			       struct edma_port_tx_stats *stats);
++			       struct edma_port_tx_stats *stats, int src_vp);
++void edma_tx_xmit_segs(struct net_device *dev, struct sk_buff *segs,
++		       struct edma_txdesc_ring *txdesc_ring,
++		       struct edma_port_tx_stats *stats, int src_vp);
++int edma_tx_vp_inject(u32 vp_id, struct sk_buff *skb);
+ u32 edma_tx_complete(u32 work_to_do,
+ 		     struct edma_txcmpl_ring *txcmpl_ring);
+ irqreturn_t edma_tx_handle_irq(int irq, void *ctx);

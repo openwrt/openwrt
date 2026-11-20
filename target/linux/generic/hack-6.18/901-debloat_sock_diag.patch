@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETDEV_ADDR_LIST_TEST) += dev_addr_lists_test.o
  
 +obj-$(CONFIG_SOCK_DIAG) += sock_diag.o
- obj-y += net-sysfs.o
+ obj-y += net-sysfs.o ppp_channel.o
  obj-y += hotdata.o
  obj-y += netdev_rx_queue.o
 --- a/net/core/sock.c
