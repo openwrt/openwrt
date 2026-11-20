@@ -14,6 +14,16 @@ econet_setup_interfaces()
 	jiofiber,jcow414)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
+	tplink,archer-c5v)
+		# No DSA driver for this switch yet; the econet,mt7530-vlan-split
+		# device tree properties split the external MT7530 into a LAN
+		# VLAN (untagged, eth0.1) and a WAN VLAN (untagged, eth0.2) at
+		# the driver level instead. eth0.35 (tagged VLAN 35, also set up
+		# by the same split) is left unconfigured here for ISPs that
+		# need PPPoE/DHCP on a tagged VLAN instead of the plain eth0.2.
+		ucidef_set_interface_lan "eth0.1"
+		ucidef_set_interface_wan "eth0.2"
+		;;
 	*)
 		# The remaining boards have no DSA switch driver yet.
 		ucidef_set_interface_lan "eth0"
