@@ -1,0 +1,135 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Raisecom MSG2100-UPON-AC (China Mobile Sichuan, F.20/SC12)
+ * SoC: Econet/Airoha EN7528HU (MIPS 1004Kc, LE, 900MHz)
+ * RAM: 512MB DDR3L (Samsung K4B4G1646B)
+ * Flash: Micron MT29F2G01 256MB SPI NAND (2048+64B pages, 128KB blocks)
+ * WiFi: none (pure wired: 1x PON + 4x GE)
+ * UART: 115200 8N1, console on ttyS0 (Econet UART @ 0x1fbf0000)
+ *
+ * Partition table (from stock /proc/mtd):
+ *   mtd0 bootloader     0x00000000-0x00040000 (256K)
+ *   mtd1 romfile        0x00040000-0x00080000 (256K)
+ *   mtd2 kernel         0x00080000-0x002ac19a
+ *   mtd3 rootfs         0x002ac19a-0x021bc19a
+ *   mtd4 tclinux        0x00080000-0x02880000 (40M, main)
+ *   mtd5 kernel_slave   0x02880000-0x02b2c19a
+ *   mtd6 rootfs_slave   0x02b2c19a-0x049bc19a
+ *   mtd7 tclinux_slave  0x02880000-0x05080000 (40M, backup)
+ *   mtd8 osgi           0x05080000-0x08080000 (48M, squashfs)
+ *   mtd9 opt0           0x08080000-0x08280000 (2M)
+ *   mtd10 ubifs         0x08280000-0x09280000 (16M, UBI)
+ *   mtd11 opt1          0x09280000-0x09480000 (2M)
+ *   mtd12 app           0x09480000-0x0dc80000 (72M, UBI)
+ *   mtd13 reservearea   0x0ddc0000-0x0e000000 (2.25M)
+ *
+ * The bootloader is "free bootbase" -> kernel decompress addr 0x80002000.
+ */
+
+/dts-v1/;
+
+#include "en7528.dtsi"
+
+/ {
+	model = "Raisecom MSG2100-UPON-AC";
+	compatible = "raisecom,msg2100-upon-ac", "econet,en7528";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x1c000000>;	/* 448MB (top 64MB is NAND/peripherals) */
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		linux,usable-memory-range = <0x00020000 0x1bfe0000>;
+		bootargs = "ubi.mtd=rootfs root=/dev/ubiblock0_0 rootfstype=squashfs";
+	};
+
+	aliases {
+		serial0 = &uart;
+	};
+
+};
+
+&uart {
+	status = "okay";
+};
+
+&gmac0 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan4";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port4 {
+	label = "lan1";
+	status = "okay";
+};
+
+/* No WiFi / PCIe on this wired-only device */
+&pcie0 {
+	status = "disabled";
+};
+
+&pcie1 {
+	status = "disabled";
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+	econet,bbt-table-size = <163>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "romfile";
+			reg = <0x40000 0x40000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "tclinux";
+			reg = <0x80000 0x400000>;
+			econet,enable-remap;
+		};
+
+		partition@480000 {
+			label = "rootfs";
+			reg = <0x480000 0xd940000>;
+			econet,enable-remap;
+		};
+
+		partition@ddc0000 {
+			label = "reservearea";
+			reg = <0xddc0000 0x240000>;
+			read-only;
+		};
+	};
+};
