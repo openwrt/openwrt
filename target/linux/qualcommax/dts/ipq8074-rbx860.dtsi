@@ -1,0 +1,70 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2026 Maximilian Brandt <me@brandtm.de>
+ */
+
+/dts-v1/;
+
+#include "ipq8074-rbx850.dtsi"
+
+/ {
+	aliases {
+		led-running = &lp5562_white;
+	};
+
+	/* The RBx860 has no GPIO power LED, only the LP5562 status LED */
+	/delete-node/ leds;
+
+	keys {
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		wps {
+			gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&qpic_nand {
+	nand@0 {
+		partitions {
+			/*
+			 * The stock U-Boot deletes all children of this node
+			 * unless the first one has no label. The name alone
+			 * matches the board_data partition just as well.
+			 */
+			partition-board_data {
+				/delete-property/ label;
+			};
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-pins {
+		pins = "gpio33", "gpio34";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+};
+
+&lp5562_red {
+	led-cur = [08];
+	max-cur = [20];
+};
+
+&lp5562_green {
+	led-cur = [08];
+	max-cur = [20];
+};
+
+&lp5562_blue {
+	led-cur = [08];
+	max-cur = [20];
+};
+
+&lp5562_white {
+	led-cur = [08];
+	max-cur = [20];
+};
