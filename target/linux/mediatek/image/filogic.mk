@@ -3838,6 +3838,21 @@ define Device/tplink_eap683-lr
 endef
 TARGET_DEVICES += tplink_eap683-lr
 
+define Device/tplink_ex820v
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := EX820v
+  DEVICE_DTS := mt7986a-tplink-ex820v
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware \
+	kmod-usb3 kmod-usb-ledtrig-usbport
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 40960k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += tplink_ex820v
+
 define Device/tplink_re6000xd
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := RE6000XD
