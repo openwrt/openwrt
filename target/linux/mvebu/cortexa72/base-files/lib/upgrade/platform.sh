@@ -42,9 +42,9 @@ platform_check_image() {
 	globalscale,mochabin|\
 	iei,puzzle-m901|\
 	iei,puzzle-m902|\
+	marvell,armada8040-clearfog-gt-8k|\
 	marvell,armada8040-mcbin-doubleshot|\
 	marvell,armada8040-mcbin-singleshot|\
-	marvell,armada8040-clearfog-gt-8k|\
 	solidrun,clearfog-pro)
 		legacy_sdcard_check_image "$1"
 		;;
@@ -72,16 +72,16 @@ platform_do_upgrade() {
 			;;
 		esac
 		;;
+	globalscale,mochabin|\
+	marvell,armada8040-clearfog-gt-8k|\
+	marvell,armada8040-mcbin-doubleshot|\
+	marvell,armada8040-mcbin-singleshot|\
+	solidrun,clearfog-pro)
+		legacy_sdcard_do_upgrade "$1"
+		;;
 	iei,puzzle-m901|\
 	iei,puzzle-m902)
 		platform_do_upgrade_emmc "$1"
-		;;
-	globalscale,mochabin|\
-	marvell,armada8040-mcbin-doubleshot|\
-	marvell,armada8040-mcbin-singleshot|\
-	marvell,armada8040-clearfog-gt-8k|\
-	solidrun,clearfog-pro)
-		legacy_sdcard_do_upgrade "$1"
 		;;
 	mikrotik,rb5009ug|\
 	mikrotik,rb5009upr)
@@ -92,6 +92,7 @@ platform_do_upgrade() {
 		;;
 	esac
 }
+
 platform_copy_config() {
 	case "$(board_name)" in
 	checkpoint,v-80|\
@@ -116,9 +117,9 @@ platform_copy_config() {
 	globalscale,mochabin|\
 	iei,puzzle-m901|\
 	iei,puzzle-m902|\
+	marvell,armada8040-clearfog-gt-8k|\
 	marvell,armada8040-mcbin-doubleshot|\
 	marvell,armada8040-mcbin-singleshot|\
-	marvell,armada8040-clearfog-gt-8k|\
 	solidrun,clearfog-pro)
 		legacy_sdcard_copy_config
 		;;
