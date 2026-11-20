@@ -1,0 +1,38 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3528-nanopi-zero2.dts	2026-04-27 20:47:22.353405056 +0000
++++ b/arch/arm64/boot/dts/rockchip/rk3528-nanopi-zero2.dts	2026-04-27 20:47:54.275217711 +0000
+@@ -17,6 +17,11 @@
+ 		mmc0 = &sdhci;
+ 		mmc1 = &sdmmc;
+ 		serial0 = &uart0;
++
++		led-boot = &sys_led;
++		led-failsafe = &sys_led;
++		led-running = &sys_led;
++		led-upgrade = &sys_led;
+ 	};
+ 
+ 	chosen {
+@@ -56,20 +61,18 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&led1>, <&led_sys>;
+ 
+-		led-0 {
++		sys_led: led-0 {
+ 			color = <LED_COLOR_ID_RED>;
+-			default-state = "on";
++			default-state = "off";
+ 			function = LED_FUNCTION_HEARTBEAT;
+ 			gpios = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "heartbeat";
+ 		};
+ 
+ 		led-1 {
+ 			color = <LED_COLOR_ID_GREEN>;
+-			default-state = "on";
++			default-state = "off";
+ 			function = LED_FUNCTION_STATUS;
+ 			gpios = <&gpio4 RK_PB1 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "default-on";
+ 		};
+ 	};
+ 
