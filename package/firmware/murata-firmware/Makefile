@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=murata-firmware
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_DATE:=2024-09-12
@@ -33,7 +33,8 @@ endef
 define Package/murata-firmware-43430-sdio
   $(Package/murata-firmware-default)
   TITLE:=BCM43430 FullMac SDIO firmware
-  CONFLICTS:=cypress-firmware-43430-sdio
+  PROVIDES:=cypress-firmware-43430-sdio brcmfmac-firmware-43430-sdio
+  CONFLICTS:=cypress-firmware-43430-sdio brcmfmac-firmware-43430-sdio
 endef
 
 define Package/murata-firmware-43430-sdio/install

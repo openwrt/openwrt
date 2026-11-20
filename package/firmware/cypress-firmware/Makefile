@@ -3,16 +3,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cypress-firmware
-PKG_VERSION_REAL:=5.10.9-2022_0909
+PKG_VERSION_REAL:=6.1.145-2026_0407
 PKG_VERSION:=$(subst _,.,$(subst -,.,$(PKG_VERSION_REAL)))
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/Infineon/ifx-linux-firmware/
-PKG_MIRROR_HASH:=cbdd862fbaad08f5905482038e8a97fafea9bab5673d65370d90ef248c4172d1
+PKG_MIRROR_HASH:=1f119e1a0d3c6c9ff5f2c07d73eb732dfdf16756e26e2408e3cd4322d7da46bd
 PKG_SOURCE_VERSION:=release-v$(PKG_VERSION_REAL)
 
 PKG_MAINTAINER:=Álvaro Fernández Rojas <noltari@gmail.com>
+PKG_LICENSE:=LicenseRef-Cypress
 PKG_LICENSE_FILES:=LICENCE
 
 include $(INCLUDE_DIR)/package.mk
@@ -51,94 +52,6 @@ define Package/cypress-firmware-43012-sdio/install
 endef
 
 $(eval $(call BuildPackage,cypress-firmware-43012-sdio))
-
-# Cypress 43340 SDIO Firmware
-define Package/cypress-firmware-43340-sdio
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW43340 FullMac SDIO firmware
-endef
-
-define Package/cypress-firmware-43340-sdio/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac43340-sdio.bin \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac43340-sdio.bin \
-		$(1)/lib/firmware/brcm/brcmfmac43340-sdio.bin
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-43340-sdio))
-
-# Cypress 43362 SDIO Firmware
-define Package/cypress-firmware-43362-sdio
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW43362 FullMac SDIO firmware
-  PROVIDES:=brcmfmac-firmware-43362-sdio
-  CONFLICTS:=brcmfmac-firmware-43362-sdio
-endef
-
-define Package/cypress-firmware-43362-sdio/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac43362-sdio.bin \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac43362-sdio.bin \
-		$(1)/lib/firmware/brcm/brcmfmac43362-sdio.bin
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-43362-sdio))
-
-# Cypress 4339 SDIO Firmware
-define Package/cypress-firmware-4339-sdio
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW4339 FullMac SDIO firmware
-  PROVIDES:=brcmfmac-firmware-4339-sdio
-  CONFLICTS:=brcmfmac-firmware-4339-sdio
-endef
-
-define Package/cypress-firmware-4339-sdio/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac4339-sdio.bin \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac4339-sdio.bin \
-		$(1)/lib/firmware/brcm/brcmfmac4339-sdio.bin
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-4339-sdio))
-
-# Cypress 43430 SDIO Firmware
-define Package/cypress-firmware-43430-sdio
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW43430 FullMac SDIO firmware
-  PROVIDES:=brcmfmac-firmware-43430-sdio
-  CONFLICTS:=brcmfmac-firmware-43430-sdio
-endef
-
-define Package/cypress-firmware-43430-sdio/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac43430-sdio.bin \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac43430-sdio.clm_blob \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac43430-sdio.bin \
-		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.bin
-	$(LN) \
-		../cypress/cyfmac43430-sdio.clm_blob \
-		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.clm_blob
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-43430-sdio))
 
 # Cypress 43439 SDIO Firmware
 define Package/cypress-firmware-43439-sdio
@@ -191,106 +104,6 @@ define Package/cypress-firmware-43455-sdio/install
 endef
 
 $(eval $(call BuildPackage,cypress-firmware-43455-sdio))
-
-# Cypress 4354 SDIO Firmware
-define Package/cypress-firmware-4354-sdio
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW4354 FullMac SDIO firmware
-endef
-
-define Package/cypress-firmware-4354-sdio/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac4354-sdio.bin \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac4354-sdio.clm_blob \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac4354-sdio.bin \
-		$(1)/lib/firmware/brcm/brcmfmac4354-sdio.bin
-	$(LN) \
-		../cypress/cyfmac4354-sdio.clm_blob \
-		$(1)/lib/firmware/brcm/brcmfmac4354-sdio.clm_blob
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-4354-sdio))
-
-# Cypress 4356 PCIe Firmware
-define Package/cypress-firmware-4356-pcie
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW4356 FullMac PCIe firmware
-endef
-
-define Package/cypress-firmware-4356-pcie/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac4356-pcie.bin \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac4356-pcie.clm_blob \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac4356-pcie.bin \
-		$(1)/lib/firmware/brcm/brcmfmac4356-pcie.bin
-	$(LN) \
-		../cypress/cyfmac4356-pcie.clm_blob \
-		$(1)/lib/firmware/brcm/brcmfmac4356-pcie.clm_blob
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-4356-pcie))
-
-# Cypress 4356 SDIO Firmware
-define Package/cypress-firmware-4356-sdio
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW4356 FullMac SDIO firmware
-endef
-
-define Package/cypress-firmware-4356-sdio/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac4356-sdio.bin \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac4356-sdio.clm_blob \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac4356-sdio.bin \
-		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.bin
-	$(LN) \
-		../cypress/cyfmac4356-sdio.clm_blob \
-		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.clm_blob
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-4356-sdio))
-
-# Cypress 43570 PCIe Firmware
-define Package/cypress-firmware-43570-pcie
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW43570 FullMac PCIe firmware
-endef
-
-define Package/cypress-firmware-43570-pcie/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac43570-pcie.bin \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac43570-pcie.clm_blob \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac43570-pcie.bin \
-		$(1)/lib/firmware/brcm/brcmfmac43570-pcie.bin
-	$(LN) \
-		../cypress/cyfmac43570-pcie.clm_blob \
-		$(1)/lib/firmware/brcm/brcmfmac43570-pcie.clm_blob
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-43570-pcie))
 
 # Cypress 4373 PCIe Firmware
 define Package/cypress-firmware-4373-pcie
@@ -354,14 +167,14 @@ define Package/cypress-firmware-4373-usb/install
 		$(PKG_BUILD_DIR)/firmware/cyfmac4373-usb.bin \
 		$(1)/lib/firmware/cypress/
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac4373.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4373-usb.clm_blob \
 		$(1)/lib/firmware/cypress/
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(LN) \
 		../cypress/cyfmac4373-usb.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4373-usb.bin
 	$(LN) \
-		../cypress/cyfmac4373.clm_blob \
+		../cypress/cyfmac4373-usb.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac4373.clm_blob
 endef
 
@@ -416,25 +229,6 @@ define Package/cypress-firmware-54591-sdio/install
 endef
 
 $(eval $(call BuildPackage,cypress-firmware-54591-sdio))
-
-# Cypress 55560 PCIe Firmware
-define Package/cypress-firmware-55560-pcie
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW55560 FullMac PCIe firmware
-endef
-
-define Package/cypress-firmware-55560-pcie/install
-	$(INSTALL_DIR) $(1)/lib/firmware/cypress
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac55560-pcie.trxse \
-		$(1)/lib/firmware/cypress/
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(LN) \
-		../cypress/cyfmac55560-pcie.trxse \
-		$(1)/lib/firmware/brcm/brcmfmac55560-pcie.trxse
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-55560-pcie))
 
 # Cypress 55572 PCIe Firmware
 define Package/cypress-firmware-55572-pcie
