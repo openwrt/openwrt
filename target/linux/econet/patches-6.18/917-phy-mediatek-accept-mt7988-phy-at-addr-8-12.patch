@@ -1,0 +1,137 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Sun, 27 Sep 2026 22:20:00 +0100
+Subject: [PATCH] net: phy: mediatek: accept MT7988-ID PHYs wired at MDIO address 8-12
+
+Accept PHYs at MDIO addresses 8 through 12 in mt7988_phy_probe and fix
+their LED polarity.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.c
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
+@@ -328,6 +328,10 @@
+ #define MTK_PHY_LED_BCR				0x21
+ #define   MTK_PHY_LED_BCR_CLK_EN		BIT(3)
+ #define   MTK_PHY_LED_BCR_EXT_CTRL		BIT(15)
++#define MTK_PHY_LED_DUR_ON			0x22
++#define   MTK_PHY_LED_DUR_ON_DEF		0x0c00
++#define MTK_PHY_LED_DUR_BLINK			0x23
++#define   MTK_PHY_LED_DUR_BLINK_DEF		0x1400
+
+ #define MTK_PHY_RG_BG_RASEL			0x115
+ #define   MTK_PHY_RG_BG_RASEL_MASK		GENMASK(2, 0)
+@@ -383,7 +387,7 @@ enum CAL_MODE {
+
+ struct mtk_socphy_shared {
+ 	u32			boottrap;
+-	struct mtk_socphy_priv	priv[4];
++	struct mtk_socphy_priv	priv[5];
+ };
+
+ /* One calibration cycle consists of:
+@@ -1172,6 +1176,9 @@ static int mt798x_phy_calibration(struct
+ 	if (IS_ERR(cell)) {
+ 		if (PTR_ERR(cell) == -EPROBE_DEFER)
+ 			return PTR_ERR(cell);
++		phydev_dbg(phydev,
++			   "no phy-cal-data nvmem cell (err=%ld), running UNCALIBRATED\n",
++			   PTR_ERR(cell));
+ 		return 0;
+ 	}
+
+@@ -1180,6 +1187,8 @@ static int mt798x_phy_calibration(struct
+ 	if (IS_ERR(buf))
+ 		return PTR_ERR(buf);
+
++	phydev_dbg(phydev, "phy-cal-data nvmem cell found, applying calibration\n");
++
+ 	if (!buf[0] || !buf[1] || !buf[2] || !buf[3] || len < 4 * sizeof(u32)) {
+ 		phydev_err(phydev, "invalid efuse data\n");
+ 		ret = -EINVAL;
+@@ -1296,6 +1305,9 @@ static bool mt7988_phy_led_get_polarity(
+ 	struct mtk_socphy_shared *priv = phy_package_get_priv(phydev);
+ 	u32 polarities;
+
++	if (phydev->mdio.addr >= 8 && phydev->mdio.addr <= 12)
++		return true;
++
+ 	if (led_num == 0)
+ 		polarities = ~(priv->boottrap);
+ 	else
+@@ -1352,8 +1364,14 @@ static int mt7988_phy_probe_shared(struct phy_device *phydev)
+ 	 * set LED polarity for each of the LED0.
+ 	 */
+ 	pio_np = of_parse_phandle(np, "mediatek,pio", 0);
+-	if (!pio_np)
+-		return -ENODEV;
++	if (!pio_np) {
++		/* Not present on SoCs that don't bootstrap configuration
++		 * through the PHY LED pins (e.g. EN751627) -- fall back to
++		 * a neutral boottrap value instead of failing probe.
++		 */
++		shared->boottrap = 0;
++		return 0;
++	}
+
+ 	regmap = device_node_to_regmap(pio_np);
+ 	of_node_put(pio_np);
+@@ -1374,10 +1392,40 @@ static int mt7988_phy_probe(struct phy_d
+ {
+ 	struct mtk_socphy_shared *shared;
+ 	struct mtk_socphy_priv *priv;
++	unsigned int idx;
+ 	int err;
+
+-	if (phydev->mdio.addr > 3)
++	if (phydev->mdio.addr <= 3) {
++		idx = phydev->mdio.addr;
++	} else if (phydev->mdio.addr >= 8 && phydev->mdio.addr <= 12) {
++		/* Some SoCs (e.g. Airoha/EcoNet EN751627) integrate the same
++		 * MT7988-identifying PHY silicon but wire it up starting at
++		 * MDIO address 8 instead of 0.
++		 */
++		idx = phydev->mdio.addr - 8;
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED_BCR,
++			      MTK_PHY_LED_BCR_EXT_CTRL |
++			      MTK_PHY_LED_BCR_CLK_EN |
++			      BIT(0));
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED_DUR_ON,
++			      MTK_PHY_LED_DUR_ON_DEF);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED_DUR_BLINK,
++			      MTK_PHY_LED_DUR_BLINK_DEF);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED0_ON_CTRL,
++			      MTK_PHY_LED_ON_ENABLE |
++			      MTK_PHY_LED_ON_POLARITY |
++			      MTK_GPHY_LED_ON_SET);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED0_BLINK_CTRL,
++			      MTK_GPHY_LED_RX_BLINK_SET | MTK_GPHY_LED_TX_BLINK_SET);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED1_ON_CTRL,
++			      MTK_PHY_LED_ON_ENABLE |
++			      MTK_PHY_LED_ON_POLARITY |
++			      MTK_GPHY_LED_ON_SET);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED1_BLINK_CTRL,
++			      MTK_GPHY_LED_RX_BLINK_SET | MTK_GPHY_LED_TX_BLINK_SET);
++	} else {
+ 		return -EINVAL;
++	}
+
+ 	err = devm_phy_package_join(&phydev->mdio.dev, phydev, 0,
+ 				    sizeof(struct mtk_socphy_shared));
+@@ -1391,7 +1439,7 @@ static int mt7988_phy_probe(struct phy_d
+ 	}
+
+ 	shared = phy_package_get_priv(phydev);
+-	priv = &shared->priv[phydev->mdio.addr];
++	priv = &shared->priv[idx];
+
+ 	phydev->priv = priv;
+
+@@ -1526,6 +1574,7 @@ static struct phy_driver mtk_socphy_driv
+ 		.led_hw_is_supported = mt798x_phy_led_hw_is_supported,
+ 		.led_hw_control_set = mt798x_phy_led_hw_control_set,
+ 		.led_hw_control_get = mt798x_phy_led_hw_control_get,
++		.led_polarity_set = an7581_phy_led_polarity_set,
+ 	},
+ 	{
+ 		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_EN7528),
