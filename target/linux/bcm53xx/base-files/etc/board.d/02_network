@@ -10,7 +10,8 @@ bcm53xx_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	asus,rt-ac87u)
+	asus,rt-ac87u|\
+	phicomm,k3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	asus,rt-ac88u)
@@ -25,13 +26,9 @@ bcm53xx_setup_interfaces()
 	luxul,xap-1610-v1)
 		ucidef_set_interface_lan "poe lan" "dhcp"
 		;;
-	meraki,mr26 | \
+	meraki,mr26|\
 	meraki,mr32)
 		ucidef_set_interface_lan "poe" "dhcp"
-		;;
-	meraki,mx64 | \
-	meraki,mx64-a0)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	meraki,mx65)
 		ucidef_set_interfaces_lan_wan \
@@ -39,9 +36,6 @@ bcm53xx_setup_interfaces()
 		# WAN on the second CPU port (switch port 7, eth0)
 		ucidef_set_network_device_conduit "wan1" "eth0"
 		ucidef_set_network_device_conduit "wan2" "eth0"
-		;;
-	phicomm,k3)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
@@ -56,12 +50,6 @@ bcm53xx_setup_macs()
 	wan_macaddr="$(nvram get wan_hwaddr)"
 
 	case "$board" in
-	netgear,r7900 | \
-	netgear,r8000 | \
-	netgear,r8500)
-		etXmacaddr=$(nvram get et2macaddr)
-		offset=1
-		;;
 	asus,rt-ac3200|\
 	asus,rt-ac5300|\
 	asus,rt-ac56u|\
@@ -81,6 +69,12 @@ bcm53xx_setup_macs()
 	smartrg,sr400ac|\
 	tenda,ac9)
 		etXmacaddr=$(nvram get et0macaddr)
+		offset=1
+		;;
+	netgear,r7900|\
+	netgear,r8000|\
+	netgear,r8500)
+		etXmacaddr=$(nvram get et2macaddr)
 		offset=1
 		;;
 	esac

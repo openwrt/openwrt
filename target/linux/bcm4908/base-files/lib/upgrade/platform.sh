@@ -45,24 +45,24 @@ platform_identify() {
 
 	magic=$(get_hex_u32_be "$1" 0)
 	case "$magic" in
-		d00dfeed)
-			BCM4908_FW_FORMAT="pkgtb"
-			return
-			;;
-		2a23245e)
-			local header_len=$((0x$(get_hex_u32_be "$1" 4)))
-			local board_id_len=$(($header_len - 40))
+	d00dfeed)
+		BCM4908_FW_FORMAT="pkgtb"
+		return
+		;;
+	2a23245e)
+		local header_len=$((0x$(get_hex_u32_be "$1" 4)))
+		local board_id_len=$(($header_len - 40))
 
-			BCM4908_FW_FORMAT="chk"
-			BCM4908_FW_BOARD_ID=$(dd if="$1" skip=40 bs=1 count=$board_id_len 2>/dev/null | hexdump -v -e '1/1 "%c"')
-			magic=$(get_hex_u32_be "$1" "$header_len")
-			[ "$magic" = "d00dfeed" ] && {
-				BCM4908_FW_INT_IMG_FORMAT="pkgtb"
-			} || {
-				BCM4908_FW_INT_IMG_FORMAT="bcm4908img"
-			}
-			BCM4908_FW_INT_IMG_EXTRACT_CMD="dd skip=$header_len iflag=skip_bytes"
-			return
+		BCM4908_FW_FORMAT="chk"
+		BCM4908_FW_BOARD_ID=$(dd if="$1" skip=40 bs=1 count=$board_id_len 2>/dev/null | hexdump -v -e '1/1 "%c"')
+		magic=$(get_hex_u32_be "$1" "$header_len")
+		[ "$magic" = "d00dfeed" ] && {
+			BCM4908_FW_INT_IMG_FORMAT="pkgtb"
+		} || {
+			BCM4908_FW_INT_IMG_FORMAT="bcm4908img"
+		}
+		BCM4908_FW_INT_IMG_EXTRACT_CMD="dd skip=$header_len iflag=skip_bytes"
+		return
 		;;
 	esac
 
@@ -70,13 +70,13 @@ platform_identify() {
 
 	magic=$(get_content "$1" $((size - 20 - 64 + 8)) 12)
 	case "$magic" in
-		GT-AC5300)
-			local size=$(wc -c "$1" | cut -d ' ' -f 1)
+	GT-AC5300)
+		local size=$(wc -c "$1" | cut -d ' ' -f 1)
 
-			BCM4908_FW_FORMAT="asus"
-			BCM4908_FW_BOARD_ID=$(get_content "$1" $((size - 20 - 64 + 8)) 12)
-			BCM4908_FW_INT_IMG_FORMAT="bcm4908img"
-			return
+		BCM4908_FW_FORMAT="asus"
+		BCM4908_FW_BOARD_ID=$(get_content "$1" $((size - 20 - 64 + 8)) 12)
+		BCM4908_FW_INT_IMG_FORMAT="bcm4908img"
+		return
 		;;
 	esac
 
@@ -209,6 +209,28 @@ platform_check_image() {
 	}
 
 	case "$BCM4908_FW_FORMAT" in
+	"bcm4908img")
+		bcm4908img info -i "$1" > /dev/null || {
+			echo "Failed to validate BCM4908 image" >&2
+			notify_firmware_broken
+			return 1
+		}
+
+		bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" || {
+			# OpenWrt images have 1-openwrt dummy file in the bootfs.
+			# Don't allow backup if it's missing
+			notify_firmware_no_backup
+		}
+		;;
+	"pkgtb")
+		platform_check_pkgtb "$1" || {
+			echo "Failed to validate pkgtb firmware" >&2
+			notify_firmware_broken
+			return 1
+		}
+		;;
+	*)
+		case "$BCM4908_FW_INT_IMG_FORMAT" in
 		"bcm4908img")
 			bcm4908img info -i "$1" > /dev/null || {
 				echo "Failed to validate BCM4908 image" >&2
@@ -223,36 +245,14 @@ platform_check_image() {
 			}
 			;;
 		"pkgtb")
-			platform_check_pkgtb "$1" || {
+			platform_check_pkgtb "$1" "$BCM4908_FW_INT_IMG_EXTRACT_CMD" || {
 				echo "Failed to validate pkgtb firmware" >&2
 				notify_firmware_broken
 				return 1
 			}
 			;;
-		*)
-			case "$BCM4908_FW_INT_IMG_FORMAT" in
-				"bcm4908img")
-					bcm4908img info -i "$1" > /dev/null || {
-						echo "Failed to validate BCM4908 image" >&2
-						notify_firmware_broken
-						return 1
-					}
-
-					bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" || {
-						# OpenWrt images have 1-openwrt dummy file in the bootfs.
-						# Don't allow backup if it's missing
-						notify_firmware_no_backup
-					}
-					;;
-				"pkgtb")
-					platform_check_pkgtb "$1" "$BCM4908_FW_INT_IMG_EXTRACT_CMD" || {
-						echo "Failed to validate pkgtb firmware" >&2
-						notify_firmware_broken
-						return 1
-					}
-					;;
-			esac
-			;;
+		esac
+		;;
 	esac
 
 	return $error
@@ -392,25 +392,25 @@ platform_do_upgrade() {
 
 	# Try NAND aware UBI upgrade for OpenWrt images
 	case "$BCM4908_FW_FORMAT" in
+	"bcm4908img")
+		bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" && platform_do_upgrade_ubi "$1"
+		;;
+	"pkgtb")
+		platform_do_upgrade_pkgtb "$1"
+		;;
+	*)
+		case "$BCM4908_FW_INT_IMG_FORMAT" in
 		"bcm4908img")
 			bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" && platform_do_upgrade_ubi "$1"
 			;;
 		"pkgtb")
-			platform_do_upgrade_pkgtb "$1"
+			platform_do_upgrade_pkgtb "$1" "$BCM4908_FW_INT_IMG_EXTRACT_CMD"
 			;;
 		*)
-			case "$BCM4908_FW_INT_IMG_FORMAT" in
-				"bcm4908img")
-					bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" && platform_do_upgrade_ubi "$1"
-					;;
-				"pkgtb")
-					platform_do_upgrade_pkgtb "$1" "$BCM4908_FW_INT_IMG_EXTRACT_CMD"
-					;;
-				*)
-					echo "NAND aware sysupgrade is unsupported for $BCM4908_FW_FORMAT format"
-					;;
-			esac
+			echo "NAND aware sysupgrade is unsupported for $BCM4908_FW_FORMAT format"
 			;;
+		esac
+		;;
 	esac
 
 	# Above calls exit on success.
