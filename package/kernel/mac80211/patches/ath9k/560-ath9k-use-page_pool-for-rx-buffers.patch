@@ -1,0 +1,293 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] wifi: ath9k: use page_pool for RX buffers
+
+Allocate RX buffers from a page_pool instead of allocating a new skb
+and mapping it for every received frame. The pool keeps its pages
+mapped, so refilling a descriptor only needs a sync for the device,
+and buffers are recycled once the stack is done with them.
+
+A buffer plus skb_shared_info does not fit into half a page, so the
+pool uses order-1 pages split into three fragments.
+
+On a Meraki MX60 (APM82181, 3x3 AR9300-family PCIe card, 5 GHz HT40)
+forwarding 90 Mbit/s of UDP from a wireless client to the WAN port,
+the CPU load drops from 56.2% to 54.8% (mean of 12 runs each, in-boot
+A/B), and the share of ath9k itself drops from 14.1% to 11.9% of the
+samples. TCP throughput is unchanged (air time bound).
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath9k/Kconfig
++++ b/drivers/net/wireless/ath/ath9k/Kconfig
+@@ -24,6 +24,7 @@ config ATH9K
+ 	tristate "Atheros 802.11n wireless cards support"
+ 	depends on m
+ 	depends on MAC80211 && HAS_DMA
++	depends on PAGE_POOL
+ 	select MAC80211_LEDS if LEDS_CLASS=y || LEDS_CLASS=MAC80211
+ 	select ATH9K_HW
+ 	select ATH9K_COMMON
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -26,6 +26,7 @@
+ #include <linux/time.h>
+ #include <linux/hw_random.h>
+ #include <linux/gpio/driver.h>
++#include <net/page_pool/helpers.h>
+ 
+ #include "common.h"
+ #include "debug.h"
+@@ -313,6 +314,7 @@ struct ath_rx {
+ 
+ 	struct ath_rxbuf *buf_hold;
+ 	struct sk_buff *frag;
++	struct page_pool *page_pool;
+ 
+ 	u32 ampdu_ref;
+ };
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -107,6 +107,71 @@ static void ath_opmode_init(struct ath_s
+ 	ath9k_hw_setmcastfilter(ah, mfilt[0], mfilt[1]);
+ }
+ 
++static int ath_rx_page_pool_create(struct ath_softc *sc, int nbufs)
++{
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
++	struct page_pool_params pp_params = {};
++	struct page_pool *pp;
++
++	/*
++	 * A buffer does not fit into half a page, use order-1 pages so
++	 * that three buffers share one of them.
++	 */
++	pp_params.order = 1;
++	pp_params.pool_size = nbufs;
++	pp_params.nid = NUMA_NO_NODE;
++	pp_params.dev = sc->dev;
++	pp_params.flags = PP_FLAG_DMA_MAP;
++
++	/* EDMA chips clear the RX status from the CPU side */
++	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
++		pp_params.dma_dir = DMA_BIDIRECTIONAL;
++	else
++		pp_params.dma_dir = DMA_FROM_DEVICE;
++
++	pp = page_pool_create(&pp_params);
++	if (IS_ERR(pp)) {
++		ath_err(common, "failed to create rx page pool\n");
++		return PTR_ERR(pp);
++	}
++
++	sc->rx.page_pool = pp;
++	return 0;
++}
++
++static struct sk_buff *ath_rx_buf_alloc(struct ath_softc *sc,
++					dma_addr_t *addr, gfp_t gfp)
++{
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
++	struct page_pool *pp = sc->rx.page_pool;
++	struct sk_buff *skb;
++	unsigned int size;
++	struct page *page;
++	void *data;
++
++	size = SKB_DATA_ALIGN(NET_SKB_PAD + common->rx_bufsize) +
++	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
++
++	data = page_pool_alloc_va(pp, &size, gfp);
++	if (!data)
++		return NULL;
++
++	skb = build_skb(data, size);
++	if (!skb) {
++		page_pool_free_va(pp, data, false);
++		return NULL;
++	}
++
++	skb_mark_for_recycle(skb);
++	skb_reserve(skb, NET_SKB_PAD);
++
++	page = virt_to_head_page(data);
++	*addr = page_pool_get_dma_addr(page) +
++		(skb->data - (u8 *)page_address(page));
++
++	return skb;
++}
++
+ static bool ath_rx_edma_buf_link(struct ath_softc *sc,
+ 				 enum ath9k_rx_qtype qtype)
+ {
+@@ -170,8 +235,6 @@ static void ath_rx_remove_buffer(struct
+ 
+ static void ath_rx_edma_cleanup(struct ath_softc *sc)
+ {
+-	struct ath_hw *ah = sc->sc_ah;
+-	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ath_rxbuf *bf;
+ 
+ 	ath_rx_remove_buffer(sc, ATH9K_RX_QUEUE_LP);
+@@ -179,9 +242,6 @@ static void ath_rx_edma_cleanup(struct a
+ 
+ 	list_for_each_entry(bf, &sc->rx.rxbuf, list) {
+ 		if (bf->bf_mpdu) {
+-			dma_unmap_single(sc->dev, bf->bf_buf_addr,
+-					common->rx_bufsize,
+-					DMA_BIDIRECTIONAL);
+ 			dev_kfree_skb_any(bf->bf_mpdu);
+ 			bf->bf_buf_addr = 0;
+ 			bf->bf_mpdu = NULL;
+@@ -218,7 +278,7 @@ static int ath_rx_edma_init(struct ath_s
+ 	INIT_LIST_HEAD(&sc->rx.rxbuf);
+ 
+ 	for (i = 0; i < nbufs; i++, bf++) {
+-		skb = ath_rxbuf_alloc(common, common->rx_bufsize, GFP_KERNEL);
++		skb = ath_rx_buf_alloc(sc, &bf->bf_buf_addr, GFP_KERNEL);
+ 		if (!skb) {
+ 			error = -ENOMEM;
+ 			goto rx_init_fail;
+@@ -227,19 +287,9 @@ static int ath_rx_edma_init(struct ath_s
+ 		memset(skb->data, 0, common->rx_bufsize);
+ 		bf->bf_mpdu = skb;
+ 
+-		bf->bf_buf_addr = dma_map_single(sc->dev, skb->data,
+-						 common->rx_bufsize,
+-						 DMA_BIDIRECTIONAL);
+-		if (unlikely(dma_mapping_error(sc->dev,
+-						bf->bf_buf_addr))) {
+-				dev_kfree_skb_any(skb);
+-				bf->bf_mpdu = NULL;
+-				bf->bf_buf_addr = 0;
+-				ath_err(common,
+-					"dma_mapping_error() on RX init\n");
+-				error = -ENOMEM;
+-				goto rx_init_fail;
+-		}
++		dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
++					   common->rx_bufsize,
++					   DMA_BIDIRECTIONAL);
+ 
+ 		list_add_tail(&bf->list, &sc->rx.rxbuf);
+ 	}
+@@ -278,8 +328,18 @@ int ath_rx_init(struct ath_softc *sc, in
+ 	common->rx_bufsize = IEEE80211_MAX_MPDU_LEN / 2 +
+ 			     sc->sc_ah->caps.rx_status_len;
+ 
+-	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
+-		return ath_rx_edma_init(sc, nbufs);
++	error = ath_rx_page_pool_create(sc, nbufs);
++	if (error)
++		return error;
++
++	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA) {
++		error = ath_rx_edma_init(sc, nbufs);
++		if (error) {
++			page_pool_destroy(sc->rx.page_pool);
++			sc->rx.page_pool = NULL;
++		}
++		return error;
++	}
+ 
+ 	ath_dbg(common, CONFIG, "cachelsz %u rxbufsize %u\n",
+ 		common->cachelsz, common->rx_bufsize);
+@@ -296,27 +356,16 @@ int ath_rx_init(struct ath_softc *sc, in
+ 	}
+ 
+ 	list_for_each_entry(bf, &sc->rx.rxbuf, list) {
+-		skb = ath_rxbuf_alloc(common, common->rx_bufsize,
+-				      GFP_KERNEL);
++		skb = ath_rx_buf_alloc(sc, &bf->bf_buf_addr, GFP_KERNEL);
+ 		if (skb == NULL) {
+ 			error = -ENOMEM;
+ 			goto err;
+ 		}
+ 
+ 		bf->bf_mpdu = skb;
+-		bf->bf_buf_addr = dma_map_single(sc->dev, skb->data,
+-						 common->rx_bufsize,
+-						 DMA_FROM_DEVICE);
+-		if (unlikely(dma_mapping_error(sc->dev,
+-					       bf->bf_buf_addr))) {
+-			dev_kfree_skb_any(skb);
+-			bf->bf_mpdu = NULL;
+-			bf->bf_buf_addr = 0;
+-			ath_err(common,
+-				"dma_mapping_error() on RX init\n");
+-			error = -ENOMEM;
+-			goto err;
+-		}
++		dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
++					   common->rx_bufsize,
++					   DMA_FROM_DEVICE);
+ 	}
+ 	sc->rx.rxlink = NULL;
+ err:
+@@ -328,27 +377,24 @@ err:
+ 
+ void ath_rx_cleanup(struct ath_softc *sc)
+ {
+-	struct ath_hw *ah = sc->sc_ah;
+-	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct sk_buff *skb;
+ 	struct ath_rxbuf *bf;
+ 
+ 	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA) {
+ 		ath_rx_edma_cleanup(sc);
+-		return;
+-	}
+-
+-	list_for_each_entry(bf, &sc->rx.rxbuf, list) {
+-		skb = bf->bf_mpdu;
+-		if (skb) {
+-			dma_unmap_single(sc->dev, bf->bf_buf_addr,
+-					 common->rx_bufsize,
+-					 DMA_FROM_DEVICE);
+-			dev_kfree_skb(skb);
+-			bf->bf_buf_addr = 0;
+-			bf->bf_mpdu = NULL;
++	} else {
++		list_for_each_entry(bf, &sc->rx.rxbuf, list) {
++			skb = bf->bf_mpdu;
++			if (skb) {
++				dev_kfree_skb(skb);
++				bf->bf_buf_addr = 0;
++				bf->bf_mpdu = NULL;
++			}
+ 		}
+ 	}
++
++	page_pool_destroy(sc->rx.page_pool);
++	sc->rx.page_pool = NULL;
+ }
+ 
+ /*
+@@ -1118,7 +1164,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 
+ 		/* Ensure we always have an skb to requeue once we are done
+ 		 * processing the current buffer's skb */
+-		requeue_skb = ath_rxbuf_alloc(common, common->rx_bufsize, GFP_ATOMIC);
++		requeue_skb = ath_rx_buf_alloc(sc, &new_buf_addr, GFP_ATOMIC);
+ 
+ 		/* If there is no memory we ignore the current RX'd frame,
+ 		 * tell hardware it can give us a new frame using the old
+@@ -1130,16 +1176,8 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 		}
+ 
+ 		/* We will now give hardware our shiny new allocated skb */
+-		new_buf_addr = dma_map_single(sc->dev, requeue_skb->data,
+-					      common->rx_bufsize, dma_type);
+-		if (unlikely(dma_mapping_error(sc->dev, new_buf_addr))) {
+-			dev_kfree_skb_any(requeue_skb);
+-			goto requeue_drop_frag;
+-		}
+-
+-		/* Unmap the frame */
+-		dma_unmap_single(sc->dev, bf->bf_buf_addr,
+-				 common->rx_bufsize, dma_type);
++		dma_sync_single_for_device(sc->dev, new_buf_addr,
++					   common->rx_bufsize, dma_type);
+ 
+ 		bf->bf_mpdu = requeue_skb;
+ 		bf->bf_buf_addr = new_buf_addr;
