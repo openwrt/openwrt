@@ -1,0 +1,303 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Mon, 31 Aug 2026 00:00:00 +0000
+Subject: [PATCH] PCI: mediatek: add EcoNet EN751221 support (V1 register model)
+
+The EcoNet EN751221 (TrendChip lineage, marks itself MT751020) has two
+PCIe root complexes whose register layout is the older MediaTek "V1"
+model, not the EN7528 "V2" model this driver's own econet,en7528-pcie
+compatible selects (added upstream for the EN751221 too by mistake):
+
+* per-port blocks live at 0x1fb82000 (RC0) and 0x1fb83000 (RC1) with
+  BAR0/class/link-status offsets matching the V1 blocks this driver
+  already knows via mtk_pcie_soc_v1. The EN7528 V2 offsets
+  mtk_pcie_startup_port_en7528() uses do not exist on this chip (all
+  read as zero on the working vendor system) -- confirmed by
+  register-level RE against the vendor bootloader/kernel.
+
+* configuration access goes through a selector/data window in the
+  pciecfg syscon at +0x20/+0x24 with address format
+  bus<<24 | devfn<<16 | reg, not via the classic V1 direct config
+  window nor the V2 TLP-request registers (also absent).
+
+* per-port PERST# is driven via the existing V1 PCIE_SYS_CFG/
+  PCIE_PORT_PERST(x) bits -- deassert only, since the bootloader has
+  already run its full PERST/training sequence by the time Linux
+  probes; a second assert->deassert pulse re-resets the endpoint right
+  before the scan and it never answers in time.
+
+Additionally, the EN751221's root ports lose their command register
+contents before the OS runs (clock-gated before kernel init), so
+startup must explicitly restore PCI_COMMAND IO/MEM/BUSMASTER plus the
+SoC-specific BIT(20) the vendor uses, or no TLP is ever routed
+downstream even with the link physically trained. INTx forwarding also
+needs an explicit enable at RC startup (PCIE_INT_ENABLE, global pciecfg
+block) at bits 20/26 for this chip's two RCs specifically -- not the
+generic PCIE_PORT_INT_EN(x) = BIT(20+x) formula the classic V1 path
+uses, since our RCs sit at global-block port positions 0 and 6.
+
+Both root ports appear as devices on the hardware's shared bus 0 (dev 0
+= RC0, dev 1 = RC1) while the driver gives each PCIe node its own PCI
+domain, so the config accessors translate the driver's per-domain
+bus/devfn to the hardware's shared-bus addressing.
+
+New compatible "econet,en751221-pcie" selects the new soc data,
+overriding the shared dtsi's default on this board; other en7528/
+en751221-family boards using the shared dtsi's own compatible are
+unaffected.
+
+Verified on real hardware (ZTE ZXHN H267A): with this patch and the
+matching clk-en7523/phy-econet-pcie changes, both radios enumerate.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/pci/controller/pcie-mediatek.c
++++ b/drivers/pci/controller/pcie-mediatek.c
+@@ -98,6 +98,23 @@
+ #define EN7528_RC0_LINKUP	BIT(1)
+ #define EN7528_RC1_LINKUP	BIT(2)
+ 
++/*
++ * EcoNet EN751221: older MediaTek "V1" register model (per-port blocks,
++ * PCIE_SYS_CFG/PCIE_PORT_PERST/PCIE_LINK_STATUS etc. above already apply),
++ * but configuration access goes through a selector/data window in the
++ * pciecfg syscon rather than the per-port base mtk_pcie_map_bus() uses --
++ * verified against the vendor bootloader and kernel, see the commit message.
++ */
++#define EN751221_PCIE_CFG_ADDR		0x20
++#define EN751221_PCIE_CFG_DATA		0x24
++#define EN751221_CONF_ADDR(bus, devfn, where) \
++	((((bus) & 0xff) << 24) | (((devfn) & 0xff) << 16) | \
++	 ((where) & 0xffc))
++
++/* vendor root-port command: IO | MEM | BUSMASTER | SoC-specific BIT(20) */
++#define EN751221_RC_CMD		(BIT(20) | PCI_COMMAND_IO | \
++				 PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER)
++
+ #define PCIE_AHB_TRANS_BASE0_L	0x438
+ #define PCIE_AHB_TRANS_BASE0_H	0x43c
+ #define AHB2PCIE_SIZE(x)	((x) & GENMASK(4, 0))
+@@ -899,6 +916,201 @@ static int mtk_pcie_retrain(struct devic
+ 	return 0;
+ }
+ 
++static int mtk_pcie_en751221_config_addr(struct mtk_pcie *pcie,
++					 struct pci_bus *bus,
++					 unsigned int devfn, int where,
++					 u32 *addr)
++{
++	struct mtk_pcie_port *port;
++	u32 hw_bus;
++
++	if (list_empty(&pcie->ports))
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
++	port = list_first_entry(&pcie->ports, struct mtk_pcie_port, list);
++
++	if (pci_is_root_bus(bus)) {
++		/*
++		 * The host's own root port lives on the hardware's shared
++		 * bus 0 as device <slot> (RC0 = dev 0, RC1 = dev 1),
++		 * regardless of the PCI domain the driver assigned. Only
++		 * devfn 0 on the domain's root bus maps to it -- anything
++		 * else does not exist (and must not be poked: config reads
++		 * to nonexistent devices can stall this hardware).
++		 */
++		if (devfn)
++			return PCIBIOS_DEVICE_NOT_FOUND;
++		/*
++		 * The root port's extended config space (>= 0x100) is
++		 * broken on this chip: its AER cap advertises a "next"
++		 * pointer at 0x400, and reading that region hard-stalls
++		 * the bus. Report "not present" so the capability walk
++		 * ends at the legacy boundary and AER is simply unused.
++		 */
++		if (where >= 0x100)
++			return PCIBIOS_DEVICE_NOT_FOUND;
++		devfn = PCI_DEVFN(port->slot, 0);
++		hw_bus = 0;
++	} else {
++		/*
++		 * Downstream buses: with pcie1 rooted at bus 1, the
++		 * core's logical numbering matches the physical wiring
++		 * (RC0's secondary is 1, RC1's is 2), so the mapping is
++		 * identity.
++		 */
++		hw_bus = bus->number;
++	}
++
++	*addr = EN751221_CONF_ADDR(hw_bus, devfn, where);
++	return PCIBIOS_SUCCESSFUL;
++}
++
++static int mtk_pcie_en751221_config_read(struct pci_bus *bus,
++					 unsigned int devfn, int where,
++					 int size, u32 *val)
++{
++	struct mtk_pcie *pcie = bus->sysdata;
++	u32 addr, v;
++	int err;
++
++	if (!pcie->cfg)
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
++	err = mtk_pcie_en751221_config_addr(pcie, bus, devfn, where, &addr);
++	if (err)
++		return err;
++
++	regmap_write(pcie->cfg, EN751221_PCIE_CFG_ADDR, addr);
++	regmap_read(pcie->cfg, EN751221_PCIE_CFG_DATA, &v);
++
++	switch (size) {
++	case 1:
++		*val = (v >> (8 * (where & 3))) & 0xff;
++		break;
++	case 2:
++		*val = (v >> (8 * (where & 2))) & 0xffff;
++		break;
++	default:
++		*val = v;
++		break;
++	}
++
++	return PCIBIOS_SUCCESSFUL;
++}
++
++static int mtk_pcie_en751221_config_write(struct pci_bus *bus,
++					  unsigned int devfn, int where,
++					  int size, u32 val)
++{
++	struct mtk_pcie *pcie = bus->sysdata;
++	u32 addr, v;
++	int err;
++
++	if (!pcie->cfg)
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
++	err = mtk_pcie_en751221_config_addr(pcie, bus, devfn, where, &addr);
++	if (err)
++		return err;
++
++	regmap_write(pcie->cfg, EN751221_PCIE_CFG_ADDR, addr);
++
++	if (size == 4) {
++		regmap_write(pcie->cfg, EN751221_PCIE_CFG_DATA, val);
++		return PCIBIOS_SUCCESSFUL;
++	}
++
++	/* sub-dword: config-read the dword, merge, config-write back */
++	regmap_read(pcie->cfg, EN751221_PCIE_CFG_DATA, &v);
++	if (size == 1) {
++		v &= ~(0xff << (8 * (where & 3)));
++		v |= val << (8 * (where & 3));
++	} else {
++		v &= ~(0xffff << (8 * (where & 2)));
++		v |= val << (8 * (where & 2));
++	}
++	regmap_write(pcie->cfg, EN751221_PCIE_CFG_DATA, v);
++
++	return PCIBIOS_SUCCESSFUL;
++}
++
++static struct pci_ops mtk_pcie_ops_en751221 = {
++	.read  = mtk_pcie_en751221_config_read,
++	.write = mtk_pcie_en751221_config_write,
++};
++
++static int mtk_pcie_startup_port_en751221(struct mtk_pcie_port *port)
++{
++	struct mtk_pcie *pcie = port->pcie;
++	u32 val;
++	int err;
++
++	if (!pcie->cfg) {
++		dev_err(pcie->dev, "EN751221: pciecfg syscon not available\n");
++		return -EINVAL;
++	}
++
++	/*
++	 * V1 per-port PERST#: deassert only. The bootloader has already
++	 * run its full PERST/training sequence by the time we get here;
++	 * a second assert->deassert pulse re-resets the endpoint right
++	 * before the scan and it never answers in time.
++	 */
++	regmap_update_bits(pcie->cfg, PCIE_SYS_CFG,
++			   PCIE_PORT_PERST(port->slot), 0);
++
++	/* 100ms timeout value should be enough for Gen1/2 training */
++	err = readl_poll_timeout(port->base + PCIE_LINK_STATUS, val,
++				 !!(val & PCIE_PORT_LINKUP), 20,
++				 100 * USEC_PER_MSEC);
++	if (err)
++		return -ETIMEDOUT;
++
++	/* vendor waits 250ms after link-up before touching the endpoint */
++	msleep(250);
++
++	/*
++	 * Restore the root-port command register: after the bootloader
++	 * hands off, the block is re-clocked with IO/MEM/BUSMASTER clear,
++	 * and without this no TLP is ever routed downstream.
++	 */
++	regmap_write(pcie->cfg, EN751221_PCIE_CFG_ADDR,
++		     EN751221_CONF_ADDR(0, PCI_DEVFN(port->slot, 0), 0x04));
++	regmap_write(pcie->cfg, EN751221_PCIE_CFG_DATA, EN751221_RC_CMD);
++
++	/* map to all DDR region. We need to set it before cfg operation. */
++	writel(PCIE_BAR_MAP_MAX | PCIE_BAR_ENABLE,
++	       port->base + PCIE_BAR0_SETUP);
++
++	/* configure class code and revision ID */
++	writel(PCIE_CLASS_CODE | PCIE_REVISION_ID,
++	       port->base + PCIE_CLASS);
++
++	/*
++	 * Enable INTx forwarding for this port: the V1 PCIE_INT_ENABLE
++	 * register in the global (pciecfg) block, 0x1fb8000c. The vendor
++	 * kernel has no PCIe irqchip and never writes this itself -- it
++	 * relies on the bootloader's value surviving (stock steady-state
++	 * 0x04100000 = bits 20+26; the bldr's own stage2 sets bit 20).
++	 * Without it the RC drops the endpoint's Assert_INTx messages and
++	 * the SoC INTC never sees anything (proven on hardware: EP's
++	 * INT_SOURCE pending + unmasked, INTC pending register flat).
++	 * On this chip our two RCs sit at global-block port positions 0
++	 * and 6, hence bits 20 and 26 (not the generic PCIE_PORT_INT_EN(x)
++	 * = BIT(20+x) formula this driver uses for the classic V1 boards).
++	 * Set it at RC startup, before the endpoint's driver probes:
++	 * with forwarding on from the start, the mt76 driver's irqs work
++	 * immediately, so no endpoint is ever left with a stuck-asserted
++	 * INTx (an unhandled level line livelocks the chained INTC
++	 * handler -- measured on hardware).
++	 */
++	regmap_update_bits(pcie->cfg, PCIE_INT_ENABLE,
++			   BIT(port->slot ? 26 : 20),
++			   BIT(port->slot ? 26 : 20));
++
++	return 0;
++}
++
+ static void __iomem *mtk_pcie_map_bus(struct pci_bus *bus,
+ 				      unsigned int devfn, int where)
+ {
+@@ -1447,8 +1659,21 @@ static const struct mtk_pcie_soc mtk_pci
+ 	.quirks = MTK_PCIE_RETRAIN,
+ };
+ 
++static const struct mtk_pcie_soc mtk_pcie_soc_en751221 = {
++	.ops = &mtk_pcie_ops_en751221,
++	.startup = mtk_pcie_startup_port_en751221,
++	/*
++	 * no .setup_irq: the chained handler acks via the V2
++	 * PCIE_INT_STATUS register which does not exist on this chip --
++	 * the board DTS routes each port's INTx straight to the SoC INTC
++	 * instead (see the board DTS &pcie0/&pcie1 interrupt-map).
++	 */
++	.quirks = MTK_PCIE_NO_MSI,
++};
++
+ static const struct of_device_id mtk_pcie_ids[] = {
+ 	{ .compatible = "airoha,an7583-pcie", .data = &mtk_pcie_soc_an7583 },
++	{ .compatible = "econet,en751221-pcie", .data = &mtk_pcie_soc_en751221 },
+ 	{ .compatible = "econet,en7528-pcie", .data = &mtk_pcie_soc_en7528 },
+ 	{ .compatible = "mediatek,mt2701-pcie", .data = &mtk_pcie_soc_v1 },
+ 	{ .compatible = "mediatek,mt7623-pcie", .data = &mtk_pcie_soc_v1 },
