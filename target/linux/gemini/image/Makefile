@@ -266,9 +266,10 @@ define Device/raidsonic_ib-4210-b
 	DEVICE_VENDOR := Raidsonic
 	DEVICE_MODEL := NAS IB-4210-B
 	DEVICE_DTS := gemini-nas4210b
+	IMAGE_SIZE := 15360k
 	IMAGE/factory.bin := storlink-3072k-factory-image $(1)
 	IMAGE/sysupgrade.bin := storlink-3072k-sysupgrade-image $(1) |\
-			append-metadata
+			check-size | append-metadata
 	DEVICE_PACKAGES += $(GEMINI_NAS_PACKAGES)
 endef
 TARGET_DEVICES += raidsonic_ib-4210-b
