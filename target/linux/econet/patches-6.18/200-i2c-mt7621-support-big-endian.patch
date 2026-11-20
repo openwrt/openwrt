@@ -1,0 +1,48 @@
+i2c: mt7621: support big endian processors
+
+Data is copied to and from I2C by way of a pair of IOMEM registers.
+When sending, the data is copied to a buffer and then written to the
+registers. However, the data is nominally little endian but the
+registers are in CPU byte order. Make the buffer explicitly little
+endian and use little endian read/write to support I2C on big endian
+CPUs.
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+--- a/drivers/i2c/busses/i2c-mt7621.c
++++ b/drivers/i2c/busses/i2c-mt7621.c
+@@ -144,7 +144,8 @@ static int mtk_i2c_xfer(struct i2c_adapt
+ 	u16 addr;
+ 	int i, j, ret, len, page_len;
+ 	u32 cmd;
+-	u32 data[2];
++	__le32 data[2];
++	u32 val;
+ 
+ 	i2c = i2c_get_adapdata(adap);
+ 
+@@ -193,8 +194,10 @@ static int mtk_i2c_xfer(struct i2c_adapt
+ 					SM0CTL1_READ : SM0CTL1_READ_LAST;
+ 			} else {
+ 				memcpy(data, &pmsg->buf[j], page_len);
+-				iowrite32(data[0], i2c->base + REG_SM0D0_REG);
+-				iowrite32(data[1], i2c->base + REG_SM0D1_REG);
++				val = le32_to_cpu(data[0]);
++				iowrite32(val, i2c->base + REG_SM0D0_REG);
++				val = le32_to_cpu(data[1]);
++				iowrite32(val, i2c->base + REG_SM0D1_REG);
+ 				cmd = SM0CTL1_WRITE;
+ 			}
+ 
+@@ -203,8 +206,10 @@ static int mtk_i2c_xfer(struct i2c_adapt
+ 				goto err_timeout;
+ 
+ 			if (pmsg->flags & I2C_M_RD) {
+-				data[0] = ioread32(i2c->base + REG_SM0D0_REG);
+-				data[1] = ioread32(i2c->base + REG_SM0D1_REG);
++				val = ioread32(i2c->base + REG_SM0D0_REG);
++				data[0] = cpu_to_le32(val);
++				val = ioread32(i2c->base + REG_SM0D1_REG);
++				data[1] = cpu_to_le32(val);
+ 				memcpy(&pmsg->buf[j], data, page_len);
+ 			} else {
+ 				if (!(pmsg->flags & I2C_M_IGNORE_NAK)) {
