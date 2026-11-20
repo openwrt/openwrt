@@ -58,16 +58,18 @@ Dynamically remove a BSS configuration.
 
 
 ## del_client
-Kick a client off the network.
+Kick a client off the network, or with `ban_only` change its ban alone.
 
 ### arguments
 | Name | Type | Required | Description |
 |---|---|---|---|
 | addr | string | yes | client MAC address |
 | reason | int32 | no | 802.11 reason code |
-| deauth | bool | no | deauthenticates client instead of disassociating |
-| ban_time | int32 | no | ban client for N milliseconds |
+| deauth | bool | no | deauthenticates the client: a client that hostapd holds as associated gets a Disassociation with the reason at once and a Deauthentication with the same reason 2 s later; where the client does not acknowledge the Disassociation, hostapd keeps it in the driver until the Deauthentication, so that a client with MFP gets that frame protected; a call for an address whose Deauthentication an earlier call still holds back sends nothing, and that Deauthentication keeps its time and reason; any other address gets the Deauthentication at once |
+| deauth_now | bool | no | with deauth: the client gets the Deauthentication alone, at once, also where hostapd holds it as associated; a Deauthentication that an earlier call still holds back for the address is cancelled, and the new one carries the reason of this call |
+| ban_time | int32 | no | ban client for N milliseconds; a ban of the MLD address of a client MLD refuses it on each link, and a ban of a link address refuses that link address |
 | ban_status | int32 | no | Status Code the ban answers the client's authentication and association with, 1 to 65535 (default 17) |
+| ban_only | bool | no | sends no frame and leaves an associated client connected; only ban_time and ban_status apply, and a ban_time of 0 ends a ban |
 
 ### example
 `ubus call hostapd.wl5-fb del_client '{ "addr": "68:2f:67:8b:98:ed", "reason": 5, "deauth": true, "ban_time": 10000 }'`
@@ -248,7 +250,7 @@ List banned clients.
 
 
 ## notify_response
-When enabled, hostapd will send a ubus notification and wait for a response before responding to various requests. This is used by e.g. usteer to make it possible to ignore probe requests.
+When enabled, hostapd will send a ubus notification and wait for a response before responding to various requests. This is used by e.g. usteer to make it possible to ignore probe requests. The `address` of an `auth` or `assoc` notification is the MLD address of a client MLD.
 
 :warning: enabling this will cause hostapd to stop responding to probe requests unless a ubus subscriber responds to the ubus notifications.
 
@@ -288,6 +290,7 @@ Send a Beacon Measurement Request to a client.
 | mode | int32 | yes | mode to be used for measurement (0: passive, 1: active, 2: beacon table) |
 | bssid | string | no | filter BSSes in Beacon Measurement Report by BSSID |
 | ssid | string | no | filter BSSes in Beacon Measurement Report by SSID|
+| last_indication | bool | no | ask the client to mark the reports in the last frame of its response (Last Beacon Report Indication Request subelement). One frame can give several `beacon-report` events with the same `token`, and an event without `report` carries no indication |
 
 
 ## rrm_nr_get_own

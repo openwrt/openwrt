@@ -314,7 +314,7 @@ define Device/plasmacloud-common
   SOC := rtl9302
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := Plasma Cloud
-  DEVICE_PACKAGES := poemgr
+  FEED_DEVICE_PACKAGES := poemgr
   IMAGE_SIZE := 15872k
   BLOCKSIZE := 64k
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma

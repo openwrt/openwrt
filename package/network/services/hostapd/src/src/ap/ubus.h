@@ -40,6 +40,7 @@ struct hostapd_ubus_request {
 	const struct ieee802_11_elems *elems;
 	int ssi_signal; /* dBm */
 	const u8 *addr;
+	const u8 *mld_addr;
 };
 
 struct hostapd_iface;
@@ -82,8 +83,14 @@ void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *
 void hostapd_ubus_notify_sta(struct hostapd_data *hapd, const char *type,
 			     struct sta_info *sta);
 void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
+				      u16 status,
 				      enum hostapd_ubus_rsn_error rsn_error,
 				      const u8 *frame, size_t len);
+void hostapd_ubus_notify_connect_refused(struct hostapd_data *hapd,
+					 const u8 *addr, u16 status,
+					 u16 reason,
+					 enum hostapd_ubus_rsn_error rsn_error,
+					 const u8 *frame, size_t len);
 void hostapd_ubus_notify_beacon_report(struct hostapd_data *hapd,
 				       const u8 *addr, u8 token, u8 meas_token,
 				       u8 rep_mode,
@@ -175,8 +182,17 @@ hostapd_ubus_notify_sta(struct hostapd_data *hapd, const char *type,
 
 static inline void
 hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
+				 u16 status,
 				 enum hostapd_ubus_rsn_error rsn_error,
 				 const u8 *frame, size_t len)
+{
+}
+
+static inline void
+hostapd_ubus_notify_connect_refused(struct hostapd_data *hapd, const u8 *addr,
+				    u16 status, u16 reason,
+				    enum hostapd_ubus_rsn_error rsn_error,
+				    const u8 *frame, size_t len)
 {
 }
 

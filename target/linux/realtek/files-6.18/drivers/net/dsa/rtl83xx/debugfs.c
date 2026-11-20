@@ -2,6 +2,7 @@
 
 #include <linux/debugfs.h>
 #include <linux/kernel.h>
+#include <linux/regmap.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "mac.h"
@@ -371,12 +372,14 @@ static ssize_t age_out_read(struct file *filp, char __user *buffer, size_t count
 	struct rtldsa_port *p = filp->private_data;
 	struct dsa_switch *ds = p->dp->ds;
 	struct otto_dsa_priv *priv = ds->priv;
-	int value = sw_r32(priv->r->l2_port_aging_out);
+	u32 value;
+	int ret;
 
-	if (value < 0)
-		return -EINVAL;
+	ret = regmap_read(priv->map, priv->r->l2_port_aging_out, &value);
+	if (ret)
+		return ret;
 
-	return rtl838x_common_read(buffer, count, ppos, (u32)value);
+	return rtl838x_common_read(buffer, count, ppos, value);
 }
 
 static ssize_t age_out_write(struct file *filp, const char __user *buffer,

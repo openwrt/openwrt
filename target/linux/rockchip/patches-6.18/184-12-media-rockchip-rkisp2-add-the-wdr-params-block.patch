@@ -1,0 +1,226 @@
+From 817803e5424aa7c415d018f7f6c280436c81d9d3 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 4 Nov 2026 14:17:30 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Add the WDR params block
+
+The wide dynamic range block of the ISP 2.0 applies a 33-point tone
+curve to the luminance, globally or scaled by the local brightness in
+block mode. Its curve, offset and DeltaMin registers sit where the ISP1
+WDR has them, but each curve register holds the global and the block
+mode output values, and the block is enabled and its mode selected in
+two further control registers.
+
+Add the parameters block, carrying the two curves, the ISP1-style
+controls and the block mode settings, and program the block from it,
+enabling it through the block flags.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkisp2/rkisp2-params.c  | 43 +++++++++++
+ .../rockchip/rkisp2/rkisp2-regs-v2x.h         |  5 ++
+ .../uapi/linux/media/rockchip/rkisp2-config.h | 71 ++++++++++++++++++-
+ 3 files changed, 118 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
+@@ -53,6 +53,7 @@ union rkisp2_params_block {
+ 	const struct rkisp2_params_awb_meas *awb_meas;
+ 	const struct rkisp2_params_dpcc *dpcc;
+ 	const struct rkisp2_params_cproc *cproc;
++	const struct rkisp2_params_wdr *wdr;
+ 	const __u8 *data;
+ };
+ 
+@@ -82,6 +83,8 @@ static void rkisp2_params_dpcc(struct rk
+ 			       union rkisp2_params_block block);
+ static void rkisp2_params_cproc(struct rkisp2_params *params,
+ 				union rkisp2_params_block block);
++static void rkisp2_params_wdr(struct rkisp2_params *params,
++			      union rkisp2_params_block block);
+ 
+ typedef void (*rkisp2_params_handler)(struct rkisp2_params *params,
+ 				      const union rkisp2_params_block block);
+@@ -114,6 +117,7 @@ rkisp2_params_handlers[] = {
+ 	RKISP2_PARAMS_BLOCK_HANDLER_INFO(AWB_MEAS, awb_meas, PRE),
+ 	RKISP2_PARAMS_BLOCK_HANDLER_INFO(DPCC, dpcc, PRE),
+ 	RKISP2_PARAMS_BLOCK_HANDLER_INFO(CPROC, cproc, PRE),
++	RKISP2_PARAMS_BLOCK_HANDLER_INFO(WDR, wdr, PRE),
+ };
+ 
+ static const struct v4l2_isp_params_block_type_info
+@@ -133,6 +137,7 @@ static const struct v4l2_isp_params_bloc
+ 		RKISP2_PARAMS_BLOCK_INFO(AWB_MEAS, awb_meas),
+ 		RKISP2_PARAMS_BLOCK_INFO(DPCC, dpcc),
+ 		RKISP2_PARAMS_BLOCK_INFO(CPROC, cproc),
++		RKISP2_PARAMS_BLOCK_INFO(WDR, wdr),
+ 	};
+ 
+ static_assert(ARRAY_SIZE(rkisp2_params_handlers) ==
+@@ -946,6 +951,44 @@ static void rkisp2_params_cproc(struct r
+ 	rkisp2_write(params->rkisp2, CPROC_CTRL, control);
+ }
+ 
++static void rkisp2_params_wdr(struct rkisp2_params *params,
++			      union rkisp2_params_block block)
++{
++	const struct rkisp2_params_wdr *arg = block.wdr;
++	unsigned int i;
++
++	if (block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_DISABLE) {
++		rkisp2_param_clear_bits(params, ISP_WDR_CTRL0, ISP_WDR_EN);
++		return;
++	}
++
++	if (!(block.header->flags & V4L2_ISP_PARAMS_FL_BLOCK_ENABLE))
++		return;
++
++	/* the ISP 2.0 enables the block in CTRL0, not in the ISP1 WDR_CTRL */
++	rkisp2_write(params->rkisp2, ISP_WDR_CTRL, arg->ctrl & ~BIT(0));
++
++	for (i = 0; i < RKISP2_ISP_WDR_CURVE_NUM_DY_REGS; i++)
++		rkisp2_write(params->rkisp2, ISP_WDR_WDR_TONECURVE_DYN1 + i * 4,
++			     arg->dy[i]);
++
++	for (i = 0; i < RKISP2_ISP_WDR_CURVE_NUM_COEFF; i++)
++		rkisp2_write(params->rkisp2, ISP_WDR_TONECURVE_YM_0 + i * 4,
++			     arg->block_y[i] << 16 | arg->global_y[i]);
++
++	rkisp2_write(params->rkisp2, ISP_WDR_OFFSET, arg->offset);
++	rkisp2_write(params->rkisp2, ISP_WDR_DELTAMIN, arg->deltamin);
++	rkisp2_write(params->rkisp2, ISP_WDR_CTRL1, arg->ctrl1);
++	rkisp2_write(params->rkisp2, ISP_WDR_BLKOFF0, arg->blkoff0);
++	rkisp2_write(params->rkisp2, ISP_WDR_AVGCLIP, arg->avgclip);
++	for (i = 0; i < ARRAY_SIZE(arg->coe); i++)
++		rkisp2_write(params->rkisp2, ISP_WDR_COE_0 + i * 4,
++			     arg->coe[i]);
++	rkisp2_write(params->rkisp2, ISP_WDR_COE_OFF, arg->coe_off);
++
++	rkisp2_write(params->rkisp2, ISP_WDR_CTRL0, arg->ctrl0 | ISP_WDR_EN);
++}
++
+ static void rkisp2_params_configure(struct rkisp2_params *params,
+ 				    struct rkisp2_params_buffer *buf,
+ 				    enum rkisp2_params_configure_priority prio)
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-regs-v2x.h
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-regs-v2x.h
+@@ -725,6 +725,7 @@
+ #define ISP_WDR_TONECURVE_YM_31			(ISP_WDR_BASE + 0x00090)
+ #define ISP_WDR_TONECURVE_YM_32			(ISP_WDR_BASE + 0x00094)
+ #define ISP_WDR_OFFSET				(ISP_WDR_BASE + 0x00098)
++#define ISP_WDR_DELTAMIN (ISP_WDR_BASE + 0x0009c)
+ #define ISP_WDR_CTRL0				(ISP_WDR_BASE + 0x00150)
+ #define ISP_WDR_CTRL1				(ISP_WDR_BASE + 0x00154)
+ #define ISP_WDR_BLKOFF0				(ISP_WDR_BASE + 0x00158)
+@@ -2521,6 +2522,10 @@
+ #define ISP_DPCC_RND_OFFS_MASK GENMASK(11, 0)
+ #define ISP_DPCC_METHODS_SET_STRIDE 0x14
+ 
++/* WDR */
++/* ISP_WDR_CTRL0 */
++#define ISP_WDR_EN BIT(0)
++
+ /* CCM */
+ /* ISP_CCM_CTRL */
+ #define ISP_CCM_EN			BIT(0)
+--- a/include/uapi/linux/media/rockchip/rkisp2-config.h
++++ b/include/uapi/linux/media/rockchip/rkisp2-config.h
+@@ -230,6 +230,7 @@ struct rkisp2_stats_awb_mean {
+  * @RKISP2_PARAMS_BLOCK_AWB_MEAS: AWB measurements config
+  * @RKISP2_PARAMS_BLOCK_DPCC: Defect pixel cluster correction config
+  * @RKISP2_PARAMS_BLOCK_CPROC: Color processing config
++ * @RKISP2_PARAMS_BLOCK_WDR: Wide dynamic range config
+  */
+ enum rkisp2_params_block_type {
+ 	RKISP2_PARAMS_BLOCK_BLS,
+@@ -247,6 +248,7 @@ enum rkisp2_params_block_type {
+ 	RKISP2_PARAMS_BLOCK_AWB_MEAS,
+ 	RKISP2_PARAMS_BLOCK_DPCC,
+ 	RKISP2_PARAMS_BLOCK_CPROC,
++	RKISP2_PARAMS_BLOCK_WDR,
+ };
+ 
+ /* DPCC: three method sets, each with a green and a red/blue variant */
+@@ -811,6 +813,72 @@ struct rkisp2_params_cproc {
+ 	__u8 reserved;
+ } __attribute__((aligned(8)));
+ 
++/* WDR: 32 curve intervals, 33 curve points */
++#define RKISP2_ISP_WDR_CURVE_NUM_INTERV 32
++#define RKISP2_ISP_WDR_CURVE_NUM_COEFF (RKISP2_ISP_WDR_CURVE_NUM_INTERV + 1)
++#define RKISP2_ISP_WDR_CURVE_NUM_DY_REGS 4
++
++#define RKISP2_ISP_WDR_CTRL0_LVL_EN(v) ((v) << 4)
++#define RKISP2_ISP_WDR_CTRL0_EPSILON(v) ((v) << 8)
++#define RKISP2_ISP_WDR_CTRL0_PYM_CC(v) ((v) << 16)
++
++#define RKISP2_ISP_WDR_CTRL1_MODE_BLOCK (1U << 0)
++#define RKISP2_ISP_WDR_CTRL1_FLT_SEL (1U << 1)
++#define RKISP2_ISP_WDR_CTRL1_NONL_MODE1 (1U << 3)
++#define RKISP2_ISP_WDR_CTRL1_NONL_OPEN (1U << 4)
++#define RKISP2_ISP_WDR_CTRL1_NONL_SEGM (1U << 5)
++#define RKISP2_ISP_WDR_CTRL1_BAVG_CLIP(v) ((v) << 6)
++#define RKISP2_ISP_WDR_CTRL1_GAIN_MAX(v) ((v) << 8)
++#define RKISP2_ISP_WDR_CTRL1_GAIN_MAX_CLIP_EN (1U << 16)
++
++#define RKISP2_ISP_WDR_AVGCLIP_NOISERATIO(v) ((v) << 4)
++#define RKISP2_ISP_WDR_AVGCLIP_BESTLIGHT(v) ((v) << 20)
++
++/**
++ * struct rkisp2_params_wdr - RkISP2 params WDR config
++ *
++ * RkISP2 parameters wide dynamic range configuration block, a tone mapping
++ * curve applied to the luminance either globally or, in block mode, scaled by
++ * the local brightness. Identified by :c:type:`RKISP2_PARAMS_BLOCK_WDR`.
++ *
++ * The curve is defined at 33 points whose input positions follow from the
++ * 32 interval widths in @dy: each 4-bit field n is an interval of 2^(n+3), the
++ * intervals adding up to 4096. The output values are on the same scale,
++ * 0x1000 being full scale.
++ *
++ * @header: The RkISP2 parameters block header
++ * @ctrl: Colour space and illumination reference control, as the ISP1 WDR_CTRL
++ *	  register without its enable bit
++ * @dy: Interval widths of the curve, eight 4-bit fields per word
++ * @global_y: Curve output values in global mode
++ * @block_y: Curve output values in block mode
++ * @offset: RGB and luminance offsets, as the ISP1 WDR_OFFSET register
++ * @deltamin: DeltaMin threshold and strength, as the ISP1 WDR_DELTAMIN register
++ * @ctrl0: Pyramid coefficients, epsilon and levels (RKISP2_ISP_WDR_CTRL0_*);
++ *	   the enable bit is set from the block flags
++ * @ctrl1: Mode, filter and gain limit (RKISP2_ISP_WDR_CTRL1_*)
++ * @blkoff0: Block mode gain offset
++ * @avgclip: Block mode noise ratio and best light level
++ *	     (RKISP2_ISP_WDR_AVGCLIP_*)
++ * @coe: Block mode luminance coefficients for R, G and B
++ * @coe_off: Block mode luminance offset
++ */
++struct rkisp2_params_wdr {
++	struct v4l2_isp_params_block_header header;
++	__u32 ctrl;
++	__u32 dy[RKISP2_ISP_WDR_CURVE_NUM_DY_REGS];
++	__u16 global_y[RKISP2_ISP_WDR_CURVE_NUM_COEFF];
++	__u16 block_y[RKISP2_ISP_WDR_CURVE_NUM_COEFF];
++	__u32 offset;
++	__u32 deltamin;
++	__u32 ctrl0;
++	__u32 ctrl1;
++	__u32 blkoff0;
++	__u32 avgclip;
++	__u32 coe[3];
++	__u32 coe_off;
++} __attribute__((aligned(8)));
++
+ #define RKISP2_PARAMS_MAX_SIZE                                                 \
+ 	(sizeof(struct rkisp2_params_bls) +                                    \
+ 	 sizeof(struct rkisp2_params_awb_gains) +                              \
+@@ -822,7 +890,8 @@ struct rkisp2_params_cproc {
+ 	 sizeof(struct rkisp2_params_hist_big) * 3 +                           \
+ 	 sizeof(struct rkisp2_params_awb_meas) +                               \
+ 	 sizeof(struct rkisp2_params_dpcc) +                                   \
+-	 sizeof(struct rkisp2_params_cproc))
++	 sizeof(struct rkisp2_params_cproc) +                                  \
++	 sizeof(struct rkisp2_params_wdr))
+ 
+ /*---------- ISPP (image post-processing) ------------*/
+ 

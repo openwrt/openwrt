@@ -1,0 +1,238 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 22:54:16 +0100
+Subject: [PATCH] nl80211: report the channel of an MLD link in channel_info()
+
+cfg80211 reports the channel of an interface with valid links only per
+link, under NL80211_ATTR_MLO_LINKS of NL80211_CMD_GET_INTERFACE.
+nl80211_channel_info() reads the top level, so it reports frequency 0
+for an MLD and every OCV user fails. A non-AP MLD with OCV never
+connects: "Cannot determine operating class and channel for OCI
+element" at EAPOL-Key message 2/4.
+
+Give the channel_info() driver op a link ID and read the channel of
+that link for an MLD. The AP passes the link of the hapd, since the
+link BSSs of an AP MLD share one driver interface. A station caller
+that names no link gets the channel of the association link.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -445,7 +445,8 @@ static inline int hostapd_drv_channel_in
+ {
+ 	if (!hapd->driver || !hapd->driver->channel_info)
+ 		return -1;
+-	return hapd->driver->channel_info(hapd->drv_priv, ci);
++	return hapd->driver->channel_info(hapd->drv_priv,
++					  hostapd_mld_link_id(hapd), ci);
+ }
+ 
+ static inline int
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -1099,6 +1099,15 @@ static inline bool hostapd_mld_is_first_
+ 
+ #endif /* CONFIG_IEEE80211BE */
+ 
++static inline int hostapd_mld_link_id(struct hostapd_data *hapd)
++{
++#ifdef CONFIG_IEEE80211BE
++	if (hapd->conf->mld_ap)
++		return hapd->mld_link_id;
++#endif /* CONFIG_IEEE80211BE */
++	return -1;
++}
++
+ u16 hostapd_get_punct_bitmap(struct hostapd_data *hapd);
+ 
+ void hostapd_get_oper_chan_info_of_bss(struct hostapd_data *hapd,
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -5002,10 +5002,12 @@ struct wpa_driver_ops {
+ 	/**
+ 	 * channel_info - Get parameters of the current operating channel
+ 	 * @priv: Private driver interface data
++	 * @link_id: Link ID of an MLD link, or -1 for a non-MLD interface
+ 	 * @channel_info: Channel info structure
+ 	 * Returns: 0 on success, negative (<0) on failure
+ 	 */
+-	int (*channel_info)(void *priv, struct wpa_channel_info *channel_info);
++	int (*channel_info)(void *priv, int link_id,
++			    struct wpa_channel_info *channel_info);
+ 
+ #ifdef ANDROID
+ 	/**
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -2076,18 +2076,46 @@ int nl80211_get_link_noise(struct i802_b
+ }
+ 
+ 
++struct nl80211_channel_info_arg {
++	int link_id;
++	struct wpa_channel_info *ci;
++};
++
++
+ static int get_channel_info(struct nl_msg *msg, void *arg)
+ {
+-	struct nlattr *tb[NL80211_ATTR_MAX + 1] = { 0 };
++	struct nlattr *msg_tb[NL80211_ATTR_MAX + 1] = { 0 };
++	struct nlattr *link_tb[NL80211_ATTR_MAX + 1];
++	struct nlattr **tb = msg_tb;
+ 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+-	struct wpa_channel_info *chan_info = arg;
++	struct nl80211_channel_info_arg *ci_arg = arg;
++	struct wpa_channel_info *chan_info = ci_arg->ci;
++	struct nlattr *link;
++	int rem;
+ 
+-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
++	nla_parse(msg_tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+ 		  genlmsg_attrlen(gnlh, 0), NULL);
+ 
+ 	os_memset(chan_info, 0, sizeof(struct wpa_channel_info));
+ 	chan_info->chanwidth = CHAN_WIDTH_UNKNOWN;
+ 
++	/* cfg80211 reports the channel of an MLD per link only */
++	if (ci_arg->link_id >= 0 && msg_tb[NL80211_ATTR_MLO_LINKS]) {
++		tb = NULL;
++		nla_for_each_nested(link, msg_tb[NL80211_ATTR_MLO_LINKS], rem) {
++			nla_parse(link_tb, NL80211_ATTR_MAX, nla_data(link),
++				  nla_len(link), NULL);
++			if (link_tb[NL80211_ATTR_MLO_LINK_ID] &&
++			    nla_get_u8(link_tb[NL80211_ATTR_MLO_LINK_ID]) ==
++			    ci_arg->link_id) {
++				tb = link_tb;
++				break;
++			}
++		}
++		if (!tb)
++			return NL_SKIP;
++	}
++
+ 	if (tb[NL80211_ATTR_WIPHY_FREQ])
+ 		chan_info->frequency =
+ 			nla_get_u32(tb[NL80211_ATTR_WIPHY_FREQ]);
+@@ -2129,14 +2157,19 @@ static int get_channel_info(struct nl_ms
+ }
+ 
+ 
+-static int nl80211_channel_info(void *priv, struct wpa_channel_info *ci)
++static int nl80211_channel_info(void *priv, int link_id,
++				struct wpa_channel_info *ci)
+ {
+ 	struct i802_bss *bss = priv;
+ 	struct wpa_driver_nl80211_data *drv = bss->drv;
++	struct nl80211_channel_info_arg arg = {
++		.link_id = link_id,
++		.ci = ci,
++	};
+ 	struct nl_msg *msg;
+ 
+ 	msg = nl80211_bss_msg(bss, 0, NL80211_CMD_GET_INTERFACE);
+-	return send_and_recv_resp(drv, msg, get_channel_info, ci);
++	return send_and_recv_resp(drv, msg, get_channel_info, &arg);
+ }
+ 
+ 
+--- a/wpa_supplicant/driver_i.h
++++ b/wpa_supplicant/driver_i.h
+@@ -546,11 +546,14 @@ wpa_drv_setup_link_reconfig(struct wpa_s
+ }
+ 
+ static inline int wpa_drv_channel_info(struct wpa_supplicant *wpa_s,
++				       int link_id,
+ 				       struct wpa_channel_info *ci)
+ {
+-	if (wpa_s->driver->channel_info)
+-		return wpa_s->driver->channel_info(wpa_s->drv_priv, ci);
+-	return -1;
++	if (!wpa_s->driver->channel_info)
++		return -1;
++	if (link_id < 0 && wpa_s->valid_links)
++		link_id = wpa_s->mlo_assoc_link_id;
++	return wpa_s->driver->channel_info(wpa_s->drv_priv, link_id, ci);
+ }
+ 
+ static inline int wpa_drv_pktcnt_poll(struct wpa_supplicant *wpa_s,
+--- a/wpa_supplicant/mesh_mpm.c
++++ b/wpa_supplicant/mesh_mpm.c
+@@ -402,7 +402,7 @@ static void mesh_mpm_send_plink_action(s
+ 	if (type != PLINK_CLOSE && conf->ocv) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_drv_channel_info(wpa_s, &ci) != 0) {
++		if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Mesh MPM: Failed to get channel info for OCI element");
+ 			goto fail;
+@@ -1321,7 +1321,7 @@ void mesh_mpm_action_rx(struct wpa_suppl
+ 			int tx_chanwidth;
+ 			int tx_seg1_idx;
+ 
+-			if (wpa_drv_channel_info(wpa_s, &ci) != 0) {
++			if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
+ 				wpa_printf(MSG_WARNING,
+ 					   "MPM: Failed to get channel info to validate received OCI in MPM Confirm");
+ 				return;
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -5444,7 +5444,7 @@ static void sme_send_sa_query_req(struct
+ 	if (wpa_sm_ocv_enabled(wpa_s->wpa)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_drv_channel_info(wpa_s, &ci) != 0) {
++		if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in SA Query Request frame");
+ 			return;
+@@ -5610,7 +5610,7 @@ static void sme_process_sa_query_request
+ 	if (wpa_sm_ocv_enabled(wpa_s->wpa)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_drv_channel_info(wpa_s, &ci) != 0) {
++		if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in SA Query Response frame");
+ 			return;
+@@ -5705,7 +5705,7 @@ void sme_sa_query_rx(struct wpa_supplica
+ 			return;
+ 		}
+ 
+-		if (wpa_drv_channel_info(wpa_s, &ci) != 0) {
++		if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info to validate received OCI in SA Query Action frame");
+ 			return;
+--- a/wpa_supplicant/wnm_sta.c
++++ b/wpa_supplicant/wnm_sta.c
+@@ -113,7 +113,7 @@ int ieee802_11_send_wnmsleep_req(struct
+ 	if (action == WNM_SLEEP_MODE_EXIT && wpa_sm_ocv_enabled(wpa_s->wpa)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_drv_channel_info(wpa_s, &ci) != 0) {
++		if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in WNM-Sleep Mode frame");
+ 			os_free(wnmsleep_ie);
+@@ -384,7 +384,7 @@ static void ieee802_11_rx_wnmsleep_resp(
+ 	    wpa_sm_ocv_enabled(wpa_s->wpa)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_drv_channel_info(wpa_s, &ci) != 0) {
++		if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
+ 			wpa_msg(wpa_s, MSG_WARNING,
+ 				"Failed to get channel info to validate received OCI in WNM-Sleep Mode frame");
+ 			return;
+--- a/wpa_supplicant/wpas_glue.c
++++ b/wpa_supplicant/wpas_glue.c
+@@ -1311,7 +1311,7 @@ static int wpa_supplicant_channel_info(v
+ {
+ 	struct wpa_supplicant *wpa_s = _wpa_s;
+ 
+-	return wpa_drv_channel_info(wpa_s, ci);
++	return wpa_drv_channel_info(wpa_s, -1, ci);
+ }
+ 
+ 

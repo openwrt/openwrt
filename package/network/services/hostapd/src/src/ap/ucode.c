@@ -622,7 +622,7 @@ uc_hostapd_iface_set_bss_order(uc_vm_t *vm, size_t nargs)
 		struct hostapd_data *bss;
 
 		bss = ucv_resource_data(ucv_array_get(bss_list, i), "hostapd.bss");
-		if (bss->iface != iface)
+		if (!bss || bss->iface != iface)
 			goto free;
 
 		for (size_t k = 0; k < i; k++)
@@ -691,11 +691,26 @@ uc_hostapd_bss_update_beacon(uc_vm_t *vm, size_t nargs)
 
 #ifdef CONFIG_IEEE80211BE
 static uc_value_t *
+uc_hostapd_link_remove_times(uc_vm_t *vm, struct hostapd_data *hapd)
+{
+	uc_value_t *ret;
+
+	ret = ucv_object_new(vm);
+	ucv_object_add(ret, "removal_ms",
+		       ucv_int64_new(hostapd_link_remove_ms(hapd)));
+	ucv_object_add(ret, "expiry_ms",
+		       ucv_int64_new(hostapd_link_remove_expiry_ms(hapd)));
+	ucv_object_add(ret, "timed",
+		       ucv_boolean_new(hostapd_link_remove_timed(hapd)));
+
+	return ret;
+}
+
+static uc_value_t *
 uc_hostapd_bss_link_remove(uc_vm_t *vm, size_t nargs)
 {
 	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
 	uc_value_t *count_arg = uc_fn_arg(0);
-	uc_value_t *ret;
 	int64_t count;
 
 	if (!hapd || ucv_type(count_arg) != UC_INTEGER)
@@ -705,13 +720,18 @@ uc_hostapd_bss_link_remove(uc_vm_t *vm, size_t nargs)
 	if (count < 0 || count > UINT32_MAX || hostapd_link_remove(hapd, count))
 		return NULL;
 
-	ret = ucv_object_new(vm);
-	ucv_object_add(ret, "removal_ms",
-		       ucv_int64_new(hostapd_link_remove_ms(hapd)));
-	ucv_object_add(ret, "expiry_ms",
-		       ucv_int64_new(hostapd_link_remove_expiry_ms(hapd)));
+	return uc_hostapd_link_remove_times(vm, hapd);
+}
 
-	return ret;
+static uc_value_t *
+uc_hostapd_bss_link_remove_times(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+
+	if (!hapd)
+		return NULL;
+
+	return uc_hostapd_link_remove_times(vm, hapd);
 }
 #endif /* CONFIG_IEEE80211BE */
 
@@ -764,11 +784,19 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 	if (!iface)
 		return NULL;
 
+	if (info && ucv_type(info) != UC_OBJECT)
+		return NULL;
+
+	conf = iface->conf;
+	for (i = 0; i < iface->num_bss; i++)
+		iface->bss[i]->conf->start_disabled = 0;
+
+	/* The end of the CAC sets up the BSSes */
+	if (!info && iface->state == HAPD_IFACE_DFS)
+		return ucv_boolean_new(true);
+
 	if (!info)
 		goto out;
-
-	if (ucv_type(info) != UC_OBJECT)
-		return NULL;
 
 #define UPDATE_VAL(field, name)							\
 	do {									\
@@ -779,7 +807,6 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 		}								\
 	} while(0)
 
-	conf = iface->conf;
 	UPDATE_VAL(op_class, "op_class");
 	UPDATE_VAL(hw_mode, "hw_mode");
 	UPDATE_VAL(channel, "channel");
@@ -823,9 +850,6 @@ out:
 
 	if (conf->channel && !iface->freq)
 		iface->freq = hostapd_hw_get_freq(iface->bss[0], conf->channel);
-
-	for (i = 0; i < iface->num_bss; i++)
-		iface->bss[i]->conf->start_disabled = 0;
 
 	if (iface->state != HAPD_IFACE_ENABLED) {
 		hostapd_enable_iface(iface);
@@ -948,6 +972,43 @@ uc_hostapd_iface_freq_running(uc_vm_t *vm, size_t nargs)
 		       ucv_int64_new(hostapd_get_oper_centr_freq_seg0_idx(iface->conf)));
 
 	return ret;
+}
+
+static uc_value_t *
+hostapd_ucode_cac_get(struct hostapd_iface *iface)
+{
+	struct os_reltime age;
+	u8 op_class = 0, channel = 0;
+	uc_value_t *ret;
+
+	if (!iface->cac_started)
+		return NULL;
+
+	ieee80211_freq_to_channel_ext(iface->freq,
+				      iface->conf->secondary_channel,
+				      hostapd_get_oper_chwidth(iface->conf),
+				      &op_class, &channel);
+	os_reltime_age(&iface->dfs_cac_start, &age);
+
+	ret = ucv_object_new(vm);
+	ucv_object_add(ret, "freq", ucv_int64_new(iface->freq));
+	ucv_object_add(ret, "op_class", ucv_int64_new(op_class));
+	ucv_object_add(ret, "channel", ucv_int64_new(channel));
+	ucv_object_add(ret, "cac_seconds", ucv_int64_new(iface->dfs_cac_ms / 1000));
+	ucv_object_add(ret, "cac_elapsed", ucv_int64_new(age.sec));
+
+	return ret;
+}
+
+static uc_value_t *
+uc_hostapd_iface_cac(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
+
+	if (!iface)
+		return NULL;
+
+	return hostapd_ucode_cac_get(iface);
 }
 
 static int
@@ -1304,8 +1365,6 @@ uc_hostapd_bss_dpp_send_gas_resp(uc_vm_t *vm, size_t nargs)
 		return NULL;
 
 	dialog_token = ucv_int64_get(token_arg);
-	if (dialog_token == 0)
-		return NULL;
 
 	data_b64 = ucv_string_get(data_arg);
 	data = base64_decode(data_b64, os_strlen(data_b64), &data_len);
@@ -1492,6 +1551,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "delete", uc_hostapd_bss_delete },
 #ifdef CONFIG_IEEE80211BE
 		{ "link_remove", uc_hostapd_bss_link_remove },
+		{ "link_remove_times", uc_hostapd_bss_link_remove_times },
 #endif /* CONFIG_IEEE80211BE */
 #ifdef CONFIG_DPP
 		{ "dpp_send_action", uc_hostapd_bss_dpp_send_action },
@@ -1507,6 +1567,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "switch_channel", uc_hostapd_iface_switch_channel },
 		{ "csa_in_progress", uc_hostapd_iface_csa_in_progress },
 		{ "freq_running", uc_hostapd_iface_freq_running },
+		{ "cac", uc_hostapd_iface_cac },
 	};
 
 	interfaces = ifaces;
@@ -1566,6 +1627,16 @@ void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type)
 	uc_value_push(ucv_get(val));
 	ucv_put(wpa_ucode_call(3));
 	ucv_put(val);
+}
+
+void hostapd_ucode_cac_start(struct hostapd_iface *iface)
+{
+	if (wpa_ucode_call_prepare("cac_start"))
+		return;
+
+	uc_value_push(ucv_string_new(iface->phy));
+	uc_value_push(hostapd_ucode_cac_get(iface));
+	ucv_put(wpa_ucode_call(2));
 }
 
 void hostapd_ucode_free_bss(struct hostapd_data *hapd)

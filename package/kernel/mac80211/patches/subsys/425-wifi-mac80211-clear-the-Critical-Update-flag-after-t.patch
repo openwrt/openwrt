@@ -262,7 +262,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				      u64 color_bitmap, u8 link_id)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -288,6 +288,8 @@ struct beacon_data {
+@@ -299,6 +299,8 @@ struct beacon_data {
  	u8 cntdwn_current_counter;
  	struct cfg80211_mbssid_elems *mbssid_ies;
  	struct cfg80211_rnr_elems *rnr_ies;
@@ -271,7 +271,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct rcu_head rcu_head;
  };
  
-@@ -1091,6 +1093,34 @@ struct ieee80211_link_data_managed {
+@@ -1102,6 +1104,34 @@ struct ieee80211_link_data_managed {
  	int mu_edca_last_param_set;
  };
  
@@ -306,7 +306,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  struct ieee80211_link_data_ap {
  	struct beacon_data __rcu *beacon;
  	struct probe_resp __rcu *probe_resp;
-@@ -1102,6 +1132,9 @@ struct ieee80211_link_data_ap {
+@@ -1113,6 +1143,9 @@ struct ieee80211_link_data_ap {
  	struct cfg80211_beacon_data *next_beacon;
  
  	int dtim_count;
@@ -316,7 +316,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  struct ieee80211_link_data {
-@@ -1128,6 +1161,8 @@ struct ieee80211_link_data {
+@@ -1139,6 +1172,8 @@ struct ieee80211_link_data {
  	struct wiphy_delayed_work color_collision_detect_work;
  	u64 color_bitmap;
  
@@ -325,7 +325,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* context reservation -- protected with wiphy mutex */
  	struct ieee80211_chanctx *reserved_chanctx;
  	struct ieee80211_chan_req reserved;
-@@ -2182,6 +2217,12 @@ void ieee80211_color_change_finalize_wor
+@@ -2193,6 +2228,12 @@ void ieee80211_color_change_finalize_wor
  void ieee80211_color_collision_detection_work(struct wiphy *wiphy,
  					      struct wiphy_work *work);
  

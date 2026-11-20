@@ -112,16 +112,36 @@ dlink_dgs_1250() {
 	echo 57000 > "$path_temp_hwmon/temp1_max_hyst"
 }
 
+# Find the LM63 independent of the I2C bus and hwmon device number.
+lm63_hwmon() {
+	local dev found
+
+	for dev in /sys/class/hwmon/hwmon*; do
+		[ "$(cat "$dev/name" 2>/dev/null)" = lm63 ] || continue
+		[ -z "$found" ] || {
+			logger -t hwmon_fancontrol "Multiple LM63 controllers found"
+			return 1
+		}
+		found="$dev"
+	done
+
+	[ -n "$found" ] || {
+		logger -t hwmon_fancontrol "LM63 controller not found"
+		return 1
+	}
+	printf '%s\n' "$found"
+}
+
 linksys_lgs328mpc_v2() {
 	# The U-Boot of this device does not set up the LM63 fan controller for us, so we do it ourselves:
 	# Let LM63 steer high/low speed full automatically, vendor defaults are 40C low->high and 31C high->low.
 	# For this, reduce PMW frequency as otherwise the fan won't start at low speeds.
 	# Temperature point 1 is set to 1C and a hysteresis of 9C gives 1C - 9C = -8C - most likely always on.
 	# Temperature point 2 is set to 40C and a hysteresis of 9C gives 40C - 9C = 31C.
-	# Other points must be monotonic for the kernel to accept auto mode.
-	local path_to_hwmon="$(find /sys/bus/i2c/devices/0-004c/hwmon/ -type d -maxdepth 1 -mindepth 1 -name 'hwmon*')"
+	# Other points must be non-decreasing for the kernel to accept auto mode.
+	local path_to_hwmon p
 
-	[ -n "$path_to_hwmon" ] || return 0
+	path_to_hwmon="$(lm63_hwmon)" || return 1
 
 	# switch to manual mode, otherwise LUT is not writable
 	echo 1 > "$path_to_hwmon/pwm1_enable"
@@ -132,18 +152,11 @@ linksys_lgs328mpc_v2() {
 	echo 128   > "$path_to_hwmon/pwm1_auto_point1_pwm"  # 50% fan speed
 	echo 40000 > "$path_to_hwmon/pwm1_auto_point2_temp" # 40°C
 	echo 255   > "$path_to_hwmon/pwm1_auto_point2_pwm"  # 100% fan speed
-	echo 41000 > "$path_to_hwmon/pwm1_auto_point3_temp" # monotonically increasing entries so the driver accepts this LUT
-	echo 255   > "$path_to_hwmon/pwm1_auto_point3_pwm"
-	echo 42000 > "$path_to_hwmon/pwm1_auto_point4_temp"
-	echo 255   > "$path_to_hwmon/pwm1_auto_point4_pwm"
-	echo 43000 > "$path_to_hwmon/pwm1_auto_point5_temp"
-	echo 255   > "$path_to_hwmon/pwm1_auto_point5_pwm"
-	echo 44000 > "$path_to_hwmon/pwm1_auto_point6_temp"
-	echo 255   > "$path_to_hwmon/pwm1_auto_point6_pwm"
-	echo 45000 > "$path_to_hwmon/pwm1_auto_point7_temp"
-	echo 255   > "$path_to_hwmon/pwm1_auto_point7_pwm"
-	echo 46000 > "$path_to_hwmon/pwm1_auto_point8_temp"
-	echo 255   > "$path_to_hwmon/pwm1_auto_point8_pwm"
+	# Unused points must be non-decreasing.
+	for p in 3 4 5 6 7 8; do
+		echo 127000 > "$path_to_hwmon/pwm1_auto_point${p}_temp"
+		echo 255 > "$path_to_hwmon/pwm1_auto_point${p}_pwm"
+	done
 
 	# set temperature hysteresis to 9K
 	echo 9000 > "$path_to_hwmon/pwm1_auto_point_temp_hyst"
@@ -152,16 +165,46 @@ linksys_lgs328mpc_v2() {
 	echo 2 > "$path_to_hwmon/pwm1_enable"
 }
 
+# Configure the original Linksys LGS352C LM63 fan curve.
+linksys_lgs352c() (
+	local path_to_hwmon p
+
+	path_to_hwmon="$(lm63_hwmon)" || return 1
+
+	# If initialization fails, request maximum fan speed.
+	trap 'rc=$?; if [ "$rc" -ne 0 ]; then
+		echo 1 > "$path_to_hwmon/pwm1_enable" 2>/dev/null || :
+		echo 255 > "$path_to_hwmon/pwm1" 2>/dev/null || :
+		logger -t hwmon_fancontrol "LGS352C LM63 initialization failed; requesting full fan speed"
+	fi' EXIT
+	set -e
+
+	# Set full speed while configuring the original Linksys curve.
+	echo 1 > "$path_to_hwmon/pwm1_enable"
+	echo 255 > "$path_to_hwmon/pwm1"
+	echo 23 > "$path_to_hwmon/pwm1_freq"
+
+	echo 20000 > "$path_to_hwmon/pwm1_auto_point1_temp"
+	echo 102 > "$path_to_hwmon/pwm1_auto_point1_pwm"
+	echo 55000 > "$path_to_hwmon/pwm1_auto_point2_temp"
+	echo 255 > "$path_to_hwmon/pwm1_auto_point2_pwm"
+
+	for p in 3 4 5 6 7 8; do
+		echo 127000 > "$path_to_hwmon/pwm1_auto_point${p}_temp"
+		echo 255 > "$path_to_hwmon/pwm1_auto_point${p}_pwm"
+	done
+
+	echo 4000 > "$path_to_hwmon/pwm1_auto_point_temp_hyst"
+	echo 2 > "$path_to_hwmon/pwm1_enable"
+
+	[ "$(cat "$path_to_hwmon/pwm1_enable")" = 2 ]
+	[ "$(cat "$path_to_hwmon/pwm1_freq")" = 23 ]
+)
+
 boot() {
 	case $(board_name) in
-	plasmacloud,esx28|\
-	plasmacloud,psx28)
-		# Lowest speed at 50 C, full speed at 70 C; critical at 80 C, as
-		# per the datasheet.
-		adt747x_fancontrol 2 1 50000 70000 80000 75000 0 22500
-		;;
-	d-link,dgs-1210-28p-f|\
-	d-link,dgs-1210-28mp-f)
+	d-link,dgs-1210-28mp-f|\
+	d-link,dgs-1210-28p-f)
 		dlink_dgs_1210
 		;;
 	d-link,dgs-1250-28x)
@@ -174,6 +217,15 @@ boot() {
 		;;
 	linksys,lgs328mpc-v2)
 		linksys_lgs328mpc_v2
+		;;
+	linksys,lgs352c)
+		linksys_lgs352c
+		;;
+	plasmacloud,esx28|\
+	plasmacloud,psx28)
+		# Lowest speed at 50 C, full speed at 70 C; critical at 80 C, as
+		# per the datasheet.
+		adt747x_fancontrol 2 1 50000 70000 80000 75000 0 22500
 		;;
 	esac
 }

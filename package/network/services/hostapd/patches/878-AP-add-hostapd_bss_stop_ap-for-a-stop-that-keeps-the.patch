@@ -23,7 +23,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1971,6 +1971,21 @@ void hostapd_bss_deinit_no_free(struct h
+@@ -2017,6 +2017,21 @@ void hostapd_bss_deinit_no_free(struct h
  }
  
  
@@ -47,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @iface: Pointer to interface data
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -902,6 +902,7 @@ int hostapd_reload_iface(struct hostapd_
+@@ -905,6 +905,7 @@ int hostapd_reload_iface(struct hostapd_
  int hostapd_reload_bss_only(struct hostapd_data *bss);
  int hostapd_disable_iface(struct hostapd_iface *hapd_iface);
  void hostapd_bss_deinit_no_free(struct hostapd_data *hapd);

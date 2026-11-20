@@ -19,6 +19,7 @@ struct wpas_ucode_bss {
 
 #ifdef UCODE_SUPPORT
 int wpas_ucode_init(struct wpa_global *gl);
+void wpas_ucode_terminate(void);
 void wpas_ucode_free(void);
 void wpas_ucode_add_bss(struct wpa_supplicant *wpa_s);
 void wpas_ucode_free_bss(struct wpa_supplicant *wpa_s);
@@ -56,6 +57,9 @@ static inline int wpas_ucode_dpp_gas_rx(struct wpa_supplicant *wpa_s,
 static inline int wpas_ucode_init(struct wpa_global *gl)
 {
 	return -EINVAL;
+}
+static inline void wpas_ucode_terminate(void)
+{
 }
 static inline void wpas_ucode_free(void)
 {

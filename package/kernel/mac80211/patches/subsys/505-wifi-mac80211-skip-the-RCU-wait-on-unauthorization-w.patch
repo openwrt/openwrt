@@ -1,0 +1,41 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 8 Nov 2026 23:54:34 +0100
+Subject: [PATCH] wifi: mac80211: skip the RCU wait on unauthorization without flush op
+
+Since commit 06d6af4e1223 ("wifi: mac80211: flush STA queues on
+unauthorization"), _sta_info_move_state() calls synchronize_net() when a
+station loses AUTHORIZED on a driver with a set_key op, so that the
+flush after it also covers frames that concurrent TX still queues.
+NL80211_CMD_SET_STATION does not hold the RTNL, so the wait is a full
+RCU grace period. Each SET_STATION that clears the authorized flag
+blocks the caller for that time, once per station.
+
+A driver without a flush or flush_sta op gets no flush, as
+ieee80211_flush_queues() returns at once. The wait then keeps
+no frame from the air: a frame that concurrent TX hands to the driver
+can stay in its queue across a later key removal with or without it,
+and the key itself is freed only after the synchronize_net() of
+ieee80211_key_destroy() or __sta_info_destroy().
+
+Only wait where the driver can flush.
+
+Fixes: 06d6af4e1223 ("wifi: mac80211: flush STA queues on unauthorization")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -1519,9 +1519,12 @@ static int _sta_info_move_state(struct sta_info *sta,
+ 			 * (after ensuring concurrent TX completed) so we won't
+ 			 * transmit anything later unencrypted if/when keys are
+ 			 * also removed, which might otherwise happen depending
+-			 * on how the hardware offload works.
++			 * on how the hardware offload works. Without a flush op
++			 * the wait keeps no queued frame off the air, as the
++			 * driver queue is not flushed.
+ 			 */
+-			if (local->ops->set_key) {
++			if (local->ops->set_key &&
++			    (local->ops->flush_sta || local->ops->flush)) {
+ 				synchronize_net();
+ 				if (local->ops->flush_sta)
+ 					drv_flush_sta(local, sta->sdata, sta);

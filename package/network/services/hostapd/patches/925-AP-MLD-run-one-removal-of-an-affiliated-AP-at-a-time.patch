@@ -1,0 +1,319 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 14 Nov 2026 18:00:00 +0100
+Subject: [PATCH] AP MLD: run one removal of an affiliated AP at a time
+
+hostapd_link_remove() starts the removal of a link while the removal of
+another link of the AP MLD runs. A driver that counts the AP Removal
+Timer can count one removal at a time, and refuses the Beacon frames of
+the second, so the second request fails. On a driver that takes it, the
+two removals overlap, and a station that handles one Reconfiguration
+Multi-Link element at a time can keep a removed link.
+
+Queue a request while the removal of another link runs, and start it
+when the removals requested before it ended: after the stop of the
+removed link, where hostapd keeps the link, or where the link goes
+before its expiry. The driver then gets the next removal with the
+removed link already gone. The reply of a queued request gives the
+removal and expiry times with the wait included, so that the caller
+waits for the stop of the link as for a removal that starts at once.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -478,6 +478,7 @@ static int hostapd_broadcast_wep_set(str
+ static void hostapd_link_remove_timeout_handler(void *eloop_data,
+ 						void *user_ctx);
+ static void hostapd_link_remove_offload_expire(struct hostapd_data *hapd);
++static void hostapd_link_remove_next(struct hostapd_data *hapd);
+ 
+ 
+ /* A nontransmitted BSSID sends no Beacon frames of its own, so the driver does
+@@ -587,11 +588,54 @@ static u64 hostapd_link_remove_tbtt_afte
+ }
+ 
+ 
++static struct hostapd_data *
++hostapd_link_remove_running(struct hostapd_data *hapd)
++{
++	struct hostapd_data *link_bss;
++
++	for_each_mld_link(link_bss, hapd) {
++		if (link_bss != hapd && hostapd_link_remove_pending(link_bss))
++			return link_bss;
++	}
++
++	return NULL;
++}
++
++
++/* A queued removal starts when the removal requested before it ends */
++static struct hostapd_data *
++hostapd_link_remove_before(struct hostapd_data *hapd)
++{
++	struct hostapd_data *link_bss, *before = NULL;
++
++	for_each_mld_link(link_bss, hapd) {
++		if (!link_bss->eht_mld_link_removal_queued ||
++		    link_bss->eht_mld_link_removal_seq >=
++		    hapd->eht_mld_link_removal_seq)
++			continue;
++
++		if (!before || link_bss->eht_mld_link_removal_seq >
++		    before->eht_mld_link_removal_seq)
++			before = link_bss;
++	}
++
++	return before ? before : hostapd_link_remove_running(hapd);
++}
++
++
+ static u64 hostapd_link_remove_expiry_us(struct hostapd_data *hapd)
+ {
++	struct hostapd_data *before;
+ 	struct os_reltime now, left;
+ 	u64 us;
+ 
++	if (hapd->eht_mld_link_removal_queued) {
++		before = hostapd_link_remove_before(hapd);
++		us = (u64) (hapd->eht_mld_link_removal_queued - 1) *
++			TU_TO_USEC(hapd->iconf->beacon_int);
++		return before ? hostapd_link_remove_expiry_us(before) + us : us;
++	}
++
+ 	if (!hapd->eht_mld_link_removal_count)
+ 		return 0;
+ 
+@@ -616,21 +660,35 @@ u64 hostapd_link_remove_expiry_ms(struct
+ }
+ 
+ 
+-/* Rounded up, with the wait for the TX status of the frames at the expiry: the
+- * caller commits no earlier than the link stops. */
+-u64 hostapd_link_remove_ms(struct hostapd_data *hapd)
++static u64 hostapd_link_remove_stop_us(struct hostapd_data *hapd)
+ {
++	struct hostapd_data *before;
+ 	u64 us;
+ 
+-	if (!hapd->eht_mld_link_removal_count)
+-		return 0;
+-
+-	if (hapd->eht_mld_link_removal_offload)
++	if (hapd->eht_mld_link_removal_queued) {
++		before = hostapd_link_remove_before(hapd);
++		us = (u64) (hapd->eht_mld_link_removal_queued + 1) *
++			TU_TO_USEC(hapd->iconf->beacon_int);
++		if (before)
++			us += hostapd_link_remove_stop_us(before);
++	} else if (hapd->eht_mld_link_removal_offload ||
++		   hapd->eht_mld_link_removal_expired) {
+ 		us = hostapd_link_remove_tbtt_after_us(hapd);
+-	else
++	} else if (hapd->eht_mld_link_removal_count) {
+ 		us = hostapd_link_remove_expiry_us(hapd);
++	} else {
++		return 0;
++	}
++
++	return us + hostapd_link_remove_tx_wait_us(hapd);
++}
+ 
+-	return (us + hostapd_link_remove_tx_wait_us(hapd) + 999) / 1000;
++
++/* Rounded up, with the wait for the TX status of the frames at the expiry: the
++ * caller commits no earlier than the link stops. */
++u64 hostapd_link_remove_ms(struct hostapd_data *hapd)
++{
++	return (hostapd_link_remove_stop_us(hapd) + 999) / 1000;
+ }
+ 
+ 
+@@ -967,6 +1025,7 @@ static bool hostapd_link_remove_expire_b
+ 			   "MLD: Keep link_id=%u, no other link beacons",
+ 			   hapd->mld_link_id);
+ 		ieee802_11_set_beacon(hapd);
++		hostapd_link_remove_next(hapd);
+ 		return false;
+ 	}
+ 
+@@ -1197,41 +1256,38 @@ static void hostapd_mld_crit_update_star
+ }
+ 
+ 
+-/* A repeated request must not set the AP Removal Timer back (IEEE Std
+- * 802.11be-2024, 35.3.6.3). */
+-int hostapd_link_remove(struct hostapd_data *hapd, u32 count)
++static bool hostapd_link_remove_allowed(struct hostapd_data *hapd)
+ {
+-	if (!hapd->conf->mld_ap || !hapd->mld || !hapd->started || !count ||
+-	    count > 0xffff)
+-		return -1;
+-
+-	if (hostapd_link_remove_pending(hapd))
+-		return 0;
+-
+ 	/* The links of an advertised TTLM stay until it ends */
+ 	if (hapd->mld->adv_ttlm_state != HOSTAPD_ADV_TTLM_NONE)
+-		return -1;
++		return false;
+ 
+ 	if (hapd->csa_in_progress)
+-		return -1;
++		return false;
+ 
+ #ifdef CONFIG_IEEE80211AX
+ 	if (hapd->cca_in_progress)
+-		return -1;
++		return false;
+ #endif /* CONFIG_IEEE80211AX */
+ 
+ 	/* mac80211 stops each BSS of an MBSSID set together with the one
+ 	 * whose link stops at the expiry. */
+ 	if (hapd->iconf->mbssid && hapd->iface->num_bss > 1)
+-		return -1;
++		return false;
+ 
+ 	if (!hostapd_link_remove_partner(hapd, NULL)) {
+ 		wpa_printf(MSG_DEBUG,
+ 			   "MLD: Do not remove link_id=%u, the last link",
+ 			   hapd->mld_link_id);
+-		return -1;
++		return false;
+ 	}
+ 
++	return true;
++}
++
++
++static int hostapd_link_remove_start(struct hostapd_data *hapd, u32 count)
++{
+ 	wpa_printf(MSG_DEBUG,
+ 		   "MLD: Remove link_id=%u in %u beacons",
+ 		   hapd->mld_link_id, count);
+@@ -1278,6 +1334,83 @@ int hostapd_link_remove(struct hostapd_d
+ }
+ 
+ 
++static void hostapd_link_remove_queued_start(void *eloop_data,
++					     void *user_ctx);
++
++/* After the removal of hapd ended, in the order of the requests */
++static void hostapd_link_remove_next(struct hostapd_data *hapd)
++{
++	struct hostapd_data *link_bss, *next = NULL;
++
++	for_each_mld_link(link_bss, hapd) {
++		if (link_bss == hapd || !link_bss->eht_mld_link_removal_queued)
++			continue;
++
++		if (!next || link_bss->eht_mld_link_removal_seq <
++		    next->eht_mld_link_removal_seq)
++			next = link_bss;
++	}
++
++	if (next)
++		eloop_register_timeout(0, 0, hostapd_link_remove_queued_start,
++				       next, NULL);
++}
++
++
++static void hostapd_link_remove_queued_start(void *eloop_data,
++					     void *user_ctx)
++{
++	struct hostapd_data *hapd = eloop_data;
++	u16 count = hapd->eht_mld_link_removal_queued;
++
++	if (!count || hostapd_link_remove_running(hapd))
++		return;
++
++	hapd->eht_mld_link_removal_queued = 0;
++	if (hostapd_link_remove_allowed(hapd) &&
++	    !hostapd_link_remove_start(hapd, count))
++		return;
++
++	wpa_printf(MSG_INFO,
++		   "MLD: The queued removal of link_id=%u did not start",
++		   hapd->mld_link_id);
++	hostapd_link_remove_next(hapd);
++}
++
++
++/* A repeated request must not set the AP Removal Timer back (IEEE Std
++ * 802.11be-2024, 35.3.6.3). One removal of the AP MLD runs at a time: a
++ * driver can count only one, and a station can miss a link where two
++ * overlap. A later request starts when the ones before it ended. */
++int hostapd_link_remove(struct hostapd_data *hapd, u32 count)
++{
++	static unsigned int seq;
++	struct hostapd_data *before;
++
++	if (!hapd->conf->mld_ap || !hapd->mld || !hapd->started || !count ||
++	    count > 0xffff)
++		return -1;
++
++	if (hostapd_link_remove_pending(hapd) ||
++	    hapd->eht_mld_link_removal_queued)
++		return 0;
++
++	if (!hostapd_link_remove_allowed(hapd))
++		return -1;
++
++	hapd->eht_mld_link_removal_seq = ++seq;
++	before = hostapd_link_remove_before(hapd);
++	if (!before)
++		return hostapd_link_remove_start(hapd, count);
++
++	hapd->eht_mld_link_removal_queued = count;
++	wpa_printf(MSG_DEBUG,
++		   "MLD: Remove link_id=%u in %u beacons after the removal of link_id=%u",
++		   hapd->mld_link_id, count, before->mld_link_id);
++	return 0;
++}
++
++
+ /* The driver counts from the first TBTT after it took the template of the
+  * removed link, and the Probe Response frames must not count ahead of the
+  * Beacon frames, so the host count starts when that update returns */
+@@ -1619,6 +1752,7 @@ void hostapd_free_hapd_data(struct hosta
+ {
+ #ifdef CONFIG_IEEE80211BE
+ 	bool removal_offload = hapd->eht_mld_link_removal_offload;
++	bool removal = hostapd_link_remove_pending(hapd);
+ 
+ 	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
+ 	eloop_cancel_timeout(hostapd_link_remove_finish, hapd, NULL);
+@@ -1626,16 +1760,20 @@ void hostapd_free_hapd_data(struct hosta
+ 	eloop_cancel_timeout(hostapd_link_remove_offload_tbtt, hapd, NULL);
+ 	eloop_cancel_timeout(hostapd_link_remove_held_start, hapd,
+ 			     ELOOP_ALL_CTX);
++	eloop_cancel_timeout(hostapd_link_remove_queued_start, hapd, NULL);
+ 	hapd->eht_mld_link_removal_count = 0;
+ 	hapd->eht_mld_link_removal_offload = false;
+ 	hapd->eht_mld_link_removal_start_pending = false;
+ 	hapd->eht_mld_beacon_start_held = false;
+ 	hapd->eht_mld_link_removal_expired = false;
+ 	hapd->eht_mld_link_removal_tx = 0;
++	hapd->eht_mld_link_removal_queued = 0;
+ 	hapd->eht_mld_crit_update = false;
+ 	/* The removal ends here without the expiry that starts these links */
+ 	if (removal_offload && hapd->conf && hapd->conf->mld_ap && hapd->mld)
+ 		hostapd_link_remove_start_held_later(hapd);
++	if (removal && hapd->conf && hapd->conf->mld_ap && hapd->mld)
++		hostapd_link_remove_next(hapd);
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	os_free(hapd->probereq_cb);
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -555,6 +555,10 @@ struct hostapd_data {
+ 	struct os_reltime eht_mld_link_removal_due;
+ 	bool eht_mld_link_removal_expired;
+ 	unsigned int eht_mld_link_removal_tx;
++	/* The count of a removal that waits for the removals of the other
++	 * links requested before it, and the order of its request */
++	u16 eht_mld_link_removal_queued;
++	unsigned int eht_mld_link_removal_seq;
+ 	/* The driver counts the AP Removal Timer until
+ 	 * EVENT_AP_REMOVAL_TIMER_EXPIRED */
+ 	bool eht_mld_link_removal_offload;

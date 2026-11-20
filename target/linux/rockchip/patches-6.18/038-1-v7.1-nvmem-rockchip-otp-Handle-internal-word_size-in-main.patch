@@ -32,7 +32,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/nvmem/rockchip-otp.c
 +++ b/drivers/nvmem/rockchip-otp.c
-@@ -59,7 +59,6 @@
+@@ -60,7 +60,6 @@
  #define RK3588_OTPC_AUTO_EN		0x08
  #define RK3588_OTPC_INT_ST		0x84
  #define RK3588_OTPC_DOUT0		0x20
@@ -40,7 +40,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  #define RK3588_BURST_NUM		1
  #define RK3588_BURST_SHIFT		8
  #define RK3588_ADDR_SHIFT		16
-@@ -69,6 +68,7 @@
+@@ -70,6 +69,7 @@
  struct rockchip_data {
  	int size;
  	int read_offset;
@@ -48,7 +48,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	const char * const *clks;
  	int num_clks;
  	nvmem_reg_read_t reg_read;
-@@ -185,48 +185,28 @@ read_end:
+@@ -188,48 +188,28 @@ read_end:
  }
  
  static int rk3588_otp_read(void *context, unsigned int offset,
@@ -105,7 +105,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	return ret;
  }
  
-@@ -234,7 +214,7 @@ static int rockchip_otp_read(void *conte
+@@ -237,7 +217,7 @@ static int rockchip_otp_read(void *conte
  			     void *val, size_t bytes)
  {
  	struct rockchip_otp *otp = context;
@@ -114,8 +114,8 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	if (!otp->data || !otp->data->reg_read)
  		return -EINVAL;
-@@ -245,8 +225,34 @@ static int rockchip_otp_read(void *conte
- 		return ret;
+@@ -250,8 +230,34 @@ static int rockchip_otp_read(void *conte
+ 		goto unlock;
  	}
  
 -	ret = otp->data->reg_read(context, offset, val, bytes);
@@ -149,8 +149,8 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 +err:
  	clk_bulk_disable_unprepare(otp->data->num_clks, otp->clks);
  
- 	return ret;
-@@ -259,7 +265,7 @@ static struct nvmem_config otp_config =
+ unlock:
+@@ -267,7 +273,7 @@ static struct nvmem_config otp_config =
  	.type = NVMEM_TYPE_OTP,
  	.read_only = true,
  	.stride = 1,
@@ -159,7 +159,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	.reg_read = rockchip_otp_read,
  };
  
-@@ -277,6 +283,7 @@ static const struct rockchip_data px30_d
+@@ -285,6 +291,7 @@ static const struct rockchip_data px30_d
  static const struct rockchip_data rk3576_data = {
  	.size = 0x100,
  	.read_offset = 0x700,
@@ -167,7 +167,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	.clks = px30_otp_clocks,
  	.num_clks = ARRAY_SIZE(px30_otp_clocks),
  	.reg_read = rk3588_otp_read,
-@@ -289,6 +296,7 @@ static const char * const rk3588_otp_clo
+@@ -297,6 +304,7 @@ static const char * const rk3588_otp_clo
  static const struct rockchip_data rk3588_data = {
  	.size = 0x400,
  	.read_offset = 0xc00,

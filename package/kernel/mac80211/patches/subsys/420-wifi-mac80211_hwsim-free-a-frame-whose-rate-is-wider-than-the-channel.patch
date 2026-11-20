@@ -15,7 +15,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
-@@ -2457,8 +2457,10 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2474,8 +2474,10 @@ static void mac80211_hwsim_tx(struct iee
  		else if (rflags & IEEE80211_TX_RC_160_MHZ_WIDTH)
  			bw = NL80211_CHAN_WIDTH_160;
  

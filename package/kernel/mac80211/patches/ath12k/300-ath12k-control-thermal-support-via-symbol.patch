@@ -23,11 +23,11 @@ Signed-off-by: Matt Merhar <mattmerhar@protonmail.com>
  	  dump collection not required choose N.
 +
 +config ATH12K_THERMAL
-+        bool "ath12k thermal sensor support"
-+        depends on ATH12K
-+        depends on THERMAL
-+        help
-+          Enable ath12k thermal sensor support.
++	bool "ath12k thermal sensors and throttling support"
++	depends on ATH12K
++	depends on THERMAL
++	help
++	  Enable ath12k thermal sensors and throttling support.
 --- a/drivers/net/wireless/ath/ath12k/Makefile
 +++ b/drivers/net/wireless/ath/ath12k/Makefile
 @@ -32,7 +32,7 @@ ath12k-$(CPTCFG_ATH12K_TRACING) += trace

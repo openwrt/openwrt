@@ -1,0 +1,71 @@
+From 67a9e80c3ca20c9044cd6ee72cd6278dd19b5023 Mon Sep 17 00:00:00 2001
+From: Zhao Li <enderaoelyther@gmail.com>
+Date: Wed, 16 Sep 2026 19:37:35 +0800
+Subject: [PATCH] wifi: mac80211: drain PS delivery work during station
+ teardown
+
+Removing an AP or mesh station can notify the driver and wake TXQs after
+the station has already been removed from the driver, and can update
+num_sta_ps and the power-save queues after station cleanup has purged
+them.
+
+sta_deliver_ps_frames() tests sta->dead only before it starts delivery. A
+worker that passes that test can be delayed while teardown sets sta->dead
+and removes the station from the driver; when it resumes it still runs the
+full delivery.
+
+The existing cancel_work_sync() sits near the end of
+__cleanup_single_sta(), after the final driver state transition and after
+PS accounting and queue purging, so it drains the worker only once the
+state it has to protect has already changed. Before commit d34ba2168a3c
+("mac80211: don't delay station destruction") cleanup was deferred
+through the same ordered workqueue as the delivery work, which kept the
+two ordered.
+
+Cancel the work after setting sta->dead and before moving the driver
+state, and move the existing cancellation to the start of
+__cleanup_single_sta(). The first drain closes the driver-lifetime window;
+driver callbacks during the remaining state transitions can still queue
+drv_deliver_wk through ieee80211_sta_block_awake(), so retain the second
+drain at the start of __cleanup_single_sta(). That drain also covers
+insertion failures, which reach cleanup without setting sta->dead.
+
+Fixes: d34ba2168a3c ("mac80211: don't delay station destruction")
+Cc: stable@vger.kernel.org
+Assisted-by: LLM sparse smatch coccinelle kasan
+Signed-off-by: Zhao Li <enderaoelyther@gmail.com>
+Link: https://patch.msgid.link/20260916113735.31029-1-enderaoelyther@gmail.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/sta_info.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -137,6 +137,8 @@ static void __cleanup_single_sta(struct
+ 	struct ieee80211_local *local = sdata->local;
+ 	struct ps_data *ps;
+ 
++	cancel_work_sync(&sta->drv_deliver_wk);
++
+ 	if (test_sta_flag(sta, WLAN_STA_PS_STA) ||
+ 	    test_sta_flag(sta, WLAN_STA_PS_DRIVER) ||
+ 	    test_sta_flag(sta, WLAN_STA_PS_DELIVER)) {
+@@ -166,8 +168,6 @@ static void __cleanup_single_sta(struct
+ 	if (ieee80211_vif_is_mesh(&sdata->vif))
+ 		mesh_sta_cleanup(sta);
+ 
+-	cancel_work_sync(&sta->drv_deliver_wk);
+-
+ 	/*
+ 	 * Destroy aggregation state here. It would be nice to wait for the
+ 	 * driver to finish aggregation stop and then clean up, but for now
+@@ -1631,6 +1631,8 @@ static void __sta_info_destroy_part2(str
+ 
+ 	sta->dead = true;
+ 
++	cancel_work_sync(&sta->drv_deliver_wk);
++
+ 	local->num_sta--;
+ 	local->sta_generation++;
+ 

@@ -313,6 +313,19 @@ define Device/linksys_spnmx56
 endef
 TARGET_DEVICES += linksys_spnmx56
 
+define Device/liteon_wpx8324
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Lite-On
+	DEVICE_MODEL := WPX8324
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq5018
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 ipq-wifi-liteon_wpx8324
+endef
+TARGET_DEVICES += liteon_wpx8324
+
 define Device/mercusys_mr80x-v2
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := MERCUSYS
@@ -396,6 +409,23 @@ define Device/tplink_re700x
 		ipq-wifi-tplink_re700x kmod-phy-realtek
 endef
 TARGET_DEVICES += tplink_re700x
+
+define Device/ubnt_unifi-6-pro
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Ubiquiti
+	DEVICE_MODEL := UniFi 6 Pro
+	DEVICE_ALT0_VENDOR := Ubiquiti
+	DEVICE_ALT0_MODEL := U6-Pro
+	SOC := ipq5018
+	DEVICE_DTS_CONFIG := config@a650
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
+		kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-ubnt_unifi-6-pro \
+		kmod-fs-f2fs f2fs-tools
+endef
+TARGET_DEVICES += ubnt_unifi-6-pro
 
 define Device/wallys_dr5018s
 	$(call Device/FitImage)

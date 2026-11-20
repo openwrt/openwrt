@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int hostapd_maclist_found(struct mac_acl_entry *list, int num_entries,
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1718,14 +1718,15 @@ void hostapd_free_hapd_data(struct hosta
+@@ -1767,14 +1767,15 @@ void hostapd_free_hapd_data(struct hosta
  /* hostapd_mld_move_vlan_list - Move the VLAN list to the new first bss
   *
   * This function is used to copy the reference to the VLAN list from the old
@@ -66,7 +66,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  #endif /* CONFIG_IEEE80211BE */
  
-@@ -6814,16 +6815,9 @@ int hostapd_mld_remove_link(struct hosta
+@@ -6893,16 +6894,9 @@ int hostapd_mld_remove_link(struct hosta
  	if (dl_list_empty(&mld->links)) {
  		mld->fbss = NULL;
  	} else {

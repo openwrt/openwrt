@@ -1608,7 +1608,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	r8153_aldps_en(tp, true);
  }
-@@ -7014,11 +6812,7 @@ static int rtl8152_close(struct net_devi
+@@ -7016,11 +6814,7 @@ static int rtl8152_close(struct net_devi
  
  static void rtl_tally_reset(struct r8152 *tp)
  {
@@ -1621,7 +1621,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void r8152b_init(struct r8152 *tp)
-@@ -7037,21 +6831,18 @@ static void r8152b_init(struct r8152 *tp
+@@ -7039,21 +6833,18 @@ static void r8152b_init(struct r8152 *tp
  
  	r8152_aldps_en(tp, false);
  
@@ -1652,7 +1652,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	ocp_data = GPHY_STS_MSK | SPEED_DOWN_MSK |
  		   SPDWN_RXDV_MSK | SPDWN_LINKCHG_MSK;
  	ocp_write_word(tp, MCU_TYPE_PLA, PLA_GPHY_INTR_IMR, ocp_data);
-@@ -7059,9 +6850,8 @@ static void r8152b_init(struct r8152 *tp
+@@ -7061,9 +6852,8 @@ static void r8152b_init(struct r8152 *tp
  	rtl_tally_reset(tp);
  
  	/* enable rx aggregation */
@@ -1664,7 +1664,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void r8153_init(struct r8152 *tp)
-@@ -7102,55 +6892,43 @@ static void r8153_init(struct r8152 *tp)
+@@ -7104,55 +6894,43 @@ static void r8153_init(struct r8152 *tp)
  	r8153_u2p3en(tp, false);
  
  	if (tp->version == RTL_VER_04) {
@@ -1745,7 +1745,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	ocp_data = FIFO_EMPTY_1FB | ROK_EXIT_LPM;
  	if (tp->version == RTL_VER_04 && tp->udev->speed < USB_SPEED_SUPER)
-@@ -7159,10 +6937,8 @@ static void r8153_init(struct r8152 *tp)
+@@ -7161,10 +6939,8 @@ static void r8153_init(struct r8152 *tp)
  		ocp_data |= LPM_TIMER_500US;
  	ocp_write_byte(tp, MCU_TYPE_USB, USB_LPM_CTRL, ocp_data);
  
@@ -1758,7 +1758,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	ocp_write_word(tp, MCU_TYPE_USB, USB_CONNECT_TIMER, 0x0001);
  
-@@ -7172,21 +6948,17 @@ static void r8153_init(struct r8152 *tp)
+@@ -7174,21 +6950,17 @@ static void r8153_init(struct r8152 *tp)
  	r8153_u1u2en(tp, true);
  	usb_enable_lpm(tp->udev);
  
@@ -1788,7 +1788,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	rtl_tally_reset(tp);
  
-@@ -7206,7 +6978,6 @@ static void r8153_init(struct r8152 *tp)
+@@ -7208,7 +6980,6 @@ static void r8153_init(struct r8152 *tp)
  
  static void r8153b_init(struct r8152 *tp)
  {
@@ -1796,7 +1796,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u16 data;
  	int i;
  
-@@ -7245,13 +7016,12 @@ static void r8153b_init(struct r8152 *tp
+@@ -7247,13 +7018,12 @@ static void r8153b_init(struct r8152 *tp
  	r8153_queue_wake(tp, false);
  	rtl_runtime_suspend_enable(tp, false);
  
@@ -1814,7 +1814,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	if (tp->udev->speed >= USB_SPEED_SUPER)
  		r8153b_u1u2en(tp, true);
-@@ -7261,25 +7031,20 @@ static void r8153b_init(struct r8152 *tp
+@@ -7263,25 +7033,20 @@ static void r8153b_init(struct r8152 *tp
  	/* MAC clock speed down */
  	r8153_mac_clk_speed_down(tp, true);
  
@@ -1848,7 +1848,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	rtl_tally_reset(tp);
  
-@@ -7288,7 +7053,6 @@ static void r8153b_init(struct r8152 *tp
+@@ -7290,7 +7055,6 @@ static void r8153b_init(struct r8152 *tp
  
  static void r8153c_init(struct r8152 *tp)
  {
@@ -1856,7 +1856,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u16 data;
  	int i;
  
-@@ -7299,12 +7063,10 @@ static void r8153c_init(struct r8152 *tp
+@@ -7301,12 +7065,10 @@ static void r8153c_init(struct r8152 *tp
  
  	/* Disable spi_en */
  	ocp_write_byte(tp, MCU_TYPE_PLA, PLA_CRWECR, CRWECR_CONFIG);
@@ -1873,7 +1873,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	for (i = 0; i < 500; i++) {
  		if (ocp_read_word(tp, MCU_TYPE_PLA, PLA_BOOT_CTRL) &
-@@ -7336,14 +7098,12 @@ static void r8153c_init(struct r8152 *tp
+@@ -7338,14 +7100,12 @@ static void r8153c_init(struct r8152 *tp
  	r8153_queue_wake(tp, false);
  	rtl_runtime_suspend_enable(tp, false);
  
@@ -1892,7 +1892,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	r8153b_u1u2en(tp, true);
  
-@@ -7352,16 +7112,13 @@ static void r8153c_init(struct r8152 *tp
+@@ -7354,16 +7114,13 @@ static void r8153c_init(struct r8152 *tp
  	/* MAC clock speed down */
  	r8153_mac_clk_speed_down(tp, true);
  
@@ -1912,7 +1912,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	rtl_tally_reset(tp);
  
-@@ -7370,14 +7127,9 @@ static void r8153c_init(struct r8152 *tp
+@@ -7372,14 +7129,9 @@ static void r8153c_init(struct r8152 *tp
  
  static void r8156_hw_phy_cfg(struct r8152 *tp)
  {
@@ -1928,7 +1928,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	data = r8153_phy_status(tp, 0);
  	switch (data) {
-@@ -7404,9 +7156,7 @@ static void r8156_hw_phy_cfg(struct r815
+@@ -7406,9 +7158,7 @@ static void r8156_hw_phy_cfg(struct r815
  	data = r8153_phy_status(tp, PHY_STAT_LAN_ON);
  	WARN_ON_ONCE(data != PHY_STAT_LAN_ON);
  
@@ -1939,7 +1939,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	switch (tp->version) {
  	case RTL_VER_10:
-@@ -7567,9 +7317,8 @@ static void r8156_hw_phy_cfg(struct r815
+@@ -7569,9 +7319,8 @@ static void r8156_hw_phy_cfg(struct r815
  		/* EEE parameter */
  		ocp_write_word(tp, MCU_TYPE_PLA, PLA_EEE_TXTWSYS_2P5G, 0x0056);
  
@@ -1951,7 +1951,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  		sram_write(tp, 0x8257, 0x020f); /*  XG PLL */
  		sram_write(tp, 0x80ea, 0x7843); /* GIGA Master */
-@@ -7578,9 +7327,8 @@ static void r8156_hw_phy_cfg(struct r815
+@@ -7580,9 +7329,8 @@ static void r8156_hw_phy_cfg(struct r815
  			return;
  
  		/* Advance EEE */
@@ -1963,7 +1963,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  		data = ocp_reg_read(tp, OCP_DOWN_SPEED);
  		data &= ~(EN_EEE_100 | EN_EEE_1000);
-@@ -7720,7 +7468,6 @@ static void r8156_hw_phy_cfg(struct r815
+@@ -7722,7 +7470,6 @@ static void r8156_hw_phy_cfg(struct r815
  
  static void r8156b_hw_phy_cfg(struct r8152 *tp)
  {
@@ -1971,7 +1971,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u16 data;
  
  	switch (tp->version) {
-@@ -7750,11 +7497,7 @@ static void r8156b_hw_phy_cfg(struct r81
+@@ -7752,11 +7499,7 @@ static void r8156b_hw_phy_cfg(struct r81
  		break;
  	}
  
@@ -1984,7 +1984,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	data = r8153_phy_status(tp, 0);
  	switch (data) {
-@@ -7791,9 +7534,7 @@ static void r8156b_hw_phy_cfg(struct r81
+@@ -7793,9 +7536,7 @@ static void r8156b_hw_phy_cfg(struct r81
  	data = r8153_phy_status(tp, PHY_STAT_LAN_ON);
  	WARN_ON_ONCE(data != PHY_STAT_LAN_ON);
  
@@ -1995,7 +1995,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	switch (tp->version) {
  	case RTL_VER_12:
-@@ -7880,9 +7621,9 @@ static void r8156b_hw_phy_cfg(struct r81
+@@ -7882,9 +7623,9 @@ static void r8156b_hw_phy_cfg(struct r81
  		ocp_reg_write(tp, 0xb87c, 0x8fd8);
  		ocp_reg_write(tp, 0xb87e, 0xf600);
  
@@ -2008,7 +2008,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		ocp_reg_write(tp, 0xb87c, 0x813d);
  		ocp_reg_write(tp, 0xb87e, 0x390e);
  		ocp_reg_write(tp, 0xb87c, 0x814f);
-@@ -8096,9 +7837,7 @@ static void r8156b_hw_phy_cfg(struct r81
+@@ -8098,9 +7839,7 @@ static void r8156b_hw_phy_cfg(struct r81
  	if (rtl_phy_patch_request(tp, true, true))
  		return;
  
@@ -2019,7 +2019,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	data = ocp_reg_read(tp, OCP_DOWN_SPEED);
  	data &= ~(EN_EEE_100 | EN_EEE_1000);
-@@ -8137,22 +7876,17 @@ static void r8156b_hw_phy_cfg(struct r81
+@@ -8139,22 +7878,17 @@ static void r8156b_hw_phy_cfg(struct r81
  
  static void r8156_init(struct r8152 *tp)
  {
@@ -2044,7 +2044,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	r8153b_u1u2en(tp, false);
  
-@@ -8202,28 +7936,23 @@ static void r8156_init(struct r8152 *tp)
+@@ -8204,28 +7938,23 @@ static void r8156_init(struct r8152 *tp)
  
  	r8156_mac_clk_spd(tp, true);
  
@@ -2083,7 +2083,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	r8156_mdio_force_mode(tp);
  	rtl_tally_reset(tp);
-@@ -8233,26 +7962,19 @@ static void r8156_init(struct r8152 *tp)
+@@ -8235,26 +7964,19 @@ static void r8156_init(struct r8152 *tp)
  
  static void r8156b_init(struct r8152 *tp)
  {
@@ -2114,7 +2114,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	r8153b_u1u2en(tp, false);
  
-@@ -8312,48 +8034,39 @@ static void r8156b_init(struct r8152 *tp
+@@ -8314,48 +8036,39 @@ static void r8156b_init(struct r8152 *tp
  
  	usb_enable_lpm(tp->udev);
  

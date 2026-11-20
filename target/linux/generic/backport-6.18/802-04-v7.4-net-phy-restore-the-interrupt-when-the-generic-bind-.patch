@@ -1,0 +1,52 @@
+From 4719b69bb66be74d7a2cb4d3887031de90c66ac9 Mon Sep 17 00:00:00 2001
+From: Aleksei Sviridkin <f@lex.la>
+Date: Thu, 1 Oct 2026 16:02:36 +0300
+Subject: [PATCH] net: phy: restore the interrupt when the generic bind cycle
+ fails
+
+When phy_attach_direct() binds the generic driver itself and the bind
+fails, the PHY is left with polling in place of its interrupt.
+phy_probe() has already replaced phydev->irq with PHY_POLL by then. The
+unwind does not go through phy_detach(), so the restore there does not
+run, and a later attach finds a PHY that can only be polled.
+
+Found on a Keenetic KN-1012 while adding the restore in phy_detach(),
+as the other way out of the same bind cycle.
+
+Save the interrupt number on entry and put it back on the error path.
+The bus table is not the right source here. The same label is reached
+when a second attach of a PHY already attached through the generic
+driver fails, and there the field is live. The table also misses a
+PHY_MAC_INTERRUPT that a MAC wrote into phydev->irq.
+
+Tested on the KN-1012 with a 6.18 distribution kernel and an injected
+failure of the generic probe: phydev->irq reads 15 afterwards, and -1
+with only the restore in phy_detach().
+
+Cc: stable+noautosel@kernel.org # never worked
+Fixes: 6d9f66ac7fec ("net: phy: Fix PHY module checks and NULL deref in phy_attach_direct()")
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+Link: https://patch.msgid.link/20261001130236.106059-5-f@lex.la
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/phy_device.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1729,6 +1729,7 @@ int phy_attach_direct(struct net_device
+ 	struct mii_bus *bus = phydev->mdio.bus;
+ 	struct device *d = &phydev->mdio.dev;
+ 	struct module *ndev_owner = NULL;
++	int irq = phydev->irq;
+ 	int err;
+ 
+ 	/* For Ethernet device drivers that register their own MDIO bus, we
+@@ -1876,6 +1877,7 @@ error:
+ 
+ error_module_put:
+ 	module_put(d->driver->owner);
++	phydev->irq = irq;
+ 	phydev->is_genphy_driven = 0;
+ 	d->driver = NULL;
+ error_put_device:

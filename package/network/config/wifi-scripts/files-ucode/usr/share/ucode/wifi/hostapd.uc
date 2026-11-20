@@ -106,7 +106,7 @@ function device_cell_density_append(config) {
 				config.supported_rates ??= [ 5500, 6000, 9000, 11000, 12000, 18000, 24000, 36000, 48000, 54000 ];
 				config.basic_rates ??= [ 5500, 11000 ];
 			}
-		} else if (config.cell_density == 2 || (config.cell_density > 3 && config.legacy_rates)) {
+		} else if (config.cell_density == 2 || (config.cell_density > 2 && config.legacy_rates)) {
 			if (!config.legacy_rates) {
 				config.supported_rates ??= [ 12000, 18000, 24000, 36000, 48000, 54000 ];
 				config.basic_rates ??= [ 12000, 24000 ];
@@ -519,8 +519,6 @@ function generate(config) {
 
 	device_country_code(config);
 
-	device_cell_density_append(config);
-
 	/* beacon */
 	append_vars(config, [ 'beacon_int', 'beacon_rate', 'rnr_beacon' ]);
 
@@ -553,6 +551,7 @@ function generate(config) {
 		config.legacy_rates = false;
 		append(require_mode[config.require_mode], 1);
 	}
+	device_cell_density_append(config);
 	device_htmode_append(config);
 
 	if (config.ieee80211ax || config.ieee80211be)

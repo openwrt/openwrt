@@ -46,7 +46,7 @@ endef
 
 define Build/zyxel-nwax10ax-fit
 	$(TOPDIR)/scripts/mkits-zyxel-fit-filogic.sh \
-		$@.its $@ "$(ZYXEL_MODEL_ID) ff ff ff ff ff ff ff ff"
+		$@.its $@ "$(ZYXEL_MODEL_ID)"
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -78,7 +78,7 @@ define Device/arcadyan_aw1000
 endef
 TARGET_DEVICES += arcadyan_aw1000
 
-define Device/asus_rt-ax89x
+define Device/asus_rt-ax89x-common
 	DEVICE_VENDOR := Asus
 	DEVICE_MODEL := RT-AX89X
 	BLOCKSIZE := 128k
@@ -106,7 +106,19 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endif
 endef
-TARGET_DEVICES += asus_rt-ax89x
+
+define Device/asus_rt-ax89x-b1
+	$(call Device/asus_rt-ax89x-common)
+	DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += asus_rt-ax89x-b1
+
+define Device/asus_rt-ax89x-b2
+	$(call Device/asus_rt-ax89x-common)
+	DEVICE_VARIANT := B2
+	SUPPORTED_DEVICES += asus,rt-ax89x
+endef
+TARGET_DEVICES += asus_rt-ax89x-b2
 
 define Device/buffalo_wxr-5950ax12
 	$(call Device/FitImage)
@@ -651,7 +663,7 @@ define Device/zyxel_nwa110ax
 	DEVICE_DTS_CONFIG := config@ac01
 	SOC := ipq8070
 	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa110ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
-	ZYXEL_MODEL_ID := 59 e1
+	ZYXEL_MODEL_ID := 59e1
 endef
 TARGET_DEVICES += zyxel_nwa110ax
 
@@ -661,6 +673,6 @@ define Device/zyxel_nwa210ax
 	DEVICE_DTS_CONFIG := config@ac02
 	SOC := ipq8071
 	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa210ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
-	ZYXEL_MODEL_ID := 5c e1
+	ZYXEL_MODEL_ID := 5ce1
 endef
 TARGET_DEVICES += zyxel_nwa210ax

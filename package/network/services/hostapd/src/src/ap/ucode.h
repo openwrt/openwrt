@@ -28,6 +28,7 @@ void hostapd_ucode_free_iface(struct hostapd_iface *iface);
 void hostapd_ucode_free_bss(struct hostapd_data *hapd);
 void hostapd_ucode_forget_bss(struct hostapd_data *hapd);
 void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type);
+void hostapd_ucode_cac_start(struct hostapd_iface *iface);
 int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta);
 void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta);
 
@@ -62,6 +63,9 @@ static inline void hostapd_ucode_free_iface(struct hostapd_iface *iface)
 {
 }
 static inline void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type)
+{
+}
+static inline void hostapd_ucode_cac_start(struct hostapd_iface *iface)
 {
 }
 static inline int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta)

@@ -8,6 +8,7 @@
 
 #include <linux/bitfield.h>
 #include <linux/if_bridge.h>
+#include <linux/if_vlan.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
 #include <linux/of.h>
@@ -63,6 +64,18 @@
 #define RTL960X_LUT_LEARN_OVER_CTRL_REG		0x1c010
 #define   RTL960X_LUT_LEARN_OVER_ACT_MASK(_port)	(0x3 << ((_port) * 2))
 #define   RTL960X_LUT_LEARN_OVER_ACT_FORWARD	0	/* forward, do not learn */
+
+/* Broadcast flooding port mask */
+#define RTL960X_UNKNOWN_BROADCAST_FLOOD	  0x1c028
+
+/* Unknown multicast DA flooding port mask */
+#define RTL960X_UNKNOWN_MULTICAST_FLOOD	  0x1c02c
+
+/* Unknown unicast DA flooding port mask */
+#define RTL960X_UNKNOWN_UNICAST_FLOOD	0x1c030
+
+#define RTL960X_SUPPORTED_BRIDGE_FLAGS \
+		(BR_LEARNING | BR_FLOOD | BR_BCAST_FLOOD)
 
 /* Per port MIB statistics */
 #define RTL960X_STAT_PORT_MIB_BASE		(0x32000)
@@ -125,7 +138,11 @@
 #define RTL960X_STAT_RESET_CONFIG	0x3401c
 #define   STAT_RESET_CMD		BIT(5)
 
+#define RTL960X_ACCEPT_MAX_LEN(x)	(0x11028 + (x) * 4)
+#define   RTL960X_ACCEPT_MAX_LEN_MASK	GENMASK(13, 0)
 #define RTL960X_MAX_PACKET_LENGTH	0x3fff
+/* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
+#define RTL960X_FRAME_OVERHEAD		(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
 
 struct rtl960x_mib_counter {
 	u32 offset;
@@ -516,6 +533,56 @@ static int rtl960x_port_set_learning(struct rtl960x_dsa *priv, int port,
 				  RTL960X_LUT_LRN_LIMITNO_MASK(port), enable);
 }
 
+static int rtl960x_port_set_ucast_flood(struct rtl960x_dsa *priv, int port,
+					bool enable)
+{
+	/* Frames with unknown unicast DA will be flooded to a programmable
+	 * port mask that by default includes all ports. Add or remove
+	 * the specified port from this port mask accordingly.
+	 */
+	return regmap_assign_bits(priv->map, RTL960X_UNKNOWN_UNICAST_FLOOD,
+				  BIT(port), enable);
+}
+
+static int rtl960x_port_set_mcast_flood(struct rtl960x_dsa *priv, int port,
+					bool enable)
+{
+	return regmap_assign_bits(priv->map, RTL960X_UNKNOWN_MULTICAST_FLOOD,
+				  BIT(port), enable);
+}
+
+static int rtl960x_port_set_bcast_flood(struct rtl960x_dsa *priv, int port,
+					bool enable)
+{
+	return regmap_assign_bits(priv->map, RTL960X_UNKNOWN_BROADCAST_FLOOD,
+				  BIT(port), enable);
+}
+
+/**
+ * rtl960x_setup_port_flood_control() - setup default flood control for a port
+ * @priv: rtl960x_dsa pointer
+ * @port: port index
+ *
+ * This function enables flooding for a given port.
+ *
+ * Context: Can sleep.
+ * Return: 0 on success, negative value for failure.
+ */
+static int rtl960x_setup_port_flood_control(struct rtl960x_dsa *priv, int port)
+{
+	int ret;
+
+	ret = rtl960x_port_set_ucast_flood(priv, port, true);
+	if (ret)
+		return ret;
+
+	ret = rtl960x_port_set_mcast_flood(priv, port, true);
+	if (ret)
+		return ret;
+
+	return rtl960x_port_set_bcast_flood(priv, port, true);
+}
+
 static void rtl960x_port_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl960x_dsa *priv = ds->priv;
@@ -594,6 +661,11 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 			return ret;
 
 		ret = rtl960x_port_set_learning(priv, dp->index, false);
+		if (ret)
+			return ret;
+
+		/* Enable all types of flooding */
+		ret = rtl960x_setup_port_flood_control(priv, dp->index);
 		if (ret)
 			return ret;
 
@@ -752,8 +824,12 @@ static int rtl960x_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 					 struct switchdev_brport_flags flags,
 					 struct netlink_ext_ack *extack)
 {
-	/* Flooding follows the hardware defaults (everything is flooded). */
-	if (flags.mask & ~BR_LEARNING)
+	struct rtl960x_dsa *priv = ds->priv;
+
+	dev_dbg(priv->dev, "pre_bridge_flags port:%d flags:%lx supported:%lx\n",
+		port, flags.mask, RTL960X_SUPPORTED_BRIDGE_FLAGS);
+
+	if (flags.mask & ~RTL960X_SUPPORTED_BRIDGE_FLAGS)
 		return -EINVAL;
 
 	return 0;
@@ -764,10 +840,29 @@ static int rtl960x_port_bridge_flags(struct dsa_switch *ds, int port,
 				     struct netlink_ext_ack *extack)
 {
 	struct rtl960x_dsa *priv = ds->priv;
+	bool enable;
+	int ret;
 
-	if (flags.mask & BR_LEARNING)
-		return rtl960x_port_set_learning(priv, port,
-						 !!(flags.val & BR_LEARNING));
+	if (flags.mask & BR_LEARNING) {
+		enable = !!(flags.val & BR_LEARNING);
+		ret = rtl960x_port_set_learning(priv, port, enable);
+		if (ret)
+			return ret;
+	}
+
+	if (flags.mask & BR_FLOOD) {
+		enable = !!(flags.val & BR_FLOOD);
+		ret = rtl960x_port_set_ucast_flood(priv, port, enable);
+		if (ret)
+			return ret;
+	}
+
+	if (flags.mask & BR_BCAST_FLOOD) {
+		enable = !!(flags.val & BR_BCAST_FLOOD);
+		ret = rtl960x_port_set_bcast_flood(priv, port, enable);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }
@@ -824,6 +919,28 @@ rtl960x_dsa_preferred_default_local_cpu_port(struct dsa_switch *ds)
 		return cpu_dp;
 
 	return NULL;
+}
+
+static int rtl960x_port_change_mtu(struct dsa_switch *ds, int port,
+				   int new_mtu)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	int frame_size;
+
+	frame_size = new_mtu + RTL960X_FRAME_OVERHEAD;
+
+	dev_dbg(priv->dev, "port %d changing mtu to %d (frame size: %d)\n",
+		port, new_mtu, frame_size);
+
+	return regmap_update_bits(priv->map, RTL960X_ACCEPT_MAX_LEN(port),
+				  RTL960X_ACCEPT_MAX_LEN_MASK,
+				  FIELD_PREP(RTL960X_ACCEPT_MAX_LEN_MASK,
+					     frame_size));
+}
+
+static int rtl960x_port_max_mtu(struct dsa_switch *ds, int port)
+{
+	return RTL960X_MAX_PACKET_LENGTH - RTL960X_FRAME_OVERHEAD;
 }
 
 static void rtl960x_dsa_mac_config(struct phylink_config *config,
@@ -884,6 +1001,8 @@ static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.get_rmon_stats		= rtl960x_get_rmon_stats,
 	.get_stats64		= rtl960x_get_stats64,
 	.get_pause_stats	= rtl960x_get_pause_stats,
+	.port_change_mtu	= rtl960x_port_change_mtu,
+	.port_max_mtu		= rtl960x_port_max_mtu,
 };
 
 static int rtl960x_dsa_probe(struct platform_device *pdev)

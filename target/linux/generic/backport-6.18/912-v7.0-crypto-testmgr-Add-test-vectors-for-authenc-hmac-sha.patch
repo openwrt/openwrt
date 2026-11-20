@@ -18,7 +18,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
 
 --- a/crypto/testmgr.c
 +++ b/crypto/testmgr.c
-@@ -4221,6 +4221,13 @@ static const struct alg_test_desc alg_te
+@@ -4222,6 +4222,13 @@ static const struct alg_test_desc alg_te
  		.test = alg_test_null,
  		.fips_allowed = 1,
  	}, {
@@ -34,7 +34,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  		.test = alg_test_aead,
 --- a/crypto/testmgr.h
 +++ b/crypto/testmgr.h
-@@ -16303,6 +16303,291 @@ static const struct aead_testvec hmac_sh
+@@ -16628,6 +16628,291 @@ static const struct aead_testvec hmac_sh
  	},
  };
  

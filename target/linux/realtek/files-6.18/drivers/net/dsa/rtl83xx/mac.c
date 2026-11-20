@@ -726,9 +726,9 @@ int otto_mac_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
 	if (priv->r->mac_max_len_reg) {
 		frame_size = new_mtu + RTLDSA_FRAME_OVERHEAD;
 
-		sw_w32_mask(RTLDSA_MAC_MAX_LEN_MASK,
-			    RTLDSA_MAC_MAX_LEN_VAL(frame_size),
-			    priv->r->mac_max_len_reg(port));
+		regmap_write_bits(priv->map, priv->r->mac_max_len_reg(port),
+				  RTLDSA_MAC_MAX_LEN_MASK,
+				  RTLDSA_MAC_MAX_LEN_VAL(frame_size));
 
 		return 0;
 	}
@@ -736,13 +736,13 @@ int otto_mac_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
 	/* One register for all ports, so it has to fit the largest of them */
 	frame_size = otto_mac_largest_mtu(ds, port, new_mtu) + RTLDSA_FRAME_OVERHEAD;
 
-	sw_w32_mask(RTLDSA_MAC_MAX_LEN_MASK, RTLDSA_MAC_MAX_LEN_VAL(frame_size),
-		    priv->r->mac_max_len_ctrl);
+	regmap_write_bits(priv->map, priv->r->mac_max_len_ctrl,
+			  RTLDSA_MAC_MAX_LEN_MASK, RTLDSA_MAC_MAX_LEN_VAL(frame_size));
 
 	if (priv->r->mac_max_len_ctrl_dup)
-		sw_w32_mask(RTLDSA_MAC_MAX_LEN_MASK,
-			    RTLDSA_MAC_MAX_LEN_VAL(frame_size),
-			    priv->r->mac_max_len_ctrl_dup);
+		regmap_write_bits(priv->map, priv->r->mac_max_len_ctrl_dup,
+				  RTLDSA_MAC_MAX_LEN_MASK,
+				  RTLDSA_MAC_MAX_LEN_VAL(frame_size));
 
 	return 0;
 }

@@ -228,6 +228,16 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	proto_init_update "$ifname" 1
+	[ "$iptype" != "ipv6" ] && {
+		for server in $(_proto_mbim_get_field ipv4dnsserver "$mbimconfig"); do
+			proto_add_dns_server "$server"
+		done
+	}
+	[ "$iptype" != "ipv4" ] && {
+		for server in $(_proto_mbim_get_field ipv6dnsserver "$mbimconfig"); do
+			proto_add_dns_server "$server"
+		done
+	}
 	proto_send_update "$interface"
 
 	[ -z "$dhcp" ] && dhcp="auto"
@@ -252,14 +262,6 @@ _proto_mbim_setup() {
 			echo "mbim[$$]" "Starting DHCP on $ifname"
 			json_add_string proto "dhcp"
 		fi
-
-		[ "$dhcp" != 1 ] || {
-			json_add_array dns
-			for server in $(_proto_mbim_get_field ipv4dnsserver "$mbimconfig"); do
-				json_add_string "" "$server"
-			done
-			json_close_array
-		}
 
 		proto_add_dynamic_defaults
 		[ -n "$zone" ] && json_add_string zone "$zone"
@@ -297,14 +299,6 @@ _proto_mbim_setup() {
 			[ "$delegate" = "0" ] && json_add_boolean delegate "0"
 			[ "$sourcefilter" = "0" ] && json_add_boolean sourcefilter "0"
 		fi
-
-		[ "$dhcpv6" != 1 ] || {
-			json_add_array dns
-			for server in $(_proto_mbim_get_field ipv6dnsserver "$mbimconfig"); do
-				json_add_string "" "$server"
-			done
-			json_close_array
-		}
 
 		proto_add_dynamic_defaults
 		[ -n "$zone" ] && json_add_string zone "$zone"

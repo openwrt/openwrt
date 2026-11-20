@@ -82,7 +82,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				     struct ieee80211_sta *sta,
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -345,6 +345,7 @@ struct ieee80211_if_ap {
+@@ -356,6 +356,7 @@ struct ieee80211_if_ap {
  	/* learned MSCS entries of every station of this BSS, and its VLANs */
  	struct rhashtable flow_tbl;
  	struct wiphy_delayed_work flow_gc_work;

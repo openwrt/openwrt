@@ -1,4 +1,4 @@
-From 65d2dbd28ee8224c0ad9bf5f0a755963efd7b4cb Mon Sep 17 00:00:00 2001
+From 8a5717ca028836855349fb5bc293ba0d706bd84e Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Wed, 28 Oct 2026 09:56:08 +0000
 Subject: [PATCH] media: rockchip: rkisp2: Add the ISPP uapi blocks
@@ -8,11 +8,19 @@ same V4L2 ISP extensible block format as the ISP2, with the ISPP blocks
 added to the Rockchip uapi header.
 
 Add the ISPP params blocks, one per module (TNR, NR, SHP, FEC, ORB),
-laid out with natural alignment and explicit padding, and the ISPP
-stats blocks (ORB feature points and the FEC motion mesh). The blocks
-are carried in the standard v4l2_isp_buffer envelope of
-V4L2_META_FMT_RKISP2_PARAMS and V4L2_META_FMT_RKISP2_STATS, so no new
-meta format is needed.
+laid out with natural alignment and explicit padding, and the ORB
+feature point stats block. The blocks are carried in the standard
+v4l2_isp_buffer envelope of V4L2_META_FMT_RKISP2_PARAMS and
+V4L2_META_FMT_RKISP2_STATS, so no new meta format is needed for them.
+
+The FEC module corrects fisheye and lens distortion through a mesh
+that gives the source coordinate of every vertex of a grid over the
+output picture. The mesh is far too large for a params block and
+changes rarely, so it travels on its own metadata output video device
+as V4L2_META_FMT_RKISPP_FEC_MESH: struct rkispp_fec_mesh heads each
+buffer with the picture size, the grid density and the offsets of the
+four coordinate tables, and the header documents the grid geometry a
+generator has to follow.
 
 The stand-alone FEC mem2mem node takes its requests through a private
 ioctl, so add the rkispp_fec_in_out request structure with it.
@@ -20,9 +28,78 @@ ioctl, so add the rkispp_fec_in_out request structure with it.
 Assisted-by: LLM
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- .../uapi/linux/media/rockchip/rkisp2-config.h | 615 +++++++++++++++++-
- 1 file changed, 614 insertions(+), 1 deletion(-)
+ .../userspace-api/media/v4l/meta-formats.rst  |   1 +
+ .../media/v4l/metafmt-rkispp-fec-mesh.rst     |  39 ++
+ drivers/media/v4l2-core/v4l2-ioctl.c          |   3 +
+ .../uapi/linux/media/rockchip/rkisp2-config.h | 623 +++++++++++++++++-
+ include/uapi/linux/videodev2.h                |   2 +
+ 5 files changed, 667 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/userspace-api/media/v4l/metafmt-rkispp-fec-mesh.rst
 
+--- a/Documentation/userspace-api/media/v4l/meta-formats.rst
++++ b/Documentation/userspace-api/media/v4l/meta-formats.rst
+@@ -20,6 +20,7 @@ These formats are used for the :ref:`met
+     metafmt-pisp-fe
+     metafmt-rkisp1
+     metafmt-rkisp2
++    metafmt-rkispp-fec-mesh
+     metafmt-uvc
+     metafmt-uvc-msxu-1-5
+     metafmt-vivid
+--- /dev/null
++++ b/Documentation/userspace-api/media/v4l/metafmt-rkispp-fec-mesh.rst
+@@ -0,0 +1,39 @@
++.. SPDX-License-Identifier: GPL-2.0
++
++.. _v4l2-meta-fmt-rkispp-fec-mesh:
++
++****************************************
++V4L2_META_FMT_RKISPP_FEC_MESH ('RKPM')
++****************************************
++
++FEC Correction Mesh
++===================
++
++The FEC module of the Rockchip ISPP corrects fisheye and lens distortion
++by backward mapping through a mesh: for every vertex of a grid over the
++output picture the mesh holds the source position the engine samples.
++Userspace generates the mesh for the lens and queues it on the
++``rkispp_fec_mesh`` metadata output video node, using the
++:c:type:`v4l2_meta_format` interface.
++
++Each buffer starts with :c:type:`rkispp_fec_mesh`, which names the
++picture size and grid density the mesh was generated for and the
++offsets of the four tables (x integer, x fraction, y integer, y
++fraction) that follow in the same buffer. The driver checks the header
++against the ISPP output format and the buffer size when the buffer is
++prepared, copies the tables into the engine's own memory when the
++buffer is queued, and returns the buffer at that point. The copied mesh
++replaces the previous one from the next frame on. The FEC module itself
++is enabled through the ``RKISPP_PARAMS_BLOCK_FEC`` parameters block,
++which needs a mesh to have been queued first.
++
++The FEC module is the slowest stage of the ISPP. On the RV1126 it
++samples the source picture at about 134 megapixels per second, a rate
++bound by the latency of its source reads rather than by the core clock:
++a 1920x1080 picture takes about 16 ms, a 2688x1520 picture about 30 ms
++and a 3856x2192 picture about 62 ms. With the FEC module enabled the
++ISPP therefore delivers a 3856x2192 picture at about 15 frames per
++second.
++
++The grid geometry and the table layout are described with
++:c:type:`rkispp_fec_mesh` in the rkisp2 uAPI header.
+--- a/drivers/media/v4l2-core/v4l2-ioctl.c
++++ b/drivers/media/v4l2-core/v4l2-ioctl.c
+@@ -1469,6 +1469,9 @@ static void v4l_fill_fmtdesc(struct v4l2
+ 	case V4L2_META_FMT_RK_ISP1_EXT_PARAMS:	descr = "Rockchip ISP1 Ext 3A Params"; break;
+ 	case V4L2_META_FMT_RKISP2_PARAMS:	descr = "Rockchip ISP2 3A Parameters"; break;
+ 	case V4L2_META_FMT_RKISP2_STATS:	descr = "Rockchip ISP2 3A Statistics"; break;
++	case V4L2_META_FMT_RKISPP_FEC_MESH:
++		descr = "Rockchip ISPP FEC Mesh";
++		break;
+ 	case V4L2_META_FMT_C3ISP_PARAMS:	descr = "Amlogic C3 ISP Parameters"; break;
+ 	case V4L2_META_FMT_C3ISP_STATS:		descr = "Amlogic C3 ISP Statistics"; break;
+ 	case V4L2_PIX_FMT_NV12_8L128:	descr = "NV12 (8x128 Linear)"; break;
 --- a/include/uapi/linux/media/rockchip/rkisp2-config.h
 +++ b/include/uapi/linux/media/rockchip/rkisp2-config.h
 @@ -1,6 +1,6 @@
@@ -41,7 +118,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #include <linux/media/v4l2-isp.h>
  
-@@ -672,4 +673,616 @@ struct rkisp2_params_awb_meas {
+@@ -674,4 +675,624 @@ struct rkisp2_params_awb_meas {
  	sizeof(struct rkisp2_params_hist_big) * 3		+\
  	sizeof(struct rkisp2_params_awb_meas))
  
@@ -65,14 +142,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +#define RKISPP_ORB_BRIEF_NUM			15
 +#define RKISPP_ORB_DATA_NUM			10000
-+
-+/*
-+ * Maximum number of FEC mesh points the driver accepts per frame. This
-+ * covers the densest mesh grid (16 pixel vertex spacing) at the maximum
-+ * supported input resolution and matches the 131072 point mesh buffers of
-+ * the ISPP FEC engine.
-+ */
-+#define RKISPP_FEC_MESH_POINTS_MAX		131072
 +
 +/* ISPP TNR curve and table sizes */
 +#define RKISPP_TNR_SIGMA_CURVE_SIZE		17
@@ -129,7 +198,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * @RKISPP_PARAMS_BLOCK_TNR: Temporal noise reduction
 + * @RKISPP_PARAMS_BLOCK_NR: Noise reduction (luma and chroma)
 + * @RKISPP_PARAMS_BLOCK_SHP: Sharpening
-+ * @RKISPP_PARAMS_BLOCK_FEC: FEC frame estimation (motion mesh)
++ * @RKISPP_PARAMS_BLOCK_FEC: FEC fisheye and lens distortion correction
 + * @RKISPP_PARAMS_BLOCK_ORB: ORB feature detection
 + */
 +enum rkispp_params_block_type {
@@ -144,11 +213,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + * enum rkispp_stats_block_type - Rockchip ISPP extensible stats block types
 + *
 + * @RKISPP_STATS_BLOCK_ORB: ORB feature points measured in the frame
-+ * @RKISPP_STATS_BLOCK_FEC_MESH: FEC mesh measured in the frame
 + */
 +enum rkispp_stats_block_type {
 +	RKISPP_STATS_BLOCK_ORB,
-+	RKISPP_STATS_BLOCK_FEC_MESH,
 +};
 +
 +/**
@@ -483,34 +550,25 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +/**
 + * struct rkispp_params_fec - Rockchip ISPP params FEC config
 + *
-+ * Rockchip ISPP parameters FEC (frame estimation) motion mesh configuration
-+ * block. Identified by :c:type:`RKISPP_PARAMS_BLOCK_FEC`.
++ * Rockchip ISPP parameters FEC (fisheye and lens distortion correction)
++ * configuration block. Identified by :c:type:`RKISPP_PARAMS_BLOCK_FEC`.
 + *
-+ * The FEC engine measures a mesh of motion vectors between consecutive
-+ * frames across the pipeline; the mesh of the measured frame is reported
-+ * in the RKISPP_STATS_BLOCK_FEC_MESH stats block.
++ * The FEC engine remaps the picture through the correction mesh queued on
++ * the rkispp_fec_mesh video device (struct rkispp_fec_mesh). The module
++ * can only be enabled once a mesh has been queued.
 + *
 + * @header: The ISPP parameters block header
-+ * @mesh_density: 0 for the dense mesh grid (16 pixel vertex spacing,
-+ *		 inputs up to 1920 pixels wide), 1 for the coarse mesh grid
-+ *		 (32 pixel vertex spacing, wider inputs)
-+ * @crop_en: Enable the measurement crop window below
++ * @crop_en: Enable the output crop window below
 + * @reserved: padding
-+ * @crop_width: Measurement crop window width in pixels (16 bits)
-+ * @crop_height: Measurement crop window height in pixels (16 bits)
-+ * @mesh_size: Number of mesh points to measure for this frame, must not
-+ *		exceed the grid size of the input geometry
-+ * @reserved1: padding
++ * @crop_width: Output crop window width in pixels (16 bits)
++ * @crop_height: Output crop window height in pixels (16 bits)
 + */
 +struct rkispp_params_fec {
 +	struct v4l2_isp_block_header header;
-+	__u8 mesh_density;
 +	__u8 crop_en;
-+	__u8 reserved[2];
++	__u8 reserved[3];
 +	__u16 crop_width;
 +	__u16 crop_height;
-+	__u32 mesh_size;
-+	__u8 reserved1[4];
 +} __attribute__((aligned(8)));
 +
 +/**
@@ -578,52 +636,79 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	struct rkispp_stats_orb_point points[RKISPP_ORB_DATA_NUM];
 +} __attribute__((aligned(8)));
 +
-+/**
-+ * struct rkispp_stats_fec_mesh - Rockchip ISPP FEC mesh stats
-+ *
-+ * Rockchip ISPP statistics FEC mesh block.
-+ * Identified by :c:type:`RKISPP_STATS_BLOCK_FEC_MESH`.
-+ *
-+ * The frame the mesh belongs to is given by the buffer sequence of the
-+ * stats buffer carrying this block.
-+ *
-+ * @header: The ISPP stats block header
-+ * @mesh_width: Mesh grid width in vertices of this frame
-+ * @mesh_height: Mesh grid height in vertices of this frame
-+ * @points: Number of valid mesh points
-+ * @xint: Mesh point x coordinates, integer part in pixels (16 bits)
-+ * @xfra: Mesh point x coordinates, fractional part (8 bits)
-+ * @yint: Mesh point y coordinates, integer part in pixels (16 bits)
-+ * @yfra: Mesh point y coordinates, fractional part (8 bits)
-+ *
-+ * The arrays hold one entry per mesh point, only the first @points
-+ * entries are valid.
-+ */
-+struct rkispp_stats_fec_mesh {
-+	struct v4l2_isp_block_header header;
-+	__u16 mesh_width;
-+	__u16 mesh_height;
-+	__u32 points;
-+	__u16 xint[RKISPP_FEC_MESH_POINTS_MAX];
-+	__u8 xfra[RKISPP_FEC_MESH_POINTS_MAX];
-+	__u16 yint[RKISPP_FEC_MESH_POINTS_MAX];
-+	__u8 yfra[RKISPP_FEC_MESH_POINTS_MAX];
-+} __attribute__((aligned(8)));
++#define RKISPP_STATS_MAX_SIZE sizeof(struct rkispp_stats_orb)
 +
-+#define RKISPP_STATS_MAX_SIZE				\
-+	(sizeof(struct rkispp_stats_orb)			+\
-+	sizeof(struct rkispp_stats_fec_mesh))
++/**
++ * enum rkispp_fec_mesh_density - Rockchip ISPP FEC mesh grid density
++ *
++ * @RKISPP_FEC_MESH_DENSE: one vertex every 16 pixels and 8 lines, for
++ *	pictures up to 1920 pixels wide
++ * @RKISPP_FEC_MESH_COARSE: one vertex every 32 pixels and 16 lines, the
++ *	only density for pictures wider than 1920 pixels
++ */
++enum rkispp_fec_mesh_density {
++	RKISPP_FEC_MESH_DENSE,
++	RKISPP_FEC_MESH_COARSE,
++};
++
++/**
++ * struct rkispp_fec_mesh - Rockchip ISPP FEC correction mesh
++ *
++ * Layout of a buffer of the rkispp_fec_mesh metadata output video device
++ * (V4L2_META_FMT_RKISPP_FEC_MESH). The FEC engine corrects the picture by
++ * backward mapping: for every vertex of a grid over the output picture
++ * the mesh holds the source position the engine samples, as an integer
++ * table (pixels) and a fraction table (1/256 pixel) for x and for y. The
++ * positions must stay between 1 and width - 3 and between 1 and
++ * height - 3; a vertex outside that range stalls the engine. A mesh
++ * queued on the device replaces the one in use from the next frame on,
++ * and the buffer is returned once the engine holds its own copy.
++ *
++ * The grid has one vertex every 16 pixels and 8 lines (dense) or every
++ * 32 pixels and 16 lines (coarse) over the picture size rounded up to a
++ * multiple of 32, walked in strips of 128 lines: W / 16 + 1 (dense) or
++ * W / 32 + 1 (coarse) vertices per row, 17 (dense) or 9 (coarse) rows per
++ * strip with the boundary row shared by two strips present in both, and
++ * L / 8 + 1 or L / 16 + 1 rows for the L lines of the last strip. Within a
++ * strip the tables hold the vertices column by column, the rows of one
++ * column consecutively, and the strips follow each other. @mesh_size is
++ * the resulting vertex count.
++ *
++ * @width: Width of the picture the mesh was generated for, in pixels;
++ *	must match the ISPP output format
++ * @height: Height of that picture in pixels
++ * @density: Grid density, from enum rkispp_fec_mesh_density
++ * @reserved: padding
++ * @mesh_size: Number of vertices in each table
++ * @xint_offset: Byte offset of the x integer table (2 bytes per vertex)
++ *	from the start of the buffer, a multiple of 16
++ * @xfra_offset: Byte offset of the x fraction table (1 byte per vertex)
++ * @yint_offset: Byte offset of the y integer table (2 bytes per vertex)
++ * @yfra_offset: Byte offset of the y fraction table (1 byte per vertex)
++ */
++struct rkispp_fec_mesh {
++	__u32 width;
++	__u32 height;
++	__u8 density;
++	__u8 reserved[3];
++	__u32 mesh_size;
++	__u32 xint_offset;
++	__u32 xfra_offset;
++	__u32 yint_offset;
++	__u32 yfra_offset;
++};
 +
 +/*
-+ * Rockchip ISPP stand-alone FEC (frame estimation) mem2mem node.
++ * Rockchip ISPP stand-alone FEC mem2mem node.
 + */
 +
 +/**
 + * struct rkispp_fec_in_out - Rockchip ISPP FEC m2m request
 + *
-+ * One request measures the motion mesh between two consecutive frames
-+ * held in the in picture and reports the result in the out picture and
-+ * the four mesh arrays.
++ * One request remaps the in picture through the mesh held in the four
++ * mesh arrays into the out picture. The arrays follow the layout given
++ * for struct rkispp_fec_mesh, with the density chosen by the picture
++ * width.
 + *
 + * @width: Picture width in pixels
 + * @height: Picture height in pixels
@@ -633,13 +718,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 + *		chroma plane right after the full luma plane)
 + * @out_pic_fd: dma-buf fd of the out picture (same layout)
 + * @mesh_xint_fd: dma-buf fd of the mesh x integer array (2 bytes per
-+ *		mesh point, at least cal_fec_mesh() * 2 bytes)
++ *		vertex)
 + * @mesh_xfra_fd: dma-buf fd of the mesh x fraction array (1 byte per
-+ *		mesh point)
++ *		vertex)
 + * @mesh_yint_fd: dma-buf fd of the mesh y integer array (2 bytes per
-+ *		mesh point, at least cal_fec_mesh() * 2 bytes)
++ *		vertex)
 + * @mesh_yfra_fd: dma-buf fd of the mesh y fraction array (1 byte per
-+ *		mesh point)
++ *		vertex)
 + */
 +struct rkispp_fec_in_out {
 +	__u32 width;
@@ -658,3 +743,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	_IOW('V', BASE_VIDIOC_PRIVATE + 10, struct rkispp_fec_in_out)
 +
  #endif /* _UAPI_RKISP2_CONFIG_H */
+--- a/include/uapi/linux/videodev2.h
++++ b/include/uapi/linux/videodev2.h
+@@ -878,6 +878,8 @@ struct v4l2_pix_format {
+ /* Vendor specific - used for RKISP2 camera sub-system */
+ #define V4L2_META_FMT_RKISP2_PARAMS	v4l2_fourcc('R', 'K', '2', 'P') /* Rockchip ISP2 Parameters */
+ #define V4L2_META_FMT_RKISP2_STATS	v4l2_fourcc('R', 'K', '2', 'S') /* Rockchip ISP2 3A Statistics */
++#define V4L2_META_FMT_RKISPP_FEC_MESH \
++	v4l2_fourcc('R', 'K', 'P', 'M') /* Rockchip ISPP FEC Mesh */
+ 
+ /* Vendor specific - used for C3_ISP */
+ #define V4L2_META_FMT_C3ISP_PARAMS	v4l2_fourcc('C', '3', 'P', 'M') /* Amlogic C3 ISP Parameters */

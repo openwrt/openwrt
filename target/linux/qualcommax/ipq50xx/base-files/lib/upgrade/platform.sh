@@ -242,6 +242,13 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
+	liteon,wpx8324)
+		CI_UBIPART="rootfs"
+		remove_oem_ubi_volume ubi_rootfs
+		remove_oem_ubi_volume bt_fw
+		remove_oem_ubi_volume wifi_fw
+		nand_do_upgrade "$1"
+		;;
 	mercusys,mr80x-v2)
 		# A/B: write the inactive slot, then point tp_boot_idx at it.
 		# tp_boot_idx=0 boots "rootfs", 1 boots "rootfs_1". primaryboot
@@ -311,6 +318,13 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume tp_data
 		nand_do_upgrade "$1"
 		;;
+	ubnt,unifi-6-pro)
+		# OpenWrt boots from slot 1, slot 0 (0:HLOS) keeps the
+		# signed stock image
+		CI_KERNPART="0:HLOS_1"
+		CI_ROOTPART="log"
+		emmc_do_upgrade "$1"
+		;;
 	wallys,dr5018s)
 		CI_UBIPART="rootfs"
 		remove_oem_ubi_volume debug
@@ -354,6 +368,14 @@ platform_do_upgrade() {
 		;;
 	*)
 		default_do_upgrade "$1"
+		;;
+	esac
+}
+
+platform_copy_config() {
+	case "$(board_name)" in
+	ubnt,unifi-6-pro)
+		emmc_copy_config
 		;;
 	esac
 }

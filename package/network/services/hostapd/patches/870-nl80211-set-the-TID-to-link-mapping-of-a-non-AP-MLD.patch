@@ -219,7 +219,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @NL80211_CMD_ASSOC_MLO_RECONF: For a non-AP MLD station, request to
   *      add/remove links to/from the association. To indicate link
 @@ -7416,6 +7421,11 @@ enum nl80211_feature_flags {
-  *	that stay again after the event. The expiry comes before the TBTT at
+  *	after the event. The expiry comes before the TBTT at
   *	which the timer reaches 0, and the removed links keep running until
   *	user space stops them.
 + * @NL80211_EXT_FEATURE_AP_NEG_TTLM: The driver applies the TID-to-link

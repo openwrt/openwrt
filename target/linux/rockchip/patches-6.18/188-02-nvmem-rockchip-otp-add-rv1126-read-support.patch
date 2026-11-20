@@ -18,7 +18,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/nvmem/rockchip-otp.c
 +++ b/drivers/nvmem/rockchip-otp.c
-@@ -66,6 +66,18 @@
+@@ -67,6 +67,18 @@
  #define RK3588_AUTO_EN			BIT(0)
  #define RK3588_RD_DONE			BIT(1)
  
@@ -37,7 +37,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  struct rockchip_data {
  	int size;
  	int read_offset;
-@@ -263,6 +275,50 @@ static int rk3588_otp_read(void *context
+@@ -266,6 +278,50 @@ static int rk3588_otp_read(void *context
  	return ret;
  }
  
@@ -88,7 +88,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rockchip_otp_read(void *context, unsigned int offset,
  			     void *val, size_t bytes)
  {
-@@ -379,6 +435,17 @@ static const struct rockchip_data rk3588
+@@ -387,6 +443,17 @@ static const struct rockchip_data rk3588
  	.reg_read = rk3588_otp_read,
  };
  
@@ -106,7 +106,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const struct of_device_id rockchip_otp_match[] = {
  	{
  		.compatible = "rockchip,px30-otp",
-@@ -408,6 +475,10 @@ static const struct of_device_id rockchi
+@@ -416,6 +483,10 @@ static const struct of_device_id rockchi
  		.compatible = "rockchip,rk3588-otp",
  		.data = &rk3588_data,
  	},
@@ -117,7 +117,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	{ /* sentinel */ },
  };
  MODULE_DEVICE_TABLE(of, rockchip_otp_match);
-@@ -448,7 +519,7 @@ static int rockchip_otp_probe(struct pla
+@@ -456,7 +527,7 @@ static int rockchip_otp_probe(struct pla
  	if (ret)
  		return dev_err_probe(dev, ret, "failed to get clocks\n");
  

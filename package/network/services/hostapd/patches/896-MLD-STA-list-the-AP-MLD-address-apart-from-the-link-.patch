@@ -1,0 +1,353 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 30 Oct 2026 03:00:00 +0100
+Subject: [PATCH] MLD STA: list the AP MLD address apart from the link BSSIDs
+
+With the SME of wpa_supplicant and MLO, wpa_s->bssid holds the AP MLD
+address. A disconnection, an
+authentication timeout after the association, a PSK mismatch, TKIP
+countermeasures and a deauthentication imminent notice of Hotspot 2.0
+put that address on the BSSID ignore list. IEEE Std 802.11be-2024
+35.3.2 permits an AP MLD address that equals the address of one
+affiliated AP, for example where the configured BSSID of a link equals
+the MLD address. The entry then also excludes that link: the BSS
+selection skips it as the association link, and
+wpa_bss_get_usable_links() leaves it out of the next association.
+
+Give the ignore list a separate entry type for the AP MLD address. The
+callers above list wpa_s->bssid of an MLO connection with that type,
+and the cancel of the authentication timeout removes it. The BSS
+selection and wpa_bss_get_usable_links() check BSSID entries only, so
+an AP MLD entry excludes no BSS and no link. It still gives the count
+for the fast reconnection, the back-off and the temporary disable of
+the network. A link that failed stays on the list under its own BSSID.
+BSSID_IGNORE marks an AP MLD entry with "ap_mld".
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/wpa_supplicant/bssid_ignore.c
++++ b/wpa_supplicant/bssid_ignore.c
+@@ -13,13 +13,41 @@
+ #include "bssid_ignore.h"
+ 
+ /**
+- * wpa_bssid_ignore_get - Get the ignore list entry for a BSSID
++ * wpa_bssid_ignore_type_of - Get the ignore list entry type of an address
+  * @wpa_s: Pointer to wpa_supplicant data
+- * @bssid: BSSID
+- * Returns: Matching entry for the BSSID or %NULL if not found
++ * @bssid: Address to be listed
++ * Returns: %WPA_BSSID_IGNORE_AP_MLD for wpa_s->bssid of an MLO connection,
++ * which holds the AP MLD address, %WPA_BSSID_IGNORE_BSS otherwise
++ *
++ * The AP MLD address can equal the BSSID of one of its links. A failure of
++ * the connection to the AP MLD must not exclude that link.
+  */
+-struct wpa_bssid_ignore * wpa_bssid_ignore_get(struct wpa_supplicant *wpa_s,
+-					       const u8 *bssid)
++enum wpa_bssid_ignore_type
++wpa_bssid_ignore_type_of(struct wpa_supplicant *wpa_s, const u8 *bssid)
++{
++	if (wpa_s->valid_links && bssid == wpa_s->bssid &&
++	    ether_addr_equal(bssid, wpa_s->ap_mld_addr))
++		return WPA_BSSID_IGNORE_AP_MLD;
++	return WPA_BSSID_IGNORE_BSS;
++}
++
++
++const char * wpa_bssid_ignore_type_txt(enum wpa_bssid_ignore_type type)
++{
++	return type == WPA_BSSID_IGNORE_AP_MLD ? " ap_mld" : "";
++}
++
++
++/**
++ * wpa_bssid_ignore_get_type - Get the ignore list entry of an address
++ * @wpa_s: Pointer to wpa_supplicant data
++ * @bssid: BSSID or AP MLD address
++ * @type: Entry type
++ * Returns: Matching entry or %NULL if not found
++ */
++struct wpa_bssid_ignore *
++wpa_bssid_ignore_get_type(struct wpa_supplicant *wpa_s, const u8 *bssid,
++			  enum wpa_bssid_ignore_type type)
+ {
+ 	struct wpa_bssid_ignore *e;
+ 
+@@ -37,7 +65,7 @@ struct wpa_bssid_ignore * wpa_bssid_igno
+ 
+ 	e = wpa_s->bssid_ignore;
+ 	while (e) {
+-		if (ether_addr_equal(e->bssid, bssid))
++		if (e->type == type && ether_addr_equal(e->bssid, bssid))
+ 			return e;
+ 		e = e->next;
+ 	}
+@@ -47,6 +75,19 @@ struct wpa_bssid_ignore * wpa_bssid_igno
+ 
+ 
+ /**
++ * wpa_bssid_ignore_get - Get the ignore list entry for a BSSID
++ * @wpa_s: Pointer to wpa_supplicant data
++ * @bssid: BSSID
++ * Returns: Matching entry for the BSSID or %NULL if not found
++ */
++struct wpa_bssid_ignore * wpa_bssid_ignore_get(struct wpa_supplicant *wpa_s,
++					       const u8 *bssid)
++{
++	return wpa_bssid_ignore_get_type(wpa_s, bssid, WPA_BSSID_IGNORE_BSS);
++}
++
++
++/**
+  * wpa_bssid_ignore_add - Add an BSSID to the ignore list
+  * @wpa_s: Pointer to wpa_supplicant data
+  * @bssid: BSSID to be added to the ignore list
+@@ -64,13 +105,32 @@ struct wpa_bssid_ignore * wpa_bssid_igno
+  */
+ int wpa_bssid_ignore_add(struct wpa_supplicant *wpa_s, const u8 *bssid)
+ {
++	return wpa_bssid_ignore_add_type(wpa_s, bssid, WPA_BSSID_IGNORE_BSS);
++}
++
++
++/**
++ * wpa_bssid_ignore_add_type - Add an address of a given type to the ignore list
++ * @wpa_s: Pointer to wpa_supplicant data
++ * @bssid: BSSID or AP MLD address to be added to the ignore list
++ * @type: Entry type
++ * Returns: Current ignore list count on success, -1 on failure
++ *
++ * An entry of type %WPA_BSSID_IGNORE_AP_MLD counts the failures of the
++ * connection to an AP MLD. It does not exclude a BSS from the selection or
++ * a link from an association, also where the AP MLD address equals the BSSID
++ * of one of its links.
++ */
++int wpa_bssid_ignore_add_type(struct wpa_supplicant *wpa_s, const u8 *bssid,
++			      enum wpa_bssid_ignore_type type)
++{
+ 	struct wpa_bssid_ignore *e;
+ 	struct os_reltime now;
+ 
+ 	if (wpa_s == NULL || bssid == NULL)
+ 		return -1;
+ 
+-	e = wpa_bssid_ignore_get(wpa_s, bssid);
++	e = wpa_bssid_ignore_get_type(wpa_s, bssid, type);
+ 	os_get_reltime(&now);
+ 	if (e) {
+ 		e->start = now;
+@@ -86,8 +146,9 @@ int wpa_bssid_ignore_add(struct wpa_supp
+ 		else
+ 			e->timeout_secs = 10;
+ 		wpa_msg(wpa_s, MSG_INFO, "BSSID " MACSTR
+-			" ignore list count incremented to %d, ignoring for %d seconds",
+-			MAC2STR(bssid), e->count, e->timeout_secs);
++			"%s ignore list count incremented to %d, ignoring for %d seconds",
++			MAC2STR(bssid), wpa_bssid_ignore_type_txt(type),
++			e->count, e->timeout_secs);
+ 		return e->count;
+ 	}
+ 
+@@ -95,14 +156,16 @@ int wpa_bssid_ignore_add(struct wpa_supp
+ 	if (e == NULL)
+ 		return -1;
+ 	os_memcpy(e->bssid, bssid, ETH_ALEN);
++	e->type = type;
+ 	e->count = 1;
+ 	e->timeout_secs = 10;
+ 	e->start = now;
+ 	e->next = wpa_s->bssid_ignore;
+ 	wpa_s->bssid_ignore = e;
+ 	wpa_msg(wpa_s, MSG_INFO, "Added BSSID " MACSTR
+-		" into ignore list, ignoring for %d seconds",
+-		MAC2STR(bssid), e->timeout_secs);
++		"%s into ignore list, ignoring for %d seconds",
++		MAC2STR(bssid), wpa_bssid_ignore_type_txt(type),
++		e->timeout_secs);
+ 
+ 	return e->count;
+ }
+@@ -116,6 +179,20 @@ int wpa_bssid_ignore_add(struct wpa_supp
+  */
+ int wpa_bssid_ignore_del(struct wpa_supplicant *wpa_s, const u8 *bssid)
+ {
++	return wpa_bssid_ignore_del_type(wpa_s, bssid, WPA_BSSID_IGNORE_BSS);
++}
++
++
++/**
++ * wpa_bssid_ignore_del_type - Remove an entry of a given type from the list
++ * @wpa_s: Pointer to wpa_supplicant data
++ * @bssid: BSSID or AP MLD address to be removed from the ignore list
++ * @type: Entry type
++ * Returns: 0 on success, -1 on failure
++ */
++int wpa_bssid_ignore_del_type(struct wpa_supplicant *wpa_s, const u8 *bssid,
++			      enum wpa_bssid_ignore_type type)
++{
+ 	struct wpa_bssid_ignore *e, *prev = NULL;
+ 
+ 	if (wpa_s == NULL || bssid == NULL)
+@@ -123,14 +200,15 @@ int wpa_bssid_ignore_del(struct wpa_supp
+ 
+ 	e = wpa_s->bssid_ignore;
+ 	while (e) {
+-		if (ether_addr_equal(e->bssid, bssid)) {
++		if (e->type == type && ether_addr_equal(e->bssid, bssid)) {
+ 			if (prev == NULL) {
+ 				wpa_s->bssid_ignore = e->next;
+ 			} else {
+ 				prev->next = e->next;
+ 			}
+ 			wpa_msg(wpa_s, MSG_INFO, "Removed BSSID " MACSTR
+-				" from ignore list", MAC2STR(bssid));
++				"%s from ignore list", MAC2STR(bssid),
++				wpa_bssid_ignore_type_txt(type));
+ 			os_free(e);
+ 			return 0;
+ 		}
+@@ -176,7 +254,8 @@ void wpa_bssid_ignore_clear(struct wpa_s
+ 		prev = e;
+ 		e = e->next;
+ 		wpa_msg(wpa_s, MSG_INFO, "Removed BSSID " MACSTR
+-			" from ignore list (clear)", MAC2STR(prev->bssid));
++			"%s from ignore list (clear)", MAC2STR(prev->bssid),
++			wpa_bssid_ignore_type_txt(prev->type));
+ 		os_free(prev);
+ 	}
+ }
+@@ -210,8 +289,9 @@ void wpa_bssid_ignore_update(struct wpa_
+ 				e = wpa_s->bssid_ignore;
+ 			}
+ 			wpa_msg(wpa_s, MSG_INFO, "Removed BSSID " MACSTR
+-				" from ignore list (expired)",
+-				MAC2STR(to_delete->bssid));
++				"%s from ignore list (expired)",
++				MAC2STR(to_delete->bssid),
++				wpa_bssid_ignore_type_txt(to_delete->type));
+ 			os_free(to_delete);
+ 		} else {
+ 			prev = e;
+--- a/wpa_supplicant/bssid_ignore.h
++++ b/wpa_supplicant/bssid_ignore.h
+@@ -9,9 +9,15 @@
+ #ifndef BSSID_IGNORE_H
+ #define BSSID_IGNORE_H
+ 
++enum wpa_bssid_ignore_type {
++	WPA_BSSID_IGNORE_BSS,
++	WPA_BSSID_IGNORE_AP_MLD,
++};
++
+ struct wpa_bssid_ignore {
+ 	struct wpa_bssid_ignore *next;
+ 	u8 bssid[ETH_ALEN];
++	enum wpa_bssid_ignore_type type;
+ 	int count;
+ 	/* Time of the most recent trigger to ignore this BSSID. */
+ 	struct os_reltime start;
+@@ -27,6 +33,16 @@ struct wpa_bssid_ignore * wpa_bssid_igno
+ int wpa_bssid_ignore_add(struct wpa_supplicant *wpa_s, const u8 *bssid);
+ int wpa_bssid_ignore_del(struct wpa_supplicant *wpa_s, const u8 *bssid);
+ int wpa_bssid_ignore_is_listed(struct wpa_supplicant *wpa_s, const u8 *bssid);
++struct wpa_bssid_ignore *
++wpa_bssid_ignore_get_type(struct wpa_supplicant *wpa_s, const u8 *bssid,
++			  enum wpa_bssid_ignore_type type);
++int wpa_bssid_ignore_add_type(struct wpa_supplicant *wpa_s, const u8 *bssid,
++			      enum wpa_bssid_ignore_type type);
++int wpa_bssid_ignore_del_type(struct wpa_supplicant *wpa_s, const u8 *bssid,
++			      enum wpa_bssid_ignore_type type);
++enum wpa_bssid_ignore_type
++wpa_bssid_ignore_type_of(struct wpa_supplicant *wpa_s, const u8 *bssid);
++const char * wpa_bssid_ignore_type_txt(enum wpa_bssid_ignore_type type);
+ void wpa_bssid_ignore_clear(struct wpa_supplicant *wpa_s);
+ void wpa_bssid_ignore_update(struct wpa_supplicant *wpa_s);
+ 
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
+@@ -2720,8 +2720,9 @@ static int wpa_supplicant_ctrl_iface_bss
+ 		end = buf + buflen;
+ 		e = wpa_s->bssid_ignore;
+ 		while (e) {
+-			ret = os_snprintf(pos, end - pos, MACSTR "\n",
+-					  MAC2STR(e->bssid));
++			ret = os_snprintf(pos, end - pos, MACSTR "%s\n",
++					  MAC2STR(e->bssid),
++					  wpa_bssid_ignore_type_txt(e->type));
+ 			if (os_snprintf_error(end - pos, ret))
+ 				return pos - buf;
+ 			pos += ret;
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -5186,7 +5186,8 @@ static void wpa_supplicant_event_disasso
+ 		bssid = wpa_s->bssid;
+ 		if (is_zero_ether_addr(bssid))
+ 			bssid = wpa_s->pending_bssid;
+-		wpa_bssid_ignore_add(wpa_s, bssid);
++		wpa_bssid_ignore_add_type(wpa_s, bssid,
++					  wpa_bssid_ignore_type_of(wpa_s, bssid));
+ 		wpas_auth_failed(wpa_s, "WRONG_KEY", wpa_s->pending_bssid);
+ 		wpas_notify_psk_mismatch(wpa_s);
+ 	}
+@@ -5330,7 +5331,9 @@ wpa_supplicant_event_michael_mic_failure
+ 		/* initialize countermeasures */
+ 		wpa_s->countermeasures = 1;
+ 
+-		wpa_bssid_ignore_add(wpa_s, wpa_s->bssid);
++		wpa_bssid_ignore_add_type(
++			wpa_s, wpa_s->bssid,
++			wpa_bssid_ignore_type_of(wpa_s, wpa_s->bssid));
+ 
+ 		wpa_msg(wpa_s, MSG_WARNING, "TKIP countermeasures started");
+ 
+--- a/wpa_supplicant/hs20_supplicant.c
++++ b/wpa_supplicant/hs20_supplicant.c
+@@ -319,7 +319,9 @@ void hs20_rx_deauth_imminent_notice(stru
+ 
+ 	if (code == HS20_DEAUTH_REASON_CODE_BSS) {
+ 		wpa_printf(MSG_DEBUG, "HS 2.0: Add BSS to ignore list");
+-		wpa_bssid_ignore_add(wpa_s, wpa_s->bssid);
++		wpa_bssid_ignore_add_type(
++			wpa_s, wpa_s->bssid,
++			wpa_bssid_ignore_type_of(wpa_s, wpa_s->bssid));
+ 		/* TODO: For now, disable full ESS since some drivers may not
+ 		 * support disabling per BSS. */
+ 		if (wpa_s->current_ssid) {
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -230,7 +230,8 @@ static void wpa_supplicant_timeout(void
+ 		bssid = wpa_s->pending_bssid;
+ 	wpa_msg(wpa_s, MSG_INFO, "Authentication with " MACSTR " timed out.",
+ 		MAC2STR(bssid));
+-	wpa_bssid_ignore_add(wpa_s, bssid);
++	wpa_bssid_ignore_add_type(wpa_s, bssid,
++				  wpa_bssid_ignore_type_of(wpa_s, bssid));
+ 	wpa_sm_notify_disassoc(wpa_s->wpa);
+ 	wpa_supplicant_deauthenticate(wpa_s, WLAN_REASON_DEAUTH_LEAVING);
+ 	wpa_s->reassociate = 1;
+@@ -298,7 +299,14 @@ void wpa_supplicant_cancel_auth_timeout(
+ {
+ 	wpa_dbg(wpa_s, MSG_DEBUG, "Cancelling authentication timeout");
+ 	eloop_cancel_timeout(wpa_supplicant_timeout, wpa_s, NULL);
+-	wpa_bssid_ignore_del(wpa_s, wpa_s->bssid);
++	wpa_bssid_ignore_del_type(wpa_s, wpa_s->bssid,
++				  wpa_bssid_ignore_type_of(wpa_s, wpa_s->bssid));
++	if (wpa_s->valid_links) {
++		int i;
++
++		for_each_link(wpa_s->valid_links, i)
++			wpa_bssid_ignore_del(wpa_s, wpa_s->links[i].bssid);
++	}
+ 	os_free(wpa_s->last_con_fail_realm);
+ 	wpa_s->last_con_fail_realm = NULL;
+ 	wpa_s->last_con_fail_realm_len = 0;
+@@ -9189,7 +9197,8 @@ void wpas_connection_failed(struct wpa_s
+ 	 * Add the failed BSSID into the ignore list and speed up next scan
+ 	 * attempt if there could be other APs that could accept association.
+ 	 */
+-	count = wpa_bssid_ignore_add(wpa_s, bssid);
++	count = wpa_bssid_ignore_add_type(wpa_s, bssid,
++					  wpa_bssid_ignore_type_of(wpa_s, bssid));
+ 
+ 	/*
+ 	 * This BSS was not in the ignore list before. If there is

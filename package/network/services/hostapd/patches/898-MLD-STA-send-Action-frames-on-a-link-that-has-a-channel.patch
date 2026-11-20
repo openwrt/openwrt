@@ -1,0 +1,849 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 30 Oct 2026 12:00:00 +0100
+Subject: [PATCH] MLD STA: send Action frames on a link that has a channel
+
+Depends on 889-MLD-STA-send-Action-frames-to-the-AP-MLD-on-an-enabl.patch
+and on 892-nl80211-report-the-channel-of-an-MLD-link-in-channel.patch.
+
+The SA Query Request and the WNM-Sleep Request stay on the association
+link with an OCI. While a TID-to-link mapping disables that link, it has
+no channel, so the OCI cannot be built and the frame is not sent. A
+station with OCV then deauthenticates itself after an unprotected
+Deauthentication frame. Build the OCI from the association link if it has
+a channel, else from the first link that has one, and send the frame on
+that link.
+
+The FT Action frame carries no OCI, so it needs no fixed link. The WMM
+ADDTS and DELTS and the TWT frames kept the frequency of the association
+link, which the driver now refuses while that link is disabled. Send them
+with no frequency, so that the driver picks an active link.
+
+A Radio Measurement Report, a solicited DSCP Policy Response, a
+Collocated Interference Report, a 20/40 BSS Coexistence frame and a WNM
+Notification of a Beacon protection failure are not in the list of
+frames intended for the MLD (IEEE Std 802.11be-2024, 35.3.14.1), so they
+belong on one link:
+- a report or a response goes on the receive link of its request,
+- a 20/40 BSS Coexistence frame goes on the association link,
+- the WNM Notification goes on the link whose BSSID the Beacon frame
+  names as SA.
+Take the channel of that link from the driver at the send, since a
+stored frequency goes stale at a channel switch. If that link has no
+channel, as under a mapping that disables it, do not send the frame.
+Another link would need an MLO Link Info element, and an AP MLD discards
+a frame whose element names a link that is not enabled (35.3.14.3). A
+Collocated Interference Report with dialog token 0 answers no request and
+goes with no frequency.
+
+The receive link of a request was found by its frequency in
+wpa_s->links[].freq. wpa_drv_get_mlo_info() set that value to 0 for a
+link that has no channel when the station reads its links, and the value
+goes stale on a link that hears no channel switch. Take the receive link
+from the driver event (NL80211_ATTR_MLO_LINK_ID) instead. Where the
+driver names no link, take the link whose current channel is the
+frequency of the frame. The SA Query Response takes its frequency from
+the current channel of that link.
+
+wpa_drv_get_mlo_info() keeps the stored frequency of a link for which the
+driver names no channel. The driver names no channel for a link until the
+link is active, and mac80211_hwsim activates a link of the default
+mapping only after the association event. With the stored value,
+MLO_STATUS names the frequency of that link, not 0.
+
+MGMT_RX_PROCESS of the control interface sets the link of its receive
+event to -1, which driver.h defines for a frame with no receive link.
+The event otherwise names link 0 for every frame.
+
+The 20/40 BSS Coexistence frame reports on the BSS of the association
+link: the OBSS scan, the secondary channel, the channels within 10 MHz of
+assoc_freq and the Country element all come from current_bss. Another
+link on 2.4 GHz belongs to another BSS.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -4658,7 +4658,9 @@ static int wpa_drv_get_mlo_info(struct w
+ 	for_each_link(wpa_s->valid_links, i) {
+ 		os_memcpy(wpa_s->links[i].addr, mlo.links[i].addr, ETH_ALEN);
+ 		os_memcpy(wpa_s->links[i].bssid, mlo.links[i].bssid, ETH_ALEN);
+-		wpa_s->links[i].freq = mlo.links[i].freq;
++		/* The driver names no channel for a link until it is active */
++		if (mlo.links[i].freq)
++			wpa_s->links[i].freq = mlo.links[i].freq;
+ 		wpa_supplicant_update_link_bss(wpa_s, i, mlo.links[i].bssid);
+ 	}
+ 
+@@ -5983,7 +5985,7 @@ void wpa_supplicant_update_channel_list(
+ 
+ static void wpas_event_rx_mgmt_action(struct wpa_supplicant *wpa_s,
+ 				      const u8 *frame, size_t len, int freq,
+-				      int rssi)
++				      int rssi, int link_id)
+ {
+ 	const struct ieee80211_mgmt *mgmt;
+ 	const u8 *payload;
+@@ -5993,6 +5995,11 @@ static void wpas_event_rx_mgmt_action(st
+ 	if (len < IEEE80211_HDRLEN + 2)
+ 		return;
+ 
++	if (!wpa_s->valid_links)
++		link_id = -1;
++	else if (link_id < 0)
++		link_id = wpas_ap_link_id_by_freq(wpa_s, freq);
++
+ 	mgmt = (const struct ieee80211_mgmt *) frame;
+ 	payload = frame + IEEE80211_HDRLEN;
+ 	category = *payload++;
+@@ -6019,14 +6026,14 @@ static void wpas_event_rx_mgmt_action(st
+ #ifdef CONFIG_SME
+ 	if (category == WLAN_ACTION_SA_QUERY) {
+ 		sme_sa_query_rx(wpa_s, mgmt->da, mgmt->sa, payload, plen,
+-				freq);
++				link_id);
+ 		return;
+ 	}
+ #endif /* CONFIG_SME */
+ 
+ #ifdef CONFIG_WNM
+ 	if (mgmt->u.action.category == WLAN_ACTION_WNM) {
+-		ieee802_11_rx_wnm_action(wpa_s, mgmt, len);
++		ieee802_11_rx_wnm_action(wpa_s, mgmt, len, link_id);
+ 		return;
+ 	}
+ #endif /* CONFIG_WNM */
+@@ -6102,7 +6109,7 @@ static void wpas_event_rx_mgmt_action(st
+ 		wpas_rrm_handle_radio_measurement_request(wpa_s, mgmt->sa,
+ 							  mgmt->da,
+ 							  payload + 1,
+-							  plen - 1, freq);
++							  plen - 1, link_id);
+ 		return;
+ 	}
+ 
+@@ -6182,7 +6189,7 @@ static void wpas_event_rx_mgmt_action(st
+ 	if (category == WLAN_ACTION_VENDOR_SPECIFIC_PROTECTED && plen > 4 &&
+ 	    WPA_GET_BE32(payload) == QM_ACTION_VENDOR_TYPE) {
+ 		wpas_handle_qos_mgmt_recv_action(wpa_s, mgmt->da, mgmt->sa,
+-						 payload + 4, plen - 4, freq);
++						 payload + 4, plen - 4, link_id);
+ 		return;
+ 	}
+ #endif /* CONFIG_NO_ROBUST_AV */
+@@ -6591,7 +6598,7 @@ static void wpas_event_unprot_beacon(str
+ 				     struct unprot_beacon *data)
+ {
+ 	struct wpabuf *buf;
+-	int res;
++	int res, freq;
+ 
+ 	if (!data || wpa_s->wpa_state != WPA_COMPLETED ||
+ 	    !ether_addr_equal(data->sa, wpa_s->bssid))
+@@ -6599,6 +6606,14 @@ static void wpas_event_unprot_beacon(str
+ 	wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_UNPROT_BEACON MACSTR,
+ 		MAC2STR(data->sa));
+ 
++	freq = wpas_ap_link_freq(wpa_s,
++				 wpas_ap_link_id_by_bssid(wpa_s, data->sa));
++	if (freq < 0) {
++		wpa_printf(MSG_DEBUG,
++			   "Link of the Beacon frame has no channel for the WNM-Notification Request frame");
++		return;
++	}
++
+ 	buf = wpabuf_alloc(4);
+ 	if (!buf)
+ 		return;
+@@ -6608,7 +6623,7 @@ static void wpas_event_unprot_beacon(str
+ 	wpabuf_put_u8(buf, 1); /* Dialog Token */
+ 	wpabuf_put_u8(buf, WNM_NOTIF_TYPE_BEACON_PROTECTION_FAILURE);
+ 
+-	res = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
++	res = wpa_drv_send_action(wpa_s, freq, 0, wpa_s->bssid,
+ 				  wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (res < 0)
+@@ -7378,7 +7393,8 @@ void supplicant_event(void *ctx, enum wp
+ 					wpa_s, data->rx_mgmt.frame,
+ 					data->rx_mgmt.frame_len,
+ 					data->rx_mgmt.freq,
+-					data->rx_mgmt.ssi_signal);
++					data->rx_mgmt.ssi_signal,
++					data->rx_mgmt.link_id);
+ 				break;
+ 			}
+ 
+--- a/wpa_supplicant/mbo.c
++++ b/wpa_supplicant/mbo.c
+@@ -300,7 +300,7 @@ static void wpas_mbo_send_wnm_notificati
+ 
+ 	wpabuf_put_data(buf, data, len);
+ 
+-	res = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++	res = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0,
+ 				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (res < 0)
+--- a/wpa_supplicant/robust_av.c
++++ b/wpa_supplicant/robust_av.c
+@@ -361,7 +361,7 @@ int wpas_send_mscs_req(struct wpa_suppli
+ 	wpas_populate_mscs_descriptor_ie(&wpa_s->robust_av, buf);
+ 
+ 	wpa_hexdump_buf(MSG_MSGDUMP, "MSCS Request", buf);
+-	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0,
+ 				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (ret < 0)
+@@ -629,7 +629,7 @@ static int _wpa_send_scs_req(struct wpa_
+ 	}
+ 
+ 	wpa_hexdump_buf(MSG_DEBUG, "SCS Request", buf);
+-	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0,
+ 				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (ret < 0) {
+@@ -1659,7 +1659,7 @@ static void wpas_fill_dscp_policy(struct
+ void wpas_handle_qos_mgmt_recv_action(struct wpa_supplicant *wpa_s,
+ 				      const u8 *dst, const u8 *src,
+ 				      const u8 *buf, size_t len,
+-				      unsigned int freq)
++				      int link_id)
+ {
+ 	int rem_len;
+ 	const u8 *qos_ie, *attr;
+@@ -1715,7 +1715,7 @@ void wpas_handle_qos_mgmt_recv_action(st
+ 	}
+ 
+ 	wpa_s->dscp_req_dialog_token = buf[1];
+-	wpa_s->dscp_req_freq = freq;
++	wpa_s->dscp_req_link_id = link_id;
+ 	more = buf[2] & DSCP_POLICY_CTRL_MORE;
+ 	reset = buf[2] & DSCP_POLICY_CTRL_RESET;
+ 
+@@ -1785,7 +1785,7 @@ int wpas_send_dscp_response(struct wpa_s
+ {
+ 	struct wpabuf *buf = NULL;
+ 	size_t buf_len;
+-	int ret = -1, i;
++	int ret = -1, i, freq;
+ 	u8 resp_control = 0;
+ 
+ 	if (wpa_s->wpa_state != WPA_COMPLETED || !wpa_s->current_ssid) {
+@@ -1799,6 +1799,16 @@ int wpas_send_dscp_response(struct wpa_s
+ 		return -1;
+ 	}
+ 
++	freq = resp_data->solicited ?
++		wpas_ap_link_freq(wpa_s, wpa_s->dscp_req_link_id) :
++		(int) wpas_ap_action_freq(wpa_s);
++	if (freq < 0) {
++		wpa_printf(MSG_ERROR,
++			   "QM: Failed to send DSCP response - request link %d has no channel",
++			   wpa_s->dscp_req_link_id);
++		return -1;
++	}
++
+ 	if (!wpa_s->connection_dscp) {
+ 		wpa_printf(MSG_ERROR,
+ 			   "QM: Failed to send DSCP response - DSCP capability not enabled for the current association");
+@@ -1842,9 +1852,7 @@ int wpas_send_dscp_response(struct wpa_s
+ 	}
+ 
+ 	wpa_hexdump_buf(MSG_MSGDUMP, "DSCP response frame: ", buf);
+-	ret = wpa_drv_send_action(wpa_s,
+-				  resp_data->solicited ? wpa_s->dscp_req_freq :
+-				  wpas_ap_action_freq(wpa_s, false), 0,
++	ret = wpa_drv_send_action(wpa_s, freq, 0,
+ 				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (ret < 0) {
+@@ -1925,7 +1933,7 @@ int wpas_send_dscp_query(struct wpa_supp
+ 	}
+ #undef DOMAIN_NAME_OFFSET
+ 
+-	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0,
+ 				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (ret < 0) {
+--- a/wpa_supplicant/rrm.c
++++ b/wpa_supplicant/rrm.c
+@@ -337,7 +337,7 @@ int wpas_rrm_send_neighbor_rep_request(s
+ 
+ 	wpa_s->rrm.next_neighbor_rep_token++;
+ 
+-	if (wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++	if (wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0,
+ 				wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(buf), wpabuf_len(buf), 0) < 0) {
+ 		wpa_dbg(wpa_s, MSG_DEBUG,
+@@ -449,8 +449,17 @@ reject:
+ static void wpas_rrm_send_msr_report_mpdu(struct wpa_supplicant *wpa_s,
+ 					  const u8 *data, size_t len)
+ {
+-	struct wpabuf *report = wpabuf_alloc(len + 3);
++	int freq = wpas_ap_link_freq(wpa_s, wpa_s->rrm.link_id);
++	struct wpabuf *report;
++
++	if (freq < 0) {
++		wpa_printf(MSG_DEBUG,
++			   "RRM: Request link %d has no channel for the report",
++			   wpa_s->rrm.link_id);
++		return;
++	}
+ 
++	report = wpabuf_alloc(len + 3);
+ 	if (!report)
+ 		return;
+ 
+@@ -460,7 +469,7 @@ static void wpas_rrm_send_msr_report_mpd
+ 
+ 	wpabuf_put_data(report, data, len);
+ 
+-	if (wpa_drv_send_action(wpa_s, wpa_s->rrm.freq, 0, wpa_s->bssid,
++	if (wpa_drv_send_action(wpa_s, freq, 0, wpa_s->bssid,
+ 				wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(report), wpabuf_len(report), 0)) {
+ 		wpa_printf(MSG_ERROR,
+@@ -1465,7 +1474,7 @@ out:
+ void wpas_rrm_handle_radio_measurement_request(struct wpa_supplicant *wpa_s,
+ 					       const u8 *src, const u8 *dst,
+ 					       const u8 *frame, size_t len,
+-					       unsigned int freq)
++					       int link_id)
+ {
+ 	struct wpabuf *report;
+ 
+@@ -1489,7 +1498,7 @@ void wpas_rrm_handle_radio_measurement_r
+ 
+ 	wpa_s->rrm.token = *frame;
+ 	os_memcpy(wpa_s->rrm.dst_addr, dst, ETH_ALEN);
+-	wpa_s->rrm.freq = freq;
++	wpa_s->rrm.link_id = link_id;
+ 
+ 	/* Number of repetitions is not supported */
+ 
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -5123,6 +5123,13 @@ static void sme_send_2040_bss_coex(struc
+ 	struct ieee80211_2040_bss_coex_ie *bc_ie;
+ 	struct ieee80211_2040_intol_chan_report *ic_report;
+ 	struct wpabuf *buf;
++	int freq = wpas_ap_link_freq(wpa_s, wpa_s->mlo_assoc_link_id);
++
++	if (freq < 0) {
++		wpa_printf(MSG_DEBUG,
++			   "SME: Association link has no channel for 20/40 BSS Coexistence");
++		return;
++	}
+ 
+ 	wpa_printf(MSG_DEBUG, "SME: Send 20/40 BSS Coexistence to " MACSTR
+ 		   " (num_channels=%u num_intol=%u)",
+@@ -5155,7 +5162,7 @@ static void sme_send_2040_bss_coex(struc
+ 			  num_channels);
+ 	}
+ 
+-	if (wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
++	if (wpa_drv_send_action(wpa_s, freq, 0, wpa_s->bssid,
+ 				wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(buf), wpabuf_len(buf), 0) < 0) {
+ 		wpa_msg(wpa_s, MSG_INFO,
+@@ -5431,6 +5438,7 @@ static void sme_send_sa_query_req(struct
+ {
+ 	u8 req[2 + WLAN_SA_QUERY_TR_ID_LEN + OCV_OCI_EXTENDED_LEN];
+ 	u8 req_len = 2 + WLAN_SA_QUERY_TR_ID_LEN;
++	unsigned int freq = wpas_ap_action_freq(wpa_s);
+ 
+ 	wpa_dbg(wpa_s, MSG_DEBUG, "SME: Sending SA Query Request to "
+ 		MACSTR, MAC2STR(wpa_s->bssid));
+@@ -5444,12 +5452,15 @@ static void sme_send_sa_query_req(struct
+ 	if (wpa_sm_ocv_enabled(wpa_s->wpa)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
++		if (wpas_ap_oci_channel_info(wpa_s, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in SA Query Request frame");
+ 			return;
+ 		}
+ 
++		if (wpa_s->valid_links)
++			freq = ci.frequency;
++
+ #ifdef CONFIG_TESTING_OPTIONS
+ 		if (wpa_s->oci_freq_override_saquery_req) {
+ 			wpa_printf(MSG_INFO,
+@@ -5467,11 +5478,8 @@ static void sme_send_sa_query_req(struct
+ 	}
+ #endif /* CONFIG_OCV */
+ 
+-	if (wpa_drv_send_action(wpa_s,
+-				wpas_ap_action_freq(
+-					wpa_s, wpa_sm_ocv_enabled(wpa_s->wpa)),
+-				0, wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+-				req, req_len, 0) < 0)
++	if (wpa_drv_send_action(wpa_s, freq, 0, wpa_s->bssid, wpa_s->own_addr,
++				wpa_s->bssid, req, req_len, 0) < 0)
+ 		wpa_msg(wpa_s, MSG_INFO, "SME: Failed to send SA Query "
+ 			"Request");
+ }
+@@ -5592,19 +5600,6 @@ void sme_event_ch_switch(struct wpa_supp
+ }
+ 
+ 
+-static int sme_link_id_by_freq(struct wpa_supplicant *wpa_s, int freq)
+-{
+-	int i;
+-
+-	for_each_link(wpa_s->valid_links, i) {
+-		if (wpa_s->links[i].freq == (unsigned int) freq)
+-			return i;
+-	}
+-
+-	return -1;
+-}
+-
+-
+ static void sme_process_sa_query_request(struct wpa_supplicant *wpa_s,
+ 					 const u8 *sa, const u8 *data,
+ 					 size_t len, int link_id)
+@@ -5619,23 +5614,23 @@ static void sme_process_sa_query_request
+ 	resp[0] = WLAN_ACTION_SA_QUERY;
+ 	resp[1] = WLAN_SA_QUERY_RESPONSE;
+ 	os_memcpy(resp + 2, data + 1, WLAN_SA_QUERY_TR_ID_LEN);
+-	freq = wpas_ap_action_freq(wpa_s, wpa_sm_ocv_enabled(wpa_s->wpa));
++	freq = wpas_ap_action_freq(wpa_s);
+ 
+ #ifdef CONFIG_OCV
+ 	if (wpa_sm_ocv_enabled(wpa_s->wpa)) {
+ 		struct wpa_channel_info ci;
+ 
+-		/* The OCI names the channel of the link that carries the
+-		 * response: the link of the request */
+-		if (link_id >= 0)
+-			freq = wpa_s->links[link_id].freq;
+-
+ 		if (wpa_drv_channel_info(wpa_s, link_id, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in SA Query Response frame");
+ 			return;
+ 		}
+ 
++		/* The OCI names the channel of the link that carries the
++		 * response: the link of the request */
++		if (link_id >= 0)
++			freq = ci.frequency;
++
+ #ifdef CONFIG_TESTING_OPTIONS
+ 		if (wpa_s->oci_freq_override_saquery_resp) {
+ 			wpa_printf(MSG_INFO,
+@@ -5695,10 +5690,8 @@ static void sme_process_sa_query_respons
+ 
+ 
+ void sme_sa_query_rx(struct wpa_supplicant *wpa_s, const u8 *da, const u8 *sa,
+-		     const u8 *data, size_t len, int freq)
++		     const u8 *data, size_t len, int link_id)
+ {
+-	int link_id = sme_link_id_by_freq(wpa_s, freq);
+-
+ 	if (len < 1 + WLAN_SA_QUERY_TR_ID_LEN)
+ 		return;
+ 	if (is_multicast_ether_addr(da)) {
+--- a/wpa_supplicant/twt.c
++++ b/wpa_supplicant/twt.c
+@@ -84,7 +84,7 @@ int wpas_twt_send_setup(struct wpa_suppl
+ 	wpabuf_put_le16(buf, mantissa); /* TWT Wake Interval Mantissa */
+ 	wpabuf_put_u8(buf, twt_channel); /* TWT Channel */
+ 
+-	if (wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
++	if (wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0, wpa_s->bssid,
+ 				wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(buf), wpabuf_len(buf), 0) < 0) {
+ 		wpa_printf(MSG_DEBUG, "TWT: Failed to send TWT Setup Request");
+@@ -128,7 +128,7 @@ int wpas_twt_send_teardown(struct wpa_su
+ 	wpabuf_put_u8(buf, S1G_ACT_TWT_TEARDOWN);
+ 	wpabuf_put_u8(buf, flags);
+ 
+-	if (wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
++	if (wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0, wpa_s->bssid,
+ 				wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(buf), wpabuf_len(buf), 0) < 0) {
+ 		wpa_printf(MSG_DEBUG, "TWT: Failed to send TWT Teardown frame");
+--- a/wpa_supplicant/wmm_ac.c
++++ b/wpa_supplicant/wmm_ac.c
+@@ -192,7 +192,7 @@ static int wmm_ac_send_addts_request(str
+ 	wpabuf_put_u8(buf, 0); /* status code */
+ 	wpabuf_put_data(buf, &req->tspec, sizeof(req->tspec));
+ 
+-	ret = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, req->address,
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0, req->address,
+ 				wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (ret) {
+@@ -226,7 +226,7 @@ static int wmm_ac_send_delts(struct wpa_
+ 	wpabuf_put_u8(buf, 0); /* Status Code (not used) */
+ 	wpabuf_put_data(buf, tspec, sizeof(*tspec));
+ 
+-	ret = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, address,
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0, address,
+ 				  wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head(buf), wpabuf_len(buf), 0);
+ 	if (ret)
+--- a/wpa_supplicant/wnm_sta.c
++++ b/wpa_supplicant/wnm_sta.c
+@@ -57,6 +57,7 @@ int ieee802_11_send_wnmsleep_req(struct
+ {
+ 	struct ieee80211_mgmt *mgmt;
+ 	int res;
++	unsigned int freq = wpas_ap_action_freq(wpa_s);
+ 	size_t len;
+ 	struct wnm_sleep_element *wnmsleep_ie;
+ 	u8 *wnmtfs_ie, *oci_ie;
+@@ -113,13 +114,17 @@ int ieee802_11_send_wnmsleep_req(struct
+ 	if (action == WNM_SLEEP_MODE_EXIT && wpa_sm_ocv_enabled(wpa_s->wpa)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_drv_channel_info(wpa_s, -1, &ci) != 0) {
++		if (wpas_ap_oci_channel_info(wpa_s, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in WNM-Sleep Mode frame");
+ 			os_free(wnmsleep_ie);
+ 			os_free(wnmtfs_ie);
+ 			return -1;
+ 		}
++
++		if (wpa_s->valid_links)
++			freq = ci.frequency;
++
+ #ifdef CONFIG_TESTING_OPTIONS
+ 		if (wpa_s->oci_freq_override_wnm_sleep) {
+ 			wpa_printf(MSG_INFO,
+@@ -186,10 +191,9 @@ int ieee802_11_send_wnmsleep_req(struct
+ 	len = 1 + sizeof(mgmt->u.action.u.wnm_sleep_req) + wnmsleep_ie_len +
+ 		wnmtfs_ie_len + oci_ie_len;
+ 
+-	res = wpa_drv_send_action(wpa_s,
+-				  wpas_ap_action_freq(wpa_s, oci_ie_len > 0), 0,
+-				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+-				  &mgmt->u.action.category, len, 0);
++	res = wpa_drv_send_action(wpa_s, freq, 0, wpa_s->bssid, wpa_s->own_addr,
++				  wpa_s->bssid, &mgmt->u.action.category, len,
++				  0);
+ 	if (res < 0)
+ 		wpa_printf(MSG_DEBUG, "Failed to send WNM-Sleep Request "
+ 			   "(action=%d, intval=%d)", action, intval);
+@@ -1058,7 +1062,7 @@ static int wnm_send_bss_transition_mgmt_
+ 	}
+ #endif /* CONFIG_MBO */
+ 
+-	res = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++	res = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0,
+ 				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head_u8(buf), wpabuf_len(buf), 0);
+ 	if (res < 0) {
+@@ -1835,7 +1839,7 @@ int wnm_send_bss_transition_mgmt_query(s
+ 		wpabuf_put(buf, ret);
+ 	}
+ 
+-	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0,
+ 				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head_u8(buf), wpabuf_len(buf), 0);
+ 
+@@ -1991,7 +1995,7 @@ static void ieee802_11_rx_wnm_notif_req(
+ 
+ static void ieee802_11_rx_wnm_coloc_intf_req(struct wpa_supplicant *wpa_s,
+ 					     const u8 *sa, const u8 *frm,
+-					     int len)
++					     int len, int link_id)
+ {
+ 	u8 dialog_token, req_info, auto_report, timeout;
+ 
+@@ -2028,11 +2032,13 @@ static void ieee802_11_rx_wnm_coloc_intf
+ 	wpa_s->coloc_intf_dialog_token = dialog_token;
+ 	wpa_s->coloc_intf_auto_report = auto_report;
+ 	wpa_s->coloc_intf_timeout = timeout;
++	wpa_s->coloc_intf_link_id = link_id;
+ }
+ 
+ 
+ void ieee802_11_rx_wnm_action(struct wpa_supplicant *wpa_s,
+-			      const struct ieee80211_mgmt *mgmt, size_t len)
++			      const struct ieee80211_mgmt *mgmt, size_t len,
++			      int link_id)
+ {
+ 	const u8 *pos, *end;
+ 	u8 act;
+@@ -2070,7 +2076,7 @@ void ieee802_11_rx_wnm_action(struct wpa
+ 		break;
+ 	case WNM_COLLOCATED_INTERFERENCE_REQ:
+ 		ieee802_11_rx_wnm_coloc_intf_req(wpa_s, mgmt->sa, pos,
+-						 end - pos);
++						 end - pos, link_id);
+ 		break;
+ 	default:
+ 		wpa_printf(MSG_ERROR, "WNM: Unknown request");
+@@ -2083,11 +2089,21 @@ int wnm_send_coloc_intf_report(struct wp
+ 			       const struct wpabuf *elems)
+ {
+ 	struct wpabuf *buf;
+-	int ret;
++	int ret, freq;
+ 
+ 	if (wpa_s->wpa_state < WPA_ASSOCIATED || !elems)
+ 		return -1;
+ 
++	freq = dialog_token ?
++		wpas_ap_link_freq(wpa_s, wpa_s->coloc_intf_link_id) :
++		(int) wpas_ap_action_freq(wpa_s);
++	if (freq < 0) {
++		wpa_printf(MSG_DEBUG,
++			   "WNM: Request link %d has no channel for the Collocated Interference Report",
++			   wpa_s->coloc_intf_link_id);
++		return -1;
++	}
++
+ 	wpa_printf(MSG_DEBUG, "WNM: Send Collocated Interference Report to "
+ 		   MACSTR " (dialog token %u)",
+ 		   MAC2STR(wpa_s->bssid), dialog_token);
+@@ -2101,8 +2117,8 @@ int wnm_send_coloc_intf_report(struct wp
+ 	wpabuf_put_u8(buf, dialog_token);
+ 	wpabuf_put_buf(buf, elems);
+ 
+-	ret = wpa_drv_send_action(wpa_s, wpa_s->assoc_freq, 0, wpa_s->bssid,
+-				  wpa_s->own_addr, wpa_s->bssid,
++	ret = wpa_drv_send_action(wpa_s, freq, 0,
++				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				  wpabuf_head_u8(buf), wpabuf_len(buf), 0);
+ 	wpabuf_free(buf);
+ 	return ret;
+--- a/wpa_supplicant/wpas_glue.c
++++ b/wpa_supplicant/wpas_glue.c
+@@ -741,11 +741,9 @@ static int wpa_supplicant_send_ft_action
+ 	pos += ETH_ALEN;
+ 	os_memcpy(pos, ies, ies_len);
+ 
+-	ret = wpa_drv_send_action(wpa_s,
+-				  wpas_ap_action_freq(
+-					wpa_s, wpa_sm_ocv_enabled(wpa_s->wpa)),
+-				  0, wpa_s->bssid, wpa_s->own_addr,
+-				  wpa_s->bssid, data, data_len, 0);
++	ret = wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0,
++				  wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
++				  data, data_len, 0);
+ 	os_free(data);
+ 
+ 	return ret;
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -591,7 +591,7 @@ static void wpas_wfa_capab_tx(void *eloo
+ 	wpabuf_free(attr);
+ 
+ 	wpa_printf(MSG_DEBUG, "WFA: Send WFA Capabilities frame");
+-	if (wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s, false), 0,
++	if (wpa_drv_send_action(wpa_s, wpas_ap_action_freq(wpa_s), 0,
+ 				wpa_s->bssid, wpa_s->own_addr, wpa_s->bssid,
+ 				wpabuf_head(buf), wpabuf_len(buf), 0) < 0)
+ 		wpa_printf(MSG_DEBUG,
+@@ -10321,28 +10321,85 @@ wpa_drv_get_scan_results(struct wpa_supp
+ }
+ 
+ 
++int wpas_ap_link_id_by_bssid(struct wpa_supplicant *wpa_s, const u8 *bssid)
++{
++	int i;
++
++	for_each_link(wpa_s->valid_links, i) {
++		if (ether_addr_equal(wpa_s->links[i].bssid, bssid))
++			return i;
++	}
++
++	return -1;
++}
++
++
+ bool wpas_ap_link_address(struct wpa_supplicant *wpa_s, const u8 *addr)
+ {
++	return wpas_ap_link_id_by_bssid(wpa_s, addr) >= 0;
++}
++
++
++unsigned int wpas_ap_action_freq(struct wpa_supplicant *wpa_s)
++{
++	return wpa_s->valid_links ? 0 : wpa_s->assoc_freq;
++}
++
++
++/* The association link has no channel while a TID-to-link mapping disables it,
++ * and an OCI must name the channel of the link that sends the frame */
++int wpas_ap_oci_channel_info(struct wpa_supplicant *wpa_s,
++			     struct wpa_channel_info *ci)
++{
+ 	int i;
+ 
+ 	if (!wpa_s->valid_links)
+-		return false;
++		return wpa_drv_channel_info(wpa_s, -1, ci);
++
++	if (!wpa_drv_channel_info(wpa_s, wpa_s->mlo_assoc_link_id, ci) &&
++	    ci->frequency)
++		return 0;
+ 
+ 	for_each_link(wpa_s->valid_links, i) {
+-		if (ether_addr_equal(wpa_s->links[i].bssid, addr))
+-			return true;
++		if (!wpa_drv_channel_info(wpa_s, i, ci) && ci->frequency)
++			return 0;
+ 	}
+ 
+-	return false;
++	return -1;
+ }
+ 
+ 
+-unsigned int wpas_ap_action_freq(struct wpa_supplicant *wpa_s, bool oci)
++int wpas_ap_link_id_by_freq(struct wpa_supplicant *wpa_s, int freq)
+ {
+-	/* An OCI names the channel of the association link */
+-	if (!wpa_s->valid_links || oci)
++	struct wpa_channel_info ci;
++	int i;
++
++	for_each_link(wpa_s->valid_links, i) {
++		if (!wpa_drv_channel_info(wpa_s, i, &ci) &&
++		    ci.frequency == freq)
++			return i;
++	}
++
++	return -1;
++}
++
++
++/* A frame for a link with no channel cannot go on another link, since the AP
++ * MLD discards an MLO Link Info element that names a link that is not enabled */
++int wpas_ap_link_freq(struct wpa_supplicant *wpa_s, int link_id)
++{
++	struct wpa_channel_info ci;
++
++	if (!wpa_s->valid_links)
+ 		return wpa_s->assoc_freq;
+-	return 0;
++
++	if (link_id < 0 || !(wpa_s->valid_links & BIT(link_id)))
++		return 0;
++
++	if (wpa_drv_channel_info(wpa_s, link_id, &ci) || !ci.frequency)
++		return -1;
++
++	return ci.frequency;
+ }
+ 
+ 
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -491,8 +491,8 @@ struct rrm_data {
+ 	/* destination address of the current radio measurement request */
+ 	u8 dst_addr[ETH_ALEN];
+ 
+-	/* receive frequency of the current radio measurement request */
+-	unsigned int freq;
++	/* receive link of the current radio measurement request */
++	int link_id;
+ };
+ 
+ enum wpa_supplicant_test_failure {
+@@ -1416,6 +1416,7 @@ struct wpa_supplicant {
+ 	u8 coloc_intf_dialog_token;
+ 	u8 coloc_intf_auto_report;
+ 	u8 coloc_intf_timeout;
++	int coloc_intf_link_id;
+ #ifdef CONFIG_MBO
+ 	unsigned int wnm_mbo_trans_reason_present:1;
+ 	u8 wnm_mbo_transition_reason;
+@@ -1670,7 +1671,7 @@ struct wpa_supplicant {
+ 	struct dl_list active_scs_ids;
+ 	bool ongoing_scs_req;
+ 	u8 dscp_req_dialog_token;
+-	unsigned int dscp_req_freq;
++	int dscp_req_link_id;
+ 	u8 dscp_query_dialog_token;
+ 	unsigned int enable_dscp_policy_capa:1;
+ 	unsigned int connection_dscp:1;
+@@ -1958,7 +1959,7 @@ int wpas_rrm_send_neighbor_rep_request(s
+ void wpas_rrm_handle_radio_measurement_request(struct wpa_supplicant *wpa_s,
+ 					       const u8 *src, const u8 *dst,
+ 					       const u8 *frame, size_t len,
+-					       unsigned int freq);
++					       int link_id);
+ void wpas_rrm_handle_link_measurement_request(struct wpa_supplicant *wpa_s,
+ 					      const u8 *src,
+ 					      const u8 *frame, size_t len,
+@@ -2187,7 +2188,7 @@ void wpas_scs_deinit(struct wpa_supplica
+ void wpas_handle_qos_mgmt_recv_action(struct wpa_supplicant *wpa_s,
+ 				      const u8 *dst, const u8 *src,
+ 				      const u8 *buf, size_t len,
+-				      unsigned int freq);
++				      int link_id);
+ void wpas_dscp_deinit(struct wpa_supplicant *wpa_s);
+ int wpas_send_dscp_response(struct wpa_supplicant *wpa_s,
+ 			    struct dscp_resp_data *resp_data);
+@@ -2223,7 +2224,12 @@ bool wpas_is_6ghz_supported(struct wpa_s
+ 
+ bool wpa_is_non_eht_scs_traffic_desc_supported(struct wpa_bss *bss);
+ bool wpas_ap_link_address(struct wpa_supplicant *wpa_s, const u8 *addr);
+-unsigned int wpas_ap_action_freq(struct wpa_supplicant *wpa_s, bool oci);
++int wpas_ap_link_id_by_bssid(struct wpa_supplicant *wpa_s, const u8 *bssid);
++unsigned int wpas_ap_action_freq(struct wpa_supplicant *wpa_s);
++int wpas_ap_oci_channel_info(struct wpa_supplicant *wpa_s,
++			     struct wpa_channel_info *ci);
++int wpas_ap_link_id_by_freq(struct wpa_supplicant *wpa_s, int freq);
++int wpas_ap_link_freq(struct wpa_supplicant *wpa_s, int link_id);
+ bool wpas_ap_supports_rsn_overriding(struct wpa_supplicant *wpa_s,
+ 				     struct wpa_bss *bss);
+ bool wpas_ap_supports_rsn_overriding_2(struct wpa_supplicant *wpa_s,
+--- a/tests/fuzzing/wnm/wnm.c
++++ b/tests/fuzzing/wnm/wnm.c
+@@ -40,7 +40,7 @@ static void test_send_wnm(void *eloop_da
+ 	wpa_hexdump(MSG_MSGDUMP, "fuzzer - WNM", ctx->data, ctx->data_len);
+ 
+ 	mgmt = (const struct ieee80211_mgmt *) ctx->data;
+-	ieee802_11_rx_wnm_action(&ctx->wpa_s, mgmt, ctx->data_len);
++	ieee802_11_rx_wnm_action(&ctx->wpa_s, mgmt, ctx->data_len, -1);
+ 
+ 	eloop_terminate();
+ }
+--- a/wpa_supplicant/wnm_sta.h
++++ b/wpa_supplicant/wnm_sta.h
+@@ -59,7 +59,8 @@ int ieee802_11_send_wnmsleep_req(struct
+ 				 u8 action, u16 intval, struct wpabuf *tfs_req);
+ 
+ void ieee802_11_rx_wnm_action(struct wpa_supplicant *wpa_s,
+-			      const struct ieee80211_mgmt *mgmt, size_t len);
++			      const struct ieee80211_mgmt *mgmt, size_t len,
++			      int link_id);
+ 
+ int wnm_send_bss_transition_mgmt_query(struct wpa_supplicant *wpa_s,
+ 				       u8 query_reason,
+--- a/wpa_supplicant/sme.h
++++ b/wpa_supplicant/sme.h
+@@ -32,7 +32,7 @@ void sme_event_unprot_disconnect(struct
+ 				 const u8 *da, u16 reason_code);
+ void sme_event_ch_switch(struct wpa_supplicant *wpa_s);
+ void sme_sa_query_rx(struct wpa_supplicant *wpa_s, const u8 *da, const u8 *sa,
+-		     const u8 *data, size_t len, int freq);
++		     const u8 *data, size_t len, int link_id);
+ void sme_state_changed(struct wpa_supplicant *wpa_s);
+ void sme_clear_on_disassoc(struct wpa_supplicant *wpa_s);
+ void sme_deinit(struct wpa_supplicant *wpa_s);
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
+@@ -9820,6 +9820,7 @@ static int wpas_ctrl_iface_mgmt_rx_proce
+ 	}
+ 
+ 	os_memset(&event, 0, sizeof(event));
++	event.rx_mgmt.link_id = -1;
+ 	event.rx_mgmt.freq = freq;
+ 	event.rx_mgmt.frame = buf;
+ 	event.rx_mgmt.frame_len = len;

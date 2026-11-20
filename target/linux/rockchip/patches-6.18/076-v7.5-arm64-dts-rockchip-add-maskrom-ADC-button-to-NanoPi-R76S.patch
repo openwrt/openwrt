@@ -1,0 +1,40 @@
+From 1f624b3b44ec1b0bba0bf219c1d63e127cfa8591 Mon Sep 17 00:00:00 2001
+From: Ryan Leung <untilscour@protonmail.com>
+Date: Sun, 11 Oct 2026 06:54:47 +0000
+Subject: [PATCH] arm64: dts: rockchip: add maskrom ADC button to NanoPi R76S
+
+The FriendlyELEC Nanopi R76S has a MASKROM button connected via SARADC
+(sheets 5, 19 of the schematic [1]). Add the button to the device tree.
+
+[1]: https://wiki.friendlyelec.com/wiki/images/6/60/NanoPi_R76S_LP4X_2411_SCH.pdf
+
+Signed-off-by: Ryan Leung <untilscour@protonmail.com>
+Link: https://patch.msgid.link/20261011-nanopi-r76s-adc-v1-1-392993e7a36e@protonmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../arm64/boot/dts/rockchip/rk3576-nanopi-r76s.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-nanopi-r76s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-nanopi-r76s.dts
+@@ -29,6 +29,20 @@
+ 		stdout-path = "serial0:1500000n8";
+ 	};
+ 
++	adc-keys {
++		compatible = "adc-keys";
++		io-channels = <&saradc 0>;
++		io-channel-names = "buttons";
++		keyup-threshold-microvolt = <1800000>;
++		poll-interval = <100>;
++
++		button-maskrom {
++			label = "maskrom";
++			linux,code = <KEY_SETUP>;
++			press-threshold-microvolt = <0>;
++		};
++	};
++
+ 	gpio-keys {
+ 		compatible = "gpio-keys";
+ 		pinctrl-names = "default";

@@ -1,0 +1,117 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] AP: optionally keep a STA whose Disassociation was not
+ acknowledged
+
+ap_sta_disassoc_cb() removes the STA from the driver at the TX status of
+the Disassociation frame, whether or not the STA acknowledged it, and
+the two second timeout of the callback does the same. A caller that
+sends a Deauthentication frame after the Disassociation then sends it
+without the pairwise key of the STA. A STA with MFP drops that
+unprotected frame, so a STA that missed the Disassociation, for example
+because the AP switched channel before it, stays associated in its own
+view.
+
+Pass the ACK of the Disassociation to ap_sta_disassoc_cb(). For a STA
+whose caller sends a Deauthentication after the Disassociation, a
+Disassociation without ACK and the timeout leave the STA in the driver
+with its keys, and the callback of the Deauthentication removes it. An
+acknowledged Disassociation removes the STA as before. A new
+authentication or association ends the mark with the other pending
+callbacks.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -9422,7 +9422,7 @@ static void handle_disassoc_cb(struct hostapd_data *hapd,
+ 		wpa_printf(MSG_DEBUG, "STA " MACSTR " did not acknowledge "
+ 			   "disassoc", MAC2STR(sta->addr));
+ 
+-	ap_sta_disassoc_cb(hapd, sta);
++	ap_sta_disassoc_cb(hapd, sta, ok);
+ }
+ 
+ 
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -1268,19 +1268,30 @@ static void ap_sta_remove_in_other_bss(struct hostapd_data *hapd,
+ }
+ 
+ 
+-static void ap_sta_disassoc_cb_timeout(void *eloop_ctx, void *timeout_ctx)
++static void ap_sta_disassoc_cb_run(struct hostapd_data *hapd,
++				   struct sta_info *sta, int ok)
+ {
+-	struct hostapd_data *hapd = eloop_ctx;
+-	struct sta_info *sta = timeout_ctx;
+-
+ 	wpa_printf(MSG_DEBUG, "%s: Disassociation callback for STA " MACSTR,
+ 		   hapd->conf->iface, MAC2STR(sta->addr));
+ 	sta->flags &= ~WLAN_STA_PENDING_DISASSOC_CB;
++	if (!ok && sta->deauth_follows_disassoc) {
++		wpa_printf(MSG_DEBUG,
++			   "%s: Keep STA " MACSTR
++			   " in the driver for the Deauthentication that follows",
++			   hapd->conf->iface, MAC2STR(sta->addr));
++		return;
++	}
+ 	ap_sta_remove(hapd, sta);
+ 	mlme_disassociate_indication(hapd, sta, sta->disassoc_reason);
+ }
+ 
+ 
++static void ap_sta_disassoc_cb_timeout(void *eloop_ctx, void *timeout_ctx)
++{
++	ap_sta_disassoc_cb_run(eloop_ctx, timeout_ctx, 0);
++}
++
++
+ static void ap_sta_disconnect_common(struct hostapd_data *hapd,
+ 				     struct sta_info *sta, unsigned int timeout,
+ 				     bool free_1x)
+@@ -2252,14 +2263,15 @@ void ap_sta_deauth_cb(struct hostapd_data *hapd, struct sta_info *sta)
+ }
+ 
+ 
+-void ap_sta_disassoc_cb(struct hostapd_data *hapd, struct sta_info *sta)
++void ap_sta_disassoc_cb(struct hostapd_data *hapd, struct sta_info *sta,
++			int ok)
+ {
+ 	if (!(sta->flags & WLAN_STA_PENDING_DISASSOC_CB)) {
+ 		wpa_printf(MSG_DEBUG, "Ignore disassoc cb for test frame");
+ 		return;
+ 	}
+ 	eloop_cancel_timeout(ap_sta_disassoc_cb_timeout, hapd, sta);
+-	ap_sta_disassoc_cb_timeout(hapd, sta);
++	ap_sta_disassoc_cb_run(hapd, sta, ok);
+ }
+ 
+ 
+@@ -2278,6 +2290,7 @@ void ap_sta_clear_disconnect_timeouts(struct hostapd_data *hapd,
+ 			   hapd->conf->iface, MAC2STR(sta->addr));
+ 	sta->flags &= ~(WLAN_STA_PENDING_DEAUTH_CB |
+ 			WLAN_STA_PENDING_DISASSOC_CB);
++	sta->deauth_follows_disassoc = 0;
+ 	if (eloop_cancel_timeout(ap_sta_delayed_1x_auth_fail_cb, hapd, sta) > 0)
+ 	{
+ 		wpa_printf(MSG_DEBUG,
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -181,6 +181,7 @@ struct sta_info {
+ 	unsigned int ft_over_ds:1;
+ 	unsigned int external_dh_updated:1;
+ 	unsigned int post_csa_sa_query:1;
++	unsigned int deauth_follows_disassoc:1;
+ 
+ 	u16 auth_alg;
+ 
+@@ -510,7 +511,8 @@ static inline int ap_sta_is_authorized(struct sta_info *sta)
+ }
+ 
+ void ap_sta_deauth_cb(struct hostapd_data *hapd, struct sta_info *sta);
+-void ap_sta_disassoc_cb(struct hostapd_data *hapd, struct sta_info *sta);
++void ap_sta_disassoc_cb(struct hostapd_data *hapd, struct sta_info *sta,
++			int ok);
+ void ap_sta_clear_disconnect_timeouts(struct hostapd_data *hapd,
+ 				      struct sta_info *sta);
+ void ap_sta_clear_assoc_timeout(struct hostapd_data *hapd,

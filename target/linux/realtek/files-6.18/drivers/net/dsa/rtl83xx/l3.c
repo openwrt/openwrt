@@ -1794,8 +1794,8 @@ static const char *otto_l3_route_dst(struct otto_l3_route *r, char *buf, size_t 
 	return buf;
 }
 
-static void otto_l3_fib4_flags_set(struct otto_l3_route *r, bool offload, bool trap,
-				   bool failed)
+static void otto_l3_fib4_flags_set(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
+				   bool offload, bool trap, bool failed)
 {
 	struct fib_rt_info fri = {
 		.fi = r->fi,
@@ -1833,7 +1833,7 @@ static void otto_l3_fib4_trap_report(struct otto_l3_ctrl *ctrl, struct otto_l3_r
 	bool in_hw = r->is_host_route ? ctrl->cfg->find_slot(ctrl, r, true) >= 0 :
 					r->row >= FIRST_PREFIX_ROW;
 
-	otto_l3_fib4_flags_set(r, false, in_hw, !in_hw);
+	otto_l3_fib4_flags_set(ctrl, r, false, in_hw, !in_hw);
 }
 
 /* The host table holds one entry per address, and the local table is looked up
@@ -1873,7 +1873,7 @@ static void otto_l3_host_unshadow(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 		if (slot >= 0) {
 			ctrl->cfg->host_route_write(ctrl, slot, q);
 			q->hw_forward = q->attr.action == ROUTE_ACT_FORWARD;
-			otto_l3_fib4_flags_set(q, q->attr.action == ROUTE_ACT_FORWARD,
+			otto_l3_fib4_flags_set(ctrl, q, q->attr.action == ROUTE_ACT_FORWARD,
 					       q->attr.action != ROUTE_ACT_FORWARD, false);
 		}
 		return;
@@ -2295,12 +2295,12 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	}
 
 	if (otto_l3_route_install(ctrl, r)) {
-		otto_l3_fib4_flags_set(r, false, false, true);
+		otto_l3_fib4_flags_set(ctrl, r, false, false, true);
 		return;
 	}
 
 	shadowed = otto_l3_host_shadowed(ctrl, r);
-	otto_l3_fib4_flags_set(r, !trap && !shadowed, trap || shadowed, false);
+	otto_l3_fib4_flags_set(ctrl, r, !trap && !shadowed, trap || shadowed, false);
 	r->hw_forward = !trap && !shadowed;
 	return;
 
@@ -2332,7 +2332,7 @@ static void otto_l3_route_trap_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	if (r->is_host_route)
 		slot = ctrl->cfg->find_slot(ctrl, r, true);
 
-	otto_l3_fib4_flags_set(r, false, slot >= 0, slot < 0);
+	otto_l3_fib4_flags_set(ctrl, r, false, slot >= 0, slot < 0);
 
 	/* Not in the hardware, so nothing forwards to the old address */
 	if (slot < 0)
@@ -2348,7 +2348,7 @@ static void otto_l3_route_trap_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	otto_l3_route_rewrite(ctrl, r);
 }
 
-static void otto_l3_fib6_flags_report(struct otto_l3_route *r)
+static void otto_l3_fib6_flags_report(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	bool trap;
 
@@ -2419,7 +2419,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 	 */
 	list_for_each_entry(r, &ctrl->routes_list, list) {
 		if (r->gw_ifindex == ifindex && ipv6_addr_equal(&r->gw_ip, gw))
-			otto_l3_fib6_flags_report(r);
+			otto_l3_fib6_flags_report(ctrl, r);
 	}
 
 	return 0;
@@ -2452,7 +2452,7 @@ static int otto_l3_port_gw_resolve(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 		read_unlock_bh(&n->lock);
 		dev_dbg(ctrl->dev, "resolved mac: %016llx\n", mac);
 		otto_l3_route_update_hw(ctrl, r, mac);
-		otto_l3_fib6_flags_report(r);
+		otto_l3_fib6_flags_report(ctrl, r);
 	} else {
 		dev_dbg(ctrl->dev, "need to wait\n");
 		neigh_event_send(n, NULL);
@@ -2907,7 +2907,7 @@ static void otto_l3_route_free(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 	}
 
 	if (r->fi) {
-		otto_l3_fib4_flags_set(r, false, false, false);
+		otto_l3_fib4_flags_set(ctrl, r, false, false, false);
 		fib_info_put(r->fi);
 	}
 
@@ -3160,7 +3160,7 @@ static void otto_l3_fib_trap_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_noti
 		return;
 	}
 
-	otto_l3_fib4_flags_set(route, false, true, false);
+	otto_l3_fib4_flags_set(ctrl, route, false, true, false);
 }
 
 static void otto_l3_route_trap_new(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
@@ -3169,9 +3169,9 @@ static void otto_l3_route_trap_new(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	r->attr.action = ROUTE_ACT_TRAP2CPU;
 
 	if (otto_l3_route_install(ctrl, r))
-		otto_l3_fib4_flags_set(r, false, false, true);
+		otto_l3_fib4_flags_set(ctrl, r, false, false, true);
 	else
-		otto_l3_fib4_flags_set(r, false, true, false);
+		otto_l3_fib4_flags_set(ctrl, r, false, true, false);
 }
 
 static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
@@ -3302,7 +3302,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			if (otto_l3_route_install(ctrl, route))
 				goto out_free_rt;
 
-			otto_l3_fib4_flags_set(route, false, true, false);
+			otto_l3_fib4_flags_set(ctrl, route, false, true, false);
 		}
 	}
 
@@ -3450,6 +3450,7 @@ static int otto_l3_fib_trap_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 {
 	struct net_device *ndev = rt->nh ? NULL : rt->fib6_nh->fib_nh_dev;
 	struct otto_l3_route *route;
+	int err;
 
 	/* While a copy of the address remains the kernel replaces the entry
 	 * rather than deleting it, so a row already trapping here is the row
@@ -3461,7 +3462,7 @@ static int otto_l3_fib_trap_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 				   0, &rt->fib6_dst.addr, rt->fib6_dst.plen);
 	if (route && ipv6_addr_any(&route->gw_ip)) {
 		route->members = members;
-		return 0;
+		goto router_mac;
 	}
 	if (route)
 		otto_l3_route_teardown(ctrl, route);
@@ -3496,18 +3497,31 @@ static int otto_l3_fib_trap_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 				ndev->dev_addr, &rt->fib6_dst.addr, rt->fib6_dst.plen);
 	}
 
-	route->row = otto_l3_route_place(ctrl, route);
-	if (route->row < FIRST_PREFIX_ROW) {
-		otto_l3_route_teardown(ctrl, route);
-		return -ENOSPC;
-	}
-
 	/* The next hop index stays zero, which is what the hardware reads as
 	 * "no next hop" on a route that only traps.
 	 */
-	ctrl->cfg->route_write(ctrl, route->row, route);
+	err = otto_l3_route_install(ctrl, route);
+	if (err) {
+		otto_l3_route_teardown(ctrl, route);
+		return err;
+	}
 	dev_dbg(ctrl->dev, "%pI6c/%d trapped at row %d\n",
 		&rt->fib6_dst.addr, rt->fib6_dst.plen, route->row);
+
+router_mac:
+	/* Connected prefixes and local addresses may be the only routes on an
+	 * IPv6-only interface: defaults and RA gateways are not offloaded.
+	 * Register its routing endpoint only after the trap is installed,
+	 * including when this route already traps. The MAC follows receiving
+	 * devices, independently of route lifetime. Without it the switch does
+	 * not route what arrives on this device, but the trap is still needed
+	 * for what arrives on any other router MAC, so keep it on failure.
+	 */
+	if (ctrl->cfg->set_router_mac && ndev && !rt->fib6_nh->fib_nh_gw_family &&
+	    otto_l3_port_dev_lower_find(ndev, ctrl) >= 0 &&
+	    otto_l3_router_mac_get(ctrl, ndev))
+		dev_warn(ctrl->dev, "no router MAC for %s, the switch does not route what arrives on it\n",
+			 ndev->name);
 
 	return 0;
 }
@@ -4682,6 +4696,51 @@ static const struct file_operations otto_l3_930x_nexthop_fops = {
 	.release = single_release,
 };
 
+/* The L3 termination endpoints: only a frame whose destination MAC matches a
+ * valid entry here reaches the route tables, and the action of that entry
+ * decides what becomes of it. Print every valid entry decoded and raw.
+ */
+static int otto_l3_930x_router_mac_dump(struct otto_l3_ctrl *ctrl, struct seq_file *s)
+{
+	u32 data[7];
+	u8 mac[ETH_ALEN], mask[ETH_ALEN];
+	int err = 0;
+
+	for (int row = 0; row < MAX_ROUTER_MACS; row++) {
+		err = otto_table_read(RTL9300_TBL_L3_ROUTER_MAC, row, &data);
+		if (err) {
+			seq_printf(s, "router_mac %d read_error %d\n", row, err);
+			break;
+		}
+		if (!(data[0] & BIT(20)))
+			continue;
+		u64_to_ether_addr(((u64)(data[1] & 0xffff) << 32) | data[2], mac);
+		u64_to_ether_addr(((u64)(data[4] & 0xffff) << 32) | data[5], mask);
+		seq_printf(s, "router_mac %d mac %pM mask %pM action %u port_type %u ",
+			   row, mac, mask, data[6] & 7, !!(data[0] & BIT(19)));
+		seq_printf(s, "port %u port_type_mask %u port_mask %02x vid %u vid_mask %03x raw",
+			   (data[0] >> 13) & 0x3f, !!(data[3] & BIT(19)),
+			   (data[3] >> 13) & 0x3f, data[0] & 0xfff, data[3] & 0xfff);
+		for (unsigned int i = 0; i < ARRAY_SIZE(data); i++)
+			seq_printf(s, " %08x", data[i]);
+		seq_putc(s, '\n');
+	}
+	return err;
+}
+
+/* Every router MAC update holds the register lock */
+static int otto_l3_router_mac_show(struct seq_file *m, void *v)
+{
+	struct otto_l3_ctrl *ctrl = m->private;
+	int err;
+
+	mutex_lock(ctrl->lock);
+	err = ctrl->cfg->router_mac_dump(ctrl, m);
+	mutex_unlock(ctrl->lock);
+	return err;
+}
+DEFINE_SHOW_ATTRIBUTE(otto_l3_router_mac);
+
 /* Clear the HIT bit of every valid unicast entry in the host route table by
  * read-modify-write. Read through the unicast view so the write covers the
  * entry and nothing else, the way the vendor SDK rewrites it through its own
@@ -4942,6 +5001,7 @@ static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
 
 	debugfs_create_file("routes", 0400, root, ctrl, &otto_l3_930x_route_fops);
 	debugfs_create_file("nexthops", 0400, root, ctrl, &otto_l3_930x_nexthop_fops);
+	debugfs_create_file("router_macs", 0400, root, ctrl, &otto_l3_router_mac_fops);
 	debugfs_create_file("clear_route_hits", 0200, root, ctrl, &otto_l3_930x_clear_hit_fops);
 }
 
@@ -4986,6 +5046,7 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 	.route_write = otto_l3_930x_route_write,
 	.setup = otto_l3_930x_setup,
 	.dbgfs_init = otto_l3_930x_dbgfs_init,
+	.router_mac_dump = otto_l3_930x_router_mac_dump,
 };
 
 const struct otto_l3_config otto_l3_931x_cfg = {

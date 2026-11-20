@@ -1,12 +1,19 @@
-From 68759f490a35ca515f67770abcd0c33aba75392b Mon Sep 17 00:00:00 2001
+From ce2e32dafecd01406e606781f99cb925e767eade Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Wed, 28 Oct 2026 13:18:43 +0000
 Subject: [PATCH] media: rockchip: ispp: Add the FEC mem2mem node
 
-The frame estimation core of the ISPP measures the motion mesh between
-a pair of frames. Make it available outside the live pipeline as a
-stand-alone mem2mem video node that takes its requests through the
+The FEC core of the ISPP remaps a picture through a fisheye and lens
+distortion correction mesh. Make it available outside the live
+pipeline as a stand-alone mem2mem video node that takes its requests,
+the pictures and the four mesh tables as dma-buf fds, through the
 rkispp_fec_in_out ioctl, behind its own Kconfig option.
+
+The core takes a single base address per picture plane and mesh table,
+so an imported buffer whose DMA mapping is not contiguous over the size
+the core accesses is refused. Physically scattered buffers map that way
+without the ISPP IOMMU, and also behind it when their chunks receive
+separate IOVA ranges.
 
 The core is shared with the pipeline: while the node waits for a
 result the FEC frame end interrupt belongs to it, otherwise the
@@ -17,11 +24,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  drivers/media/platform/rockchip/ispp/Kconfig  |  11 +
  drivers/media/platform/rockchip/ispp/Makefile |   1 +
- drivers/media/platform/rockchip/ispp/fec.c    | 484 ++++++++++++++++++
+ drivers/media/platform/rockchip/ispp/fec.c    | 468 ++++++++++++++++++
  drivers/media/platform/rockchip/ispp/fec.h    |  47 ++
  drivers/media/platform/rockchip/ispp/hw.c     |  11 +
  drivers/media/platform/rockchip/ispp/hw.h     |   2 +
- 6 files changed, 556 insertions(+)
+ 6 files changed, 540 insertions(+)
  create mode 100644 drivers/media/platform/rockchip/ispp/fec.c
  create mode 100644 drivers/media/platform/rockchip/ispp/fec.h
 
@@ -33,18 +40,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	  will be called video-rkispp.
 +
 +config VIDEO_ROCKCHIP_ISPP_FEC
-+	bool "ISPP frame estimation (FEC) mem2mem node"
++	bool "ISPP lens distortion correction (FEC) mem2mem node"
 +	depends on VIDEO_ROCKCHIP_ISPP
 +	select V4L2_MEM2MEM_DEV
 +	default n
 +	help
-+	  Enable the stand-alone FEC (frame estimation) memory-to-memory
-+	  node of the ISPP. The FEC core estimates a motion mesh between
-+	  a pair of input frames and can be used for motion compensated
-+	  processing outside the live pipeline.
++	  Enable the stand-alone FEC (fisheye and lens distortion
++	  correction) memory-to-memory node of the ISPP. The FEC core
++	  remaps a picture through a correction mesh and can be used on
++	  pictures held in memory, outside the live pipeline.
 --- a/drivers/media/platform/rockchip/ispp/Makefile
 +++ b/drivers/media/platform/rockchip/ispp/Makefile
-@@ -9,5 +9,6 @@ video-rkispp-y := common.o \
+@@ -10,5 +10,6 @@ video-rkispp-y := common.o \
  		  stream.o
  
  video-rkispp-$(CONFIG_DEBUG_FS) += debug.o
@@ -53,10 +60,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  obj-$(CONFIG_VIDEO_ROCKCHIP_ISPP) += video-rkispp.o
 --- /dev/null
 +++ b/drivers/media/platform/rockchip/ispp/fec.c
-@@ -0,0 +1,484 @@
+@@ -0,0 +1,468 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
-+ * Rockchip ISPP stand-alone FEC (frame estimation) mem2mem node
++ * Rockchip ISPP stand-alone FEC (lens distortion correction) mem2mem node
 + *
 + * Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd.
 + */
@@ -79,23 +86,151 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#include "ispp.h"
 +#include "regs.h"
 +
++enum fec_dmabuf_id {
++	FEC_DMABUF_IN,
++	FEC_DMABUF_OUT,
++	FEC_DMABUF_XINT,
++	FEC_DMABUF_XFRA,
++	FEC_DMABUF_YINT,
++	FEC_DMABUF_YFRA,
++	FEC_DMABUF_NUM,
++};
++
++struct fec_dmabuf {
++	struct dma_buf_attachment *attach;
++	struct dma_buf *dbuf;
++	struct sg_table *sgt;
++	dma_addr_t addr;
++};
++
++static size_t fec_sgt_contiguous_size(struct sg_table *sgt)
++{
++	dma_addr_t expected = sg_dma_address(sgt->sgl);
++	struct scatterlist *s;
++	size_t size = 0;
++	unsigned int i;
++
++	for_each_sgtable_dma_sg(sgt, s, i) {
++		if (sg_dma_address(s) != expected)
++			break;
++		expected += sg_dma_len(s);
++		size += sg_dma_len(s);
++	}
++
++	return size;
++}
++
++static void fec_dmabuf_put(struct fec_dmabuf *buf)
++{
++	dma_buf_unmap_attachment_unlocked(buf->attach, buf->sgt,
++					  DMA_BIDIRECTIONAL);
++	dma_buf_detach(buf->dbuf, buf->attach);
++	dma_buf_put(buf->dbuf);
++}
++
++/* the engine takes one base address per buffer */
++static int fec_dmabuf_get(struct rkispp_fec_dev *fec, struct fec_dmabuf *buf,
++			  const char *name, int fd, size_t size)
++{
++	struct rkispp_device *dev = fec->dev;
++	size_t contig;
++	int ret;
++
++	buf->dbuf = dma_buf_get(fd);
++	if (IS_ERR(buf->dbuf)) {
++		v4l2_err(&dev->v4l2_dev, "invalid dmabuf fd %d for %s\n", fd,
++			 name);
++		return PTR_ERR(buf->dbuf);
++	}
++
++	if (buf->dbuf->size < size) {
++		v4l2_err(&dev->v4l2_dev, "%s size %zu < %zu\n", name,
++			 buf->dbuf->size, size);
++		ret = -EINVAL;
++		goto err_put;
++	}
++
++	buf->attach = dma_buf_attach(buf->dbuf, dev->hw_dev.dev);
++	if (IS_ERR(buf->attach)) {
++		ret = PTR_ERR(buf->attach);
++		goto err_put;
++	}
++
++	buf->sgt =
++		dma_buf_map_attachment_unlocked(buf->attach, DMA_BIDIRECTIONAL);
++	if (IS_ERR(buf->sgt)) {
++		ret = PTR_ERR(buf->sgt);
++		goto err_detach;
++	}
++
++	contig = fec_sgt_contiguous_size(buf->sgt);
++	if (contig < size) {
++		v4l2_err(&dev->v4l2_dev, "%s contiguous size %zu < %zu\n", name,
++			 contig, size);
++		ret = -EFAULT;
++		goto err_unmap;
++	}
++
++	buf->addr = sg_dma_address(buf->sgt->sgl);
++
++	return 0;
++
++err_unmap:
++	dma_buf_unmap_attachment_unlocked(buf->attach, buf->sgt,
++					  DMA_BIDIRECTIONAL);
++err_detach:
++	dma_buf_detach(buf->dbuf, buf->attach);
++err_put:
++	dma_buf_put(buf->dbuf);
++	return ret;
++}
++
++static int fec_dmabufs_get(struct rkispp_fec_dev *fec, struct fec_dmabuf *bufs,
++			   const struct rkispp_fec_in_out *buf,
++			   const size_t *sizes)
++{
++	const struct {
++		const char *name;
++		int fd;
++	} srcs[FEC_DMABUF_NUM] = {
++		[FEC_DMABUF_IN] = { "in picture", buf->in_pic_fd },
++		[FEC_DMABUF_OUT] = { "out picture", buf->out_pic_fd },
++		[FEC_DMABUF_XINT] = { "mesh xint", buf->mesh_xint_fd },
++		[FEC_DMABUF_XFRA] = { "mesh xfra", buf->mesh_xfra_fd },
++		[FEC_DMABUF_YINT] = { "mesh yint", buf->mesh_yint_fd },
++		[FEC_DMABUF_YFRA] = { "mesh yfra", buf->mesh_yfra_fd },
++	};
++	int ret;
++	int i;
++
++	for (i = 0; i < FEC_DMABUF_NUM; i++) {
++		ret = fec_dmabuf_get(fec, &bufs[i], srcs[i].name, srcs[i].fd,
++				     sizes[i]);
++		if (ret)
++			goto err_put;
++	}
++
++	return 0;
++
++err_put:
++	while (i--)
++		fec_dmabuf_put(&bufs[i]);
++	return ret;
++}
++
 +static int fec_running(struct rkispp_fec_dev *fec,
 +		       struct rkispp_fec_in_out *buf)
 +{
++	struct fec_dmabuf bufs[FEC_DMABUF_NUM];
 +	struct rkispp_device *dev = fec->dev;
 +	struct rkispp_hw_dev *hw = &dev->hw_dev;
 +	u32 in_fmt, out_fmt, in_mult = 1, out_mult = 1;
-+	u32 in_size, in_offs, out_size, out_offs, val;
 +	u32 w = buf->width, h = buf->height, density, mesh_size;
-+	struct dma_buf *in_dbuf, *out_dbuf;
-+	struct dma_buf *xint_dbuf, *xfra_dbuf, *yint_dbuf, *yfra_dbuf;
-+	struct dma_buf_attachment *in_attach, *out_attach;
-+	struct dma_buf_attachment *xint_attach, *xfra_attach;
-+	struct dma_buf_attachment *yint_attach, *yfra_attach;
-+	struct sg_table *in_map, *out_map;
-+	struct sg_table *xint_map, *xfra_map, *yint_map, *yfra_map;
 +	void __iomem *base = hw->base_addr;
++	size_t sizes[FEC_DMABUF_NUM];
++	u32 in_offs, out_offs, val;
 +	int ret = -EINVAL;
++	int i;
 +
 +	v4l2_dbg(3, rkispp_debug, &dev->v4l2_dev,
 +		 "%s enter %dx%d format(in:%c%c%c%c out:%c%c%c%c)\n", __func__,
@@ -108,7 +243,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		clk_set_rate(hw->clks[0], hw->core_clk_max);
 +
 +	init_completion(&fec->cmpl);
-+	density = w > 1920 ? SW_MESH_DENSITY : 0;
++	density = w > RKISPP_FEC_DENSE_WIDTH_MAX ? SW_MESH_DENSITY : 0;
 +	mesh_size = cal_fec_mesh(w, h, !!density);
 +
 +	switch (buf->in_fourcc) {
@@ -133,7 +268,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		goto end;
 +	}
 +	in_offs = w * h;
-+	in_size = (in_fmt & FMT_YUV422) ? w * h * 2 : w * h * 3 / 2;
++	sizes[FEC_DMABUF_IN] = (in_fmt & FMT_YUV422) ? w * h * 2 :
++						       w * h * 3 / 2;
 +
 +	switch (buf->out_fourcc) {
 +	case V4L2_PIX_FMT_YUYV:
@@ -156,140 +292,28 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			 buf->out_fourcc >> 16, buf->out_fourcc >> 24);
 +		goto end;
 +	}
-+	out_size = (out_fmt & FMT_YUV422) ? w * h * 2 : w * h * 3 / 2;
++	sizes[FEC_DMABUF_OUT] = (out_fmt & FMT_YUV422) ? w * h * 2 :
++							 w * h * 3 / 2;
 +	out_offs = w * h;
++	sizes[FEC_DMABUF_XINT] = mesh_size * 2;
++	sizes[FEC_DMABUF_XFRA] = mesh_size;
++	sizes[FEC_DMABUF_YINT] = mesh_size * 2;
++	sizes[FEC_DMABUF_YFRA] = mesh_size;
 +
-+	in_dbuf = dma_buf_get(buf->in_pic_fd);
-+	if (IS_ERR_OR_NULL(in_dbuf)) {
-+		v4l2_err(&dev->v4l2_dev, "invalid dmabuf fd:%d for in picture",
-+			 buf->in_pic_fd);
++	ret = fec_dmabufs_get(fec, bufs, buf, sizes);
++	if (ret)
 +		goto end;
-+	}
-+	if (in_dbuf->size < in_size) {
-+		v4l2_err(&dev->v4l2_dev, "in picture size error:%zu < %u\n",
-+			 in_dbuf->size, in_size);
-+		goto put_in_dbuf;
-+	}
-+	in_attach = dma_buf_attach(in_dbuf, hw->dev);
-+	if (IS_ERR(in_attach)) {
-+		v4l2_err(&dev->v4l2_dev, "failed to attach in dmabuf\n");
-+		goto put_in_dbuf;
-+	}
-+	in_map = dma_buf_map_attachment(in_attach, DMA_BIDIRECTIONAL);
-+	if (IS_ERR(in_map))
-+		goto detach_in_dbuf;
-+	val = sg_dma_address(in_map->sgl);
-+	writel(val, base + RKISPP_FEC_RD_Y_BASE);
-+	val += in_offs;
-+	writel(val, base + RKISPP_FEC_RD_UV_BASE);
 +
-+	out_dbuf = dma_buf_get(buf->out_pic_fd);
-+	if (IS_ERR_OR_NULL(out_dbuf)) {
-+		v4l2_err(&dev->v4l2_dev, "invalid dmabuf fd:%d for out picture",
-+			 buf->out_pic_fd);
-+		goto unmap_in_dbuf;
-+	}
-+	if (out_dbuf->size < out_size) {
-+		v4l2_err(&dev->v4l2_dev, "out picture size error:%zu < %u\n",
-+			 out_dbuf->size, out_size);
-+		goto put_out_dbuf;
-+	}
-+	out_attach = dma_buf_attach(out_dbuf, hw->dev);
-+	if (IS_ERR(out_attach)) {
-+		v4l2_err(&dev->v4l2_dev, "failed to attach out dmabuf\n");
-+		goto put_out_dbuf;
-+	}
-+	out_map = dma_buf_map_attachment(out_attach, DMA_BIDIRECTIONAL);
-+	if (IS_ERR(out_map))
-+		goto detach_out_dbuf;
-+	val = sg_dma_address(out_map->sgl);
-+	writel(val, base + RKISPP_FEC_WR_Y_BASE);
-+	val += out_offs;
-+	writel(val, base + RKISPP_FEC_WR_UV_BASE);
-+
-+	xint_dbuf = dma_buf_get(buf->mesh_xint_fd);
-+	if (IS_ERR_OR_NULL(xint_dbuf)) {
-+		v4l2_err(&dev->v4l2_dev, "invalid dmabuf fd for xint picture");
-+		goto unmap_out_dbuf;
-+	}
-+	if (xint_dbuf->size < mesh_size * 2) {
-+		v4l2_err(&dev->v4l2_dev, "mesh xint size error:%zu < %u\n",
-+			 xint_dbuf->size, mesh_size * 2);
-+		goto put_xint_dbuf;
-+	}
-+	xint_attach = dma_buf_attach(xint_dbuf, hw->dev);
-+	if (IS_ERR(xint_attach)) {
-+		v4l2_err(&dev->v4l2_dev, "failed to attach xint dmabuf\n");
-+		goto put_xint_dbuf;
-+	}
-+	xint_map = dma_buf_map_attachment(xint_attach, DMA_BIDIRECTIONAL);
-+	if (IS_ERR(xint_map))
-+		goto detach_xint_dbuf;
-+	val = sg_dma_address(xint_map->sgl);
-+	writel(val, base + RKISPP_FEC_MESH_XINT_BASE);
-+
-+	xfra_dbuf = dma_buf_get(buf->mesh_xfra_fd);
-+	if (IS_ERR_OR_NULL(xfra_dbuf)) {
-+		v4l2_err(&dev->v4l2_dev, "invalid dmabuf fd for xfra picture");
-+		goto unmap_xint_dbuf;
-+	}
-+	if (xfra_dbuf->size < mesh_size) {
-+		v4l2_err(&dev->v4l2_dev, "mesh xfra size error:%zu < %u\n",
-+			 xfra_dbuf->size, mesh_size);
-+		goto put_xfra_dbuf;
-+	}
-+	xfra_attach = dma_buf_attach(xfra_dbuf, hw->dev);
-+	if (IS_ERR(xfra_attach)) {
-+		v4l2_err(&dev->v4l2_dev, "failed to attach xfra dmabuf\n");
-+		goto put_xfra_dbuf;
-+	}
-+	xfra_map = dma_buf_map_attachment(xfra_attach, DMA_BIDIRECTIONAL);
-+	if (IS_ERR(xfra_map))
-+		goto detach_xfra_dbuf;
-+	val = sg_dma_address(xfra_map->sgl);
-+	writel(val, base + RKISPP_FEC_MESH_XFRA_BASE);
-+
-+	yint_dbuf = dma_buf_get(buf->mesh_yint_fd);
-+	if (IS_ERR_OR_NULL(yint_dbuf)) {
-+		v4l2_err(&dev->v4l2_dev, "invalid dmabuf fd for yint picture");
-+		goto unmap_xfra_dbuf;
-+	}
-+	if (yint_dbuf->size < mesh_size * 2) {
-+		v4l2_err(&dev->v4l2_dev, "mesh yint size error:%zu < %u\n",
-+			 yint_dbuf->size, mesh_size * 2);
-+		goto put_yint_dbuf;
-+	}
-+	yint_attach = dma_buf_attach(yint_dbuf, hw->dev);
-+	if (IS_ERR(yint_attach)) {
-+		v4l2_err(&dev->v4l2_dev, "failed to attach yint dmabuf\n");
-+		goto put_yint_dbuf;
-+	}
-+	yint_map = dma_buf_map_attachment(yint_attach, DMA_BIDIRECTIONAL);
-+	if (IS_ERR(yint_map))
-+		goto detach_yint_dbuf;
-+	val = sg_dma_address(yint_map->sgl);
-+	writel(val, base + RKISPP_FEC_MESH_YINT_BASE);
-+
-+	yfra_dbuf = dma_buf_get(buf->mesh_yfra_fd);
-+	if (IS_ERR_OR_NULL(yfra_dbuf)) {
-+		v4l2_err(&dev->v4l2_dev, "invalid dmabuf fd for yfra picture");
-+		goto unmap_yint_dbuf;
-+	}
-+	if (yfra_dbuf->size < mesh_size) {
-+		v4l2_err(&dev->v4l2_dev, "mesh yfra size error:%zu < %u\n",
-+			 yfra_dbuf->size, mesh_size);
-+		goto put_yfra_dbuf;
-+	}
-+	yfra_attach = dma_buf_attach(yfra_dbuf, hw->dev);
-+	if (IS_ERR(yfra_attach)) {
-+		v4l2_err(&dev->v4l2_dev, "failed to attach yfra dmabuf\n");
-+		goto put_yfra_dbuf;
-+	}
-+	yfra_map = dma_buf_map_attachment(yfra_attach, DMA_BIDIRECTIONAL);
-+	if (IS_ERR(yfra_map))
-+		goto detach_yfra_dbuf;
-+	val = sg_dma_address(yfra_map->sgl);
-+	writel(val, base + RKISPP_FEC_MESH_YFRA_BASE);
++	writel(bufs[FEC_DMABUF_IN].addr, base + RKISPP_FEC_RD_Y_BASE);
++	writel(bufs[FEC_DMABUF_IN].addr + in_offs,
++	       base + RKISPP_FEC_RD_UV_BASE);
++	writel(bufs[FEC_DMABUF_OUT].addr, base + RKISPP_FEC_WR_Y_BASE);
++	writel(bufs[FEC_DMABUF_OUT].addr + out_offs,
++	       base + RKISPP_FEC_WR_UV_BASE);
++	writel(bufs[FEC_DMABUF_XINT].addr, base + RKISPP_FEC_MESH_XINT_BASE);
++	writel(bufs[FEC_DMABUF_XFRA].addr, base + RKISPP_FEC_MESH_XFRA_BASE);
++	writel(bufs[FEC_DMABUF_YINT].addr, base + RKISPP_FEC_MESH_YINT_BASE);
++	writel(bufs[FEC_DMABUF_YFRA].addr, base + RKISPP_FEC_MESH_YFRA_BASE);
 +
 +	val = out_fmt << 4 | in_fmt;
 +	writel(val, base + RKISPP_FEC_CTRL);
@@ -344,41 +368,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	}
 +	writel(SW_FEC2DDR_DIS, base + RKISPP_FEC_CORE_CTRL);
 +
-+	dma_buf_unmap_attachment(yfra_attach, yfra_map, DMA_BIDIRECTIONAL);
-+detach_yfra_dbuf:
-+	dma_buf_detach(yfra_dbuf, yfra_attach);
-+put_yfra_dbuf:
-+	dma_buf_put(yfra_dbuf);
-+unmap_yint_dbuf:
-+	dma_buf_unmap_attachment(yint_attach, yint_map, DMA_BIDIRECTIONAL);
-+detach_yint_dbuf:
-+	dma_buf_detach(yint_dbuf, yint_attach);
-+put_yint_dbuf:
-+	dma_buf_put(yint_dbuf);
-+unmap_xfra_dbuf:
-+	dma_buf_unmap_attachment(xfra_attach, xfra_map, DMA_BIDIRECTIONAL);
-+detach_xfra_dbuf:
-+	dma_buf_detach(xfra_dbuf, xfra_attach);
-+put_xfra_dbuf:
-+	dma_buf_put(xfra_dbuf);
-+unmap_xint_dbuf:
-+	dma_buf_unmap_attachment(xint_attach, xint_map, DMA_BIDIRECTIONAL);
-+detach_xint_dbuf:
-+	dma_buf_detach(xint_dbuf, xint_attach);
-+put_xint_dbuf:
-+	dma_buf_put(xint_dbuf);
-+unmap_out_dbuf:
-+	dma_buf_unmap_attachment(out_attach, out_map, DMA_BIDIRECTIONAL);
-+detach_out_dbuf:
-+	dma_buf_detach(out_dbuf, out_attach);
-+put_out_dbuf:
-+	dma_buf_put(out_dbuf);
-+unmap_in_dbuf:
-+	dma_buf_unmap_attachment(in_attach, in_map, DMA_BIDIRECTIONAL);
-+detach_in_dbuf:
-+	dma_buf_detach(in_dbuf, in_attach);
-+put_in_dbuf:
-+	dma_buf_put(in_dbuf);
++	for (i = FEC_DMABUF_NUM - 1; i >= 0; i--)
++		fec_dmabuf_put(&bufs[i]);
 +end:
 +	v4l2_dbg(3, rkispp_debug, &dev->v4l2_dev, "%s exit ret:%d\n", __func__,
 +		 ret);

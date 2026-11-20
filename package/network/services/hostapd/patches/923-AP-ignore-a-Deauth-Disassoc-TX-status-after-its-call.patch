@@ -1,0 +1,67 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] AP: ignore a Deauth/Disassoc TX status after its callback
+ ended
+
+WLAN_STA_PENDING_DEAUTH_CB and WLAN_STA_PENDING_DISASSOC_CB mark the
+callback that the TX status of a Deauthentication or Disassociation
+frame runs. Only ap_sta_deauth_cb() and ap_sta_disassoc_cb() clear
+them, so the flag stays set where the two second timeout runs the
+callback first, or where ap_sta_clear_disconnect_timeouts() cancels it
+for a new authentication or association. A later TX status of the
+frame, for example from a driver that holds the frame for a STA in
+power save until the removal flushes it, then runs the callback again.
+It removes the STA from the driver a second time, or removes the new
+association of a STA that came back within the wait.
+
+Clear the flag where the callback runs, from the TX status or from the
+timeout, and where ap_sta_clear_disconnect_timeouts() cancels it. A
+later TX status of the frame is then ignored, as that of a test frame
+is.
+
+Fixes: 4dc03726de07 ("Delay STA entry removal until Deauth/Disassoc TX status in AP mode")
+Fixes: cc28ad8cdf38 ("Fix Deauth/Disassoc callback handling with test frames")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -1275,6 +1275,7 @@ static void ap_sta_disassoc_cb_timeout(void *eloop_ctx, void *timeout_ctx)
+ 
+ 	wpa_printf(MSG_DEBUG, "%s: Disassociation callback for STA " MACSTR,
+ 		   hapd->conf->iface, MAC2STR(sta->addr));
++	sta->flags &= ~WLAN_STA_PENDING_DISASSOC_CB;
+ 	ap_sta_remove(hapd, sta);
+ 	mlme_disassociate_indication(hapd, sta, sta->disassoc_reason);
+ }
+@@ -1357,6 +1358,7 @@ static void ap_sta_deauth_cb_timeout(void *eloop_ctx, void *timeout_ctx)
+ 
+ 	wpa_printf(MSG_DEBUG, "%s: Deauthentication callback for STA " MACSTR,
+ 		   hapd->conf->iface, MAC2STR(sta->addr));
++	sta->flags &= ~WLAN_STA_PENDING_DEAUTH_CB;
+ 	ap_sta_remove(hapd, sta);
+ 	mlme_deauthenticate_indication(hapd, sta, sta->deauth_reason);
+ }
+@@ -2245,7 +2247,6 @@ void ap_sta_deauth_cb(struct hostapd_data *hapd, struct sta_info *sta)
+ 		wpa_printf(MSG_DEBUG, "Ignore deauth cb for test frame");
+ 		return;
+ 	}
+-	sta->flags &= ~WLAN_STA_PENDING_DEAUTH_CB;
+ 	eloop_cancel_timeout(ap_sta_deauth_cb_timeout, hapd, sta);
+ 	ap_sta_deauth_cb_timeout(hapd, sta);
+ }
+@@ -2257,7 +2258,6 @@ void ap_sta_disassoc_cb(struct hostapd_data *hapd, struct sta_info *sta)
+ 		wpa_printf(MSG_DEBUG, "Ignore disassoc cb for test frame");
+ 		return;
+ 	}
+-	sta->flags &= ~WLAN_STA_PENDING_DISASSOC_CB;
+ 	eloop_cancel_timeout(ap_sta_disassoc_cb_timeout, hapd, sta);
+ 	ap_sta_disassoc_cb_timeout(hapd, sta);
+ }
+@@ -2276,6 +2276,8 @@ void ap_sta_clear_disconnect_timeouts(struct hostapd_data *hapd,
+ 			   "%s: Removed ap_sta_disassoc_cb_timeout timeout for "
+ 			   MACSTR,
+ 			   hapd->conf->iface, MAC2STR(sta->addr));
++	sta->flags &= ~(WLAN_STA_PENDING_DEAUTH_CB |
++			WLAN_STA_PENDING_DISASSOC_CB);
+ 	if (eloop_cancel_timeout(ap_sta_delayed_1x_auth_fail_cb, hapd, sta) > 0)
+ 	{
+ 		wpa_printf(MSG_DEBUG,

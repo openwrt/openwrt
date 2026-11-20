@@ -807,6 +807,10 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 		append_raw('mld_ap=1');
 		if (data.config.radio != null)
 			append_raw('mld_link_id=' + data.config.radio);
+		if (config.mlo_emlsr === false)
+			append_raw('mld_emlsr=0');
+		if (config.mlo_emlmr === false)
+			append_raw('mld_emlmr=0');
 	}
 
 	if (config.default_macaddr)

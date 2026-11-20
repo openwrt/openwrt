@@ -112,6 +112,11 @@ platform_do_upgrade() {
 		draytek_g2282x_set_part_name || return 1
 		default_do_upgrade "$1"
 		;;
+	linksys,lgs328c|\
+	linksys,lgs328mpc-v2|\
+	linksys,lgs352c)
+		nand_do_upgrade "$1"
+		;;
 	plasmacloud,esx28|\
 	plasmacloud,mcx3|\
 	plasmacloud,psx8|\
@@ -120,16 +125,12 @@ platform_do_upgrade() {
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_plasmacloud "$1"
 		;;
+	tplink,festa-fs308g-v1|\
 	tplink,sg2008p-v1|\
 	tplink,sg2008p-v3|\
 	tplink,sg2210p-v3)
 		tplink_sg2xxx_fix_mtdparts
 		default_do_upgrade "$1"
-		;;
-	linksys,lgs328c|\
-	linksys,lgs328mpc-v2|\
-	linksys,lgs352c)
-		nand_do_upgrade "$1"
 		;;
 	zyxel,xgs1930-28hp|\
 	zyxel,xgs2220-30hp|\

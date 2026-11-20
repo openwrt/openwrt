@@ -66,6 +66,8 @@
 
 &wifi {
 	qcom,calibration-variant = "Xiaomi-AX3600";
+	nvmem-cells = <&caldata_art_1000>;
+	nvmem-cell-names = "calibration";
 };
 
 &qca8075_1 {

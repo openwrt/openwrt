@@ -1,0 +1,110 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 1 Nov 2026 00:33:54 +0100
+Subject: [PATCH] wifi: mac80211: take a tagged EAPOL before the port of a
+ station opens
+
+A Multi-AP AP that tags its EAPOL frames sends Message 1 right after the
+association. The station drops it twice over. The exemption in
+ieee80211_rx_h_check() for a frame that arrives before the ASSOC flag
+compares only the outer type, and wpa_supplicant enables 4-address mode
+only once it has handled the association, so the tagged control port
+check does not hold yet. The handshake then waits one second for the
+AP's retry.
+
+Apply the exemption to the inner type too, and let a station with a
+closed port take every tagged EAPOL frame without 4-address mode, not
+only Message 1. wpa_supplicant knows whether the network is a backhaul,
+and discards the frame where it is not. A tagged frame on an open port
+of a 3-address station stays data.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1576,6 +1576,28 @@ ieee80211_rx_h_check_dup(struct ieee8021
+ 	return RX_CONTINUE;
+ }
+ 
++static bool ieee80211_sta_has_tagged_control_port(struct sta_info *sta)
++{
++	struct ieee80211_sub_if_data *sdata = sta->sdata;
++
++	if (!sdata->control_port_over_nl80211)
++		return false;
++
++	switch (sdata->vif.type) {
++	case NL80211_IFTYPE_AP_VLAN:
++		return rcu_access_pointer(sdata->u.vlan.sta);
++	case NL80211_IFTYPE_STATION:
++		/* wpa_supplicant enables 4-address mode only once it has handled
++		 * the association, and the AP's Message 1 can arrive before that.
++		 * It discards the frame itself where the link is no backhaul.
++		 */
++		return sdata->u.mgd.use_4addr ||
++		       !test_sta_flag(sta, WLAN_STA_AUTHORIZED);
++	default:
++		return false;
++	}
++}
++
+ static ieee80211_rx_result debug_noinline
+ ieee80211_rx_h_check(struct ieee80211_rx_data *rx)
+ {
+@@ -1635,6 +1657,14 @@ ieee80211_rx_h_check(struct ieee80211_rx
+ 			skb_copy_bits(rx->skb, hdrlen + 6, &ethertype, 2);
+ 			if (ethertype == rx->sdata->control_port_protocol)
+ 				return RX_CONTINUE;
++
++			if (ethertype == cpu_to_be16(ETH_P_8021Q) &&
++			    ieee80211_sta_has_tagged_control_port(rx->sta) &&
++			    rx->skb->len >= hdrlen + 12) {
++				skb_copy_bits(rx->skb, hdrlen + 10, &ethertype, 2);
++				if (ethertype == rx->sdata->control_port_protocol)
++					return RX_CONTINUE;
++			}
+ 		}
+ 
+ 		if (rx->sdata->vif.type == NL80211_IFTYPE_AP &&
+@@ -2675,9 +2705,10 @@ static bool ieee80211_is_control_port_de
+ 
+ /*
+  * A Multi-AP backhaul with a Primary VLAN sends EAPOL with a C-Tag on a
+- * 4-address link. The BSS accepts that form, while a tagged frame of any
+- * other station stays subject to the port. Only a receiver on the control
+- * port over nl80211 can take the tagged frame apart.
++ * 4-address link. The BSS accepts that form, and a station takes it while
++ * its port is closed, before it enables 4-address mode. A tagged frame of
++ * any other station stays subject to the port. Only a receiver on the
++ * control port over nl80211 can take the tagged frame apart.
+  */
+ static bool ieee80211_is_tagged_control_port(struct ieee80211_rx_data *rx,
+ 					     struct sk_buff *skb,
+@@ -2688,26 +2719,11 @@ static bool ieee80211_is_tagged_control_
+ 	const __be16 *inner;
+ 	__be16 _inner;
+ 
+-	if (likely(ehdr->h_proto != cpu_to_be16(ETH_P_8021Q)) || !rx->sta)
++	if (likely(ehdr->h_proto != cpu_to_be16(ETH_P_8021Q)) || !rx->sta ||
++	    !ieee80211_sta_has_tagged_control_port(rx->sta))
+ 		return false;
+ 
+ 	sdata = rx->sta->sdata;
+-	if (!sdata->control_port_over_nl80211)
+-		return false;
+-
+-	switch (sdata->vif.type) {
+-	case NL80211_IFTYPE_AP_VLAN:
+-		if (!rcu_access_pointer(sdata->u.vlan.sta))
+-			return false;
+-		break;
+-	case NL80211_IFTYPE_STATION:
+-		if (!sdata->u.mgd.use_4addr)
+-			return false;
+-		break;
+-	default:
+-		return false;
+-	}
+-
+ 	inner = skb_header_pointer(skb, tag_offs +
+ 				   offsetof(struct vlan_hdr,
+ 					    h_vlan_encapsulated_proto),

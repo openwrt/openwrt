@@ -19,6 +19,7 @@ hostapd.data.pending_config = {};
 hostapd.data.apsta_freq = {};
 hostapd.data.apsta_stopped = {};
 hostapd.data.link_reload = {};
+hostapd.data.link_remove_wait = [];
 
 hostapd.data.file_fields = {
 	vlan_file: true,
@@ -1762,6 +1763,68 @@ function iface_link_reload_expired(phy, name)
 	return true;
 }
 
+const LINK_REMOVE_REPLY_MARGIN_MS = 1000;
+
+function mld_link_remove_times(times)
+{
+	return {
+		removal_ms: times?.removal_ms ?? 0,
+		expiry_ms: times?.expiry_ms ?? 0,
+	};
+}
+
+function time_ms()
+{
+	let t = clock(true);
+
+	return t[0] * 1000 + t[1] / 1000000;
+}
+
+function mld_link_remove_reply(wait, bss)
+{
+	let times = mld_link_remove_times(bss.link_remove_times?.());
+
+	hostapd.data.link_remove_wait = filter(hostapd.data.link_remove_wait,
+					       (w) => w != wait);
+	wait.timer.cancel();
+
+	// The caller counts the expiry from its request and the stop from the reply
+	if (times.expiry_ms)
+		times.expiry_ms += time_ms() - wait.start_ms;
+	wait.req.reply(times);
+}
+
+function mld_link_remove_defer(req, phy, name, bss, removal_ms)
+{
+	let wait = { req, phy, name, bss, start_ms: time_ms() };
+
+	wait.timer = uloop.timer(removal_ms + LINK_REMOVE_REPLY_MARGIN_MS,
+				 () => mld_link_remove_reply(wait, wait.bss));
+	push(hostapd.data.link_remove_wait, wait);
+	req.defer();
+}
+
+function mld_link_remove_answer(phy, name, bss)
+{
+	let waits = filter(hostapd.data.link_remove_wait,
+			   (w) => w.phy == phy && w.name == name);
+
+	for (let wait in waits)
+		mld_link_remove_reply(wait, bss);
+}
+
+function iface_link_reload_timed(phy, name, bss)
+{
+	let reload = hostapd.data.link_reload[phy];
+	if (!reload?.links[name])
+		return;
+
+	let wait_ms = mld_link_remove_times(bss.link_remove_times?.()).removal_ms +
+		      LINK_RELOAD_MARGIN_MS;
+	if (wait_ms > reload.timer.remaining())
+		reload.timer.set(wait_ms);
+}
+
 function iface_set_config(name, config)
 {
 	let old_config = hostapd.data.config[name];
@@ -2269,6 +2332,17 @@ function dpp_channel_handle_request(channel, req)
 	}
 }
 
+// The links of an AP MLD share one name, one ubus object and one hook. A restart
+// of one link publishes no object event, so nothing registers the hook again.
+function dpp_name_held_elsewhere(phy, name)
+{
+	for (let other, bss_list in hostapd.bss)
+		if (other != phy && bss_list[name])
+			return true;
+
+	return false;
+}
+
 function dpp_channel_handle_disconnect(channel)
 {
 	for (let ifname, hook in hostapd.data.dpp_hooks) {
@@ -2588,7 +2662,13 @@ let main_obj = {
 			if (removal == null)
 				return libubus.STATUS_NOT_SUPPORTED;
 
-			return removal;
+			if (removal.timed)
+				return mld_link_remove_times(removal);
+
+			// The caller reads the times once, and the driver can apply
+			// a larger count than the request named.
+			mld_link_remove_defer(req, phy, req.args.iface, bss,
+					      removal.removal_ms);
 		}
 	},
 	status: {
@@ -2603,6 +2683,7 @@ let main_obj = {
 				let is_pending = !!hostapd.data.pending_config[phy_name];
 				let iface = hostapd.interfaces[phy_name];
 				let state = iface?.state();
+				let cac = iface?.cac();
 				let is_running = iface && state == "ENABLED" && !is_pending;
 
 				for (let bss in config.bss) {
@@ -2624,6 +2705,7 @@ let main_obj = {
 							running: is_running,
 							pending: is_pending,
 							state,
+							cac,
 						};
 					} else {
 						entry = {
@@ -2632,6 +2714,7 @@ let main_obj = {
 							running: is_running,
 							pending: is_pending,
 							state,
+							cac,
 						};
 						if (config.radio_idx != null && config.radio_idx >= 0)
 							entry.radio = config.radio_idx;
@@ -2672,12 +2755,23 @@ function bss_event(type, name, data) {
 
 	data ??= {};
 	data.name = name;
-	hostapd.data.obj.notify(`bss.${type}`, data, null, null, null, -1);
+	hostapd.data.obj?.notify(`bss.${type}`, data, null, null, null, -1);
 	ubus.call("service", "event", { type: `hostapd.${name}.${type}`, data: {} });
 }
 
 return {
 	shutdown: function() {
+		// ubusd drops a reply to an object that is gone
+		for (let wait in hostapd.data.link_remove_wait)
+			mld_link_remove_reply(wait, wait.bss);
+
+		// Nothing serves the connection from here on, so a caller that
+		// still resolves an object waits for its own timeout.
+		hostapd.data.obj?.remove();
+		hostapd.data.auth_obj?.remove();
+		delete hostapd.data.obj;
+		delete hostapd.data.auth_obj;
+
 		for (let phy in hostapd.data.config)
 			iface_set_config(phy);
 		hostapd.udebug_set(null);
@@ -2698,12 +2792,27 @@ return {
 		bss_event("reload", name, { reconf: reconf != 0 });
 	},
 	bss_remove: function(phy, name, obj) {
-		delete hostapd.data.dpp_hooks[name];
+		mld_link_remove_answer(phy, name, obj);
+		if (!dpp_name_held_elsewhere(phy, name))
+			delete hostapd.data.dpp_hooks[name];
 		bss_event("remove", name);
 	},
+	// The AP MLD keeps its name on its other links, so the event names the
+	// radio of the link that stopped.
 	bss_link_removed: function(phy, name, obj) {
+		mld_link_remove_answer(phy, name, obj);
 		if (!iface_link_reload_expired(phy, name))
 			mld_link_bss_remove(phy, name, obj);
+		bss_event("link_removed", name, { phy });
+	},
+	bss_link_remove_timed: function(phy, name, obj) {
+		iface_link_reload_timed(phy, name, obj);
+		mld_link_remove_answer(phy, name, obj);
+	},
+	cac_start: function(phy, cac) {
+		hostapd.data.obj?.notify("cac_start",
+			{ wiphy: hostapd.data.config[phy]?.phy, ...cac },
+			null, null, null, -1);
 	},
 	sta_auth: function(iface, sta) {
 		let msg = { iface, sta };

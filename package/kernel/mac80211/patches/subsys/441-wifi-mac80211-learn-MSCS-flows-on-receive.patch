@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -341,6 +341,10 @@ struct ieee80211_if_ap {
+@@ -352,6 +352,10 @@ struct ieee80211_if_ap {
  
  	bool multicast_to_unicast;
  	bool active;
@@ -35,7 +35,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  struct ieee80211_if_vlan {
-@@ -2270,6 +2274,9 @@ int ieee80211_set_mscs(struct wiphy *wip
+@@ -2281,6 +2285,9 @@ int ieee80211_set_mscs(struct wiphy *wip
  		       const u8 *peer, struct cfg80211_mscs_desc *desc);
  void ieee80211_sta_scs_free(struct sta_info *sta);
  bool ieee80211_flow_classify(struct sta_info *sta, struct sk_buff *skb);
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		local->fif_pspoll--;
  		local->fif_probe_req--;
  	} else if (sdata->vif.type == NL80211_IFTYPE_ADHOC) {
-@@ -1422,6 +1424,10 @@ int ieee80211_do_open(struct wireless_de
+@@ -1423,6 +1425,10 @@ int ieee80211_do_open(struct wireless_de
  		break;
  		}
  	case NL80211_IFTYPE_AP:
@@ -67,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	case NL80211_IFTYPE_MESH_POINT:
  	case NL80211_IFTYPE_STATION:
  	case NL80211_IFTYPE_MONITOR:
-@@ -1456,7 +1462,7 @@ int ieee80211_do_open(struct wireless_de
+@@ -1457,7 +1463,7 @@ int ieee80211_do_open(struct wireless_de
  			 * no need to worry about AP_VLAN/NAN_DATA cleanup since
  			 * in that case we can't have open_count == 0
  			 */
@@ -76,7 +76,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		}
  		ieee80211_led_radio(local, true);
  		ieee80211_mod_tpt_led_trig(local,
-@@ -1632,6 +1638,9 @@ int ieee80211_do_open(struct wireless_de
+@@ -1633,6 +1639,9 @@ int ieee80211_do_open(struct wireless_de
  		list_del(&sdata->u.vlan.list);
  	/* Might not be initialized yet, but it is harmless */
  	sdata->bss = NULL;

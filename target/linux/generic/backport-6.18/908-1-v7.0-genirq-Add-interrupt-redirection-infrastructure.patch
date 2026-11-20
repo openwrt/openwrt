@@ -280,7 +280,7 @@ Link: https://patch.msgid.link/20251128212055.1409093-2-rrendec@redhat.com
  /* Dynamic interrupt handling */
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -35,6 +35,16 @@ static int __init setup_forced_irqthread
+@@ -36,6 +36,16 @@ static int __init setup_forced_irqthread
  early_param("threadirqs", setup_forced_irqthreads);
  #endif
  
@@ -297,7 +297,7 @@ Link: https://patch.msgid.link/20251128212055.1409093-2-rrendec@redhat.com
  static int __irq_get_irqchip_state(struct irq_data *d, enum irqchip_irq_state which, bool *state);
  
  static void __synchronize_hardirq(struct irq_desc *desc, bool sync_chip)
-@@ -107,7 +117,9 @@ EXPORT_SYMBOL(synchronize_hardirq);
+@@ -108,7 +118,9 @@ EXPORT_SYMBOL(synchronize_hardirq);
  
  static void __synchronize_irq(struct irq_desc *desc)
  {
@@ -307,7 +307,7 @@ Link: https://patch.msgid.link/20251128212055.1409093-2-rrendec@redhat.com
  	/*
  	 * We made sure that no hardirq handler is running. Now verify that no
  	 * threaded handlers are active.
-@@ -217,8 +229,7 @@ static inline void irq_validate_effectiv
+@@ -218,8 +230,7 @@ static inline void irq_validate_effectiv
  
  static DEFINE_PER_CPU(struct cpumask, __tmp_mask);
  

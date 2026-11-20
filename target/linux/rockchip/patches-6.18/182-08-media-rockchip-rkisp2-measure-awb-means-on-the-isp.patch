@@ -108,7 +108,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  #define rkisp2_init_stats_block(rkisp2, buf, type)			\
-@@ -367,6 +369,37 @@ static void rkisp2_stats_get_rawawb(stru
+@@ -369,6 +371,37 @@ static void rkisp2_stats_get_rawawb(stru
  	rkisp2_write(rkisp2, ctrl, val1 | ISP3X_RAWAWB_CTRL_MEAS_DONE);
  }
  
@@ -146,7 +146,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* This is always called in an intterupt context */
  static struct rkisp2_buffer *rkisp2_stats_get_buf(struct rkisp2_stats *stats)
  {
-@@ -418,7 +451,10 @@ static void rkisp2_stats_send_measuremen
+@@ -420,7 +453,10 @@ static void rkisp2_stats_send_measuremen
  
  	rkisp2_stats_get_hist(stats, status, cur_stat_buf);
  
@@ -216,7 +216,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*---------- Parameters ------------*/
  
-@@ -619,6 +646,10 @@ struct rkisp2_params_hist_big {
+@@ -621,6 +648,10 @@ struct rkisp2_params_hist_big {
   * @limits: Limits for white point detection [min, max] (8 bits)
   * @weights: Weights (6-bits)
   * @reserved: padding

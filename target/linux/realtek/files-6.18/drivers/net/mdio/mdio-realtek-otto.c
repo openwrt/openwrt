@@ -85,6 +85,7 @@
 #define RTMD_PHY_AQR113C_A			0x31c31c12
 #define RTMD_PHY_AQR113C_B			0x31c31c13
 #define RTMD_PHY_AQR813				0x31c31cb2
+#define RTMD_PHY_RTL8214QF			0x001ccab0
 #define RTMD_PHY_RTL8218D			0x001cc983
 #define RTMD_PHY_RTL8218E			0x001cc984
 #define RTMD_PHY_RTL8221B_VB_CG			0x001cc849
@@ -726,6 +727,10 @@ static int rtmd_get_phy_info(struct rtmd_ctrl *ctrl, int pn, struct rtmd_phy_inf
 		phyinfo->poll_duplex = RTMD_PHY_POLL_MMD(1, 0x0000, 8);
 		phyinfo->poll_adv_1000 = RTMD_PHY_POLL_MMD(7, 0xc400, 15);
 		phyinfo->poll_lpa_1000 = RTMD_PHY_POLL_MMD(7, 0xe820, 15);
+		break;
+	case RTMD_PHY_RTL8214QF:
+		/* Like the vendor SDK: with the default type the MAC never sees the link */
+		phyinfo->mac_type = RTMD_PHY_MAC_1G;
 		break;
 	case RTMD_PHY_RTL8218D:
 	case RTMD_PHY_RTL8218E:

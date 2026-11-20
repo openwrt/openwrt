@@ -1,0 +1,48 @@
+From a8d0b22564a73a734b4df23684f3060bd834738e Mon Sep 17 00:00:00 2001
+From: Mikhail Zhilkin <csharper2005@gmail.com>
+Date: Sat, 7 Nov 2026 12:15:27 +0100
+Subject: [PATCH v2 2/3] net: mtk_eth: an8855: sync link error recovery config
+ with Linux
+
+Sync the Link Error Recovery configuration with the proposed Linux
+driver [1].
+
+Currently, the U-Boot driver explicitly clears the
+AN8855_RG_LINK_ERRO_EN bit (bit 23) in the AN8855_RX_CTRL_26 register
+during SGMII initialization. Setting bit 23, while explicitly clearing
+bit 24, matches the Linux driver behavior. This allows the MAC/PCS to
+gracefully recover from momentary link errors on marginal hardware
+rather than dropping packets or the entire link.
+
+[1] https://lore.kernel.org/all/20261009161102.38961-11-ansuelsmth@gmail.com/
+
+Fixes: cedafee9ff39 ("net: mediatek: add support for Airoha AN8855 ethernet switch")
+Signed-off-by: Mikhail Zhilkin <csharper2005@gmail.com>
+---
+Changes in v2:
+- Also cleared BIT(24) to exactly match the proposed Linux driver based
+  on review feedback.
+- Changed "upstream" to "proposed" and added lore link.
+- Added Fixes tag.
+Link: https://patchwork.ozlabs.org/project/uboot/patch/20261114091049.2418574-3-csharper2005@gmail.com/
+---
+ drivers/net/mtk_eth/an8855.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/mtk_eth/an8855.c b/drivers/net/mtk_eth/an8855.c
+index 663cc5d935e..d06493018f0 100644
+--- a/drivers/net/mtk_eth/an8855.c
++++ b/drivers/net/mtk_eth/an8855.c
+@@ -599,7 +599,8 @@ static int an8855_port_sgmii_init(struct an8855_switch_priv *priv, u32 port)
+ 	an8855_reg_write(priv, AN8855_PLL_CTRL_0, val);
+ 
+ 	an8855_reg_read(priv, AN8855_RX_CTRL_26, &val);
+-	val &= ~BIT(23);
++	val |= BIT(23);
++	val &= ~BIT(24);
+ 	val |= BIT(26);
+ 	an8855_reg_write(priv, AN8855_RX_CTRL_26, val);
+ 
+-- 
+2.53.0
+

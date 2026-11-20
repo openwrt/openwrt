@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -100,6 +100,7 @@ enum ieee80211_status_data {
+@@ -111,6 +111,7 @@ enum ieee80211_status_data {
  	IEEE80211_STATUS_TYPE_SMPS	= 1,
  	IEEE80211_STATUS_TYPE_NEG_TTLM	= 2,
  	IEEE80211_STATUS_TYPE_UHR_OMP	= 3,
@@ -39,7 +39,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	IEEE80211_STATUS_SUBDATA_MASK	= 0x1ff0,
  };
  
-@@ -578,6 +579,9 @@ struct ieee80211_if_managed {
+@@ -589,6 +590,9 @@ struct ieee80211_if_managed {
  	unsigned int uapsd_max_sp_len;
  
  	u8 use_4addr;

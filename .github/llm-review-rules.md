@@ -15,6 +15,10 @@ start.
 - **MAC from MTD.** `mediatek,mtd-eeprom = <&factory 0xNNNN>;` --> use
   `nvmem-cells = <&macaddr_factory_NN>;` +
   `nvmem-cell-names = "mac-address";`.
+- **Prefixed calibration variant.**
+  `qcom,ath10k-calibration-variant = "...";` /
+  `qcom,ath11k-calibration-variant = "...";` --> use
+  `qcom,calibration-variant = "...";` with the same value.
 
 ## Patch regeneration
 
