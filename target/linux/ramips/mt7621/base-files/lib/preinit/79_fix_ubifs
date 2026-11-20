@@ -1,0 +1,29 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+. /lib/functions.sh
+
+fix_ubifs() {
+	case "$(board_name)" in
+	zte,mf286c3-a|\
+	zte,mf286c3-b)
+		# After the stock firmware flashes the factory image, when trying to restore config files,
+		# the firmware interprets the UBIFS rootfs_data volume as JFFS2, effectively corrupting it.
+		# Operation: attempt to mount /dev/ubi0_1 as UBIFS and truncate it when unsuccessful.
+		# Needs to be run before 80_mount_root (taking care of reinitializing and mounting) and after
+		# 70_initramfs_test (taking care of not running when on the initramfs image).
+		if [ -c /dev/ubi0_1 ]; then
+			mkdir -p /tmp/test_mnt
+			if ! mount -t ubifs /dev/ubi0_1 /tmp/test_mnt 2>/dev/null; then
+				echo "Fix-UBIFS: Dirty overlay detected. Wiping..." > /dev/kmsg
+				ubiupdatevol /dev/ubi0_1 -t
+			else
+				umount /tmp/test_mnt
+				rmdir /tmp/test_mnt
+			fi
+		fi
+		;;
+	esac
+}
+
+boot_hook_add preinit_main fix_ubifs
