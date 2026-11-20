@@ -1,0 +1,93 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "armada-8040-v-81x.dtsi"
+
+/ {
+	model = "Check Point V-81WD";
+	compatible = "checkpoint,v-81wd", "marvell,armada8040",
+		     "marvell,armada-ap806-quad", "marvell,armada-ap806";
+};
+
+/*
+ * No interrupt/pinctrl properties on the expanders: they must probe
+ * before the PCIe controllers so the Wi-Fi hogs are applied before
+ * link training. The SFP signals are therefore polled.
+ */
+&gpio3 {
+	wifi1-en-hog {
+		gpio-hog;
+		gpios = <12 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "wifi1_en";
+	};
+
+	wifi1-reset-hog {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "wifi1_reset";
+	};
+
+	wifi2-reset-hog {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "wifi2_reset";
+	};
+};
+
+&gpio4 {
+	w-disable-1-hog {
+		gpio-hog;
+		gpios = <12 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "w_disable";
+	};
+
+	w-disable-2-hog {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "w_disable_2";
+	};
+
+	wifi-wol-3v3-2-hog {
+		gpio-hog;
+		gpios = <5 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "wifi_wol_3v3_2";
+	};
+};
+
+&gpio5 {
+	wifi2-en-hog {
+		gpio-hog;
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "wifi2_en";
+	};
+};
+
+/*
+ * Wi-Fi LED: only the blue one (led-8) is used, shared by both radios.
+ * The red one (led-7) does not seem to be used on stock firmware.
+ */
+&{/leds/led-8} {
+	linux,default-trigger = "phy0radio";
+};
+
+&cp0_pcie2 {
+	status = "okay";
+	num-lanes = <1>;
+	phys = <&cp0_comphy5 2>;
+	phy-names = "cp0-pcie2-x1-phy";
+};
+
+&cp1_pcie1 {
+	status = "okay";
+	num-lanes = <1>;
+	phys = <&cp1_comphy4 1>;
+	phy-names = "cp1-pcie1-x1-phy";
+};
