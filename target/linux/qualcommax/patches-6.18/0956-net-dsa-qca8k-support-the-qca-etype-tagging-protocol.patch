@@ -12,7 +12,7 @@ Assisted-by: Claude:claude-opus-5-5
 Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 --- a/drivers/net/dsa/qca/qca8k-8xxx.c
 +++ b/drivers/net/dsa/qca/qca8k-8xxx.c
-@@ -216,7 +216,8 @@ static void qca8k_rw_reg_ack_handler(str
+@@ -230,7 +230,8 @@ complete:
  }
  
  static struct sk_buff *qca8k_alloc_mdio_header(enum mdio_cmd cmd, u32 reg, u32 *val,
@@ -22,7 +22,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  {
  	struct qca_mgmt_ethhdr *mgmt_ethhdr;
  	unsigned int real_len;
-@@ -261,7 +262,8 @@ static struct sk_buff *qca8k_alloc_mdio_
+@@ -275,7 +276,8 @@ static struct sk_buff *qca8k_alloc_mdio_
  	skb_reset_mac_header(skb);
  	skb_set_network_header(skb, skb->len);
  
@@ -32,7 +32,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  
  	hdr = FIELD_PREP(QCA_HDR_XMIT_VERSION, QCA_HDR_VERSION);
  	hdr |= FIELD_PREP(QCA_HDR_XMIT_PRIORITY, priority);
-@@ -280,7 +282,12 @@ static struct sk_buff *qca8k_alloc_mdio_
+@@ -294,7 +296,12 @@ static struct sk_buff *qca8k_alloc_mdio_
  	if (cmd == MDIO_WRITE)
  		put_unaligned_le32(*val, &mgmt_ethhdr->mdio_data);
  
@@ -46,7 +46,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  
  	data2 = skb_put_zero(skb, QCA_HDR_MGMT_DATA2_LEN + QCA_HDR_MGMT_PADDING_LEN);
  	if (cmd == MDIO_WRITE && len > QCA_HDR_MGMT_DATA1_LEN) {
-@@ -317,7 +324,8 @@ static int qca8k_read_eth(struct qca8k_p
+@@ -331,7 +338,8 @@ static int qca8k_read_eth(struct qca8k_p
  	int ret;
  
  	skb = qca8k_alloc_mdio_header(MDIO_READ, reg, NULL,
@@ -56,7 +56,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	if (!skb)
  		return -ENOMEM;
  
-@@ -369,7 +377,8 @@ static int qca8k_write_eth(struct qca8k_
+@@ -383,7 +391,8 @@ static int qca8k_write_eth(struct qca8k_
  	int ret;
  
  	skb = qca8k_alloc_mdio_header(MDIO_WRITE, reg, val,
@@ -66,7 +66,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	if (!skb)
  		return -ENOMEM;
  
-@@ -648,19 +657,22 @@ qca8k_phy_eth_command(struct qca8k_priv
+@@ -661,19 +670,22 @@ qca8k_phy_eth_command(struct qca8k_priv
  
  	/* Prealloc all the needed skb before the lock */
  	write_skb = qca8k_alloc_mdio_header(MDIO_WRITE, QCA8K_MDIO_MASTER_CTRL, &write_val,
@@ -92,7 +92,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	if (!read_skb) {
  		ret = -ENOMEM;
  		goto err_read_skb;
-@@ -1743,6 +1755,35 @@ qca8k_get_tag_protocol(struct dsa_switch
+@@ -1815,6 +1827,35 @@ qca8k_get_tag_protocol(struct dsa_switch
  	return DSA_TAG_PROTO_QCA;
  }
  
@@ -128,7 +128,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  static struct dsa_port *
  qca8k_preferred_default_local_cpu_port(struct dsa_switch *ds)
  {
-@@ -1893,6 +1934,7 @@ static int qca8k_connect_tag_protocol(st
+@@ -1968,6 +2009,7 @@ static int qca8k_connect_tag_protocol(st
  
  	switch (proto) {
  	case DSA_TAG_PROTO_QCA:
@@ -136,17 +136,17 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  		tagger_data = ds->tagger_data;
  
  		tagger_data->rw_reg_ack_handler = qca8k_rw_reg_ack_handler;
-@@ -2122,6 +2164,7 @@ static const struct phylink_mac_ops qca8
+@@ -2337,6 +2379,7 @@ static const struct phylink_mac_ops qca8
  
  static const struct dsa_switch_ops qca8k_switch_ops = {
  	.get_tag_protocol	= qca8k_get_tag_protocol,
 +	.change_tag_protocol	= qca8k_change_tag_protocol,
  	.setup			= qca8k_setup,
+ 	.teardown		= qca8k_teardown,
  	.get_strings		= qca8k_get_strings,
- 	.get_ethtool_stats	= qca8k_get_ethtool_stats,
 --- a/drivers/net/dsa/qca/qca8k.h
 +++ b/drivers/net/dsa/qca/qca8k.h
-@@ -149,6 +149,9 @@
+@@ -152,6 +152,9 @@
  #define   QCA8K_PORT_STATUS_LINK_AUTO			BIT(9)
  #define   QCA8K_PORT_STATUS_LINK_PAUSE			BIT(10)
  #define   QCA8K_PORT_STATUS_FLOW_AUTO			BIT(12)
@@ -156,7 +156,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  #define QCA8K_REG_PORT_HDR_CTRL(_i)			(0x9c + (_i * 4))
  #define   QCA8K_PORT_HDR_CTRL_RX_MASK			GENMASK(3, 2)
  #define   QCA8K_PORT_HDR_CTRL_TX_MASK			GENMASK(1, 0)
-@@ -462,6 +465,7 @@ struct qca8k_priv {
+@@ -532,6 +535,7 @@ struct qca8k_priv {
  	struct device *dev;
  	struct gpio_desc *reset_gpio;
  	struct net_device *mgmt_conduit; /* Track if mdio/mib Ethernet is available */
