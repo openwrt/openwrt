@@ -234,6 +234,11 @@ platform_do_upgrade() {
 		fw_setenv bootcount 0
 		nand_do_upgrade "$1"
 		;;
+	dlink,dba-x1230p)
+		CI_UBIPART="rootfs"
+		remove_oem_ubi_volume ubi_rootfs
+		nand_do_upgrade "$1"
+		;;
 	glinet,gl-ax1800|\
 	glinet,gl-axt1800|\
 	netgear,rbr350|\
