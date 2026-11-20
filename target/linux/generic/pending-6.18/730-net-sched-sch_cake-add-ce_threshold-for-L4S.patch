@@ -1,0 +1,201 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] net/sched: sch_cake: add ce_threshold for L4S
+
+A scalable congestion control (L4S, RFC 9330) expects a CE mark as soon as
+a packet has queued longer than a shallow threshold. CAKE only marks
+through COBALT, which reacts on CoDel's target and interval, so an L4S
+flow through CAKE sees classic marking. fq_codel offers this as
+ce_threshold, added in commit 80ba92fa1a92 ("codel: add ce_threshold
+attribute"), and ce_threshold_selector, added in commit dfcb63ce1de6
+("fq_codel: generalise ce_threshold marking for subset of traffic"), and
+the L4S operational guidance (draft-ietf-tsvwg-l4sops) recommends that
+recipe for FQ AQMs.
+
+Add the same three attributes to CAKE. At dequeue, an ECN-capable packet
+that is not CE yet and whose DS field matches the selector under the mask
+is marked CE with a probability that rises linearly from zero at the
+threshold to one at twice the threshold, the ramp RFC 9332 (Appendix A.1)
+recommends over a step for its Native L4S AQM. CAKE queues every flow
+separately, so only the selected flows see the shallow threshold, and
+COBALT keeps running on all flows, which keeps the overload behaviour
+RFC 9331 asks for.
+
+A hard step at the threshold, as fq_codel has, starves a scalable flow at
+internet RTTs. A picoquic Prague flow through a 100 Mbit/s CAKE reached
+31 Mbit/s with a 1 ms step at 10 ms of added RTT (1 run). With the ramp
+and a 3 ms threshold it reached 92.5, 89.5 and 85.1 Mbit/s at 10, 20 and
+40 ms of added RTT with 2.1 to 2.4 ms of average queueing delay, against
+93.8 to 94.1 Mbit/s and 4.9 to 5.6 ms without the threshold (1 run each).
+fq_codel with a 3 ms step reached 71.8 Mbit/s at 40 ms (1 run). Against
+one non-ECN CUBIC flow at 20 and 40 ms, kernel DCTCP kept 46.7 and 43.8
+Mbit/s to CUBIC's 53.3 and 46.8 (1 run each).
+
+Over a 300/150 Mbit/s PPPoE line, with CAKE shaping the download to
+310 Mbit/s and the sender remarking a DCTCP flow's ECT(0) to ECT(1), the
+DCTCP flow queued 2.0 ms at the median and 3.0 ms at the 99th percentile
+next to a CUBIC flow, both at 144 Mbit/s, against 6.2 and 12.5 ms with
+COBALT alone; the CUBIC flow queued 3.5 and 3.1 ms. Alone, the DCTCP flow
+queued 1.8 and 3.7 ms against 5.8 and 56 ms. Two CUBIC flows saw no
+change (2.9 and 2.7 ms); for these TCP flows the queueing delay is the
+sender's smoothed RTT less the path's idle RTT. picoquic Prague through
+the same CAKE at 150 Mbit/s kept CAKE's average queueing delay at 3.0 ms
+instead of 5.0 ms at the same 138 Mbit/s. 3 runs each.
+
+As COBALT does for its target, the threshold is held above 1.5 times the
+tin's time to send a full packet, and a packet that was alone in its flow
+is not marked: at a low rate a single packet waits longer than a 1 ms
+threshold by itself, and would be marked every time. A packet COBALT has
+just marked is not marked again. The marks are counted in a new per-tin
+statistic, separate from COBALT's.
+
+ce_threshold 3ms ce_threshold_selector 0x01/0x03 marks ECT(1) packets.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/uapi/linux/pkt_sched.h
++++ b/include/uapi/linux/pkt_sched.h
+@@ -1014,6 +1014,9 @@ enum {
+ 	TCA_CAKE_ACK_FILTER,
+ 	TCA_CAKE_SPLIT_GSO,
+ 	TCA_CAKE_FWMARK,
++	TCA_CAKE_CE_THRESHOLD,
++	TCA_CAKE_CE_THRESHOLD_SELECTOR,
++	TCA_CAKE_CE_THRESHOLD_MASK,
+ 	__TCA_CAKE_MAX
+ };
+ #define TCA_CAKE_MAX	(__TCA_CAKE_MAX - 1)
+@@ -1068,6 +1071,7 @@ enum {
+ 	TCA_CAKE_TIN_STATS_UNRESPONSIVE_FLOWS,
+ 	TCA_CAKE_TIN_STATS_MAX_SKBLEN,
+ 	TCA_CAKE_TIN_STATS_FLOW_QUANTUM,
++	TCA_CAKE_TIN_STATS_CE_THRESHOLD_MARKS,
+ 	__TCA_CAKE_TIN_STATS_MAX
+ };
+ #define TCA_CAKE_TIN_STATS_MAX (__TCA_CAKE_TIN_STATS_MAX - 1)
+--- a/net/sched/sch_cake.c
++++ b/net/sched/sch_cake.c
+@@ -180,6 +180,7 @@ struct cake_tin_data {
+ 	u32	tin_backlog;
+ 	u32	tin_dropped;
+ 	u32	tin_ecn_mark;
++	u32	tin_ce_threshold_mark;
+ 
+ 	u32	packets;
+ 	u64	bytes;
+@@ -206,6 +207,9 @@ struct cake_sched_config {
+ 	u32		buffer_config_limit;
+ 	u32		fwmark_mask;
+ 	u16		fwmark_shft;
++	u8		ce_threshold_selector;
++	u8		ce_threshold_mask;
++	u32		ce_threshold;
+ 	s16		rate_overhead;
+ 	u16		rate_mpu;
+ 	u16		rate_flags;
+@@ -2011,6 +2015,7 @@ static struct sk_buff *cake_dequeue(stru
+ 	struct list_head *head;
+ 	bool first_flow = true;
+ 	struct sk_buff *skb;
++	u64 ce_threshold;
+ 	u64 delay;
+ 	u32 len;
+ 
+@@ -2257,6 +2262,38 @@ retry:
+ 		   cake_ewma(b->base_delay, delay,
+ 			     delay < b->base_delay ? 2 : 8));
+ 
++	/* A scalable (L4S) flow expects a CE mark as soon as its packet has
++	 * waited longer than a shallow threshold; the selector picks those
++	 * flows by their ECN codepoint. The mark probability rises linearly
++	 * from zero at the threshold to one at twice the threshold, so the
++	 * marks follow the queue's growth rather than switching on with it.
++	 * As COBALT does for its target, the threshold is held above 1.5 times
++	 * the tin's time to send a full packet, and a packet that had its flow
++	 * to itself is left alone: at a low rate the one packet in flight
++	 * would otherwise be marked every time. Only an ECN-capable packet
++	 * that is not CE yet, and that COBALT did not just mark, counts.
++	 */
++	ce_threshold = READ_ONCE(q->config->ce_threshold);
++	if (ce_threshold)
++		ce_threshold = max_t(u64, ce_threshold,
++				     b->cparams.mtu_time * 3 / 2);
++	if (ce_threshold && flow->head && !flow->cvars.ecn_marked &&
++	    delay > ce_threshold &&
++	    (delay >= 2 * ce_threshold ||
++	     mul_u64_u32_shr(ce_threshold, get_random_u32(), 32) <
++	     delay - ce_threshold)) {
++		u8 mask = READ_ONCE(q->config->ce_threshold_mask);
++		int dsfield = skb_get_dsfield(skb);
++
++		if (dsfield >= 0 && !INET_ECN_is_not_ect(dsfield) &&
++		    !INET_ECN_is_ce(dsfield) &&
++		    (!mask || ((u8)dsfield & mask) ==
++			      READ_ONCE(q->config->ce_threshold_selector)) &&
++		    INET_ECN_set_ce(skb))
++			WRITE_ONCE(b->tin_ce_threshold_mark,
++				   b->tin_ce_threshold_mark + 1);
++	}
++
+ 	len = cake_advance_shaper(q, b, skb, now, false);
+ 	flow->deficit -= len;
+ 	b->tin_deficit -= len;
+@@ -2318,6 +2355,9 @@ static const struct nla_policy cake_poli
+ 	[TCA_CAKE_ACK_FILTER]	 = { .type = NLA_U32 },
+ 	[TCA_CAKE_SPLIT_GSO]	 = { .type = NLA_U32 },
+ 	[TCA_CAKE_FWMARK]	 = { .type = NLA_U32 },
++	[TCA_CAKE_CE_THRESHOLD]	 = { .type = NLA_U32 },
++	[TCA_CAKE_CE_THRESHOLD_SELECTOR] = { .type = NLA_U8 },
++	[TCA_CAKE_CE_THRESHOLD_MASK] = { .type = NLA_U8 },
+ };
+ 
+ static void cake_set_rate(struct cake_tin_data *b, u64 rate, u32 mtu,
+@@ -2756,6 +2796,21 @@ static int cake_config_change(struct cak
+ 			   q->fwmark_mask ? __ffs(q->fwmark_mask) : 0);
+ 	}
+ 
++	if (tb[TCA_CAKE_CE_THRESHOLD]) {
++		u64 ce = (u64)nla_get_u32(tb[TCA_CAKE_CE_THRESHOLD]) *
++			 NSEC_PER_USEC;
++
++		WRITE_ONCE(q->ce_threshold, min_t(u64, ce, U32_MAX));
++	}
++
++	if (tb[TCA_CAKE_CE_THRESHOLD_SELECTOR] &&
++	    tb[TCA_CAKE_CE_THRESHOLD_MASK]) {
++		WRITE_ONCE(q->ce_threshold_selector,
++			   nla_get_u8(tb[TCA_CAKE_CE_THRESHOLD_SELECTOR]));
++		WRITE_ONCE(q->ce_threshold_mask,
++			   nla_get_u8(tb[TCA_CAKE_CE_THRESHOLD_MASK]));
++	}
++
+ 	WRITE_ONCE(q->rate_flags, rate_flags);
+ 	WRITE_ONCE(q->flow_mode, flow_mode);
+ 
+@@ -2967,6 +3022,18 @@ static int cake_config_dump(struct cake_
+ 	if (nla_put_u32(skb, TCA_CAKE_FWMARK, READ_ONCE(q->fwmark_mask)))
+ 		goto nla_put_failure;
+ 
++	if (READ_ONCE(q->ce_threshold)) {
++		if (nla_put_u32(skb, TCA_CAKE_CE_THRESHOLD,
++				READ_ONCE(q->ce_threshold) / NSEC_PER_USEC))
++			goto nla_put_failure;
++		if (READ_ONCE(q->ce_threshold_mask) &&
++		    (nla_put_u8(skb, TCA_CAKE_CE_THRESHOLD_SELECTOR,
++				READ_ONCE(q->ce_threshold_selector)) ||
++		     nla_put_u8(skb, TCA_CAKE_CE_THRESHOLD_MASK,
++				READ_ONCE(q->ce_threshold_mask))))
++			goto nla_put_failure;
++	}
++
+ 	return nla_nest_end(skb, opts);
+ 
+ nla_put_failure:
+@@ -3046,6 +3113,8 @@ static int cake_dump_stats(struct Qdisc
+ 		PUT_TSTAT_U32(SENT_PACKETS, READ_ONCE(b->packets));
+ 		PUT_TSTAT_U32(DROPPED_PACKETS, READ_ONCE(b->tin_dropped));
+ 		PUT_TSTAT_U32(ECN_MARKED_PACKETS, READ_ONCE(b->tin_ecn_mark));
++		PUT_TSTAT_U32(CE_THRESHOLD_MARKS,
++			      READ_ONCE(b->tin_ce_threshold_mark));
+ 		PUT_TSTAT_U32(ACKS_DROPPED_PACKETS, READ_ONCE(b->ack_drops));
+ 
+ 		PUT_TSTAT_U32(PEAK_DELAY_US,
