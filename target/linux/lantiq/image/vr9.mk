@@ -334,6 +334,25 @@ define Device/buffalo_wbmr-300hpd
 endef
 TARGET_DEVICES += buffalo_wbmr-300hpd
 
+define Device/draytek_vigor2860
+  $(Device/dsa-migration)
+  $(Device/NAND)
+  DEVICE_VENDOR := DrayTek
+  DEVICE_MODEL := Vigor 2860
+  DEVICE_VARIANT := ac
+  SOC := vr9
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 27392k
+  UBINIZE_OPTS := -E 5
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | draytek-factory
+  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-phy-qca83xx kmod-usb-dwc2 \
+	xrx200-rev1.2-phy11g-firmware kmod-ath10k ath10k-firmware-qca988x \
+	rt2800-pci-firmware kmod-rt2800-pci \
+	wpad-basic-mbedtls kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += draytek_vigor2860
+
 define Device/lantiq_easy80920-nand
   $(Device/dsa-migration)
   $(Device/lantiqFullImage)
