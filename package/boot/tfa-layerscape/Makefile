@@ -27,7 +27,7 @@ else
 	HOST_MUSL_FLAG:=
 endif
 
-HOST_CFLAGS += -Wall -Werror -pedantic -std=c99
+HOST_CFLAGS += -Wall -Werror -Wno-unused-but-set-variable -pedantic -std=c99
 define Host/Compile
 	$(MAKE) -C \
 		$(HOST_BUILD_DIR)/tools/fiptool \
