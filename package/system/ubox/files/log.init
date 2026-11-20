@@ -54,8 +54,7 @@ start_service_file()
 
 	local mountpoint="$(procd_get_mountpoints "${log_file}")"
 
-	[ "$_BOOT" = "1" ] &&
-		[ "$mountpoint" ] &&
+	[ "$mountpoint" ] &&
 		! grep -q ".* $mountpoint " /proc/mounts &&
 		return 0
 
@@ -109,8 +108,4 @@ start_service()
 	config_foreach validate_log_daemon system start_service_daemon
 	config_foreach validate_log_section system start_service_file
 	config_foreach validate_log_section system start_service_remote
-}
-
-boot() {
-	_BOOT=1 start
 }
