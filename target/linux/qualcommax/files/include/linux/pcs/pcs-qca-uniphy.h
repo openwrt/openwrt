@@ -156,6 +156,16 @@ struct qca_uniphy {
 	phy_interface_t interface;
 };
 
+#if IS_REACHABLE(CONFIG_PCS_QCA_UNIPHY)
+int qca_uniphy_pcs_preconfig(struct phylink_pcs *pcs, phy_interface_t interface);
+#else
+static inline int qca_uniphy_pcs_preconfig(struct phylink_pcs *pcs,
+					   phy_interface_t interface)
+{
+	return 0;
+}
+#endif
+
 #define port_rx_clk_idx(upcs)	((upcs)->channel * 2 + 2)
 #define port_tx_clk_idx(upcs)	((upcs)->channel * 2 + 3)
 /* The pair is adjacent, so the bulk ops can take it from the rx index */
