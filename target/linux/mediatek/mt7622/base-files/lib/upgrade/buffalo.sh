@@ -141,6 +141,12 @@ buffalo_do_upgrade() {
 		buffalo_upgrade_ubinized "$1"
 	else
 		CI_KERNPART="firmware"
+		case "$(board_name)" in
+		buffalo,wsr-3200ax4s)
+			# keep rootfs_data on the unused "WTB" partition
+			CI_DATA_UBIPART="WTB"
+			;;
+		esac
 		nand_do_upgrade "$1"
 	fi
 }
