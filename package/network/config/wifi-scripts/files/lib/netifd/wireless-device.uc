@@ -2,7 +2,7 @@
 import * as ubus from "ubus";
 import * as uloop from "uloop";
 import { is_equal } from "./utils.uc";
-import { access, lsdir } from "fs";
+import { access, lsdir, readfile } from "fs";
 
 const wds_sta_re = /^(.+)\.sta[0-9]+$/;
 
@@ -293,9 +293,34 @@ function wdev_proc_reset(wdev)
 	wdev.procs = [];
 }
 
+/*
+ * A running process's start time, in clock ticks since boot (field 22 of
+ * /proc/<pid>/stat); none for a process that has ended (a zombie).
+ */
+function proc_start_time(pid)
+{
+	let stat = readfile(`/proc/${pid}/stat`);
+	if (!stat)
+		return null;
+
+	let fields = split(substr(stat, rindex(stat, ")") + 2), " ");
+	if (fields[0] == "Z" || fields[0] == "X")
+		return null;
+
+	return fields[19];
+}
+
 function __wdev_proc_check(wdev, proc)
 {
 	if (netifd.process_check(proc.pid, proc.exe))
+		return;
+
+	/*
+	 * The executable path no longer matches when the binary was unmounted
+	 * or replaced under the running process. It is still the same process
+	 * if it started when it did; a reused PID would not have.
+	 */
+	if (proc.start != null && proc_start_time(proc.pid) == proc.start)
 		return;
 
 	wdev.dbg(`process ${proc.exe}(${proc.pid}) no longer active`);
@@ -315,6 +340,7 @@ function wdev_proc_add(wdev, data)
 	if (!data.pid || !data.exe)
 		return;
 
+	data.start = proc_start_time(data.pid);
 	push(wdev.procs, data);
 
 	if (!wdev.proc_timer)
