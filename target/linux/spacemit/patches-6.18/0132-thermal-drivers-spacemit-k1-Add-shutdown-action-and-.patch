@@ -1,0 +1,129 @@
+From 13ccb8b08503dbad2cb492ee45eb1270c0e7276a Mon Sep 17 00:00:00 2001
+From: Pei Xiao <xiaopei01@kylinos.cn>
+Date: Thu, 16 Jul 2026 15:04:19 +0800
+Subject: [PATCH] thermal/drivers/spacemit/k1: Add shutdown action and reorder
+ registration order
+
+Add a devm action to clean hardware interrupts, sampling, and control
+registers on driver unbind, mirroring what k1_tsensor_init() sets up.
+
+Reorder the registration order within probe(): register the thermal
+zones first, then request the IRQ, and register the shutdown action
+last.  On removal, the hardware interrupt is disabled first, then the
+IRQ is released, and finally the thermal zones are released.  This
+avoids the IRQ thread accessing an already unregistered thermal zone
+during devres cleanup.
+
+Signed-off-by: Pei Xiao <xiaopei01@kylinos.cn>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@kernel.org>
+Reviewed-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Link: https://patch.msgid.link/1967d2bcc8fede6fbd25fc8eee07f2873fb41472.1784184867.git.xiaopei01@kylinos.cn
+(cherry picked from commit 9cbf780428ca1102377a228febd5fc4164ea6512)
+---
+ drivers/thermal/spacemit/k1_tsensor.c | 73 ++++++++++++++++++++++-----
+ 1 file changed, 60 insertions(+), 13 deletions(-)
+
+--- a/drivers/thermal/spacemit/k1_tsensor.c
++++ b/drivers/thermal/spacemit/k1_tsensor.c
+@@ -199,6 +199,39 @@ static irqreturn_t k1_tsensor_irq_thread
+ 	return IRQ_HANDLED;
+ }
+ 
++static void k1_tsensor_shutdown(struct k1_tsensor *ts)
++{
++	u32 val;
++
++	/* Disable all interrupts */
++	writel(0xffffffff, ts->base + K1_TSENSOR_INT_EN_REG);
++
++	/* Disable all sensors */
++	val = readl(ts->base + K1_TSENSOR_EN_REG);
++	val &= ~K1_TSENSOR_EN_ALL;
++	writel(val, ts->base + K1_TSENSOR_EN_REG);
++
++	/* Clear the sampling configuration set by k1_tsensor_init() */
++	val = readl(ts->base + K1_TSENSOR_TIME_REG);
++	val &= ~(K1_TSENSOR_TIME_FILTER_PERIOD |
++		 K1_TSENSOR_TIME_ADC_CNT_RST |
++		 K1_TSENSOR_TIME_WAIT_REF_CNT);
++	writel(val, ts->base + K1_TSENSOR_TIME_REG);
++
++	/* Clear the control bits configured by k1_tsensor_init() */
++	val = readl(ts->base + K1_TSENSOR_PCTRL_REG);
++	val &= ~(K1_TSENSOR_PCTRL_RAW_SEL |
++		 K1_TSENSOR_PCTRL_TEMP_MODE |
++		 K1_TSENSOR_PCTRL_HW_AUTO_MODE |
++		 K1_TSENSOR_PCTRL_ENABLE);
++	writel(val, ts->base + K1_TSENSOR_PCTRL_REG);
++}
++
++static void k1_tsensor_shutdown_action(void *data)
++{
++	k1_tsensor_shutdown(data);
++}
++
+ static int k1_tsensor_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -229,34 +262,48 @@ static int k1_tsensor_probe(struct platf
+ 
+ 	k1_tsensor_init(ts);
+ 
+-	irq = platform_get_irq(pdev, 0);
+-	if (irq < 0)
+-		return irq;
+-
+-	ret = devm_request_threaded_irq(dev, irq, NULL,
+-					k1_tsensor_irq_thread,
+-					IRQF_ONESHOT, "k1_tsensor", ts);
+-	if (ret < 0)
+-		return ret;
+-
+ 	for (i = 0; i < MAX_SENSOR_NUMBER; ++i) {
+ 		ts->ch[i].id = i;
+ 		ts->ch[i].ts = ts;
+ 		ts->ch[i].tzd = devm_thermal_of_zone_register(dev, i, ts->ch + i, &k1_tsensor_ops);
+-		if (IS_ERR(ts->ch[i].tzd))
+-			return PTR_ERR(ts->ch[i].tzd);
++		if (IS_ERR(ts->ch[i].tzd)) {
++			ret = PTR_ERR(ts->ch[i].tzd);
++			goto err_shutdown;
++		}
+ 
+ 		/* Attach sysfs hwmon attributes for userspace monitoring */
+ 		ret = devm_thermal_add_hwmon_sysfs(dev, ts->ch[i].tzd);
+ 		if (ret)
+ 			dev_warn(dev, "Failed to add hwmon sysfs attributes\n");
++	}
+ 
+-		k1_tsensor_enable_irq(ts->ch + i);
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		ret = irq;
++		goto err_shutdown;
+ 	}
+ 
++	ret = devm_request_threaded_irq(dev, irq, NULL,
++					k1_tsensor_irq_thread,
++					IRQF_ONESHOT, "k1_tsensor", ts);
++	if (ret < 0)
++		goto err_shutdown;
++
++	ret = devm_add_action_or_reset(dev, k1_tsensor_shutdown_action, ts);
++	if (ret)
++		return ret;
++
++	/* Enable interrupts only after all zones and the handler are ready */
++	for (i = 0; i < MAX_SENSOR_NUMBER; ++i)
++		k1_tsensor_enable_irq(ts->ch + i);
++
+ 	platform_set_drvdata(pdev, ts);
+ 
+ 	return 0;
++
++err_shutdown:
++	k1_tsensor_shutdown(ts);
++	return ret;
+ }
+ 
+ static const struct of_device_id k1_tsensor_dt_ids[] = {

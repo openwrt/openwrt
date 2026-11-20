@@ -1,0 +1,345 @@
+From da4fc1586aa5182b5d5d9e94cbc71f1baa6a7223 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 4 Nov 2026 09:13:55 +0100
+Subject: [PATCH] k1-x.dtsi: sync cpus node with upstream kernel
+
+u-boot and/or mainline opensbi make use of this.
+
+Up to 1fc72ff0 "riscv: dts: spacemit: k1: Add Zic64b ISA extension"
+---
+ arch/riscv/dts/k1-x.dtsi | 244 +++++++++++++++++++++++++++++++++------
+ 1 file changed, 211 insertions(+), 33 deletions(-)
+
+--- a/arch/riscv/dts/k1-x.dtsi
++++ b/arch/riscv/dts/k1-x.dtsi
+@@ -22,119 +22,297 @@
+ 	cpus: cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		timebase-frequency = <10000000>;
++		timebase-frequency = <24000000>;
++
++		cpu-map {
++			cluster0 {
++				core0 {
++					cpu = <&cpu_0>;
++				};
++				core1 {
++					cpu = <&cpu_1>;
++				};
++				core2 {
++					cpu = <&cpu_2>;
++				};
++				core3 {
++					cpu = <&cpu_3>;
++				};
++			};
++
++			cluster1 {
++				core0 {
++					cpu = <&cpu_4>;
++				};
++				core1 {
++					cpu = <&cpu_5>;
++				};
++				core2 {
++					cpu = <&cpu_6>;
++				};
++				core3 {
++					cpu = <&cpu_7>;
++				};
++			};
++		};
++
+ 		cpu_0: cpu@0 {
+-			compatible = "riscv";
++			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <0>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcbv_zic64b_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zic64b",
++					       "zicbom", "zicbop", "zicboz", "zicntr", "zicond",
++					       "zicsr", "zifencei", "zihintpause", "zihpm", "zfh",
++					       "zba", "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
++			i-cache-block-size = <64>;
++			i-cache-size = <32768>;
++			i-cache-sets = <128>;
++			d-cache-block-size = <64>;
++			d-cache-size = <32768>;
++			d-cache-sets = <128>;
++			next-level-cache = <&cluster0_l2_cache>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu0_intc: interrupt-controller {
+-				#interrupt-cells = <1>;
+ 				compatible = "riscv,cpu-intc";
+ 				interrupt-controller;
++				#interrupt-cells = <1>;
+ 			};
+ 		};
++
+ 		cpu_1: cpu@1 {
+-			compatible = "riscv";
++			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <1>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcbv_zic64b_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zic64b",
++					       "zicbom", "zicbop", "zicboz", "zicntr", "zicond",
++					       "zicsr", "zifencei", "zihintpause", "zihpm", "zfh",
++					       "zba", "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
++			i-cache-block-size = <64>;
++			i-cache-size = <32768>;
++			i-cache-sets = <128>;
++			d-cache-block-size = <64>;
++			d-cache-size = <32768>;
++			d-cache-sets = <128>;
++			next-level-cache = <&cluster0_l2_cache>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu1_intc: interrupt-controller {
+-				#interrupt-cells = <1>;
+ 				compatible = "riscv,cpu-intc";
+ 				interrupt-controller;
++				#interrupt-cells = <1>;
+ 			};
+ 		};
++
+ 		cpu_2: cpu@2 {
+-			compatible = "riscv";
++			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <2>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcbv_zic64b_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zic64b",
++					       "zicbom", "zicbop", "zicboz", "zicntr", "zicond",
++					       "zicsr", "zifencei", "zihintpause", "zihpm", "zfh",
++					       "zba", "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
++			i-cache-block-size = <64>;
++			i-cache-size = <32768>;
++			i-cache-sets = <128>;
++			d-cache-block-size = <64>;
++			d-cache-size = <32768>;
++			d-cache-sets = <128>;
++			next-level-cache = <&cluster0_l2_cache>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu2_intc: interrupt-controller {
+-				#interrupt-cells = <1>;
+ 				compatible = "riscv,cpu-intc";
+ 				interrupt-controller;
++				#interrupt-cells = <1>;
+ 			};
+ 		};
++
+ 		cpu_3: cpu@3 {
+-			compatible = "riscv";
++			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <3>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcbv_zic64b_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zic64b",
++					       "zicbom", "zicbop", "zicboz", "zicntr", "zicond",
++					       "zicsr", "zifencei", "zihintpause", "zihpm", "zfh",
++					       "zba", "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
++			i-cache-block-size = <64>;
++			i-cache-size = <32768>;
++			i-cache-sets = <128>;
++			d-cache-block-size = <64>;
++			d-cache-size = <32768>;
++			d-cache-sets = <128>;
++			next-level-cache = <&cluster0_l2_cache>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu3_intc: interrupt-controller {
+-				#interrupt-cells = <1>;
+ 				compatible = "riscv,cpu-intc";
+ 				interrupt-controller;
++				#interrupt-cells = <1>;
+ 			};
+ 		};
++
+ 		cpu_4: cpu@4 {
+-			compatible = "riscv";
++			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <4>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcbv_zic64b_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zic64b",
++					       "zicbom", "zicbop", "zicboz", "zicntr", "zicond",
++					       "zicsr", "zifencei", "zihintpause", "zihpm", "zfh",
++					       "zba", "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
++			i-cache-block-size = <64>;
++			i-cache-size = <32768>;
++			i-cache-sets = <128>;
++			d-cache-block-size = <64>;
++			d-cache-size = <32768>;
++			d-cache-sets = <128>;
++			next-level-cache = <&cluster1_l2_cache>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu4_intc: interrupt-controller {
+-				#interrupt-cells = <1>;
+ 				compatible = "riscv,cpu-intc";
+ 				interrupt-controller;
++				#interrupt-cells = <1>;
+ 			};
+ 		};
++
+ 		cpu_5: cpu@5 {
+-			compatible = "riscv";
++			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <5>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcbv_zic64b_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zic64b",
++					       "zicbom", "zicbop", "zicboz", "zicntr", "zicond",
++					       "zicsr", "zifencei", "zihintpause", "zihpm", "zfh",
++					       "zba", "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
++			i-cache-block-size = <64>;
++			i-cache-size = <32768>;
++			i-cache-sets = <128>;
++			d-cache-block-size = <64>;
++			d-cache-size = <32768>;
++			d-cache-sets = <128>;
++			next-level-cache = <&cluster1_l2_cache>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu5_intc: interrupt-controller {
+-				#interrupt-cells = <1>;
+ 				compatible = "riscv,cpu-intc";
+ 				interrupt-controller;
++				#interrupt-cells = <1>;
+ 			};
+ 		};
++
+ 		cpu_6: cpu@6 {
+-			compatible = "riscv";
++			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <6>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcbv_zic64b_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zic64b",
++					       "zicbom", "zicbop", "zicboz", "zicntr", "zicond",
++					       "zicsr", "zifencei", "zihintpause", "zihpm", "zfh",
++					       "zba", "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
++			i-cache-block-size = <64>;
++			i-cache-size = <32768>;
++			i-cache-sets = <128>;
++			d-cache-block-size = <64>;
++			d-cache-size = <32768>;
++			d-cache-sets = <128>;
++			next-level-cache = <&cluster1_l2_cache>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu6_intc: interrupt-controller {
+-				#interrupt-cells = <1>;
+ 				compatible = "riscv,cpu-intc";
+ 				interrupt-controller;
++				#interrupt-cells = <1>;
+ 			};
+ 		};
++
+ 		cpu_7: cpu@7 {
+-			compatible = "riscv";
++			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <7>;
+-			status = "okay";
+-			riscv,isa = "rv64imafdcv";
++			riscv,isa = "rv64imafdcbv_zic64b_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa-base = "rv64i";
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zic64b",
++					       "zicbom", "zicbop", "zicboz", "zicntr", "zicond",
++					       "zicsr", "zifencei", "zihintpause", "zihpm", "zfh",
++					       "zba", "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
++					       "sscofpmf", "sstc", "svinval", "svnapot", "svpbmt";
++			riscv,cbom-block-size = <64>;
++			riscv,cbop-block-size = <64>;
++			riscv,cboz-block-size = <64>;
++			i-cache-block-size = <64>;
++			i-cache-size = <32768>;
++			i-cache-sets = <128>;
++			d-cache-block-size = <64>;
++			d-cache-size = <32768>;
++			d-cache-sets = <128>;
++			next-level-cache = <&cluster1_l2_cache>;
+ 			mmu-type = "riscv,sv39";
+ 
+ 			cpu7_intc: interrupt-controller {
+-				#interrupt-cells = <1>;
+ 				compatible = "riscv,cpu-intc";
+ 				interrupt-controller;
++				#interrupt-cells = <1>;
+ 			};
+ 		};
++
++		cluster0_l2_cache: l2-cache0 {
++			compatible = "cache";
++			cache-block-size = <64>;
++			cache-level = <2>;
++			cache-size = <524288>;
++			cache-sets = <512>;
++			cache-unified;
++		};
++
++		cluster1_l2_cache: l2-cache1 {
++			compatible = "cache";
++			cache-block-size = <64>;
++			cache-level = <2>;
++			cache-size = <524288>;
++			cache-sets = <512>;
++			cache-unified;
++		};
+ 	};
+ 
+ 	clocks: clocks {
