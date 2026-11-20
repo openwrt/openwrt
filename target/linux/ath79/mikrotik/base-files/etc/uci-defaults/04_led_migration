@@ -6,7 +6,8 @@ board=$(board_name)
 case "$board" in
 esac
 
-remove_devicename_leds
+# qca8k switch LED names always start with their mdio device name
+remove_devicename_leds "mdio.0"
 
 migrations_apply system
 
