@@ -39,6 +39,7 @@ void otto_qos_931x_queue_sched_set(struct otto_dsa_priv *priv, int port, int que
 int otto_qos_930x_red_set(struct otto_dsa_priv *priv, int port,
 			  const struct tc_red_qopt_offload_params **p);
 void otto_qos_930x_queue_drops_update(struct otto_dsa_priv *priv, int port);
+void otto_qos_931x_queue_drops_update(struct otto_dsa_priv *priv, int port);
 void otto_qos_queue_sched_reset(struct otto_dsa_priv *priv, int port);
 
 void otto_qos_setup(struct dsa_switch *ds);

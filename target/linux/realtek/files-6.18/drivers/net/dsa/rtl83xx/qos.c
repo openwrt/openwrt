@@ -763,6 +763,22 @@ void otto_qos_931x_queue_sched_set(struct otto_dsa_priv *priv, int port, int que
 		regmap_write(priv->map, RTL931X_SCHED_PORT_Q_CTRL_SET1(port, queue), v);
 }
 
+void otto_qos_931x_queue_drops_update(struct otto_dsa_priv *priv, int port)
+{
+	struct rtldsa_port *pp = &priv->ports[port];
+	u32 entry[4];
+
+	if (otto_table_read(RTL9310_TBL_STAT_PORT_PRVTE_E_Q_CNTR, port, &entry))
+		return;
+
+	for (int queue = 0; queue < MAX_PRIOS; queue++) {
+		u16 val = entry[ARRAY_SIZE(entry) - 1 - queue / 2] >> (queue % 2 * 16);
+
+		pp->queues[queue].drops += (u16)(val - pp->queues[queue].drops_hw);
+		pp->queues[queue].drops_hw = val;
+	}
+}
+
 static void otto_qos_931x_set_scheduling_queue_weights(struct otto_dsa_priv *priv)
 {
 	struct dsa_port *dp;

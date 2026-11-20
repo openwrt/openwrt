@@ -461,6 +461,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.enable_bcast_flood = otto_l2_931x_enable_bcast_flood,
 	.set_receive_management_action = rtldsa_931x_set_receive_management_action,
 	.qos_queue_sched_set = otto_qos_931x_queue_sched_set,
+	.qos_queue_drops_update = otto_qos_931x_queue_drops_update,
 	.tc_egress_shaper_set = otto_tc_931x_egress_shaper_set,
 	.tc_max_burst = U16_MAX,
 	.qos_init = otto_qos_931x_init,

@@ -228,11 +228,9 @@ static int otto_dsa_93xx_setup(struct dsa_switch *ds)
 
 	priv->r->pie_init(priv);
 
-	if (priv->r->pie_cls_flower) {
-		err = otto_tc_init(priv);
-		if (err)
-			return err;
-	}
+	err = otto_tc_init(priv);
+	if (err)
+		return err;
 
 	priv->r->led_init(priv);
 
