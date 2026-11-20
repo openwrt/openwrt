@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kosuke Shibuya <kakiringopcneko@gmail.com>
+Date: Mon, 9 Nov 2026 17:00:00 +0900
+Subject: [PATCH] net: dsa: mv88e6xxx: configure fixed CPU port flow control
+
+Set flow control on fixed CPU ports of 6352-family switches from the
+resolved symmetric pause settings before synchronizing the DSA link.
+
+Signed-off-by: Kosuke Shibuya <kakiringopcneko@gmail.com>
+---
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -1013,6 +1013,25 @@ static void mv88e6xxx_mac_link_up(struct
+ 				goto error;
+ 		}
+ 
++		if (chip->info->family == MV88E6XXX_FAMILY_6352 &&
++		    dsa_port_is_cpu(dp) && mode == MLO_AN_FIXED) {
++			u16 reg;
++
++			err = mv88e6xxx_port_read(chip, port,
++						 MV88E6XXX_PORT_MAC_CTL, &reg);
++			if (err)
++				goto error;
++			reg &= ~(MV88E6XXX_PORT_MAC_CTL_FC |
++				 MV88E6XXX_PORT_MAC_CTL_FORCE_FC);
++			reg |= MV88E6XXX_PORT_MAC_CTL_FORCE_FC;
++			if (tx_pause && rx_pause)
++				reg |= MV88E6XXX_PORT_MAC_CTL_FC;
++			err = mv88e6xxx_port_write(chip, port,
++						  MV88E6XXX_PORT_MAC_CTL, reg);
++			if (err)
++				goto error;
++		}
++
+ 		if (ops->port_sync_link)
+ 			err = ops->port_sync_link(chip, port, mode, true);
+ 	}

@@ -1,0 +1,265 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# RAM-only backup, install gate, and stock-firmware restore for the IX2106.
+set -eu
+umask 077
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+export PATH
+
+BACKUP_ARCHIVE_MAX=34000000
+
+usage() {
+	cat >&2 <<'EOF'
+Usage:
+  ix2106-nor backup /tmp/ix2106-nor-backup.tar
+  ix2106-nor verify /tmp/ix2106-nor-backup.tar
+  ix2106-nor install /tmp/ix2106-nor-backup.tar /tmp/openwrt-sysupgrade.bin
+  ix2106-nor restore /tmp/ix2106-nor-backup.tar
+
+All operations require the TFTP initramfs recovery environment and a RAM-backed /tmp.
+The archive is user-specific. Save it off-device before install; it contains stock data.
+EOF
+	exit 2
+}
+
+die() {
+	echo "ix2106-nor: ERROR: $*" >&2
+	exit 1
+}
+
+check_ram_environment() {
+	local compatible
+	[ "$(id -u)" = 0 ] || die "must run as root"
+	awk '$2 == "/" && $3 ~ /^(tmpfs|ramfs|rootfs)$/ { root = 1 }
+	     $2 == "/tmp" && $3 == "tmpfs" { tmp = 1 }
+	     END { exit !(root && tmp) }' /proc/mounts \
+		|| die "use TFTP initramfs recovery with root and /tmp in RAM"
+	compatible=/proc/device-tree/compatible
+	[ -r "$compatible" ] || compatible=/sys/firmware/devicetree/base/compatible
+	[ -r "$compatible" ] || die "device-tree compatible is unavailable"
+	tr '\000' '\n' < "$compatible" | grep -Fxq 'nec,ix2106' \
+		|| die "device is not a NEC IX2106"
+	[ -d /sys/class/mtd ] || die "MTD sysfs is unavailable"
+	[ -r /proc/mtd ] || die "/proc/mtd is unavailable"
+	[ -r /lib/upgrade/ix2106.sh ] || die "IX2106 upgrade validation is unavailable"
+	. /lib/upgrade/ix2106.sh
+	ix2106_check_mtd_layout || die "active MTD layout is not the supported IX2106 NOR layout"
+}
+
+in_tmp_regular() {
+	local file resolved
+	file=$1
+	case "$file" in /tmp/*) ;; *) die "files must be under /tmp" ;; esac
+	[ -f "$file" ] && [ ! -L "$file" ] || die "not a regular non-symlink file: $file"
+	resolved=$(readlink -f "$file") || die "cannot resolve file path: $file"
+	case "$resolved" in /tmp/*) ;; *) die "file path resolves outside /tmp: $file" ;; esac
+}
+
+find_mtd_ro() {
+	local wanted="$1" found= sys device
+	for sys in /sys/class/mtd/mtd[0-9]*; do
+		[ -f "$sys/name" ] || continue
+		[ "$(cat "$sys/name")" = "$wanted" ] || continue
+		[ -z "$found" ] || die "duplicate MTD partition: $wanted"
+		found=$sys
+	done
+	[ -n "$found" ] || die "missing MTD partition: $wanted"
+	device="/dev/${found##*/}ro"
+	[ -c "$device" ] || die "read-only MTD device is missing: $device"
+	printf '%s\n' "$device"
+}
+
+check_factory() {
+	local factory="$1" sum mac_count mac0 mac1 mac offset first
+	[ "$(wc -c < "$factory")" -eq "$((IX2106_FACTORY_SIZE))" ] \
+		|| die "factory member has the wrong size"
+	sum=$(hexdump -v -s 12 -n 244 -e '1/1 "%u\n"' "$factory" |
+		awk 'NR % 2 { high = $1; next } { total += high * 256 + $1 }
+			END { if (NR != 244) exit 1; printf "%04x", total % 65536 }') \
+		|| die "factory checksum data is incomplete"
+	[ "$sum" = 0000 ] || die "factory BE16 checksum is invalid"
+	set -- $(hexdump -v -s 14 -n 2 -e '2/1 "%u "' "$factory")
+	mac_count=$(($1 * 256 + $2))
+	[ "$mac_count" -ge 2 ] && [ "$mac_count" -le 27 ] \
+		|| die "factory MAC count is unsupported"
+	mac0=$(hexdump -v -s 16 -n 6 -e '6/1 "%02x"' "$factory")
+	mac1=$(hexdump -v -s 22 -n 6 -e '6/1 "%02x"' "$factory")
+	[ "$mac0" != "$mac1" ] || die "factory MAC addresses are identical"
+	for offset in 16 22; do
+		mac=$(hexdump -v -s "$offset" -n 6 -e '6/1 "%02x"' "$factory")
+		[ "$mac" != 000000000000 ] && [ "$mac" != ffffffffffff ] \
+			|| die "factory MAC is blank"
+		first=$(hexdump -v -s "$offset" -n 1 -e '1/1 "%u"' "$factory")
+		[ $((first & 1)) -eq 0 ] || die "factory MAC is multicast"
+	done
+}
+
+make_backup() {
+	local output parent tmp temporary_archive archive_sha factory factory_data firmware boot_reserved
+	output=$1
+	case "$output" in /tmp/*) ;; *) die "archive path must be under /tmp" ;; esac
+	parent=$(dirname "$output")
+	parent=$(readlink -f "$parent") || die "cannot resolve archive directory"
+	case "$parent" in /tmp|/tmp/*) ;; *) die "archive directory resolves outside /tmp" ;; esac
+	[ -d "$parent" ] || die "archive directory does not exist"
+	[ ! -e "$output" ] && [ ! -L "$output" ] || die "refusing to overwrite $output"
+	tmp=$(mktemp -d /tmp/ix2106-nor.XXXXXX) || die "cannot create temporary directory"
+	temporary_archive=
+	trap 'rm -rf "$tmp"; [ -z "$temporary_archive" ] || rm -f "$temporary_archive"' EXIT HUP INT TERM
+	temporary_archive=$(mktemp "$parent/.ix2106-nor-backup.XXXXXX") || die "cannot create temporary archive"
+	factory=$(find_mtd_ro factory)
+	factory_data=$(find_mtd_ro factory-data)
+	firmware=$(find_mtd_ro firmware)
+	boot_reserved=$(find_mtd_ro boot-reserved)
+	cat "$factory" > "$tmp/factory.bin"
+	cat "$factory_data" > "$tmp/factory-data.bin"
+	cat "$firmware" > "$tmp/firmware.bin"
+	cat "$boot_reserved" > "$tmp/boot-reserved.bin"
+	check_backup_sizes "$tmp"
+	check_factory "$tmp/factory.bin"
+	(cd "$tmp" && sha256sum factory.bin factory-data.bin firmware.bin boot-reserved.bin > manifest.sha256)
+	tar -C "$tmp" -cf "$temporary_archive" factory.bin factory-data.bin firmware.bin boot-reserved.bin manifest.sha256
+	archive_sha=$(sha256sum "$temporary_archive" | awk '{print $1}')
+	[ ! -e "$output" ] && [ ! -L "$output" ] || die "refusing to overwrite $output"
+	mv "$temporary_archive" "$output" || die "cannot publish backup archive"
+	printf '%s  %s\n' "$archive_sha" "$output"
+	trap - EXIT HUP INT TERM
+	rm -rf "$tmp"
+}
+
+check_backup_sizes() {
+	local tmp
+	tmp=$1
+	[ "$(wc -c < "$tmp/factory.bin")" -eq "$((IX2106_FACTORY_SIZE))" ] || die "factory backup size mismatch"
+	[ "$(wc -c < "$tmp/factory-data.bin")" -eq "$((IX2106_FACTORY_DATA_SIZE))" ] || die "factory-data backup size mismatch"
+	[ "$(wc -c < "$tmp/firmware.bin")" -eq "$((IX2106_FW_SIZE))" ] || die "firmware backup size mismatch"
+	[ "$(wc -c < "$tmp/boot-reserved.bin")" -eq "$((IX2106_BOOT_RESERVED_SIZE))" ] || die "boot-reserved backup size mismatch"
+}
+
+validate_backup() {
+	local archive current_factory tmp member archive_size size expected_size hash
+	archive=$1
+	current_factory=$2
+	tmp=$3
+	in_tmp_regular "$archive"
+	archive_size=$(wc -c < "$archive" | tr -d '[:space:]')
+	[ "$archive_size" -le "$BACKUP_ARCHIVE_MAX" ] || die "backup archive exceeds its maximum size"
+	[ -f "$current_factory" ] && [ ! -L "$current_factory" ] || die "current factory image is unavailable"
+	printf '%s\n' factory.bin factory-data.bin firmware.bin boot-reserved.bin manifest.sha256 > "$tmp/expected-members"
+	tar -tf "$archive" > "$tmp/actual-members" || die "cannot read backup archive"
+	cmp -s "$tmp/expected-members" "$tmp/actual-members" || die "backup archive has missing, extra, or duplicate members"
+	tar -tvf "$archive" > "$tmp/verbose-members" || die "cannot inspect backup member types"
+	awk '$1 !~ /^-/ { bad = 1 } END { exit bad }' "$tmp/verbose-members" \
+		|| die "backup archive contains a non-regular member"
+	tar -xOf "$archive" manifest.sha256 > "$tmp/manifest.sha256" || die "cannot read archive manifest"
+	tar -xOf "$archive" factory.bin > "$tmp/factory.bin" || die "cannot read factory archive member"
+	check_factory "$tmp/factory.bin"
+	hash=$(sha256sum "$tmp/factory.bin" | awk '{print $1}') || die "cannot hash factory archive member"
+	printf '%s  factory.bin\n' "$hash" > "$tmp/expected.sha256"
+	for member in factory-data.bin firmware.bin boot-reserved.bin; do
+		size=$(tar -xOf "$archive" "$member" | wc -c | tr -d '[:space:]')
+		case "$member" in
+			factory-data.bin) expected_size=$((IX2106_FACTORY_DATA_SIZE)) ;;
+			firmware.bin) expected_size=$((IX2106_FW_SIZE)) ;;
+			boot-reserved.bin) expected_size=$((IX2106_BOOT_RESERVED_SIZE)) ;;
+		esac
+		[ "$size" = "$expected_size" ] || die "$member backup size mismatch"
+		hash=$(tar -xOf "$archive" "$member" | sha256sum | awk '{print $1}') || die "cannot hash $member archive member"
+		printf '%s  %s\n' "$hash" "$member" >> "$tmp/expected.sha256"
+	done
+	cmp -s "$tmp/expected.sha256" "$tmp/manifest.sha256" || die "backup member checksum or manifest name mismatch"
+	cmp -s "$tmp/factory.bin" "$current_factory" || die "backup belongs to a different factory identity"
+}
+
+current_factory_device() {
+	local output factory
+	output=$1
+	factory=$(find_mtd_ro factory)
+	cat "$factory" > "$output"
+	check_factory "$output"
+}
+
+verify_archive_on_device() {
+	local archive tmp
+	archive=$1
+	tmp=$2
+	current_factory_device "$tmp/current-factory.bin"
+	validate_backup "$archive" "$tmp/current-factory.bin" "$tmp"
+}
+
+install_openwrt() {
+	local archive image image_size tmp status
+	archive=$1
+	image=$2
+	in_tmp_regular "$archive"
+	in_tmp_regular "$image"
+	image_size=$(wc -c < "$image") || die "cannot read sysupgrade image size"
+	[ "$image_size" -gt 0 ] && [ "$image_size" -le "$((IX2106_SYSUPGRADE_MAX_SIZE))" ] \
+		|| die "sysupgrade image size exceeds the firmware and metadata bounds"
+	tmp=$(mktemp -d /tmp/ix2106-nor.XXXXXX) || die "cannot create temporary directory"
+	trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+	verify_archive_on_device "$archive" "$tmp"
+	echo "Backup SHA-256: $(sha256sum "$archive" | awk '{print $1}')"
+	echo "Validated IX2106 identity and backup. Starting standard sysupgrade -n."
+	status=0
+	sysupgrade -n "$image" || status=$?
+	trap - EXIT HUP INT TERM
+	rm -rf "$tmp"
+	return "$status"
+}
+
+restore_firmware() {
+	local archive tmp firmware expected_fw actual_fw
+	archive=$1
+	in_tmp_regular "$archive"
+	tmp=$(mktemp -d /tmp/ix2106-nor.XXXXXX) || die "cannot create temporary directory"
+	trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+	verify_archive_on_device "$archive" "$tmp"
+	tar -xOf "$archive" firmware.bin > "$tmp/firmware.bin" || die "cannot read firmware archive member"
+	[ "$(wc -c < "$tmp/firmware.bin")" -eq "$((IX2106_FW_SIZE))" ] || die "firmware member size changed"
+	expected_fw=$(awk '$2 == "firmware.bin" { print $1 }' "$tmp/manifest.sha256")
+	actual_fw=$(sha256sum "$tmp/firmware.bin" | awk '{ print $1 }')
+	[ -n "$expected_fw" ] && [ "$actual_fw" = "$expected_fw" ] || die "firmware member changed after archive validation"
+	echo "Restoring only the verified archived firmware partition."
+	mtd write "$tmp/firmware.bin" firmware || die "firmware partition write failed"
+	firmware=$(find_mtd_ro firmware)
+	cmp -s "$tmp/firmware.bin" "$firmware" || die "archived firmware readback differs; do not reboot"
+	echo "Archived firmware readback verified. Reboot when ready."
+	trap - EXIT HUP INT TERM
+	rm -rf "$tmp"
+}
+
+main() {
+	local cmd
+	[ "$#" -ge 1 ] || usage
+	cmd=$1
+	shift
+	check_ram_environment
+	case "$cmd" in
+		backup)
+			[ "$#" -eq 1 ] || usage
+			make_backup "$1"
+			;;
+		verify)
+			[ "$#" -eq 1 ] || usage
+			tmp=$(mktemp -d /tmp/ix2106-nor.XXXXXX) || die "cannot create temporary directory"
+			trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+			verify_archive_on_device "$1" "$tmp"
+			echo "IX2106 identity and backup archive verified. No Flash writes performed."
+			;;
+		install)
+			[ "$#" -eq 2 ] || usage
+			install_openwrt "$1" "$2"
+			;;
+		restore)
+			[ "$#" -eq 1 ] || usage
+			restore_firmware "$1"
+			;;
+		*) usage ;;
+	esac
+}
+
+if [ "${IX2106_NOR_LIBRARY:-0}" != 1 ]; then
+	main "$@"
+fi

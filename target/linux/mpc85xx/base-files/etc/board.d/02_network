@@ -9,7 +9,9 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
-aerohive,br200-wp)
+aerohive,br200-wp|\
+nec,ix2106|\
+tplink,tl-wdr4900-v1)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 	;;
 aerohive,hiveap-330|\
@@ -30,9 +32,6 @@ hpe,msm460)
 	;;
 ocedo,panda)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8" "eth1"
-	;;
-tplink,tl-wdr4900-v1)
-	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 	;;
 watchguard,firebox-t10|\
 watchguard,firebox-t15)

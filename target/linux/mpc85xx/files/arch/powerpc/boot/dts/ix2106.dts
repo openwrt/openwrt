@@ -1,0 +1,507 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/include/ "fsl/p1010si-pre.dtsi"
+
+/ {
+	model = "NEC IX2106";
+	compatible = "nec,ix2106";
+
+	/include/ "fsl/p1010rdb_32b.dtsi"
+
+	/*
+	 * Publish the passive NOR mapping through the MPC85xx simple-bus
+	 * whitelist. The controller's IFC node is disabled during bring-up.
+	 */
+	flash-bus@fe000000 {
+		compatible = "simple-bus";
+		reg = <0x0 0xfe000000 0x0 0x02000000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x0 0xfe000000 0x02000000>;
+
+		flash@0 {
+			compatible = "cfi-flash";
+			vpp-gpios = <&cpld_flash_gpio 7 GPIO_ACTIVE_HIGH>;
+			reg = <0x0 0x02000000>;
+			bank-width = <2>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				factory: partition@0 {
+					label = "factory";
+					reg = <0x000000 0x020000>;
+					read-only;
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						mac_ge0: mac-address@10 {
+							reg = <0x10 0x6>;
+						};
+
+						mac_ge1: mac-address@16 {
+							reg = <0x16 0x6>;
+						};
+					};
+				};
+
+				partition@20000 {
+					label = "factory-data";
+					reg = <0x020000 0x3e0000>;
+					read-only;
+				};
+
+				partition@400000 {
+					label = "firmware";
+					reg = <0x400000 0x19c0000>;
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					/* Offsets below are relative to firmware. */
+					partition@0 {
+						label = "kernel";
+						reg = <0x000000 0x800000>;
+						read-only;
+					};
+
+					partition@800000 {
+						label = "rootfs-header";
+						reg = <0x800000 0x020000>;
+						read-only;
+					};
+
+					partition@820000 {
+						label = "rootfs";
+						reg = <0x820000 0x11a0000>;
+						linux,rootfs;
+					};
+				};
+
+				partition@1dc0000 {
+					label = "boot-reserved";
+					reg = <0x1dc0000 0x240000>;
+					read-only;
+				};
+			};
+		};
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,9600n8 earlycon=uart8250,mmio,0xfd004500 rootfstype=squashfs,jffs2";
+		stdout-path = &serial0;
+	};
+
+	cpld-bus@fb800000 {
+		compatible = "simple-bus";
+		reg = <0x0 0xfb800000 0x0 0x100>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x0 0xfb800000 0x100>;
+
+		cpld_gpio: gpio@c {
+			compatible = "nec,ix2106-cpld-gpio";
+			reg = <0xc 0x1>;
+			reg-names = "dat";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <3>;
+		};
+
+		cpld_flash_gpio: gpio@60 {
+			compatible = "nec,ix2106-cpld-gpio";
+			reg = <0x60 0x1>;
+			reg-names = "dat";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			gpio-reserved-ranges = <0 7>;
+		};
+
+		cpld_system_led_gpio: gpio@78 {
+			compatible = "nec,ix2106-cpld-gpio";
+			reg = <0x78 0x1>;
+			reg-names = "dat";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			gpio-reserved-ranges = <4 3>;
+		};
+
+		/*
+		 * GE0 (wan) speed LED: bit 6 = green (100M),
+		 * bit 7 = amber (1G).  The remaining bits are not
+		 * documented and are kept reserved.
+		 */
+		cpld_led_gpio0: gpio@7c {
+			compatible = "nec,ix2106-cpld-gpio";
+			reg = <0x7c 0x1>;
+			reg-names = "dat";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			gpio-reserved-ranges = <0 6>;
+		};
+
+		/*
+		 * LAN1..LAN4 speed LEDs: one byte at 0x80,
+		 * two bits per port (green/amber).
+		 */
+		cpld_led_gpio1: gpio@80 {
+			compatible = "nec,ix2106-cpld-gpio";
+			reg = <0x80 0x1>;
+			reg-names = "dat";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-alm {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_ALARM;
+			gpios = <&cpld_system_led_gpio 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-bsy {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_MTD;
+			gpios = <&cpld_system_led_gpio 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-vpn {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <1>;
+			gpios = <&cpld_system_led_gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-ppp {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <2>;
+			gpios = <&cpld_system_led_gpio 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-bak {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <3>;
+			gpios = <&cpld_system_led_gpio 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wan-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_SPEED_WAN;
+			gpios = <&cpld_led_gpio0 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wan-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_SPEED_WAN;
+			gpios = <&cpld_led_gpio0 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan1-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <1>;
+			gpios = <&cpld_led_gpio1 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan1-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <1>;
+			gpios = <&cpld_led_gpio1 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan2-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <2>;
+			gpios = <&cpld_led_gpio1 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan2-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <2>;
+			gpios = <&cpld_led_gpio1 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan3-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <3>;
+			gpios = <&cpld_led_gpio1 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan3-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <3>;
+			gpios = <&cpld_led_gpio1 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan4-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <4>;
+			gpios = <&cpld_led_gpio1 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan4-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <4>;
+			gpios = <&cpld_led_gpio1 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	cpus {
+		PowerPC,P1010@0 {
+			clock-frequency = <800000000>;
+			bus-frequency = <400000000>;
+			/* Bootstrap uses 50 MHz (400 MHz CSB / 8). */
+			timebase-frequency = <50000000>;
+		};
+	};
+
+	/delete-node/ memory;
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x0 0x0 0x10000000>;
+	};
+};
+
+/include/ "fsl/p1010si-post.dtsi"
+
+/* CCSR mapping observed in the stock Bootstrap TLB setup. */
+&soc {
+	reg = <0x0 0xfd000000 0x0 0x100000>;
+	ranges = <0x0 0x0 0xfd000000 0x100000>;
+	bus-frequency = <400000000>;
+};
+
+&serial0 {
+	clock-frequency = <400000000>;
+};
+
+&serial1 {
+	clock-frequency = <400000000>;
+};
+
+&soc {
+	mdio@24000 {
+		reset-gpios = <&cpld_gpio 2 GPIO_ACTIVE_HIGH>;
+		reset-delay-us = <12000>;
+		reset-post-delay-us = <120000>;
+		switch@0 {
+			compatible = "marvell,mv88e6085";
+			reg = <0>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					label = "wan";
+					nvmem-cells = <&mac_ge0>;
+					nvmem-cell-names = "mac-address";
+
+					leds {
+						#address-cells = <1>;
+						#size-cells = <0>;
+
+						led@0 {
+							reg = <0>;
+							color = <LED_COLOR_ID_GREEN>;
+							function = LED_FUNCTION_WAN;
+							default-state = "keep";
+						};
+
+						led@1 {
+							reg = <1>;
+							color = <LED_COLOR_ID_AMBER>;
+							function = LED_FUNCTION_WAN;
+							default-state = "keep";
+						};
+					};
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan1";
+
+					leds {
+						#address-cells = <1>;
+						#size-cells = <0>;
+
+						led@0 {
+							reg = <0>;
+							color = <LED_COLOR_ID_GREEN>;
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <1>;
+							default-state = "keep";
+						};
+
+						led@1 {
+							reg = <1>;
+							color = <LED_COLOR_ID_AMBER>;
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <1>;
+							default-state = "keep";
+						};
+					};
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan2";
+
+					leds {
+						#address-cells = <1>;
+						#size-cells = <0>;
+
+						led@0 {
+							reg = <0>;
+							color = <LED_COLOR_ID_GREEN>;
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <2>;
+							default-state = "keep";
+						};
+
+						led@1 {
+							reg = <1>;
+							color = <LED_COLOR_ID_AMBER>;
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <2>;
+							default-state = "keep";
+						};
+					};
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan3";
+
+					leds {
+						#address-cells = <1>;
+						#size-cells = <0>;
+
+						led@0 {
+							reg = <0>;
+							color = <LED_COLOR_ID_GREEN>;
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <3>;
+							default-state = "keep";
+						};
+
+						led@1 {
+							reg = <1>;
+							color = <LED_COLOR_ID_AMBER>;
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <3>;
+							default-state = "keep";
+						};
+					};
+				};
+
+				port@4 {
+					reg = <4>;
+					label = "lan4";
+
+					leds {
+						#address-cells = <1>;
+						#size-cells = <0>;
+
+						led@0 {
+							reg = <0>;
+							color = <LED_COLOR_ID_GREEN>;
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <4>;
+							default-state = "keep";
+						};
+
+						led@1 {
+							reg = <1>;
+							color = <LED_COLOR_ID_AMBER>;
+							function = LED_FUNCTION_LAN;
+							function-enumerator = <4>;
+							default-state = "keep";
+						};
+					};
+				};
+
+				port@6 {
+					reg = <6>;
+					ethernet = <&enet0>;
+					phy-mode = "rgmii-id";
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+		};
+	};
+
+	/* The IX2106 does not route the inherited P1010 USB controller. */
+	usb@22000 {
+		compatible = "fsl-usb2-dr";
+		status = "disabled";
+	};
+};
+
+/* These inherited P1010 interfaces are not enabled on this board. */
+&ifc {
+	status = "disabled";
+};
+
+&pci0 {
+	status = "disabled";
+};
+
+&pci1 {
+	status = "disabled";
+};
+
+&enet0 {
+	bd-stash;
+	rx-stash-len = <512>;
+	rx-stash-idx = <0>;
+	reg = <0xb0000 0x1000>;
+	phy-mode = "rgmii-id";
+	nvmem-cells = <&mac_ge1>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		pause;
+	};
+};
+
+&enet1 {
+	reg = <0xb1000 0x1000>;
+	status = "disabled";
+};
+
+&enet2 {
+	reg = <0xb2000 0x1000>;
+	status = "disabled";
+};

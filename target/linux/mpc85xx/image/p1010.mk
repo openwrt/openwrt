@@ -14,6 +14,24 @@ define Build/spi-loader-okli
 	mv "$@.new" "$@"
 endef
 
+define Build/ix2106-entry
+	$(TARGET_CC) -mcpu=8548 -mbig-endian -m32 -c $(CURDIR)/ix2106-entry.S -o $@.o
+	$(TARGET_CROSS)ld -T $(CURDIR)/ix2106-entry.ld -o $@.elf $@.o
+	$(TARGET_CROSS)objcopy -O binary $@.elf $@
+endef
+
+define Build/ix2106-ram
+	$(STAGING_DIR_HOST)/bin/mknecix2106 --mode ram \
+		--shim $(KDIR)/ix2106-entry.bin --kernel $@ --output $@.new
+	mv $@.new $@
+endef
+
+define Build/ix2106-factory
+	$(STAGING_DIR_HOST)/bin/mknecix2106 --mode factory \
+		--shim $(KDIR)/ix2106-entry.bin --kernel $(IMAGE_KERNEL) \
+		--rootfs $(IMAGE_ROOTFS) --output $@
+endef
+
 define Device/aerohive_br200-wp
   DEVICE_VENDOR := Aerohive
   DEVICE_MODEL := BR200-WP
@@ -48,6 +66,31 @@ define Device/enterasys_ws-ap3715i
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += enterasys_ws-ap3715i
+
+define Device/nec_ix2106
+  DEVICE_VENDOR := NEC
+  DEVICE_MODEL := IX2106
+  DEVICE_DTS := ix2106
+  DEVICE_PACKAGES := kmod-dsa-mv88e6xxx -kmod-gpio-button-hotplug \
+	-kmod-ath9k -kmod-ath9k-common -wpad-basic-mbedtls \
+	-kmod-usb2 -kmod-usb-core -kmod-usb-ehci -kmod-usb-common \
+	-kmod-crypto-hw-talitos -uboot-envtools
+  KERNEL_NAME := simpleImage.ix2106
+  KERNEL := kernel-bin
+  KERNEL_INITRAMFS := kernel-bin | ix2106-ram
+  KERNEL_INITRAMFS_SUFFIX := -recovery.ram.rap
+  KERNEL_DEPENDS += $(KDIR)/ix2106-entry.bin
+  COMPILE := ix2106-entry.bin
+  COMPILE/ix2106-entry.bin := ix2106-entry
+  KERNEL_ENTRY := 0x02000000
+  KERNEL_LOADADDR := 0x02000000
+  IMAGE_SIZE := 26368k
+  DEVICE_COMPAT_VERSION := 1.0
+  IMAGES := nor-install.bin sysupgrade.bin
+  IMAGE/nor-install.bin := ix2106-factory | check-size
+  IMAGE/sysupgrade.bin := ix2106-factory | check-size | append-metadata
+endef
+TARGET_DEVICES += nec_ix2106
 
 define Device/tplink_tl-wdr4900-v1
   DEVICE_VENDOR := TP-Link
