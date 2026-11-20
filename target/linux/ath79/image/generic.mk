@@ -1539,7 +1539,8 @@ define Device/engenius_epg5000
   SOC := qca9558
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EPG5000
-  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2 \
+	kmod-dsa-qca8k kmod-phy-qca83xx -swconfig
   IMAGE_SIZE := 14656k
   IMAGES += factory.dlf
   IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
@@ -1553,7 +1554,8 @@ define Device/engenius_esr1200
   SOC := qca9557
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ESR1200
-  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2 \
+	kmod-dsa-qca8k kmod-phy-qca83xx -swconfig
   IMAGE_SIZE := 14656k
   IMAGES += factory.dlf
   IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
@@ -1567,7 +1569,8 @@ define Device/engenius_esr1750
   SOC := qca9558
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ESR1750
-  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2 \
+	kmod-dsa-qca8k kmod-phy-qca83xx -swconfig
   IMAGE_SIZE := 14656k
   IMAGES += factory.dlf
   IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
@@ -1581,7 +1584,7 @@ define Device/engenius_esr900
   SOC := qca9558
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ESR900
-  DEVICE_PACKAGES := kmod-usb2
+  DEVICE_PACKAGES := kmod-usb2 kmod-dsa-qca8k kmod-phy-qca83xx -swconfig
   IMAGE_SIZE := 14656k
   IMAGES += factory.dlf
   IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
