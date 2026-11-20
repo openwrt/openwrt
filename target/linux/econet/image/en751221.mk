@@ -83,6 +83,34 @@ define Device/tplink_archer-vr1200v-v2
 endef
 TARGET_DEVICES += tplink_archer-vr1200v-v2
 
+define Device/tplink_archer-c5v
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Archer C5v
+  # 2.4 GHz is MT7603 (14c3:7603), 5 GHz is MT7612EN (14c3:7662); both
+  # firmwares ship inside kmod-mt7603 / kmod-mt76x2. kmod-8021q is needed
+  # for the tagged eth0.35 VLAN that econet,mt7530-vlan-split sets up on
+  # the WAN port (see en751221_tplink_archer-c5v.dts).
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-8021q
+  # Shares its HWID/HWREV with Device/tplink_archer-vr1200v-v2 above: both
+  # boards use the same TP-Link v2 signed-factory-image family, verified by
+  # flashing (factory.bin is accepted and boots correctly; the signature
+  # check is HWID/HWREV-based only, not board-specific beyond that).
+  TPLINK_FLASHLAYOUT := 16Mmtk
+  TPLINK_HWID := 0x0b473502
+  TPLINK_HWREV := 0x0006007c
+  TPLINK_HWREVADD := 0x0
+  TPLINK_HVERSION := 3
+  DEVICE_DTS := en751221_tplink_archer-c5v
+  NAND_SIZE := 128m
+  IMAGE_SIZE := 98304k
+  KERNEL := kernel-bin | append-dtb | lzma | tplink-v2-header -R 0x400000 | check-size 4194304
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to 4194304 | append-ubi
+endef
+TARGET_DEVICES += tplink_archer-c5v
+
 define Device/zyxel_pmg5617ga
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := PMG5617GA
