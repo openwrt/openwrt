@@ -23,6 +23,8 @@ MISSING=""
 SUMMARY=""
 NL="
 "
+RETRY_COUNT=3
+RETRY_DELAY=5
 
 # Arguments parsing
 while expr "x$1" : "x-" > /dev/null; do
@@ -52,66 +54,88 @@ if [ -z "$1" ]; then
 	set $(cd /usr/lib/opkg/info/; for i in *.files-sha256sum; do basename $i .files-sha256sum; done)
 fi
 
+# Function to check package checksums with retries
+check_package() {
+	local pkg=$1
+	local attempt=1
+	local success=0
+
+	while [ $attempt -le $RETRY_COUNT ]; do
+		if [ \! -f "/usr/lib/opkg/info/$pkg.files-sha256sum" ]; then
+			if [ "$ERRFATAL" = no ]; then
+				echo " * No checksums for $pkg - skipping"
+				echo
+			else
+				echo " * No checksums for $pkg - exiting"
+				exit 1
+			fi
+			if [ -z "$MISSING" ]; then
+				MISSING="$pkg"
+			else
+				MISSING="$MISSING, $pkg"
+			fi
+			return
+		fi
+		[ $QUIET = yes ] || echo " * Checking package $pkg:"
+		ERR=""
+		CHECK="$(sha256sum -c /usr/lib/opkg/info/$pkg.files-sha256sum 2> /dev/null)"
+
+		# Are the changed files config files?
+		if [ $? -ne 0 ] && [ "$(cat "/usr/lib/opkg/info/$pkg.files-sha256sum")" ]; then
+			NEWCHECK="$(echo "$CHECK" | grep '^.*: OK$')"
+			for i in $(echo "$CHECK" | sed -n 's|^\(.*\): FAILED$|\1|p'); do
+				if [ "$(grep "^$i\$" "/usr/lib/opkg/info/$pkg.conffiles" 2> /dev/null)" ] || \
+				   [ "$(echo "$i" | grep "^/etc/uci-defaults/")" ]; then
+					NEWCHECK="${NEWCHECK}${NL}${i}: CONFIGURED"
+				else
+					NEWCHECK="${NEWCHECK}${NL}${i}: FAILED"
+					ERR="y"
+				fi
+			done
+			CHECK="$NEWCHECK"
+		fi
+
+		# Do we have changed files or not?
+		if [ -z "$ERR" ]; then
+			[ $QUIET = yes ] || [ ! -s "/usr/lib/opkg/info/$pkg.files-sha256sum" ] || echo "$CHECK" | sed 's|^|   - |'
+			[ $QUIET = yes ] || echo " * Package $pkg is ok"
+			[ $QUIET = yes ] || echo
+			success=1
+			break
+		else
+			if [ $QUIET = yes ]; then
+				echo " * Changes found in package $pkg:"
+				echo "$CHECK" | sed -n 's|^\(.*:[[:blank:]]*FAILED\)$|   - \1|p'
+			else
+				echo "$CHECK" | sed 's|^|   - |'
+				echo " * Changes found in package $pkg!"
+			fi
+			if [ "$ERRFATAL" = yes ]; then
+				echo
+				echo "Exiting on first change found!"
+				exit 1
+			fi
+			for i in $(echo "$CHECK" | sed -n 's|^\(.*\): FAILED$|\1|p'); do
+				SUMMARY="${SUMMARY}${NL} - $pkg: $i"
+			done
+			echo
+		fi
+
+		if [ $attempt -lt $RETRY_COUNT ]; then
+			echo "Retrying in $RETRY_DELAY seconds... (Attempt $attempt of $RETRY_COUNT)"
+			sleep $RETRY_DELAY
+		fi
+		attempt=$((attempt + 1))
+	done
+
+	if [ $success -eq 0 ]; then
+		echo " * Failed to verify package $pkg after $RETRY_COUNT attempts"
+	fi
+}
+
 # Iterate over packages
 while [ "$1" ]; do
-	if [ \! -f "/usr/lib/opkg/info/$1.files-sha256sum" ]; then
-		if [ "$ERRFATAL" = no ]; then
-			echo " * No checksums for $1 - skipping"
-			echo
-		else
-			echo " * No checksums for $1 - exiting"
-			exit 1
-		fi
-		if [ -z "$MISSING" ]; then
-			MISSING="$1"
-		else
-			MISSING="$MISSING, $1"
-		fi
-		shift
-		continue
-	fi
-	[ $QUIET = yes ] || echo " * Checking package $1:"
-	ERR=""
-	CHECK="$(sha256sum -c /usr/lib/opkg/info/$1.files-sha256sum 2> /dev/null)"
-
-	# Are the changed files config files?
-	if [ $? -ne 0 ] && [ "$(cat "/usr/lib/opkg/info/$1.files-sha256sum")" ]; then
-		NEWCHECK="$(echo "$CHECK" | grep '^.*: OK$')"
-		for i in $(echo "$CHECK" | sed -n 's|^\(.*\): FAILED$|\1|p'); do
-			if [ "$(grep "^$i\$" "/usr/lib/opkg/info/$1.conffiles" 2> /dev/null)" ] || \
-			   [ "$(echo "$i" | grep "^/etc/uci-defaults/")" ]; then
-				NEWCHECK="${NEWCHECK}${NL}${i}: CONFIGURED"
-			else
-				NEWCHECK="${NEWCHECK}${NL}${i}: FAILED"
-				ERR="y"
-			fi
-		done
-		CHECK="$NEWCHECK"
-	fi
-
-	# Do we have changed files or not?
-	if [ -z "$ERR" ]; then
-		[ $QUIET = yes ] || [ ! -s "/usr/lib/opkg/info/$1.files-sha256sum" ] || echo "$CHECK" | sed 's|^|   - |'
-		[ $QUIET = yes ] || echo " * Package $1 is ok"
-		[ $QUIET = yes ] || echo
-	else
-		if [ $QUIET = yes ]; then
-			echo " * Changes found in package $1:"
-			echo "$CHECK" | sed -n 's|^\(.*:[[:blank:]]*FAILED\)$|   - \1|p'
-		else
-			echo "$CHECK" | sed 's|^|   - |'
-			echo " * Changes found in package $1!"
-		fi
-		if [ "$ERRFATAL" = yes ]; then
-			echo
-			echo "Exiting on first change found!"
-			exit 1
-		fi
-		for i in $(echo "$CHECK" | sed -n 's|^\(.*\): FAILED$|\1|p'); do
-			SUMMARY="${SUMMARY}${NL} - $1: $i"
-		done
-		echo
-	fi
+	check_package "$1"
 	shift
 done
 
