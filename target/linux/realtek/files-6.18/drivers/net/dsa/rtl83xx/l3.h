@@ -9,7 +9,6 @@
 
 #include <net/inet_dscp.h>
 
-#include "l3_limits.h"
 #include "otto_dsa.h"
 
 struct fib6_info;

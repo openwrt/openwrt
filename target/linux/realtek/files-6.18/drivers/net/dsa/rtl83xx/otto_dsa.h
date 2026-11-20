@@ -10,7 +10,6 @@
 #include <linux/soc/realtek/otto_table.h>
 
 #include "l2.h"
-#include "l3_limits.h"
 #include "lag.h"
 #include "mac.h"
 #include "mirror.h"
@@ -20,6 +19,7 @@
 #include "vlan.h"
 
 #define MAX_PRIOS 8
+#define MAX_INTF_MTUS 8
 
 /* special port action controls */
 /* values:
