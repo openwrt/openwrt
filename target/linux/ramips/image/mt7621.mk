@@ -4048,3 +4048,22 @@ define Device/zyxel_wsm20
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | znet-header V1.00(ABZF.0)C0
 endef
 TARGET_DEVICES += zyxel_wsm20
+
+define Device/buffalo_wsr-1800ax4s
+  $(Device/nand)
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := WSR-1800AX4S
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  DEVICE_DTS_DELIMITER := @
+  DEVICE_DTS_CONFIG := config@1
+  SUPPORTED_DEVICES += mt7621-rfb-ax-nand
+  IMAGE/sysupgrade.bin := wsr-gtkc-rootfs | \
+	sysupgrade-tar rootfs=$$(KDIR)/root.gtkc | append-metadata
+  IMAGES += factory.bin
+  IMAGE/factory.bin := wsr-gtkc-rootfs | append-kernel | wsr-factory
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 40960k
+endef
+TARGET_DEVICES += buffalo_wsr-1800ax4s
