@@ -182,6 +182,11 @@ define Device/buffalo_wsr-3200ax4s
   IMAGE_SIZE := 24576k
   BUFFALO_TRX_MAGIC := 0x33504844
   DEVICE_PACKAGES := kmod-mt7915-firmware
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := The flash layout has changed: the WTB partition is a part of the UBI now. \
+	Flash this image over the old layout only with 'sysupgrade -F' and only after WTB has been \
+	erased ('mtd erase WTB' with the UBI on it detached); the buffalo.sh of this image does that, \
+	the one of the old layout does not. An image of the old layout must not be flashed over this one.
 endef
 TARGET_DEVICES += buffalo_wsr-3200ax4s
 
