@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+ #include "ar9331_embeddedwireless_dorin.dts"
+
+ / {
+ 	model = "Embedded Wireless Mobile Gateway";
+ 	compatible = "embeddedwireless,dorin-mobile-gw", "qca,ar9331";
+ };
+
+ &wmac {
+ 	status = "disabled";
+ };
+ 
