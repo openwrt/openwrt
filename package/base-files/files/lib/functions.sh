@@ -545,6 +545,23 @@ cmdline_get_var() {
 	done
 }
 
+profile_d_retire() {
+	local file="/etc/profile.d/$1"
+	local hash sum
+
+	[ -f "$file" ] || return 0
+	shift
+
+	hash="$(sha256sum "$file")"
+	hash="${hash%% *}"
+
+	for sum in "$@"; do
+		[ "$sum" = "$hash" ] || continue
+		rm -f "$file"
+		return 0
+	done
+}
+
 # lexically, without looking at the file system or following links
 path_normalize() {
 	local IFS=/

@@ -31,9 +31,10 @@ case "$TERM" in
 esac
 
 if [ -z "$FAILSAFE" ] ; then
-	for FILE in /etc/profile.d/*.sh ; do
-		[ -f "${FILE%.sh}.hush" ] && continue
+	for FILE in /usr/lib/profile.d/*.sh /etc/profile.d/*.sh ; do
+		HUSH="${FILE##*/}"
+		[ -f "/etc/profile.d/${HUSH%.sh}.hush" ] && continue
 		[ -f "$FILE" ] && . "$FILE"
 	done
-	unset FILE
+	unset FILE HUSH
 fi
