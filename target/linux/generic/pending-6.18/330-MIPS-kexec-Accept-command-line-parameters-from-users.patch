@@ -2,6 +2,10 @@ From: Yousong Zhou <yszhou4tech@gmail.com>
 Subject: MIPS: kexec: Accept command line parameters from userspace.
 
 Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
+[Marco: copy the command line through a buffer on the stack, as
+ kexec_argv_buf is kernel text and hardened usercopy refuses to copy
+ into it; read the "kexec " prefix of the segments with copy_from_user()]
+Signed-off-by: Marco Martins <marcomartins86@gmail.com>
 ---
  arch/mips/kernel/machine_kexec.c   |  153 +++++++++++++++++++++++++++++++-----
  arch/mips/kernel/machine_kexec.h   |   20 +++++
@@ -29,7 +33,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  static unsigned long reboot_code_buffer;
  
-@@ -31,6 +28,101 @@ void (*_crash_smp_send_stop)(void) = NUL
+@@ -31,6 +28,116 @@ void (*_crash_smp_send_stop)(void) = NUL
  void (*_machine_kexec_shutdown)(void) = NULL;
  void (*_machine_crash_shutdown)(struct pt_regs *regs) = NULL;
  
@@ -51,6 +55,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
 +
 +static void machine_kexec_init_argv(struct kimage *image)
 +{
++	char cmdline[KEXEC_COMMAND_LINE_SIZE];
 +	void __user *buf = NULL;
 +	size_t bufsz;
 +	size_t size;
@@ -59,12 +64,19 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
 +	bufsz = 0;
 +	for (i = 0; i < image->nr_segments; i++) {
 +		struct kexec_segment *seg;
++		char prefix[6];
 +
 +		seg = &image->segment[i];
-+		if (seg->bufsz < 6)
++		if (seg->bufsz < sizeof(prefix))
 +			continue;
 +
-+		if (strncmp((char *) seg->buf, "kexec ", 6))
++		/* seg->buf is a user space address */
++		if (copy_from_user(prefix, seg->buf, sizeof(prefix))) {
++			pr_warn("kexec segment copy to kernel space failed\n");
++			return;
++		}
++
++		if (memcmp(prefix, "kexec ", sizeof(prefix)))
 +			continue;
 +
 +		buf = seg->buf;
@@ -80,9 +92,16 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
 +	if (size < bufsz)
 +		pr_warn("kexec command line truncated to %zd bytes\n", size);
 +
-+	/* Copy to kernel space */
-+	if (copy_from_user(kexec_argv_buf, buf, size))
++	/*
++	 * Copy to kernel space. kexec_argv_buf is part of the relocation code,
++	 * which is kernel text, and hardened usercopy refuses to copy into
++	 * that: go through a buffer of our own.
++	 */
++	if (copy_from_user(cmdline, buf, size)) {
 +		pr_warn("kexec command line copy to kernel space failed\n");
++		return;
++	}
++	memcpy(kexec_argv_buf, cmdline, size);
 +
 +	kexec_argv_buf[size - 1] = 0;
 +}
@@ -131,7 +150,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  static void kexec_image_info(const struct kimage *kimage)
  {
  	unsigned long i;
-@@ -100,6 +192,18 @@ machine_kexec_prepare(struct kimage *kim
+@@ -100,6 +207,18 @@ machine_kexec_prepare(struct kimage *kim
  #endif
  
  	kexec_image_info(kimage);
@@ -150,7 +169,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	if (_machine_kexec_prepare)
  		return _machine_kexec_prepare(kimage);
-@@ -162,7 +266,7 @@ machine_crash_shutdown(struct pt_regs *r
+@@ -162,7 +281,7 @@ machine_crash_shutdown(struct pt_regs *r
  void kexec_nonboot_cpu_jump(void)
  {
  	local_flush_icache_range((unsigned long)relocated_kexec_smp_wait,
@@ -159,7 +178,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	relocated_kexec_smp_wait(NULL);
  }
-@@ -200,7 +304,7 @@ void kexec_reboot(void)
+@@ -200,7 +319,7 @@ void kexec_reboot(void)
  	 * machine_kexec() CPU.
  	 */
  	local_flush_icache_range(reboot_code_buffer,
@@ -168,7 +187,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	do_kexec = (void *)reboot_code_buffer;
  	do_kexec();
-@@ -213,10 +317,12 @@ machine_kexec(struct kimage *image)
+@@ -213,10 +332,12 @@ machine_kexec(struct kimage *image)
  	unsigned long *ptr;
  
  	reboot_code_buffer =
@@ -182,7 +201,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	if (image->type == KEXEC_TYPE_DEFAULT) {
  		kexec_indirection_page =
-@@ -224,9 +330,19 @@ machine_kexec(struct kimage *image)
+@@ -224,9 +345,19 @@ machine_kexec(struct kimage *image)
  	} else {
  		kexec_indirection_page = (unsigned long)&image->head;
  	}
@@ -204,7 +223,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  	/*
  	 * The generic kexec code builds a page list with physical
-@@ -257,7 +373,7 @@ machine_kexec(struct kimage *image)
+@@ -257,7 +388,7 @@ machine_kexec(struct kimage *image)
  #ifdef CONFIG_SMP
  	/* All secondary cpus now may jump to kexec_wait cycle */
  	relocated_kexec_smp_wait = reboot_code_buffer +
