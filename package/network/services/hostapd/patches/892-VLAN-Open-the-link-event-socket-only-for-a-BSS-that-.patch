@@ -1,0 +1,49 @@
+From 8ad356cf2f62ad0e80a1dfade8e84f76b7c03f1f Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Wed, 4 Nov 2026 04:36:23 -0600
+Subject: [PATCH] VLAN: Open the link event socket only for a BSS that has
+ VLANs
+
+vlan_init() opens a NETLINK_ROUTE socket in the RTMGRP_LINK group for
+every BSS when hostapd is built with CONFIG_FULL_DYNAMIC_VLAN, whether
+or not the BSS uses VLANs. Its events matter only to the BSS's VLAN
+interfaces: vlan_newlink() and vlan_dellink() match them against
+conf->vlan. A BSS with dynamic_vlan disabled, no per_sta_vif and no
+VLAN list receives every link event in the system and uses none. When
+hostapd is busy during a burst of link events, each of these sockets
+overflows, and each BSS logs "VLAN: vlan_event_receive: recvfrom
+failed: No buffer space available" at error level.
+
+Open the socket only when the BSS can have VLAN interfaces. The rest
+of the VLAN setup in vlan_init() already depends on the same settings,
+and vlan_init() runs only at BSS setup.
+
+Tested on OpenWrt (wpad, 4 BSSes without VLANs, on an Arista W-318).
+hostapd held 5 NETLINK_ROUTE link sockets before (one per BSS and the
+driver's) and 1 after. With hostapd stopped during 1000 up/down
+toggles of a test bridge, the 4 per-BSS sockets overflowed and each
+logged the error. With this change only the driver's socket
+overflowed; it logs "netlink: Link events lost, request the link
+state" and recovers.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+Link: https://lists.infradead.org/pipermail/hostap/2026-November/045941.html
+---
+ src/ap/vlan_init.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/src/ap/vlan_init.c
++++ b/src/ap/vlan_init.c
+@@ -139,7 +139,10 @@ static void vlan_dynamic_remove(struct h
+ int vlan_init(struct hostapd_data *hapd)
+ {
+ #ifdef CONFIG_FULL_DYNAMIC_VLAN
+-	hapd->full_dynamic_vlan = full_dynamic_vlan_init(hapd);
++	/* Only a BSS that can have VLAN interfaces needs their link events */
++	if (hapd->conf->ssid.dynamic_vlan != DYNAMIC_VLAN_DISABLED ||
++	    hapd->conf->ssid.per_sta_vif || hapd->conf->vlan)
++		hapd->full_dynamic_vlan = full_dynamic_vlan_init(hapd);
+ #endif /* CONFIG_FULL_DYNAMIC_VLAN */
+ 
+ 	if ((hapd->conf->ssid.dynamic_vlan != DYNAMIC_VLAN_DISABLED ||
