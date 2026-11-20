@@ -299,6 +299,13 @@ hiwifi,hc6361)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "blue:wlan" "phy0tpt"
 	;;
+intelbras,wom-5a-16m)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "signal1" "SIGNAL1" "red:indicator-1" "wlan0" "1" "100"
+	ucidef_set_led_rssi "signal2" "SIGNAL2" "orange:indicator-2" "wlan0" "25" "100"
+	ucidef_set_led_rssi "signal3" "SIGNAL3" "green:indicator-3" "wlan0" "50" "100"
+	ucidef_set_led_rssi "signal4" "SIGNAL4" "green:indicator-4" "wlan0" "75" "100"
+	;;
 kuwfi,c910)
 	ucidef_set_led_netdev "wan" "WAN" "white:wan" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "white:lan1" "switch0" "0x10"
