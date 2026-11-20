@@ -1844,7 +1844,7 @@ define KernelPackage/usb3
 	+TARGET_airoha_an7581:kmod-usb-xhci-mtk \
 	+TARGET_bcm53xx:kmod-usb-bcma \
 	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb3 \
-	+TARGET_ramips_mt7621:kmod-usb-xhci-mtk \
+	+(TARGET_ramips_mt7621||TARGET_ramips_mt7621_small):kmod-usb-xhci-mtk \
 	+TARGET_econet_en751221:kmod-usb-xhci-mtk \
 	+TARGET_mediatek:kmod-usb-xhci-mtk
   KCONFIG:= \
@@ -1920,7 +1920,7 @@ define KernelPackage/phy-mtk-tphy
   KCONFIG:= \
 	CONFIG_GENERIC_PHY=y \
 	CONFIG_PHY_MTK_TPHY
-  DEPENDS:=@(TARGET_mediatek||TARGET_ramips_mt7621)
+  DEPENDS:=@(TARGET_mediatek||TARGET_ramips_mt7621||TARGET_ramips_mt7621_small)
   FILES:=$(LINUX_DIR)/drivers/phy/mediatek/phy-mtk-tphy.ko
   AUTOLOAD:=$(call AutoProbe,phy-mtk-tphy,1)
 endef
@@ -1932,7 +1932,7 @@ define KernelPackage/usb-xhci-mtk
   TITLE:=xHCI support for MediaTek SoCs
   DEPENDS:= \
 	+kmod-usb-xhci-hcd \
-	+(TARGET_mediatek||TARGET_ramips_mt7621):kmod-phy-mtk-tphy
+	+(TARGET_mediatek||TARGET_ramips_mt7621||TARGET_ramips_mt7621_small):kmod-phy-mtk-tphy
   KCONFIG:=CONFIG_USB_XHCI_MTK
   HIDDEN:=1
   FILES:= \

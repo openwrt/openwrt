@@ -16,12 +16,15 @@ DEVICE_VARS += SERCOMM_PAD JCG_MAXSIZE
 loadaddr-y := 0x80000000
 loadaddr-$(CONFIG_TARGET_ramips_rt288x) := 0x88000000
 loadaddr-$(CONFIG_TARGET_ramips_mt7621) := 0x80001000
+loadaddr-$(CONFIG_TARGET_ramips_mt7621_small) := 0x80001000
 
 ldrplatform-y := ralink
 ldrplatform-$(CONFIG_TARGET_ramips_mt7621) := mt7621
+ldrplatform-$(CONFIG_TARGET_ramips_mt7621_small) := mt7621
 
 ldrflashstart-y := 0x1c000000
 ldrflashstart-$(CONFIG_TARGET_ramips_mt7621) := 0x1fc00000
+ldrflashstart-$(CONFIG_TARGET_ramips_mt7621_small) := 0x1fc00000
 
 LOADADDR := $(loadaddr-y)
 LOADER_PLATFORM := $(ldrplatform-y)
