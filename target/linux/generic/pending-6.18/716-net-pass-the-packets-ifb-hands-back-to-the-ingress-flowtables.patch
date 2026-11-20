@@ -1,0 +1,124 @@
+From 05a37438bd21b60f0f880bf2c93c5c26a7a00afd Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 8 Nov 2026 11:39:48 +0100
+Subject: [PATCH] net: pass the packets ifb hands back to the ingress
+ flowtables
+
+A tc ingress filter that redirects to ifb takes the packet before the
+netfilter ingress hook. ifb hands the packet back with tc_skip_classify
+set, and __netif_receive_skb_core() then skips the netfilter ingress hook
+together with tc. A flowtable on that device never sees such a packet,
+so with an ingress shaper on ifb, as sqm-scripts sets up for the
+download, every packet of an offloaded flow in that direction takes the
+classic forwarding path.
+
+Run the flowtables of the device's ingress hook on a packet ifb hands
+back, and skip the base chains as before. The base chains sit above tc
+and do not see what tc redirected; a chain that forwards to ifb itself
+would otherwise see the packet again and forward it again. A flowtable
+transmits to the flow's output device and never redirects to ifb, which
+drops what was not redirected to it.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ include/linux/netfilter_netdev.h | 39 ++++++++++++++++++++++++++++++++
+ net/core/dev.c                   | 25 +++++++++++++++++++-
+ 2 files changed, 63 insertions(+), 1 deletion(-)
+
+--- a/include/linux/netfilter_netdev.h
++++ b/include/linux/netfilter_netdev.h
+@@ -38,6 +38,40 @@ static inline int nf_hook_ingress(struct
+ 	return ret;
+ }
+ 
++/* caller must hold rcu_read_lock */
++static inline int nf_hook_ingress_flowtable(struct sk_buff *skb)
++{
++	struct nf_hook_entries *e = rcu_dereference(skb->dev->nf_hooks_ingress);
++	struct nf_hook_state state;
++	struct nf_hook_ops **ops;
++	unsigned int i;
++
++	if (unlikely(!e))
++		return 0;
++
++	nf_hook_state_init(&state, NF_NETDEV_INGRESS,
++			   NFPROTO_NETDEV, skb->dev, NULL, NULL,
++			   dev_net(skb->dev), NULL);
++	ops = nf_hook_entries_get_hook_ops(e);
++	for (i = 0; i < e->num_hook_entries; i++) {
++		if (ops[i]->hook_ops_type != NF_HOOK_OP_NFT_FT)
++			continue;
++
++		switch (nf_hook_entry_hookfn(&e->hooks[i], skb, &state) &
++			NF_VERDICT_MASK) {
++		case NF_ACCEPT:
++			break;
++		case NF_DROP:
++			kfree_skb_reason(skb, SKB_DROP_REASON_NETFILTER_DROP);
++			return -1;
++		default:
++			return -1;
++		}
++	}
++
++	return 0;
++}
++
+ #else /* CONFIG_NETFILTER_INGRESS */
+ static inline int nf_hook_ingress_active(struct sk_buff *skb)
+ {
+@@ -48,6 +82,11 @@ static inline int nf_hook_ingress(struct
+ {
+ 	return 0;
+ }
++
++static inline int nf_hook_ingress_flowtable(struct sk_buff *skb)
++{
++	return 0;
++}
+ #endif /* CONFIG_NETFILTER_INGRESS */
+ 
+ #ifdef CONFIG_NETFILTER_EGRESS
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -5936,6 +5936,22 @@ static inline int nf_ingress(struct sk_b
+ 	return 0;
+ }
+ 
++static inline int nf_ingress_flowtable(struct sk_buff *skb)
++{
++#ifdef CONFIG_NET_INGRESS
++	if (static_branch_unlikely(&ingress_needed_key) &&
++	    nf_hook_ingress_active(skb)) {
++		int ret;
++
++		rcu_read_lock();
++		ret = nf_hook_ingress_flowtable(skb);
++		rcu_read_unlock();
++		return ret;
++	}
++#endif
++	return 0;
++}
++
+ static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,
+ 				    struct packet_type **ppt_prev)
+ {
+@@ -5992,8 +6008,15 @@ another_round:
+ 			goto out;
+ 	}
+ 
+-	if (skb_skip_tc_classify(skb))
++	if (skb_skip_tc_classify(skb)) {
++		/* ifb hands back what tc redirected there: the netfilter
++		 * base chains are above tc and do not see it, a flowtable
++		 * on the device takes it.
++		 */
++		if (nf_ingress_flowtable(skb) < 0)
++			goto out;
+ 		goto skip_classify;
++	}
+ 
+ 	if (pfmemalloc)
+ 		goto skip_taps;
