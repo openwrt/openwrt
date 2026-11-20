@@ -38,7 +38,6 @@ define Package/apk-mbedtls
   DEFAULT:=y if USE_APK
   VARIANT:=mbedtls
   DEFAULT_VARIANT:=1
-  CONFLICTS:=apk-openssl
 endef
 
 define Package/apk-openssl
