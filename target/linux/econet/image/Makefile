@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += TRX_MODEL TRX_LOADADDR
+DEVICE_VARS += TRX_MODEL TRX_LOADADDR TRX_PAD
 
 define Target/Description
 	Build firmware images for EcoNet MIPS based boards.
@@ -12,7 +12,8 @@ define Build/tclinux-trx
   ./tclinux-trx.sh --kernel $@ --rootfs $(IMAGE_ROOTFS) \
     --version $(VERSION_DIST)-$(REVISION) --endian $(TRX_ENDIAN) \
     $(if $(TRX_MODEL),--model $(TRX_MODEL)) \
-    $(if $(TRX_LOADADDR),--loadaddr $(TRX_LOADADDR)) > $@.new
+    $(if $(TRX_LOADADDR),--loadaddr $(TRX_LOADADDR)) \
+    $(if $(TRX_PAD),--pad $(TRX_PAD)) > $@.new
 	mv $@.new $@
 endef
 
@@ -21,7 +22,8 @@ define Build/kernel-trx
   ./tclinux-trx.sh --kernel $@ \
     --version $(VERSION_DIST)-$(REVISION) --endian $(TRX_ENDIAN) \
     $(if $(TRX_MODEL),--model $(TRX_MODEL)) \
-    $(if $(TRX_LOADADDR),--loadaddr $(TRX_LOADADDR)) > $@.new
+    $(if $(TRX_LOADADDR),--loadaddr $(TRX_LOADADDR)) \
+    $(if $(TRX_PAD),--pad $(TRX_PAD)) > $@.new
 	mv $@.new $@
 endef
 
@@ -56,6 +58,7 @@ define Device/Default
   UBINIZE_OPTS := -E 5
   TRX_MODEL :=
   TRX_LOADADDR :=
+  TRX_PAD :=
 endef
 
 # Kernel in a raw TRX partition, root squashfs in UBI. FACTORY_SIZE must be the
