@@ -102,6 +102,7 @@ HOST_CONFIGURE_ARGS += \
 	--disable-java \
 	--disable-openmp \
 	--without-emacs \
+	--without-selinux \
 	--with-libiconv-prefix=$(STAGING_DIR_HOSTPKG) \
 	--with-libunistring-prefix=$(STAGING_DIR_HOSTPKG) \
 	--with-libxml2-prefix=$(STAGING_DIR_HOSTPKG)
