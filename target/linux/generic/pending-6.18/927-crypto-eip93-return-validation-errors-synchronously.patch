@@ -19,14 +19,11 @@ driver object was cross-compiled on MIPS.
 Fixes: 9739f5f93b78 ("crypto: eip93 - Add Inside Secure SafeXcel EIP-93 crypto engine support")
 Reported-by: Herbert Xu <herbert@gondor.apana.org.au>
 Closes: https://lore.kernel.org/linux-crypto/aXxmIuU9PKJiDs7n@gondor.apana.org.au/
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
 ---
- drivers/crypto/inside-secure/eip93/eip93-aead.c   | 4 +---
- drivers/crypto/inside-secure/eip93/eip93-cipher.c | 4 +---
- 2 files changed, 2 insertions(+), 6 deletions(-)
-
 --- a/drivers/crypto/inside-secure/eip93/eip93-aead.c
 +++ b/drivers/crypto/inside-secure/eip93/eip93-aead.c
-@@ -47,10 +47,8 @@ static int eip93_aead_send_req(struct crypto_async_request *async)
+@@ -47,10 +47,8 @@
  	int err;
  
  	err = check_valid_request(rctx);
@@ -40,7 +37,7 @@ Closes: https://lore.kernel.org/linux-crypto/aXxmIuU9PKJiDs7n@gondor.apana.org.a
  }
 --- a/drivers/crypto/inside-secure/eip93/eip93-cipher.c
 +++ b/drivers/crypto/inside-secure/eip93/eip93-cipher.c
-@@ -38,10 +38,8 @@ static int eip93_skcipher_send_req(struct crypto_async_request *async)
+@@ -45,10 +45,8 @@
  
  	err = check_valid_request(rctx);
  
