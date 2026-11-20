@@ -1,0 +1,84 @@
+From 79507e57df92e8b078e58308d4e99a6a520fb4c5 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:02:17 +0100
+Subject: [PATCH] dt-bindings: usb: rockchip,dwc3: add rv1126
+
+The RV1126 integrates a high-speed only DWC3 dual-role controller that
+is fed by a 24 MHz reference clock and the bus clock. It has no
+suspend clock, so the clock list may stop after the bus clock.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../bindings/usb/rockchip,dwc3.yaml           | 25 ++++++++++++++++---
+ 1 file changed, 22 insertions(+), 3 deletions(-)
+
+--- a/Documentation/devicetree/bindings/usb/rockchip,dwc3.yaml
++++ b/Documentation/devicetree/bindings/usb/rockchip,dwc3.yaml
+@@ -30,6 +30,7 @@ select:
+           - rockchip,rk3568-dwc3
+           - rockchip,rk3576-dwc3
+           - rockchip,rk3588-dwc3
++          - rockchip,rv1126-dwc3
+   required:
+     - compatible
+ 
+@@ -42,6 +43,7 @@ properties:
+           - rockchip,rk3568-dwc3
+           - rockchip,rk3576-dwc3
+           - rockchip,rk3588-dwc3
++          - rockchip,rv1126-dwc3
+       - const: snps,dwc3
+ 
+   reg:
+@@ -51,7 +53,7 @@ properties:
+     maxItems: 1
+ 
+   clocks:
+-    minItems: 3
++    minItems: 2
+     items:
+       - description:
+           Controller reference clock, must to be 24 MHz
+@@ -66,10 +68,12 @@ properties:
+           PIPE clock
+ 
+   clock-names:
+-    minItems: 3
++    minItems: 2
+     items:
+       - const: ref_clk
+-      - const: suspend_clk
++      - enum:
++          - suspend_clk
++          - bus_clk
+       - const: bus_clk
+       - enum:
+           - grf_clk
+@@ -140,12 +144,27 @@ allOf:
+     then:
+       properties:
+         clocks:
++          minItems: 3
+           maxItems: 3
+         clock-names:
++          minItems: 3
+           maxItems: 3
+   - if:
+       properties:
+         compatible:
++          contains:
++            const: rockchip,rv1126-dwc3
++    then:
++      properties:
++        clocks:
++          maxItems: 2
++        clock-names:
++          items:
++            - const: ref_clk
++            - const: bus_clk
++  - if:
++      properties:
++        compatible:
+           contains:
+             const: rockchip,rk3588-dwc3
+     then:

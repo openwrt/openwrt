@@ -1,0 +1,117 @@
+From 7f93ca31f7fd9b42e7d692f59514436d448ac908 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 16 Sep 2026 11:48:32 +0200
+Subject: wifi: mac80211: prevent AP VLAN tx from other interfaces
+
+Since the station lookup was factored out of ieee80211_build_hdr(),
+ieee80211_lookup_ra_sta() uses sta_info_get_bss() for all AP and AP VLAN
+frames, not only for control port frames. A unicast frame sent on one
+interface thus matches a station of a different VLAN of the same BSS and
+is transmitted to it.
+
+Only match stations of the interface the frame is sent on, except for
+control port frames, since those may be sent for VLAN stations directly
+on the BSS interface.
+
+Fixes: 97ffe75791b3 ("mac80211: factor out station lookup from ieee80211_build_hdr()")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Link: https://patch.msgid.link/20260916094833.164219-1-nbd@nbd.name
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/ieee80211_i.h |  2 +-
+ net/mac80211/tx.c          | 24 +++++++++++++++---------
+ 2 files changed, 16 insertions(+), 10 deletions(-)
+
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -2490,7 +2490,7 @@ static inline bool ieee80211_require_enc
+ /* sta_out needs to be checked for ERR_PTR() before using */
+ int ieee80211_lookup_ra_sta(struct ieee80211_sub_if_data *sdata,
+ 			    struct sk_buff *skb,
+-			    struct sta_info **sta_out);
++			    struct sta_info **sta_out, bool bss);
+ 
+ static inline void
+ ieee80211_tx_skb_tid_band(struct ieee80211_sub_if_data *sdata,
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2533,7 +2533,7 @@ static inline bool ieee80211_is_tdls_set
+ 
+ int ieee80211_lookup_ra_sta(struct ieee80211_sub_if_data *sdata,
+ 			    struct sk_buff *skb,
+-			    struct sta_info **sta_out)
++			    struct sta_info **sta_out, bool bss)
+ {
+ 	struct sta_info *sta;
+ 
+@@ -2554,7 +2554,10 @@ int ieee80211_lookup_ra_sta(struct ieee8
+ 			*sta_out = ERR_PTR(-ENOENT);
+ 			return 0;
+ 		}
+-		sta = sta_info_get_bss(sdata, skb->data);
++		if (bss)
++			sta = sta_info_get_bss(sdata, skb->data);
++		else
++			sta = sta_info_get(sdata, skb->data);
+ 		break;
+ #ifdef CPTCFG_MAC80211_MESH
+ 	case NL80211_IFTYPE_MESH_POINT:
+@@ -4418,7 +4421,8 @@ void __ieee80211_subif_start_xmit(struct
+ 	    ieee80211_mesh_xmit_fast(sdata, skb, ctrl_flags))
+ 		goto out;
+ 
+-	if (ieee80211_lookup_ra_sta(sdata, skb, &sta))
++	if (ieee80211_lookup_ra_sta(sdata, skb, &sta,
++				    skb->protocol == sdata->control_port_protocol))
+ 		goto out_free;
+ 
+ 	if (IS_ERR(sta))
+@@ -4859,7 +4863,10 @@ static void __ieee80211_subif_start_xmit
+ 
+ 	rcu_read_lock();
+ 
+-	if (ieee80211_lookup_ra_sta(sdata, skb, &sta)) {
++	if (unlikely(sdata->control_port_protocol == ehdr->h_proto))
++		goto skip_offload;
++
++	if (ieee80211_lookup_ra_sta(sdata, skb, &sta, false)) {
+ 		kfree_skb(skb);
+ 		goto out;
+ 	}
+@@ -4880,8 +4887,7 @@ static void __ieee80211_subif_start_xmit
+ 		link = &sdata->deflink;
+ 		key = rcu_dereference(link->default_multicast_key);
+ 	} else if (unlikely(IS_ERR_OR_NULL(sta) || !sta->uploaded ||
+-		   !test_sta_flag(sta, WLAN_STA_AUTHORIZED) ||
+-	    sdata->control_port_protocol == ehdr->h_proto)) {
++		   !test_sta_flag(sta, WLAN_STA_AUTHORIZED))) {
+ 		goto skip_offload;
+ 	} else {
+ 		key = rcu_dereference(sta->ptk[sta->ptk_idx]);
+@@ -4942,7 +4948,7 @@ ieee80211_build_data_template(struct iee
+ 
+ 	rcu_read_lock();
+ 
+-	if (ieee80211_lookup_ra_sta(sdata, skb, &sta)) {
++	if (ieee80211_lookup_ra_sta(sdata, skb, &sta, false)) {
+ 		kfree_skb(skb);
+ 		skb = ERR_PTR(-EINVAL);
+ 		goto out;
+@@ -5013,7 +5019,7 @@ static bool ieee80211_tx_pending_skb(str
+ 		}
+ 		result = ieee80211_tx(sdata, NULL, skb, true);
+ 	} else if (info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) {
+-		if (ieee80211_lookup_ra_sta(sdata, skb, &sta)) {
++		if (ieee80211_lookup_ra_sta(sdata, skb, &sta, true)) {
+ 			dev_kfree_skb(skb);
+ 			return true;
+ 		}
+@@ -6646,7 +6652,7 @@ int ieee80211_tx_control_port(struct wip
+ 	 * AF_PACKET
+ 	 */
+ 	rcu_read_lock();
+-	err = ieee80211_lookup_ra_sta(sdata, skb, &sta);
++	err = ieee80211_lookup_ra_sta(sdata, skb, &sta, true);
+ 	if (err) {
+ 		dev_kfree_skb(skb);
+ 		rcu_read_unlock();

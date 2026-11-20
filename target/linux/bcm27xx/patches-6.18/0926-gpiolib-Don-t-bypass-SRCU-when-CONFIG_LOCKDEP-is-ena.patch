@@ -1,0 +1,41 @@
+From ce0873cb5e0c24dd4730d87f4777982035733a0d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ma=C3=ADra=20Canal?= <mcanal@igalia.com>
+Date: Tue, 11 Aug 2026 16:36:11 -0300
+Subject: [PATCH] gpiolib: Don't bypass SRCU when CONFIG_LOCKDEP is enabled
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Commit 6c967417fe83 ("gpiolib: Avoid the hotplug performance reduction")
+stubs out gpiolib's SRCU read-side locking to recover the throughput lost
+to the hotplug interlock. That trade-off is deliberate, but it leaves the
+core's lockdep_assert_held(&gc->gpiodev->srcu) checks in place while the
+lock is never actually taken. Since those are WARN_ON(), every GPIO access
+splats with CONFIG_LOCKDEP=y and the log fills up with backtraces.
+
+Therefore, only enable REJECT_HOTPLUG_TAX when CONFIG_LOCKDEP is
+disabled. This way, the optimisation is kept for production builds, but
+developers can still debug the kernel with lockdep enabled.
+
+Fixes: 6c967417fe83 ("gpiolib: Avoid the hotplug performance reduction")
+Signed-off-by: Maíra Canal <mcanal@igalia.com>
+---
+ drivers/gpio/gpiolib.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpio/gpiolib.c
++++ b/drivers/gpio/gpiolib.c
+@@ -53,7 +53,12 @@
+ 
+ #define dont_test_bit(b,d) (0)
+ 
+-#define REJECT_HOTPLUG_TAX 1
++/*
++ * The SRCU bypass below skips srcu_read_lock() while the core retains its
++ * lockdep_assert_held(&gc->gpiodev->srcu) checks, so every gpiod_*() call
++ * splats under lockdep. Keep the optimisation for production builds only.
++ */
++#define REJECT_HOTPLUG_TAX (!IS_ENABLED(CONFIG_LOCKDEP))
+ 
+ #if REJECT_HOTPLUG_TAX
+ 

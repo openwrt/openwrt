@@ -1,0 +1,27 @@
+From 1877747a8966a9466802b8f807f4dec9141f9a48 Mon Sep 17 00:00:00 2001
+From: huangwenbin <huangwenbin@kylinos.cn>
+Date: Mon, 31 Aug 2026 17:29:27 +0800
+Subject: [PATCH] closures: handle page size lookup failure
+
+allocate_space() uses the value returned by sysconf(_SC_PAGESIZE)
+as the size of a local buffer without checking for failure.
+
+Return early when the page size lookup fails or produces an invalid
+value, avoiding creation of an invalid variable-length array.
+
+Signed-off-by: huangwenbin <huangwenbin@kylinos.cn>
+---
+ src/closures.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/src/closures.c
++++ b/src/closures.c
+@@ -800,6 +800,8 @@ allocate_space (int fd, off_t len)
+   /* Obtain system page size. */
+   if (!page_size)
+     page_size = sysconf(_SC_PAGESIZE);
++  if (page_size <= 0)
++    return -1;
+ 
+   unsigned char buf[page_size];
+   memset (buf, 0, page_size);

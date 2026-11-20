@@ -1,0 +1,39 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 1 Nov 2026 21:00:00 +0000
+Subject: [PATCH] MLD STA: take a Beacon protection failure on any link
+
+wpas_event_unprot_beacon() compared the SA of the Beacon frame with
+wpa_s->bssid. With the SME in user space, that is the AP MLD address,
+while mac80211 does not translate the address of a Beacon frame, so an
+MLD station ignored each Beacon protection failure. With the SME in the
+driver, wpa_s->bssid is the BSSID of the association link, so a failure
+on another link was ignored. Look the SA up in the links.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -6600,16 +6600,19 @@ static void wpas_event_unprot_beacon(str
+ 				     struct unprot_beacon *data)
+ {
+ 	struct wpabuf *buf;
+-	int res, freq;
++	int res, freq, link_id;
+ 
+-	if (!data || wpa_s->wpa_state != WPA_COMPLETED ||
++	if (!data || wpa_s->wpa_state != WPA_COMPLETED)
++		return;
++
++	link_id = wpas_ap_link_id_by_bssid(wpa_s, data->sa);
++	if (wpa_s->valid_links ? link_id < 0 :
+ 	    !ether_addr_equal(data->sa, wpa_s->bssid))
+ 		return;
+ 	wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_UNPROT_BEACON MACSTR,
+ 		MAC2STR(data->sa));
+ 
+-	freq = wpas_ap_link_freq(wpa_s,
+-				 wpas_ap_link_id_by_bssid(wpa_s, data->sa));
++	freq = wpas_ap_link_freq(wpa_s, link_id);
+ 	if (freq < 0) {
+ 		wpa_printf(MSG_DEBUG,
+ 			   "Link of the Beacon frame has no channel for the WNM-Notification Request frame");

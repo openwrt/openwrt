@@ -1,0 +1,51 @@
+From e26d32cb48f452aabbc589f2eaedac49651cf946 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 12:46:01 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Set the CSC defaults by colorspace
+
+When user space sets the colorspace field of an ISP source pad with
+the CSC flag and leaves the transfer function, the encoding and the
+quantization at their default values, the pad keeps the values copied
+from the raw sink pad, so a request for the JPEG colorspace ends up
+with no transfer function and the limited range.
+
+Fill the fields left at their default with the defaults of the
+requested colorspace field, as the V4L2 CSC API prescribes, before
+applying the fields that are set explicitly.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../media/platform/rockchip/rkisp2/rkisp2-isp.c    | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
+@@ -408,6 +408,17 @@ static int rkisp2_isp_init_state(struct
+ 	return 0;
+ }
+ 
++/* The other colour space fields default to the values of the colorspace. */
++static void rkisp2_isp_csc_defaults(struct v4l2_mbus_framefmt *fmt,
++				    u32 colorspace)
++{
++	fmt->colorspace = colorspace;
++	fmt->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(colorspace);
++	fmt->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(colorspace);
++	fmt->quantization = V4L2_MAP_QUANTIZATION_DEFAULT(false, colorspace,
++							  fmt->ycbcr_enc);
++}
++
+ static void rkisp2_isp_set_src_fmt(struct rkisp2_isp *isp,
+ 				   struct v4l2_subdev_state *sd_state,
+ 				   struct v4l2_mbus_framefmt *format,
+@@ -493,7 +504,8 @@ static void rkisp2_isp_set_src_fmt(struc
+ 	if (set_csc && src_info->pixel_enc == V4L2_PIXEL_ENC_YUV) {
+ 		if (sink_info->pixel_enc == V4L2_PIXEL_ENC_BAYER) {
+ 			if (format->colorspace != V4L2_COLORSPACE_DEFAULT)
+-				src_fmt->colorspace = format->colorspace;
++				rkisp2_isp_csc_defaults(src_fmt,
++							format->colorspace);
+ 			if (format->xfer_func != V4L2_XFER_FUNC_DEFAULT)
+ 				src_fmt->xfer_func = format->xfer_func;
+ 			if (format->ycbcr_enc != V4L2_YCBCR_ENC_DEFAULT)

@@ -1,0 +1,98 @@
+From 6f2e1c75bc5eb2237e03c134c32a2a352484881e Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Thu, 27 Nov 2025 14:08:48 +0200
+Subject: [PATCH] net: dsa: introduce the dsa_xmit_port_mask() tagging protocol
+ helper
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Many tagging protocols deal with the transmit port mask being a bit
+mask, and set it to BIT(dp->index). Not a big deal.
+
+Also, some tagging protocols are written for switches which support HSR
+offload (including packet duplication offload), there we see a walk
+using dsa_hsr_foreach_port() to find the other port in the same switch
+that's member of the HSR, and set that bit in the port mask too.
+
+That isn't sufficiently interesting either, until you come to realize
+that there isn't anything special in the second case that switches just
+in the first one can't do too.
+
+It just becomes a matter of "is it wise to do it? are sufficient people
+using HSR/PRP with generic off-the-shelf switches to justify add an
+extra test in the data path?" - the answer to which is probably "it
+depends". It isn't _much_ worse to not have HSR offload at all, so as to
+make it impractical, esp. with a rich OS like Linux. But the HSR users
+are rather specialized in industrial networking.
+
+Anyway, the change acts on the premise that we're going to have support
+for this, it should be uniformly implemented for everyone, and that if
+we find some sort of balance, we can keep everyone relatively happy.
+
+So I've disabled that logic if CONFIG_HSR isn't enabled, and I've tilted
+the branch predictor to say it's unlikely we're transmitting through a
+port with this capability currently active. On branch miss, we're still
+going to save the transmission of one packet, so there's some remaining
+benefit there too. I don't _think_ we need to jump to static keys yet.
+
+The helper returns a 32-bit zero-based unsigned number, that callers
+have to transpose using FIELD_PREP(). It is not the first time we assume
+DSA switches won't be larger than 32 ports - dsa_user_ports() has that
+assumption baked into it too.
+
+One last development note about why pass the "skb" argument when this
+isn't used. Looking at the compiled code on arm64, which is identical
+both with and without it, the answer is "why not?" - who knows what
+other features dependent on the skb may be handled in the future.
+
+Link: https://lore.kernel.org/netdev/20251126093240.2853294-4-mmyangfl@gmail.com/
+Cc: "Alvin Šipraga" <alsi@bang-olufsen.dk>
+Cc: Chester A. Unal" <chester.a.unal@arinc9.com>
+Cc: "Clément Léger" <clement.leger@bootlin.com>
+Cc: Daniel Golle <daniel@makrotopia.org>
+Cc: David Yang <mmyangfl@gmail.com>
+Cc: DENG Qingfang <dqfext@gmail.com>
+Cc: Florian Fainelli <florian.fainelli@broadcom.com>
+Cc: George McCollister <george.mccollister@gmail.com>
+Cc: Hauke Mehrtens <hauke@hauke-m.de>
+Cc: Jonas Gorski <jonas.gorski@gmail.com>
+Cc: Kurt Kanzenbach <kurt@linutronix.de>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+Cc: Sean Wang <sean.wang@mediatek.com>
+Cc: UNGLinuxDriver@microchip.com
+Cc: Woojung Huh <woojung.huh@microchip.com>
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Link: https://patch.msgid.link/20251127120902.292555-2-vladimir.oltean@nxp.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ net/dsa/tag.h | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/net/dsa/tag.h
++++ b/net/dsa/tag.h
+@@ -319,6 +319,24 @@ static inline void *dsa_etype_header_pos
+ 	return skb->data + 2 * ETH_ALEN;
+ }
+ 
++static inline unsigned long dsa_xmit_port_mask(const struct sk_buff *skb,
++					       const struct net_device *dev)
++{
++	struct dsa_port *dp = dsa_user_to_port(dev);
++	unsigned long mask = BIT(dp->index);
++
++	if (IS_ENABLED(CONFIG_HSR) &&
++	    unlikely(dev->features & NETIF_F_HW_HSR_DUP)) {
++		struct net_device *hsr_dev = dp->hsr_dev;
++		struct dsa_port *other_dp;
++
++		dsa_hsr_foreach_port(other_dp, dp->ds, hsr_dev)
++			mask |= BIT(other_dp->index);
++	}
++
++	return mask;
++}
++
+ /* Create 2 modaliases per tagging protocol, one to auto-load the module
+  * given the ID reported by get_tag_protocol(), and the other by name.
+  */

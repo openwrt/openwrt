@@ -1,0 +1,555 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 12 Oct 2026 11:30:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: report the airtime of each operating
+ channel
+
+hwsim reports a survey entry only for the channels that the last scan
+visited, with a busy time of one eighth of the dwell time. The operating
+channel has no entry, so userspace that measures the channel utilisation
+of a BSS reads nothing.
+
+Count the TX and RX airtime of each 2.4, 5 and 6 GHz channel of the
+wiphy. The count on a channel starts when a channel context first uses
+it, and it does not reset. The counters are apart from the scan data,
+because each scan clears the scan data. mac80211_hwsim_get_survey()
+reports one entry for each channel that an active channel context uses,
+with the IN_USE flag, the time since the count started, and the busy, TX
+and RX times. A frame counts as one attempt at the first rate of its
+rate table, because the table holds the retries that mac80211 plans,
+not the attempts on the medium. ACKs, retries and contention time do
+not count.
+
+Busy is the time that a TX or RX frame is on the medium, because hwsim
+does not simulate CCA. In no_nl mode, the frames reach the medium at the
+speed of the CPU, faster than their airtime. The airtime of frames that
+overlap in time thus counts once, so that the busy, TX and RX times stay
+within the time since the count started. A survey does not count the
+part of the last frame that lies after it.
+
+The airtime entry of an operating channel replaces its scan entry, and
+the operating channels that the last scan did not visit follow the scan
+entries. The other scan entries stay unchanged, because hostapd ACS
+reads them. Real drivers also report one entry for each channel, with
+IN_USE on the operating one. An entry thus keeps its index when a
+channel context starts or stops during a dump, except among the entries
+after the scan entries.
+
+The RX airtime of a frame uses the first rate of the transmitter, as its
+TX airtime does. In wmediumd mode, HWSIM_ATTR_RX_RATE carries only a
+legacy rate index, and an HT or VHT MCS read as a legacy index gives an
+unrelated airtime. hwsim thus takes the rate from
+HWSIM_ATTR_TX_INFO_FLAGS in HWSIM_CMD_FRAME, which wmediumd must forward
+from the frame of the transmitter. Without the attribute,
+ieee80211_calc_rx_airtime() computes the airtime from the RX rate. A VHT
+rate with more than four spatial streams, which the airtime tables of
+mac80211 do not hold, counts as four streams, for example in a frame
+that radiotap injects.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_i.h
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_i.h
+@@ -59,6 +59,25 @@ struct mac80211_hwsim_link_data {
+ #define HWSIM_NUM_S1G_CHANNELS_US	51
+ #define HWSIM_NUM_RATES			12
+ #define HWSIM_NUM_CIPHERS		11
++#define HWSIM_NUM_AIRTIME_CHANNELS	(HWSIM_NUM_CHANNELS_2GHZ + \
++					 HWSIM_NUM_CHANNELS_5GHZ + \
++					 HWSIM_NUM_CHANNELS_6GHZ)
++
++struct hwsim_airtime_span {
++	u64 ns;
++	u64 end_ns;
++};
++
++struct hwsim_chan_airtime {
++	struct ieee80211_channel *channel;
++	atomic64_t start_ns;
++
++	/* protects tx, rx and busy */
++	spinlock_t lock;
++	struct hwsim_airtime_span tx;
++	struct hwsim_airtime_span rx;
++	struct hwsim_airtime_span busy;
++};
+ 
+ struct mac80211_hwsim_data {
+ 	struct list_head list;
+@@ -109,6 +128,9 @@ struct mac80211_hwsim_data {
+ 		      HWSIM_NUM_CHANNELS_5GHZ +
+ 		      HWSIM_NUM_CHANNELS_6GHZ];
+ 
++	/* apart from survey_data, which each hw_scan clears */
++	struct hwsim_chan_airtime airtime[HWSIM_NUM_AIRTIME_CHANNELS];
++
+ 	struct ieee80211_channel *channel;
+ 	enum nl80211_chan_width bw;
+ 	unsigned int rx_filter;
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -1624,6 +1624,36 @@ static inline u16 trans_tx_rate_flags_ie
+ 	return result;
+ }
+ 
++static inline u16 trans_tx_rate_flags_hwsim2ieee(u16 flags)
++{
++	u16 result = 0;
++
++	if (flags & MAC80211_HWSIM_TX_RC_USE_RTS_CTS)
++		result |= IEEE80211_TX_RC_USE_RTS_CTS;
++	if (flags & MAC80211_HWSIM_TX_RC_USE_CTS_PROTECT)
++		result |= IEEE80211_TX_RC_USE_CTS_PROTECT;
++	if (flags & MAC80211_HWSIM_TX_RC_USE_SHORT_PREAMBLE)
++		result |= IEEE80211_TX_RC_USE_SHORT_PREAMBLE;
++	if (flags & MAC80211_HWSIM_TX_RC_MCS)
++		result |= IEEE80211_TX_RC_MCS;
++	if (flags & MAC80211_HWSIM_TX_RC_GREEN_FIELD)
++		result |= IEEE80211_TX_RC_GREEN_FIELD;
++	if (flags & MAC80211_HWSIM_TX_RC_40_MHZ_WIDTH)
++		result |= IEEE80211_TX_RC_40_MHZ_WIDTH;
++	if (flags & MAC80211_HWSIM_TX_RC_DUP_DATA)
++		result |= IEEE80211_TX_RC_DUP_DATA;
++	if (flags & MAC80211_HWSIM_TX_RC_SHORT_GI)
++		result |= IEEE80211_TX_RC_SHORT_GI;
++	if (flags & MAC80211_HWSIM_TX_RC_VHT_MCS)
++		result |= IEEE80211_TX_RC_VHT_MCS;
++	if (flags & MAC80211_HWSIM_TX_RC_80_MHZ_WIDTH)
++		result |= IEEE80211_TX_RC_80_MHZ_WIDTH;
++	if (flags & MAC80211_HWSIM_TX_RC_160_MHZ_WIDTH)
++		result |= IEEE80211_TX_RC_160_MHZ_WIDTH;
++
++	return result;
++}
++
+ static void mac80211_hwsim_write_tsf(struct mac80211_hwsim_data *data,
+ 				     struct sk_buff *skb, u64 sim_time)
+ {
+@@ -1689,6 +1719,172 @@ static void hwsim_tx_addrs_restore(struc
+ 	memcpy(&hdr->addrs, orig_addrs, sizeof(hdr->addrs));
+ }
+ 
++static struct hwsim_chan_airtime *
++mac80211_hwsim_airtime_get(struct mac80211_hwsim_data *data,
++			   struct ieee80211_channel *chan)
++{
++	unsigned int idx;
++
++	if (chan >= data->channels_2ghz &&
++	    chan < data->channels_2ghz + HWSIM_NUM_CHANNELS_2GHZ)
++		idx = chan - data->channels_2ghz;
++	else if (chan >= data->channels_5ghz &&
++		 chan < data->channels_5ghz + HWSIM_NUM_CHANNELS_5GHZ)
++		idx = HWSIM_NUM_CHANNELS_2GHZ + (chan - data->channels_5ghz);
++	else if (chan >= data->channels_6ghz &&
++		 chan < data->channels_6ghz + HWSIM_NUM_CHANNELS_6GHZ)
++		idx = HWSIM_NUM_CHANNELS_2GHZ + HWSIM_NUM_CHANNELS_5GHZ +
++		      (chan - data->channels_6ghz);
++	else
++		return NULL;
++
++	return &data->airtime[idx];
++}
++
++static struct hwsim_chan_airtime *
++mac80211_hwsim_airtime_start(struct mac80211_hwsim_data *data,
++			     struct ieee80211_channel *chan)
++{
++	struct hwsim_chan_airtime *airtime;
++
++	airtime = mac80211_hwsim_airtime_get(data, chan);
++	if (!airtime)
++		return NULL;
++
++	WRITE_ONCE(airtime->channel, chan);
++	atomic64_cmpxchg(&airtime->start_ns, 0, ktime_get_boottime_ns());
++
++	return airtime;
++}
++
++static struct hwsim_chan_airtime *
++mac80211_hwsim_airtime_active(struct mac80211_hwsim_data *data,
++			      struct ieee80211_channel *chan)
++{
++	struct hwsim_chan_airtime *airtime;
++
++	airtime = mac80211_hwsim_airtime_get(data, chan);
++	if (!airtime || !atomic64_read(&airtime->start_ns))
++		return NULL;
++
++	return airtime;
++}
++
++static u32 mac80211_hwsim_airtime_calc(struct ieee80211_hw *hw,
++				       enum nl80211_band band,
++				       const struct ieee80211_tx_rate *rate,
++				       int len)
++{
++	struct ieee80211_tx_info info = {};
++
++	/* the rate table holds the planned retries, not the attempts made */
++	info.band = band;
++	info.status.rates[0] = *rate;
++	info.status.rates[0].count = 1;
++	info.status.rates[1].idx = -1;
++
++	/* the airtime tables of mac80211 end at four streams */
++	if ((rate->flags & IEEE80211_TX_RC_VHT_MCS) &&
++	    ieee80211_rate_get_vht_nss(rate) > 4)
++		ieee80211_rate_set_vht(&info.status.rates[0],
++				       ieee80211_rate_get_vht_mcs(rate), 4);
++
++	return ieee80211_calc_tx_airtime(hw, &info, len);
++}
++
++/* In no_nl mode, frames reach the medium at the speed of the CPU, so
++ * the airtime of frames that overlap in time counts once.
++ */
++static void hwsim_airtime_span_add(struct hwsim_airtime_span *span, u64 now,
++				   u32 duration)
++{
++	u64 end = now + (u64)duration * NSEC_PER_USEC;
++	u64 start = max(now, span->end_ns);
++
++	if (end <= start)
++		return;
++
++	span->ns += end - start;
++	span->end_ns = end;
++}
++
++static void mac80211_hwsim_airtime_add(struct hwsim_chan_airtime *airtime,
++				       struct hwsim_airtime_span *span,
++				       u32 duration)
++{
++	u64 now = ktime_get_boottime_ns();
++	unsigned long flags;
++
++	spin_lock_irqsave(&airtime->lock, flags);
++	hwsim_airtime_span_add(span, now, duration);
++	hwsim_airtime_span_add(&airtime->busy, now, duration);
++	spin_unlock_irqrestore(&airtime->lock, flags);
++}
++
++static void mac80211_hwsim_airtime_tx(struct ieee80211_hw *hw,
++				      struct sk_buff *skb,
++				      struct ieee80211_channel *chan)
++{
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++	struct hwsim_chan_airtime *airtime;
++	u32 duration;
++
++	airtime = mac80211_hwsim_airtime_active(hw->priv, chan);
++	if (!airtime)
++		return;
++
++	duration = mac80211_hwsim_airtime_calc(hw, chan->band,
++					       &info->control.rates[0],
++					       skb->len);
++	mac80211_hwsim_airtime_add(airtime, &airtime->tx, duration);
++}
++
++static void mac80211_hwsim_airtime_rx(struct mac80211_hwsim_data *data,
++				      struct ieee80211_rx_status *rx_status,
++				      const struct ieee80211_tx_rate *tx_rate,
++				      struct sk_buff *skb)
++{
++	struct hwsim_chan_airtime *airtime;
++	struct ieee80211_channel *chan;
++	u32 duration;
++
++	chan = ieee80211_get_channel_khz(data->hw->wiphy,
++					 ieee80211_rx_status_to_khz(rx_status));
++	if (!chan)
++		return;
++
++	airtime = mac80211_hwsim_airtime_active(data, chan);
++	if (!airtime)
++		return;
++
++	if (tx_rate)
++		duration = mac80211_hwsim_airtime_calc(data->hw, chan->band,
++						       tx_rate, skb->len);
++	else
++		duration = ieee80211_calc_rx_airtime(data->hw, rx_status,
++						     skb->len);
++
++	mac80211_hwsim_airtime_add(airtime, &airtime->rx, duration);
++}
++
++static const struct ieee80211_tx_rate *
++mac80211_hwsim_airtime_tx_rate(const struct genl_info *info,
++			       struct ieee80211_tx_rate *rate)
++{
++	const struct nlattr *attr = info->attrs[HWSIM_ATTR_TX_INFO_FLAGS];
++	const struct hwsim_tx_rate_flag *tx_rate;
++
++	if (!attr || nla_len(attr) < sizeof(*tx_rate))
++		return NULL;
++
++	tx_rate = nla_data(attr);
++	rate->idx = tx_rate->idx;
++	rate->count = 1;
++	rate->flags = trans_tx_rate_flags_hwsim2ieee(tx_rate->flags);
++
++	return rate;
++}
++
+ static void mac80211_hwsim_tx_frame_nl(struct ieee80211_hw *hw,
+ 				       struct sk_buff *my_skb,
+ 				       int dst_portid,
+@@ -1798,6 +1994,8 @@ static void mac80211_hwsim_tx_frame_nl(s
+ 			goto err_free_txskb;
+ 	}
+ 
++	mac80211_hwsim_airtime_tx(hw, my_skb, channel);
++
+ 	/* Enqueue the packet */
+ 	skb_queue_tail(&data->pending, my_skb);
+ 	data->tx_pkts++;
+@@ -1912,6 +2110,7 @@ static void mac80211_hwsim_add_vendor_rt
+ 
+ static void mac80211_hwsim_rx(struct mac80211_hwsim_data *data,
+ 			      struct ieee80211_rx_status *rx_status,
++			      const struct ieee80211_tx_rate *tx_rate,
+ 			      struct sk_buff *skb)
+ {
+ 	struct ieee80211_hdr *hdr = (void *)skb->data;
+@@ -1940,6 +2139,8 @@ static void mac80211_hwsim_rx(struct mac
+ 		rcu_read_unlock();
+ 	}
+ 
++	mac80211_hwsim_airtime_rx(data, rx_status, tx_rate, skb);
++
+ 	memcpy(IEEE80211_SKB_RXCB(skb), rx_status, sizeof(*rx_status));
+ 
+ 	mac80211_hwsim_add_vendor_rtap(skb);
+@@ -1966,6 +2167,7 @@ static bool mac80211_hwsim_tx_frame_no_n
+ 	mac80211_hwsim_write_tsf(data, skb, sim_tsf);
+ 
+ 	mac80211_hwsim_monitor_rx(hw, skb, chan);
++	mac80211_hwsim_airtime_tx(hw, skb, chan);
+ 
+ 	memset(&rx_status, 0, sizeof(rx_status));
+ 	rx_status.flag |= RX_FLAG_MACTIME_START;
+@@ -2078,7 +2280,8 @@ static bool mac80211_hwsim_tx_frame_no_n
+ 		if (mac80211_hwsim_addr_match(data2, hdr->addr1))
+ 			ack = true;
+ 
+-		mac80211_hwsim_rx(data2, &rx_status, nskb);
++		mac80211_hwsim_rx(data2, &rx_status, &info->control.rates[0],
++				  nskb);
+ 	}
+ 	spin_unlock(&hwsim_radio_lock);
+ 
+@@ -2849,6 +3052,10 @@ static int mac80211_hwsim_config(struct
+ 	}
+ 	mutex_unlock(&data->mutex);
+ 
++	/* emulated chanctx: the channel of the context unless OFFCHANNEL */
++	if (conf->chandef.chan && !(conf->flags & IEEE80211_CONF_OFFCHANNEL))
++		mac80211_hwsim_airtime_start(data, conf->chandef.chan);
++
+ 	for (idx = 0; idx < ARRAY_SIZE(data->link_data); idx++) {
+ 		struct mac80211_hwsim_link_data *link_data =
+ 			&data->link_data[idx];
+@@ -3171,21 +3378,130 @@ static int mac80211_hwsim_conf_tx(struct
+ 	return 0;
+ }
+ 
++static void
++mac80211_hwsim_survey_chanctx_iter(struct ieee80211_hw *hw,
++				   struct ieee80211_chanctx_conf *conf,
++				   void *in_use)
++{
++	struct mac80211_hwsim_data *data = hw->priv;
++	struct hwsim_chan_airtime *airtime;
++
++	airtime = mac80211_hwsim_airtime_start(data, conf->def.chan);
++	if (airtime)
++		__set_bit(airtime - data->airtime, in_use);
++}
++
++/* the part of the last frame after @now is not on the medium yet */
++static u64 hwsim_airtime_span_ns(const struct hwsim_airtime_span *span,
++				 u64 now)
++{
++	if (span->end_ns > now)
++		return span->ns - (span->end_ns - now);
++
++	return span->ns;
++}
++
++static void mac80211_hwsim_survey_airtime(struct hwsim_chan_airtime *airtime,
++					  struct survey_info *survey)
++{
++	u64 now, tx_ns, rx_ns, busy_ns;
++	unsigned long flags;
++	s64 start_ns;
++
++	start_ns = atomic64_read(&airtime->start_ns);
++
++	spin_lock_irqsave(&airtime->lock, flags);
++	now = ktime_get_boottime_ns();
++	tx_ns = hwsim_airtime_span_ns(&airtime->tx, now);
++	rx_ns = hwsim_airtime_span_ns(&airtime->rx, now);
++	busy_ns = hwsim_airtime_span_ns(&airtime->busy, now);
++	spin_unlock_irqrestore(&airtime->lock, flags);
++
++	survey->channel = READ_ONCE(airtime->channel);
++	survey->filled = SURVEY_INFO_NOISE_DBM |
++			 SURVEY_INFO_IN_USE |
++			 SURVEY_INFO_TIME |
++			 SURVEY_INFO_TIME_BUSY |
++			 SURVEY_INFO_TIME_TX |
++			 SURVEY_INFO_TIME_RX;
++	survey->noise = -92;
++	survey->time = div_u64(now - start_ns, NSEC_PER_MSEC);
++	survey->time_tx = div_u64(tx_ns, NSEC_PER_MSEC);
++	survey->time_rx = div_u64(rx_ns, NSEC_PER_MSEC);
++	/* no CCA: the medium is busy only while a frame is on it */
++	survey->time_busy = div_u64(busy_ns, NSEC_PER_MSEC);
++}
++
++static int mac80211_hwsim_get_survey_unscanned(struct mac80211_hwsim_data *data,
++					       int idx,
++					       struct survey_info *survey,
++					       const unsigned long *unscanned)
++{
++	unsigned int i;
++	int n = 0;
++
++	for_each_set_bit(i, unscanned, HWSIM_NUM_AIRTIME_CHANNELS) {
++		if (n++ != idx)
++			continue;
++
++		mac80211_hwsim_survey_airtime(&data->airtime[i], survey);
++		return 0;
++	}
++
++	return -ENOENT;
++}
++
+ static int mac80211_hwsim_get_survey(struct ieee80211_hw *hw, int idx,
+ 				     struct survey_info *survey)
+ {
++	DECLARE_BITMAP(in_use, HWSIM_NUM_AIRTIME_CHANNELS) = {};
++	DECLARE_BITMAP(unscanned, HWSIM_NUM_AIRTIME_CHANNELS);
+ 	struct mac80211_hwsim_data *hwsim = hw->priv;
++	struct hwsim_chan_airtime *airtime;
++	struct ieee80211_channel *chan;
++	int n_slots;
+ 
+-	if (idx < 0 || idx >= ARRAY_SIZE(hwsim->survey_data))
++	if (idx < 0)
+ 		return -ENOENT;
+ 
++	ieee80211_iter_chan_contexts_atomic(hw,
++					    mac80211_hwsim_survey_chanctx_iter,
++					    in_use);
++	bitmap_copy(unscanned, in_use, HWSIM_NUM_AIRTIME_CHANNELS);
++
+ 	mutex_lock(&hwsim->mutex);
+-	survey->channel = hwsim->survey_data[idx].channel;
+-	if (!survey->channel) {
++	for (n_slots = 0; n_slots < ARRAY_SIZE(hwsim->survey_data); n_slots++) {
++		chan = hwsim->survey_data[n_slots].channel;
++		if (!chan)
++			break;
++
++		airtime = mac80211_hwsim_airtime_get(hwsim, chan);
++		if (airtime)
++			__clear_bit(airtime - hwsim->airtime, unscanned);
++	}
++
++	/*
++	 * An entry keeps its index while the set of operating channels
++	 * changes, so that a dump over several calls neither skips nor
++	 * repeats one: an operating channel takes the place of its scan
++	 * entry, and only the channels that no scan visited come after.
++	 */
++	if (idx >= n_slots) {
+ 		mutex_unlock(&hwsim->mutex);
+-		return -ENOENT;
++		return mac80211_hwsim_get_survey_unscanned(hwsim, idx - n_slots,
++							   survey, unscanned);
++	}
++
++	chan = hwsim->survey_data[idx].channel;
++	airtime = mac80211_hwsim_airtime_get(hwsim, chan);
++	if (airtime && test_bit(airtime - hwsim->airtime, in_use)) {
++		mutex_unlock(&hwsim->mutex);
++		mac80211_hwsim_survey_airtime(airtime, survey);
++		return 0;
+ 	}
+ 
++	survey->channel = chan;
++
+ 	/*
+ 	 * Magically conjured dummy values --- this is only ok for simulated hardware.
+ 	 *
+@@ -3579,6 +3895,7 @@ static int mac80211_hwsim_add_chanctx(st
+ 				      struct ieee80211_chanctx_conf *ctx)
+ {
+ 	hwsim_set_chanctx_magic(ctx);
++	mac80211_hwsim_airtime_start(hw->priv, ctx->def.chan);
+ 	wiphy_dbg(hw->wiphy,
+ 		  "add channel context control: %d MHz/width: %d/cfreqs:%d/%d MHz\n",
+ 		  ctx->def.chan->center_freq, ctx->def.width,
+@@ -3602,6 +3919,7 @@ static void mac80211_hwsim_change_chanct
+ 					  u32 changed)
+ {
+ 	hwsim_check_chanctx_magic(ctx);
++	mac80211_hwsim_airtime_start(hw->priv, ctx->def.chan);
+ 	wiphy_dbg(hw->wiphy,
+ 		  "change channel context control: %d MHz/width: %d/cfreqs:%d/%d MHz\n",
+ 		  ctx->def.chan->center_freq, ctx->def.width,
+@@ -3689,6 +4007,8 @@ static int mac80211_hwsim_switch_vif_cha
+ 		case CHANCTX_SWMODE_SWAP_CONTEXTS:
+ 			hwsim_set_chanctx_magic(vifs[i].new_ctx);
+ 			hwsim_clear_chanctx_magic(vifs[i].old_ctx);
++			mac80211_hwsim_airtime_start(hw->priv,
++						     vifs[i].new_ctx->def.chan);
+ 			break;
+ 		default:
+ 			WARN(1, "Invalid mode %d\n", mode);
+@@ -6372,6 +6692,8 @@ static int mac80211_hwsim_new_radio(stru
+ 	hw->wiphy->ema_max_profile_periodicity = 3;
+ 
+ 	spin_lock_init(&data->tsf_offset_lock);
++	for (i = 0; i < ARRAY_SIZE(data->airtime); i++)
++		spin_lock_init(&data->airtime[i].lock);
+ 
+ 	data->rx_rssi = DEFAULT_RX_RSSI;
+ 
+@@ -6939,6 +7261,8 @@ static int hwsim_cloned_frame_received_n
+ {
+ 	struct mac80211_hwsim_data *data2;
+ 	struct ieee80211_rx_status rx_status;
++	const struct ieee80211_tx_rate *tx_rate;
++	struct ieee80211_tx_rate tx_rate_buf;
+ 	struct ieee80211_hdr *hdr;
+ 	const u8 *dst;
+ 	int frame_data_len;
+@@ -7042,7 +7366,8 @@ static int hwsim_cloned_frame_received_n
+ 	    ieee80211_is_probe_resp(hdr->frame_control))
+ 		rx_status.boottime_ns = ktime_get_boottime_ns();
+ 
+-	mac80211_hwsim_rx(data2, &rx_status, skb);
++	tx_rate = mac80211_hwsim_airtime_tx_rate(info, &tx_rate_buf);
++	mac80211_hwsim_rx(data2, &rx_status, tx_rate, skb);
+ 
+ 	return 0;
+ err:
+--- a/drivers/net/wireless/virtual/mac80211_hwsim.h
++++ b/drivers/net/wireless/virtual/mac80211_hwsim.h
+@@ -58,7 +58,9 @@ enum hwsim_tx_control_flags {
+  *	space, uses:
+  *	%HWSIM_ATTR_ADDR_TRANSMITTER, %HWSIM_ATTR_ADDR_RECEIVER,
+  *	%HWSIM_ATTR_FRAME, %HWSIM_ATTR_FLAGS, %HWSIM_ATTR_RX_RATE,
+- *	%HWSIM_ATTR_SIGNAL, %HWSIM_ATTR_COOKIE, %HWSIM_ATTR_FREQ (optional)
++ *	%HWSIM_ATTR_SIGNAL, %HWSIM_ATTR_COOKIE, %HWSIM_ATTR_FREQ (optional),
++ *	%HWSIM_ATTR_TX_INFO_FLAGS (optional; from user space, the rates of the
++ *	transmitter, which give the airtime of the received frame)
+  * @HWSIM_CMD_TX_INFO_FRAME: Transmission info report from user space to
+  *	kernel, uses:
+  *	%HWSIM_ATTR_ADDR_TRANSMITTER, %HWSIM_ATTR_FLAGS,

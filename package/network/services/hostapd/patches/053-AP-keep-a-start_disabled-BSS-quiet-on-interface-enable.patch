@@ -1,0 +1,64 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:18:53 +0200
+Subject: [PATCH] AP: Keep a start_disabled BSS quiet on interface enable
+
+A BSS with start_disabled=1 starts without Beacon frames. They start
+with the first Beacon update that is requested for the BSS, for example
+by UPDATE_BEACON or RELOAD.
+
+If the driver disables the interface before that and enables it again,
+hostapd_iface_enable() calls ieee802_11_set_beacon() for every started
+BSS. The Beacon frames of the start_disabled BSS then start without a
+request.
+
+Skip the Beacon update on interface enable for a start_disabled BSS
+whose Beacon frames were never set since the BSS setup. Track this in
+its own flag, since beacon_set_done is cleared when the driver reports
+NL80211_CMD_STOP_AP on interface disable. A start_disabled BSS that
+beacons before the interface disable starts beaconing again on enable.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -2768,6 +2768,7 @@ static int __ieee802_11_set_beacon(struc
+ #endif /* CONFIG_IEEE80211AX */
+ 
+ 	hapd->beacon_set_done = 1;
++	hapd->beacon_started = 1;
+ 
+ 	if (ieee802_11_build_ap_params(hapd, &params) < 0)
+ 		return -1;
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -2542,7 +2542,8 @@ static void hostapd_iface_enable(struct
+ 		else
+ 			hostapd_reconfig_encryption(hapd);
+ 		hapd->reenable_beacon = 1;
+-		ieee802_11_set_beacon(hapd);
++		if (!hapd->conf->start_disabled || hapd->beacon_started)
++			ieee802_11_set_beacon(hapd);
+ #ifdef NEED_AP_MLME
+ 	} else if (hapd->disabled && hapd->iface->cac_started) {
+ 		wpa_printf(MSG_DEBUG, "DFS: restarting pending CAC");
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -523,6 +523,7 @@ void hostapd_free_hapd_data(struct hosta
+ 	}
+ 	hapd->started = 0;
+ 	hapd->beacon_set_done = 0;
++	hapd->beacon_started = 0;
+ 
+ 	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
+ 	accounting_deinit(hapd);
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -200,6 +200,7 @@ struct hostapd_data {
+ 	unsigned int started:1;
+ 	unsigned int disabled:1;
+ 	unsigned int reenable_beacon:1;
++	unsigned int beacon_started:1;
+ 
+ 	u8 own_addr[ETH_ALEN];
+ 

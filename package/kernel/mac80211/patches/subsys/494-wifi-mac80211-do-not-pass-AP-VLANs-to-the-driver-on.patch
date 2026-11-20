@@ -1,0 +1,41 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 08:34:03 +0100
+Subject: [PATCH] wifi: mac80211: do not pass AP VLANs to the driver on
+ hardware restart
+
+ieee80211_reconfig() calls ieee80211_assign_chanctx() for each active
+link of every running interface, and drv_change_vif_links() for every
+MLD. An AP VLAN is never added to the driver, so both calls fail
+check_sdata_in_driver() for it. Since an AP VLAN tracks the channel
+context of its AP, the first hardware restart after boot with an AP
+VLAN up warns, as does a WoWLAN resume where drv_resume() returns 1:
+
+  ap-mld0.sta1: Failed check-sdata-in-driver check, flags: 0x1
+  WARNING: CPU: 0 PID: 617 at drv_assign_vif_chanctx+0x1c4/0x1e0 [mac80211]
+  Call trace:
+   drv_assign_vif_chanctx+0x1c4/0x1e0 [mac80211] (P)
+   ieee80211_reconfig+0x7a8/0x1a30 [mac80211]
+   ieee80211_restart_work+0x110/0x180 [mac80211]
+
+Skip AP VLANs in that loop, as the loop that adds the interfaces back
+to the driver already does, and as ieee80211_vif_update_links() does
+for drv_change_vif_links(). The loop has nothing else to do for an AP
+VLAN: its stations are added back together with those of the AP further
+down.
+
+Fixes: 4d76d21bd700 ("mac80211: assign VLAN channel contexts")
+Fixes: 90233b0ad215 ("wifi: mac80211: Create separate links for VLAN interfaces")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -2071,7 +2071,8 @@ int ieee80211_reconfig(struct ieee80211_
+ 		unsigned int link_id;
+ 		u32 active_links = 0;
+ 
+-		if (!ieee80211_sdata_running(sdata))
++		if (!ieee80211_sdata_running(sdata) ||
++		    sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
+ 			continue;
+ 
+ 		if (ieee80211_vif_is_mld(&sdata->vif)) {

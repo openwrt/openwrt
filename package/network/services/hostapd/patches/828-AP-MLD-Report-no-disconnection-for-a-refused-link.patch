@@ -1,0 +1,39 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 23 Oct 2026 23:00:00 +0200
+Subject: [PATCH] AP MLD: Report no disconnection for a refused link
+
+ieee80211_ml_process_link() gives the new link station the flags of the
+origin station, WLAN_STA_AUTHORIZED included. Where the link is refused
+after that point (the element check of the link, no AID, or the driver
+refuses the link station), the failure path frees the link station with
+ap_free_sta(). Its ap_sta_set_authorized(0) then reports
+AP-STA-DISCONNECTED and the ubus "disassoc" notification with the MLD
+address, although the non-AP MLD stays associated over its other links.
+A Link Reconfiguration Request that adds a link always reaches this
+with an authorized origin station; an association does so only where
+the earlier association is still authorized.
+
+Upstream hostap has the same code (main 741d70dd8e32).
+
+Clear the authorized flag of the link station without the event before
+it is freed, as ap_free_link_sta() does for the other link stations of
+a station that stays associated.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -6676,8 +6676,12 @@ out:
+ 	if (status != WLAN_STATUS_SUCCESS) {
+ 		wpa_release_link_auth_ref(origin_sta->wpa_sm,
+ 					  hapd->mld_link_id, true);
+-		if (sta)
++		if (sta) {
++			/* Only this link is refused, so no disconnection is
++			 * reported for the non-AP MLD. */
++			ap_sta_set_authorized_flag(hapd, sta, 0);
+ 			ap_free_sta(hapd, sta);
++		}
+ 		return -1;
+ 	}
+ 

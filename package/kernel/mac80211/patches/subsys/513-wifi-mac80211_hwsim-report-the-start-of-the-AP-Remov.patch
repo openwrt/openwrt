@@ -1,0 +1,99 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 14 Nov 2026 18:50:00 +0100
+Subject: [PATCH] wifi: mac80211_hwsim: report the start of the AP Removal
+ Timer
+
+Report the count and the TBTT of each removal with
+ieee80211_ap_removal_timer_started() where a Beacon frame anchors its
+removal TBTT. mac80211_hwsim puts the count of the template on air. One
+Beacon frame can anchor the removals of several links, the removed link
+and partners that send no Beacon frames, so each of them gets its
+report.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -3314,7 +3314,8 @@ static void hwsim_ap_removal_timer_write
+ 					 struct hwsim_ap_removal *rem,
+ 					 unsigned int link_id, u64 tbtt,
+ 					 unsigned int removed, u8 *timer,
+-					 bool silent)
++					 bool silent,
++					 struct cfg80211_ap_removal_timer_event *start)
+ {
+ 	u32 bcn_int = data->link_data[silent ? link_id : removed].beacon_int;
+ 	u16 count = get_unaligned_le16(timer);
+@@ -3329,6 +3330,9 @@ static void hwsim_ap_removal_timer_write
+ 
+ 		rem->links |= BIT(removed);
+ 		rem->tbtt[removed] = tbtt + (u64)count * bcn_int;
++		start[removed].link_id = removed;
++		start[removed].count = count;
++		start[removed].tsf = rem->tbtt[removed];
+ 		return;
+ 	}
+ 
+@@ -3400,7 +3404,8 @@ static void hwsim_ap_removal_silent_tbtt
+ static bool mac80211_hwsim_ap_removal_tbtt(struct mac80211_hwsim_data *data,
+ 					   struct ieee80211_vif *vif,
+ 					   unsigned int link_id, u64 tbtt,
+-					   struct sk_buff *skb, u16 *expired)
++					   struct sk_buff *skb, u16 *expired,
++					   struct cfg80211_ap_removal_timer_event *start)
+ {
+ 	size_t hdr_len = offsetof(struct ieee80211_mgmt, u.beacon.variable);
+ 	struct hwsim_vif_priv *vp = (void *)vif->drv_priv;
+@@ -3452,7 +3457,8 @@ static bool mac80211_hwsim_ap_removal_tb
+ 			announced |= BIT(removed);
+ 			hwsim_ap_removal_timer_write(data, rem, link_id, tbtt,
+ 						     removed, timer,
+-						     hwsim_ap_removal_silent(vif, removed));
++						     hwsim_ap_removal_silent(vif, removed),
++						     start);
+ 		}
+ 	}
+ 
+@@ -3468,12 +3474,32 @@ static bool mac80211_hwsim_ap_removal_tb
+ 	return send;
+ }
+ 
++static void
++hwsim_ap_removal_started(struct mac80211_hwsim_data *data,
++			 struct ieee80211_vif *vif,
++			 struct cfg80211_ap_removal_timer_event *start)
++{
++	unsigned int i;
++
++	for (i = 0; i < IEEE80211_MLD_MAX_NUM_LINKS; i++) {
++		if (!start[i].count)
++			continue;
++
++		start[i].tbtt_boottime =
++			ktime_to_ns(mac80211_hwsim_tsf_to_boottime(data,
++								   start[i].tsf));
++		ieee80211_ap_removal_timer_started(vif, &start[i], GFP_ATOMIC);
++	}
++}
++
+ static void __mac80211_hwsim_beacon_tx(struct ieee80211_bss_conf *link_conf,
+ 				       struct mac80211_hwsim_data *data,
+ 				       struct ieee80211_hw *hw,
+ 				       struct ieee80211_vif *vif,
+ 				       u64 tbtt, struct sk_buff *skb)
+ {
++	/* one Beacon frame can start the removal of several links */
++	struct cfg80211_ap_removal_timer_event start[IEEE80211_MLD_MAX_NUM_LINKS] = {};
+ 	struct hwsim_vif_priv *vp = (void *)vif->drv_priv;
+ 	unsigned int link_id = link_conf->link_id;
+ 	struct ieee80211_tx_info *info;
+@@ -3481,7 +3507,8 @@ static void __mac80211_hwsim_beacon_tx(s
+ 	bool send;
+ 
+ 	send = mac80211_hwsim_ap_removal_tbtt(data, vif, link_id, tbtt, skb,
+-					      &expired);
++					      &expired, start);
++	hwsim_ap_removal_started(data, vif, start);
+ 	if (send && vp->skip_beacons[link_id]) {
+ 		vp->skip_beacons[link_id]--;
+ 		send = false;

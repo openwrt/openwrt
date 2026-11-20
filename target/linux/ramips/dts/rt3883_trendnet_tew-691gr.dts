@@ -1,0 +1,137 @@
+#include "rt3883.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "trendnet,tew-691gr", "ralink,rt3883-soc";
+	model = "TRENDnet TEW-691GR";
+
+	aliases {
+		led-boot = &led_wps;
+		led-failsafe = &led_wps;
+		led-running = &led_wps;
+		led-upgrade = &led_wps;
+	};
+
+	flash@1c000000 {
+		compatible = "cfi-flash";
+		reg = <0x1c000000 0x800000>;
+		bank-width = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x0030000>;
+				label = "u-boot";
+				read-only;
+			};
+
+			partition@30000 {
+				reg = <0x00030000 0x00010000>;
+				label = "u-boot-env";
+				read-only;
+			};
+
+			partition@40000 {
+				reg = <0x00040000 0x00010000>;
+				label = "factory";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				reg = <0x00050000 0x007b0000>;
+				label = "firmware";
+			};
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_wps: wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&state_default {
+	gpio {
+		groups = "spi", "i2c", "jtag", "uartf";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_4 0>;
+	nvmem-cell-names = "mac-address";
+
+	port@0 {
+		phy-handle = <&phy0>;
+		phy-mode = "rgmii";
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+			phy-mode = "rgmii";
+		};
+	};
+};
+
+&wmac {
+	ralink,5ghz = <0>;
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4 1>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};

@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar934x.dtsi"
+
+/ {
+	compatible = "qca,ar9344";
+};
+
+&cpuintc {
+	/* the WMAC and the PCIe root complex share interrupt 2 */
+	qca,ddr-wb-channel-interrupts = <2>, <2>, <3>, <4>, <5>;
+	qca,ddr-wb-channels = <&ddr_ctrl 4>, <&ddr_ctrl 3>,
+			<&ddr_ctrl 2>, <&ddr_ctrl 0>,
+			<&ddr_ctrl 1>;
+};
+
+&ahb {
+	pcie: pcie@180c0000 {
+		compatible = "qcom,ar9340-pci", "qcom,ar7240-pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		reg = <0x180c0000 0x1000>, /* CRP */
+				<0x180f0000 0x100>, /* CTRL */
+				<0x14000000 0x1000>; /* CFG */
+		reg-names = "crp_base", "ctrl_base", "cfg_base";
+		ranges = <0x2000000 0 0x10000000 0x10000000 0 0x04000000>; /* pci memory */
+		interrupt-parent = <&cpuintc>;
+		interrupts = <2>;
+
+		device_type = "pci";
+
+		clocks = <&pll ATH79_CLK_PCIE>;
+		resets = <&rst 6>, <&rst 7>;
+		reset-names = "hc", "phy";
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+
+		status = "disabled";
+	};
+};
+
+&wmac {
+	interrupt-parent = <&cpuintc>;
+	interrupts = <2>;
+};

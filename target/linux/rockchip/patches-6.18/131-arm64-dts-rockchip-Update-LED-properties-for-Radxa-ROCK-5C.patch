@@ -1,0 +1,33 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-rock-5c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-rock-5c.dts
+@@ -19,6 +19,10 @@
+ 		ethernet0 = &gmac1;
+ 		mmc0 = &sdhci;
+ 		mmc1 = &sdmmc;
++		led-boot = &led_green;
++		led-failsafe = &led_green;
++		led-running = &led_green;
++		led-upgrade = &led_green;
+ 	};
+ 
+ 	chosen {
+@@ -52,7 +56,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&led_pins>;
+ 
+-		led-0 {
++		led_green: led-0 {
+ 			color = <LED_COLOR_ID_GREEN>;
+ 			default-state = "on";
+ 			function = LED_FUNCTION_POWER;
+@@ -61,10 +65,8 @@
+ 
+ 		led-1 {
+ 			color = <LED_COLOR_ID_BLUE>;
+-			default-state = "on";
+ 			function = LED_FUNCTION_HEARTBEAT;
+ 			gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "heartbeat";
+ 		};
+ 	};
+ 

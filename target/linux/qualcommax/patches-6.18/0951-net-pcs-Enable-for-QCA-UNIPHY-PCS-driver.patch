@@ -1,0 +1,36 @@
+From fa494b3b09b9ceca6f424e1cbd2c2332d8f68335 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Tue, 1 Sep 2026 15:18:01 +0400
+Subject: [PATCH] net: pcs: Enable for QCA UNIPHY PCS driver
+
+Enable the QCA UNIPHY PCS driver for Qualcomm IPQ platforms.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/net/pcs/Kconfig  | 9 +++++++++
+ drivers/net/pcs/Makefile | 1 +
+ 2 files changed, 10 insertions(+)
+
+--- a/drivers/net/pcs/Kconfig
++++ b/drivers/net/pcs/Kconfig
+@@ -54,4 +54,13 @@ config PCS_RZN1_MIIC
+ 	  Renesas RZ/N1, RZ/N2H, and RZ/T2H SoCs. This PCS converts MII to
+ 	  RMII/RGMII, or can be set in pass-through mode for MII.
+ 
++config PCS_QCA_UNIPHY
++	tristate "Qualcomm 802.11ax UNIPHY PCS driver"
++	select PHYLINK
++	select FWNODE_PCS
++	help
++	  PCS driver for the UNIPHY SerDes blocks in Qualcomm 802.11ax SoCs.
++	  Provides PSGMII and SGMII interface modes and registers the UNIPHY
++	  PLL clock providers needed for port clock muxing.
++
+ endmenu
+--- a/drivers/net/pcs/Makefile
++++ b/drivers/net/pcs/Makefile
+@@ -10,3 +10,4 @@ obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
+ obj-$(CONFIG_PCS_MTK_LYNXI)	+= pcs-mtk-lynxi.o
+ obj-$(CONFIG_PCS_MTK_USXGMII)	+= pcs-mtk-usxgmii.o
+ obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
++obj-$(CONFIG_PCS_QCA_UNIPHY)	+= pcs-qca-uniphy.o

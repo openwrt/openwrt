@@ -1,0 +1,98 @@
+From 3aa996b5b6bd96c29f2c6da98da33c3fb3d13038 Mon Sep 17 00:00:00 2001
+From: Eric Hawicz <erh+git@nimenees.com>
+Date: Sat, 4 Jul 2026 11:02:06 -0400
+Origin: https://github.com/json-c/json-c/commit/3aa996b5b6bd96c29f2c6da98da33c3fb3d13038
+Subject: [PATCH] Issue #934: Be sure to clear _user_delete in
+ _json_object_put_maybe_free() to avoid calling it twice.  Add a test to
+ check.
+
+---
+ json_object.c             |  1 +
+ json_object.h             |  4 ++--
+ tests/test_deep_nesting.c | 33 +++++++++++++++++++++++++++++++++
+ 3 files changed, 36 insertions(+), 2 deletions(-)
+
+diff --git a/json_object.c b/json_object.c
+index 0a619679bd..6cb1bdac86 100644
+--- a/json_object.c
++++ b/json_object.c
+@@ -303,6 +303,7 @@ static inline int _json_object_put_maybe_free(struct json_object *jso, int free_
+ 
+ 	if (jso->_user_delete)
+ 		jso->_user_delete(jso, jso->_userdata);
++	jso->_user_delete = NULL;
+ 
+ 	switch (jso->o_type)
+ 	{
+diff --git a/json_object.h b/json_object.h
+index e21138ecf1..7edb63d4f8 100644
+--- a/json_object.h
++++ b/json_object.h
+@@ -259,7 +259,7 @@ JSON_EXPORT void *json_object_get_userdata(json_object *jso);
+  * The user_delete parameter is optional and may be passed as NULL, even if
+  * the userdata parameter is non-NULL.  It will be called just before the
+  * json_object is deleted, after it's reference count goes to zero
+- * (see json_object_put()).
++ * (see json_object_put()) but before any child objects are freed.
+  * If this is not provided, it is up to the caller to free the userdata at
+  * an appropriate time. (i.e. after the json_object is deleted)
+  *
+@@ -293,7 +293,7 @@ JSON_EXPORT void json_object_set_userdata(json_object *jso, void *userdata,
+  * The user_delete parameter is optional and may be passed as NULL, even if
+  * the userdata parameter is non-NULL.  It will be called just before the
+  * json_object is deleted, after it's reference count goes to zero
+- * (see json_object_put()).
++ * (see json_object_put()) but before any child objects are freed.
+  * If this is not provided, it is up to the caller to free the userdata at
+  * an appropriate time. (i.e. after the json_object is deleted)
+  *
+diff --git a/tests/test_deep_nesting.c b/tests/test_deep_nesting.c
+index 364c4820ea..9e251750c4 100644
+--- a/tests/test_deep_nesting.c
++++ b/tests/test_deep_nesting.c
+@@ -56,6 +56,37 @@ static void test_deep_nesting_tostring(const char *str)
+ 	json_tokener_free(tok);
+ }
+ 
++struct userdata_test {
++	int userdata_val;
++	char *p;
++};
++/*
++ * Check that the user_delete function is only called once, even with the
++ * newer code to avoid deeply nested calls during json_object_put().
++ */
++static void user_delete_test(struct json_object *jso, void *userdata_in)
++{
++	struct userdata_test *userdata = (struct userdata_test *)userdata_in;
++	printf("in user_delete, userdata_val=%d\n", userdata->userdata_val);
++	fflush(stdout);
++	userdata->userdata_val = 0;
++	userdata->p[0] = 'x';
++	userdata->p[8191] = 'x';
++	free(userdata->p);
++}
++static void test_nesting_with_user_delete(void)
++{
++	json_object *jso;
++	struct userdata_test userdata_val = {
++		1, malloc(8192)
++	};
++
++ 	jso = json_object_new_object();
++	json_object_set_userdata(jso, &userdata_val, user_delete_test);
++	json_object_object_add(jso, "somekey", json_object_new_string("foo"));
++	json_object_put(jso);
++}
++
+ int main(int argc, char **argv)
+ {
+ 	char *str;	
+@@ -77,5 +108,7 @@ int main(int argc, char **argv)
+ 
+ 	free(str);
+ 
++	test_nesting_with_user_delete();
++
+ 	return EXIT_SUCCESS;
+ }

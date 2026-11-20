@@ -1,0 +1,19 @@
+menu "Configuration"
+	depends on PACKAGE_kexec
+
+config KEXEC_ZLIB
+	bool
+	prompt "zlib support"
+	default y
+
+config KEXEC_LZMA
+	bool
+	prompt "lzma support"
+	default n
+
+config KEXEC_ZSTD
+	bool
+	prompt "zstd support"
+	default n
+	
+endmenu

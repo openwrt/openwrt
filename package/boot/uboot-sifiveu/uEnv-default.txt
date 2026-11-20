@@ -1,0 +1,4 @@
+setenv loadkernel fatload mmc 0:3 \$kernel_comp_addr_r uImage
+setenv bootargs console=ttySIF0,115200 earlycon=sbi root=/dev/mmcblk0p4 rootwait
+setenv uenvcmd run loadkernel \&\& bootm \$kernel_comp_addr_r
+run uenvcmd

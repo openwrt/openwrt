@@ -1,0 +1,175 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 07:41:58 +0200
+Subject: [PATCH] DPP: Require a PMKSA of the DPP AKM before skipping Network Introduction
+
+wpas_dpp_check_connect() skips Network Introduction if
+wpa_sm_pmksa_exists() finds a PMKSA for the BSS. That lookup ignores the
+AKM, so a PMKSA from an SAE association, made while the AP did not offer
+the DPP AKM, counts for DPP. When the AP offers DPP again, the station
+associates with the DPP AKM without a PMKID, and the AP rejects the
+Association Request with status code 53 (invalid PMKID). The DPP check
+in BSS selection uses the same lookup, so such a PMKSA also makes a BSS
+selectable for a DPP network without a Connector.
+
+Look up a PMKSA of the DPP AKM instead, in both places. For an MLO
+association, also require the entry under the AP MLD address, which the
+association uses. Decide on MLO with the condition that
+wpas_populate_assoc_ies() and sme_send_authentication() use, since
+bss->mld_addr is set for every BSS of an AP MLD, also when the station
+does not support MLO.
+
+BSS selection now accepts a BSS without the DPP AKM, as
+wpas_dpp_check_connect() does. It does not check the partner links of
+an AP MLD, since an MLO association uses the PMKSA of the AP MLD.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/wpa_supplicant/bss.c
++++ b/wpa_supplicant/bss.c
+@@ -1968,6 +1968,29 @@ u16 wpa_bss_get_usable_links(struct wpa_
+ 
+ 
+ /**
++ * wpa_bss_assoc_mld_addr - Get the AP MLD address of an association
++ * @wpa_s: Pointer to wpa_supplicant data
++ * @bss: BSS table entry
++ * @ssid: Target SSID (or %NULL)
++ * Returns: The AP MLD address, or %NULL if an association with the BSS does
++ * not use MLO
++ */
++const u8 * wpa_bss_assoc_mld_addr(struct wpa_supplicant *wpa_s,
++				  struct wpa_bss *bss, struct wpa_ssid *ssid)
++{
++	if (!(wpa_s->drv_flags2 & WPA_DRIVER_FLAGS2_MLO) ||
++	    is_zero_ether_addr(bss->mld_addr))
++		return NULL;
++
++	if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_SME) &&
++	    !wpa_bss_get_usable_links(wpa_s, bss, ssid, NULL))
++		return NULL;
++
++	return bss->mld_addr;
++}
++
++
++/**
+  * wpa_bss_parse_basic_ml_element - Parse the Basic Multi-Link element
+  * @wpa_s: Pointer to wpa_supplicant data
+  * @bss: BSS table entry
+--- a/wpa_supplicant/bss.h
++++ b/wpa_supplicant/bss.h
+@@ -228,6 +228,8 @@ void calculate_update_time(const struct
+ 
+ u16 wpa_bss_get_usable_links(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
+ 			     struct wpa_ssid *ssid, u16 *missing_links);
++const u8 * wpa_bss_assoc_mld_addr(struct wpa_supplicant *wpa_s,
++				  struct wpa_bss *bss, struct wpa_ssid *ssid);
+ void wpa_bss_parse_basic_ml_element(struct wpa_supplicant *wpa_s,
+ 				    struct wpa_bss *bss);
+ u16 wpa_bss_parse_reconf_ml_element(struct wpa_supplicant *wpa_s,
+--- a/wpa_supplicant/dpp_supplicant.c
++++ b/wpa_supplicant/dpp_supplicant.c
+@@ -4565,24 +4565,54 @@ static int wpas_dpp_start_private_peer_i
+ #endif /* CONFIG_DPP3 */
+ 
+ 
+-int wpas_dpp_check_connect(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
++static bool wpas_dpp_pmksa_exists(struct wpa_supplicant *wpa_s,
++				  struct wpa_ssid *ssid, struct wpa_bss *bss)
++{
++	const u8 *mld_addr;
++
++	/* A PMKSA of another AKM, e.g., from SAE while the AP did not offer
++	 * DPP, cannot be used for a DPP association. */
++	if (!wpa_sm_pmksa_cache_get(wpa_s->wpa, bss->bssid, NULL, ssid,
++				    WPA_KEY_MGMT_DPP))
++		return false;
++
++	/* An MLD association looks up the PMKSA by the AP MLD address. */
++	mld_addr = wpa_bss_assoc_mld_addr(wpa_s, bss, ssid);
++	if (mld_addr &&
++	    !wpa_sm_pmksa_cache_get(wpa_s->wpa, mld_addr, NULL, ssid,
++				    WPA_KEY_MGMT_DPP))
++		return false;
++
++	return true;
++}
++
++
++bool wpas_dpp_intro_needed(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
+ 			   struct wpa_bss *bss)
+ {
+-	struct os_time now;
+-	struct wpabuf *msg;
+-	unsigned int wait_time;
+ 	const u8 *rsn;
+ 	struct wpa_ie_data ied;
+-	size_t len;
+ 
+-	if (!(ssid->key_mgmt & WPA_KEY_MGMT_DPP) || !bss)
+-		return 0; /* Not using DPP AKM - continue */
++	if (!(ssid->key_mgmt & WPA_KEY_MGMT_DPP))
++		return false; /* Not using DPP AKM */
+ 	rsn = wpa_bss_get_rsne(wpa_s, bss, ssid, false);
+ 	if (rsn && wpa_parse_wpa_ie(rsn, 2 + rsn[1], &ied) == 0 &&
+ 	    !(ied.key_mgmt & WPA_KEY_MGMT_DPP))
+-		return 0; /* AP does not support DPP AKM - continue */
+-	if (wpa_sm_pmksa_exists(wpa_s->wpa, bss->bssid, wpa_s->own_addr, ssid))
+-		return 0; /* PMKSA exists for DPP AKM - continue */
++		return false; /* AP does not support DPP AKM */
++	return !wpas_dpp_pmksa_exists(wpa_s, ssid, bss);
++}
++
++
++int wpas_dpp_check_connect(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
++			   struct wpa_bss *bss)
++{
++	struct os_time now;
++	struct wpabuf *msg;
++	unsigned int wait_time;
++	size_t len;
++
++	if (!bss || !wpas_dpp_intro_needed(wpa_s, ssid, bss))
++		return 0;
+ 
+ 	if (!ssid->dpp_connector || !ssid->dpp_netaccesskey ||
+ 	    !ssid->dpp_csign) {
+--- a/wpa_supplicant/dpp_supplicant.h
++++ b/wpa_supplicant/dpp_supplicant.h
+@@ -33,6 +33,8 @@ int wpas_dpp_pkex_remove(struct wpa_supp
+ void wpas_dpp_stop(struct wpa_supplicant *wpa_s);
+ int wpas_dpp_init(struct wpa_supplicant *wpa_s);
+ void wpas_dpp_deinit(struct wpa_supplicant *wpa_s);
++bool wpas_dpp_intro_needed(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
++			   struct wpa_bss *bss);
+ int wpas_dpp_check_connect(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
+ 			   struct wpa_bss *bss);
+ int wpas_dpp_controller_start(struct wpa_supplicant *wpa_s, const char *cmd);
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -1574,9 +1574,9 @@ skip_assoc_disallow:
+ #endif /* CONFIG_MBO */
+ 
+ #ifdef CONFIG_DPP
+-	if ((ssid->key_mgmt & WPA_KEY_MGMT_DPP) &&
+-	    !wpa_sm_pmksa_exists(wpa_s->wpa, bss->bssid, wpa_s->own_addr,
+-				 ssid) &&
++	/* The partner links of an MLD association use the PMKSA of the AP MLD,
++	 * which the check of the association link covers. */
++	if (!link && wpas_dpp_intro_needed(wpa_s, ssid, bss) &&
+ 	    (!ssid->dpp_connector || !ssid->dpp_netaccesskey ||
+ 	     !ssid->dpp_csign)) {
+ 		if (debug_print)
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -3999,8 +3999,7 @@ static u8 * wpas_populate_assoc_ies(
+ 		const u8 *addr = bss->bssid;
+ 
+ 		if (!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_SME) &&
+-		    (wpa_s->drv_flags2 & WPA_DRIVER_FLAGS2_MLO) &&
+-		    !is_zero_ether_addr(bss->mld_addr))
++		    wpa_bss_assoc_mld_addr(wpa_s, bss, ssid))
+ 			addr = bss->mld_addr;
+ 
+ 		if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_SME) &&

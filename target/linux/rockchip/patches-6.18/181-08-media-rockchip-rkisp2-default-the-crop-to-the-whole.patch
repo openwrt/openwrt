@@ -1,0 +1,39 @@
+From 4bd101784e4f99b11c0982a6958f5f61a47454d0 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 13:10:02 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Default the crop to the whole frame
+
+When no parameters buffer is queued at stream start, the crop of each
+path is initialised to its output size at the top left corner of the
+frame, so a capture smaller than the sensor frame shows that corner of
+the frame only.
+
+Initialise the crop to the whole frame, which the resizer then scales to
+the output, as the crop parameters block does when it is disabled.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkisp2/rkisp2-params.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-params.c
+@@ -567,13 +567,13 @@ static void rkisp2_params_crop_init(stru
+ 
+ 		.mp_crop.h_offs = 0,
+ 		.mp_crop.v_offs = 0,
+-		.mp_crop.h_size = rkisp2->resizer_devs[0].source_size.width,
+-		.mp_crop.v_size = rkisp2->resizer_devs[0].source_size.height,
++		.mp_crop.h_size = rkisp2->resizer_devs[0].sink_size.width,
++		.mp_crop.v_size = rkisp2->resizer_devs[0].sink_size.height,
+ 
+ 		.sp_crop.h_offs = 0,
+ 		.sp_crop.v_offs = 0,
+-		.sp_crop.h_size = rkisp2->resizer_devs[1].source_size.width,
+-		.sp_crop.v_size = rkisp2->resizer_devs[1].source_size.height
++		.sp_crop.h_size = rkisp2->resizer_devs[1].sink_size.width,
++		.sp_crop.v_size = rkisp2->resizer_devs[1].sink_size.height
+ 	};
+ 
+ 	dev_dbg(rkisp2->dev,

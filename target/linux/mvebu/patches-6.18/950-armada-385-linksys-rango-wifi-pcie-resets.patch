@@ -1,0 +1,70 @@
+From 9d4e841b93a5e15fe5a64598bfc05b413d915e76 Mon Sep 17 00:00:00 2001
+From: Michele Salerno <mikysal78@gmail.com>
+Date: Fri, 23 Oct 2026 20:08:20 +0200
+Subject: [PATCH] ARM: dts: marvell: armada-385-linksys-rango: fix wifi card
+ resets described as LEDs
+
+On the WRT3200ACM, mpp45 (gpio1 13) and mpp46 (gpio1 14) are described as
+the "wlan_2g" and "wlan_5g" LEDs, but they are the PERST# lines of the
+2.4GHz and 5GHz 88W8964 cards: driving them low holds the card in reset.
+With a LED trigger on them (e.g. netdev on the wifi interface, or
+phyXradio) the card disappears from the bus, its config space reads
+0xffffffff, and mwlwifi logs "adapter does not exist", "buffer is NULL for
+tx done ring" and "can't get hw specs" until the next reboot.
+
+Drop the two LEDs and describe the lines as the reset GPIOs of the PCIe
+ports they belong to (pcie1: 5GHz card, pcie2: 2.4GHz card).
+
+Link: https://github.com/openwrt/openwrt/issues/9517
+Link: https://lore.kernel.org/r/20261023175302.2102555-1-mikysal78@gmail.com
+Fixes: 41c865209626 ("ARM: dts: mvebu: add support for Linksys WRT3200ACM (Rango)")
+Signed-off-by: Michele Salerno <mikysal78@gmail.com>
+---
+ .../dts/marvell/armada-385-linksys-rango.dts  | 31 +++++++++++++------
+ 1 file changed, 22 insertions(+), 9 deletions(-)
+
+--- a/arch/arm/boot/dts/marvell/armada-385-linksys-rango.dts
++++ b/arch/arm/boot/dts/marvell/armada-385-linksys-rango.dts
+@@ -63,20 +63,33 @@
+ 		gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+ 		label = "rango:white:sata";
+ 	};
++};
+ 
+-	led-wlan_2g {
+-		gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+-		label = "rango:white:wlan_2g";
+-	};
++&gpio_leds_pins {
++	marvell,pins = "mpp21", "mpp56";
++};
+ 
+-	led-wlan_5g {
+-		gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+-		label = "rango:white:wlan_5g";
++&pinctrl {
++	pcie_reset_pins: pcie-reset-pins {
++		/* mpp45: 2.4GHz card reset, mpp46: 5GHz card reset */
++		marvell,pins = "mpp45", "mpp46";
++		marvell,function = "gpio";
+ 	};
+ };
+ 
+-&gpio_leds_pins {
+-	marvell,pins = "mpp21", "mpp45", "mpp46", "mpp56";
++&pciec {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie_reset_pins>;
++};
++
++&pcie1 {
++	/* 5GHz card */
++	reset-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
++};
++
++&pcie2 {
++	/* 2.4GHz card */
++	reset-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+ };
+ 
+ &nand {

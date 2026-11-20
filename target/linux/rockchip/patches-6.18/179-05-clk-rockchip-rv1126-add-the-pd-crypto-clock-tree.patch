@@ -1,0 +1,61 @@
+From cca18123bb8214f43c1c79ef06e4c3960549127a Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 10 Oct 2026 11:54:19 +0100
+Subject: [PATCH] clk: rockchip: rv1126: add the PD_CRYPTO clock tree
+
+The crypto power domain of the RV1126 has an AXI and an AHB bus clock
+with their dividers, the gates of the crypto block on them, and the
+core and PKA clocks that are divided from GPLL or CPLL. The NIU gates
+of the bus clocks have to stay open.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/clk/rockchip/clk-rv1126.c | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+--- a/drivers/clk/rockchip/clk-rv1126.c
++++ b/drivers/clk/rockchip/clk-rv1126.c
+@@ -639,6 +639,27 @@ static struct rockchip_clk_branch rv1126
+ 			RV1126_CLKGATE_CON(24), 2, GFLAGS),
+ 
+ 	/*
++	 * Clock-Architecture Diagram 5
++	 */
++	/* PD_CRYPTO */
++	COMPOSITE(ACLK_PDCRYPTO, "aclk_pdcrypto", mux_gpll_cpll_p, 0,
++			RV1126_CLKSEL_CON(4), 7, 1, MFLAGS, 0, 5, DFLAGS,
++			RV1126_CLKGATE_CON(4), 11, GFLAGS),
++	COMPOSITE_NOMUX(HCLK_PDCRYPTO, "hclk_pdcrypto", "aclk_pdcrypto", 0,
++			RV1126_CLKSEL_CON(4), 8, 5, DFLAGS,
++			RV1126_CLKGATE_CON(4), 12, GFLAGS),
++	GATE(ACLK_CRYPTO, "aclk_crypto", "aclk_pdcrypto", 0,
++			RV1126_CLKGATE_CON(3), 2, GFLAGS),
++	GATE(HCLK_CRYPTO, "hclk_crypto", "hclk_pdcrypto", 0,
++			RV1126_CLKGATE_CON(3), 3, GFLAGS),
++	COMPOSITE(CLK_CRYPTO_CORE, "aclk_crypto_core", mux_gpll_cpll_p, 0,
++			RV1126_CLKSEL_CON(7), 7, 1, MFLAGS, 0, 5, DFLAGS,
++			RV1126_CLKGATE_CON(3), 4, GFLAGS),
++	COMPOSITE(CLK_CRYPTO_PKA, "aclk_crypto_pka", mux_gpll_cpll_p, 0,
++			RV1126_CLKSEL_CON(7), 15, 1, MFLAGS, 8, 5, DFLAGS,
++			RV1126_CLKGATE_CON(3), 5, GFLAGS),
++
++	/*
+ 	 * Clock-Architecture Diagram 6
+ 	 */
+ 	/* PD_AUDIO */
+@@ -1053,6 +1074,15 @@ static struct rockchip_clk_branch rv1126
+ 			RV1126_CLKGATE_CON(7), 14, GFLAGS),
+ 
+ 	/*
++	 * Clock-Architecture Diagram 5
++	 */
++	/* PD_CRYPTO */
++	GATE(0, "aclk_pdcrypto_niu", "aclk_pdcrypto", CLK_IGNORE_UNUSED,
++			RV1126_CLKGATE_CON(4), 13, GFLAGS),
++	GATE(0, "hclk_pdcrypto_niu", "hclk_pdcrypto", CLK_IGNORE_UNUSED,
++			RV1126_CLKGATE_CON(4), 14, GFLAGS),
++
++	/*
+ 	 * Clock-Architecture Diagram 6
+ 	 */
+ 	/* PD_AUDIO */

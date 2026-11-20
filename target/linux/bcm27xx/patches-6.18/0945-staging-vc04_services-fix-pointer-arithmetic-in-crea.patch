@@ -1,0 +1,35 @@
+From 8dcfc7dda3cd7ff8526367b7ffa4894a3789dd72 Mon Sep 17 00:00:00 2001
+From: nolasoft <93552511+nolasoft@users.noreply.github.com>
+Date: Thu, 3 Sep 2026 17:22:58 +0200
+Subject: [PATCH] staging: vc04_services: fix pointer arithmetic in
+ create_pagelist
+
+In the vmalloc path of create_pagelist(), the address passed to
+vmalloc_to_page() was computed as:
+
+    (unsigned int *)bulk->offset + (actual_pages * PAGE_SIZE)
+
+Because pointer arithmetic on unsigned int * scales by sizeof(unsigned int),
+this advances by 4 * PAGE_SIZE bytes instead of PAGE_SIZE. As a result,
+only the first page is correct; subsequent pages point to the wrong
+addresses.
+
+Cast through void * so the offset is applied in bytes.
+
+Fixes: 0d2df8b10b54 ("staging: vchiq_core: Subsume 'offset' in struct vchiq_bulk")
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.c
++++ b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_core.c
+@@ -1590,7 +1590,7 @@ create_pagelist(struct vchiq_instance *i
+ 		for (actual_pages = 0; actual_pages < num_pages;
+ 		     actual_pages++) {
+ 			struct page *pg =
+-				vmalloc_to_page(((unsigned int *)bulk->offset +
++				vmalloc_to_page(((void *)bulk->offset +
+ 						 (actual_pages * PAGE_SIZE)));
+ 			size_t bytes = PAGE_SIZE - off;
+ 

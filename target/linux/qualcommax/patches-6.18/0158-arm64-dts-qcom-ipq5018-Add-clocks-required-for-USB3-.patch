@@ -1,0 +1,41 @@
+From 2b8dc0f00d0bb10871b454207ee2a5b83ced5fdd Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Tue, 25 Aug 2026 15:33:23 +0400
+Subject: [PATCH 158/160] arm64: dts: qcom: ipq5018: Add clocks required for
+ USB3 support
+
+Add aux and lfps clocks to USB controller node for Super-Speed support.
+These clocks are required for USB3 mode only and are not needed for USB2
+mode.
+
+In addition, set UTMI clock frequency to ensure it's parented correctly
+and override the clock rate potentially set by the bootloader.
+
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -604,11 +604,15 @@
+ 			clocks = <&gcc GCC_USB0_MASTER_CLK>,
+ 				 <&gcc GCC_SYS_NOC_USB0_AXI_CLK>,
+ 				 <&gcc GCC_USB0_SLEEP_CLK>,
+-				 <&gcc GCC_USB0_MOCK_UTMI_CLK>;
++				 <&gcc GCC_USB0_MOCK_UTMI_CLK>,
++				 <&gcc GCC_USB0_AUX_CLK>,
++				 <&gcc GCC_USB0_LFPS_CLK>;
+ 			clock-names = "core",
+ 				      "iface",
+ 				      "sleep",
+-				      "mock_utmi";
++				      "mock_utmi",
++				      "aux",
++				      "lfps";
+ 			assigned-clocks = <&gcc GCC_USB0_MOCK_UTMI_CLK>;
+ 			assigned-clock-rates = <60000000>;
+ 

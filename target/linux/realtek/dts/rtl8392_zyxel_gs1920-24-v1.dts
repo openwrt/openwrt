@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+/dts-v1/;
+
+#include "rtl839x_zyxel_gs1920-24-common.dtsi"
+#include "rtl8392_zyxel_gs1920-24-v1-common.dtsi"
+
+/ {
+	compatible = "zyxel,gs1920-24-v1", "realtek,rtl8392-soc";
+	model = "Zyxel GS1920-24v1";
+
+	aliases {
+		label-mac-device = &ethernet0;
+	};
+};
+
+&i2c4 {
+	adt7463: adt7463@2e {
+		compatible = "adi,adt7463";
+		reg = <0x2e>;
+	};
+};

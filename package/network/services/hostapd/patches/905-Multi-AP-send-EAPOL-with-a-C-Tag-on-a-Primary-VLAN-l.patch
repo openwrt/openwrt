@@ -1,0 +1,260 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 1 Nov 2026 00:33:54 +0100
+Subject: [PATCH] Multi-AP: send EAPOL with a C-Tag on a Primary VLAN link
+
+On a Wi-Fi link in a Multi-AP Profile-2 Network Segment, EtherType
+0x888E frames must carry a C-Tag with the Primary VLAN ID, where one is
+configured. Neither hostapd nor wpa_supplicant sends this form.
+
+Send every EAPOL-Key frame to a Profile-2 or later backhaul STA tagged
+where multi_ap_vlanid is set, over the control port, whatever the AP's
+TX path for other EAPOL frames. A Profile-1 peer lies outside the
+segment and a non-Multi-AP station discards the form, so both stay
+untagged. There is no untagged fallback, so a failed send, such as
+-EINVAL from a kernel that does not take the form, is logged as an error.
+The tagged reply of the STA reaches hostapd only over the control port,
+so a driver without the control port for TX and RX, for example with
+the driver parameter control_port=0, gets no tagged frame either.
+
+The station answers in the form of the last EAPOL frame it received, not
+by the VLAN of the Association Response, so that it cannot stall against
+an AP that announces a VLAN and does not tag.
+
+Remove the tag from the control port TX status, so that the Authenticator
+parses a reported EAPOL-Key frame as an untagged one.
+
+Discard a tagged EAPOL frame on a network that is no Multi-AP backhaul:
+the kernel passes it to the station before the 4-address mode is set.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -223,6 +223,17 @@ static inline int hostapd_drv_sta_remove
+ 	return hapd->driver->sta_remove(hapd->drv_priv, addr);
+ }
+ 
++static inline int hostapd_drv_tx_control_port(struct hostapd_data *hapd,
++					      const u8 *dest, u16 proto,
++					      const u8 *buf, size_t len,
++					      int no_encrypt, int link_id)
++{
++	if (!hapd->driver || !hapd->driver->tx_control_port)
++		return -1;
++	return hapd->driver->tx_control_port(hapd->drv_priv, dest, proto, buf,
++					     len, no_encrypt, link_id);
++}
++
+ static inline int hostapd_drv_hapd_send_eapol(struct hostapd_data *hapd,
+ 					      const u8 *addr, const u8 *data,
+ 					      size_t data_len, int encrypt,
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
+@@ -728,6 +728,52 @@ static int hostapd_wpa_auth_eapol_link_i
+ }
+ 
+ 
++static bool hostapd_sta_tags_eapol(struct hostapd_data *hapd,
++				   const struct sta_info *sta)
++{
++	return sta && (sta->flags & WLAN_STA_MULTI_AP) &&
++		sta->multi_ap_profile >= MULTI_AP_PROFILE_2 &&
++		hapd->conf->multi_ap_profile >= MULTI_AP_PROFILE_2 &&
++		hapd->conf->multi_ap_vlanid;
++}
++
++
++/* With a Primary VLAN ID, EAPOL on a Wi-Fi link in a Profile-2 Network
++ * Segment carries a C-Tag. */
++static int hostapd_wpa_auth_send_tagged_eapol(struct hostapd_data *hapd,
++					      struct sta_info *sta,
++					      const u8 *data, size_t data_len,
++					      int encrypt)
++{
++	size_t tagged_len = 0;
++	u8 *tagged;
++	int ret = -1;
++
++	/* The tagged reply of the STA reaches hostapd over the control port
++	 * only. */
++	if (!(hapd->iface->drv_flags & WPA_DRIVER_FLAGS_CONTROL_PORT) ||
++	    !(hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_CONTROL_PORT_RX)) {
++		wpa_printf(MSG_ERROR,
++			   "Multi-AP: No control port for a tagged EAPOL frame to "
++			   MACSTR, MAC2STR(sta->addr));
++		return -1;
++	}
++
++	tagged = wpa_eapol_vlan_tag(data, data_len, hapd->conf->multi_ap_vlanid,
++				    &tagged_len);
++	if (tagged)
++		ret = hostapd_drv_tx_control_port(
++			hapd, sta->addr, ETH_P_8021Q, tagged, tagged_len,
++			!encrypt, hostapd_sta_eapol_link_id(hapd, sta));
++	os_free(tagged);
++	if (ret < 0)
++		wpa_printf(MSG_ERROR,
++			   "Multi-AP: Could not send a tagged EAPOL frame to "
++			   MACSTR ": %d", MAC2STR(sta->addr), ret);
++	return ret;
++}
++
++
+ int hostapd_wpa_auth_send_eapol(void *ctx, const u8 *addr,
+ 				const u8 *data, size_t data_len,
+ 				int encrypt)
+@@ -755,6 +801,10 @@ int hostapd_wpa_auth_send_eapol(void *ct
+ 	if (sta)
+ 		flags = hostapd_sta_flags_to_drv(sta->flags);
+ 
++	if (hostapd_sta_tags_eapol(hapd, sta))
++		return hostapd_wpa_auth_send_tagged_eapol(hapd, sta, data,
++							  data_len, encrypt);
++
+ 	return hostapd_drv_hapd_send_eapol(hapd, addr, data, data_len,
+ 					   encrypt, flags,
+ 					   hostapd_sta_eapol_link_id(hapd, sta));
+--- a/src/common/wpa_common.c
++++ b/src/common/wpa_common.c
+@@ -352,6 +352,31 @@ static int rsn_eapol_key_mic_hash(const
+ 
+ 
+ /**
++ * wpa_eapol_vlan_tag - Build the control port payload of a tagged EAPOL frame
++ * @data: The EAPOL frame, from its IEEE 802.1X header on
++ * @data_len: Length of data
++ * @tci: Tag Control Information of the C-Tag
++ * @tagged_len: Set to the length of the result
++ * Returns: An allocated buffer that starts with the TCI and the inner type,
++ * to send with ethertype ETH_P_8021Q, or %NULL on failure
++ */
++u8 * wpa_eapol_vlan_tag(const u8 *data, size_t data_len, u16 tci,
++			size_t *tagged_len)
++{
++	u8 *buf;
++
++	buf = os_malloc(data_len + 4);
++	if (!buf)
++		return NULL;
++	WPA_PUT_BE16(buf, tci);
++	WPA_PUT_BE16(buf + 2, ETH_P_EAPOL);
++	os_memcpy(buf + 4, data, data_len);
++	*tagged_len = data_len + 4;
++	return buf;
++}
++
++
++/**
+  * wpa_eapol_key_mic - Calculate EAPOL-Key MIC
+  * @key: EAPOL-Key Key Confirmation Key (KCK)
+  * @key_len: KCK length in octets
+--- a/src/common/wpa_common.h
++++ b/src/common/wpa_common.h
+@@ -479,6 +479,8 @@ struct rsn_rdie {
+ #endif /* _MSC_VER */
+ 
+ 
++u8 * wpa_eapol_vlan_tag(const u8 *data, size_t data_len, u16 tci,
++			size_t *tagged_len);
+ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp,
+ 		      enum rsn_hash_alg hash, int ver,
+ 		      const u8 *buf, size_t len, u8 *mic);
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -4279,6 +4279,11 @@ nl80211_control_port_frame_tx_status(str
+ 	event.eapol_tx_status.dst = frame;
+ 	event.eapol_tx_status.data = frame + ETH_HLEN;
+ 	event.eapol_tx_status.data_len = len - ETH_HLEN;
++	if (WPA_GET_BE16(frame + 2 * ETH_ALEN) == ETH_P_8021Q &&
++	    event.eapol_tx_status.data_len >= VLAN_TAG_LEN) {
++		event.eapol_tx_status.data += VLAN_TAG_LEN;
++		event.eapol_tx_status.data_len -= VLAN_TAG_LEN;
++	}
+ 	event.eapol_tx_status.ack = ack != NULL;
+ 	event.eapol_tx_status.link_id =
+ 		nla_get_u64(cookie) == drv->eapol_tx_cookie ?
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -365,6 +365,7 @@ void wpa_supplicant_mark_disassoc(struct
+ {
+ 	int bssid_changed;
+ 
++	wpa_s->eapol_rx_vlan_tci = -1;
+ 	wnm_bss_keep_alive_deinit(wpa_s);
+ 
+ #ifdef CONFIG_IBSS_RSN
+@@ -7526,6 +7527,14 @@ void supplicant_event(void *ctx, enum wp
+ #endif /* CONFIG_PR */
+ 		break;
+ 	case EVENT_EAPOL_RX:
++		if (data->eapol_rx.vlan_tci >= 0 &&
++		    (!wpa_s->current_ssid ||
++		     !wpa_s->current_ssid->multi_ap_backhaul_sta)) {
++			wpa_dbg(wpa_s, MSG_DEBUG,
++				"Drop an EAPOL frame with a C-Tag outside a Multi-AP backhaul");
++			break;
++		}
++		wpa_s->eapol_rx_vlan_tci = data->eapol_rx.vlan_tci;
+ 		wpa_supplicant_rx_eapol(wpa_s, data->eapol_rx.src,
+ 					data->eapol_rx.data,
+ 					data->eapol_rx.data_len,
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -6699,6 +6699,7 @@ wpa_supplicant_alloc(struct wpa_supplica
+ #endif /* CONFIG_P2P */
+ 	wpa_s->sched_scanning = 0;
+ 	wpa_s->setband_mask = WPA_SETBAND_AUTO;
++	wpa_s->eapol_rx_vlan_tci = -1;
+ 
+ 	dl_list_init(&wpa_s->bss_tmp_disallowed);
+ 	dl_list_init(&wpa_s->fils_hlp_req);
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -1056,6 +1056,7 @@ struct wpa_supplicant {
+ 	enum frame_encryption pending_eapol_encrypted;
+ 	int pending_eapol_link_id;
+ 	unsigned int last_eapol_matches_bssid:1;
++	int eapol_rx_vlan_tci; /* TCI of the last EAPOL frame's C-Tag, or -1 */
+ 	unsigned int eapol_failed:1;
+ 	unsigned int eap_expected_failure:1;
+ 	unsigned int reattach:1; /* reassociation to the same BSS requested */
+--- a/wpa_supplicant/wpas_glue.c
++++ b/wpa_supplicant/wpas_glue.c
+@@ -86,6 +86,25 @@ static u8 * wpa_alloc_eapol(const struct
+ }
+ 
+ 
++static int wpa_ether_send_tagged(struct wpa_supplicant *wpa_s, const u8 *dest,
++				 const u8 *buf, size_t len, int no_encrypt,
++				 int link_id)
++{
++	size_t tagged_len = 0;
++	u8 *tagged;
++	int ret;
++
++	tagged = wpa_eapol_vlan_tag(buf, len, wpa_s->eapol_rx_vlan_tci,
++				    &tagged_len);
++	if (!tagged)
++		return -1;
++	ret = wpa_drv_tx_control_port(wpa_s, dest, ETH_P_8021Q, tagged,
++				      tagged_len, no_encrypt, link_id);
++	os_free(tagged);
++	return ret;
++}
++
++
+ /**
+  * wpa_ether_send - Send Ethernet frame
+  * @wpa_s: Pointer to wpa_supplicant data
+@@ -118,6 +137,11 @@ int wpa_ether_send(struct wpa_supplicant
+ 		int encrypt = wpa_s->wpa &&
+ 			wpa_sm_has_ptk_installed(wpa_s->wpa);
+ 
++		/* Answer in the form of the AP's frame */
++		if (proto == ETH_P_EAPOL && wpa_s->eapol_rx_vlan_tci >= 0)
++			return wpa_ether_send_tagged(wpa_s, dest, buf, len,
++						     !encrypt, link_id);
++
+ 		return wpa_drv_tx_control_port(wpa_s, dest, proto, buf, len,
+ 					       !encrypt, link_id);
+ 	}

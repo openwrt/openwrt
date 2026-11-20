@@ -1,0 +1,16 @@
+--- a/src/drv_vmmc_ioctl.c
++++ b/src/drv_vmmc_ioctl.c
+@@ -108,9 +108,11 @@ extern IFX_int32_t VMMC_ChipAccessInit (
+               {\
+               arg* p_arg = VMMC_OS_Malloc (sizeof(arg));\
+               VMMC_ASSERT (p_arg != IFX_NULL);\
+-              copy_from_user (p_arg, (IFX_uint8_t*)ioarg, sizeof(arg));\
++              if (copy_from_user (p_arg, (IFX_uint8_t*)ioarg, sizeof(arg)))\
++                ret = -EFAULT;\
+               ret = func((pContext), p_arg);\
+-              copy_to_user ((IFX_uint8_t*)ioarg, p_arg, sizeof(arg));\
++              if (copy_to_user ((IFX_uint8_t*)ioarg, p_arg, sizeof(arg)))\
++                ret = -EFAULT;\
+               VMMC_OS_Free (p_arg);\
+               }\
+               break

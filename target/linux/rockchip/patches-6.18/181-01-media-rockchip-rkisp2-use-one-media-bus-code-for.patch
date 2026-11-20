@@ -1,0 +1,100 @@
+From 3edd24aa5d01434c7206ce647a27dd7693350b88 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 01:18:36 +0100
+Subject: [PATCH] media: rockchip: rkisp2: Use one media bus code for the YUV
+ formats
+
+The 4:2:0 capture formats name YUYV8_1_5X8 as their media bus code,
+but the ISP source pads only offer YUYV8_2X8, so link validation
+fails for NV12M, NV21, NV21M, YUV420 and YVU420. Only NV12 passes
+because its entry uses the code of the pad.
+
+The ISP produces the same data for all YUV outputs and the memory
+interface converts it. Use YUYV8_2X8 for every YUV capture format.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../platform/rockchip/rkisp2/rkisp2-capture.c | 20 +++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-capture.c
+@@ -144,7 +144,7 @@ static const struct rkisp2_capture_fmt_c
+ 		.uv_swap = 1,
+ 		.write_format = RKISP2_MI_CTRL_MP_WRITE_YUV_SPLA,
+ 		.output_format = ISP32_MI_OUTPUT_YUV420,
+-		.mbus = MEDIA_BUS_FMT_YUYV8_1_5X8,
++		.mbus = MEDIA_BUS_FMT_YUYV8_2X8,
+ 	}, {
+ 		.fourcc = V4L2_PIX_FMT_NV12,
+ 		.uv_swap = 0,
+@@ -156,25 +156,25 @@ static const struct rkisp2_capture_fmt_c
+ 		.uv_swap = 1,
+ 		.write_format = RKISP2_MI_CTRL_MP_WRITE_YUV_SPLA,
+ 		.output_format = RKISP2_CIF_MI_INIT_MP_OUTPUT_YUV420,
+-		.mbus = MEDIA_BUS_FMT_YUYV8_1_5X8,
++		.mbus = MEDIA_BUS_FMT_YUYV8_2X8,
+ 	}, {
+ 		.fourcc = V4L2_PIX_FMT_NV12M,
+ 		.uv_swap = 0,
+ 		.write_format = RKISP2_MI_CTRL_MP_WRITE_YUV_SPLA,
+ 		.output_format = RKISP2_CIF_MI_INIT_MP_OUTPUT_YUV420,
+-		.mbus = MEDIA_BUS_FMT_YUYV8_1_5X8,
++		.mbus = MEDIA_BUS_FMT_YUYV8_2X8,
+ 	}, {
+ 		.fourcc = V4L2_PIX_FMT_YUV420,
+ 		.uv_swap = 0,
+ 		.write_format = RKISP2_MI_CTRL_MP_WRITE_YUV_PLA_OR_RAW8,
+ 		.output_format = RKISP2_CIF_MI_INIT_MP_OUTPUT_YUV420,
+-		.mbus = MEDIA_BUS_FMT_YUYV8_1_5X8,
++		.mbus = MEDIA_BUS_FMT_YUYV8_2X8,
+ 	}, {
+ 		.fourcc = V4L2_PIX_FMT_YVU420,
+ 		.uv_swap = 1,
+ 		.write_format = RKISP2_MI_CTRL_MP_WRITE_YUV_PLA_OR_RAW8,
+ 		.output_format = RKISP2_CIF_MI_INIT_MP_OUTPUT_YUV420,
+-		.mbus = MEDIA_BUS_FMT_YUYV8_1_5X8,
++		.mbus = MEDIA_BUS_FMT_YUYV8_2X8,
+ 	},
+ };
+ 
+@@ -253,7 +253,7 @@ static const struct rkisp2_capture_fmt_c
+ 		.uv_swap = 1,
+ 		.write_format = RKISP2_MI_CTRL_SP_WRITE_SPLA,
+ 		.output_format = RKISP2_MI_CTRL_SP_OUTPUT_YUV420,
+-		.mbus = MEDIA_BUS_FMT_YUYV8_1_5X8,
++		.mbus = MEDIA_BUS_FMT_YUYV8_2X8,
+ 	}, {
+ 		.fourcc = V4L2_PIX_FMT_NV12,
+ 		.uv_swap = 0,
+@@ -265,25 +265,25 @@ static const struct rkisp2_capture_fmt_c
+ 		.uv_swap = 1,
+ 		.write_format = RKISP2_MI_CTRL_SP_WRITE_SPLA,
+ 		.output_format = RKISP2_MI_CTRL_SP_OUTPUT_YUV420,
+-		.mbus = MEDIA_BUS_FMT_YUYV8_1_5X8,
++		.mbus = MEDIA_BUS_FMT_YUYV8_2X8,
+ 	}, {
+ 		.fourcc = V4L2_PIX_FMT_NV12M,
+ 		.uv_swap = 0,
+ 		.write_format = RKISP2_MI_CTRL_SP_WRITE_SPLA,
+ 		.output_format = RKISP2_MI_CTRL_SP_OUTPUT_YUV420,
+-		.mbus = MEDIA_BUS_FMT_YUYV8_1_5X8,
++		.mbus = MEDIA_BUS_FMT_YUYV8_2X8,
+ 	}, {
+ 		.fourcc = V4L2_PIX_FMT_YUV420,
+ 		.uv_swap = 0,
+ 		.write_format = RKISP2_MI_CTRL_SP_WRITE_PLA,
+ 		.output_format = RKISP2_MI_CTRL_SP_OUTPUT_YUV420,
+-		.mbus = MEDIA_BUS_FMT_YUYV8_1_5X8,
++		.mbus = MEDIA_BUS_FMT_YUYV8_2X8,
+ 	}, {
+ 		.fourcc = V4L2_PIX_FMT_YVU420,
+ 		.uv_swap = 1,
+ 		.write_format = RKISP2_MI_CTRL_SP_WRITE_PLA,
+ 		.output_format = RKISP2_MI_CTRL_SP_OUTPUT_YUV420,
+-		.mbus = MEDIA_BUS_FMT_YUYV8_1_5X8,
++		.mbus = MEDIA_BUS_FMT_YUYV8_2X8,
+ 	},
+ };
+ 

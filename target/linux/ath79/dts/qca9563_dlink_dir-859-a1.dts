@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "qca9563_dlink_dir-8x9-a1.dtsi"
+
+/ {
+	model = "D-Link DIR-859 A1";
+	compatible = "dlink,dir-859-a1", "qca,qca9563";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		internet {
+			label = "green:internet";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};

@@ -1,0 +1,73 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 21:46:36 +0100
+Subject: [PATCH] AP MLD: take the capability of a link STA from its per-STA profile
+
+A STA of a non-AP MLD on a link other than the association link keeps
+the Capability Information field 0, so __check_assoc_ies() does not
+copy its RM Enabled Capabilities and a Radio Measurement Request
+through the AP of that link fails with "does not support ... beacon
+report". IEEE Std 802.11be-2024, 35.3.3.3: the STA Profile field of a
+reported non-AP STA carries the fields of Table 9-64 or 9-66, which
+start with its Capability Information field. A Link Reconfiguration
+Request carries the complete profile (9.4.2.322.4, 35.3.6.4).
+
+Take the capability of the link STA from the Capability Information
+field of its per-STA profile, which the association path already
+parses into mld_link_info, and which a Link Reconfiguration Request
+carries at the start of the STA profile of an added link.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -6629,6 +6629,7 @@ int ieee80211_ml_process_link(struct hos
+ 	}
+ 
+ 	sta->flags |= origin_sta->flags | WLAN_STA_ASSOC_REQ_OK;
++	sta->capability = link->capability;
+ 	sta->multi_ap_profile = origin_sta->multi_ap_profile;
+ 	sta->mld_assoc_link_id = origin_sta->mld_assoc_link_id;
+ 	ap_sta_set_mld(sta, true);
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1884,8 +1884,9 @@ static bool recover_from_zero_links(u16
+ 
+ static u16
+ hostapd_ml_process_reconf_link(struct hostapd_data *hapd,
+-			       struct sta_info *assoc_sta, const u8 *ies,
+-			       size_t ies_len, u8 link_id, const u8 *link_addr)
++			       struct sta_info *assoc_sta, const u8 *sta_prof,
++			       size_t sta_prof_len, u8 link_id,
++			       const u8 *link_addr)
+ {
+ 	struct hostapd_data *lhapd, *other_hapd;
+ 	struct mld_link_info link;
+@@ -1898,12 +1899,14 @@ hostapd_ml_process_reconf_link(struct ho
+ 	os_memset(&link, 0, sizeof(link));
+ 
+ 	link.valid = 1;
++	link.capability = WPA_GET_LE16(sta_prof);
+ 	os_memcpy(link.local_addr, lhapd->own_addr, ETH_ALEN);
+ 	os_memcpy(link.peer_addr, link_addr, ETH_ALEN);
+ 
+ 	/* Parse STA profile, check the IEs, and send ADD_LINK_STA */
+-	ieee80211_ml_process_link(lhapd, assoc_sta, &link, ies, ies_len,
+-				  LINK_PARSE_RECONF, false, NULL);
++	ieee80211_ml_process_link(lhapd, assoc_sta, &link, sta_prof + 2,
++				  sta_prof_len - 2, LINK_PARSE_RECONF, false,
++				  NULL);
+ 	if (link.status != WLAN_STATUS_SUCCESS)
+ 		return link.status;
+ 
+@@ -2641,10 +2644,9 @@ hostapd_validate_link_reconf_req(struct
+ 		    info->sta_prof_len < 2)
+ 			continue;
+ 
+-		/* Offset 2 bytes for Capabilities in STA Profile */
+ 		status = hostapd_ml_process_reconf_link(hapd, assoc_sta,
+-							info->sta_prof + 2,
+-							info->sta_prof_len - 2,
++							info->sta_prof,
++							info->sta_prof_len,
+ 							info->link_id,
+ 							info->peer_addr);
+ 		if (status != WLAN_STATUS_SUCCESS) {

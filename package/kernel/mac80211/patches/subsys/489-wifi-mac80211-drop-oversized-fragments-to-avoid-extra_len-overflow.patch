@@ -1,0 +1,86 @@
+From 5e4f3509793b4db2c0835340224743db680e861f Mon Sep 17 00:00:00 2001
+From: Yuchao Zhang <ndaugoing@gmail.com>
+Date: Fri, 18 Sep 2026 11:40:04 +0800
+Subject: [PATCH] wifi: mac80211: drop oversized fragments to avoid extra_len
+ overflow
+
+In ieee80211_rx_h_defragment(), fragment payloads are accumulated into
+entry->extra_len as subsequent fragments arrive:
+
+        entry->extra_len += rx->skb->len;
+
+When the final fragment arrives, the head fragment is dequeued, and
+pskb_expand_head() is called with entry->extra_len to ensure sufficient
+tailroom for all queued fragments before copying:
+
+        if (skb_tailroom(rx->skb) < entry->extra_len) {
+                if (unlikely(pskb_expand_head(rx->skb, 0, entry->extra_len,
+                                              GFP_ATOMIC))) {
+                        ...
+                }
+        }
+        while ((skb = __skb_dequeue(&entry->skb_list))) {
+                skb_put_data(rx->skb, skb->data, skb->len);
+                dev_kfree_skb(skb);
+        }
+
+In commit 69f132236827 ("mac80211: shrink struct
+ieee80211_fragment_entry"), entry->extra_len was narrowed from unsigned
+int to u16 in order to reduce structure memory footprint.
+
+However, an IEEE 802.11 frame sequence can contain up to 16 fragments
+(frag numbers 0..15). If a sequence of large fragments arrives (e.g. from
+a malicious peer or rogue AP), the sum of fragment lengths can exceed
+65535 bytes (for example, 15 fragments of 4400 bytes total 66000 bytes).
+Because extra_len is a u16, this addition overflows and wraps around
+modulo 65536 (e.g. 66000 wraps to 464).
+
+Consequently, pskb_expand_head() allocates only the truncated amount of
+tailroom (or is skipped entirely if the head fragment already has >= 464
+bytes of tailroom). When skb_put_data() subsequently iterates through the
+queued skb list, it appends the full payload into the undersized buffer,
+causing skb_put() to trigger skb_over_panic() and crash the kernel in
+softirq context.
+
+A legitimate MSDU in IEEE 802.11 is at most 2304 bytes (or up to 7935/11454
+bytes for A-MSDU, which is not fragmented), well below U16_MAX.
+
+Fix this without increasing the size of struct ieee80211_fragment_entry by
+checking whether adding the incoming fragment length would exceed U16_MAX.
+If so, purge the queued fragments and drop the frame.
+
+Fixes: 69f132236827 ("mac80211: shrink struct ieee80211_fragment_entry")
+Signed-off-by: Yuchao Zhang <ndaugoing@gmail.com>
+Link: https://patch.msgid.link/20260918034004.85078-2-ndaugoing@gmail.com
+[assign a separate drop reason]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/drop.h | 1 +
+ net/mac80211/rx.c   | 6 ++++++
+ 2 files changed, 7 insertions(+)
+
+--- a/net/mac80211/drop.h
++++ b/net/mac80211/drop.h
+@@ -108,6 +108,7 @@ typedef unsigned int __bitwise ieee80211
+ 	R(RX_DROP_U_UNHANDLED_PREQ)		\
+ 	R(RX_DROP_U_UNHANDLED_MGMT_STYPE)	\
+ 	R(RX_DROP_U_NO_LINK)			\
++	R(RX_DROP_U_DEFRAG_OVERFLOW)		\
+ /* this line for the trailing \ - add before this */
+ 
+ /* having two enums allows for checking ieee80211_rx_result use with sparse */
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -2508,6 +2508,12 @@ ieee80211_rx_h_defragment(struct ieee802
+ 	}
+ 
+ 	skb_pull(rx->skb, ieee80211_hdrlen(fc));
++	if (unlikely((u32)entry->extra_len + rx->skb->len > U16_MAX)) {
++		I802_DEBUG_INC(rx->local->rx_handlers_drop_defrag);
++		__skb_queue_purge(&entry->skb_list);
++		return RX_DROP_U_DEFRAG_OVERFLOW;
++	}
++
+ 	__skb_queue_tail(&entry->skb_list, rx->skb);
+ 	entry->last_frag = frag;
+ 	entry->extra_len += rx->skb->len;

@@ -1,0 +1,49 @@
+Fix double negation of bitmask in dc_ep_icu_disable andwr32_mask.
+Also add locking to ensure the masking is applied atomically.
+
+--- a/misc.c
++++ b/misc.c
+@@ -68,12 +68,22 @@ void dc_ep_icu_disable(struct dc_ep_priv
+ 
+ void dc_ep_icu_dis_intr(struct dc_ep_priv *priv, u32 bits)
+ {
+-	wr32_mask(~bits, 0, ICU_IMER);
++	struct dc_aca *aca = to_aca(priv);
++	unsigned long flags;
++
++	spin_lock_irqsave(&aca->icu_lock, flags);
++	wr32_mask(bits, 0, ICU_IMER);
++	spin_unlock_irqrestore(&aca->icu_lock, flags);
+ }
+ 
+ void dc_ep_icu_en_intr(struct dc_ep_priv *priv, u32 bits)
+ {
++	struct dc_aca *aca = to_aca(priv);
++	unsigned long flags;
++
++	spin_lock_irqsave(&aca->icu_lock, flags);
+ 	wr32_mask(0, bits, ICU_IMER);
++	spin_unlock_irqrestore(&aca->icu_lock, flags);
+ }
+ 
+ void dc_ep_assert_device(struct dc_ep_priv *priv, u32 bits)
+--- a/aca.c
++++ b/aca.c
+@@ -1158,6 +1158,7 @@ void dc_aca_info_init(struct dc_ep_priv
+ 	struct dc_aca *aca = to_aca(priv);
+ 
+ 	aca->initialized = false;
++	spin_lock_init(&aca->icu_lock);
+ 	spin_lock_init(&aca->clk_lock);
+ 	spin_lock_init(&aca->rcu_lock);
+ 	mutex_init(&aca->pin_lock);
+--- a/aca.h
++++ b/aca.h
+@@ -470,6 +470,7 @@ struct aca_hif_params {
+ 
+ struct dc_aca {
+ 	bool initialized;
++	spinlock_t	icu_lock;
+ 	spinlock_t	clk_lock;
+ 	spinlock_t	rcu_lock;
+ 	struct mutex	pin_lock;

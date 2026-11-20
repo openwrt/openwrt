@@ -1,0 +1,53 @@
+From 9e79dcc4d8681df3ea1a0665dce5e35a37ece4b6 Mon Sep 17 00:00:00 2001
+From: Shawn Lin <shawn.lin@rock-chips.com>
+Date: Fri, 13 Feb 2026 10:35:12 +0800
+Subject: [PATCH] arm64: dts: rockchip: add node name for RK3588_PD_RKVDEC0/1
+ and RK3588_PD_VENC0/1
+
+Thus the board dts files could add property for these nodes.
+
+Signed-off-by: Shawn Lin <shawn.lin@rock-chips.com>
+Link: https://patch.msgid.link/1770950113-19802-1-git-send-email-shawn.lin@rock-chips.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-base.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -907,7 +907,7 @@
+ 				#size-cells = <0>;
+ 				#power-domain-cells = <0>;
+ 
+-				power-domain@RK3588_PD_RKVDEC0 {
++				pd_rkvdec0: power-domain@RK3588_PD_RKVDEC0 {
+ 					reg = <RK3588_PD_RKVDEC0>;
+ 					clocks = <&cru HCLK_RKVDEC0>,
+ 						 <&cru HCLK_VDPU_ROOT>,
+@@ -917,7 +917,7 @@
+ 					pm_qos = <&qos_rkvdec0>;
+ 					#power-domain-cells = <0>;
+ 				};
+-				power-domain@RK3588_PD_RKVDEC1 {
++				pd_rkvdec1: power-domain@RK3588_PD_RKVDEC1 {
+ 					reg = <RK3588_PD_RKVDEC1>;
+ 					clocks = <&cru HCLK_RKVDEC1>,
+ 						 <&cru HCLK_VDPU_ROOT>,
+@@ -926,7 +926,7 @@
+ 					pm_qos = <&qos_rkvdec1>;
+ 					#power-domain-cells = <0>;
+ 				};
+-				power-domain@RK3588_PD_VENC0 {
++				pd_venc0: power-domain@RK3588_PD_VENC0 {
+ 					reg = <RK3588_PD_VENC0>;
+ 					clocks = <&cru HCLK_RKVENC0>,
+ 						 <&cru ACLK_RKVENC0>;
+@@ -937,7 +937,7 @@
+ 					#size-cells = <0>;
+ 					#power-domain-cells = <0>;
+ 
+-					power-domain@RK3588_PD_VENC1 {
++				pd_venc1: power-domain@RK3588_PD_VENC1 {
+ 						reg = <RK3588_PD_VENC1>;
+ 						clocks = <&cru HCLK_RKVENC1>,
+ 							 <&cru HCLK_RKVENC0>,

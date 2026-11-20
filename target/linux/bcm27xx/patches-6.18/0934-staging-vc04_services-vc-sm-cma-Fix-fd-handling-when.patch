@@ -1,0 +1,86 @@
+From bf9f8e0c9557ac47d0073737892d7b3debffa897 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 26 Aug 2026 17:51:38 +0100
+Subject: [PATCH] staging: vc04_services: vc-sm-cma: Fix fd handling when
+ copy_to_user fails
+
+Both VC_SM_CMA_CMD_ALLOC and VC_SM_CMA_CMD_IMPORT_DMABUF install a
+dmabuf fd into the caller's fd table before copying the result struct
+back out. If that copy_to_user() fails the ioctl returns -EFAULT, but
+the fd stays installed and userspace never learns its number, so it
+cannot close it.
+
+For ALLOC that leaves the CMA allocation, the vc_sm_buffer and the VPU
+mapping pinned until the process exits, and lets a caller pin an fd per
+ioctl up to RLIMIT_NOFILE. Release the fd with close_fd() instead.
+
+IMPORT is worse. dma_buf_fd() does not take a reference of its own, it
+transfers the caller's reference to the fd table. Once it has succeeded
+the dma_buf_put() on the copy_to_user() error path drops a reference the
+ioctl no longer owns, freeing the dmabuf while the installed fd still
+points at it - a refcount underflow and a use-after-free on the
+subsequent close. Split the two conditions so dma_buf_put() only runs
+when dma_buf_fd() actually failed, and use close_fd() otherwise.
+
+While here, propagate the dma_buf_fd() error in vc_sm_cma_ioctl_alloc()
+rather than falling into the error path with ret still 0, which made the
+ioctl report success with an uninitialised handle.
+
+The device is registered with mode 0666, so this is reachable by any
+local user.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/staging/vc04_services/vc-sm-cma/vc_sm.c | 16 ++++++++++------
+ 1 file changed, 10 insertions(+), 6 deletions(-)
+
+--- a/drivers/staging/vc04_services/vc-sm-cma/vc_sm.c
++++ b/drivers/staging/vc04_services/vc-sm-cma/vc_sm.c
+@@ -33,6 +33,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/dma-buf.h>
+ #include <linux/errno.h>
++#include <linux/fdtable.h>
+ #include <linux/fs.h>
+ #include <linux/kernel.h>
+ #include <linux/list.h>
+@@ -1200,8 +1201,10 @@ static int vc_sm_cma_ioctl_alloc(struct
+ 	buffer->alloc.sg_table = sgt;
+ 
+ 	fd = dma_buf_fd(dmabuf, O_CLOEXEC);
+-	if (fd < 0)
++	if (fd < 0) {
++		ret = fd;
+ 		goto error;
++	}
+ 
+ 	vc_sm_add_resource(private, buffer);
+ 
+@@ -1276,9 +1279,9 @@ static long vc_sm_cma_ioctl(struct file
+ 		if (!ret &&
+ 		    (copy_to_user((void *)arg, &ioparam,
+ 				  sizeof(ioparam)) != 0)) {
+-			/* FIXME: Release allocation */
+ 			pr_err("[%s]: failed to copy-to-user for cmd %x\n",
+ 			       __func__, cmdnr);
++			close_fd(ioparam.handle);
+ 			ret = -EFAULT;
+ 		}
+ 		break;
+@@ -1312,11 +1315,12 @@ static long vc_sm_cma_ioctl(struct file
+ 			ioparam.vc_handle = buf->vc_handle;
+ 			ioparam.dma_addr = buf->dma_addr;
+ 
+-			if (ioparam.handle < 0 ||
+-			    (copy_to_user((void *)arg, &ioparam,
+-					  sizeof(ioparam)) != 0)) {
++			if (ioparam.handle < 0) {
+ 				dma_buf_put(new_dmabuf);
+-				/* FIXME: Release allocation */
++				ret = -EFAULT;
++			} else if (copy_to_user((void *)arg, &ioparam,
++						sizeof(ioparam)) != 0) {
++				close_fd(ioparam.handle);
+ 				ret = -EFAULT;
+ 			}
+ 		}

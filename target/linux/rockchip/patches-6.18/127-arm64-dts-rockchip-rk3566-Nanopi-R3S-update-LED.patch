@@ -1,0 +1,14 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts
+@@ -24,6 +24,11 @@
+ 		ethernet0 = &gmac1;
+ 		mmc0 = &sdhci;
+ 		mmc1 = &sdmmc0;
++
++		led-boot = &power_led;
++		led-failsafe = &power_led;
++		led-running = &power_led;
++		led-upgrade = &power_led;
+ 	};
+ 
+ 	chosen: chosen {

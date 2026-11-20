@@ -1,0 +1,22 @@
+#!/bin/sh /etc/rc.common
+
+START=21
+STOP=10
+
+boot() {
+	case $(board_name) in
+		meraki,mr30h)
+			if [ $(cat /sys/class/gpio/poeaf_det/value) -eq 0 ]; then
+				echo "1" > /sys/class/gpio/pse_en/value
+			fi
+		;;
+	esac
+}
+
+shutdown() {
+	case $(board_name) in
+		meraki,mr30h)
+			echo "0" > /sys/class/gpio/pse_en/value
+		;;
+	esac
+}

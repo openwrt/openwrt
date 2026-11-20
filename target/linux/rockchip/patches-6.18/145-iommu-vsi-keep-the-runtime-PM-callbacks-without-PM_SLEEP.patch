@@ -1,0 +1,34 @@
+From e8114502dc91f5fb709509291fdd85e27545dfb6 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 23 Oct 2026 01:39:35 +0100
+Subject: [PATCH] iommu/vsi: keep the runtime PM callbacks without PM_SLEEP
+
+The runtime PM operations are handed to the driver core through
+pm_sleep_ptr(), which is NULL unless CONFIG_PM_SLEEP is set. Without
+system sleep support the IOMMU has no runtime PM callbacks at all: its
+clocks are never enabled by the driver, the page table is not restored
+when the power domain comes back, and iommu->enable stays set while
+genpd powers the domain off. The TLB flush issued from vsi_iommu_map()
+then writes to the unpowered IOMMU, and the first buffer allocation of
+the RK3588 AV1 decoder ends in an asynchronous SError.
+
+Use pm_ptr(), which keeps the operations whenever CONFIG_PM is set.
+
+Fixes: 917ace84b770 ("iommu: Add verisilicon IOMMU driver")
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/iommu/vsi-iommu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/iommu/vsi-iommu.c
++++ b/drivers/iommu/vsi-iommu.c
+@@ -787,7 +787,7 @@ static struct platform_driver rockchip_v
+ 	.driver = {
+ 		   .name = "vsi_iommu",
+ 		   .of_match_table = vsi_iommu_dt_ids,
+-		   .pm = pm_sleep_ptr(&vsi_iommu_pm_ops),
++		   .pm = pm_ptr(&vsi_iommu_pm_ops),
+ 		   .suppress_bind_attrs = true,
+ 	},
+ };

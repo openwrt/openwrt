@@ -1,0 +1,22 @@
+From: Paul Spooren <paul.spooren@hs-nordhausen.de>
+Subject: pylibfdt: allow undefined symbols when linking on macOS
+
+LDSHARED is hardcoded to "$(HOSTCC) -shared". On macOS, Python
+extensions are not linked against libpython; they resolve its
+symbols when the module is loaded. Without -undefined dynamic_lookup
+the link fails with undefined _Py* symbols. Add the flag on Darwin
+hosts only.
+
+Signed-off-by: Paul Spooren <paul.spooren@hs-nordhausen.de>
+---
+--- a/scripts/dtc/pylibfdt/Makefile
++++ b/scripts/dtc/pylibfdt/Makefile
+@@ -18,7 +18,7 @@
+ 
+ quiet_cmd_pymod = PYMOD   $@
+       cmd_pymod = unset CROSS_COMPILE; unset CFLAGS; \
+-		CC="$(HOSTCC)" LDSHARED="$(HOSTCC) -shared " \
++		CC="$(HOSTCC)" LDSHARED="$(HOSTCC) -shared $(if $(filter Darwin,$(shell uname -s)),-undefined dynamic_lookup) " \
+ 		LDFLAGS="$(HOSTLDFLAGS)" \
+ 		VERSION="$(PEP_VERSION)" \
+ 		CPPFLAGS="$(HOSTCFLAGS) -I$(LIBFDT_srcdir)" OBJDIR=$(obj) \

@@ -1,0 +1,145 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+BOOTCONFIG_MTD="$(find_mtd_part 0:bootconfig || true)"
+BOOTCONFIG1_MTD="$(find_mtd_part 0:bootconfig1 || true)"
+OFFSET=4
+
+FORCE=0
+
+usage() {
+	cat <<-EOF
+	Usage: $0 [--force] {show | set image0 | set image1}
+
+	Options:
+	  --force   Skip all confirmation prompts (non-interactive mode)
+
+	Commands:
+	  show           Display current and next boot image status
+	  set image0     Set image0 as active for next boot
+	  set image1     Set image1 as active for next boot
+	EOF
+	exit 1
+}
+
+if [ "${1:-}" = "--force" ]; then
+	FORCE=1
+	shift
+fi
+
+require_mtd() {
+	if [ -z "$BOOTCONFIG_MTD" ] || [ -z "$BOOTCONFIG1_MTD" ]; then
+		printf "ERROR: bootconfig MTD partitions not found.\n" >&2
+		exit 1
+	fi
+}
+
+read_status() {
+	local dev="$1"
+	hexdump -v -e '1/1 "%01x"' -n 1 -s "$OFFSET" "$dev" 2>/dev/null
+}
+
+write_status() {
+	local dev="$1" val="$2"
+	printf "\\x$val" | dd of="$dev" bs=1 seek=$OFFSET count=1 conv=notrunc 2>/dev/null
+}
+
+status_string() {
+	case "$1" in
+		0) printf "none" ;;
+		1) printf "backup" ;;
+		2) printf "selected" ;;
+		*) printf "unknown" ;;
+	esac
+}
+
+show_status() {
+	printf "Currently booted:\n  image%s\n" \
+		"$(awk -F 'bootImage=' '{print $2}' /proc/cmdline | awk '{print $1}')"
+
+	STATUS0="$(read_status "$BOOTCONFIG_MTD")"
+	STATUS1="$(read_status "$BOOTCONFIG1_MTD")"
+
+	printf "At next reboot:\n"
+	printf "  image0: %s\n" "$(status_string "$STATUS0")"
+	printf "  image1: %s\n" "$(status_string "$STATUS1")"
+}
+
+check_selected() {
+	local old="$1"
+	local img="$2"
+
+	if [ "$old" = "0" ]; then
+		printf "\nWARNING: image%s is currently 'none'. Booting might fail.\n" "$img" >&2
+		if [ "$FORCE" -ne 1 ]; then
+			read -rp "Proceed anyway? (yes/no) " confirm >&2
+			[ "$confirm" != "yes" ] && return 1
+		fi
+	fi
+	printf "02"
+}
+
+check_backup() {
+	local old="$1"
+	local img="$2"
+
+	if [ "$old" = "0" ]; then
+		printf "\nINFO: Kept image%s as 'none'.\n" "$img" >&2
+		printf "00"
+	else
+		printf "01"
+	fi
+}
+
+set_image() {
+	local img="$1"
+	local new0 new1
+
+	printf "OLD CONFIGURATION\n"
+	show_status
+
+	if [ "$STATUS0" = "1" ] && [ "$STATUS1" = "1" ] && [ "$FORCE" -ne 1 ]; then
+		printf "WARNING: Both images are marked as selected!\n" >&2
+		read -rp "Proceed anyway? (yes/no) " confirm >&2
+		[ "$confirm" != "yes" ] && exit 1
+	fi
+
+	case "$img" in
+		0)
+			new0="$(check_selected "$STATUS0" "0")" || exit 1
+			new1="$(check_backup "$STATUS1" "1")"
+			;;
+		1)
+			new0="$(check_backup "$STATUS0" "0")"
+			new1="$(check_selected "$STATUS1" "1")" || exit 1
+			;;
+		*)
+			printf "ERROR: Invalid image selection.\n" >&2
+			exit 1
+			;;
+	esac
+	
+	printf "\nUpdating image selection...\n"
+	write_status "$BOOTCONFIG_MTD" "$new0"
+	write_status "$BOOTCONFIG1_MTD" "$new1"
+	printf "Done.\n"
+
+	printf "\nNEW CONFIGURATION\n"
+	show_status
+}
+
+require_mtd
+
+case "${1:-}" in
+	show)
+		show_status
+		;;
+	set)
+		[ -z "${2:-}" ] && usage
+		set_image "${2#image}"
+		;;
+	*)
+		usage
+		;;
+esac

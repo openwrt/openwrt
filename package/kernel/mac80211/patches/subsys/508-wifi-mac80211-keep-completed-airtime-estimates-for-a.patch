@@ -1,0 +1,157 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 9 Nov 2026 06:14:04 +0100
+Subject: [PATCH] wifi: mac80211: keep completed airtime estimates for a deferred report
+
+Some devices report the TX airtime of a station in batches, some time
+after the TX status of its frames, for example from a firmware counter
+that the driver reads at a fixed interval. ieee80211_sta_deficit()
+subtracts the estimate of the pending frames from the deficit, and the
+TX status of a frame drops its estimate. Between the TX status and the
+next report, the airtime of a completed frame is thus in neither, and
+the scheduler gives such a station more than its share.
+
+Add a hardware flag for such a driver. With it, the TX status moves the
+estimate of a frame into a counter of completed airtime per station and
+AC, which the deficit also subtracts, and
+ieee80211_sta_register_airtime() clears that counter when it charges the
+reported airtime. The AQL limits still read the pending estimate alone,
+as a completed frame holds no space in the device queue. The counter of
+an AC drops only at a report, so the driver must report every station
+at each interval, also with an airtime of 0.
+
+Also show the counter in the aql file of the station debugfs.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -3082,6 +3082,15 @@ struct ieee80211_txq {
+  * @IEEE80211_HW_SUPPORTS_NDP_BLOCKACK: HW can transmit/receive S1G NDP
+  *	BlockAck frames.
+  *
++ * @IEEE80211_HW_DEFERRED_AIRTIME_REPORT: The driver reports the TX airtime
++ *	of a station with ieee80211_sta_register_airtime() some time after
++ *	the TX status of the frames, and each call covers every frame of
++ *	that station and AC that completed since the previous call. The
++ *	estimate of a completed frame then stays in the airtime deficit
++ *	until the next call. A driver that sets this flag must call
++ *	ieee80211_sta_register_airtime() for each station and AC at a
++ *	regular interval, also with an airtime of 0.
++ *
+  * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
+  */
+ enum ieee80211_hw_flags {
+@@ -3143,6 +3152,7 @@ enum ieee80211_hw_flags {
+ 	IEEE80211_HW_HANDLES_QUIET_CSA,
+ 	IEEE80211_HW_STRICT,
+ 	IEEE80211_HW_SUPPORTS_NDP_BLOCKACK,
++	IEEE80211_HW_DEFERRED_AIRTIME_REPORT,
+ 
+ 	/* keep last, obviously */
+ 	NUM_IEEE80211_HW_FLAGS
+@@ -7082,6 +7092,10 @@ void ieee80211_sta_recalc_aggregates(str
+  * TX and RX airtime can be reported together, or separately by setting one of
+  * them to 0.
+  *
++ * With %IEEE80211_HW_DEFERRED_AIRTIME_REPORT, each call also drops the
++ * estimated airtime of the frames of the AC that completed since the
++ * previous call, as the reported airtime covers them.
++ *
+  * @pubsta: the station
+  * @tid: the TID to register airtime for
+  * @tx_airtime: airtime used during TX (in usec)
+--- a/net/mac80211/debugfs.c
++++ b/net/mac80211/debugfs.c
+@@ -483,6 +483,7 @@ static const char *hw_flag_names[] = {
+ 	FLAG(HANDLES_QUIET_CSA),
+ 	FLAG(STRICT),
+ 	FLAG(SUPPORTS_NDP_BLOCKACK),
++	FLAG(DEFERRED_AIRTIME_REPORT),
+ #undef FLAG
+ };
+ 
+--- a/net/mac80211/debugfs_sta.c
++++ b/net/mac80211/debugfs_sta.c
+@@ -435,7 +435,7 @@ static ssize_t sta_aql_read(struct file
+ 	struct ieee80211_local *local = sta->sdata->local;
+ 	size_t bufsz = 400;
+ 	char *buf = kzalloc(bufsz, GFP_KERNEL), *p = buf;
+-	u32 q_depth[IEEE80211_NUM_ACS];
++	u32 q_depth[IEEE80211_NUM_ACS], q_completed[IEEE80211_NUM_ACS];
+ 	u32 q_limit_l[IEEE80211_NUM_ACS], q_limit_h[IEEE80211_NUM_ACS];
+ 	ssize_t rv;
+ 	int ac;
+@@ -449,14 +449,18 @@ static ssize_t sta_aql_read(struct file
+ 		q_limit_h[ac] = sta->airtime[ac].aql_limit_high;
+ 		spin_unlock_bh(&local->active_txq_lock[ac]);
+ 		q_depth[ac] = atomic_read(&sta->airtime[ac].aql_tx_pending);
++		q_completed[ac] = atomic_read(&sta->airtime[ac].aql_tx_completed);
+ 	}
+ 
+ 	p += scnprintf(p, bufsz + buf - p,
+ 		"Q depth: VO: %u us VI: %u us BE: %u us BK: %u us\n"
+-		"Q limit[low/high]: VO: %u/%u VI: %u/%u BE: %u/%u BK: %u/%u\n",
++		"Q limit[low/high]: VO: %u/%u VI: %u/%u BE: %u/%u BK: %u/%u\n"
++		"AQL completed: VO: %u us VI: %u us BE: %u us BK: %u us\n",
+ 		q_depth[0], q_depth[1], q_depth[2], q_depth[3],
+ 		q_limit_l[0], q_limit_h[0], q_limit_l[1], q_limit_h[1],
+-		q_limit_l[2], q_limit_h[2], q_limit_l[3], q_limit_h[3]);
++		q_limit_l[2], q_limit_h[2], q_limit_l[3], q_limit_h[3],
++		q_completed[0], q_completed[1], q_completed[2],
++		q_completed[3]);
+ 
+ 	rv = simple_read_from_buffer(userbuf, count, ppos, buf, p - buf);
+ 	kfree(buf);
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -763,6 +763,7 @@ __sta_info_alloc(struct ieee80211_sub_if
+ 		skb_queue_head_init(&sta->tx_filtered[i]);
+ 		sta->airtime[i].deficit = sta->airtime_weight;
+ 		atomic_set(&sta->airtime[i].aql_tx_pending, 0);
++		atomic_set(&sta->airtime[i].aql_tx_completed, 0);
+ 		sta->airtime[i].aql_limit_low = local->aql_txq_limit_low[i];
+ 		sta->airtime[i].aql_limit_high = local->aql_txq_limit_high[i];
+ 	}
+@@ -2486,6 +2487,9 @@ void ieee80211_sta_register_airtime(stru
+ 	if (ieee80211_sta_keep_active(sta, ac))
+ 		sta->airtime[ac].deficit -= airtime;
+ 
++	if (ieee80211_hw_check(&local->hw, DEFERRED_AIRTIME_REPORT))
++		atomic_set(&sta->airtime[ac].aql_tx_completed, 0);
++
+ 	spin_unlock_bh(&local->active_txq_lock[ac]);
+ }
+ EXPORT_SYMBOL(ieee80211_sta_register_airtime);
+@@ -2583,6 +2587,10 @@ void ieee80211_sta_update_pending_airtim
+ 		if (tx_pending < 0)
+ 			atomic_cmpxchg(&sta->airtime[ac].aql_tx_pending,
+ 				       tx_pending, 0);
++
++		if (ieee80211_hw_check(&local->hw, DEFERRED_AIRTIME_REPORT))
++			atomic_add(tx_airtime,
++				   &sta->airtime[ac].aql_tx_completed);
+ 	}
+ 
+ 	atomic_sub(tx_airtime, &local->aql_total_pending_airtime);
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -141,6 +141,7 @@ struct airtime_info {
+ 	unsigned long last_active;
+ 	s32 deficit;
+ 	atomic_t aql_tx_pending; /* Estimated airtime for frames pending */
++	atomic_t aql_tx_completed; /* Estimated airtime of completed frames */
+ 	u32 aql_limit_low;
+ 	u32 aql_limit_high;
+ };
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -4279,7 +4279,8 @@ static inline s32 ieee80211_sta_deficit(
+ {
+ 	struct airtime_info *air_info = &sta->airtime[ac];
+ 
+-	return air_info->deficit - atomic_read(&air_info->aql_tx_pending);
++	return air_info->deficit - atomic_read(&air_info->aql_tx_pending) -
++	       atomic_read(&air_info->aql_tx_completed);
+ }
+ 
+ static void
