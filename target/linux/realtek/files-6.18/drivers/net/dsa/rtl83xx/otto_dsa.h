@@ -119,6 +119,7 @@ struct rtldsa_ets {
 struct otto_dsa_queue {
 	u64 drops;
 	u16 drops_hw;
+	u8 ets_weight;
 };
 
 struct rtldsa_port {
@@ -134,7 +135,6 @@ struct rtldsa_port {
 	u16 ets_children;
 	bool ets_offloadable;
 	bool ets_offloaded;
-	u8 ets_weights[MAX_PRIOS];
 	struct otto_dsa_qdisc_stats ets_stats;
 	struct rtldsa_tbf tbf;
 	struct rtldsa_tbf queue_tbf[MAX_PRIOS];
