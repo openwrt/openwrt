@@ -78,7 +78,7 @@ tplink_get_boot_part() {
 		rootfs|rootfs_1)
 			echo "$ubi_mtd_arg"
 			return
-		;;
+			;;
 		esac
 	done
 
@@ -101,11 +101,11 @@ tplink_do_upgrade() {
 	rootfs)
 		CI_UBIPART="rootfs_1"
 		new_boot_part=1
-	;;
+		;;
 	rootfs_1)
 		CI_UBIPART="rootfs"
 		new_boot_part=0
-	;;
+		;;
 	esac
 
 	fw_setenv -s - <<-EOF
@@ -222,9 +222,6 @@ platform_do_upgrade_mikrotik_nand() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	mikrotik,chateau-5g-r17-ax)
-		platform_do_upgrade_mikrotik_nand "$1"
-		;;
 	alfa-network,ap120c-ax)
 		CI_UBIPART="rootfs_1"
 		alfa_bootconfig_rootfs_rotate "0:BOOTCONFIG" "148"
@@ -239,13 +236,6 @@ platform_do_upgrade() {
 	netgear,rbr350|\
 	netgear,rbs350|\
 	netgear,wax214)
-		nand_do_upgrade "$1"
-		;;
-	qihoo,360v6)
-		CI_UBIPART="rootfs_1"
-		qihoo_bootconfig_toggle_rootfs "0:bootconfig"
-		remove_oem_ubi_volume wifi_fw
-		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
 	jdcloud,re-cs-02|\
@@ -264,16 +254,26 @@ platform_do_upgrade() {
 		fi
 		emmc_do_upgrade "$1"
 		;;
+	linksys,mr7350|\
+	linksys,mr7500)
+		linksys_mr_pre_upgrade "$1"
+		remove_oem_ubi_volume squashfs
+		nand_do_upgrade "$1"
+		;;
+	mikrotik,chateau-5g-r17-ax)
+		platform_do_upgrade_mikrotik_nand "$1"
+		;;
 	netgear,wax610|\
 	netgear,wax610y)
 		remove_oem_ubi_volume wifi_fw
 		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
-	linksys,mr7350|\
-	linksys,mr7500)
-		linksys_mr_pre_upgrade "$1"
-		remove_oem_ubi_volume squashfs
+	qihoo,360v6)
+		CI_UBIPART="rootfs_1"
+		qihoo_bootconfig_toggle_rootfs "0:bootconfig"
+		remove_oem_ubi_volume wifi_fw
+		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
 	tplink,eap610-outdoor|\
