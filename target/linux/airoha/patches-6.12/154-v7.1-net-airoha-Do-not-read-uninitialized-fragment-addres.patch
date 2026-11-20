@@ -52,13 +52,14 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		e->dma_addr = addr;
  		e->dma_len = len;
  
-@@ -2092,6 +2092,9 @@ static netdev_tx_t airoha_dev_xmit(struc
- 		if (i == nr_frags - 1)
- 			continue;
+@@ -2089,8 +2089,8 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 		WRITE_ONCE(desc->msg1, cpu_to_le32(msg1));
+ 		WRITE_ONCE(desc->msg2, cpu_to_le32(0xffff));
  
+-		if (i == nr_frags - 1)
+-			continue;
 +		if (++i == nr_frags)
 +			break;
-+
+ 
  		data = skb_frag_address(frag);
  		len = skb_frag_size(frag);
- 	}

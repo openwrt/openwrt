@@ -243,7 +243,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		return NETDEV_TX_BUSY;
  	}
  
-@@ -2346,6 +2425,7 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2343,6 +2422,7 @@ static netdev_tx_t airoha_dev_xmit(struc
  				FIELD_PREP(TX_RING_CPU_IDX_MASK, index));
  
  	spin_unlock_bh(&q->lock);
@@ -251,7 +251,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	return NETDEV_TX_OK;
  
-@@ -2358,6 +2438,7 @@ error_unlock:
+@@ -2355,6 +2435,7 @@ error_unlock:
  error:
  	dev_kfree_skb_any(skb);
  	netdev->stats.tx_dropped++;
@@ -259,7 +259,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	return NETDEV_TX_OK;
  }
-@@ -2437,17 +2518,19 @@ static int airoha_qdma_set_chan_tx_sched
+@@ -2434,17 +2515,19 @@ static int airoha_qdma_set_chan_tx_sched
  					 const u16 *weights, u8 n_weights)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -281,7 +281,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			       TWRR_RW_CMD_MASK |
  			       FIELD_PREP(TWRR_CHAN_IDX_MASK, channel) |
  			       FIELD_PREP(TWRR_QUEUE_IDX_MASK, i) |
-@@ -2455,12 +2538,12 @@ static int airoha_qdma_set_chan_tx_sched
+@@ -2452,12 +2535,12 @@ static int airoha_qdma_set_chan_tx_sched
  		err = read_poll_timeout(airoha_qdma_rr, status,
  					status & TWRR_RW_CMD_DONE,
  					USEC_PER_MSEC, 10 * USEC_PER_MSEC,
@@ -296,7 +296,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			CHAN_QOS_MODE_MASK(channel),
  			__field_prep(CHAN_QOS_MODE_MASK(channel), mode));
  
-@@ -2524,10 +2607,11 @@ static int airoha_qdma_get_tx_ets_stats(
+@@ -2521,10 +2604,11 @@ static int airoha_qdma_get_tx_ets_stats(
  					struct tc_ets_qopt_offload *opt)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -309,7 +309,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	cpu_tx_packets = airoha_qdma_rr(qdma, REG_CNTR_VAL(channel << 1));
  	fwd_tx_packets = airoha_qdma_rr(qdma,
  					REG_CNTR_VAL((channel << 1) + 1));
-@@ -2813,16 +2897,18 @@ static int airoha_qdma_set_tx_rate_limit
+@@ -2810,16 +2894,18 @@ static int airoha_qdma_set_tx_rate_limit
  					 u32 bucket_size)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -330,7 +330,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  							 REG_EGRESS_TRTCM_CFG,
  							 i, rate, bucket_size);
  		if (err)
-@@ -2858,11 +2944,12 @@ static int airoha_tc_htb_alloc_leaf_queu
+@@ -2855,11 +2941,12 @@ static int airoha_tc_htb_alloc_leaf_queu
  	u32 channel = TC_H_MIN(opt->classid) % AIROHA_NUM_QOS_CHANNELS;
  	int err, num_tx_queues = AIROHA_NUM_TX_RING + channel + 1;
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -344,7 +344,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (test_and_set_bit(channel, qdma->qos_channel_map)) {
  		NL_SET_ERR_MSG_MOD(opt->extack,
  				   "qdma qos channel already in use");
-@@ -2898,7 +2985,7 @@ static int airoha_qdma_set_rx_meter(stru
+@@ -2895,7 +2982,7 @@ static int airoha_qdma_set_rx_meter(stru
  				    u32 rate, u32 bucket_size,
  				    enum trtcm_unit_type unit_type)
  {
@@ -353,7 +353,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	int i;
  
  	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
-@@ -3073,10 +3160,11 @@ static void airoha_tc_remove_htb_queue(s
+@@ -3070,10 +3157,11 @@ static void airoha_tc_remove_htb_queue(s
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	int num_tx_queues = AIROHA_NUM_TX_RING;
@@ -366,7 +366,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	clear_bit(queue, qdma->qos_channel_map);
  	clear_bit(queue, dev->qos_sq_bmap);
  
-@@ -3102,6 +3190,98 @@ static int airoha_tc_htb_delete_leaf_que
+@@ -3099,6 +3187,98 @@ static int airoha_tc_htb_delete_leaf_que
  	return 0;
  }
  
@@ -465,7 +465,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int airoha_tc_htb_destroy(struct net_device *netdev)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
-@@ -3110,6 +3290,8 @@ static int airoha_tc_htb_destroy(struct
+@@ -3107,6 +3287,8 @@ static int airoha_tc_htb_destroy(struct
  	for_each_set_bit(q, dev->qos_sq_bmap, AIROHA_NUM_QOS_CHANNELS)
  		airoha_tc_remove_htb_queue(netdev, q);
  
@@ -474,7 +474,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	return 0;
  }
  
-@@ -3129,24 +3311,33 @@ static int airoha_tc_get_htb_get_leaf_qu
+@@ -3126,24 +3308,33 @@ static int airoha_tc_get_htb_get_leaf_qu
  	return 0;
  }
  
@@ -515,7 +515,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	default:
  		return -EOPNOTSUPP;
  	}
-@@ -3248,8 +3439,8 @@ static int airoha_alloc_gdm_device(struc
+@@ -3245,8 +3436,8 @@ static int airoha_alloc_gdm_device(struc
  {
  	struct net_device *netdev;
  	struct airoha_gdm_dev *dev;
@@ -525,7 +525,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	netdev = devm_alloc_etherdev_mqs(eth->dev, sizeof(*dev),
  					 AIROHA_NUM_NETDEV_TX_RINGS,
-@@ -3300,6 +3491,8 @@ static int airoha_alloc_gdm_device(struc
+@@ -3297,6 +3488,8 @@ static int airoha_alloc_gdm_device(struc
  	netdev->dev.of_node = of_node_get(np);
  	dev = netdev_priv(netdev);
  	u64_stats_init(&dev->stats.syncp);
