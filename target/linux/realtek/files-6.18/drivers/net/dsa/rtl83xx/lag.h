@@ -22,8 +22,6 @@ int otto_lag_port_join(struct dsa_switch *ds, int port, struct dsa_lag lag,
 		       struct netlink_ext_ack *extack);
 int otto_lag_port_leave(struct dsa_switch *ds, int port, struct dsa_lag lag);
 
-int otto_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
-int otto_lag_del(struct dsa_switch *ds, int group, int port);
 int otto_lag_93xx_set_distribution_algorithm(struct otto_dsa_priv *priv,
 					     int group, int algoidx, u32 algomsk);
 int otto_lag_83xx_setup_algomask(struct otto_dsa_priv *priv, int group,

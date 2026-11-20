@@ -51,7 +51,6 @@ int otto_l2_find_cam_entry(struct otto_dsa_priv *priv, u64 seed,
 u64 otto_l2_838x_hash_seed(u64 mac, u32 vid);
 u32 otto_l2_838x_hash_key(struct otto_dsa_priv *priv, u64 seed);
 int otto_l2_838x_port_new_salrn(int p);
-int otto_l2_838x_port_new_sa_fwd(int p);
 u64 otto_l2_838x_read_entry_using_hash(u32 hash, u32 pos, struct otto_l2_entry *e);
 void otto_l2_838x_write_entry_using_hash(struct otto_dsa_priv *priv,
 					 u32 hash, u32 pos, struct otto_l2_entry *e);
@@ -72,7 +71,6 @@ int otto_l2_838x_set_ageing_time(struct otto_dsa_priv *priv, unsigned long msec)
 u64 otto_l2_839x_hash_seed(u64 mac, u32 vid);
 u32 otto_l2_839x_hash_key(struct otto_dsa_priv *priv, u64 seed);
 int otto_l2_839x_port_new_salrn(int p);
-int otto_l2_839x_port_new_sa_fwd(int p);
 u64 otto_l2_839x_read_entry_using_hash(u32 hash, u32 pos, struct otto_l2_entry *e);
 void otto_l2_839x_write_entry_using_hash(struct otto_dsa_priv *priv,
 					 u32 hash, u32 pos, struct otto_l2_entry *e);
@@ -91,7 +89,6 @@ void otto_l2_839x_set_static_move_action(struct otto_dsa_priv *priv,
 int otto_l2_839x_fast_age(struct otto_dsa_priv *priv, int port, int vid);
 int otto_l2_839x_set_ageing_time(struct otto_dsa_priv *priv, unsigned long msec);
 int otto_l2_930x_port_new_salrn(int p);
-int otto_l2_930x_port_new_sa_fwd(int p);
 void otto_l2_930x_learning_setup(struct otto_dsa_priv *priv);
 void otto_l2_930x_enable_learning(struct otto_dsa_priv *priv, int port, bool enable);
 void otto_l2_930x_set_port_new_sa_trap(struct otto_dsa_priv *priv, int port, bool trap);
@@ -109,7 +106,6 @@ void otto_l2_930x_write_mcast_pmask(int idx, u64 portmask);
 int otto_l2_930x_fast_age(struct otto_dsa_priv *priv, int port, int vid);
 int otto_l2_930x_set_ageing_time(struct otto_dsa_priv *priv, unsigned long msec);
 int otto_l2_931x_port_new_salrn(int p);
-int otto_l2_931x_port_new_sa_fwd(int p);
 u64 otto_l2_931x_hash_seed(u64 mac, u32 vid);
 u32 otto_l2_931x_hash_key(struct otto_dsa_priv *priv, u64 seed);
 u64 otto_l2_931x_read_entry_using_hash(u32 hash, u32 pos, struct otto_l2_entry *e);

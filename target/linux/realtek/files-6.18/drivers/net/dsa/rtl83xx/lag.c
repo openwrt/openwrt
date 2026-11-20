@@ -215,6 +215,74 @@ int otto_lag_port_change(struct dsa_switch *ds, int port)
 	return 0;
 }
 
+/* Caller must hold priv->reg_mutex */
+static int otto_lag_add(struct dsa_switch *ds, int group, int port,
+			struct netdev_lag_upper_info *info)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	int ret;
+	int i;
+
+	for (i = 0; i < priv->ds->num_lag_ids; i++) {
+		if (priv->lags_port_members[i] & BIT_ULL(port))
+			break;
+	}
+	if (i != priv->ds->num_lag_ids) {
+		pr_err("%s: Port %d already member of LAG %d.\n", __func__, port, i);
+		return -ENOSPC;
+	}
+
+	if (priv->r->lag_setup_algomask) {
+		ret = priv->r->lag_setup_algomask(priv, group, info);
+		if (ret)
+			return ret;
+	}
+
+	ret = priv->r->lag_set_port_members(priv, group,
+					    priv->lags_port_members[group] | BIT_ULL(port), info);
+	if (ret)
+		return ret;
+
+	pr_info("%s: Added port %d to LAG %d. Members now %016llx.\n",
+		__func__, port, group, priv->lags_port_members[group]);
+
+	return 0;
+}
+
+/* Caller must hold priv->reg_mutex */
+static int otto_lag_del(struct dsa_switch *ds, int group, int port)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+	int ret;
+
+	if (group >= priv->ds->num_lag_ids) {
+		pr_err("%s: LAG %d invalid.\n", __func__, group);
+		return -EINVAL;
+	}
+
+	if (!(priv->lags_port_members[group] & BIT_ULL(port))) {
+		pr_err("%s: Port %d not member of LAG %d.\n", __func__, port, group);
+		return -ENOSPC;
+	}
+
+	/* Don't touch hash mask bits, as only the port might be removed from
+	 * the LAG group. This means the lag group stays valid with existing
+	 * mask algo bits. If there are no lag members left, then
+	 * otto_lag_add will reconfigure hash mask when new LAG group is
+	 * created.
+	 */
+	ret = priv->r->lag_set_port_members(priv, group,
+					    priv->lags_port_members[group] & ~BIT_ULL(port),
+					    NULL);
+	if (ret)
+		return ret;
+
+	pr_info("%s: Removed port %d from LAG %d. Members now %016llx.\n",
+		__func__, port, group, priv->lags_port_members[group]);
+
+	return 0;
+}
+
 int otto_lag_port_join(struct dsa_switch *ds, int port, struct dsa_lag lag,
 		       struct netdev_lag_upper_info *info,
 		       struct netlink_ext_ack *extack)
@@ -295,73 +363,6 @@ int otto_lag_port_leave(struct dsa_switch *ds, int port, struct dsa_lag lag)
 out:
 	mutex_unlock(&priv->reg_mutex);
 	return err;
-}
-
-/* Caller must hold priv->reg_mutex */
-int otto_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-	int ret;
-	int i;
-
-	for (i = 0; i < priv->ds->num_lag_ids; i++) {
-		if (priv->lags_port_members[i] & BIT_ULL(port))
-			break;
-	}
-	if (i != priv->ds->num_lag_ids) {
-		pr_err("%s: Port %d already member of LAG %d.\n", __func__, port, i);
-		return -ENOSPC;
-	}
-
-	if (priv->r->lag_setup_algomask) {
-		ret = priv->r->lag_setup_algomask(priv, group, info);
-		if (ret)
-			return ret;
-	}
-
-	ret = priv->r->lag_set_port_members(priv, group,
-					    priv->lags_port_members[group] | BIT_ULL(port), info);
-	if (ret)
-		return ret;
-
-	pr_info("%s: Added port %d to LAG %d. Members now %016llx.\n",
-		__func__, port, group, priv->lags_port_members[group]);
-
-	return 0;
-}
-
-/* Caller must hold priv->reg_mutex */
-int otto_lag_del(struct dsa_switch *ds, int group, int port)
-{
-	struct otto_dsa_priv *priv = ds->priv;
-	int ret;
-
-	if (group >= priv->ds->num_lag_ids) {
-		pr_err("%s: LAG %d invalid.\n", __func__, group);
-		return -EINVAL;
-	}
-
-	if (!(priv->lags_port_members[group] & BIT_ULL(port))) {
-		pr_err("%s: Port %d not member of LAG %d.\n", __func__, port, group);
-		return -ENOSPC;
-	}
-
-	/* Don't touch hash mask bits, as only the port might be removed from
-	 * the LAG group. This means the lag group stays valid with existing
-	 * mask algo bits. If there are no lag members left, then
-	 * otto_lag_add will reconfigure hash mask when new LAG group is
-	 * created.
-	 */
-	ret = priv->r->lag_set_port_members(priv, group,
-					    priv->lags_port_members[group] & ~BIT_ULL(port),
-					    NULL);
-	if (ret)
-		return ret;
-
-	pr_info("%s: Removed port %d from LAG %d. Members now %016llx.\n",
-		__func__, port, group, priv->lags_port_members[group]);
-
-	return 0;
 }
 
 int otto_lag_93xx_set_distribution_algorithm(struct otto_dsa_priv *priv,

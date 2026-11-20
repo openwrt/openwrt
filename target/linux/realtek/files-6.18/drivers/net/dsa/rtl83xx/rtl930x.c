@@ -69,7 +69,7 @@
 /* get shift for given led in any set */
 #define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
 
-void rtldsa_930x_print_matrix(struct otto_dsa_priv *priv)
+static void rtldsa_930x_print_matrix(struct otto_dsa_priv *priv)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
 	u32 v;

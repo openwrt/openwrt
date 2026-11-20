@@ -93,10 +93,8 @@
 #define RTL931X_MAC_LINK_STS			(0x0EC0)
 
 struct dsa_switch;
-struct ethtool_keee;
 struct otto_dsa_priv;
 struct phylink_config;
-struct phylink_mac_ops;
 
 enum rtldsa_mac_link_state_source {
 	RTLDSA_MAC_LINK_STATE_SOURCE_PCS,

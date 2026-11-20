@@ -358,8 +358,6 @@ struct pie_rule {
 	bool bypass_ibc_sc;	/* Bypass Ingress Bandwidth Control and Storm Control */
 };
 
-struct otto_dsa_priv;
-
 struct rtldsa_config {
 	const struct dsa_switch_ops *switch_ops;
 	const struct phylink_mac_ops *phylink_mac_ops;
@@ -637,20 +635,8 @@ struct fdb_update_work {
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
 int rtl83xx_port_is_under(const struct net_device *dev, struct otto_dsa_priv *priv);
 
-/* RTL838x-specific */
-u32 rtl838x_hash(struct otto_dsa_priv *priv, u64 seed);
-void rtldsa_838x_print_matrix(struct otto_dsa_priv *priv);
-
-/* RTL839x-specific */
-u32 rtl839x_hash(struct otto_dsa_priv *priv, u64 seed);
-void rtldsa_839x_print_matrix(struct otto_dsa_priv *priv);
-
 /* RTL930x-specific */
 u32 otto_l2_930x_hash(struct otto_dsa_priv *priv, u64 seed);
-void rtldsa_930x_print_matrix(struct otto_dsa_priv *priv);
-
-/* RTL931x-specific */
-void rtldsa_931x_print_matrix(struct otto_dsa_priv *priv);
 
 /*
  * TODO: The following functions are currently not in use. So compiler will complain if

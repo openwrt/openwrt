@@ -226,7 +226,7 @@ int otto_l2_838x_port_new_salrn(int p)
 	return RTL838X_L2_PORT_NEW_SALRN(p);
 }
 
-int otto_l2_838x_port_new_sa_fwd(int p)
+static int otto_l2_838x_port_new_sa_fwd(int p)
 {
 	return RTL838X_L2_PORT_NEW_SA_FWD(p);
 }
@@ -569,7 +569,7 @@ int otto_l2_839x_port_new_salrn(int p)
 	return RTL839X_L2_PORT_NEW_SALRN(p);
 }
 
-int otto_l2_839x_port_new_sa_fwd(int p)
+static int otto_l2_839x_port_new_sa_fwd(int p)
 {
 	return RTL839X_L2_PORT_NEW_SA_FWD(p);
 }
@@ -871,7 +871,7 @@ int otto_l2_930x_port_new_salrn(int p)
 	return RTL930X_L2_PORT_SALRN(p);
 }
 
-int otto_l2_930x_port_new_sa_fwd(int p)
+static int otto_l2_930x_port_new_sa_fwd(int p)
 {
 	/* TODO: The definition of the fields changed, because of the master-cpu in a stack */
 	return RTL930X_L2_PORT_NEW_SA_FWD(p);
@@ -1317,7 +1317,7 @@ int otto_l2_931x_port_new_salrn(int p)
 	return RTL931X_L2_PORT_NEW_SALRN(p);
 }
 
-int otto_l2_931x_port_new_sa_fwd(int p)
+static int otto_l2_931x_port_new_sa_fwd(int p)
 {
 	return RTL931X_L2_PORT_NEW_SA_FWD(p);
 }

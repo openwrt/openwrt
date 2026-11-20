@@ -24,9 +24,6 @@
 #define RTL930X_STAT_PORT_RST			(0x3244)
 #define RTL931X_STAT_PORT_RST			(0x7ef8)
 #define RTL838X_STAT_CTRL			(0x3108)
-#define RTL839X_STAT_CTRL			(0x04cc)
-#define RTL930X_STAT_CTRL			(0x3248)
-#define RTL931X_STAT_CTRL			(0x5720)
 #define RTL930X_STAT_PRVTE_DROP_COUNTER0	(0xB5B8)
 
 /* This interval needs to be short enough to prevent an undetected counter
@@ -167,22 +164,13 @@ extern const struct otto_stats_mib_desc otto_stats_839x_mib_desc;
 extern const struct otto_stats_mib_desc otto_stats_930x_mib_desc;
 extern const struct otto_stats_mib_desc otto_stats_931x_mib_desc;
 
-struct otto_stats_drop_desc;
-
 extern const struct otto_stats_drop_desc otto_stats_838x_drop_desc;
 extern const struct otto_stats_drop_desc otto_stats_839x_drop_desc;
 extern const struct otto_stats_drop_desc otto_stats_930x_drop_desc;
 extern const struct otto_stats_drop_desc otto_stats_931x_drop_desc;
 
 struct dsa_switch;
-struct ethtool_eth_ctrl_stats;
-struct ethtool_eth_mac_stats;
-struct ethtool_eth_phy_stats;
-struct ethtool_pause_stats;
-struct ethtool_rmon_hist_range;
-struct ethtool_rmon_stats;
 struct otto_dsa_priv;
-struct rtnl_link_stats64;
 
 void otto_stats_init(struct otto_dsa_priv *priv);
 void otto_stats_init_counters(struct otto_dsa_priv *priv);

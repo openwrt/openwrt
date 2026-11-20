@@ -7,8 +7,6 @@
 #include <net/pkt_cls.h>
 
 struct dsa_switch;
-struct flow_action_entry;
-struct flow_cls_offload;
 struct otto_dsa_priv;
 
 int otto_tc_init(struct otto_dsa_priv *priv);

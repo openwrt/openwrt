@@ -140,7 +140,7 @@
 #define ROUTE_MTU_ID 1
 #define FLOW_MTU_ID 2
 
-bool otto_l3_fasttrack(struct otto_dsa_priv *priv)
+static bool otto_l3_fasttrack(struct otto_dsa_priv *priv)
 {
 	return priv->l3_ctrl && READ_ONCE(priv->l3_ctrl->fasttrack);
 }
@@ -3566,7 +3566,16 @@ static bool otto_l3_route_has_srcs(struct otto_l3_route *r)
 	return !list_empty(&r->srcs) || r->srcs_incomplete;
 }
 
-static void otto_l3_resync_request(struct otto_l3_ctrl *ctrl);
+/* Probe holds the work disabled until the FIB notifier is in place, and a
+ * work that is disabled does not queue: the request is noted first, for probe
+ * to find once it has enabled the work.
+ */
+static void otto_l3_resync_request(struct otto_l3_ctrl *ctrl)
+{
+	WRITE_ONCE(ctrl->resync_wanted, true);
+	smp_mb(); /* pairs with the one after enable_delayed_work() in probe */
+	queue_delayed_work(system_long_wq, &ctrl->resync_work, 0);
+}
 
 /* A source-specific route matches only the packets from its source, and the
  * hardware matches on the destination alone, so the destination traps for as
@@ -4175,17 +4184,6 @@ static bool otto_l3_fib_table_ok(struct otto_l3_ctrl *ctrl, unsigned long event,
 		dev_warn_ratelimited(ctrl->dev, "routes in table %u are not offloaded\n", tb_id);
 
 	return false;
-}
-
-/* Probe holds the work disabled until the FIB notifier is in place, and a
- * work that is disabled does not queue: the request is noted first, for probe
- * to find once it has enabled the work.
- */
-static void otto_l3_resync_request(struct otto_l3_ctrl *ctrl)
-{
-	WRITE_ONCE(ctrl->resync_wanted, true);
-	smp_mb(); /* pairs with the one after enable_delayed_work() in probe */
-	queue_delayed_work(system_long_wq, &ctrl->resync_work, 0);
 }
 
 /* Called with rcu_read_lock() */
