@@ -70,6 +70,22 @@ define Device/friendlyarm_zeropi
 endef
 TARGET_DEVICES += friendlyarm_zeropi
 
+define Device/kaiserbaas_kba03042
+  $(call Device/FitImageGzip) # use gzip Flattened Image Tree (kernel +.dtb)
+  DEVICE_VENDOR := KaiserBaas
+  DEVICE_MODEL := Smart MediaPlayer KBA03042
+  DEVICE_PACKAGES:= kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi \
+		   kmod-rtl8xxxu rtl8188eu-firmware
+  SOC := sun7i-a20
+  DEVICE_DTS_DIR := $$(DTS_DIR)/allwinner
+  DEVICE_DTS := sun7i-a20-kaiserbaas-kba03042
+  # Overiding default SUNXI_DTS in ./Makfile
+  # so can use short name kaiserbaas_kba03042
+  # rather than kaiserbaas_kaiserbaas-kba03042
+  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(DEVICE_DTS)
+endef
+TARGET_DEVICES += kaiserbaas_kba03042
+
 define Device/lamobo_lamobo-r1
   $(call Device/FitImageGzip)
   DEVICE_VENDOR := Lamobo
