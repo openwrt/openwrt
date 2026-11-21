@@ -1,0 +1,253 @@
+From 1524d5c6316369b57ccafdff8915ec0b10e49da2 Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Sat, 21 Nov 2026 14:57:46 +0000
+Subject: [PATCH] net: bgmac: tag flow accelerator output for VLAN-filtering
+ bridge ports
+
+With VLAN filtering on for br-lan, TCP connections whose traffic to a
+bridged port went through the flow accelerator failed on an RT-N18U. In
+six runs in a row, downloads and uploads alike, none completed, while
+with filtering off both directions ran at 949 Mbit/s. The likely cause
+is the VLAN the switch gives the accelerator's output: it enters on
+port 8 untagged and gets port 8's default VID 0, while filtering moves
+br-lan's ports to VID 1. Port 8's RxDiscarded counter rose by 16 in
+each of two failed downloads but did not move in a failed upload.
+
+With filtering on, give the next hop of a flow towards a bridged port
+the VLAN that port sends untagged, as b53_fa_pvid() reports it, so that
+the accelerator's output enters port 8 tagged with it. b53_fa_pvid()
+reports a VLAN only when port 8 is a member of it too. DSA makes port 8
+a member of the VLANs the bridge itself is in, so a VLAN that is only
+switched between ports gets no flows.
+
+b53 keeps the CPU port a tagged member of its VLANs, so the frames of a
+filtering bridge port reach the accelerator tagged. A next hop either
+sends a frame untagged, removing the tag it came with, or adds one tag,
+so a flow that needs a tag stays in software while its ingress port has
+a VLAN, as a flow routed between two VLANs does. Without a tag of its
+own, a flow also stays in software when its egress port has no untagged
+VLAN. When the route adds its own tag towards a bridged port, as for a
+tagged VLAN on a trunk port, the flow is offloaded only while the port
+filters VLANs and both it and port 8 are members of that VLAN, which
+b53_fa_vlan_ok() reports. bgmac_fa_flow_allowed() makes the same checks
+for flows already in the accelerator and takes a flow out when its VLAN
+no longer fits, for example after filtering is turned off or the port
+leaves the VLAN.
+
+With this change and filtering on, the same six runs all completed in
+the accelerator at 949 Mbit/s, and port 8's RxDiscarded counter did not
+move during a download. Turning filtering on or off under an offloaded
+download slowed or stopped it for up to about 5 s before it ran in the
+accelerator again. With the software flowtable, the same change only
+slowed a download for a second or two. A download whose LAN port left
+VID 1 for a few seconds was back in the accelerator about a second after
+the port rejoined.
+
+A trunk port in a tagged VLAN, routed through an upper of br-lan,
+carried a download and an upload in the accelerator at 939 Mbit/s. When
+the port left the VLAN under a download, the flow left the accelerator
+within 3 s and the port got no more of it. A UDP download was back in
+the accelerator within a second of the port rejoining. On the same
+bridge without filtering, the download stayed in software at about 540
+Mbit/s. Without this change such a flow is offloaded, and b53_fa_vlan()
+then writes that VLAN into the switch with only the egress port and port
+8 as members, while other ports of the bridge can carry it as well. A
+standalone port is not in a bridge, so flows over an upper of a
+standalone port are still offloaded with filtering off. With filtering
+on, DSA makes such a port and port 8 members of the upper's VLAN, and
+the same membership check applies to them; b53_fa_vlan_ok() covers both
+cases. b53 keeps both in the VLAN for the accelerator while a next hop
+uses it, so without the check a flow stays in the accelerator after its
+upper is gone: on an RT-N18U with filtering on, the accelerator went on
+sending a download to the host behind a deleted upper until the download
+ended. With the check, the flow left the accelerator within 3 s.
+
+Two limits remain. A port that is an untagged member of two VLANs gets
+the tag of its PVID for both, so a flow routed to it through the other
+VLAN's interface leaves the accelerator in the PVID's VLAN. And when a
+port's PVID is changed by hand under a running flow, a flow towards it
+is taken out and, if port 8 is in the new VLAN, offloaded again with
+the new PVID: the flow rule of an untagged bridge VLAN carries no VLAN
+that would hold it to the old one.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c         | 41 ++++++++++++++++++++++++
+ drivers/net/ethernet/broadcom/bgmac-fa.c | 41 +++++++++++++++++++++++-
+ include/linux/dsa/b53.h                  | 12 +++++++
+ 3 files changed, 93 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -3190,6 +3190,47 @@ int b53_fa_vlan(struct dsa_switch *ds, i
+ }
+ EXPORT_SYMBOL(b53_fa_vlan);
+ 
++int b53_fa_pvid(struct dsa_switch *ds, int port)
++{
++	struct b53_device *dev = ds->priv;
++	struct b53_vlan *vl;
++	u16 members, pvid;
++
++	if (ds->ops != &b53_switch_ops)
++		return -EOPNOTSUPP;
++	if (!READ_ONCE(dev->vlan_filtering))
++		return 0;
++
++	pvid = READ_ONCE(dev->ports[port].pvid);
++	if (!pvid)
++		return READ_ONCE(dsa_to_port(ds, port)->bridge) ? -ENOENT : 0;
++
++	vl = &dev->vlans[pvid];
++	members = READ_ONCE(vl->members);
++	if (!(members & BIT(B53_CPU_PORT)) ||
++	    !(members & READ_ONCE(vl->untag) & BIT(port)))
++		return -ENOENT;
++
++	return pvid;
++}
++EXPORT_SYMBOL(b53_fa_pvid);
++
++bool b53_fa_vlan_ok(struct dsa_switch *ds, int port, u16 vid)
++{
++	struct b53_device *dev = ds->priv;
++	u16 mask = BIT(port) | BIT(B53_CPU_PORT);
++
++	if (ds->ops != &b53_switch_ops)
++		return false;
++	if (!READ_ONCE(dev->vlan_filtering))
++		return !READ_ONCE(dsa_to_port(ds, port)->bridge);
++	if (!vid || vid >= dev->num_vlans)
++		return false;
++
++	return (READ_ONCE(dev->vlans[vid].members) & mask) == mask;
++}
++EXPORT_SYMBOL(b53_fa_vlan_ok);
++
+ static const struct b53_arl_ops b53_arl_ops_25 = {
+ 	.arl_read_entry = b53_arl_read_entry_25,
+ 	.arl_write_entry = b53_arl_write_entry_25,
+--- a/drivers/net/ethernet/broadcom/bgmac-fa.c
++++ b/drivers/net/ethernet/broadcom/bgmac-fa.c
+@@ -194,6 +194,7 @@ struct bgmac_fa_flow {
+ 	struct bgmac_fa_block *block;
+ 	struct bgmac_fa_tuple t;
+ 	struct dsa_port *in;		/* ingress port */
++	bool pvid;
+ 	int idx, next_hop, pool;	/* IPv6: entries idx and idx + 1 */
+ 	u32 hits;			/* last read from the entry */
+ 	u64 lastused;
+@@ -613,6 +614,7 @@ struct bgmac_fa_rule {
+ 	__be16 nat_port;
+ 	bool snat, dnat;		/* neither: routing only */
+ 	u16 push_vid;			/* VLAN tag to add */
++	bool pvid;
+ 	struct dsa_port *in, *out;
+ };
+ 
+@@ -635,6 +637,25 @@ static struct dsa_port *bgmac_fa_user_po
+ 	return NULL;
+ }
+ 
++static int bgmac_fa_pvid(const struct dsa_port *in, const struct dsa_port *out)
++{
++	int vid = b53_fa_pvid(out->ds, out->index);
++
++	if (vid > 0 && b53_fa_pvid(in->ds, in->index))
++		return -EOPNOTSUPP;
++
++	return vid;
++}
++
++static bool bgmac_fa_push_ok(const struct dsa_port *in,
++			     const struct dsa_port *out, u16 vid)
++{
++	if (b53_fa_pvid(in->ds, in->index))
++		return false;
++
++	return b53_fa_vlan_ok(out->ds, out->index, vid);
++}
++
+ static void bgmac_fa_mangle_eth(const struct flow_action_entry *act, u8 *eth)
+ {
+ 	void *dest = eth + act->mangle.offset;
+@@ -659,7 +680,7 @@ static int bgmac_fa_parse(struct bgmac *
+ 	bool snat_port = false, dnat_port = false;
+ 	bool vlan = false, pop = false;
+ 	struct net_device *out = NULL;
+-	int i;
++	int i, vid;
+ 
+ 	memset(r, 0, sizeof(*r));
+ 
+@@ -838,6 +859,16 @@ static int bgmac_fa_parse(struct bgmac *
+ 	if (!r->out)
+ 		return -EOPNOTSUPP;
+ 
++	if (r->push_vid && !bgmac_fa_push_ok(r->in, r->out, r->push_vid))
++		return -EOPNOTSUPP;
++	if (!r->push_vid) {
++		vid = bgmac_fa_pvid(r->in, r->out);
++		if (vid < 0 || (vid && pop))
++			return -EOPNOTSUPP;
++		r->push_vid = vid;
++		r->pvid = true;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -959,10 +990,17 @@ static void bgmac_fa_flow_remove(struct
+ static bool bgmac_fa_flow_allowed(struct bgmac *bgmac,
+ 				  struct bgmac_fa_flow *flow)
+ {
++	struct bgmac_fa_next_hop *nh = &bgmac->fa->next_hop[flow->next_hop];
++
+ 	if ((flow->t.v6 || flow->t.proto == IPPROTO_TCP) &&
+ 	    !b53_fa_trap_active(flow->in->ds, flow->in->index))
+ 		return false;
+ 
++	if (flow->pvid && bgmac_fa_pvid(flow->in, nh->dp) != nh->vid)
++		return false;
++	if (!flow->pvid && !bgmac_fa_push_ok(flow->in, nh->dp, nh->vid))
++		return false;
++
+ 	return true;
+ }
+ 
+@@ -1003,6 +1041,7 @@ static int bgmac_fa_flow_add(struct bgma
+ 	flow->block = block;
+ 	flow->t = r.t;
+ 	flow->in = r.in;
++	flow->pvid = r.pvid;
+ 	flow->idx = base + i;
+ 	flow->lastused = jiffies;
+ 
+--- a/include/linux/dsa/b53.h
++++ b/include/linux/dsa/b53.h
+@@ -16,6 +16,8 @@ struct dsa_switch;
+ #if IS_REACHABLE(CONFIG_B53)
+ bool b53_fa_trap_active(struct dsa_switch *ds, int port);
+ int b53_fa_vlan(struct dsa_switch *ds, int port, u16 vid, bool add);
++int b53_fa_pvid(struct dsa_switch *ds, int port);
++bool b53_fa_vlan_ok(struct dsa_switch *ds, int port, u16 vid);
+ #else
+ static inline bool b53_fa_trap_active(struct dsa_switch *ds, int port)
+ {
+@@ -27,6 +29,16 @@ static inline int b53_fa_vlan(struct dsa
+ {
+ 	return -EOPNOTSUPP;
+ }
++
++static inline int b53_fa_pvid(struct dsa_switch *ds, int port)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline bool b53_fa_vlan_ok(struct dsa_switch *ds, int port, u16 vid)
++{
++	return false;
++}
+ #endif
+ 
+ #endif /* _LINUX_DSA_B53_H */
