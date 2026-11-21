@@ -1,0 +1,203 @@
+From 67705c0c3cf1da7d61b2b203148fd0eeda0d13d8 Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Wed, 30 Sep 2026 21:37:00 +0200
+Subject: [PATCH] dt-bindings: net: qcom,ipq9574-ppe: Add IPQ5332 support
+
+IPQ5332 uses the same PPE architecture as IPQ9574, but has two front
+panel ports instead of six and four interconnect paths instead of seven.
+
+Add the qcom,ipq5332-ppe compatible and constrain the interconnects
+and port nodes per SoC. Apply the port-count limit to both container
+and port naming forms.
+
+IPQ5332 also needs the GCC IM sleep clock. Keep the shared EDMA sys
+and apb resets, and constrain the PPE clock counts per SoC.
+
+IPQ5332 EDMA has 24 TX/completion rings, 16 RX descriptor rings and eight
+RX fill rings, so the full EDMA interrupt set comprises 49 interrupts.
+Constrain the interrupt counts and ring names per SoC as well.
+
+The ring limits come from QSDK 14.0.1595.1665,
+qca-nss-dp hal/soc_ops/ipq53xx/nss_ipq53xx.h.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+
+--- a/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml
++++ b/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml
+@@ -74,6 +74,10 @@ description: |
+     +------->|             QCA8075 PHY             | | PHY4  | | PHY5  |
+      (clock) +-------------------------------------+ +-------+ +-------+
+ 
++  IPQ5332 uses the same PPE architecture with two front panel ports and two
++  UNIPHY (PCS) instances. Its Ethernet datapath has a CPU port (port0) and
++  two GMAC/XGMAC ports (port1 and port2).
++
+   The IPQ5424 PPE reuses the same switch core, but wires up only 3
+   front panel ports (GMAC0-2) and the single EDMA FIFO interface; it
+   has no EIP FIFO and no ports 4-6.
+@@ -81,6 +85,7 @@ description: |
+ properties:
+   compatible:
+     enum:
++      - qcom,ipq5332-ppe
+       - qcom,ipq5424-ppe
+       - qcom,ipq9574-ppe
+ 
+@@ -88,18 +93,22 @@ properties:
+     maxItems: 1
+ 
+   clocks:
++    minItems: 4
+     items:
+       - description: PPE core clock
+       - description: PPE APB (Advanced Peripheral Bus) clock
+       - description: PPE IPE (Ingress Process Engine) clock
+       - description: PPE BM, QM and scheduler clock
++      - description: PPE sleep clock from GCC
+ 
+   clock-names:
++    minItems: 4
+     items:
+       - const: ppe
+       - const: apb
+       - const: ipe
+       - const: btq
++      - const: sleep
+ 
+   resets:
+     maxItems: 1
+@@ -110,15 +119,15 @@ properties:
+     description: PPE switch miscellaneous interrupt
+ 
+   interconnects:
+-    minItems: 5
++    minItems: 4
+     maxItems: 7
+     description:
+-      The number of interconnect paths depends on compatible, 5 paths for
+-      qcom,ipq5424-ppe and 7 paths for qcom,ipq9574-ppe, enumerated in the
+-      allOf conditionals below.
++      The number of interconnect paths depends on compatible, 4 paths for
++      qcom,ipq5332-ppe, 5 paths for qcom,ipq5424-ppe and 7 paths for
++      qcom,ipq9574-ppe, enumerated in the allOf conditionals below.
+ 
+   interconnect-names:
+-    minItems: 5
++    minItems: 4
+     maxItems: 7
+ 
+   ethernet-dma:
+@@ -127,7 +136,9 @@ properties:
+     description:
+       EDMA (Ethernet DMA) is used to transmit packets between PPE and ARM
+       host CPU. There are 32 TX descriptor rings, 32 TX completion rings,
+-      24 RX descriptor rings and 8 RX fill rings supported.
++      24 RX descriptor rings and 8 RX fill rings supported on IPQ9574 and
++      IPQ5424. IPQ5332 supports 24 TX descriptor rings, 24 TX completion
++      rings, 16 RX descriptor rings and 8 RX fill rings.
+ 
+     properties:
+       clocks:
+@@ -151,11 +162,11 @@ properties:
+           - const: apb
+ 
+       interrupts:
+-        minItems: 65
++        minItems: 49
+         maxItems: 65
+ 
+       interrupt-names:
+-        minItems: 65
++        minItems: 49
+         maxItems: 65
+         items:
+           oneOf:
+@@ -168,6 +179,7 @@ properties:
+           Interrupts "rxfill_[0-7]" are the Ethernet DMA RX fill ring interrupts.
+           Interrupts "rxdesc_[0-23]" are the Ethernet DMA RX Descriptor ring interrupts.
+           Interrupt "misc" is the Ethernet DMA miscellaneous error interrupt.
++          On IPQ5332, only "txcmpl_[0-23]" and "rxdesc_[0-15]" are supported.
+ 
+     required:
+       - clocks
+@@ -237,9 +249,62 @@ allOf:
+       properties:
+         compatible:
+           contains:
++            const: qcom,ipq5332-ppe
++    then:
++      properties:
++        clocks:
++          minItems: 5
++        clock-names:
++          minItems: 5
++        interconnects:
++          items:
++            - description: Bus interconnect path leading to PPE switch core function
++            - description: Bus interconnect path leading to PPE register access
++            - description: Bus interconnect path leading to QoS generation
++            - description: Bus interconnect path leading to timeout reference
++        interconnect-names:
++          items:
++            - const: ppe
++            - const: ppe_cfg
++            - const: qos_gen
++            - const: timeout_ref
++        ethernet-dma:
++          properties:
++            interrupts:
++              maxItems: 49
++            interrupt-names:
++              maxItems: 49
++              items:
++                oneOf:
++                  - pattern: '^txcmpl_(1?[0-9]|2[0-3])$'
++                  - pattern: '^rxfill_[0-7]$'
++                  - pattern: '^rxdesc_([0-9]|1[0-5])$'
++                  - const: misc
++      patternProperties:
++        "^(ethernet-)?ports$":
++          patternProperties:
++            "^(ethernet-)?port@[0-9a-f]+$":
++              properties:
++                reg:
++                  minimum: 1
++                  maximum: 2
++  - if:
++      properties:
++        compatible:
++          contains:
+             const: qcom,ipq9574-ppe
+     then:
+       properties:
++        clocks:
++          maxItems: 4
++        clock-names:
++          maxItems: 4
++        ethernet-dma:
++          properties:
++            interrupts:
++              minItems: 65
++            interrupt-names:
++              minItems: 65
+         interconnects:
+           items:
+             - description: Bus interconnect path leading to PPE switch core function
+@@ -266,6 +331,16 @@ allOf:
+             const: qcom,ipq5424-ppe
+     then:
+       properties:
++        clocks:
++          maxItems: 4
++        clock-names:
++          maxItems: 4
++        ethernet-dma:
++          properties:
++            interrupts:
++              minItems: 65
++            interrupt-names:
++              minItems: 65
+         interconnects:
+           items:
+             - description: Bus interconnect path leading to PPE switch core function
