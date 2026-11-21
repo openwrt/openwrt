@@ -71,7 +71,9 @@ ipq40xx_setup_interfaces()
 	mikrotik,sxtsq-5-ac|\
 	netgear,ex6100v2|\
 	netgear,ex6150v2|\
-	zte,mf282plus)
+	zte,mf282plus|\
+	zyxel,nwa1123acv3|\
+	zyxel,wac500)
 		ucidef_set_interface_lan "lan"
 		;;
 	aruba,ap-303h|\
@@ -154,6 +156,9 @@ ipq40xx_setup_interfaces()
 	zte,mf287pro)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
+		;;
+	zyxel,wac500h)
+		ucidef_set_interface_lan "uplink lan1 lan2"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
