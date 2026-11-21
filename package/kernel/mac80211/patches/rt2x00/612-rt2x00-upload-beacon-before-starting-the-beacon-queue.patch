@@ -1,0 +1,42 @@
+From 79c7bca4f487d04062cc7a8f05d9cf90e6adeb16 Mon Sep 17 00:00:00 2001
+From: Ho Jie Feng <hjf3108@gmail.com>
+Date: Sat, 21 Nov 2026 16:16:33 +0800
+Subject: [PATCH] wifi: rt2x00: upload beacon before starting the beacon queue
+
+On PCI and SoC devices, rt2x00mac_bss_info_changed() starts the beacon
+queue without uploading a beacon, and leaves that to the PRE_TBTT
+interrupt. But the TSF is 0 when the queue starts, so the first TBTT is
+due at once. With no beacon enabled, BCN_OFFSET0 is 0, and rt2800 sends
+a beacon from shared memory 0x4000, the start of the pairwise key table.
+
+On the RT3883 this wedges the baseband until the BBP is reset: the radio
+neither receives nor transmits, so the AP never comes up.
+
+Upload the beacon of the first beaconing interface before starting the
+queue, as is done on USB devices. The (PRE)TBTT tasklets are not running
+yet, so this cannot race with them.
+
+Tested on an ASUS RT-N56U (RT3883).
+
+Fixes: 1dae8d342e84 ("rt2x00: Limit beacon updates in bss_info_changed to USB devices")
+Fixes: ba08910e04e0 ("rt2x00: change beaconing setup on RT2800")
+Signed-off-by: Ho Jie Feng <hjf3108@gmail.com>
+---
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
+@@ -630,10 +630,12 @@ void rt2x00mac_bss_info_changed(struct ieee80211_hw *hw,
+ 			rt2x00dev->intf_beaconing++;
+ 			intf->enable_beacon = true;
+ 			/*
+-			 * Upload beacon to the H/W. This is only required on
+-			 * USB devices. PCI devices fetch beacons periodically.
++			 * Upload beacon to the H/W. This is required on USB
++			 * devices. PCI devices fetch beacons periodically, but
++			 * the first TBTT can come before the first fetch.
+ 			 */
+-			if (rt2x00_is_usb(rt2x00dev))
++			if (rt2x00_is_usb(rt2x00dev) ||
++			    rt2x00dev->intf_beaconing == 1)
+ 				rt2x00queue_update_beacon(rt2x00dev, vif);
+ 
+ 			if (rt2x00dev->intf_beaconing == 1) {
