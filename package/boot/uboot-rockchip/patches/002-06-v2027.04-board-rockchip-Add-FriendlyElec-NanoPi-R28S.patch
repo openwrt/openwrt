@@ -1,0 +1,114 @@
+From adf01f2d2ddca1be5a0d6431d54cd907df7976e2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E5=AE=89=E5=AE=B9?= <HystericalDragons@proton.me>
+Date: Tue, 3 Nov 2026 18:37:11 +0800
+Subject: [PATCH] board: rockchip: Add FriendlyElec NanoPi R28S
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The FriendlyElec NanoPi R28S is a dual gigabit Ethernet router board
+based on the Rockchip RK3528 SoC. It shares most of its design with the
+NanoPi Zero2.
+
+Specifications:
+- SoC: Rockchip RK3528, quad-core Cortex-A53 @ 2.0 GHz
+- RAM: 1 GB LPDDR4
+- Storage: microSD slot, optional onboard eMMC
+- Ethernet: 1x GbE (GMAC1 + Realtek RTL8211F),
+            1x GbE (Realtek RTL8111H over PCIe)
+- WiFi: AICSemi AIC8800D80 over SDIO
+- USB: 1x USB 2.0 Type-C (power input and OTG)
+- UART: USB Type-C debug console (onboard WCH CH340E), 1500000 8N1
+- Buttons: user (GPIO), MaskROM (SARADC)
+
+Add the board to the NanoPi RK3528 board target, which selects the
+R28S FDT based on its HW_ID, and enable CONFIG_BUTTON_GPIO for the user
+button.
+
+Features tested on NanoPi R28S:
+- SD-card boot
+- Ethernet
+
+Signed-off-by: 安容 <HystericalDragons@proton.me>
+Reviewed-by: Quentin Schulz <quentin.schulz@cherry.de>
+Link: https://patch.msgid.link/20261103-nanopi-r28s-v3-6-ae8664fd168f@proton.me
+Signed-off-by: Quentin Schulz <u-boot@0leil.net>
+(cherry picked from commit 28d923fc96438291c20658cde27452ceea124870)
+---
+ arch/arm/dts/rk3528-nanopi-r28s-u-boot.dtsi      | 3 +++
+ arch/arm/mach-rockchip/rk3528/Kconfig            | 5 +++--
+ board/friendlyelec/nanopi-rk3528/MAINTAINERS     | 2 ++
+ board/friendlyelec/nanopi-rk3528/nanopi-rk3528.c | 1 +
+ configs/nanopi-zero2-rk3528_defconfig            | 2 ++
+ doc/board/rockchip/rockchip.rst                  | 2 +-
+ 6 files changed, 12 insertions(+), 3 deletions(-)
+ create mode 100644 arch/arm/dts/rk3528-nanopi-r28s-u-boot.dtsi
+
+--- /dev/null
++++ b/arch/arm/dts/rk3528-nanopi-r28s-u-boot.dtsi
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++
++#include "rk3528-nanopi-u-boot.dtsi"
+--- a/arch/arm/mach-rockchip/rk3528/Kconfig
++++ b/arch/arm/mach-rockchip/rk3528/Kconfig
+@@ -1,9 +1,10 @@
+ if ROCKCHIP_RK3528
+ 
+ config TARGET_NANOPI_RK3528
+-	bool "FriendlyElec NanoPi Zero2"
++	bool "FriendlyElec NanoPi R28S/Zero2"
+ 	help
+-	  FriendlyElec NanoPi Zero2 single board computer with a RK3528A SoC.
++	  FriendlyElec NanoPi R28S/Zero2 single board computers with a RK3528A
++	  SoC.
+ 
+ config TARGET_RADXA_ROCK_2_RK3528
+ 	bool "Radxa ROCK 2A/2F"
+--- a/board/friendlyelec/nanopi-rk3528/MAINTAINERS
++++ b/board/friendlyelec/nanopi-rk3528/MAINTAINERS
+@@ -1,7 +1,9 @@
+ NANOPI-RK3528
+ M:	Jonas Karlman <jonas@kwiboo.se>
++M:	安容 <HystericalDragons@proton.me>
+ S:	Maintained
+ F:	board/friendlyelec/nanopi-rk3528
+ F:	arch/arm/dts/rk3528-nanopi-u-boot.dtsi
++F:	arch/arm/dts/rk3528-nanopi-r28s*
+ F:	arch/arm/dts/rk3528-nanopi-zero2*
+ F:	configs/nanopi-zero2-rk3528_defconfig
+--- a/board/friendlyelec/nanopi-rk3528/nanopi-rk3528.c
++++ b/board/friendlyelec/nanopi-rk3528/nanopi-rk3528.c
+@@ -16,6 +16,7 @@ struct board_model {
+ /* HW_ID buckets from the FriendlyElec vendor U-Boot hwrev.c */
+ static const struct board_model board_models[] = {
+ 	{  82, 150, "rockchip/rk3528-nanopi-zero2.dtb" },
++	{ 212, 274, "rockchip/rk3528-nanopi-r28s.dtb" },
+ };
+ 
+ static const struct board_model *get_board_model(void)
+--- a/configs/nanopi-zero2-rk3528_defconfig
++++ b/configs/nanopi-zero2-rk3528_defconfig
+@@ -28,9 +28,11 @@ CONFIG_CMD_USB_MASS_STORAGE=y
+ CONFIG_CMD_RNG=y
+ CONFIG_CMD_REGULATOR=y
+ # CONFIG_SPL_DOS_PARTITION is not set
++CONFIG_OF_LIST="rockchip/rk3528-nanopi-zero2 rockchip/rk3528-nanopi-r28s"
+ CONFIG_OF_SPL_REMOVE_PROPS="clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
+ CONFIG_BUTTON=y
+ CONFIG_BUTTON_ADC=y
++CONFIG_BUTTON_GPIO=y
+ # CONFIG_USB_FUNCTION_FASTBOOT is not set
+ CONFIG_ROCKCHIP_GPIO=y
+ CONFIG_LED=y
+--- a/doc/board/rockchip/rockchip.rst
++++ b/doc/board/rockchip/rockchip.rst
+@@ -103,7 +103,7 @@ List of mainline supported Rockchip boar
+ 
+ * rk3528
+      - ArmSoM Sige1 (sige1-rk3528)
+-     - FriendlyElec NanoPi Zero2 (nanopi-zero2-rk3528)
++     - FriendlyElec NanoPi R28S/Zero2 (nanopi-zero2-rk3528)
+      - Generic RK3528 (generic-rk3528)
+      - Radxa E20C (radxa-e20c-rk3528)
+      - Radxa ROCK 2A/2F (rock-2-rk3528)

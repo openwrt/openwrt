@@ -1,0 +1,58 @@
+From 05b25e457f7fd2a843124fb99c7e921d92ab902a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E5=AE=89=E5=AE=B9?= <HystericalDragons@proton.me>
+Date: Tue, 3 Nov 2026 18:37:06 +0800
+Subject: [PATCH] dt-bindings: arm: rockchip: Add FriendlyElec NanoPi R28S
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The NanoPi R28S is a dual gigabit Ethernet router board based on the
+Rockchip RK3528 SoC. It shares its base devicetree with the NanoPi
+Zero2, so fold both boards into a single RK3528 series entry, which
+further RK3528 based NanoPi boards can join without renaming it.
+
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: 安容 <HystericalDragons@proton.me>
+Link: https://patch.msgid.link/20260919-r28s-upstream-v7-1-e80a6f8ef521@proton.me
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+[ upstream commit: bdcf29a379afecc02c3e99c0d1745363ad7a7407 ]
+
+(cherry picked from commit e9eafc0ca521c8d12e1a65b43f899e336ef28eba)
+
+Reviewed-by: Quentin Schulz <quentin.schulz@cherry.de>
+Link: https://patch.msgid.link/20261103-nanopi-r28s-v3-1-ae8664fd168f@proton.me
+Signed-off-by: Quentin Schulz <u-boot@0leil.net>
+(cherry picked from commit 5949dc67a319cf7330312cf8a494e474a841efc8)
+---
+ dts/upstream/Bindings/arm/rockchip.yaml | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+--- a/dts/upstream/Bindings/arm/rockchip.yaml
++++ b/dts/upstream/Bindings/arm/rockchip.yaml
+@@ -315,6 +315,13 @@ properties:
+               - friendlyarm,nanopi-r2s-plus
+           - const: rockchip,rk3328
+ 
++      - description: FriendlyElec NanoPi RK3528 series boards
++        items:
++          - enum:
++              - friendlyarm,nanopi-r28s
++              - friendlyarm,nanopi-zero2
++          - const: rockchip,rk3528
++
+       - description: FriendlyElec NanoPi R3S
+         items:
+           - const: friendlyarm,nanopi-r3s
+@@ -356,11 +363,6 @@ properties:
+           - const: friendlyarm,nanopi-r76s
+           - const: rockchip,rk3576
+ 
+-      - description: FriendlyElec NanoPi Zero2
+-        items:
+-          - const: friendlyarm,nanopi-zero2
+-          - const: rockchip,rk3528
+-
+       - description: FriendlyElec NanoPC T6 series boards
+         items:
+           - enum:
