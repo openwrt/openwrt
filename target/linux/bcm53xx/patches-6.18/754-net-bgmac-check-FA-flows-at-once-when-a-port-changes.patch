@@ -1,0 +1,141 @@
+From 2a3cdba89c4a73426bf767542c35bd27016b204d Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Sat, 21 Nov 2026 14:57:47 +0000
+Subject: [PATCH] net: bgmac: check FA flows at once when a port changes
+
+bgmac_fa_flow_allowed() takes a flow out of the flow accelerator once
+the conditions it was offloaded under no longer hold: the traps, its
+port's map, VLANs and conduit, and hw-tc-offload on the conduit. It runs
+when the flowtable asks for the counters of a flow, which is every 3 to
+4 s while the flow runs. Until then a flow to a port that has just
+joined a bridge still goes out by the port map, and one to a port that
+has just left a bridge by the address table, on a port that does not
+learn.
+
+Register a netdevice notifier that queues a check of every flow when a
+user port of the conduit gains or loses an upper device (a bridge or an
+802.1Q upper) or moves to another conduit, when the conduit's features
+change, and when the conduit of the traps goes up or down. The work
+takes RTNL, so it sees the change only after DSA has applied it. The
+stats poll stays for changes that come without such an event, as of a
+bridge VLAN.
+
+Measured on an RT-N18U under an offloaded download. After its port
+joined a bridge, the accelerator held the flow for 1.65 to 2.41 s
+without this change and for 0.06 to 0.07 s with it. After its port left
+a bridge, the flowtable's own cleanup, which runs once a second, took
+the flow down within 0.35 to 0.76 s, and this change within 0.09 to
+0.11 s.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ drivers/net/ethernet/broadcom/bgmac-fa.c | 72 ++++++++++++++++++++++--
+ 1 file changed, 68 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac-fa.c
++++ b/drivers/net/ethernet/broadcom/bgmac-fa.c
+@@ -217,6 +217,10 @@ struct bgmac_fa {
+ 	struct bgmac_fa_next_hop next_hop[FA_NEXT_HOPS];
+ 	struct bgmac_fa_pool pool[FA_POOLS];
+ 	struct list_head block_cb_list;
++
++	struct bgmac *bgmac;
++	struct notifier_block netdev_nb;
++	struct work_struct check;	/* all flows, now */
+ };
+ 
+ static u32 fa_read(struct bgmac *bgmac, u16 reg)
+@@ -1151,10 +1155,9 @@ static int bgmac_fa_flow_stats(struct bg
+ 	if (!flow)
+ 		return -ENOENT;
+ 
+-	/* The traps go when their conduit goes down, and hw-tc-offload or a
+-	 * port's VLANs, bridge or conduit can change, without a word to
+-	 * this driver. The flowtable asks for the counters of a flow every
+-	 * few seconds: take the flow out here, it goes on in software.
++	/* A port's VLANs can change without a word to this driver, and the
++	 * flowtable asks for the counters of a flow every few seconds: take
++	 * the flow out here, it goes on in software.
+ 	 */
+ 	if (!bgmac_fa_flow_allowed(bgmac, flow)) {
+ 		bgmac_fa_flow_remove(bgmac, flow);
+@@ -1298,6 +1301,59 @@ static int bgmac_fa_setup_tc(struct bgma
+ 	return bgmac_fa_setup_block(bgmac, type_data);
+ }
+ 
++/* under RTNL, so DSA has applied the change that queued it */
++static void bgmac_fa_check_work(struct work_struct *work)
++{
++	struct bgmac_fa *fa = container_of(work, struct bgmac_fa, check);
++	struct bgmac *bgmac = fa->bgmac;
++	struct bgmac_fa_flow *flow;
++	struct hlist_node *tmp;
++	int bkt;
++
++	rtnl_lock();
++	bgmac_fa_lock(bgmac);
++	hash_for_each_safe(fa->flows, bkt, tmp, flow, node)
++		if (!bgmac_fa_flow_allowed(bgmac, flow))
++			bgmac_fa_flow_remove(bgmac, flow);
++	bgmac_fa_unlock(bgmac);
++	rtnl_unlock();
++}
++
++static int bgmac_fa_netdev_event(struct notifier_block *nb,
++				 unsigned long event, void *ptr)
++{
++	struct bgmac_fa *fa = container_of(nb, struct bgmac_fa, netdev_nb);
++	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
++	struct bgmac *bgmac = fa->bgmac;
++
++	switch (event) {
++	case NETDEV_CHANGEUPPER:
++		if (dev == bgmac->net_dev || bgmac_fa_user_port(bgmac, dev))
++			schedule_work(&fa->check);
++		break;
++	case NETDEV_FEAT_CHANGE:
++		if (dev == bgmac->net_dev)
++			schedule_work(&fa->check);
++		break;
++	case NETDEV_UP:
++	case NETDEV_DOWN:
++		/* the conduit of the traps */
++		if (dev != bgmac->net_dev && netdev_uses_dsa(dev))
++			schedule_work(&fa->check);
++		break;
++	}
++
++	return NOTIFY_DONE;
++}
++
++static void bgmac_fa_netdev_release(void *data)
++{
++	struct bgmac_fa *fa = data;
++
++	unregister_netdevice_notifier(&fa->netdev_nb);
++	cancel_work_sync(&fa->check);
++}
++
+ /* ---------- open / stop ---------- */
+ 
+ static bool bgmac_fa_wanted(struct bgmac *bgmac)
+@@ -1383,11 +1439,19 @@ void bgmac_fa_probe(struct bgmac *bgmac)
+ 	mutex_init(&fa->lock);
+ 	hash_init(fa->flows);
+ 	INIT_LIST_HEAD(&fa->block_cb_list);
++	fa->bgmac = bgmac;
++	INIT_WORK(&fa->check, bgmac_fa_check_work);
+ 
+ 	bgmac->fa = fa;
+ 	bgmac->fa_open = bgmac_fa_open;
+ 	bgmac->fa_stop = bgmac_fa_stop;
+ 	bgmac->fa_setup_tc = bgmac_fa_setup_tc;
++
++	fa->netdev_nb.notifier_call = bgmac_fa_netdev_event;
++	if (register_netdevice_notifier(&fa->netdev_nb) ||
++	    devm_add_action_or_reset(bgmac->dev, bgmac_fa_netdev_release, fa))
++		dev_warn(bgmac->dev,
++			 "flow accelerator: port changes are seen at the stats poll only\n");
+ }
+ EXPORT_SYMBOL_GPL(bgmac_fa_probe);
+ 
