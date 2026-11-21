@@ -145,6 +145,13 @@
 			compatible = "national,lm75b";
 			reg = <0x48>;
 		};
+
+		/* SensyLink CTF2302 */
+		fan-controller@6a {
+			compatible = "sensylink,ctf2302";
+			reg = <0x6a>;
+			#thermal-sensor-cells = <1>;
+		};
 	};
 	i2c1: i2c@1 {
 		reg = <1>;
