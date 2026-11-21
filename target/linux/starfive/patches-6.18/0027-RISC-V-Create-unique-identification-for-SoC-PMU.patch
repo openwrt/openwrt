@@ -84,7 +84,7 @@ Signed-off-by: João Mário Domingos <joao.mario@tecnico.ulisboa.pt>
 +	ret = sysfs_create_group(&pdev->dev.kobj, &pmu_sbi_group);
 +	if (ret) {
 +		dev_err(&pdev->dev, "sysfs creation failed\n");
-+		return ret;
++		goto out_destroy;
 +	}
 +	pdev->dev.groups = pmu_sbi_groups;
 +
