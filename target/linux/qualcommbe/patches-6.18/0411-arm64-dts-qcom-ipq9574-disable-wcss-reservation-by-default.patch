@@ -1,0 +1,27 @@
+From ef052f989e96e5027bd3cbabc9712f43ed2c888e Mon Sep 17 00:00:00 2001
+From: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+Date: Sat, 21 Nov 2026 13:37:14 +0900
+Subject: [PATCH] arm64: dts: qcom: ipq9574: disable WCSS reservation by
+ default
+
+The WCSS remote processor is disabled by default, but its Q6 memory
+region is still reserved on boards that do not use the integrated radio.
+Disable the reservation by default too. Boards that use WCSS can enable
+the reservation alongside the remote processor.
+
+Link: https://github.com/openwrt/openwrt/pull/25595#issuecomment-6716314055
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq9574.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+@@ -232,6 +232,7 @@
+ 		q6_region: wcss@4ab00000 {
+ 			reg = <0x0 0x4ab00000 0x0 0x2b00000>;
+ 			no-map;
++			status = "disabled";
+ 		};
+ 	};
+ 
