@@ -1,0 +1,82 @@
+From 41a74372e54f46be1eb73343d7a82d342efed6df Mon Sep 17 00:00:00 2001
+From: Vladislav Leonov <vlad@zlab.su>
+Date: Mon, 10 Aug 2026 15:10:56 +0300
+Subject: [PATCH 05/19] net: ethernet: stmicro: stmmac: dwmac-rk: Add RV1106
+ support
+
+Rockchip RV1106 GMAC 10/100 ethernet controller.
+
+Signed-off-by: Vladislav Leonov <vlad@zlab.su>
+---
+ .../net/ethernet/stmicro/stmmac/dwmac-rk.c    | 55 +++++++++++++++++++
+ 1 file changed, 55 insertions(+)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.c
++++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.c
+@@ -1281,6 +1281,58 @@ static const struct rk_gmac_ops rk3588_o
+ 	},
+ };
+ 
++#define RV1106_VOGRF_GMAC_CLK_CON		0X60004
++
++#define RV1106_VOGRF_MACPHY_RMII_MODE		GRF_BIT(0)
++#define RV1106_VOGRF_GMAC_CLK_RMII_DIV2		GRF_BIT(2)
++#define RV1106_VOGRF_GMAC_CLK_RMII_DIV20	GRF_CLR_BIT(2)
++
++#define RV1106_VOGRF_MACPHY_CON0		0X60028
++
++static void rv1106_set_to_rmii(struct rk_priv_data *bsp_priv)
++{
++	regmap_write(bsp_priv->grf, RV1106_VOGRF_GMAC_CLK_CON,
++		     RV1106_VOGRF_MACPHY_RMII_MODE |
++		     RV1106_VOGRF_GMAC_CLK_RMII_DIV2);
++}
++
++static int rv1106_set_speed(struct rk_priv_data *bsp_priv,
++			    phy_interface_t interface, int speed)
++{
++	unsigned int val;
++
++	if (interface != PHY_INTERFACE_MODE_RMII)
++		return 0;
++
++	if (speed == SPEED_10)
++		val = RV1106_VOGRF_GMAC_CLK_RMII_DIV20;
++	else if (speed == SPEED_100)
++		val = RV1106_VOGRF_GMAC_CLK_RMII_DIV2;
++	else
++		return -EINVAL;
++
++	regmap_write(bsp_priv->grf, RV1106_VOGRF_GMAC_CLK_CON, val);
++
++	return 0;
++}
++
++static void rv1106_integrated_phy_powerup(struct rk_priv_data *bsp_priv)
++{
++	rk_gmac_integrated_fephy_powerup(bsp_priv, RV1106_VOGRF_MACPHY_CON0);
++}
++
++static void rv1106_integrated_phy_powerdown(struct rk_priv_data *bsp_priv)
++{
++	rk_gmac_integrated_fephy_powerdown(bsp_priv, RV1106_VOGRF_MACPHY_CON0);
++}
++
++static const struct rk_gmac_ops rv1106_ops = {
++	.set_to_rmii = rv1106_set_to_rmii,
++	.set_speed = rv1106_set_speed,
++	.integrated_phy_powerup = rv1106_integrated_phy_powerup,
++	.integrated_phy_powerdown = rv1106_integrated_phy_powerdown,
++};
++
+ #define RV1108_GRF_GMAC_CON0		0X0900
+ 
+ /* RV1108_GRF_GMAC_CON0 */
+@@ -1816,6 +1868,7 @@ static const struct of_device_id rk_gmac
+ 	{ .compatible = "rockchip,rk3568-gmac", .data = &rk3568_ops },
+ 	{ .compatible = "rockchip,rk3576-gmac", .data = &rk3576_ops },
+ 	{ .compatible = "rockchip,rk3588-gmac", .data = &rk3588_ops },
++	{ .compatible = "rockchip,rv1106-gmac", .data = &rv1106_ops },
+ 	{ .compatible = "rockchip,rv1108-gmac", .data = &rv1108_ops },
+ 	{ .compatible = "rockchip,rv1126-gmac", .data = &rv1126_ops },
+ 	{ }

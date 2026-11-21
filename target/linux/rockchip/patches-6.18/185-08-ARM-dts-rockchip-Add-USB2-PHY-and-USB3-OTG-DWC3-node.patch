@@ -1,0 +1,85 @@
+From dd5bf4bb58631b6fd0f88f1d41731a314e77dc94 Mon Sep 17 00:00:00 2001
+From: Vladislav Leonov <vlad@zlab.su>
+Date: Mon, 10 Aug 2026 15:11:01 +0300
+Subject: [PATCH 08/19] ARM: dts: rockchip: Add USB2 PHY and USB3-OTG (DWC3)
+ nodes for RV1106
+
+Add the u2phy node with its otg-port child, using the disconnect
+interrupt in addition to otg-bvalid/otg-id/linestate.
+
+Also add the usbdrd/usbdrd_dwc3 nodes for the DWC3 controller behind
+the PHY, reusing the "rockchip,rk3399-dwc3" glue compatible and the
+snps quirks already used by other Rockchip DWC3 platforms, since
+RV1106 does not need a dedicated glue driver.
+
+Both nodes default to status = "disabled" and are enabled per-board.
+
+Signed-off-by: Vladislav Leonov <vlad@zlab.su>
+---
+ arch/arm/boot/dts/rockchip/rv1106.dtsi | 48 ++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1106.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1106.dtsi
+@@ -180,6 +180,30 @@
+ 			status = "disabled";
+ 		};
+ 
++		u2phy: usb2-phy@ff3e0000 {
++			compatible = "rockchip,rv1106-usb2phy";
++			reg = <0xff3e0000 0x8000>;
++			clocks = <&cru CLK_REF_USBPHY>, <&cru PCLK_USBPHY>;
++			clock-names = "phyclk", "pclk";
++			resets = <&cru SRST_USBPHY_POR>, <&cru SRST_P_USBPHY>;
++			reset-names = "phy", "apb";
++			rockchip,usbgrf = <&grf>;
++			#clock-cells = <0>;
++			clock-output-names = "usb480m_phy";
++			status = "disabled";
++
++			u2phy_otg: otg-port {
++				interrupts = <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
++						<GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
++						<GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
++						<GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
++				interrupt-names = "otg-bvalid", "otg-id",
++						"linestate", "disconnect";
++				#phy-cells = <0>;
++				status = "disabled";
++			};
++		};
++
+ 		uart0: serial@ff4a0000 {
+ 			compatible = "rockchip,rv1106-uart", "snps,dw-apb-uart";
+ 			reg = <0xff4a0000 0x100>;
+@@ -378,6 +402,30 @@
+ 			#size-cells = <0>;
+ 			status = "disabled";
+ 		};
++
++		usbdrd_dwc3: usb@ffb00000 {
++			compatible = "rockchip,rv1106-dwc3", "snps,dwc3";
++			reg = <0xffb00000 0x100000>;
++			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru CLK_REF_USBOTG>, <&cru ACLK_USBOTG>,
++				<&cru CLK_UTMI_USBOTG>;
++			clock-names = "ref_clk", "bus_clk", "utmi";
++			resets = <&cru SRST_A_USBOTG>;
++			dr_mode = "otg";
++			maximum-speed = "high-speed";
++			phys = <&u2phy_otg>;
++			phy-names = "usb2-phy";
++			phy_type = "utmi_wide";
++			snps,dis_enblslpm_quirk;
++			snps,dis-u2-freeclk-exists-quirk;
++			snps,dis_u2_susphy_quirk;
++			snps,dis-del-phy-power-chg-quirk;
++			snps,dis-tx-ipgap-linecheck-quirk;
++			snps,usb2-gadget-lpm-disable;
++			snps,usb2-lpm-disable;
++			snps,parkmode-disable-hs-quirk;
++			status = "disabled";
++		};
+ 	};
+ };
+ 

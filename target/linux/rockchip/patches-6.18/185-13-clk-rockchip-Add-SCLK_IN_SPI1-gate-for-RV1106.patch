@@ -1,0 +1,25 @@
+From a333a617ff6ef1ead376d2a4f66afda2b5765666 Mon Sep 17 00:00:00 2001
+From: Vladislav Leonov <vlad@zlab.su>
+Date: Mon, 10 Aug 2026 15:11:07 +0300
+Subject: [PATCH 13/19] clk: rockchip: Add SCLK_IN_SPI1 gate for RV1106
+
+Register the SCLK_IN_SPI1 clock gate (PERICLKGATE_CON3, bit 8),
+mirroring the existing SCLK_IN_SPI0 gate. This clock is documented in
+the RV1106 TRM but was missing in the Rockchip BSP kernel.
+
+Signed-off-by: Vladislav Leonov <vlad@zlab.su>
+---
+ drivers/clk/rockchip/clk-rv1106.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/clk/rockchip/clk-rv1106.c
++++ b/drivers/clk/rockchip/clk-rv1106.c
+@@ -976,6 +976,8 @@ static struct rockchip_clk_branch rv1106
+ 			RV1106_VEPUCLKGATE_CON(0), 14, GFLAGS),
+ 	GATE(SCLK_IN_SPI0, "sclk_in_spi0", "sclk_in_spi0_io", 0,
+ 			RV1106_VEPUCLKGATE_CON(1), 4, GFLAGS),
++	GATE(SCLK_IN_SPI1, "sclk_in_spi1", "sclk_in_spi1_io", 0,
++			RV1106_PERICLKGATE_CON(3), 8, GFLAGS),
+ 
+ 	GATE(CLK_UTMI_USBOTG, "clk_utmi_usbotg", "clk_utmi_usbotg_io", 0,
+ 			RV1106_PERICLKGATE_CON(4), 9, GFLAGS),

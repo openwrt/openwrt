@@ -1,0 +1,102 @@
+From b94e154bb64e29406a449011aea4248f59b6e08b Mon Sep 17 00:00:00 2001
+From: Andreas Zdziarstek <andreas.zdziarstek@gmail.com>
+Date: Tue, 7 Jul 2026 00:36:26 +0200
+Subject: [PATCH 2/2] phy: rockchip: inno-usb2: keep peripheral-only OTG port
+ active
+
+The OTG state machine autonomously suspends the OTG port whenever it
+decides no usable VBUS session is present. On the initial sample after
+init, when a dedicated charger is detected, on peripheral disconnect
+and on host-session end. It calls rockchip_usb2phy_power_off()
+directly, underneath the USB controller.
+
+For a dr_mode="peripheral" port this kills the USB gadget on any boot
+without an attached cable. The state machine suspends the port shortly
+after init, resulting in "failed to enable ep0out", ep0 start transfer
+returns -EINVAL). The gadget remains unrecoverable in user space
+afterwards.
+
+Skip the state machine's autonomous power-offs when the port is
+peripheral-only. VBUS detection, extcon signalling and charger
+detection are unaffected, and controller-initiated power management
+via phy_power_on()/phy_power_off() keeps working.
+
+Signed-off-by: Andreas Zdziarstek <andreas.zdziarstek@gmail.com>
+[narrow target to rv1103 mach]
+Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 28 +++++++++++++++----
+ 1 file changed, 23 insertions(+), 5 deletions(-)
+
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -679,6 +679,24 @@ static const struct phy_ops rockchip_usb
+ 	.owner		= THIS_MODULE,
+ };
+ 
++/*
++ * Autonomous power-off from the OTG state machine or charger detection.
++ *
++ * A peripheral-only port shouldn't be power-gated behind the controller's
++ * back. If the gadget (re)binds while the PHY is suspended, the
++ * controller's ep0 setup fails and the gadget stays dead even when a VBUS
++ * session appears later. Keep the phy active on peripheral ports for
++ * correct connection detection.
++ */
++static void rockchip_usb2phy_sm_power_off(struct rockchip_usb2phy_port *rport)
++{
++	if (rport->mode == USB_DR_MODE_PERIPHERAL &&
++	    of_machine_is_compatible("rockchip,rv1103"))
++		return;
++
++	rockchip_usb2phy_power_off(rport->phy);
++}
++
+ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
+ {
+ 	struct rockchip_usb2phy_port *rport =
+@@ -702,7 +720,7 @@ static void rockchip_usb2phy_otg_sm_work
+ 	case OTG_STATE_UNDEFINED:
+ 		rport->state = OTG_STATE_B_IDLE;
+ 		if (!vbus_attach)
+-			rockchip_usb2phy_power_off(rport->phy);
++			rockchip_usb2phy_sm_power_off(rport);
+ 		fallthrough;
+ 	case OTG_STATE_B_IDLE:
+ 		if (extcon_get_state(rphy->edev, EXTCON_USB_HOST) > 0) {
+@@ -733,7 +751,7 @@ static void rockchip_usb2phy_otg_sm_work
+ 					break;
+ 				case POWER_SUPPLY_TYPE_USB_DCP:
+ 					dev_dbg(&rport->phy->dev, "dcp cable is connected\n");
+-					rockchip_usb2phy_power_off(rport->phy);
++					rockchip_usb2phy_sm_power_off(rport);
+ 					notify_charger = true;
+ 					sch_work = true;
+ 					cable = EXTCON_CHG_USB_DCP;
+@@ -779,7 +797,7 @@ static void rockchip_usb2phy_otg_sm_work
+ 			rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
+ 			rport->state = OTG_STATE_B_IDLE;
+ 			delay = 0;
+-			rockchip_usb2phy_power_off(rport->phy);
++			rockchip_usb2phy_sm_power_off(rport);
+ 		}
+ 		sch_work = true;
+ 		break;
+@@ -787,7 +805,7 @@ static void rockchip_usb2phy_otg_sm_work
+ 		if (extcon_get_state(rphy->edev, EXTCON_USB_HOST) == 0) {
+ 			dev_dbg(&rport->phy->dev, "usb otg host disconnect\n");
+ 			rport->state = OTG_STATE_B_IDLE;
+-			rockchip_usb2phy_power_off(rport->phy);
++			rockchip_usb2phy_sm_power_off(rport);
+ 		}
+ 		break;
+ 	default:
+@@ -852,7 +870,7 @@ static void rockchip_chg_detect_work(str
+ 	switch (rphy->chg_state) {
+ 	case USB_CHG_STATE_UNDEFINED:
+ 		if (!rport->suspended && !vbus_attach)
+-			rockchip_usb2phy_power_off(rport->phy);
++			rockchip_usb2phy_sm_power_off(rport);
+ 		/* put the controller in non-driving mode */
+ 		if (!vbus_attach)
+ 			property_enable(rphy->grf, &rphy->phy_cfg->chg_det.opmode, false);

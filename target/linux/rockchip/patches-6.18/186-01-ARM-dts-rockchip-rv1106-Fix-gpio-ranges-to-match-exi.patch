@@ -1,0 +1,66 @@
+From b924fdd955fe6f781572154fddbfd962460eadb5 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Sun, 30 Aug 2026 10:09:38 +0200
+Subject: [PATCH 1/6] ARM: dts: rockchip: rv1106: Fix gpio-ranges to match
+ existing pins
+
+Only a subset of each bank's 32 pins is bonded out on RV1103/RV1106.
+Describe the real ranges, as pointed out by Jonas Karlman in review of
+the mailing list submission.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ arch/arm/boot/dts/rockchip/rv1106.dtsi | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/boot/dts/rockchip/rv1106.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1106.dtsi
+@@ -93,7 +93,7 @@
+ 			clocks = <&cru PCLK_PMU_GPIO0>, <&cru DBCLK_PMU_GPIO0>;
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+-			gpio-ranges = <&pinctrl 0 0 32>;
++			gpio-ranges = <&pinctrl 0 0 7>;
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 			rockchip,grf = <&gpio0_ioc>;
+@@ -106,7 +106,10 @@
+ 			clocks = <&cru PCLK_GPIO1>, <&cru DBCLK_GPIO1>;
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+-			gpio-ranges = <&pinctrl 0 32 32>;
++			gpio-ranges = <&pinctrl 0 32 5>,
++				      <&pinctrl 8 40 4>,
++				      <&pinctrl 16 48 8>,
++				      <&pinctrl 24 56 4>;
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 			rockchip,grf = <&gpio1_ioc>;
+@@ -119,7 +122,7 @@
+ 			clocks = <&cru PCLK_GPIO2>, <&cru DBCLK_GPIO2>;
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+-			gpio-ranges = <&pinctrl 0 64 32>;
++			gpio-ranges = <&pinctrl 0 64 10>;
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 			rockchip,grf = <&gpio2_ioc>;
+@@ -132,7 +135,7 @@
+ 			clocks = <&cru PCLK_GPIO3>, <&cru DBCLK_GPIO3>;
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+-			gpio-ranges = <&pinctrl 0 96 32>;
++			gpio-ranges = <&pinctrl 1 97 27>;
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 			rockchip,grf = <&gpio3_ioc>;
+@@ -145,7 +148,8 @@
+ 			clocks = <&cru PCLK_GPIO4>, <&cru DBCLK_GPIO4>;
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+-			gpio-ranges = <&pinctrl 0 128 32>;
++			gpio-ranges = <&pinctrl 1 129 9>,
++				      <&pinctrl 16 144 2>;
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 			rockchip,grf = <&gpio4_ioc>;

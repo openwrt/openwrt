@@ -1,0 +1,78 @@
+From 8aa25c6e8893ed911b0cad37a5562fda9bc98438 Mon Sep 17 00:00:00 2001
+From: Simon Glass <sjg@chromium.org>
+Date: Wed, 29 Jul 2026 07:27:25 -0600
+Subject: [PATCH 4/5] pinctrl: rockchip: Decode drive strength in the get
+ function
+
+The decoding of the 2-bit and 8-bit level drive-strength values sits in
+rockchip_set_drive_perpin(), where it is unreachable: the SoCs whose
+banks declare these drive types (RK3506 and RV1103B) take the early
+ctrl->type branch in the set path, and the read-and-decode logic in a
+set function has no purpose. Meanwhile rockchip_get_drive_perpin()
+lacks the decoding, so pin_config_get() and the debugfs output report
+-EINVAL for these SoCs.
+
+Move the two cases to rockchip_get_drive_perpin(), where they belong.
+
+Fixes: dbd2317d7b9f ("pinctrl: rockchip: Add rk3506 pinctrl support")
+Signed-off-by: Simon Glass <sjg@chromium.org>
+Reviewed-by: Heiko Stuebner <heiko@sntech.de>
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+---
+ drivers/pinctrl/pinctrl-rockchip.c | 38 +++++++++++++++---------------
+ 1 file changed, 19 insertions(+), 19 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-rockchip.c
++++ b/drivers/pinctrl/pinctrl-rockchip.c
+@@ -2764,6 +2764,25 @@ static int rockchip_get_drive_perpin(str
+ 	case DRV_TYPE_IO_1V8_ONLY:
+ 		rmask_bits = RK3288_DRV_BITS_PER_PIN;
+ 		break;
++	case DRV_TYPE_IO_LEVEL_2_BIT:
++		ret = regmap_read(regmap, reg, &data);
++		if (ret)
++			return ret;
++		data >>= bit;
++
++		return data & 0x3;
++	case DRV_TYPE_IO_LEVEL_8_BIT:
++		ret = regmap_read(regmap, reg, &data);
++		if (ret)
++			return ret;
++		data >>= bit;
++		data &= (1 << 8) - 1;
++
++		ret = hweight8(data);
++		if (ret > 0)
++			return ret - 1;
++		else
++			return -EINVAL;
+ 	default:
+ 		dev_err(dev, "unsupported pinctrl drive type: %d\n", drv_type);
+ 		return -EINVAL;
+@@ -2880,25 +2899,6 @@ static int rockchip_set_drive_perpin(str
+ 	case DRV_TYPE_IO_1V8_ONLY:
+ 		rmask_bits = RK3288_DRV_BITS_PER_PIN;
+ 		break;
+-	case DRV_TYPE_IO_LEVEL_2_BIT:
+-		ret = regmap_read(regmap, reg, &data);
+-		if (ret)
+-			return ret;
+-		data >>= bit;
+-
+-		return data & 0x3;
+-	case DRV_TYPE_IO_LEVEL_8_BIT:
+-		ret = regmap_read(regmap, reg, &data);
+-		if (ret)
+-			return ret;
+-		data >>= bit;
+-		data &= (1 << 8) - 1;
+-
+-		ret = hweight8(data);
+-		if (ret > 0)
+-			return ret - 1;
+-		else
+-			return -EINVAL;
+ 	default:
+ 		dev_err(dev, "unsupported pinctrl drive type: %d\n", drv_type);
+ 		return -EINVAL;

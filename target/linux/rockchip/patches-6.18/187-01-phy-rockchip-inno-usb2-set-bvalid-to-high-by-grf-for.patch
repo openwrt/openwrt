@@ -1,0 +1,69 @@
+From 145850cba7f429f70bd540f02cf706fbef8df8e2 Mon Sep 17 00:00:00 2001
+From: William Wu <william.wu@rock-chips.com>
+Date: Fri, 11 Mar 2022 17:23:34 +0800
+Subject: [PATCH 1/2] phy: rockchip: inno-usb2: set bvalid to high by grf for
+ rv1103
+
+RV1103 doesn't have VBUSDET pin for the usb phy to
+detect the USB VBUS, and the default status of bvalid
+is inactive(low level), it cause the dwc3 controller
+fail to start usb device connection, so it needs to
+set bvalid to high by grf for RV1103.
+
+Signed-off-by: William Wu <william.wu@rock-chips.com>
+[add bvalid_grf_sel struct and set it for rv1103]
+Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -119,6 +119,7 @@ struct rockchip_chg_det_reg {
+  * @bvalid_det_en: vbus valid rise detection enable register.
+  * @bvalid_det_st: vbus valid rise detection status register.
+  * @bvalid_det_clr: vbus valid rise detection clear register.
++ * @bvalid_grf_sel: vbus valid software control select.
+  * @disfall_en: host disconnect fall edge detection enable.
+  * @disfall_st: host disconnect fall edge detection state.
+  * @disfall_clr: host disconnect fall edge detection clear.
+@@ -147,6 +148,7 @@ struct rockchip_usb2phy_port_cfg {
+ 	struct usb2phy_reg	bvalid_det_en;
+ 	struct usb2phy_reg	bvalid_det_st;
+ 	struct usb2phy_reg	bvalid_det_clr;
++	struct usb2phy_reg	bvalid_grf_sel;
+ 	struct usb2phy_reg      disfall_en;
+ 	struct usb2phy_reg      disfall_st;
+ 	struct usb2phy_reg      disfall_clr;
+@@ -1344,6 +1346,23 @@ static int rockchip_usb2phy_otg_port_ini
+ 		goto out;
+ 	}
+ 
++	/*
++	 * Set the utmi bvalid come from the usb phy or grf.
++	 * For most of Rockchip SoCs, them have VBUSDET pin
++	 * for the usb phy to detect the USB VBUS and set
++	 * the bvalid signal, so select the bvalid from the
++	 * usb phy by default. And for those SoCs which don't
++	 * have VBUSDET pin (e.g. RV1103), it needs to select
++	 * the bvaid from the grf and set bvalid to be valid
++	 * (high) by default.
++	 */
++	if (rport->port_cfg->bvalid_grf_sel.enable != 0) {
++		if (of_machine_is_compatible("rockchip,rv1103"))
++			property_enable(rphy->grf, &rport->port_cfg->bvalid_grf_sel, true);
++		else
++			property_enable(rphy->grf, &rport->port_cfg->bvalid_grf_sel, false);
++	}
++
+ 	if (!IS_ERR(rphy->edev)) {
+ 		rport->event_nb.notifier_call = rockchip_otg_event;
+ 
+@@ -2388,6 +2407,7 @@ static const struct rockchip_usb2phy_cfg
+ 				.bvalid_det_en	= { 0x0100, 2, 2, 0, 1 },
+ 				.bvalid_det_st	= { 0x0104, 2, 2, 0, 1 },
+ 				.bvalid_det_clr = { 0x0108, 2, 2, 0, 1 },
++				.bvalid_grf_sel	= { 0x0058, 15, 14, 0, 3 },
+ 				.idfall_det_en	= { 0x0100, 5, 5, 0, 1 },
+ 				.idfall_det_st	= { 0x0104, 5, 5, 0, 1 },
+ 				.idfall_det_clr = { 0x0108, 5, 5, 0, 1 },

@@ -22,7 +22,7 @@ rockchip_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	herospeed,rv1126-imx415)
+	*)
 		ucidef_set_interface_lan 'eth0'
 		;;
 	esac

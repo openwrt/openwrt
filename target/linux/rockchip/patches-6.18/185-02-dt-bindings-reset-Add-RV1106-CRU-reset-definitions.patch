@@ -1,0 +1,323 @@
+From 3e976a227deb7c83b7f502012b8e8173d6fd5d57 Mon Sep 17 00:00:00 2001
+From: Vladislav Leonov <vlad@zlab.su>
+Date: Mon, 10 Aug 2026 15:10:52 +0300
+Subject: [PATCH 02/19] dt-bindings: reset: Add RV1106 CRU reset definitions
+
+Add the reset ID definitions for the Rockchip RV1106 clock and
+reset unit (CRU), to be used by the reset controller driver and
+device tree nodes.
+
+Signed-off-by: Vladislav Leonov <vlad@zlab.su>
+---
+ .../dt-bindings/reset/rockchip,rv1106-cru.h   | 305 ++++++++++++++++++
+ 1 file changed, 305 insertions(+)
+ create mode 100644 include/dt-bindings/reset/rockchip,rv1106-cru.h
+
+--- /dev/null
++++ b/include/dt-bindings/reset/rockchip,rv1106-cru.h
+@@ -0,0 +1,305 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
++/*
++ * Copyright (c) 2022 Rockchip Electronics Co. Ltd.
++ * Author: Elaine Zhang <zhangqing@rock-chips.com>
++ */
++
++#ifndef _DT_BINDINGS_RESET_ROCKCHIP_RV1106_H
++#define _DT_BINDINGS_RESET_ROCKCHIP_RV1106_H
++
++/* ==========================list all of reset fields id=========================== */
++
++/* PMU-->SOFTRST_CON00 */
++#define SRST_P_I2C1		0
++#define SRST_I2C1		1
++#define SRST_H_PMU_BIU		2
++#define SRST_P_PMU_BIU		3
++#define SRST_H_PMU_SRAM		4
++#define SRST_PMU_MCU		5
++#define SRST_PMU_MCU_PWRUP	6
++#define SRST_PMU_MCU_CPU	7
++#define SRST_T_PMU_MCU_CPU	8
++
++/* PMU-->SOFTRST_CON01 */
++#define SRST_P_PMU_GPIO0	9
++#define SRST_PMU_GPIO0		10
++#define SRST_PVTM_PMU		11
++#define SRST_P_PVTM_PMU		12
++#define SRST_DDR_FAIL_SAFE	13
++
++/* PMU-->SOFTRST_CON02 */
++#define SRST_P_PMU_HP_TIMER	14
++#define SRST_PMU_HP_TIMER	15
++#define SRST_PMU_32K_HP_TIMER	16
++#define SRST_P_PMU_IOC		17
++#define SRST_P_PMU_CRU		18
++#define SRST_P_PMU_GRF		19
++#define SRST_P_PMU_SGRF		20
++#define SRST_P_PMU_SGRF_REMAP	21
++#define SRST_P_PMU_WDT		22
++#define SRST_T_PMU_WDT		23
++#define SRST_P_PMU_MAILBOX	24
++
++/* TOP-->SOFTRST_CON02 */
++#define SRST_REF_PVTPLL_0	25
++#define SRST_REF_PVTPLL_1	26
++#define SRST_P_CRU		27
++#define SRST_P_CRU_BIU		28
++
++/* PERI-->SOFTRST_CON00 */
++#define SRST_P_PERI_BIU		29
++#define SRST_A_PERI_BIU		30
++#define SRST_H_PERI_BIU		31
++#define SRST_H_BOOTROM		32
++#define SRST_P_TIMER		33
++#define SRST_TIMER0		34
++#define SRST_TIMER1		35
++#define SRST_TIMER2		36
++#define SRST_TIMER3		37
++#define SRST_TIMER4		38
++#define SRST_TIMER5		39
++#define SRST_P_STIMER		40
++
++/* PERI-->SOFTRST_CON01 */
++#define SRST_STIMER0		41
++#define SRST_STIMER1		42
++#define SRST_P_WDT_NS		43
++#define SRST_T_WDT_NS		44
++#define SRST_P_WDT_S		45
++#define SRST_T_WDT_S		46
++#define SRST_P_I2C0		47
++#define SRST_I2C0		48
++#define SRST_P_I2C2		49
++#define SRST_I2C2		50
++#define SRST_P_I2C3		51
++#define SRST_I2C3		52
++#define SRST_P_I2C4		53
++#define SRST_I2C4		54
++
++/* PERI-->SOFTRST_CON02 */
++#define SRST_P_GPIO4		55
++#define SRST_GPIO4		56
++#define SRST_P_PERI_IOC		57
++#define SRST_P_UART2		58
++#define SRST_S_UART2		59
++#define SRST_P_UART3		60
++#define SRST_S_UART3		61
++#define SRST_P_UART4		62
++#define SRST_S_UART4		63
++#define SRST_P_UART5		64
++
++/* PERI-->SOFTRST_CON03 */
++#define SRST_S_UART5		65
++#define SRST_P_SARADC		66
++#define SRST_SARADC		67
++#define SRST_SARADC_PHY		68
++#define SRST_P_SPI1		69
++#define SRST_SPI1		70
++#define SRST_H_TRNG_NS		71
++#define SRST_H_TRNG_S		72
++#define SRST_CORE_CRYPTO	73
++#define SRST_PKA_CRYPTO		74
++#define SRST_A_CRYPTO		75
++#define SRST_H_CRYPTO		76
++#define SRST_P_PWM1_PERI	77
++
++/* PERI-->SOFTRST_CON04 */
++#define SRST_PWM1_PERI		78
++#define SRST_P_PWM2_PERI	79
++#define SRST_PWM2_PERI		80
++#define SRST_P_PERI_GRF		81
++#define SRST_P_PERI_CRU		82
++#define SRST_A_USBOTG		83
++#define SRST_A_BUS_BIU		84
++#define SRST_H_EMMC		85
++#define SRST_H_SFC		86
++
++/* PERI-->SOFTRST_CON05 */
++#define SRST_S_SFC		87
++#define SRST_P_USBPHY		88
++#define SRST_USBPHY_POR		89
++#define SRST_USBPHY_OTG		90
++#define SRST_A_DMAC		91
++#define SRST_A_DECOM		92
++#define SRST_P_DECOM		93
++#define SRST_D_DECOM		94
++#define SRST_P_PERI_SGRF	95
++#define SRST_H_SAI		96
++#define SRST_M_SAI		97
++#define SRST_M_I2S0_8CH_TX	98
++
++/* PERI-->SOFTRST_CON06 */
++#define SRST_H_I2S0		99
++#define SRST_M_DSM		100
++#define SRST_P_DSM		101
++#define SRST_P_ACODEC		102
++#define SRST_M_I2S0_8CH_RX	103
++#define SRST_P_DFT2APB		104
++#define SRST_H_IVE		105
++#define SRST_A_IVE		106
++#define SRST_P_UART0		107
++#define SRST_S_UART0		108
++#define SRST_P_UART1		109
++
++/* PERI-->SOFTRST_CON07 */
++#define SRST_S_UART1		110
++#define SRST_P_PWM0_PERI	111
++#define SRST_PWM0_PERI		112
++
++/* VI-->SOFTRST_CON00 */
++#define SRST_H_VI_BIU		113
++#define SRST_A_VI_BIU		114
++#define SRST_P_VI_BIU		115
++#define SRST_CORE_ISP3P2	116
++#define SRST_D_VICAP		117
++#define SRST_P_VICAP		118
++#define SRST_A_VICAP		119
++#define SRST_H_VICAP		120
++#define SRST_VICAP_I0		121
++#define SRST_VICAP_I1		122
++
++/* VI-->SOFTRST_CON01 */
++#define SRST_VICAP_RX0		123
++#define SRST_VICAP_RX1		124
++#define SRST_VICAP_ISP0		125
++#define SRST_P_CSIHOST0		126
++#define SRST_P_CSIHOST1		127
++#define SRST_H_SDMMC		128
++#define SRST_SDMMC_DETN_FLT	129
++#define SRST_P_MIPICSIPHY	130
++#define SRST_P_GPIO3		131
++
++/* VI-->SOFTRST_CON02 */
++#define SRST_GPIO3		132
++#define SRST_P_VI_IOC		133
++#define SRST_P_VI_GRF		134
++#define SRST_P_VI_SGRF		135
++#define SRST_P_VI_CRU		136
++#define SRST_P_VI_RTC_TEST	137
++#define SRST_P_VI_RTC_NIU	138
++
++/* NPU-->SOFTRST_CON00 */
++#define SRST_H_NPU_BIU		139
++#define SRST_A_NPU_BIU		140
++#define SRST_P_NPU_BIU		141
++#define SRST_P_NPU_CRU		142
++#define SRST_P_NPU_SGRF		143
++#define SRST_P_NPU_GRF		144
++#define SRST_H_RKNN		145
++#define SRST_A_RKNN		146
++
++/* CORE-->SOFTRST_CON00 */
++#define SRST_NCOREPORESET	147
++#define SRST_NCORESET		148
++#define SRST_NDBGRESET		149
++#define SRST_NL2RESET		150
++#define SRST_A_M_CORE_BIU	151
++#define SRST_P_DBG		152
++#define SRST_POT_DBG		153
++#define SRST_NT_DBG		154
++#define SRST_P_CORE_GRF		155
++#define SRST_H_CPU_BIU		156
++#define SRST_P_CPU_BIU		157
++#define SRST_PVTM_CORE		158
++#define SRST_P_PVTM_CORE	159
++
++/* CORE-->SOFTRST_CON01 */
++#define SRST_REF_PVTPLL_CORE	160
++#define SRST_CORE_MCU		161
++#define SRST_CORE_MCU_PWRUP	162
++#define SRST_CORE_MCU_CPU	163
++#define SRST_T_CORE_MCU_CPU	164
++#define SRST_MCU_BIU		165
++#define SRST_P_MAILBOX		166
++#define SRST_P_INTMUX		167
++#define SRST_P_CORE_CRU		168
++#define SRST_P_CORE_SGRF	169
++#define SRST_H_CACHE		170
++
++/* VEPU-->SOFTRST_CON00 */
++#define SRST_H_VEPU_BIU		171
++#define SRST_A_VEPU_BIU		172
++#define SRST_A_VEPU_COM_BIU	173
++#define SRST_P_VEPU_BIU		174
++#define SRST_H_VEPU		175
++#define SRST_A_VEPU		176
++#define SRST_CORE_VEPU		177
++#define SRST_H_VEPU_PP		178
++#define SRST_A_VEPU_PP		179
++#define SRST_CORE_VEPU_DVBM	180
++#define SRST_P_VICAP_VEPU	181
++#define SRST_P_GPIO1		182
++
++/* VEPU-->SOFTRST_CON01 */
++#define SRST_GPIO1		183
++#define SRST_P_VEPU_IOC		184
++#define SRST_P_SPI0		185
++#define SRST_SPI0		186
++#define SRST_P_VEPU_CRU		187
++#define SRST_P_VEPU_SGRF	188
++#define SRST_P_VEPU_GRF		189
++#define SRST_UART_DETN_FLT	190
++
++/* VO-->SOFTRST_CON00 */
++#define SRST_A_VO_BIU		191
++#define SRST_H_VO_BIU		192
++#define SRST_H_RGA2E		193
++#define SRST_A_RGA2E		194
++#define SRST_CORE_RGA2E		195
++#define SRST_P_VO_GRF		196
++#define SRST_A_VOP_BIU		197
++#define SRST_H_VOP		198
++#define SRST_D_VOP		199
++#define SRST_A_VOP		200
++
++/* VO-->SOFTRST_CON01 */
++#define SRST_P_MAC_BIU		201
++#define SRST_A_MAC_BIU		202
++#define SRST_A_MAC		203
++#define SRST_P_VO_SGRF		204
++#define SRST_P_VO_CRU		205
++#define SRST_H_SDIO		206
++
++/* VO-->SOFTRST_CON02 */
++#define SRST_P_TSADC		207
++#define SRST_TSADC		208
++#define SRST_P_OTPC_NS		209
++#define SRST_SBPI_OTPC_NS	210
++#define SRST_USER_OTPC_NS	211
++#define SRST_P_OTPC_S		212
++#define SRST_SBPI_OTPC_S	213
++#define SRST_USER_OTPC_S	214
++#define SRST_OTPC_ARB		215
++#define SRST_MACPHY		216
++#define SRST_P_OTP_MASK		217
++#define SRST_PMC_OTP		218
++
++/* VO-->SOFTRST_CON03 */
++#define SRST_P_GPIO2		219
++#define SRST_GPIO2		220
++#define SRST_P_VO_IOC		221
++
++/* DDR-->SOFTRST_CON00 */
++#define SRST_P_DDR_BIU		222
++#define SRST_P_DDRC		223
++#define SRST_P_DDRMON		224
++#define SRST_TIMER_DDRMON	225
++#define SRST_P_DFICTRL		226
++#define SRST_A_SYS_SHRM		227
++#define SRST_A_SHRM_NIU		228
++#define SRST_P_DDR_GRF		229
++
++/* DDR-->SOFTRST_CON01 */
++#define SRST_P_DDR_CRU		230
++#define SRST_P_DDR_HWLP		231
++#define SRST_P_DDRPHY		232
++
++/* SUBDDR-->SOFTRST_CON00 */
++#define SRST_MSCH_BIU		233
++#define SRST_A_DDRC		234
++#define SRST_CORE_DDRC		235
++#define SRST_DDRMON		236
++#define SRST_DFICTRL		237
++#define SRST_DDR_PHY		238
++
++#endif

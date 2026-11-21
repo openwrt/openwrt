@@ -1,0 +1,24 @@
+From 317077c391ba65f50fac29d1d2062eb6f7944578 Mon Sep 17 00:00:00 2001
+From: Vladislav Leonov <vlad@zlab.su>
+Date: Mon, 10 Aug 2026 15:11:06 +0300
+Subject: [PATCH 12/19] dt-bindings: clock: rockchip: Add SCLK_IN_SPI1 for
+ RV1106
+
+Add the clock ID for SCLK_IN_SPI1. This gate exists per the RV1106 TRM
+but is missing in the Rockchip BSP kernel. SCLK_IN_SPI0 already has
+a binding, so add the SPI1 counterpart for consistency.
+
+Signed-off-by: Vladislav Leonov <vlad@zlab.su>
+---
+ include/dt-bindings/clock/rockchip,rv1106-cru.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/include/dt-bindings/clock/rockchip,rv1106-cru.h
++++ b/include/dt-bindings/clock/rockchip,rv1106-cru.h
+@@ -303,4 +303,6 @@
+ #define PCLK_CPU_ROOT		286
+ #define CLK_RTC32K_FRAC		287
+ 
++#define SCLK_IN_SPI1		288
++
+ #endif

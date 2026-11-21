@@ -1,0 +1,203 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2023 Luckfox Electronics Co., Ltd
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/input/linux-event-codes.h>
+#include <dt-bindings/leds/common.h>
+#include "rockchip/rv1103.dtsi"
+
+/ {
+	model = "Luckfox WebBee";
+	compatible = "luckfox,webbee", "rockchip,rv1103";
+
+	aliases {
+		ethernet1 = &usbdrd_dwc3;
+		led-boot = &activity;
+		led-failsafe = &activity;
+		led-running = &activity;
+		led-upgrade = &activity;
+		mmc0 = &sdmmc;
+		serial2 = &uart2;
+	};
+
+	chosen {
+		bootargs = "earlycon=uart8250,mmio32,0xff4c0000 console=ttyS2,115200n8";
+		stdout-path = "serial2:115200n8";
+	};
+
+	keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		poll-interval = <100>;
+		keyup-threshold-microvolt = <1800000>;
+
+		button-recovery {
+			label = "Recovery";
+			linux,code = <KEY_RESTART>;
+			press-threshold-microvolt = <0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		activity: led {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_ACTIVITY;
+			gpios = <&gpio3 RK_PC6 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x04000000>;
+	};
+
+	vcc_1v8: regulator-vcc-1v8 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_1v8";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+		regulator-boot-on;
+		vin-supply = <&vcc_sys>;
+	};
+
+	vcc_3v3: regulator-vcc-3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_3v3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		regulator-boot-on;
+		vin-supply = <&vcc_sys>;
+	};
+
+	vcc_sys: regulator-vcc-5v0 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_5v0";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	vdd_arm: regulator-vdd-0v9 {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_0v9";
+		regulator-min-microvolt = <900000>;
+		regulator-max-microvolt = <900000>;
+		regulator-always-on;
+		regulator-boot-on;
+		vin-supply = <&vcc_sys>;
+	};
+};
+
+&cpu0 {
+	cpu-supply = <&vdd_arm>;
+};
+
+&gmac {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&saradc {
+	status = "okay";
+
+	vref-supply = <&vcc_1v8>;
+};
+
+&sdmmc {
+	status = "okay";
+
+	bus-width = <4>;
+	cap-sd-highspeed;
+	disable-wp;
+	broken-cd;
+	vmmc-supply = <&vcc_3v3>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc0_clk &sdmmc0_cmd &sdmmc0_det &sdmmc0_bus4>;
+};
+
+&sfc {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&fspi_pins &fspi_cs0>;
+
+	spi_nand: flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <75000000>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "env";
+				reg = <0x0000000 0x0040000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+				};
+			};
+
+			partition@40000 {
+				label = "idblock";
+				reg = <0x0040000 0x0100000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "uboot";
+				reg = <0x0140000 0x0100000>;
+				read-only;
+			};
+
+			partition@240000 {
+				label = "ubi";
+				reg = <0x0240000 0x7dc0000>;
+			};
+		};
+	};
+};
+
+&u2phy {
+	status = "okay";
+};
+
+&u2phy_otg {
+	status = "okay";
+
+	phy-supply = <&vcc_sys>;
+};
+
+&uart2 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2m1_xfer>;
+};
+
+&usbdrd_dwc3 {
+	status = "okay";
+
+	dr_mode = "peripheral";
+	extcon = <&u2phy>;
+};
+
+&wdt {
+	status = "okay";
+};

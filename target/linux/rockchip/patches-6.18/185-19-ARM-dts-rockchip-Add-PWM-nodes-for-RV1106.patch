@@ -1,0 +1,195 @@
+From 947409956bab707e1642fb72392809b36d2c1765 Mon Sep 17 00:00:00 2001
+From: Vladislav Leonov <vlad@zlab.su>
+Date: Mon, 10 Aug 2026 15:11:16 +0300
+Subject: [PATCH 19/19] ARM: dts: rockchip: Add PWM nodes for RV1106
+
+Add the 12 PWM controller nodes (pwm0-pwm11) for RV1106, along with
+their aliases.
+
+Signed-off-by: Vladislav Leonov <vlad@zlab.su>
+---
+ arch/arm/boot/dts/rockchip/rv1106.dtsi | 159 +++++++++++++++++++++++++
+ 1 file changed, 159 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1106.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1106.dtsi
+@@ -30,6 +30,18 @@
+ 		i2c2 = &i2c2;
+ 		i2c3 = &i2c3;
+ 		i2c4 = &i2c4;
++		pwm0 = &pwm0;
++		pwm1 = &pwm1;
++		pwm2 = &pwm2;
++		pwm3 = &pwm3;
++		pwm4 = &pwm4;
++		pwm5 = &pwm5;
++		pwm6 = &pwm6;
++		pwm7 = &pwm7;
++		pwm8 = &pwm8;
++		pwm9 = &pwm9;
++		pwm10 = &pwm10;
++		pwm11 = &pwm11;
+ 		spi0 = &spi0;
+ 		spi1 = &spi1;
+ 	};
+@@ -189,6 +201,104 @@
+ 			status = "disabled";
+ 		};
+ 
++		pwm0: pwm@ff350000 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff350000 0x10>;
++			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm0m0_pins>;
++			clocks = <&cru CLK_PWM0_PERI>, <&cru PCLK_PWM0_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
++		pwm1: pwm@ff350010 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff350010 0x10>;
++			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm1m0_pins>;
++			clocks = <&cru CLK_PWM0_PERI>, <&cru PCLK_PWM0_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
++		pwm2: pwm@ff350020 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff350020 0x10>;
++			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm2m0_pins>;
++			clocks = <&cru CLK_PWM0_PERI>, <&cru PCLK_PWM0_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
++		pwm3: pwm@ff350030 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff350030 0x10>;
++			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm3m0_pins>;
++			clocks = <&cru CLK_PWM0_PERI>, <&cru PCLK_PWM0_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
++		pwm4: pwm@ff360000 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff360000 0x10>;
++			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm4m0_pins>;
++			clocks = <&cru CLK_PWM1_PERI>, <&cru PCLK_PWM1_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
++		pwm5: pwm@ff360010 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff360010 0x10>;
++			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm5m0_pins>;
++			clocks = <&cru CLK_PWM1_PERI>, <&cru PCLK_PWM1_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
++		pwm6: pwm@ff360020 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff360020 0x10>;
++			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm6m0_pins>;
++			clocks = <&cru CLK_PWM1_PERI>, <&cru PCLK_PWM1_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
++		pwm7: pwm@ff360030 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff360030 0x10>;
++			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm7m0_pins>;
++			clocks = <&cru CLK_PWM1_PERI>, <&cru PCLK_PWM1_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
+ 		gpio0_ioc: syscon@ff388000 {
+ 			compatible = "rockchip,rv1106-gpio0-ioc", "syscon";
+ 			reg = <0xff388000 0x8000>;
+@@ -304,6 +414,55 @@
+ 			status = "disabled";
+ 		};
+ 
++		pwm8: pwm@ff490000 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff490000 0x10>;
++			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm8m0_pins>;
++			clocks = <&cru CLK_PWM2_PERI>, <&cru PCLK_PWM2_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
++		pwm9: pwm@ff490010 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff490010 0x10>;
++			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm9m0_pins>;
++			clocks = <&cru CLK_PWM2_PERI>, <&cru PCLK_PWM2_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
++		pwm10: pwm@ff490020 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff490020 0x10>;
++			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm10m0_pins>;
++			clocks = <&cru CLK_PWM2_PERI>, <&cru PCLK_PWM2_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
++		pwm11: pwm@ff490030 {
++			compatible = "rockchip,rv1106-pwm", "rockchip,rk3328-pwm";
++			reg = <0xff490030 0x10>;
++			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>;
++			#pwm-cells = <3>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm11m0_pins>;
++			clocks = <&cru CLK_PWM2_PERI>, <&cru PCLK_PWM2_PERI>;
++			clock-names = "pwm", "pclk";
++			status = "disabled";
++		};
++
+ 		uart0: serial@ff4a0000 {
+ 			compatible = "rockchip,rv1106-uart", "snps,dw-apb-uart";
+ 			reg = <0xff4a0000 0x100>;
