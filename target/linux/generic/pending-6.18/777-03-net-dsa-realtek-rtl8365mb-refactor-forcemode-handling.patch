@@ -1,0 +1,162 @@
+From ed077efac96999aae1650a86e84569e87e10f8de Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sat, 10 Oct 2026 16:50:17 +0200
+Subject: [PATCH net-next v10 03/12] net: dsa: realtek: rtl8365mb: refactor
+ forcemode handling
+
+Move the external interface force-mode configuration behind struct
+rtl8365mb_family_info, so that family D can provide its own versions
+without is_d() checks in the shared code. The existing code becomes
+the family C implementation and is otherwise unchanged. The
+mac_link_up() and mac_link_down() callbacks call it through the family
+info.
+
+No functional change.
+
+Tested-by: Gustavo Foletto Mora <gusfmora@gmail.com>
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.h      |  3 ++
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 44 ++++++++++++++----------
+ 2 files changed, 29 insertions(+), 18 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.h
++++ b/drivers/net/dsa/realtek/rtl8365mb.h
+@@ -16,6 +16,9 @@ struct rtl8365mb_family_info {
+ 	unsigned int num_ports;
+ 	const struct rtl8365mb_jam_tbl_entry *jam_table;
+ 	size_t jam_size;
++	int (*ext_config_forcemode)(struct realtek_priv *priv, int port,
++				    bool link, int speed, int duplex,
++				    bool tx_pause, bool rx_pause);
+ };
+ 
+ const struct rtl8365mb_family_info *
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -335,15 +335,15 @@
+ #define RTL8365MB_PORT_SPEED_1000M	2
+ 
+ /* External interface force configuration registers 0~2 */
+-#define RTL8365MB_DIGITAL_INTERFACE_FORCE_REG0		0x1310 /* EXT0 */
+-#define RTL8365MB_DIGITAL_INTERFACE_FORCE_REG1		0x1311 /* EXT1 */
+-#define RTL8365MB_DIGITAL_INTERFACE_FORCE_REG2		0x13C4 /* EXT2 */
+-#define RTL8365MB_DIGITAL_INTERFACE_FORCE_REG(_extint) \
+-		((_extint) == 0 ? RTL8365MB_DIGITAL_INTERFACE_FORCE_REG0 : \
+-		 (_extint) == 1 ? RTL8365MB_DIGITAL_INTERFACE_FORCE_REG1 : \
+-		 (_extint) == 2 ? RTL8365MB_DIGITAL_INTERFACE_FORCE_REG2 : \
++#define RTL8365MB_C_DIGITAL_INTERFACE_FORCE_REG0		0x1310 /* EXT0 */
++#define RTL8365MB_C_DIGITAL_INTERFACE_FORCE_REG1		0x1311 /* EXT1 */
++#define RTL8365MB_C_DIGITAL_INTERFACE_FORCE_REG2		0x13C4 /* EXT2 */
++#define RTL8365MB_C_DIGITAL_INTERFACE_FORCE_REG(_extint) \
++		((_extint) == 0 ? RTL8365MB_C_DIGITAL_INTERFACE_FORCE_REG0 : \
++		 (_extint) == 1 ? RTL8365MB_C_DIGITAL_INTERFACE_FORCE_REG1 : \
++		 (_extint) == 2 ? RTL8365MB_C_DIGITAL_INTERFACE_FORCE_REG2 : \
+ 		 0x0)
+-#define   RTL8365MB_DIGITAL_INTERFACE_FORCE_EN_MASK		BIT(12)
++#define   RTL8365MB_C_DIGITAL_INTERFACE_FORCE_EN_MASK		BIT(12)
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_NWAY_MASK		BIT(7)
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_TXPAUSE_MASK	BIT(6)
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_RXPAUSE_MASK	BIT(5)
+@@ -692,11 +692,16 @@ struct rtl8365mb_extint {
+ 	unsigned int supported_interfaces;
+ };
+ 
++static int rtl8365mb_c_ext_config_forcemode(struct realtek_priv *priv, int port,
++					    bool link, int speed, int duplex,
++					    bool tx_pause, bool rx_pause);
++
+ static const struct rtl8365mb_family_info rtl8365mb_family_c = {
+ 	.family = RTL8365MB_FAMILY_C,
+ 	.num_ports = RTL8365MB_C_MAX_NUM_PORTS,
+ 	.jam_table = rtl8365mb_init_jam_8365mb_vc,
+ 	.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
++	.ext_config_forcemode = rtl8365mb_c_ext_config_forcemode,
+ };
+ 
+ /**
+@@ -1558,9 +1563,9 @@ static const struct phylink_pcs_ops rtl8
+ 	.pcs_link_up = rtl8365mb_pcs_link_up,
+ };
+ 
+-static int rtl8365mb_ext_config_forcemode(struct realtek_priv *priv, int port,
+-					  bool link, int speed, int duplex,
+-					  bool tx_pause, bool rx_pause)
++static int rtl8365mb_c_ext_config_forcemode(struct realtek_priv *priv, int port,
++					    bool link, int speed, int duplex,
++					    bool tx_pause, bool rx_pause)
+ {
+ 	const struct rtl8365mb_extint *extint =
+ 		rtl8365mb_get_port_extint(priv, port);
+@@ -1615,7 +1620,7 @@ static int rtl8365mb_ext_config_forcemod
+ 		r_duplex = 0;
+ 	}
+ 
+-	val = FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_EN_MASK, 1) |
++	val = FIELD_PREP(RTL8365MB_C_DIGITAL_INTERFACE_FORCE_EN_MASK, 1) |
+ 	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_TXPAUSE_MASK,
+ 			 r_tx_pause) |
+ 	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_RXPAUSE_MASK,
+@@ -1625,7 +1630,7 @@ static int rtl8365mb_ext_config_forcemod
+ 			 r_duplex) |
+ 	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK, r_speed);
+ 	ret = regmap_write(priv->map,
+-			   RTL8365MB_DIGITAL_INTERFACE_FORCE_REG(extint->id),
++			   RTL8365MB_C_DIGITAL_INTERFACE_FORCE_REG(extint->id),
+ 			   val);
+ 	if (ret)
+ 		return ret;
+@@ -1733,12 +1738,14 @@ static void rtl8365mb_phylink_mac_link_d
+ {
+ 	struct dsa_port *dp = dsa_phylink_to_port(config);
+ 	struct realtek_priv *priv = dp->ds->priv;
++	const struct rtl8365mb_family_info *fi;
+ 	struct rtl8365mb_port *p;
+ 	struct rtl8365mb *mb;
+ 	u8 port = dp->index;
+ 	int ret;
+ 
+ 	mb = priv->chip_data;
++	fi = rtl8365mb_get_family_info(priv);
+ 	p = &mb->ports[port];
+ 	cancel_delayed_work_sync(&p->mib_work);
+ 
+@@ -1749,8 +1756,8 @@ static void rtl8365mb_phylink_mac_link_d
+ 	 */
+ 	if (phy_interface_mode_is_rgmii(interface) ||
+ 	    rtl8365mb_interface_is_serdes(interface)) {
+-		ret = rtl8365mb_ext_config_forcemode(priv, port, false, 0, 0,
+-						     false, false);
++		ret = fi->ext_config_forcemode(priv, port, false, 0, 0,
++					       false, false);
+ 		if (ret)
+ 			dev_err(priv->dev,
+ 				"failed to reset forced mode on port %d: %pe\n",
+@@ -1769,12 +1776,14 @@ static void rtl8365mb_phylink_mac_link_u
+ {
+ 	struct dsa_port *dp = dsa_phylink_to_port(config);
+ 	struct realtek_priv *priv = dp->ds->priv;
++	const struct rtl8365mb_family_info *fi;
+ 	struct rtl8365mb_port *p;
+ 	struct rtl8365mb *mb;
+ 	u8 port = dp->index;
+ 	int ret;
+ 
+ 	mb = priv->chip_data;
++	fi = rtl8365mb_get_family_info(priv);
+ 	p = &mb->ports[port];
+ 	schedule_delayed_work(&p->mib_work, 0);
+ 
+@@ -1784,9 +1793,8 @@ static void rtl8365mb_phylink_mac_link_u
+ 	 */
+ 	if (phy_interface_mode_is_rgmii(interface) ||
+ 	    rtl8365mb_interface_is_serdes(interface)) {
+-		ret = rtl8365mb_ext_config_forcemode(priv, port, true, speed,
+-						     duplex, tx_pause,
+-						     rx_pause);
++		ret = fi->ext_config_forcemode(priv, port, true, speed,
++					       duplex, tx_pause, rx_pause);
+ 		if (ret) {
+ 			dev_err(priv->dev,
+ 				"failed to force mode on port %d: %pe\n", port,
