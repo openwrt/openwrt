@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+/*
+ * OpenWrt additions to the ZTE ZXHN H3600 device tree of the kernel
+ * (arch/arm/boot/dts/zte/zx279128s-zte-zxhn-h3600.dts): the LED aliases of
+ * OpenWrt's boot status and a pstore region.
+ *
+ * The kernel command line is CONFIG_CMDLINE with CONFIG_CMDLINE_FORCE (see
+ * config-6.18), not /chosen/bootargs: CONFIG_ARM_ATAG_DTB_COMPAT takes the
+ * RAM size from the boot loader, and the boot loader's own command line
+ * (root=/dev/mtdblock8 ... mem=...) is meant for the stock firmware.
+ */
+
+#include "zte/zx279128s-zte-zxhn-h3600.dts"
+
+/ {
+	aliases {
+		ethernet0 = &gmac;
+		led-boot = &led_power_red;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * Kernel log and oops records that survive a reboot. Inside the
+		 * lower 256 MiB that every unit has, and away from the top of
+		 * RAM, which the boot loader may use during a reboot.
+		 */
+		ramoops@4bf00000 {
+			compatible = "ramoops";
+			reg = <0x4bf00000 0x100000>;
+			no-map;
+			record-size = <0x20000>;
+			console-size = <0x40000>;
+			ecc-size = <16>;
+		};
+	};
+};
