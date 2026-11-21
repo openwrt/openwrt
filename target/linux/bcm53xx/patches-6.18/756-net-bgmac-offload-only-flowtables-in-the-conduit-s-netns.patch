@@ -1,0 +1,97 @@
+From a85255142de054d02293f9e03f7aa1bb73a4921f Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Sat, 21 Nov 2026 14:57:48 +0000
+Subject: [PATCH] net: bgmac: offload only flowtables in the conduit's netns
+
+bgmac_fa_parse() resolves the ingress ifindex of a flow in init_net,
+while the ifindex belongs to the netns of the flowtable. With the user
+ports in another netns the lookup usually finds no port and the flow
+stays in software, but an ifindex that init_net uses for another port
+of the switch gives the flow the wrong ingress port. Resolving it in
+the flowtable's netns would let that netns put flows into the flow
+accelerator, which all ports share and which matches a flow by its
+addresses and ports only, so those entries would also forward frames
+of the conduit's netns.
+
+Set up no flow block for a netns other than the conduit's, and look the
+ingress ifindex up in the conduit's netns. A further bind of a block set
+up earlier only takes a reference, so that its unbind stays balanced. A
+port outside the conduit's netns is refused for a new flow, and
+bgmac_fa_flow_allowed() takes a flow out when one of its ports moves to
+another netns. OpenWrt's netfilter patch 701 ignores -EOPNOTSUPP from a
+flowtable device's offload setup, so a flowtable in another netns runs
+in software there. Without that patch, nft fails to add such a flowtable
+with the offload flag.
+
+On an RT-N18U, a LAN port and wan were moved into another netns with an
+offload flowtable, and a UDP download ran through them. The flowtable
+was added without an error or a warning. When that netns already had
+devices at their ifindexes, as a container can have, the two ports got
+ifindexes that other ports of the switch have in init_net. Without this
+patch the download then ran through the accelerator at 900 Mbit/s; with
+it, in software at 600 Mbit/s. Without such a clash the download stayed
+in software either way. When a port moved into another netns under an
+offloaded download, the flowtable took the flow out of the accelerator
+at the move, before bgmac_fa_flow_allowed() saw it.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ drivers/net/ethernet/broadcom/bgmac-fa.c | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac-fa.c
++++ b/drivers/net/ethernet/broadcom/bgmac-fa.c
+@@ -586,6 +586,9 @@ static struct dsa_port *bgmac_fa_user_po
+ 	if (!dev || !netdev_uses_dsa(bgmac->net_dev))
+ 		return NULL;
+ 
++	if (!net_eq(dev_net(dev), dev_net(bgmac->net_dev)))
++		return NULL;
++
+ 	list_for_each_entry(dp, &cpu_dp->dst->ports, list)
+ 		if (dsa_port_is_user(dp) && dp->user == dev &&
+ 		    dp->cpu_dp == cpu_dp)
+@@ -677,7 +680,8 @@ static int bgmac_fa_parse(struct bgmac *
+ 
+ 		flow_rule_match_meta(rule, &m);
+ 		rcu_read_lock();
+-		in = dev_get_by_index_rcu(&init_net, m.key->ingress_ifindex);
++		in = dev_get_by_index_rcu(dev_net_rcu(bgmac->net_dev),
++					  m.key->ingress_ifindex);
+ 		r->in = bgmac_fa_user_port(bgmac, in);
+ 		rcu_read_unlock();
+ 		if (!r->in)
+@@ -970,6 +974,10 @@ static bool bgmac_fa_flow_allowed(struct
+ 	    !bgmac_fa_conduit_of(bgmac, nh->dp))
+ 		return false;
+ 
++	if (!net_eq(dev_net(flow->in->user), dev_net(bgmac->net_dev)) ||
++	    !net_eq(dev_net(nh->dp->user), dev_net(bgmac->net_dev)))
++		return false;
++
+ 	if ((flow->t.v6 || flow->t.proto == IPPROTO_TCP) &&
+ 	    !b53_fa_trap_active(flow->in->ds, flow->in->index))
+ 		return false;
+@@ -1155,9 +1163,9 @@ static int bgmac_fa_flow_stats(struct bg
+ 	if (!flow)
+ 		return -ENOENT;
+ 
+-	/* A port's VLANs can change without a word to this driver, and the
+-	 * flowtable asks for the counters of a flow every few seconds: take
+-	 * the flow out here, it goes on in software.
++	/* A port's VLANs or netns can change without a word to this driver,
++	 * and the flowtable asks for the counters of a flow every few seconds:
++	 * take the flow out here, it goes on in software.
+ 	 */
+ 	if (!bgmac_fa_flow_allowed(bgmac, flow)) {
+ 		bgmac_fa_flow_remove(bgmac, flow);
+@@ -1257,6 +1265,9 @@ static int bgmac_fa_setup_block(struct b
+ 			return 0;
+ 		}
+ 
++		if (!net_eq(f->net, dev_net(bgmac->net_dev)))
++			return -EOPNOTSUPP;
++
+ 		block = kzalloc(sizeof(*block), GFP_KERNEL);
+ 		if (!block)
+ 			return -ENOMEM;
