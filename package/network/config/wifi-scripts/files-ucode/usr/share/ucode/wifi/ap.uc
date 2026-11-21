@@ -54,6 +54,44 @@ function sae_password_available(config) {
 		sae_password_option(config);
 }
 
+/* options hostapd parses only when built with a feature that wpad-basic and
+ * wpad-mini leave out; hostapd refuses its whole configuration, every BSS of
+ * the radio, at a line it cannot parse */
+const FEATURE_OPTIONS = [
+	{ feature: 'wnm-ap', refusal: 'WNM_NOT_SUPPORTED',
+	  options: [ 'bss_transition', 'wnm_sleep_mode', 'wnm_sleep_mode_no_keys' ] },
+	{ feature: 'mbo', refusal: 'MBO_NOT_SUPPORTED', options: [ 'mbo' ] },
+	{ feature: 'proxyarp', refusal: 'PROXYARP_NOT_SUPPORTED', options: [ 'proxy_arp' ] },
+];
+
+let hostapd_features = {};
+
+function hostapd_has_feature(feature) {
+	hostapd_features[feature] ??= system(`/usr/sbin/hostapd -v${feature} >/dev/null 2>&1`) == 0;
+
+	return hostapd_features[feature];
+}
+
+/* without the feature, leave such an option out when it is off, and refuse
+ * only this BSS when it is on */
+function feature_refusal(config) {
+	for (let entry in FEATURE_OPTIONS) {
+		let set = filter(entry.options, (option) => config[option] != null);
+
+		if (!length(set) || hostapd_has_feature(entry.feature))
+			continue;
+
+		for (let option in set) {
+			if (config[option])
+				return entry.refusal;
+
+			delete config[option];
+		}
+	}
+
+	return null;
+}
+
 function bss_refusal(config, band) {
 	const personal = config.auth_type in [ 'psk', 'psk2', 'sae', 'psk-sae', 'psk-sae-compat' ];
 	const kind = key_kind(config.key);
@@ -715,6 +753,10 @@ export function owe_transition(config, band) {
 };
 
 export function generate(interface, data, config, vlans, stas, phy_features) {
+	const unsupported = feature_refusal(config);
+	if (unsupported)
+		return unsupported;
+
 	config.ctrl_interface = '/var/run/hostapd';
 
 	config.start_disabled = data.ap_start_disabled;
