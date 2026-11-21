@@ -1,0 +1,135 @@
+From cd461c06eebfd26efba8cb4b2d4756ade1b94359 Mon Sep 17 00:00:00 2001
+From: Murad Rabadanov <the21.21@mail.ru>
+Date: Tue, 10 Nov 2026 22:44:18 +0300
+Subject: [PATCH] mtd: spinand: add support for Wodposit WPS3NS01W
+
+Add support for the Wodposit WPS3NS01W found on some Tenbay WR3000K
+units. The chip returns a5:a0 with a dummy byte after READ ID and has
+128 MiB of data, 2 KiB pages and 64 bytes of OOB per page.
+
+Use the standard single-lane cache operations with one dummy byte for
+cache reads. Reserve the first two OOB bytes for bad-block markers.
+Use the on-die ECC status values from the Ingenic driver.
+
+Link: https://github.com/openwrt/openwrt/issues/23842
+Link: https://github.com/gtxaspec/ingenic-u-boot-xburst1/blob/4092abf5e9863af08eac6fa5cba6377ed237234a/drivers/mtd/devices/nand_device/wodposit_nand.c
+Link: https://github.com/Yuzhii0718/bl-mt798x-dhcpd/blob/e4cf4dc72d451dc7a86c9508390ad5a2e50743c4/uboot-mtk-20250711/drivers/mtd/nand/spi/wodposit.c
+---
+ drivers/mtd/nand/spi/Makefile   |  2 +-
+ drivers/mtd/nand/spi/core.c     |  1 +
+ drivers/mtd/nand/spi/wodposit.c | 79 +++++++++++++++++++++++++++++++++
+ include/linux/mtd/spinand.h     |  1 +
+ 4 files changed, 82 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/mtd/nand/spi/wodposit.c
+
+--- a/drivers/mtd/nand/spi/Makefile
++++ b/drivers/mtd/nand/spi/Makefile
+@@ -1,5 +1,5 @@
+ # SPDX-License-Identifier: GPL-2.0
+ spinand-objs := core.o otp.o
+ spinand-objs += alliancememory.o ato.o dosilicon.o esmt.o etron.o fmsh.o foresee.o gigadevice.o heyangtek.o
+-spinand-objs += macronix.o micron.o paragon.o skyhigh.o toshiba.o winbond.o xtx.o
++spinand-objs += macronix.o micron.o paragon.o skyhigh.o toshiba.o winbond.o wodposit.o xtx.o
+ obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -1260,6 +1260,7 @@ static const struct spinand_manufacturer
+ 	&skyhigh_spinand_manufacturer,
+ 	&toshiba_spinand_manufacturer,
+ 	&winbond_spinand_manufacturer,
++	&wodposit_spinand_manufacturer,
+ 	&xtx_spinand_manufacturer,
+ };
+ 
+--- /dev/null
++++ b/drivers/mtd/nand/spi/wodposit.c
+@@ -0,0 +1,79 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#include <linux/errno.h>
++#include <linux/kernel.h>
++#include <linux/mtd/spinand.h>
++
++#define SPINAND_MFR_WODPOSIT		0xa5
++#define WODPOSIT_STATUS_ECC_5_BITFLIPS	(3 << 4)
++
++static SPINAND_OP_VARIANTS(read_cache_variants,
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_1S_OP(0, 1, NULL, 0, 0));
++
++static SPINAND_OP_VARIANTS(write_cache_variants,
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(true, 0, NULL, 0));
++
++static SPINAND_OP_VARIANTS(update_cache_variants,
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(false, 0, NULL, 0));
++
++static int wodposit_ooblayout_ecc(struct mtd_info *mtd, int section,
++				 struct mtd_oob_region *region)
++{
++	return -ERANGE;
++}
++
++static int wodposit_ooblayout_free(struct mtd_info *mtd, int section,
++				  struct mtd_oob_region *region)
++{
++	if (section)
++		return -ERANGE;
++
++	region->offset = 2;
++	region->length = mtd->oobsize - 2;
++
++	return 0;
++}
++
++static const struct mtd_ooblayout_ops wodposit_ooblayout = {
++	.ecc = wodposit_ooblayout_ecc,
++	.free = wodposit_ooblayout_free,
++};
++
++static int wodposit_ecc_get_status(struct spinand_device *spinand, u8 status)
++{
++	switch (status & STATUS_ECC_MASK) {
++	case STATUS_ECC_NO_BITFLIPS:
++		return 0;
++	case STATUS_ECC_HAS_BITFLIPS:
++		return 4;
++	case STATUS_ECC_UNCOR_ERROR:
++		return -EBADMSG;
++	case WODPOSIT_STATUS_ECC_5_BITFLIPS:
++		return 5;
++	default:
++		return -EINVAL;
++	}
++}
++
++static const struct spinand_info wodposit_spinand_table[] = {
++	SPINAND_INFO("WPS3NS01W",
++		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xa0),
++		     NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
++		     NAND_ECCREQ(6, 512),
++		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
++					      &write_cache_variants,
++					      &update_cache_variants),
++		     0,
++		     SPINAND_ECCINFO(&wodposit_ooblayout,
++				     wodposit_ecc_get_status)),
++};
++
++static const struct spinand_manufacturer_ops wodposit_spinand_manuf_ops = {};
++
++const struct spinand_manufacturer wodposit_spinand_manufacturer = {
++	.id = SPINAND_MFR_WODPOSIT,
++	.name = "Wodposit",
++	.chips = wodposit_spinand_table,
++	.nchips = ARRAY_SIZE(wodposit_spinand_table),
++	.ops = &wodposit_spinand_manuf_ops,
++};
+--- a/include/linux/mtd/spinand.h
++++ b/include/linux/mtd/spinand.h
+@@ -374,6 +374,7 @@ extern const struct spinand_manufacturer
+ extern const struct spinand_manufacturer skyhigh_spinand_manufacturer;
+ extern const struct spinand_manufacturer toshiba_spinand_manufacturer;
+ extern const struct spinand_manufacturer winbond_spinand_manufacturer;
++extern const struct spinand_manufacturer wodposit_spinand_manufacturer;
+ extern const struct spinand_manufacturer xtx_spinand_manufacturer;
+ 
+ /**
