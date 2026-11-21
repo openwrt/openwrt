@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# This script replaces the generic one, which then never runs: let it do
+# the Wi-Fi interfaces and the rest first, the Ethernet settings below
+# override its choices
+steering_flows="$(uci -q get network.@globals[0].steering_flows)"
+[ "${steering_flows:-0}" -gt 0 ] && opts="-l $steering_flows"
+/usr/libexec/network/packet-steering.uc $opts "$1"
+
 packet_steering="$(uci -q get network.@globals[0].packet_steering)"
 flow_offloading="$(uci -q get firewall.@defaults[0].flow_offloading)"
 flow_offloading_hw="$(uci -q get firewall.@defaults[0].flow_offloading_hw)"
