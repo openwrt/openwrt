@@ -1,0 +1,227 @@
+From 7c74b2076dc7dee1d481d39a135e0946d5e04145 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 1 Nov 2026 18:51:46 +0100
+Subject: [PATCH] net: keep the TCP fixed-ID flags on the header they describe
+
+Commit 3271f19bf7b9 ("net: gso: restore ids of outer ip headers
+correctly") made SKB_GSO_TCP_FIXEDID describe the outermost IPv4 header
+and added SKB_GSO_TCP_FIXEDID_INNER for the inner header of an
+encapsulated packet. Every path that adds or removes a header then has to
+move the flags, and none does. A TCP stream that GRO merged with fixed
+IDs and that is forwarded into an IPIP tunnel, or into an ESP tunnel mode
+SA with crypto offload, is segmented with one outer ID for all segments
+and with incrementing inner IDs. A tunnel that decapsulates such a packet
+in iptunnel_pull_offloads() leaves the state of the removed outer header
+on the new outer one, and the inner header of a GRE or UDP tunnel, which
+segmentation reads at encap_level 0, gets the state of the outer header.
+
+Let SKB_GSO_TCP_FIXEDID describe the innermost IPv4 header again, as it
+did before that commit, and replace SKB_GSO_TCP_FIXEDID_INNER with
+SKB_GSO_TCP_FIXEDID_OUTER for the outermost header of an encapsulated
+packet. Where a header is added in front of a GSO packet, in
+iptunnel_handle_offloads() and in the BPF LWT encapsulation, clear the
+outer flag, so that the new header gets incrementing IDs as it does on a
+packet that was not encapsulated before. Clear it as well where
+iptunnel_pull_offloads() and bpf_skb_net_shrink() remove the outer
+header. ESP transport and BEET mode with crypto offload set
+skb->encapsulation but keep the IPv4 header and its ID, so xfrm_output()
+copies the inner flag to the outer one for them. Convert mlx5 and sfc,
+the two drivers that use the inner flag.
+
+Two flags cannot describe a header between the outermost and the
+innermost one of a packet with three IPv4 headers: software segmentation
+uses SKB_GSO_TCP_FIXEDID for it, as it used SKB_GSO_TCP_FIXEDID_INNER
+before.
+
+Fixes: 3271f19bf7b9 ("net: gso: restore ids of outer ip headers correctly")
+Suggested-by: Alexei Starovoitov <alexei.starovoitov@gmail.com>
+Link: https://lore.kernel.org/netdev/cover.1795284858.git.julius@bairaktaris.de/
+[ 6.18: bpf_skb_net_shrink() has no BPF_F_ADJ_ROOM_DECAP_L4_* or
+  BPF_F_ADJ_ROOM_DECAP_IPXIP* flags yet, so its decapsulation hunk and
+  the uAPI documentation of those flags are left out ]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/Documentation/networking/segmentation-offloads.rst
++++ b/Documentation/networking/segmentation-offloads.rst
+@@ -45,9 +45,11 @@ The default behavior is to increment the
+ GSO type SKB_GSO_TCP_FIXEDID is specified then we will not increment the IP
+ ID and all segments will use the same IP ID.
+ 
+-For encapsulated packets, SKB_GSO_TCP_FIXEDID refers only to the outer header.
+-SKB_GSO_TCP_FIXEDID_INNER can be used to specify the same for the inner header.
+-Any combination of these two GSO types is allowed.
++For encapsulated packets, SKB_GSO_TCP_FIXEDID describes the innermost header
++and SKB_GSO_TCP_FIXEDID_OUTER the outermost header. Any combination of these
++two GSO types is allowed. A header added in front of a packet gets incrementing
++IDs. A header between the outermost and the innermost one has no flag of its
++own; software segmentation uses SKB_GSO_TCP_FIXEDID for it.
+ 
+ If a device has NETIF_F_TSO_MANGLEID set then the IP ID can be ignored when
+ performing TSO and we will either increment the IP ID for all frames, or leave
+--- a/drivers/net/ethernet/mellanox/mlx5/core/en_rx.c
++++ b/drivers/net/ethernet/mellanox/mlx5/core/en_rx.c
+@@ -1301,12 +1301,8 @@ static void mlx5e_shampo_update_ipv4_tcp
+ 	tcp->check = ~tcp_v4_check(skb->len - tcp_off, ipv4->saddr,
+ 				   ipv4->daddr, 0);
+ 	skb_shinfo(skb)->gso_type |= SKB_GSO_TCPV4;
+-	if (ntohs(ipv4->id) == rq->hw_gro_data->second_ip_id) {
+-		bool encap = rq->hw_gro_data->fk.control.flags & FLOW_DIS_ENCAPSULATION;
+-
+-		skb_shinfo(skb)->gso_type |= encap ? SKB_GSO_TCP_FIXEDID_INNER :
+-						     SKB_GSO_TCP_FIXEDID;
+-	}
++	if (ntohs(ipv4->id) == rq->hw_gro_data->second_ip_id)
++		skb_shinfo(skb)->gso_type |= SKB_GSO_TCP_FIXEDID;
+ 
+ 	skb->csum_start = (unsigned char *)tcp - skb->head;
+ 	skb->csum_offset = offsetof(struct tcphdr, check);
+--- a/drivers/net/ethernet/sfc/ef100_tx.c
++++ b/drivers/net/ethernet/sfc/ef100_tx.c
+@@ -201,16 +201,10 @@ static void ef100_make_tso_desc(struct e
+ 	bool outer_csum;
+ 	u32 paylen;
+ 
+-	if (encap) {
+-		if (skb_shinfo(skb)->gso_type & SKB_GSO_TCP_FIXEDID_INNER)
+-			mangleid = ESE_GZ_TX_DESC_IP4_ID_NO_OP;
+-		if (skb_shinfo(skb)->gso_type & SKB_GSO_TCP_FIXEDID)
+-			mangleid_outer = ESE_GZ_TX_DESC_IP4_ID_NO_OP;
+-	} else {
+-		if (skb_shinfo(skb)->gso_type & SKB_GSO_TCP_FIXEDID)
+-			mangleid = ESE_GZ_TX_DESC_IP4_ID_NO_OP;
++	if (skb_shinfo(skb)->gso_type & SKB_GSO_TCP_FIXEDID)
++		mangleid = ESE_GZ_TX_DESC_IP4_ID_NO_OP;
++	if (!encap || (skb_shinfo(skb)->gso_type & SKB_GSO_TCP_FIXEDID_OUTER))
+ 		mangleid_outer = ESE_GZ_TX_DESC_IP4_ID_NO_OP;
+-	}
+ 
+ 	if (efx->net_dev->features & NETIF_F_HW_VLAN_CTAG_TX)
+ 		vlan_enable = skb_vlan_tag_present(skb);
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -5389,7 +5389,7 @@ static inline bool net_gso_ok(netdev_fea
+ {
+ 	netdev_features_t feature;
+ 
+-	if (gso_type & (SKB_GSO_TCP_FIXEDID | SKB_GSO_TCP_FIXEDID_INNER))
++	if (gso_type & (SKB_GSO_TCP_FIXEDID | SKB_GSO_TCP_FIXEDID_OUTER))
+ 		gso_type |= __SKB_GSO_TCP_FIXEDID;
+ 
+ 	feature = ((netdev_features_t)gso_type << NETIF_F_GSO_SHIFT) & NETIF_F_GSO_MASK;
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -710,9 +710,19 @@ enum {
+ 
+ 	/* These indirectly map onto the same netdev feature.
+ 	 * If NETIF_F_TSO_MANGLEID is set it may mangle both inner and outer IDs.
++	 * SKB_GSO_TCP_FIXEDID describes the innermost IPv4 header and
++	 * SKB_GSO_TCP_FIXEDID_OUTER the outermost one. Adding a header in
++	 * iptunnel_handle_offloads() or with BPF LWT clears the outer flag, and
++	 * so does removing one in iptunnel_pull_offloads() or in
++	 * bpf_skb_adjust_room() with a BPF_F_ADJ_ROOM_DECAP_L4_* or
++	 * BPF_F_ADJ_ROOM_DECAP_IPXIP* flag. xfrm_output() sets it from the
++	 * inner flag for ESP transport and BEET mode offload, which keep the
++	 * header.
++	 * Software segmentation uses SKB_GSO_TCP_FIXEDID for any header in
++	 * between.
+ 	 */
+ 	SKB_GSO_TCP_FIXEDID = 1 << 30,
+-	SKB_GSO_TCP_FIXEDID_INNER = 1 << 31,
++	SKB_GSO_TCP_FIXEDID_OUTER = 1 << 31,
+ };
+ 
+ #if BITS_PER_LONG > 32
+--- a/include/net/ip_tunnels.h
++++ b/include/net/ip_tunnels.h
+@@ -663,6 +663,7 @@ static inline int iptunnel_pull_offloads
+ 			return err;
+ 		skb_shinfo(skb)->gso_type &= ~(NETIF_F_GSO_ENCAP_ALL >>
+ 					       NETIF_F_GSO_SHIFT);
++		skb_shinfo(skb)->gso_type &= ~SKB_GSO_TCP_FIXEDID_OUTER;
+ 	}
+ 
+ 	skb->encapsulation = 0;
+--- a/net/core/lwt_bpf.c
++++ b/net/core/lwt_bpf.c
+@@ -536,6 +536,8 @@ static int handle_gso_type(struct sk_buf
+ 	struct skb_shared_info *shinfo = skb_shinfo(skb);
+ 
+ 	gso_type |= SKB_GSO_DODGY;
++	/* The outer flag described the header below the new one. */
++	shinfo->gso_type &= ~SKB_GSO_TCP_FIXEDID_OUTER;
+ 	shinfo->gso_type |= gso_type;
+ 	skb_decrease_gso_size(shinfo, encap_len);
+ 	shinfo->gso_segs = 0;
+--- a/net/ipv4/af_inet.c
++++ b/net/ipv4/af_inet.c
+@@ -1393,10 +1393,13 @@ struct sk_buff *inet_gso_segment(struct
+ 
+ 	segs = ERR_PTR(-EPROTONOSUPPORT);
+ 
+-	fixedid = !!(skb_shinfo(skb)->gso_type & (SKB_GSO_TCP_FIXEDID << encap));
+-
+-	if (!skb->encapsulation || encap)
++	if (!skb->encapsulation || encap) {
+ 		udpfrag = !!(skb_shinfo(skb)->gso_type & SKB_GSO_UDP);
++		fixedid = !!(skb_shinfo(skb)->gso_type & SKB_GSO_TCP_FIXEDID);
++	} else {
++		fixedid = !!(skb_shinfo(skb)->gso_type &
++			     SKB_GSO_TCP_FIXEDID_OUTER);
++	}
+ 
+ 	ops = rcu_dereference(inet_offloads[proto]);
+ 	if (likely(ops && ops->callbacks.gso_segment)) {
+--- a/net/ipv4/ip_tunnel_core.c
++++ b/net/ipv4/ip_tunnel_core.c
+@@ -185,6 +185,8 @@ int iptunnel_handle_offloads(struct sk_b
+ 		err = skb_header_unclone(skb, GFP_ATOMIC);
+ 		if (unlikely(err))
+ 			return err;
++		/* The outer flag described the header below the new one. */
++		skb_shinfo(skb)->gso_type &= ~SKB_GSO_TCP_FIXEDID_OUTER;
+ 		skb_shinfo(skb)->gso_type |= gso_type_mask;
+ 		return 0;
+ 	}
+--- a/net/ipv4/tcp_offload.c
++++ b/net/ipv4/tcp_offload.c
+@@ -482,6 +482,8 @@ INDIRECT_CALLABLE_SCOPE int tcp4_gro_com
+ {
+ 	const u16 offset = NAPI_GRO_CB(skb)->network_offsets[skb->encapsulation];
+ 	const struct iphdr *iph = (struct iphdr *)(skb->data + offset);
++	const u8 fixedid = NAPI_GRO_CB(skb)->ip_fixedid;
++	const u8 encap = skb->encapsulation;
+ 	struct tcphdr *th = tcp_hdr(skb);
+ 
+ 	if (unlikely(NAPI_GRO_CB(skb)->is_flist)) {
+@@ -499,9 +501,10 @@ INDIRECT_CALLABLE_SCOPE int tcp4_gro_com
+ 	th->check = ~tcp_v4_check(skb->len - thoff, iph->saddr,
+ 				  iph->daddr, 0);
+ 
+-	BUILD_BUG_ON(SKB_GSO_TCP_FIXEDID << 1 != SKB_GSO_TCP_FIXEDID_INNER);
++	/* Bit 0 of ip_fixedid is the outermost header, bit 1 the inner one. */
+ 	skb_shinfo(skb)->gso_type |= SKB_GSO_TCPV4 |
+-			(NAPI_GRO_CB(skb)->ip_fixedid * SKB_GSO_TCP_FIXEDID);
++		(((fixedid >> encap) & 1) * SKB_GSO_TCP_FIXEDID) |
++		((fixedid & encap) * SKB_GSO_TCP_FIXEDID_OUTER);
+ 
+ 	tcp_gro_complete(skb);
+ 	return 0;
+--- a/net/xfrm/xfrm_output.c
++++ b/net/xfrm/xfrm_output.c
+@@ -798,6 +798,16 @@ int xfrm_output(struct sock *sk, struct
+ 		xfrm_state_hold(x);
+ 
+ 		xfrm_get_inner_ipproto(skb, x);
++		/*
++		 * Transport and BEET mode keep the IPv4 header and its ID, so
++		 * the header that SKB_GSO_TCP_FIXEDID describes is the outer
++		 * one as well.
++		 */
++		if (!skb->encapsulation &&
++		    (x->props.mode == XFRM_MODE_TRANSPORT ||
++		     x->props.mode == XFRM_MODE_BEET) &&
++		    (skb_shinfo(skb)->gso_type & SKB_GSO_TCP_FIXEDID))
++			skb_shinfo(skb)->gso_type |= SKB_GSO_TCP_FIXEDID_OUTER;
+ 		skb->encapsulation = 1;
+ 
+ 		if (skb_is_gso(skb)) {
