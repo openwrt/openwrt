@@ -1,0 +1,347 @@
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -259,6 +259,47 @@
+ #define RTL9000A_GINMR				0x14
+ #define RTL9000A_GINMR_LINK_STATUS		BIT(4)
+ 
++#define RTL9607C_PX_PHY_STATUS_ADDR		0x10
++#define RTL9607C_PX_PHY_STATUS_MASK		GENMASK(2, 0)
++#define   RTL9607C_STATUS_EXT_INI		2
++
++#define RTL9607C_ECHO_CANCELLOR			0x16
++#define RTL9607C_AUTOTUNE_FUNC			BIT(4)
++
++#define RTL9607C_LOCK_MAIN_ADDR			0x15
++#define RTL9607C_LOCK_MAIN_BIT			BIT(1)
++
++#define RTL9607C_PCS_STATE_ADDR			0x10
++#define   RTL9607C_PCS_STATE_OK			BIT(0)
++
++/* Same SRAM addr and data as RTL8224 */
++#define RTL9607C_SRAM_RTCT_FAULT(pair)		(0x802b + (pair) * 4)
++#define RTL9607C_SRAM_RTCT_FAULT_MISMATCH	(BIT(1) | BIT(2))
++#define RTL9607C_SRAM_RTCT_LEN(pair)		(0x802d + (pair) * 4)
++
++#define RTL9607C_SRAM_ADDR_GREEN		0x8011
++#define   RTL9607C_GREEN_R_TUNE			(BIT(15) | BIT(11))
++
++#define RTL9607C_SRAM_ADDR_GIGA_MASTER		0x809b
++#define RTL9607C_SRAM_ADDR_GIGA_SLAVE		0x809d
++#define   RTL9607C_INRX_DELTA			GENMASK(15, 11)
++
++#define RTL9607C_AMP_CAL_ADDR			0x16
++#define   RTL9607C_AMP_CAL_MASK			GENMASK(15, 0)
++#define RTL9607C_AFE_REF_LDO_ADDR		0x17
++#define   RTL9607C_AFE_REF_LDO			GENMASK(14, 12)
++#define   RTL9607C_AFE_ADC_DUTY75		BIT(8)
++#define   RTL9607C_AFE_ADC_SARDUTY		GENMASK(1, 0)
++
++#define RTL9607C_AFE_VCM_ADDR			0x10
++#define   RTL9607C_AFE_VCM			GENMASK(13, 12)
++#define   RTL9607C_AFE_REG_REF			GENMASK(10, 8)
++#define RTL9607C_AFE_ADC_IBSET_DN_ADDR		0x17
++#define   RTL9607C_AFE_ADC_IBSET_DN		BIT(4)
++
++#define RTL9607C_AFE_ADC_IBSET_ADDR		0x13
++#define   RTL9607C_AFE_ADC_IBSET		GENMASK(2, 0)
++
+ #define RTL_PHYSR				MII_RESV2
+ #define RTL_PHYSR_DUPLEX			BIT(3)
+ #define RTL_PHYSR_SPEEDL			GENMASK(5, 4)
+@@ -4277,6 +4318,262 @@ static int rtl826x_set_tunable(struct ph
+ 	return 0;
+ }
+ 
++static int rtl9607c_vb_config_init(struct phy_device *phydev)
++{
++	int ret;
++	u16 val;
++
++	ret = phy_read_paged(phydev, 0xa42, RTL9607C_PX_PHY_STATUS_ADDR);
++	if (ret < 0)
++		return ret;
++
++	/* When Px_phy_status = 0x2 (EXT_INI), we can't set lock main */
++	if ((ret & RTL9607C_PX_PHY_STATUS_MASK) != RTL9607C_STATUS_EXT_INI) {
++		ret = phy_modify_paged(phydev, 0xa46, RTL9607C_LOCK_MAIN_ADDR,
++				       RTL9607C_LOCK_MAIN_BIT,
++				       RTL9607C_LOCK_MAIN_BIT);
++		if (ret)
++			return ret;
++
++		ret = read_poll_timeout(phy_read_paged, val,
++					val & RTL9607C_PCS_STATE_OK, 1, 255,
++					false, phydev, 0xa60,
++					RTL9607C_PCS_STATE_ADDR);
++		if (ret)
++			return ret;
++	}
++
++	ret = phy_write_paged(phydev, 0xa43, RTL8224_MII_SRAM_ADDR,
++			      RTL9607C_SRAM_ADDR_GREEN);
++	if (ret)
++		return ret;
++
++	ret = phy_modify_paged(phydev, 0xa43, RTL8224_MII_SRAM_DATA,
++			       RTL9607C_GREEN_R_TUNE, 0);
++	if (ret)
++		return ret;
++
++	ret = phy_modify_paged(phydev, 0xa42, RTL9607C_ECHO_CANCELLOR,
++			       RTL9607C_AUTOTUNE_FUNC, RTL9607C_AUTOTUNE_FUNC);
++	if (ret)
++		return ret;
++
++	/* Some AFE patch parameters */
++	ret = phy_modify_paged(phydev, 0xbcc, RTL9607C_AFE_VCM_ADDR,
++			       RTL9607C_AFE_VCM, FIELD_PREP(RTL9607C_AFE_VCM, 2));
++	if (ret)
++		return ret;
++
++	ret = phy_modify_paged(phydev, 0xbca, RTL9607C_AFE_REF_LDO_ADDR,
++			       RTL9607C_AFE_REF_LDO,
++			       FIELD_PREP(RTL9607C_AFE_REF_LDO, 4));
++	if (ret)
++		return ret;
++
++	ret = phy_modify_paged(phydev, 0xbcc, RTL9607C_AFE_VCM_ADDR,
++			       RTL9607C_AFE_REG_REF,
++			       FIELD_PREP(RTL9607C_AFE_REG_REF, 4));
++	if (ret)
++		return ret;
++
++	ret = phy_modify_paged(phydev, 0xbca, RTL9607C_AFE_REF_LDO_ADDR,
++			       RTL9607C_AFE_ADC_SARDUTY |
++			       RTL9607C_AFE_ADC_DUTY75, 0);
++	if (ret)
++		return ret;
++
++	ret = phy_modify_paged(phydev, 0xbcc, RTL9607C_AFE_ADC_IBSET_DN_ADDR,
++			       RTL9607C_AFE_ADC_IBSET_DN, 0);
++	if (ret)
++		return ret;
++
++	ret = phy_modify_paged(phydev, 0xbcd, RTL9607C_AFE_ADC_IBSET_ADDR,
++			       RTL9607C_AFE_ADC_IBSET,
++			       FIELD_PREP(RTL9607C_AFE_ADC_IBSET, 5));
++	if (ret)
++		return ret;
++
++	/* AMP Calibration */
++	ret = phy_modify_paged(phydev, 0xbca, RTL9607C_AMP_CAL_ADDR,
++			       RTL9607C_AMP_CAL_MASK, 0x9999);
++	if (ret)
++		return ret;
++
++	/* Where the PHY calibration from OTP would go */
++
++	/* INRX Patch Parameters */
++	ret = phy_write_paged(phydev, 0xa43, RTL8224_MII_SRAM_ADDR,
++			      RTL9607C_SRAM_ADDR_GIGA_MASTER);
++	if (ret)
++		return ret;
++
++	ret = phy_modify_paged(phydev, 0xa43, RTL8224_MII_SRAM_DATA,
++			       RTL9607C_INRX_DELTA,
++			       FIELD_PREP(RTL9607C_INRX_DELTA, 0x13));
++	if (ret)
++		return ret;
++
++	ret = phy_write_paged(phydev, 0xa43, RTL8224_MII_SRAM_ADDR,
++			      RTL9607C_SRAM_ADDR_GIGA_SLAVE);
++	if (ret)
++		return ret;
++
++	ret = phy_modify_paged(phydev, 0xa43, RTL8224_MII_SRAM_DATA,
++			       RTL9607C_INRX_DELTA,
++			       FIELD_PREP(RTL9607C_INRX_DELTA, 0x11));
++	if (ret)
++		return ret;
++
++	/* Release from lock main state */
++	return phy_modify_paged(phydev, 0xa46, RTL9607C_LOCK_MAIN_ADDR,
++			       RTL9607C_LOCK_MAIN_BIT, 0);
++}
++
++static int rtl9607c_cable_test_start(struct phy_device *phydev)
++{
++	u32 val;
++	int ret;
++
++	/* disable auto-negotiation and force 1000/Full */
++	ret = phy_modify(phydev, MII_BMCR,
++			 BMCR_ANENABLE | BMCR_SPEED100 | BMCR_SPEED10,
++			 BMCR_SPEED1000 | BMCR_FULLDPLX);
++	if (ret)
++		return ret;
++
++	/* TODO Check if this delay is needed */
++	mdelay(500);
++
++	/* trigger cable test */
++	val = RTL8224_MII_RTCT_ENABLE;
++	val |= RTL8224_MII_RTCT_PAIR_A;
++	val |= RTL8224_MII_RTCT_PAIR_B;
++	val |= RTL8224_MII_RTCT_PAIR_C;
++	val |= RTL8224_MII_RTCT_PAIR_D;
++
++	return phy_modify_paged(phydev, 0xa42, RTL8224_MII_RTCT,
++				RTL8224_MII_RTCT_DONE, val);
++}
++
++static int rtl9607c_sram_read(struct phy_device *phydev, u32 reg)
++{
++	int ret;
++
++	ret = phy_write_paged(phydev, 0xa43, RTL8224_MII_SRAM_ADDR, reg);
++	if (ret)
++		return ret;
++
++	return phy_read_paged(phydev, 0xa43, RTL8224_MII_SRAM_DATA);
++}
++
++static int rtl9607c_pair_len_get(struct phy_device *phydev, u32 pair)
++{
++	u32 reg_len;
++	int ret;
++	u32 cm;
++
++	reg_len = RTL9607C_SRAM_RTCT_LEN(pair);
++
++	ret = rtl9607c_sram_read(phydev, reg_len);
++	if (ret < 0)
++		return ret;
++
++	/* PHY reports length in 0x40 degree increments starting at 0x40*/
++	cm = ret - 0x40;
++
++	return cm;
++}
++
++static int rtl9607c_cable_test_result_trans(u32 result)
++{
++	if (!(result & RTL8224_SRAM_RTCT_FAULT_DONE))
++		return -EBUSY;
++
++	if (result & RTL8224_SRAM_RTCT_FAULT_OK)
++		return ETHTOOL_A_CABLE_RESULT_CODE_OK;
++
++	if (result & RTL8224_SRAM_RTCT_FAULT_OPEN)
++		return ETHTOOL_A_CABLE_RESULT_CODE_OPEN;
++
++	if (result & RTL8224_SRAM_RTCT_FAULT_SAME_SHORT)
++		return ETHTOOL_A_CABLE_RESULT_CODE_SAME_SHORT;
++
++	if (result & RTL8224_SRAM_RTCT_FAULT_BUSY)
++		return ETHTOOL_A_CABLE_RESULT_CODE_UNSPEC;
++
++	if (result & RTL9607C_SRAM_RTCT_FAULT_MISMATCH)
++		return ETHTOOL_A_CABLE_RESULT_CODE_IMPEDANCE_MISMATCH;
++
++	return ETHTOOL_A_CABLE_RESULT_CODE_UNSPEC;
++}
++
++static int rtl9607c_cable_test_report_pair(struct phy_device *phydev, unsigned int pair)
++{
++	int fault_rslt;
++	int ret;
++
++	ret = rtl9607c_sram_read(phydev, RTL9607C_SRAM_RTCT_FAULT(pair));
++	if (ret < 0)
++		return ret;
++
++	fault_rslt = rtl9607c_cable_test_result_trans(ret);
++	if (fault_rslt < 0)
++		return 0;
++
++	ret = ethnl_cable_test_result(phydev, pair, fault_rslt);
++	if (ret < 0)
++		return ret;
++
++	switch (fault_rslt) {
++	case ETHTOOL_A_CABLE_RESULT_CODE_OPEN:
++	case ETHTOOL_A_CABLE_RESULT_CODE_SAME_SHORT:
++		ret = rtl9607c_pair_len_get(phydev, pair);
++		if (ret < 0)
++			return ret;
++
++		return ethnl_cable_test_fault_length(phydev, pair, ret);
++	default:
++		return  0;
++	}
++}
++
++static int rtl9607c_cable_test_report(struct phy_device *phydev, bool *finished)
++{
++	unsigned int pair;
++	int ret;
++
++	for (pair = ETHTOOL_A_CABLE_PAIR_A; pair <= ETHTOOL_A_CABLE_PAIR_D; pair++) {
++		ret = rtl9607c_cable_test_report_pair(phydev, pair);
++		if (ret == -EBUSY) {
++			*finished = false;
++			return 0;
++		}
++
++		if (ret < 0)
++			return ret;
++	}
++
++	return 0;
++}
++
++static int rtl9607c_cable_test_get_status(struct phy_device *phydev, bool *finished)
++{
++	int ret;
++
++	*finished = false;
++
++	ret = phy_read_paged(phydev, 0xa42, RTL8224_MII_RTCT);
++	if (ret < 0)
++		return ret;
++
++	if (!(ret & RTL8224_MII_RTCT_DONE))
++		return 0;
++
++	*finished = true;
++
++	return rtl9607c_cable_test_report(phydev, finished);
++}
++
+ static struct phy_driver realtek_drvs[] = {
+ 	{
+ 		PHY_ID_MATCH_EXACT(0x00008201),
+@@ -4734,6 +5031,33 @@ static struct phy_driver realtek_drvs[]
+ 		.get_wol        = rtl826x_get_wol,
+ 		.get_tunable    = rtl826x_get_tunable,
+ 		.set_tunable    = rtl826x_set_tunable,
++	}, {
++		PHY_ID_MATCH_EXACT(0x001ccac0),
++		.name		= "RTL9607C-VA Gigabit Ethernet",
++		.flags = PHY_POLL_CABLE_TEST,
++		/* Interrupt handling analogous to RTL8366RB */
++		.config_intr	= genphy_no_config_intr,
++		.handle_interrupt = genphy_handle_interrupt_no_ack,
++		.suspend	= genphy_suspend,
++		.resume		= genphy_resume,
++		.read_page	= rtl821x_read_page,
++		.write_page	= rtl821x_write_page,
++		.cable_test_start = rtl9607c_cable_test_start,
++		.cable_test_get_status = rtl9607c_cable_test_get_status,
++	}, {
++		PHY_ID_MATCH_EXACT(0x001cc981),
++		.name		= "RTL9607C-VB Gigabit Ethernet",
++		.flags = PHY_POLL_CABLE_TEST,
++		.config_init	= rtl9607c_vb_config_init,
++		/* Interrupt handling analogous to RTL8366RB */
++		.config_intr	= genphy_no_config_intr,
++		.handle_interrupt = genphy_handle_interrupt_no_ack,
++		.suspend	= genphy_suspend,
++		.resume		= genphy_resume,
++		.read_page	= rtl821x_read_page,
++		.write_page	= rtl821x_write_page,
++		.cable_test_start = rtl9607c_cable_test_start,
++		.cable_test_get_status = rtl9607c_cable_test_get_status,
+ 	},
+ };
+ 
