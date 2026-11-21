@@ -12,7 +12,7 @@ PKG_NAME:=mac80211
 
 PKG_SOURCE_VERSION:=7.2
 PKG_VERSION:=$(subst -,_,$(PKG_SOURCE_VERSION))
-PKG_RELEASE:=16
+PKG_RELEASE:=17
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
 
@@ -397,3 +397,4 @@ endef
 $(eval $(foreach drv,$(PKG_DRIVERS),$(call KernelPackage,$(drv))))
 $(eval $(call KernelPackage,cfg80211))
 $(eval $(call KernelPackage,mac80211))
+$(eval $(call BuildPackage,b43-firmware))
