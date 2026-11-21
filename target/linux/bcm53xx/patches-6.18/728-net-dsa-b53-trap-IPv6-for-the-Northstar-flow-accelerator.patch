@@ -1,0 +1,201 @@
+From c871187e7201cec95bfc5d1bab11fe8efb6933ab Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 14:12:04 +0100
+Subject: [PATCH] net: dsa: b53: trap IPv6 for the Northstar flow accelerator
+
+The flow accelerator in front of port 8 can forward IPv6 as well, but it
+has no hop limit check: it forwards a frame with hop limit 1 as hop
+limit 0. Its driver can only use it for IPv6 while the switch keeps
+those frames away from it.
+
+Let the TTL rule match IPv6 with hop limit 0 or 1 too, and add the TCP
+FIN and RST rules for IPv6, with the user defined field of the IPv6
+frames at the same offset. Tell the driver of the accelerator whether
+the traps are on for a port with b53_fa_trap_active().
+
+Linksys EA6900 (BCM4708), TCP flow from a LAN host held by the
+accelerator, then 5 segments with hop limit 1: 4 ICMPv6 time exceeded
+messages (rate limit), the frames arriving on the trap port. After an
+iperf3 test the entries of its IPv6 connections are gone within 1 s,
+after a FIN as after an RST.
+
+Assisted-by: Claude:claude-fable-5-2
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 78 ++++++++++++++++++++++----------
+ drivers/net/dsa/b53/b53_regs.h   |  5 ++
+ include/linux/dsa/b53.h          | 24 ++++++++++
+ 3 files changed, 83 insertions(+), 24 deletions(-)
+ create mode 100644 include/linux/dsa/b53.h
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -18,6 +18,7 @@
+  */
+ 
+ #include <linux/delay.h>
++#include <linux/dsa/b53.h>
+ #include <linux/export.h>
+ #include <linux/gpio.h>
+ #include <linux/kernel.h>
+@@ -656,6 +657,8 @@ enum {
+ 	B53_FA_TRAP_TTL,
+ 	B53_FA_TRAP_FIN,
+ 	B53_FA_TRAP_RST,
++	B53_FA_TRAP_FIN6,
++	B53_FA_TRAP_RST6,
+ 	B53_FA_TRAP_NUM,
+ };
+ 
+@@ -665,23 +668,23 @@ static int b53_fa_trap_set(struct b53_de
+ 	u32 mask[B53_CFP_NUM_KEY_REGS] = {
+ 		CFP_DATA0_SLICE_VALID | CFP_DATA0_SLICE_ID_MASK
+ 	};
+-	int err;
++	int err, v6;
+ 
+-	/* IPv4 from the ports in @src: the source port map key matches
+-	 * the ports that the mask leaves out
++	/* From the ports in @src: the source port map key matches the
++	 * ports that the mask leaves out
+ 	 */
+-	mask[6] = CFP_DATA6_L3_FRAMING_MASK;
+ 	mask[7] = 0xff & ~src;
+ 
+-	/* TTL 0 or 1, which the flow accelerator drops after its decrement
+-	 * instead of leaving the ICMP time exceeded message to the host.
+-	 * The TTL range field (bits 4:3) holds 0 for TTL 0, 1 for TTL 1,
+-	 * 2 for TTL 2 to 254 and 3 for TTL 255 (measured on a BCM4708), so
+-	 * a clear bit 4 matches exactly TTL 0 and 1.
++	/* IPv4 and IPv6 with TTL or hop limit 0 or 1. The flow accelerator
++	 * drops such an IPv4 frame after its decrement instead of leaving
++	 * the ICMP time exceeded message to the host, and forwards an IPv6
++	 * one with hop limit 0. The TTL range field (bits 4:3) holds 0 for
++	 * TTL 0, 1 for TTL 1, 2 for TTL 2 to 254 and 3 for TTL 255
++	 * (measured on a BCM4708), so a clear bit 4 matches exactly TTL 0
++	 * and 1.
+ 	 */
+-	mask[6] |= CFP_DATA6_TTL_RANGE_HIGH;
++	mask[6] = CFP_DATA6_L3_FRAMING_NOT_IP | CFP_DATA6_TTL_RANGE_HIGH;
+ 	err = b53_cfp_redirect(dev, B53_FA_TRAP_TTL, data, mask, map);
+-	mask[6] &= ~CFP_DATA6_TTL_RANGE_HIGH;
+ 	if (err)
+ 		return err;
+ 
+@@ -691,22 +694,36 @@ static int b53_fa_trap_set(struct b53_de
+ 	 */
+ 	b53_write8(dev, B53_CFP_PAGE, B53_CFP_UDF_0_A_0,
+ 		   CFP_UDF_EOL3 | B53_CFP_UDF_TCP_FLAGS);
++	b53_write8(dev, B53_CFP_PAGE, B53_CFP_UDF_0_B_0,
++		   CFP_UDF_EOL3 | B53_CFP_UDF_TCP_FLAGS);
+ 	data[5] = CFP_DATA5_UDF_VALID_0;
+ 	mask[5] = CFP_DATA5_UDF_VALID_0;
+-	data[6] = IPPROTO_TCP << CFP_DATA6_IP_PROTO_S;
+-	mask[6] |= CFP_DATA6_IP_PROTO_MASK;
++	mask[6] = CFP_DATA6_L3_FRAMING_MASK | CFP_DATA6_IP_PROTO_MASK;
+ 
+-	data[0] |= CFP_UDF_TCP_FIN << CFP_DATA0_UDF_A0_S;
+-	mask[0] |= CFP_UDF_TCP_FIN << CFP_DATA0_UDF_A0_S;
+-	err = b53_cfp_redirect(dev, B53_FA_TRAP_FIN, data, mask, map);
+-	data[0] &= ~(CFP_UDF_TCP_FIN << CFP_DATA0_UDF_A0_S);
+-	mask[0] &= ~(CFP_UDF_TCP_FIN << CFP_DATA0_UDF_A0_S);
+-	if (err)
+-		return err;
++	for (v6 = 0; v6 <= 1; v6++) {
++		data[6] = IPPROTO_TCP << CFP_DATA6_IP_PROTO_S |
++			  (v6 ? CFP_DATA6_L3_FRAMING_IP6 : 0);
++
++		data[0] = CFP_DATA0_SLICE_VALID |
++			  CFP_UDF_TCP_FIN << CFP_DATA0_UDF_A0_S;
++		mask[0] |= data[0];
++		err = b53_cfp_redirect(dev, v6 ? B53_FA_TRAP_FIN6 :
++				       B53_FA_TRAP_FIN, data, mask, map);
++		mask[0] &= ~(CFP_UDF_TCP_FIN << CFP_DATA0_UDF_A0_S);
++		if (err)
++			return err;
++
++		data[0] = CFP_DATA0_SLICE_VALID |
++			  CFP_UDF_TCP_RST << CFP_DATA0_UDF_A0_S;
++		mask[0] |= data[0];
++		err = b53_cfp_redirect(dev, v6 ? B53_FA_TRAP_RST6 :
++				       B53_FA_TRAP_RST, data, mask, map);
++		mask[0] &= ~(CFP_UDF_TCP_RST << CFP_DATA0_UDF_A0_S);
++		if (err)
++			return err;
++	}
+ 
+-	data[0] |= CFP_UDF_TCP_RST << CFP_DATA0_UDF_A0_S;
+-	mask[0] |= CFP_UDF_TCP_RST << CFP_DATA0_UDF_A0_S;
+-	return b53_cfp_redirect(dev, B53_FA_TRAP_RST, data, mask, map);
++	return 0;
+ }
+ 
+ static void b53_fa_trap_clear(struct b53_device *dev)
+@@ -3092,6 +3109,19 @@ static const struct dsa_switch_ops b53_s
+ 	.port_change_mtu	= b53_change_mtu,
+ };
+ 
++/* For the driver of the flow accelerator in front of port 8: are the
++ * frames that it cannot handle trapped for @port? Without the traps it
++ * forwards IPv6 frames with hop limit 1.
++ */
++bool b53_fa_trap_active(struct dsa_switch *ds, int port)
++{
++	struct b53_device *dev = ds->priv;
++
++	return ds->ops == &b53_switch_ops &&
++	       READ_ONCE(dev->fa_trap_ports) & b53_cfp_port_bit(port);
++}
++EXPORT_SYMBOL(b53_fa_trap_active);
++
+ static const struct b53_arl_ops b53_arl_ops_25 = {
+ 	.arl_read_entry = b53_arl_read_entry_25,
+ 	.arl_write_entry = b53_arl_write_entry_25,
+--- a/drivers/net/dsa/b53/b53_regs.h
++++ b/drivers/net/dsa/b53/b53_regs.h
+@@ -612,6 +612,9 @@
+ #define   CFP_UDF_TCP_FIN		BIT(0)	/* in the flags word */
+ #define   CFP_UDF_TCP_RST		BIT(2)
+ 
++/* The same for IPv6 frames (8 bit) */
++#define B53_CFP_UDF_0_B_0		0x40
++
+ /*************************************************************************
+  * CFP TCAM and Action/Policy RAM Access Page Registers
+  *************************************************************************/
+@@ -635,6 +638,8 @@
+ #define   CFP_DATA6_IP_PROTO_S		8
+ #define   CFP_DATA6_IP_PROTO_MASK	(0xff << 8)
+ #define   CFP_DATA6_L3_FRAMING_MASK	(0x3 << 24) /* 0: IPv4 */
++#define   CFP_DATA6_L3_FRAMING_IP6	BIT(24)
++#define   CFP_DATA6_L3_FRAMING_NOT_IP	BIT(25)	/* IPv4 or IPv6 if clear */
+ #define B53_CFP_NUM_KEY_REGS		8
+ 
+ /* CFP Action/Policy Data Registers (32 bit) */
+--- /dev/null
++++ b/include/linux/dsa/b53.h
+@@ -0,0 +1,24 @@
++/* SPDX-License-Identifier: ISC */
++/*
++ * B53 switch driver: interface for the driver of the flow accelerator
++ * in front of port 8 of the BCM5301x switches
++ */
++
++#ifndef _LINUX_DSA_B53_H
++#define _LINUX_DSA_B53_H
++
++#include <linux/kconfig.h>
++#include <linux/types.h>
++
++struct dsa_switch;
++
++#if IS_REACHABLE(CONFIG_B53)
++bool b53_fa_trap_active(struct dsa_switch *ds, int port);
++#else
++static inline bool b53_fa_trap_active(struct dsa_switch *ds, int port)
++{
++	return false;
++}
++#endif
++
++#endif /* _LINUX_DSA_B53_H */

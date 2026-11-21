@@ -1,0 +1,463 @@
+From 0feddab655459d3c808d39e4fad72142d6489af8 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 16:51:38 +0100
+Subject: [PATCH] net: bgmac: offload IPv6 flows to the Northstar flow
+ accelerator
+
+The flow accelerator can forward IPv6, which Broadcom's driver does not
+use: fa_napt_add() refuses it. The registers for the IPv6 next header
+values and a second valid bit in the flow entry show that the hardware
+has it, and the dump code of that driver reads such a flow from two
+entries. The rest was measured on a BCM4708 (Linksys EA6900):
+
+- The hash is that of IPv4 with 128-bit addresses. The accelerator puts
+  the flow id in the tag of the frames it does not forward: 68 of 68
+  flows match.
+- A flow takes two entries. The first has the fields of an IPv4 entry,
+  with the ports and the TCP bit 96 bits up and the valid bit at bit
+  244; the second has the destination and the source address. Changing
+  any one field gives no hits.
+- The accelerator only finds such a pair at the first or the third entry
+  of a bucket, so a bucket holds two IPv6 flows at most. Let an IPv4
+  flow prefer an entry whose neighbour is in use.
+- It decrements the hop limit, but does not check it: hop limit 1 leaves
+  as 0.
+
+So offload routed IPv6 TCP and UDP, and only while the switch traps hop
+limit 1 in front of the accelerator (b53_fa_trap_active()). The trap
+goes when its conduit goes down, without a word to this driver, so check
+again when the flowtable asks for the counters of a flow, and take the
+flow out then. IPv6 with NAT stays in software: those fields are not
+known.
+
+The entry with the addresses has source address bits where an IPv4 entry
+has its valid bit and the bit that tells it is one. Refuse a flow whose
+source address sets both; no global unicast address does.
+
+EA6900, iperf3 TCP between a LAN host and a host on the WAN side, up and
+down in Mbit/s, and the idle time of the router's two cores:
+
+                          IPv6                 IPv4
+  software flowtable      629 (up only)        456 / 535, 50 %
+  flow accelerator        928 / 928, 95-100 %  941 / 941, 95 %
+
+16 parallel IPv6 connections: 34 flows in the accelerator, 928 Mbit/s,
+none left 3 s after the test. With the trap conduit taken down during a
+test the IPv6 flows left the accelerator within 1 s and went on in
+software.
+
+Assisted-by: Claude:claude-fable-5-2
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/ethernet/broadcom/bgmac-fa.c | 215 ++++++++++++++++++-----
+ 1 file changed, 173 insertions(+), 42 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac-fa.c
++++ b/drivers/net/ethernet/broadcom/bgmac-fa.c
+@@ -39,6 +39,13 @@
+  * that its hash selects. The FA decrements the TTL, rewrites the MAC
+  * addresses and, for NAT, the address and port, and sends the frame back
+  * to the switch. It counts hits per entry, not bytes.
++ *
++ * It forwards routed IPv6 TCP and UDP as well, which Broadcom's driver
++ * does not use: the hash over the wider addresses, the format of the two
++ * entries that such a flow takes, and where in a bucket the FA looks for
++ * them were measured on a BCM4708. The FA has no hop limit check, it
++ * forwards hop limit 1 as 0. So it only gets IPv6 flows while the switch
++ * traps those frames in front of it (see b53_fa_trap_active()).
+  */
+ 
+ #include <linux/bcma/bcma.h>
+@@ -47,7 +54,9 @@
+ #include <linux/etherdevice.h>
+ #include <linux/hashtable.h>
+ #include <linux/iopoll.h>
++#include <linux/dsa/b53.h>
+ #include <linux/ip.h>
++#include <linux/ipv6.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
+ #include <net/dsa.h>
+@@ -130,6 +139,14 @@
+ #define FA_FLOW_VALID			212
+ #define FA_FLOW_IPV4			255
+ 
++/* IPv6 flow entry: these fields as above, the addresses in the next entry
++ * (destination in bits 0 to 127, source above it)
++ */
++#define FA_FLOW6_DPORT			191	/* 16 bits */
++#define FA_FLOW6_SPORT			207	/* 16 bits */
++#define FA_FLOW6_TCP			223
++#define FA_FLOW6_VALID			244
++
+ /* next hop entry */
+ #define FA_NH_TAG_OP			1	/* 2 bits */
+ #define  FA_NH_TAG_NONE			2
+@@ -140,9 +157,11 @@
+ #define FA_POOL_SA			1	/* 48 bits */
+ 
+ struct bgmac_fa_tuple {
+-	__be32 sip, dip;
++	struct in6_addr sip6, dip6;	/* IPv6 */
++	__be32 sip, dip;		/* IPv4 */
+ 	__be16 sport, dport;
+ 	u8 proto;
++	bool v6;
+ };
+ 
+ struct bgmac_fa_next_hop {
+@@ -168,7 +187,8 @@ struct bgmac_fa_flow {
+ 	unsigned long cookie;
+ 	struct bgmac_fa_block *block;
+ 	struct bgmac_fa_tuple t;
+-	int idx, next_hop, pool;
++	struct dsa_port *in;		/* ingress port */
++	int idx, next_hop, pool;	/* IPv6: entries idx and idx + 1 */
+ 	u32 hits;			/* last read from the entry */
+ 	u64 lastused;
+ };
+@@ -394,22 +414,30 @@ static int bgmac_fa_tbl_write(struct bgm
+ 
+ /* The software hash (fa_crc_ccitt()): CRC-ITU-T over 7 zero bits, the
+  * source and destination address, a TCP bit and the source and
+- * destination port; the low 8 bits select a bucket of four entries.
++ * destination port; the low 8 bits select a bucket of four entries. For
++ * IPv6 the same with 128-bit addresses (measured against the flow ids
++ * that the FA puts in the tag of the frames it does not forward).
+  */
+ static int bgmac_fa_bucket(const struct bgmac_fa_tuple *t)
+ {
+-	u8 key[13] = {};
++	int len = t->v6 ? 33 : 9;	/* up to the TCP bit */
++	u8 key[37] = {};
+ 	int i;
+ 
+-	memcpy(&key[1], &t->sip, 4);
+-	memcpy(&key[5], &t->dip, 4);
+-	memcpy(&key[9], &t->sport, 2);
+-	memcpy(&key[11], &t->dport, 2);
+-	for (i = 0; i < 8; i++)
++	if (t->v6) {
++		memcpy(&key[1], &t->sip6, 16);
++		memcpy(&key[17], &t->dip6, 16);
++	} else {
++		memcpy(&key[1], &t->sip, 4);
++		memcpy(&key[5], &t->dip, 4);
++	}
++	memcpy(&key[len], &t->sport, 2);
++	memcpy(&key[len + 2], &t->dport, 2);
++	for (i = 0; i < len - 1; i++)
+ 		key[i] = (key[i] << 1) | (key[i + 1] >> 7);
+-	key[8] = (key[8] << 1) | (t->proto == IPPROTO_TCP);
++	key[len - 1] = (key[len - 1] << 1) | (t->proto == IPPROTO_TCP);
+ 
+-	return (crc_itu_t(0, key, sizeof(key)) & 0xff) * FA_FLOW_BUCKET;
++	return (crc_itu_t(0, key, len + 4) & 0xff) * FA_FLOW_BUCKET;
+ }
+ 
+ /* ---------- next hops and pools, shared and refcounted ---------- */
+@@ -539,7 +567,7 @@ struct bgmac_fa_rule {
+ 	__be32 nat_ip;
+ 	__be16 nat_port;
+ 	bool snat, dnat;		/* neither: routing only */
+-	struct dsa_port *out;
++	struct dsa_port *in, *out;
+ };
+ 
+ /* a user port of the switch behind this conduit */
+@@ -591,7 +619,6 @@ static int bgmac_fa_parse(struct bgmac *
+ 	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META) ||
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CONTROL) ||
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC) ||
+-	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS) ||
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS) ||
+ 	    flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN) ||
+ 	    flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CVLAN))
+@@ -600,22 +627,26 @@ static int bgmac_fa_parse(struct bgmac *
+ 	{
+ 		struct flow_match_meta m;
+ 		struct net_device *in;
+-		bool ours;
+ 
+ 		flow_rule_match_meta(rule, &m);
+ 		rcu_read_lock();
+ 		in = dev_get_by_index_rcu(&init_net, m.key->ingress_ifindex);
+-		ours = bgmac_fa_user_port(bgmac, in);
++		r->in = bgmac_fa_user_port(bgmac, in);
+ 		rcu_read_unlock();
+-		if (!ours)
++		if (!r->in)
+ 			return -EOPNOTSUPP;
+ 	}
+ 	{
+ 		struct flow_match_control m;
+ 
+ 		flow_rule_match_control(rule, &m);
+-		if (m.key->addr_type != FLOW_DISSECTOR_KEY_IPV4_ADDRS ||
+-		    m.mask->flags)
++		if (m.mask->flags)
++			return -EOPNOTSUPP;
++		if (m.key->addr_type == FLOW_DISSECTOR_KEY_IPV6_ADDRS)
++			r->t.v6 = true;
++		else if (m.key->addr_type != FLOW_DISSECTOR_KEY_IPV4_ADDRS)
++			return -EOPNOTSUPP;
++		if (!flow_rule_match_key(rule, m.key->addr_type))
+ 			return -EOPNOTSUPP;
+ 	}
+ 	{
+@@ -626,7 +657,13 @@ static int bgmac_fa_parse(struct bgmac *
+ 		if (r->t.proto != IPPROTO_TCP && r->t.proto != IPPROTO_UDP)
+ 			return -EOPNOTSUPP;
+ 	}
+-	{
++	if (r->t.v6) {
++		struct flow_match_ipv6_addrs m;
++
++		flow_rule_match_ipv6_addrs(rule, &m);
++		r->t.sip6 = m.key->src;
++		r->t.dip6 = m.key->dst;
++	} else {
+ 		struct flow_match_ipv4_addrs m;
+ 
+ 		flow_rule_match_ipv4_addrs(rule, &m);
+@@ -687,6 +724,22 @@ static int bgmac_fa_parse(struct bgmac *
+ 		}
+ 	}
+ 
++	/* IPv6 is routed only (its NAT mangles were refused above), and
++	 * needs the switch to trap hop limit 1 in front of the FA
++	 */
++	if (r->t.v6 && !b53_fa_trap_active(r->in->ds, r->in->index))
++		return -EOPNOTSUPP;
++
++	/* The entry with the addresses of an IPv6 flow has the source
++	 * address where an IPv4 entry has its valid bit and the bit that
++	 * tells it is one. It must not look like a valid IPv4 entry; no
++	 * global unicast address has the upper bit set.
++	 */
++	if (r->t.v6 &&
++	    ntohl(r->t.sip6.s6_addr32[0]) & BIT(FA_FLOW_IPV4 % 32) &&
++	    ntohl(r->t.sip6.s6_addr32[1]) & BIT(FA_FLOW_VALID % 32))
++		return -EOPNOTSUPP;
++
+ 	/* One kind of NAT at most: the entry overwrites the source or the
+ 	 * destination, address and port together.
+ 	 */
+@@ -729,18 +782,57 @@ static bool bgmac_fa_tuple_offloaded(str
+ 	struct bgmac_fa_flow *flow;
+ 	int bkt;
+ 
+-	hash_for_each(fa->flows, bkt, flow, node)
+-		if (flow->t.sip == t->sip && flow->t.dip == t->dip &&
+-		    flow->t.sport == t->sport && flow->t.dport == t->dport &&
+-		    flow->t.proto == t->proto)
++	hash_for_each(fa->flows, bkt, flow, node) {
++		if (flow->t.v6 != t->v6 || flow->t.proto != t->proto ||
++		    flow->t.sport != t->sport || flow->t.dport != t->dport)
++			continue;
++		if (t->v6 ? ipv6_addr_equal(&flow->t.sip6, &t->sip6) &&
++			    ipv6_addr_equal(&flow->t.dip6, &t->dip6) :
++			    flow->t.sip == t->sip && flow->t.dip == t->dip)
+ 			return true;
++	}
+ 	return false;
+ }
+ 
+-static int bgmac_fa_free_slots(struct bgmac_fa *fa, int base)
++/* An IPv6 flow takes two entries, and the FA only finds such a pair at
++ * the first or the third entry of a bucket (measured). An IPv4 flow takes
++ * one: prefer an entry whose neighbour is in use, as that costs no pair.
++ * Returns the offset in the bucket, or -1.
++ */
++static int bgmac_fa_pick(struct bgmac_fa *fa, int base, bool v6)
++{
++	int i, any = -1;
++
++	if (v6) {
++		for (i = 0; i < FA_FLOW_BUCKET; i += 2)
++			if (!test_bit(base + i, fa->used) &&
++			    !test_bit(base + i + 1, fa->used))
++				return i;
++		return -1;
++	}
++
++	for (i = 0; i < FA_FLOW_BUCKET; i++) {
++		if (test_bit(base + i, fa->used))
++			continue;
++		if (test_bit(base + (i ^ 1), fa->used))
++			return i;
++		if (any < 0)
++			any = i;
++	}
++	return any;
++}
++
++/* how many more flows of this kind fit in the bucket */
++static int bgmac_fa_room(struct bgmac_fa *fa, int base, bool v6)
+ {
+ 	int i, n = 0;
+ 
++	if (v6)
++		return (!test_bit(base, fa->used) &&
++			!test_bit(base + 1, fa->used)) +
++		       (!test_bit(base + 2, fa->used) &&
++			!test_bit(base + 3, fa->used));
++
+ 	for (i = 0; i < FA_FLOW_BUCKET; i++)
+ 		n += !test_bit(base + i, fa->used);
+ 	return n;
+@@ -754,7 +846,7 @@ static int bgmac_fa_free_slots(struct bg
+ static bool bgmac_fa_reply_fits(struct bgmac_fa *fa,
+ 				const struct bgmac_fa_rule *r, int base)
+ {
+-	struct bgmac_fa_tuple rt = { .proto = r->t.proto };
++	struct bgmac_fa_tuple rt = { .proto = r->t.proto, .v6 = r->t.v6 };
+ 	int rbase;
+ 
+ 	if (r->dnat) {		/* reply: from the NAT address and port */
+@@ -769,8 +861,10 @@ static bool bgmac_fa_reply_fits(struct b
+ 		rt.dport = r->nat_port;
+ 	} else {
+ 		rt.sip = r->t.dip;
++		rt.sip6 = r->t.dip6;
+ 		rt.sport = r->t.dport;
+ 		rt.dip = r->t.sip;
++		rt.dip6 = r->t.sip6;
+ 		rt.dport = r->t.sport;
+ 	}
+ 
+@@ -778,14 +872,14 @@ static bool bgmac_fa_reply_fits(struct b
+ 		return true;
+ 
+ 	rbase = bgmac_fa_bucket(&rt);
+-	return bgmac_fa_free_slots(fa, rbase) >= (rbase == base ? 2 : 1);
++	return bgmac_fa_room(fa, rbase, rt.v6) >= (rbase == base ? 2 : 1);
+ }
+ 
+ static int bgmac_fa_flow_add(struct bgmac *bgmac, struct flow_cls_offload *f,
+ 			     struct bgmac_fa_block *block)
+ {
+ 	struct bgmac_fa *fa = bgmac->fa;
+-	u32 e[FA_FLOW_WORDS] = {};
++	u32 e[FA_FLOW_WORDS] = {}, addr[FA_FLOW_WORDS];
+ 	struct bgmac_fa_flow *flow;
+ 	struct bgmac_fa_rule r;
+ 	int base, i, err;
+@@ -801,10 +895,8 @@ static int bgmac_fa_flow_add(struct bgma
+ 		return err;
+ 
+ 	base = bgmac_fa_bucket(&r.t);
+-	for (i = 0; i < FA_FLOW_BUCKET; i++)
+-		if (!test_bit(base + i, fa->used))
+-			break;
+-	if (i == FA_FLOW_BUCKET || !bgmac_fa_reply_fits(fa, &r, base))
++	i = bgmac_fa_pick(fa, base, r.t.v6);
++	if (i < 0 || !bgmac_fa_reply_fits(fa, &r, base))
+ 		return -ENOSPC;
+ 
+ 	flow = kzalloc(sizeof(*flow), GFP_KERNEL);
+@@ -814,6 +906,7 @@ static int bgmac_fa_flow_add(struct bgma
+ 	flow->cookie = f->cookie;
+ 	flow->block = block;
+ 	flow->t = r.t;
++	flow->in = r.in;
+ 	flow->idx = base + i;
+ 	flow->lastused = jiffies;
+ 
+@@ -841,16 +934,33 @@ static int bgmac_fa_flow_add(struct bgma
+ 	fa_put_bits(e, FA_FLOW_ACTION, 2, action);
+ 	fa_put_bits(e, FA_FLOW_POOL, 2, flow->pool);
+ 	fa_put_bits(e, FA_FLOW_NEXT_HOP, 7, flow->next_hop);
+-	fa_put_bits(e, FA_FLOW_NAT_IP, 32, ntohl(r.nat_ip));
+-	fa_put_bits(e, FA_FLOW_NAT_PORT, 16, ntohs(r.nat_port));
+-	fa_put_bits(e, FA_FLOW_DPORT, 16, ntohs(r.t.dport));
+-	fa_put_bits(e, FA_FLOW_SPORT, 16, ntohs(r.t.sport));
+-	fa_put_bits(e, FA_FLOW_TCP, 1, r.t.proto == IPPROTO_TCP);
+-	fa_put_bits(e, FA_FLOW_DIP, 32, ntohl(r.t.dip));
+-	fa_put_bits(e, FA_FLOW_SIP, 32, ntohl(r.t.sip));
+-	fa_put_bits(e, FA_FLOW_OVRW_DEST, 1, r.dnat);
+-	fa_put_bits(e, FA_FLOW_VALID, 1, 1);
+-	fa_put_bits(e, FA_FLOW_IPV4, 1, 1);
++	if (r.t.v6) {
++		fa_put_bits(e, FA_FLOW6_DPORT, 16, ntohs(r.t.dport));
++		fa_put_bits(e, FA_FLOW6_SPORT, 16, ntohs(r.t.sport));
++		fa_put_bits(e, FA_FLOW6_TCP, 1, r.t.proto == IPPROTO_TCP);
++		fa_put_bits(e, FA_FLOW6_VALID, 1, 1);
++
++		/* the addresses first: the valid bit is in the other entry */
++		for (i = 0; i < 4; i++) {
++			addr[3 - i] = ntohl(r.t.dip6.s6_addr32[i]);
++			addr[7 - i] = ntohl(r.t.sip6.s6_addr32[i]);
++		}
++		err = bgmac_fa_tbl_write(bgmac, FA_TBL_FLOW, flow->idx + 1,
++					 addr, FA_FLOW_WORDS);
++		if (err)
++			goto put_pool;
++	} else {
++		fa_put_bits(e, FA_FLOW_NAT_IP, 32, ntohl(r.nat_ip));
++		fa_put_bits(e, FA_FLOW_NAT_PORT, 16, ntohs(r.nat_port));
++		fa_put_bits(e, FA_FLOW_DPORT, 16, ntohs(r.t.dport));
++		fa_put_bits(e, FA_FLOW_SPORT, 16, ntohs(r.t.sport));
++		fa_put_bits(e, FA_FLOW_TCP, 1, r.t.proto == IPPROTO_TCP);
++		fa_put_bits(e, FA_FLOW_DIP, 32, ntohl(r.t.dip));
++		fa_put_bits(e, FA_FLOW_SIP, 32, ntohl(r.t.sip));
++		fa_put_bits(e, FA_FLOW_OVRW_DEST, 1, r.dnat);
++		fa_put_bits(e, FA_FLOW_VALID, 1, 1);
++		fa_put_bits(e, FA_FLOW_IPV4, 1, 1);
++	}
+ 
+ 	err = bgmac_fa_tbl_write(bgmac, FA_TBL_FLOW, flow->idx, e,
+ 				 FA_FLOW_WORDS);
+@@ -858,6 +968,8 @@ static int bgmac_fa_flow_add(struct bgma
+ 		goto put_pool;
+ 
+ 	set_bit(flow->idx, fa->used);
++	if (r.t.v6)
++		set_bit(flow->idx + 1, fa->used);
+ 	hash_add(fa->flows, &flow->node, flow->cookie);
+ 
+ 	return 0;
+@@ -873,16 +985,24 @@ free:
+ 
+ static void bgmac_fa_flow_remove(struct bgmac *bgmac, struct bgmac_fa_flow *flow)
+ {
++	int valid = flow->t.v6 ? FA_FLOW6_VALID : FA_FLOW_VALID;
+ 	u32 e[FA_FLOW_WORDS];
+ 
+ 	/* _fa_napt_del(): clear the valid bit, keep the rest */
+ 	if (!bgmac_fa_tbl_read(bgmac, FA_TBL_FLOW, flow->idx, e, FA_FLOW_WORDS)) {
+-		e[FA_FLOW_VALID / 32] &= ~BIT(FA_FLOW_VALID % 32);
++		e[valid / 32] &= ~BIT(valid % 32);
+ 		bgmac_fa_tbl_write(bgmac, FA_TBL_FLOW, flow->idx, e,
+ 				   FA_FLOW_WORDS);
+ 	}
+ 
+ 	clear_bit(flow->idx, bgmac->fa->used);
++	if (flow->t.v6) {
++		/* the address entry may become an IPv4 flow's: clean */
++		memset(e, 0, sizeof(e));
++		bgmac_fa_tbl_write(bgmac, FA_TBL_FLOW, flow->idx + 1, e,
++				   FA_FLOW_WORDS);
++		clear_bit(flow->idx + 1, bgmac->fa->used);
++	}
+ 	bgmac_fa_pool_put(bgmac, flow->pool);
+ 	bgmac_fa_next_hop_put(bgmac, flow->next_hop);
+ 	hash_del(&flow->node);
+@@ -908,6 +1028,17 @@ static int bgmac_fa_flow_stats(struct bg
+ 	if (!flow)
+ 		return -ENOENT;
+ 
++	/* The hop limit trap goes when its conduit goes down, without a
++	 * word to this driver. The flowtable asks for the counters of a
++	 * flow every few seconds: take the flow out here, it goes on in
++	 * software.
++	 */
++	if (flow->t.v6 &&
++	    !b53_fa_trap_active(flow->in->ds, flow->in->index)) {
++		bgmac_fa_flow_remove(bgmac, flow);
++		return -ENOENT;
++	}
++
+ 	if (bgmac_fa_tbl_read(bgmac, FA_TBL_FLOW, flow->idx, e, FA_FLOW_WORDS))
+ 		return -EIO;
+ 

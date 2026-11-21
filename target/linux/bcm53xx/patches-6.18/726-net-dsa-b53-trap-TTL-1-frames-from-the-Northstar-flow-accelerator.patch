@@ -1,0 +1,388 @@
+From 37ecb183e672954ad39c04c3c684efd475d6c8a1 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 13:44:04 +0100
+Subject: [PATCH] net: dsa: b53: trap TTL 1 frames from the Northstar flow
+ accelerator
+
+The flow accelerator in front of port 8 of the BCM5301x switches
+forwards the frames of the flows it holds without the host seeing them.
+It decrements the TTL and drops a frame whose TTL runs out, so a frame
+with TTL 1 in an offloaded flow gets no ICMP time exceeded message from
+the router.
+
+Use the CFP to redirect IPv4 frames with TTL 0 or 1 from the user ports
+behind the accelerator to another CPU port, where the host forwards them.
+The rule is on while the conduit of that CPU port is operational and
+port 8 uses the prepended tag, which is when the accelerator is in the
+path. It follows changes of the tag protocol and user ports that move to
+another CPU port; DSA updates cpu_dp only after port_change_conduit, so
+the moving port is passed in. Bring the trap conduit up when a user port
+behind the accelerator opens, as DSA does with the port's own conduit.
+
+Prefer port 8 as the default CPU port on BCM5301x too, as on BCM58xx, so
+that describing the trap port changes nothing else. No Northstar board
+in the tree describes both port 5 and port 8 as CPU ports.
+
+Linksys EA6900 (BCM4708), TCP flow from a LAN host held by the
+accelerator (4 entries), then 5 segments with TTL 1:
+
+                   ICMP time exceeded   frames on the trap port
+  without traps            0                     0
+  with traps               4 (rate limit)       17
+
+TCP throughput through the accelerator stays at 941 Mbit/s.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 222 ++++++++++++++++++++++++++++++-
+ drivers/net/dsa/b53/b53_priv.h   |   7 +
+ drivers/net/dsa/b53/b53_regs.h   |  42 ++++++
+ 3 files changed, 268 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -31,6 +31,7 @@
+ #include <linux/etherdevice.h>
+ #include <linux/if_bridge.h>
+ #include <linux/if_vlan.h>
++#include <linux/iopoll.h>
+ #include <net/dsa.h>
+ 
+ #include "b53_regs.h"
+@@ -593,6 +594,212 @@ static bool b53_has_flow_accelerator(str
+ 	       (dev->core_rev >= 3 || of_machine_is_compatible("brcm,bcm47094"));
+ }
+ 
++/* Bit of a port in the CFP port maps: ports 0 to 5, 7 and 8 */
++static u16 b53_cfp_port_bit(int port)
++{
++	return port > 5 ? BIT(port - 1) : BIT(port);
++}
++
++static u32 b53_cfp_acc(struct b53_device *dev)
++{
++	u32 val;
++
++	b53_read32(dev, B53_CFP_TCAM_PAGE, B53_CFP_ACC, &val);
++	return val;
++}
++
++static int b53_cfp_op(struct b53_device *dev, int index, u32 op)
++{
++	u32 val;
++
++	b53_write32(dev, B53_CFP_TCAM_PAGE, B53_CFP_ACC,
++		    index << CFP_ACC_ADDR_S | op | CFP_ACC_OP_STR_DONE);
++	return readx_poll_timeout(b53_cfp_acc, dev, val,
++				  !(val & CFP_ACC_OP_STR_DONE), 10, 1000);
++}
++
++static int b53_cfp_write_tcam(struct b53_device *dev, int index,
++			      const u32 *data, const u32 *mask)
++{
++	int i;
++
++	for (i = 0; i < B53_CFP_NUM_KEY_REGS; i++) {
++		b53_write32(dev, B53_CFP_TCAM_PAGE, B53_CFP_DATA(i), data[i]);
++		b53_write32(dev, B53_CFP_TCAM_PAGE, B53_CFP_MASK(i), mask[i]);
++	}
++
++	return b53_cfp_op(dev, index, CFP_ACC_RAM_TCAM | CFP_ACC_OP_WRITE);
++}
++
++/* Rule @index of slice 0: send the frames that match @data and @mask to
++ * the ports in @map (a CFP port map) instead of their ARL destination
++ */
++static int b53_cfp_redirect(struct b53_device *dev, int index,
++			    const u32 *data, const u32 *mask, u16 map)
++{
++	int err;
++
++	b53_write32(dev, B53_CFP_TCAM_PAGE, B53_CFP_ACT_POL_DATA0,
++		    CFP_ACT_POL0_REP_ARL | map << CFP_ACT_POL0_DST_MAP_S |
++		    CFP_ACT_POL0_BYP_ALL);
++	b53_write32(dev, B53_CFP_TCAM_PAGE, B53_CFP_ACT_POL_DATA1,
++		    CFP_ACT_POL1_REP_ARL | map << CFP_ACT_POL1_DST_MAP_S);
++	err = b53_cfp_op(dev, index, CFP_ACC_RAM_ACT_POL | CFP_ACC_OP_WRITE);
++	if (err)
++		return err;
++
++	return b53_cfp_write_tcam(dev, index, data, mask);
++}
++
++/* The CFP rules for the flow accelerator, from the first one on */
++enum {
++	B53_FA_TRAP_TTL,
++	B53_FA_TRAP_NUM,
++};
++
++static int b53_fa_trap_set(struct b53_device *dev, u16 src, u16 map)
++{
++	u32 data[B53_CFP_NUM_KEY_REGS] = { CFP_DATA0_SLICE_VALID };
++	u32 mask[B53_CFP_NUM_KEY_REGS] = {
++		CFP_DATA0_SLICE_VALID | CFP_DATA0_SLICE_ID_MASK
++	};
++	int err;
++
++	/* IPv4 from the ports in @src: the source port map key matches
++	 * the ports that the mask leaves out
++	 */
++	mask[6] = CFP_DATA6_L3_FRAMING_MASK;
++	mask[7] = 0xff & ~src;
++
++	/* TTL 0 or 1, which the flow accelerator drops after its decrement
++	 * instead of leaving the ICMP time exceeded message to the host.
++	 * The TTL range field (bits 4:3) holds 0 for TTL 0, 1 for TTL 1,
++	 * 2 for TTL 2 to 254 and 3 for TTL 255 (measured on a BCM4708), so
++	 * a clear bit 4 matches exactly TTL 0 and 1.
++	 */
++	mask[6] |= CFP_DATA6_TTL_RANGE_HIGH;
++	err = b53_cfp_redirect(dev, B53_FA_TRAP_TTL, data, mask, map);
++	mask[6] &= ~CFP_DATA6_TTL_RANGE_HIGH;
++
++	return err;
++}
++
++static void b53_fa_trap_clear(struct b53_device *dev)
++{
++	static const u32 zero[B53_CFP_NUM_KEY_REGS];
++	int i;
++
++	b53_write8(dev, B53_CFP_PAGE, B53_CFP_CTRL, 0);
++	for (i = 0; i < B53_FA_TRAP_NUM; i++)
++		b53_cfp_write_tcam(dev, i, zero, zero);
++	dev->fa_trap_ports = 0;
++}
++
++/* The flow accelerator in front of port 8 forwards the frames of the
++ * flows it holds without the host seeing them, and cannot handle some of
++ * them. With another CPU port up, redirect those frames there from the
++ * user ports that use port 8, so that the host handles them. The tagger
++ * leaves them to the bridge, as they arrive through a CPU port other than
++ * their port's own.
++ *
++ * @port is about to move to CPU port @cpu, or -1.
++ */
++static void b53_fa_trap_update(struct b53_device *dev, int port, int cpu)
++{
++	struct dsa_switch *ds = dev->ds;
++	struct dsa_port *dp;
++	int trap = -1, err;
++	u16 src = 0;
++
++	if (b53_has_flow_accelerator(dev) &&
++	    dev->tag_protocol == DSA_TAG_PROTO_BRCM_PREPEND) {
++		dsa_switch_for_each_cpu_port(dp, ds) {
++			if (dp->index != B53_CPU_PORT &&
++			    dev->cpu_ports_up & BIT(dp->index)) {
++				trap = dp->index;
++				break;
++			}
++		}
++	}
++
++	if (trap >= 0) {
++		dsa_switch_for_each_user_port(dp, ds) {
++			if ((dp->index == port ? cpu : dp->cpu_dp->index) ==
++			    B53_CPU_PORT)
++				src |= b53_cfp_port_bit(dp->index);
++		}
++	}
++
++	if (src == dev->fa_trap_ports && (!src || trap == dev->fa_trap_port))
++		return;
++
++	b53_fa_trap_clear(dev);
++	if (!src) {
++		dev_info(ds->dev, "flow accelerator traps off\n");
++		return;
++	}
++
++	err = b53_fa_trap_set(dev, src, b53_cfp_port_bit(trap));
++	if (err) {
++		dev_err(ds->dev, "flow accelerator traps: %pe\n", ERR_PTR(err));
++		b53_fa_trap_clear(dev);
++		return;
++	}
++
++	b53_write8(dev, B53_CFP_PAGE, B53_CFP_CTRL, src);
++	dev->fa_trap_port = trap;
++	dev->fa_trap_ports = src;
++	dev_info(ds->dev, "flow accelerator traps to port %d\n", trap);
++}
++
++/* Bring up the conduit that takes the traps when a user port behind the
++ * flow accelerator opens, as DSA brings up the port's own conduit
++ */
++static void b53_fa_trap_open(struct b53_device *dev, int port)
++{
++	struct dsa_switch *ds = dev->ds;
++	struct net_device *conduit;
++	struct dsa_port *cpu_dp;
++	int err;
++
++	ASSERT_RTNL();
++
++	if (!b53_has_flow_accelerator(dev) ||
++	    dev->tag_protocol != DSA_TAG_PROTO_BRCM_PREPEND ||
++	    dsa_to_port(ds, port)->cpu_dp->index != B53_CPU_PORT)
++		return;
++
++	dsa_switch_for_each_cpu_port(cpu_dp, ds) {
++		if (cpu_dp->index == B53_CPU_PORT)
++			continue;
++
++		conduit = cpu_dp->conduit;
++		if (conduit->flags & IFF_UP)
++			return;
++
++		err = dev_open(conduit, NULL);
++		if (err)
++			dev_warn(ds->dev, "flow accelerator traps: %s: %pe\n",
++				 conduit->name, ERR_PTR(err));
++		return;
++	}
++}
++
++static void b53_conduit_state_change(struct dsa_switch *ds,
++				     const struct net_device *conduit,
++				     bool operational)
++{
++	struct b53_device *dev = ds->priv;
++	u16 bit = BIT(conduit->dsa_ptr->index);
++
++	if (operational)
++		dev->cpu_ports_up |= bit;
++	else
++		dev->cpu_ports_up &= ~bit;
++
++	b53_fa_trap_update(dev, -1, -1);
++}
++
+ static int b53_port_change_conduit(struct dsa_switch *ds, int port,
+ 				   struct net_device *conduit,
+ 				   struct netlink_ext_ack *extack)
+@@ -610,17 +817,21 @@ static int b53_port_change_conduit(struc
+ 	pvlan |= BIT(conduit->dsa_ptr->index);
+ 	b53_write16(dev, B53_PVLAN_PAGE, B53_PVLAN_PORT_MASK(port), pvlan);
+ 
++	b53_fa_trap_update(dev, port, conduit->dsa_ptr->index);
++
+ 	return 0;
+ }
+ 
+-/* Keep port 8 as the default CPU port of BCM58xx when another one is
+- * described: ports can move to it with port_change_conduit
++/* Keep port 8 as the default CPU port of BCM5301x and BCM58xx when
++ * another one is described: ports can move to it with
++ * port_change_conduit, and on BCM5301x it can take the flow accelerator
++ * traps
+  */
+ static struct dsa_port *b53_preferred_default_local_cpu_port(struct dsa_switch *ds)
+ {
+ 	struct b53_device *dev = ds->priv;
+ 
+-	if (dev->chip_id == BCM58XX_DEVICE_ID &&
++	if ((is5301x(dev) || dev->chip_id == BCM58XX_DEVICE_ID) &&
+ 	    dsa_is_cpu_port(ds, B53_CPU_PORT))
+ 		return dsa_to_port(ds, B53_CPU_PORT);
+ 
+@@ -784,6 +995,8 @@ int b53_enable_port(struct dsa_switch *d
+ 	if (dev->ports[port].eee.eee_enabled)
+ 		b53_eee_enable_set(ds, port, true);
+ 
++	b53_fa_trap_open(dev, port);
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL(b53_enable_port);
+@@ -2644,6 +2857,8 @@ static int b53_change_tag_protocol(struc
+ 	dsa_switch_for_each_cpu_port(cpu_dp, ds)
+ 		b53_brcm_hdr_setup(ds, cpu_dp->index);
+ 
++	b53_fa_trap_update(dev, -1, -1);
++
+ 	return 0;
+ }
+ 
+@@ -2815,6 +3030,7 @@ static const struct dsa_switch_ops b53_s
+ 	.get_tag_protocol	= b53_get_tag_protocol,
+ 	.change_tag_protocol	= b53_change_tag_protocol,
+ 	.preferred_default_local_cpu_port = b53_preferred_default_local_cpu_port,
++	.conduit_state_change	= b53_conduit_state_change,
+ 	.port_change_conduit	= b53_port_change_conduit,
+ 	.setup			= b53_setup,
+ 	.teardown		= b53_teardown,
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -177,6 +177,13 @@ struct b53_device {
+ 	unsigned int num_ports;
+ 	struct b53_port *ports;
+ 
++	/* CPU ports whose conduit is operational, and the flow accelerator
++	 * traps: their CPU port and the ports they apply to (none if 0)
++	 */
++	u16 cpu_ports_up;
++	int fa_trap_port;
++	u16 fa_trap_ports;
++
+ 	struct b53_pcs pcs[B53_N_PCS];
+ };
+ 
+--- a/drivers/net/dsa/b53/b53_regs.h
++++ b/drivers/net/dsa/b53/b53_regs.h
+@@ -57,6 +57,9 @@
+ /* EEE Control Registers Page */
+ #define B53_EEE_PAGE			0x92
+ 
++/* CFP TCAM and Action/Policy RAM Access Page */
++#define B53_CFP_TCAM_PAGE		0xa0
++
+ /* CFP Configuration Registers Page */
+ #define B53_CFP_PAGE			0xa1
+ 
+@@ -601,4 +604,43 @@
+ /* CFP Control Register with ports map (8 bit) */
+ #define B53_CFP_CTRL			0x00
+ 
++/* User Defined Field 0 of slice 0 for IPv4 frames (8 bit) */
++#define B53_CFP_UDF_0_A_0		0x10
++#define   CFP_UDF_OFFSET_MASK		0x1f	/* in 16 bit words */
++#define   CFP_UDF_EOL3			(3 << 5) /* from the end of L3 */
++
++/*************************************************************************
++ * CFP TCAM and Action/Policy RAM Access Page Registers
++ *************************************************************************/
++
++/* CFP Access Register (32 bit) */
++#define B53_CFP_ACC			0x00
++#define   CFP_ACC_OP_STR_DONE		BIT(0)
++#define   CFP_ACC_OP_WRITE		(2 << 1)
++#define   CFP_ACC_RAM_TCAM		(1 << 10)
++#define   CFP_ACC_RAM_ACT_POL		(2 << 10)
++#define   CFP_ACC_ADDR_S		16
++
++/* CFP TCAM Data and Mask Registers (32 bit) */
++#define B53_CFP_DATA(i)			(0x10 + 4 * (i))
++#define B53_CFP_MASK(i)			(0x30 + 4 * (i))
++#define   CFP_DATA0_SLICE_VALID		0x3
++#define   CFP_DATA0_SLICE_ID_MASK	(0x3 << 2)
++#define   CFP_DATA0_UDF_A0_S		8
++#define   CFP_DATA5_UDF_VALID_0		BIT(24)
++#define   CFP_DATA6_TTL_RANGE_HIGH	BIT(4)	/* TTL 0 or 1 if clear */
++#define   CFP_DATA6_IP_PROTO_S		8
++#define   CFP_DATA6_IP_PROTO_MASK	(0xff << 8)
++#define   CFP_DATA6_L3_FRAMING_MASK	(0x3 << 24) /* 0: IPv4 */
++#define B53_CFP_NUM_KEY_REGS		8
++
++/* CFP Action/Policy Data Registers (32 bit) */
++#define B53_CFP_ACT_POL_DATA0		0x50
++#define   CFP_ACT_POL0_BYP_ALL		0x7	/* VLAN, EAP, STP */
++#define   CFP_ACT_POL0_DST_MAP_S	14
++#define   CFP_ACT_POL0_REP_ARL		(2 << 24)
++#define B53_CFP_ACT_POL_DATA1		0x54
++#define   CFP_ACT_POL1_DST_MAP_S	1
++#define   CFP_ACT_POL1_REP_ARL		(2 << 11)
++
+ #endif /* !__B53_REGS_H */
