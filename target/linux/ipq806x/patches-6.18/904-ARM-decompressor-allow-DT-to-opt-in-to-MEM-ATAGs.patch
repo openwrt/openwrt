@@ -1,0 +1,83 @@
+From 09cedbb8cbbf0313ccf08a91cdb2fc41414de02a Mon Sep 17 00:00:00 2001
+From: Sven Ulland <sven.ulland@gmail.com>
+Date: Fri, 20 Nov 2026 22:48:45 +0100
+Subject: [PATCH] ARM: decompressor: allow DT to opt in to MEM ATAGs
+
+ARM_ATAG_DTB_COMPAT_IGNORE_MEM drops all MEM ATAGs, which protects
+boards whose bootloader reports a wrong RAM size. But some boards are
+available with different RAM sizes and a bootloader that reports the
+size correctly, for example the Aruba AP-32x with 256 or 512 MB. With
+MEM ATAGs ignored, such a board needs one DTB per RAM size, and
+booting the 512 MB image on a 256 MB unit hangs silently.
+
+Let such a board opt in to MEM ATAGs with the boolean property
+openwrt,memory-from-atags in /chosen. The board should still describe
+its smallest RAM size in its /memory node: the MEM ATAGs replace that
+reg, and if they are missing, or this patch is dropped, the board still
+boots with the smaller size.
+
+Suggested-by: Gary Dotzler <geldot@protonmail.com>
+Signed-off-by: Sven Ulland <sven.ulland@gmail.com>
+---
+This builds on 901-02, which adds ARM_ATAG_DTB_COMPAT_IGNORE_MEM and is
+not in mainline either. If that patch changes or is dropped, revisit
+this one.
+
+ arch/arm/Kconfig                        |  6 ++++++
+ arch/arm/boot/compressed/atags_to_fdt.c | 12 ++++++++++--
+ 2 files changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 7e00cfc..d42acc1 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1530,6 +1530,12 @@ config ARM_ATAG_DTB_COMPAT_IGNORE_MEM
+ 	  Enable this option if MEM ATAGs should be ignored and the memory
+ 	  node in the appended DTB should NOT be augumented.
+ 
++	  A board can still opt in to MEM ATAGs with the boolean property
++	  openwrt,memory-from-atags in /chosen. This allows boards that ship
++	  with different RAM sizes to take the RAM size from the bootloader.
++	  Such a board should describe its smallest RAM size in its /memory
++	  node as a fallback, which the MEM ATAGs then replace.
++
+ choice
+ 	prompt "Kernel command line type"
+ 	depends on CMDLINE != ""
+diff --git a/arch/arm/boot/compressed/atags_to_fdt.c b/arch/arm/boot/compressed/atags_to_fdt.c
+index 6516991..2891676 100644
+--- a/arch/arm/boot/compressed/atags_to_fdt.c
++++ b/arch/arm/boot/compressed/atags_to_fdt.c
+@@ -223,6 +223,7 @@ int atags_to_fdt(void *atag_list, void *fdt, int total_space)
+ 	__be32 mem_reg_property[2 * 2 * NR_BANKS];
+ 	int memcount = 0;
+ 	int ret, memsize;
++	int ignore_mem;
+ 
+ 	/* make sure we've got an aligned pointer */
+ 	if ((u32)atag_list & 0x3)
+@@ -243,6 +244,14 @@ int atags_to_fdt(void *atag_list, void *fdt, int total_space)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	/*
++	 * Bootloader MEM ATAGs may be broken, so ignore them unless the DT
++	 * opts in with openwrt,memory-from-atags in /chosen.
++	 */
++	ignore_mem = IS_ENABLED(CONFIG_ARM_ATAG_DTB_COMPAT_IGNORE_MEM);
++	if (getprop(fdt, "/chosen", "openwrt,memory-from-atags", NULL))
++		ignore_mem = 0;
++
+ 	for_each_tag(atag, atag_list) {
+ 		if (atag->hdr.tag == ATAG_CMDLINE) {
+ 			/* Append the ATAGS command line to the device tree
+@@ -258,8 +267,7 @@ int atags_to_fdt(void *atag_list, void *fdt, int total_space)
+ 				setprop_string(fdt, "/chosen", "bootargs",
+ 					       atag->u.cmdline.cmdline);
+ 		} else if (atag->hdr.tag == ATAG_MEM) {
+-			/* Bootloader MEM ATAG are broken and should be ignored */
+-			if (IS_ENABLED(CONFIG_ARM_ATAG_DTB_COMPAT_IGNORE_MEM))
++			if (ignore_mem)
+ 				continue;
+ 
+ 			if (memcount >= sizeof(mem_reg_property)/4)
