@@ -1,0 +1,163 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Pawlik <pawlik.dan@gmail.com>
+Subject: [PATCH] firewall4: harden bridge offload configuration and lifecycle
+
+Resolve actual bridge member ports in software and hardware mode,
+including VLAN interfaces enslaved to a bridge. Bridge offload follows
+the flow_offloading and flow_offloading_hw settings, probing bridge
+hardware support before falling back to software. Remove the bridge
+table on stop and share a queued hotplug handler which waits for bridge
+membership. The bridge flowtable replaces bridger for L2 offloading;
+the two must not run at the same time.
+
+Signed-off-by: Daniel Pawlik <pawlik.dan@gmail.com>
+---
+--- a/root/usr/share/ucode/fw4.uc
++++ b/root/usr/share/ucode/fw4.uc
+@@ -488,10 +488,11 @@ function nft_json_command(...args) {
+ 	return info || [];
+ }
+ 
+-function nft_try_hw_offload(devices) {
++function nft_try_hw_offload(devices, family) {
++	family ||= 'inet';
+ 	let nft_test = `
+-		add table inet fw4-hw-offload-test;
+-		add flowtable inet fw4-hw-offload-test ft {
++		add table ${family} fw4-hw-offload-test;
++		add flowtable ${family} fw4-hw-offload-test ft {
+ 			hook ingress priority 0;
+ 			devices = { "${join('", "', devices)}" };
+ 			flags offload;
+@@ -597,14 +598,45 @@ return {
+ 		return false;
+ 	},
+ 
+-	resolve_bridge_devices: function(devices) {
++	resolve_bridge_devices: function() {
+ 		let bridge_devs = [];
++		if (!this.default_option("flow_offloading"))
++			return bridge_devs;
+ 
+-		for (let dev in devices)
+-			if (fs.access(`/sys/class/net/${dev}/brport`))
+-				push(bridge_devs, dev);
+-			else if (fs.access(`/sys/class/net/${dev}/bridge`))
++		let visited = {};
++		let resolve;
++		resolve = function(dev) {
++			if (visited[dev])
++				return;
++			visited[dev] = true;
++
++			// Keep VLAN devices which are themselves enslaved to a bridge.
++			if (fs.access(`/sys/class/net/${dev}/brport`)) {
+ 				push(bridge_devs, dev);
++				return;
++			}
++
++			let dir = fs.opendir(`/sys/class/net/${dev}`);
++			if (dir) {
++				let entry;
++				while ((entry = dir.read()) != null)
++					if (index(entry, 'lower_') == 0)
++						resolve(substr(entry, 6));
++				dir.close();
++			}
++		};
++
++		for (let zone in this.zones())
++			for (let device in zone.related_physdevs)
++				resolve(device);
++
++		bridge_devs = sort(uniq(bridge_devs));
++		if (length(bridge_devs) && this.default_option("flow_offloading_hw")) {
++			this.state.defaults.bridge_hw_offload =
++				nft_try_hw_offload(bridge_devs, 'bridge');
++			if (!this.state.defaults.bridge_hw_offload)
++				this.warn('Hardware bridge offloading unavailable, falling back to software offloading');
++		}
+ 
+ 		return bridge_devs;
+ 	},
+--- a/root/usr/share/firewall4/templates/ruleset.uc
++++ b/root/usr/share/firewall4/templates/ruleset.uc
+@@ -481,7 +481,7 @@ flush table bridge fw4
+ delete flowtable bridge fw4 fb
+ {% endif %}
+ 
+-{% let bridge_devices = fw4.resolve_bridge_devices(flowtable_devices); %}
++{% let bridge_devices = fw4.resolve_bridge_devices(); %}
+ {% if (length(bridge_devices) > 0): %}
+ table bridge fw4 {
+ 	#
+@@ -491,7 +491,7 @@ table bridge fw4 {
+ 		hook ingress priority 0;
+ 		devices = {{ fw4.set(bridge_devices, true) }};
+ 		counter;
+-{% if (fw4.default_option("flow_offloading_hw")): %}
++{% if (fw4.default_option("bridge_hw_offload")): %}
+ 		flags offload;
+ {% endif %}
+ 	}
+--- a/root/sbin/fw4
++++ b/root/sbin/fw4
+@@ -50,6 +50,9 @@ stop() {
+ 		flock -x 1000
+ 
+ 		nft delete table inet fw4
++		if nft list table bridge fw4 >/dev/null 2>&1; then
++			nft delete table bridge fw4
++		fi
+ 		rm -f $STATE
+ 
+ 	} 1000>$LOCK
+--- /dev/null
++++ b/root/etc/hotplug.d/net/50-fw4-bridge-reload
+@@ -0,0 +1,46 @@
++#!/bin/sh
++
++# A net add event can precede netifd attaching the port to its bridge.
++[ "$ACTION" = add ] || exit 0
++[ -n "$DEVICENAME" ] || exit 0
++/etc/init.d/firewall enabled || exit 0
++
++. /lib/functions.sh
++bridge_offload_enabled() {
++	config_get_bool bridge_enabled "$1" flow_offloading 0
++}
++config_load firewall
++bridge_enabled=0
++config_foreach bridge_offload_enabled defaults
++[ "$bridge_enabled" = 1 ] || exit 0
++
++(
++	# Bound the wait for devices which never become bridge members.
++	attempt=0
++	while [ ! -d "/sys/class/net/$DEVICENAME/brport" ]; do
++		[ -d "/sys/class/net/$DEVICENAME" ] || exit 0
++		[ "$attempt" -lt 10 ] || exit 0
++		attempt=$((attempt + 1))
++		sleep 1
++	done
++
++	# Queue events instead of losing an event arriving during a reload.
++	exec 9>/var/run/fw4-bridge-reload.lock
++	flock -x 9 || exit 0
++	/etc/init.d/firewall enabled || exit 0
++	# Reload removes the state file temporarily; wait for it to finish.
++	flock -x /var/run/fw4.lock test -f /var/run/fw4.state || exit 0
++	[ -d "/sys/class/net/$DEVICENAME/brport" ] || exit 0
++	config_load firewall
++	bridge_enabled=0
++	config_foreach bridge_offload_enabled defaults
++	[ "$bridge_enabled" = 1 ] || exit 0
++
++	# Recheck after earlier reloads; routed device lookup cannot identify
++	# member ports of a zone attached to a bridge or bridge VLAN.
++	nft -j list flowtable bridge fw4 fb 2>/dev/null |
++		jsonfilter -e '@.nftables[*].flowtable.dev[*]' |
++		grep -Fxq -- "$DEVICENAME" && exit 0
++
++	fw4 -q reload || logger -t firewall "Bridge offload reload failed for $DEVICENAME"
++) </dev/null >/dev/null 2>&1 &
