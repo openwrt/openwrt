@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Matthew Cather <mattbob4@gmail.com>
+Date: Tue, 15 Sep 2026 14:00:26 -0700
+Subject: [PATCH] libsanitizer: shrink the HWASan primary allocator on aarch64
+
+The HWASan primary allocator reserves a fixed 4T address space
+region on Linux. An aarch64 kernel built with a 39 bit virtual
+address space, the OpenWrt default for 4K pages, gives user space
+only 512G, so the reservation fails and every instrumented process
+aborts at startup in mmap.
+
+Android meets the same limit on its 39, 42 and 48 bit configurations
+and uses a 128G allocator with VeryDenseSizeClassMap. Exclude
+aarch64 from the 4T Linux branch so it falls through to that 128G
+configuration, which fits every aarch64 VA size.
+
+Signed-off-by: Matthew Cather <mattbob4@gmail.com>
+---
+ libsanitizer/hwasan/hwasan_allocator.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/libsanitizer/hwasan/hwasan_allocator.h
++++ b/libsanitizer/hwasan/hwasan_allocator.h
+@@ -74,7 +74,7 @@ struct AP64 {
+ #if defined(HWASAN_ALIASING_MODE)
+   static const uptr kSpaceSize = 1ULL << kAddressTagShift;
+   typedef __sanitizer::DefaultSizeClassMap SizeClassMap;
+-#elif SANITIZER_LINUX && !SANITIZER_ANDROID
++#elif SANITIZER_LINUX && !SANITIZER_ANDROID && !defined(__aarch64__)
+   static const uptr kSpaceSize = 0x40000000000ULL;  // 4T.
+   typedef __sanitizer::DefaultSizeClassMap SizeClassMap;
+ #else

@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Matthew Cather <mattbob4@gmail.com>
+Date: Tue, 15 Sep 2026 14:00:26 -0700
+Subject: [PATCH] libsanitizer: untag the stack on a foreign jmp_buf
+
+HWASan stamps its jmp_buf magic from __sigjmp_save, a glibc internal
+that libhwasan overrides. musl has no such hook, its setjmp is
+assembly, so the magic is never written and every intercepted
+longjmp takes the mismatch branch. That branch warns and delegates
+to libc, and it skips the call that clears the tags of the frames
+being abandoned. GCC emits no such call at longjmp sites, so on musl
+nothing untags the stack after a longjmp: stale shadow over reused
+stack hides real errors and produces false tag mismatch reports.
+
+The musl aarch64 jmp_buf holds x19-x30 and then sp at index 13, and
+x86_64 holds sp at index 6, both matching the layout HWASan expects,
+and musl does not mangle the saved sp. Untag the stack from the
+foreign buffer before handing the jump to libc; the tag check keeps
+a corrupt buffer from tripping the internal consistency check. glibc
+keeps the warning, where a mismatch means setjmp was not called or
+HWASan is broken.
+
+Signed-off-by: Matthew Cather <mattbob4@gmail.com>
+---
+ libsanitizer/hwasan/hwasan_interceptors.cpp |   32 +++++++++++-------
+ 1 file changed, 21 insertions(+), 11 deletions(-)
+
+--- a/libsanitizer/hwasan/hwasan_interceptors.cpp
++++ b/libsanitizer/hwasan/hwasan_interceptors.cpp
+@@ -352,16 +352,30 @@
+   return 0;
+ }
+ 
+-static void __attribute__((always_inline))
+-InternalLongjmp(__hw_register_buf env, int retval) {
+ #    if defined(__aarch64__)
+-  constexpr size_t kSpIndex = 13;
++constexpr size_t kSpIndex = 13;
+ #    elif defined(__x86_64__)
+-  constexpr size_t kSpIndex = 6;
++constexpr size_t kSpIndex = 6;
+ #    elif SANITIZER_RISCV64
+-  constexpr size_t kSpIndex = 13;
++constexpr size_t kSpIndex = 13;
+ #    endif
+ 
++// musl never stamps the magic: its setjmp has no __sigjmp_save hook. The
++// jmp_buf still matches __hw_register_buf, so untag before libc's longjmp.
++static void HandleForeignJmpBuf(__hw_register_buf env) {
++#    if SANITIZER_GLIBC
++  Printf(
++      "WARNING: Unexpected bad jmp_buf. Either setjmp was not called or "
++      "there is a bug in HWASan.\n");
++#    else
++  uptr sp = (uptr)env[kSpIndex];
++  if (GetTagFromPointer(sp) == 0)
++    __hwasan_handle_longjmp((void *)sp);
++#    endif
++}
++
++static void __attribute__((always_inline))
++InternalLongjmp(__hw_register_buf env, int retval) {
+   // Clear all memory tags on the stack between here and where we're going.
+   unsigned long long stack_pointer = env[kSpIndex];
+   // The stack pointer should never be tagged, so we don't need to clear the
+@@ -465,9 +479,7 @@
+ 
+ INTERCEPTOR(void, siglongjmp, __hw_sigjmp_buf env, int val) {
+   if (env[0].__magic != kHwJmpBufMagic) {
+-    Printf(
+-        "WARNING: Unexpected bad jmp_buf. Either setjmp was not called or "
+-        "there is a bug in HWASan.\n");
++    HandleForeignJmpBuf(env[0].__jmpbuf);
+     return REAL(siglongjmp)(env, val);
+   }
+ 
+@@ -488,9 +500,7 @@
+ 
+ INTERCEPTOR(void, longjmp, __hw_jmp_buf env, int val) {
+   if (env[0].__magic != kHwJmpBufMagic) {
+-    Printf(
+-        "WARNING: Unexpected bad jmp_buf. Either setjmp was not called or "
+-        "there is a bug in HWASan.\n");
++    HandleForeignJmpBuf(env[0].__jmpbuf);
+     return REAL(longjmp)(env, val);
+   }
+   InternalLongjmp(env[0].__jmpbuf, val);
