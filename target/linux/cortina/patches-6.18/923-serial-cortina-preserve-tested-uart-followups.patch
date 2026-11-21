@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Subject: [PATCH] serial: cortina: preserve locally tested UART follow-ups
+
+Preserve the UART fixes already running on the test board when rebuilding
+its kernel from the patch queue. Limit interrupt processing to enabled
+sources, retain RX error status until RX is handled, and clear a stale TX
+empty interrupt before priming the FIFO. Remove unsupported SysRq handling.
+
+These changes are prepared for the next platform series revision.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/drivers/tty/serial/cortina-uart.c
++++ b/drivers/tty/serial/cortina-uart.c
+@@ -129,12 +129,13 @@ static void cortina_uart_tx_chars(struct
+ 
+ static void cortina_uart_start_tx(struct uart_port *port)
+ {
+-	cortina_uart_ie_update(port, 0, CORTINA_UART_IRQ_TX_EMPTY);
+-
+ 	/*
+ 	 * The TX empty interrupt only fires when the FIFO drains, so prime
+-	 * the FIFO here.
++	 * the FIFO here. Drop a stale TX empty event first: it would fire
++	 * at once while the FIFO is being filled.
+ 	 */
++	writel(CORTINA_UART_IRQ_TX_EMPTY, port->membase + CORTINA_UART_INT);
++	cortina_uart_ie_update(port, 0, CORTINA_UART_IRQ_TX_EMPTY);
+ 	cortina_uart_tx_chars(port);
+ }
+ 
+@@ -185,8 +186,6 @@ static void cortina_uart_rx_chars(struct
+ 			flag = TTY_PARITY;
+ 		else if (ch_err & CORTINA_UART_IRQ_RX_STOP)
+ 			flag = TTY_FRAME;
+-		else if (uart_prepare_sysrq_char(port, ch))
+-			continue;
+ 
+ 		tty_insert_flip_char(tport, ch, flag);
+ 	}
+@@ -202,15 +201,28 @@ static void cortina_uart_rx_chars(struct
+ static irqreturn_t cortina_uart_isr(int irq, void *dev_id)
+ {
+ 	struct uart_port *port = dev_id;
+-	u32 status;
++	u32 status, pending;
+ 
+-	guard(uart_port_lock_check_sysrq_irqsave)(port);
++	guard(uart_port_lock_irqsave)(port);
+ 
+ 	status = readl(port->membase + CORTINA_UART_INT);
+-	writel(status, port->membase + CORTINA_UART_INT);
++	pending = status & readl(port->membase + CORTINA_UART_IE);
++	if (!pending)
++		return IRQ_NONE;
+ 
+-	cortina_uart_rx_chars(port, status);
+-	cortina_uart_tx_chars(port);
++	/*
++	 * The RX error bits are not enabled as interrupts. Leave them latched
++	 * until the characters they belong to are read.
++	 */
++	if (pending & CORTINA_UART_IRQ_RX_NONEMPTY)
++		pending |= status & (CORTINA_UART_IRQ_RX_OVERRUN |
++				     CORTINA_UART_IRQ_RX_ERR);
++	writel(pending, port->membase + CORTINA_UART_INT);
++
++	if (pending & CORTINA_UART_IRQ_RX_NONEMPTY)
++		cortina_uart_rx_chars(port, status);
++	if (pending & CORTINA_UART_IRQ_TX_EMPTY)
++		cortina_uart_tx_chars(port);
+ 
+ 	return IRQ_HANDLED;
+ }
+@@ -522,7 +534,6 @@ static int cortina_uart_probe(struct pla
+ 	port->ops = &cortina_uart_ops;
+ 	port->fifosize = CORTINA_UART_FIFO_SIZE;
+ 	port->flags = UPF_BOOT_AUTOCONF;
+-	port->has_sysrq = IS_ENABLED(CONFIG_SERIAL_CORTINA_CONSOLE);
+ 
+ 	platform_set_drvdata(pdev, up);
+ 
