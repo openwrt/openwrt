@@ -1,0 +1,57 @@
+From a914cf1aa3fa879b146402319054dcb3ef32dd5a Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Sat, 21 Nov 2026 14:57:49 +0000
+Subject: [PATCH] net: dsa: b53: rewrite the flow accelerator traps in place
+
+b53_fa_trap_update() clears all trap rules and CFP_CTRL before it
+writes the rules for the new set of ports. When a port moves to another
+conduit, or the traps move to another CPU port, the ports that keep the
+traps are without them until the rules are written again. The
+accelerator forwards the FIN, RST and hop limit 1 frames of their flows
+meanwhile, and a stats poll in that time takes their TCP and IPv6 flows
+out until they are offloaded again.
+
+Clear the rules only when the traps go off. Otherwise take the ports
+that leave out of fa_trap_ports first, write the rules over the old
+ones, and then set CFP_CTRL and fa_trap_ports for the new ports. Each
+rule is written as a whole, so a port that keeps the traps matches every
+rule at any time.
+
+Tested on an RT-N18U: moving a port to the other conduit and back under
+a UDP stream logged "flow accelerator traps to port 5" both times and no
+error, and the stream went through the other conduit and back into the
+accelerator as before. Throughput and the tests that take the trap
+port's conduit down and up gave the same results as without this
+change. With a test build, the clear took 160 us and writing the new
+rules with CFP_CTRL took 196 to 268 us in twenty conduit moves (once
+1 ms when the trap port's conduit came up), so before this change the
+ports that keep the traps were without them for about 0.36 ms on each
+move.
+
+In a test build that stretched the window to about 4 s, TTL 1 packets
+of an offloaded flow on a port that kept the traps were neither trapped
+nor answered while another port moved to a new conduit. With this change
+they were trapped throughout the move.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -788,12 +788,13 @@ static void b53_fa_trap_update(struct b5
+ 	if (src == dev->fa_trap_ports && (!src || trap == dev->fa_trap_port))
+ 		return;
+ 
+-	b53_fa_trap_clear(dev);
+ 	if (!src) {
++		b53_fa_trap_clear(dev);
+ 		dev_info(ds->dev, "flow accelerator traps off\n");
+ 		return;
+ 	}
+ 
++	WRITE_ONCE(dev->fa_trap_ports, dev->fa_trap_ports & src);
+ 	err = b53_fa_trap_set(dev, src, b53_cfp_port_bit(trap));
+ 	if (err) {
+ 		dev_err(ds->dev, "flow accelerator traps: %pe\n", ERR_PTR(err));
