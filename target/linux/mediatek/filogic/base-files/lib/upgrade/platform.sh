@@ -52,7 +52,7 @@ jiorouter_initial_setup()
 
 	# Set boot arguments in freshly created U-Boot environment
 	fw_setenv bootcmd 'ubi read 46000000 kernel;fdt addr $(fdtcontroladdr);fdt rm /signature;bootm 0x46000000'
-	fw_setenv bootdelay 0
+	fw_setenv bootdelay 3
 	fw_setenv ipaddr ''
 }
 
