@@ -4,8 +4,55 @@ REQUIRE_IMAGE_METADATA=1
 RAMFS_COPY_BIN='fw_printenv fw_setenv'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
+hh70_check_image() {
+	local tar_file="$1"
+	local board_dir
+	local kernel_len
+	local rootfs_len
+
+	board_dir="$(tar tf "$tar_file" | grep -m 1 '^sysupgrade-.*/$')"
+	board_dir="${board_dir%/}"
+
+	[ -n "$board_dir" ] || {
+		echo "HH70: sysupgrade payload directory missing"
+		return 1
+	}
+
+	kernel_len="$(tar Oxf "$tar_file" "${board_dir}/kernel" 2>/dev/null | wc -c)"
+	rootfs_len="$(tar Oxf "$tar_file" "${board_dir}/root" 2>/dev/null | wc -c)"
+
+	[ "$kernel_len" -gt 0 ] 2>/dev/null || {
+		echo "HH70: kernel payload missing"
+		return 1
+	}
+
+	[ "$rootfs_len" -gt 0 ] 2>/dev/null || {
+		echo "HH70: rootfs payload missing"
+		return 1
+	}
+
+	echo "HH70 kernel: $kernel_len / 4063232 bytes"
+	echo "HH70 rootfs: $rootfs_len / 9961472 bytes"
+
+	[ "$kernel_len" -le 4063232 ] || {
+		echo "HH70: kernel exceeds 0:HLOS partition"
+		return 1
+	}
+
+	[ "$rootfs_len" -le 9961472 ] || {
+		echo "HH70: rootfs exceeds rootfs partition"
+		return 1
+	}
+
+	return 0
+}
+
 platform_check_image() {
 	case "$(board_name)" in
+	alcatel,hh70)
+		hh70_check_image "$1"
+		return $?
+		;;
 	asus,map-ac1300|\
 	asus,rt-ac42u|\
 	asus,rt-ac58u)
@@ -68,6 +115,51 @@ askey_do_upgrade() {
 	tar Oxf $tar_file ${board_dir}/root | mtd write - rootfs
 
 	nand_do_upgrade "$1"
+}
+
+hh70_do_upgrade() {
+	local tar_file="$1"
+	local board_dir
+	local kernel_mtd
+	local rootfs_mtd
+	local kernel_dev
+	local rootfs_dev
+
+	hh70_check_image "$tar_file" || return 1
+
+	board_dir="$(tar tf "$tar_file" | grep -m 1 '^sysupgrade-.*/$')"
+	board_dir="${board_dir%/}"
+
+	kernel_mtd="$(find_mtd_index "0:HLOS")"
+	rootfs_mtd="$(find_mtd_index "rootfs")"
+
+	[ -n "$kernel_mtd" ] || {
+		echo "HH70: 0:HLOS partition not found"
+		return 1
+	}
+
+	[ -n "$rootfs_mtd" ] || {
+		echo "HH70: rootfs partition not found"
+		return 1
+	}
+
+	kernel_dev="/dev/mtd${kernel_mtd}"
+	rootfs_dev="/dev/mtd${rootfs_mtd}"
+
+	echo "HH70: writing kernel to $kernel_dev..."
+		tar Oxf "$tar_file" "${board_dir}/kernel" |
+		mtd write - "$kernel_dev" || return 1
+
+	echo "HH70: writing root filesystem to $rootfs_dev..."
+	if [ -n "$UPGRADE_BACKUP" ]; then
+		tar Oxf "$tar_file" "${board_dir}/root" |
+		mtd -j "$UPGRADE_BACKUP" write - "$rootfs_dev" ||
+		return 1
+	else
+		tar Oxf "$tar_file" "${board_dir}/root" |
+		mtd write - "$rootfs_dev" ||
+		return 1
+	fi
 }
 
 zyxel_do_upgrade() {
@@ -142,6 +234,9 @@ platform_do_upgrade() {
 			CI_UBIPART="rootfs1"
 		fi
 		nand_do_upgrade "$1"
+		;;
+	alcatel,hh70)
+		hh70_do_upgrade "$1"
 		;;
 	asus,map-ac1300|\
 	asus,map-ac2200|\

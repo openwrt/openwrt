@@ -56,6 +56,11 @@ ipq40xx_setup_interfaces()
 	zte,mf289f)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
+	alcatel,hh70)
+		ucidef_set_interfaces_lan "lan"
+		ucidef_set_interface "wan" device "usb0" protocol "jrd"
+		ucidef_set_interface "wan2" device "wan" prtocol "dhcp"
+		;;
 	aruba,ap-303|\
 	aruba,ap-365|\
 	avm,fritzrepeater-1200|\

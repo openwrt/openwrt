@@ -147,6 +147,33 @@ define Device/8dev_jalapeno
 endef
 TARGET_DEVICES += 8dev_jalapeno
 
+define Device/alcatel_hh70
+	$(call Device/FitzImage)
+	DEVICE_VENDOR := Alcatel
+	DEVICE_MODEL := HH70
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@4
+	BLOCKSIZE := 64k
+	KERNEL_SIZE := 3968k
+	ROOTFS_SIZE := 9728k
+	FILESYSTEMS := squashfs
+	IMAGES += factory.bin
+	IMAGE/factory.bin := qsdk-ipq-factory-nor
+	IMAGE/sysupgrade.bin/squashfs := \
+	    append-rootfs | \
+	    pad-rootfs | \
+	    check-size $$$$(ROOTFS_SIZE) | \
+	    sysupgrade-tar rootfs=$$$$@ | \
+	    append-metadata
+	DEVICE_PACKAGES := \
+	    jrd-modem \
+	    kmod-usb-net-rndis \
+	    kmod-usb-storage \
+	    kmod-fs-cifs \
+	    block-mount
+endef
+TARGET_DEVICES += alcatel_hh70
+
 define Device/alfa-network_ap120c-ac
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
