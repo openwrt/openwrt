@@ -44,6 +44,8 @@ struct rtl960x_dsa {
 	 * the L2 flush engine.
 	 */
 	struct mutex l2_lock;
+	struct mutex map_lock;
+	u16 page[RTL960X_NUM_PORTS];
 	u16 pvid[RTL960X_NUM_PORTS];	/* shadow of each port's PVID */
 	u16 bridge_pvid[RTL960X_NUM_PORTS]; /* PVID set by the bridge, 0 if none */
 	u8 vlan_owner[RTL960X_BRIDGE_VID_MIN]; /* bridge.num using the VID */

@@ -314,6 +314,11 @@
 			};
 		};
 
+		mdio_ctrl: mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		i2c_mst1: i2c@b4 {
 			compatible = "realtek,rtl9607c-i2c";
 			reg = <0xb4 0x4>;
@@ -340,12 +345,6 @@
 			pinctrl-names = "default";
 
 			status = "disabled";
-		};
-
-		mdio_ctrl: mdio-controller {
-			compatible = "realtek,rtl9607-int-mdio";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		soc_thermal: thermal {
