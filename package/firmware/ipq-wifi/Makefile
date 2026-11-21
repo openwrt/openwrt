@@ -119,6 +119,7 @@ ALLWIFIBOARDS:= \
 	tplink_tl-wa1201-v2 \
 	ubnt_unifi-6-pro \
 	ubnt_utr \
+	ubnt_utr-lr \
 	wallys_dr40x9 \
 	wallys_dr5018s \
 	wallys_dr6018s \
@@ -340,6 +341,7 @@ $(eval $(call generate-ipq-wifi-package,tplink_re700x,TP-Link RE700X))
 $(eval $(call generate-ipq-wifi-package,tplink_tl-wa1201-v2,TP-Link TL-WA1201 V2))
 $(eval $(call generate-ipq-wifi-package,ubnt_unifi-6-pro,Ubiquiti UniFi 6 Pro))
 $(eval $(call generate-ipq-wifi-package,ubnt_utr,Ubiquiti UniFi Travel Router))
+$(eval $(call generate-ipq-wifi-package,ubnt_utr-lr,Ubiquiti UniFi Travel Router LR))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,wallys_dr5018s,Wallys DR5018S))
 $(eval $(call generate-ipq-wifi-package,wallys_dr6018s,Wallys DR6018S))
