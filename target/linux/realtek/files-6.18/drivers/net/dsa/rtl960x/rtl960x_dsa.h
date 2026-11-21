@@ -57,6 +57,8 @@ struct rtl960x_dsa {
 	u16 vlan_member[RTL960X_BRIDGE_VID_MIN];
 	u16 vlan_untag[RTL960X_BRIDGE_VID_MIN];
 	u16 transparent;
+	int irq;
+	struct irq_domain	*irqdomain;
 };
 
 #endif /* __RTL960X_DSA_H */
