@@ -23,7 +23,7 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
 ---
 --- a/drivers/crypto/inside-secure/eip93/eip93-aead.c
 +++ b/drivers/crypto/inside-secure/eip93/eip93-aead.c
-@@ -47,10 +47,8 @@
+@@ -47,10 +47,8 @@ static int eip93_aead_send_req(struct cr
  	int err;
  
  	err = check_valid_request(rctx);
@@ -37,7 +37,7 @@ Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
  }
 --- a/drivers/crypto/inside-secure/eip93/eip93-cipher.c
 +++ b/drivers/crypto/inside-secure/eip93/eip93-cipher.c
-@@ -45,10 +45,8 @@
+@@ -38,10 +38,8 @@ static int eip93_skcipher_send_req(struc
  
  	err = check_valid_request(rctx);
  
