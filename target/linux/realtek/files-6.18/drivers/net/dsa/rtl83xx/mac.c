@@ -157,7 +157,7 @@ void otto_mac_838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	/* Enable EEE MAC support on ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			priv->r->set_mac_eee(priv, i, enable);
+			priv->r->mac_set_eee(priv, i, enable);
 	}
 	priv->eee_enabled = enable;
 }
@@ -210,7 +210,7 @@ void otto_mac_839x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			priv->r->set_mac_eee(priv, i, enable);
+			priv->r->mac_set_eee(priv, i, enable);
 	}
 	priv->eee_enabled = enable;
 }
@@ -259,7 +259,7 @@ void otto_mac_930x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			priv->r->set_mac_eee(priv, i, enable);
+			priv->r->mac_set_eee(priv, i, enable);
 	}
 
 	priv->eee_enabled = enable;
@@ -761,10 +761,10 @@ int otto_mac_set_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 
 	if (e->eee_enabled && !priv->eee_enabled) {
 		pr_info("Globally enabling EEE\n");
-		priv->r->init_eee(priv, true);
+		priv->r->mac_init_eee(priv, true);
 	}
 
-	priv->r->set_mac_eee(priv, port, e->eee_enabled);
+	priv->r->mac_set_eee(priv, port, e->eee_enabled);
 
 	if (e->eee_enabled)
 		pr_info("Enabled EEE for port %d\n", port);

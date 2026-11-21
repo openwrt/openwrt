@@ -498,8 +498,8 @@ struct rtldsa_config {
 	void (*write_cam)(int idx, struct otto_l2_entry *e);
 	int rma_bpdu_fld_pmask;
 	int spcl_trap_eapol_ctrl;
-	void (*init_eee)(struct otto_dsa_priv *priv, bool enable);
-	void (*set_mac_eee)(struct otto_dsa_priv *priv, int port, bool enable);
+	void (*mac_init_eee)(struct otto_dsa_priv *priv, bool enable);
+	void (*mac_set_eee)(struct otto_dsa_priv *priv, int port, bool enable);
 	u64 (*l2_hash_seed)(u64 mac, u32 vid);
 	u32 (*l2_hash_key)(struct otto_dsa_priv *priv, u64 seed);
 	u64 (*read_mcast_pmask)(int idx);
