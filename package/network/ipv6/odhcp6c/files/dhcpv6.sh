@@ -34,6 +34,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string iface_464xlat
 	proto_config_add_string zone_464xlat
 	proto_config_add_string zone
+	proto_config_add_int metric
 	proto_config_add_string 'ip6ifaceid:ip6addr'
 	proto_config_add_string "userclass"
 	proto_config_add_string "vendorclass"
@@ -90,6 +91,7 @@ proto_dhcpv6_setup() {
 	json_get_vars delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite
 	json_get_vars encaplimit_map skpriority soltimeout fakeroutes sourcefilter
 	json_get_vars keep_ra_dnslifetime ra_holdoff verbose mtu_dslite dynamic
+	json_get_var metric metric
 
 	json_for_each_item proto_dhcpv6_add_prefix ip6prefix ip6prefixes
 
@@ -201,6 +203,7 @@ proto_dhcpv6_setup() {
 	[ -n "$zone_map" ] && proto_export "ZONE_MAP=$zone_map"
 	[ -n "$zone_464xlat" ] && proto_export "ZONE_464XLAT=$zone_464xlat"
 	[ -n "$zone" ] && proto_export "ZONE=$zone"
+	[ -n "$metric" ] && [ "$metric" -gt 0 ] && proto_export "METRIC=$metric"
 	[ -n "$encaplimit_dslite" ] && proto_export "ENCAPLIMIT_DSLITE=$encaplimit_dslite"
 	[ -n "$encaplimit_map" ] && proto_export "ENCAPLIMIT_MAP=$encaplimit_map"
 	[ "$fakeroutes" != "0" ] && proto_export "FAKE_ROUTES=1"
