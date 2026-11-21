@@ -1,0 +1,14 @@
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+checkpoint,l-72)
+	ucidef_set_led_netdev "dmz_red" "DMZ (red)" "red:dmz-copper" "eth1" "link_10 link_1000"
+	ucidef_set_led_netdev "dmz_green" "DMZ (green)" "green:dmz-copper" "eth1" "link_100 link_1000"
+	;;
+esac
+
+board_config_flush
+
+exit 0
