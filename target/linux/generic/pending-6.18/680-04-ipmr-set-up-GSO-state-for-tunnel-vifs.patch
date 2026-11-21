@@ -1,0 +1,99 @@
+From ffd8ca7abd44882707fbca297889f6e43ced4a65 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 11 Oct 2026 17:09:05 +0200
+Subject: [PATCH] ipmr: set up GSO state for tunnel vifs
+
+ip_encap() pushes the outer IPv4 header but does not set SKB_GSO_IPXIP4,
+skb->encapsulation or the inner headers. A GSO packet forwarded to a
+VIFF_TUNNEL vif is then rejected by ipip_gso_segment() and dropped in
+validate_xmit_skb(), after being counted as sent. A device with UDP
+segmentation offload is handed a GSO packet whose transport header
+points at the inner IP header.
+
+Call iptunnel_handle_offloads() and skb_set_inner_ipproto() as
+ipip_tunnel_xmit() does, reserve one outer IP ID per segment as
+iptunnel_xmit() does, and set the outer length with iph_set_totlen(),
+since a GSO packet plus the outer header can exceed 64 KB.
+
+An encapsulated GSO packet keeps the inner headers of its own tunnel,
+and ip_encap() overwrites skb->inner_protocol for the IPIP header it
+adds.
+IPIP and SIT aggregates (SKB_GSO_IPXIP4) still segment in software, as
+inet_gso_segment() follows the IP headers by their protocol field. GRE
+and UDP tunnel aggregates do not: gre_gso_segment() and
+skb_udp_tunnel_segment() take the payload type from
+skb->inner_protocol. Drop those before the vif counts them; without
+this change ipip_gso_segment() dropped them, as they lacked
+SKB_GSO_IPXIP4. A device that segments IPXIP4 packets itself, such as
+i40e, prepares only the outermost and the innermost IP header of each
+segment; it was handed the same three-header IPIP and SIT aggregates
+before this change.
+
+Complete the pending checksum of an encapsulated packet that is not GSO
+before ip_encap(), as validate_xmit_skb() does for a packet sent through
+an ipip device, so that ip_encap() does not leave the inner offsets of
+the previous tunnel on the IPIP packet. This is done after the last use
+of the IP header pointer, as completing it can reallocate the head.
+
+Fixes: 9fd1ff5d2ac7 ("udp: Support UDP fraglist GRO/GSO.")
+Link: https://lore.kernel.org/netdev/cover.1795295554.git.julius@bairaktaris.de/
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/net/ipv4/ipmr.c
++++ b/net/ipv4/ipmr.c
+@@ -1839,6 +1839,10 @@ static void ip_encap(struct net *net, st
+ 	struct iphdr *iph;
+ 	const struct iphdr *old_iph = ip_hdr(skb);
+ 
++	/* skb_cow() in ipmr_prepare_xmit() leaves no header to unclone */
++	iptunnel_handle_offloads(skb, SKB_GSO_IPXIP4);
++	skb_set_inner_ipproto(skb, IPPROTO_IPIP);
++
+ 	skb_push(skb, sizeof(struct iphdr));
+ 	skb->transport_header = skb->network_header;
+ 	skb_reset_network_header(skb);
+@@ -1852,8 +1856,8 @@ static void ip_encap(struct net *net, st
+ 	iph->saddr	=	saddr;
+ 	iph->protocol	=	IPPROTO_IPIP;
+ 	iph->ihl	=	5;
+-	iph->tot_len	=	htons(skb->len);
+-	ip_select_ident(net, skb, NULL);
++	iph_set_totlen(iph, skb->len);
++	ip_select_ident_segs(net, skb, NULL, skb_shinfo(skb)->gso_segs ?: 1);
+ 	ip_send_check(iph);
+ 
+ 	memset(&(IPCB(skb)->opt), 0, sizeof(IPCB(skb)->opt));
+@@ -1921,6 +1925,15 @@ static int ipmr_prepare_xmit(struct net
+ 	}
+ 
+ 	if (vif->flags & VIFF_TUNNEL) {
++		/* An encapsulated packet carries the inner headers of its
++		 * own tunnel. Only IPXIP4 GSO packets nest: their IP headers
++		 * are segmented by protocol field, while GRE and UDP tunnel
++		 * segmentation read skb->inner_protocol, which ip_encap()
++		 * sets for its own header.
++		 */
++		if (skb_is_gso(skb) && skb->encapsulation &&
++		    !(skb_shinfo(skb)->gso_type & SKB_GSO_IPXIP4))
++			return -1;
+ 		rt = ip_route_output_ports(net, &fl4, NULL,
+ 					   vif->remote, vif->local,
+ 					   0, 0,
+@@ -1954,6 +1967,17 @@ static int ipmr_prepare_xmit(struct net
+ 		ip_rt_put(rt);
+ 		return -1;
+ 	}
++
++	/* Complete the pending checksum of an encapsulated packet, as for
++	 * a packet sent through an ipip device. This may reallocate the
++	 * head: no pointer into it is used after this point.
++	 */
++	if ((vif->flags & VIFF_TUNNEL) && skb->encapsulation &&
++	    !skb_is_gso(skb) && skb->ip_summed == CHECKSUM_PARTIAL &&
++	    skb_checksum_help(skb)) {
++		ip_rt_put(rt);
++		return -1;
++	}
+ 
+ 	WRITE_ONCE(vif->pkt_out, vif->pkt_out + 1);
+ 	WRITE_ONCE(vif->bytes_out, vif->bytes_out + skb->len);

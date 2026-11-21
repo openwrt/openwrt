@@ -1,0 +1,155 @@
+From c512956bc8cc74688721e3d5a52016ee85966484 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 21 Nov 2026 20:10:20 +0100
+Subject: [PATCH] net: gso: segment fraglist packets with a software tunnel checksum
+
+skb_segment_list() turns the frag_list members of a fraglist packet into
+segments and copies the headers of the head in front of each, but sets
+no SKB_GSO_CB() checksum state for them. In a UDP tunnel or GRE with
+checksum (SKB_GSO_UDP_TUNNEL_CSUM, SKB_GSO_GRE_CSUM),
+__skb_udp_tunnel_segment() and gre_gso_segment() compute the outer
+checksum of a segment with gso_make_checksum(), which reads exactly that
+state, when the egress device does not offload it and for every segment
+that is still CHECKSUM_PARTIAL, as they then set skb->encapsulation.
+The segments of skb_segment_list() have the ip_summed of the head, so in
+both cases their outer checksum is wrong.
+
+Both tunnel segmenters set skb->encap_hdr_csum before they segment the
+inner packet. Set it only in those two cases, with one helper for both,
+as its description says ("software checksum is needed"), and segment a
+fraglist packet with skb_segment() when it is set, as
+tcp4_gso_segment(), tcp6_gso_segment() and __udp_gso_segment() already
+do for fraglist packets that are DODGY or whose geometry changed. A
+fraglist packet that is not CHECKSUM_PARTIAL and leaves through a device
+that offloads the outer checksum, and one whose tunnel receive path
+cleared the tunnel GSO bits (iptunnel_pull_offloads()), is still
+segmented by skb_segment_list().
+
+The UFO segmenters also read encap_hdr_csum. For a UFO packet in such a
+tunnel that is not CHECKSUM_PARTIAL, with the outer checksum offloaded,
+they now fake the inner checksum offload as they do without an outer
+checksum: its segments are CHECKSUM_UNNECESSARY, so the tunnel
+segmenters offload the outer checksum and do not call
+gso_make_checksum().
+
+In the setup of the previous patch, with the outer UDP checksum set and
+checksum offload off on the egress port, 849 to 981 of 1000 segments
+per case left with a wrong outer checksum before this change (2 runs of
+4 cases) and none after it (3 runs); with checksum offload on, the
+packets are still segmented by skb_segment_list() and arrive with valid
+checksums (3 runs). With a TCP flow from a local VXLAN device behind
+veth, so that the aggregates are CHECKSUM_PARTIAL, 132 to 1098 segments
+per transfer left with a wrong outer checksum before this change, with
+checksum offload on and off (2 runs), and none after it (3 runs).
+
+Fixes: 9fd1ff5d2ac7 ("udp: Support UDP fraglist GRO/GSO.")
+Fixes: bee88cd5bd83 ("net: add support for segmenting TCP fraglist GSO packets")
+Link: https://lore.kernel.org/netdev/cover.1795295554.git.julius@bairaktaris.de/
+[ 6.18: __skb_gso_segment() has no max_segs argument and
+  __udp_gso_segment() does not check the IP version of the first frag_list
+  member yet; context adjusted ]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/gso.h
++++ b/include/net/gso.h
+@@ -82,6 +82,30 @@ static inline __sum16 gso_make_checksum(
+ 	return csum_fold(csum_partial(csum_start, plen, partial));
+ }
+ 
++/* Whether a GRE or UDP tunnel segmenter computes the outer checksum of a
++ * segment with gso_make_checksum(): when it does not offload it, and for each
++ * segment that is CHECKSUM_PARTIAL, as it then sets skb->encapsulation. Every
++ * segment of skb_segment_list() has the ip_summed of the head.
++ */
++static inline bool skb_gso_tnl_csum_sw(const struct sk_buff *skb,
++				       bool need_csum, bool offload_csum)
++{
++	return need_csum &&
++	       (!offload_csum || skb->ip_summed == CHECKSUM_PARTIAL);
++}
++
++/* skb_segment_list() sets no SKB_GSO_CB() checksum state for the segments it
++ * builds, and gso_make_checksum() reads it: a fraglist packet whose tunnel
++ * computes the outer checksum that way (encap_hdr_csum) has to be segmented
++ * by skb_segment().
++ */
++static inline bool skb_gso_list_csum_ok(const struct sk_buff *skb)
++{
++	return !(skb->encap_hdr_csum &&
++		 (skb_shinfo(skb)->gso_type &
++		  (SKB_GSO_GRE_CSUM | SKB_GSO_UDP_TUNNEL_CSUM)));
++}
++
+ struct sk_buff *__skb_gso_segment(struct sk_buff *skb,
+ 				  netdev_features_t features, bool tx_path);
+ 
+--- a/net/ipv4/gre_offload.c
++++ b/net/ipv4/gre_offload.c
+@@ -43,7 +43,6 @@ static struct sk_buff *gre_gso_segment(s
+ 	skb->protocol = skb->inner_protocol;
+ 
+ 	need_csum = !!(skb_shinfo(skb)->gso_type & SKB_GSO_GRE_CSUM);
+-	skb->encap_hdr_csum = need_csum;
+ 
+ 	features &= skb->dev->hw_enc_features;
+ 	if (need_csum)
+@@ -53,6 +52,7 @@ static struct sk_buff *gre_gso_segment(s
+ 	/* Try to offload checksum if possible */
+ 	offload_csum = !!(need_csum && !need_ipsec &&
+ 			  (skb->dev->features & NETIF_F_HW_CSUM));
++	skb->encap_hdr_csum = skb_gso_tnl_csum_sw(skb, need_csum, offload_csum);
+ 
+ 	/* segment inner packet. */
+ 	segs = skb_mac_gso_segment(skb, features);
+--- a/net/ipv4/tcp_offload.c
++++ b/net/ipv4/tcp_offload.c
+@@ -108,7 +108,8 @@ static struct sk_buff *tcp4_gso_segment(
+ 		struct tcphdr *th = tcp_hdr(skb);
+ 
+ 		if ((skb_pagelen(skb) - th->doff * 4 == skb_shinfo(skb)->gso_size) &&
+-		    !(skb_shinfo(skb)->gso_type & SKB_GSO_DODGY))
++		    !(skb_shinfo(skb)->gso_type & SKB_GSO_DODGY) &&
++		    skb_gso_list_csum_ok(skb))
+ 			return __tcp4_gso_segment_list(skb, features);
+ 
+ 		skb->ip_summed = CHECKSUM_NONE;
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -214,7 +214,6 @@ static struct sk_buff *__skb_udp_tunnel_
+ 	skb->protocol = new_protocol;
+ 
+ 	need_csum = !!(skb_shinfo(skb)->gso_type & SKB_GSO_UDP_TUNNEL_CSUM);
+-	skb->encap_hdr_csum = need_csum;
+ 
+ 	remcsum = !!(skb_shinfo(skb)->gso_type & SKB_GSO_TUNNEL_REMCSUM);
+ 	skb->remcsum_offload = remcsum;
+@@ -226,6 +225,7 @@ static struct sk_buff *__skb_udp_tunnel_
+ 			  (skb->dev->features &
+ 			   (is_ipv6 ? (NETIF_F_HW_CSUM | NETIF_F_IPV6_CSUM) :
+ 				      (NETIF_F_HW_CSUM | NETIF_F_IP_CSUM))));
++	skb->encap_hdr_csum = skb_gso_tnl_csum_sw(skb, need_csum, offload_csum);
+ 
+ 	features &= skb->dev->hw_enc_features;
+ 	if (need_csum)
+@@ -517,7 +517,8 @@ struct sk_buff *__udp_gso_segment(struct
+ 	if (skb_shinfo(gso_skb)->gso_type & SKB_GSO_FRAGLIST) {
+ 		 /* Detect modified geometry and pass those to skb_segment. */
+ 		if ((skb_pagelen(gso_skb) - sizeof(*uh) == skb_shinfo(gso_skb)->gso_size) &&
+-		    !(skb_shinfo(gso_skb)->gso_type & SKB_GSO_DODGY))
++		    !(skb_shinfo(gso_skb)->gso_type & SKB_GSO_DODGY) &&
++		    skb_gso_list_csum_ok(gso_skb))
+ 			return __udp_gso_segment_list(gso_skb, features, is_ipv6);
+ 
+ 		ret = __skb_linearize(gso_skb);
+--- a/net/ipv6/tcpv6_offload.c
++++ b/net/ipv6/tcpv6_offload.c
+@@ -185,7 +185,8 @@ static struct sk_buff *tcp6_gso_segment(
+ 		struct tcphdr *th = tcp_hdr(skb);
+ 
+ 		if ((skb_pagelen(skb) - th->doff * 4 == skb_shinfo(skb)->gso_size) &&
+-		    !(skb_shinfo(skb)->gso_type & SKB_GSO_DODGY))
++		    !(skb_shinfo(skb)->gso_type & SKB_GSO_DODGY) &&
++		    skb_gso_list_csum_ok(skb))
+ 			return __tcp6_gso_segment_list(skb, features);
+ 
+ 		skb->ip_summed = CHECKSUM_NONE;
