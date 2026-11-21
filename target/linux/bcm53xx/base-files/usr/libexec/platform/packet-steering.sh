@@ -4,13 +4,22 @@ packet_steering="$(uci -q get network.@globals[0].packet_steering)"
 flow_offloading="$(uci -q get firewall.@defaults[0].flow_offloading)"
 flow_offloading_hw="$(uci -q get firewall.@defaults[0].flow_offloading_hw)"
 
-# DSA puts its sysfs group on the conduit
+# DSA puts its sysfs group on each conduit. With the flow accelerator the
+# switch has two, the traps' and the traffic's: take the one that the user
+# ports hang off, the conduit with the most interfaces linked to it
 conduit=eth0
+users=0
 for d in /sys/class/net/*/dsa; do
 	[ -d "$d" ] || continue
-	conduit="${d%/dsa}"
-	conduit="${conduit##*/}"
-	break
+	dev="${d%/dsa}"
+	dev="${dev##*/}"
+	ifindex="$(cat /sys/class/net/$dev/ifindex)"
+	n=0
+	for l in /sys/class/net/*/iflink; do
+		[ "${l%/iflink}" = "/sys/class/net/$dev" ] && continue
+		[ "$(cat "$l")" = "$ifindex" ] && n=$((n + 1))
+	done
+	[ $n -gt $users ] && conduit="$dev" users=$n
 done
 
 [ "$packet_steering" != 1 ] && {
