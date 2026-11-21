@@ -12,6 +12,9 @@ case "$board" in
 alfa-network,ap120c-ac)
 	ucidef_set_led_netdev "wan" "WAN" "amber:wan" "wan"
 	;;
+arista,w-118)
+	ucidef_set_led_netdev "uplink" "UPLINK" "green:uplink" "uplink" "link"
+	;;
 asus,rt-ac42u)
 	ucidef_set_led_netdev "lan1" "LAN1" "blue:lan-1" "lan1"
 	ucidef_set_led_netdev "lan2" "LAN2" "blue:lan-2" "lan2"
