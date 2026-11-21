@@ -40,6 +40,7 @@
 #include "mtk_eth_soc.h"
 #include "mdio.h"
 #include "ethtool.h"
+#include "ppe_v1_offload.h"
 
 #if IS_ENABLED(CONFIG_NET_DSA)
 #include <net/dsa.h>
@@ -1064,6 +1065,8 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 			skb_checksum_none_assert(skb);
 		skb->protocol = eth_type_trans(skb, netdev);
 
+		ppe_v1_rx(priv->ppe, skb, trxd.rxd4);
+
 #if IS_ENABLED(CONFIG_NET_DSA)
 		if (netdev_uses_dsa(netdev) &&
 		    netdev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_RALINK) {
@@ -1426,6 +1429,9 @@ static int fe_open(struct net_device *dev)
 
 	spin_unlock_irqrestore(&priv->page_lock, flags);
 
+	if (priv->ppe)
+		ppe_v1_start(priv->ppe);
+
 	if (priv->phy && !priv->dsa_switch)
 		priv->phy->start(priv);
 
@@ -1450,6 +1456,9 @@ static int fe_stop(struct net_device *dev)
 	netif_tx_disable(dev);
 	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
 	napi_disable(&priv->rx_napi);
+
+	if (priv->ppe)
+		ppe_v1_stop(priv->ppe);
 
 	if (priv->phy && !priv->dsa_switch)
 		priv->phy->stop(priv);
@@ -1630,6 +1639,14 @@ static int fe_change_mtu(struct net_device *dev, int new_mtu)
 	return 0;
 }
 
+static int fe_setup_tc(struct net_device *dev, enum tc_setup_type type,
+		       void *type_data)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+
+	return ppe_v1_setup_tc(priv->ppe, type, type_data);
+}
+
 static const struct net_device_ops fe_netdev_ops = {
 	.ndo_init		= fe_init,
 	.ndo_uninit		= fe_uninit,
@@ -1644,6 +1661,7 @@ static const struct net_device_ops fe_netdev_ops = {
 	.ndo_get_stats64        = fe_get_stats64,
 	.ndo_vlan_rx_add_vid	= fe_vlan_rx_add_vid,
 	.ndo_vlan_rx_kill_vid	= fe_vlan_rx_kill_vid,
+	.ndo_setup_tc		= fe_setup_tc,
 #ifdef CONFIG_NET_POLL_CONTROLLER
 	.ndo_poll_controller	= fe_poll_controller,
 #endif
@@ -1836,6 +1854,12 @@ static int fe_probe(struct platform_device *pdev)
 	}
 	netif_napi_add_weight(netdev, &priv->rx_napi, fe_poll, napi_weight);
 	fe_set_ethtool_ops(netdev);
+
+	priv->ppe = ppe_v1_create(priv, netdev);
+	if (priv->ppe) {
+		netdev->hw_features |= NETIF_F_HW_TC;
+		netdev->features |= NETIF_F_HW_TC;
+	}
 
 	err = devm_register_netdev(&pdev->dev, netdev);
 	if (err) {
