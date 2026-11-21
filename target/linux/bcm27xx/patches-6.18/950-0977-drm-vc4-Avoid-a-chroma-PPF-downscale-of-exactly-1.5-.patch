@@ -1,0 +1,33 @@
+From 17b507f6f8521f3aa4e01a61f7700361ed287470 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 23:35:57 +0000
+Subject: [PATCH] drm/vc4: Avoid a chroma PPF downscale of exactly 1.5 on
+ BCM2835
+
+On BCM2835 the chroma of a planar YUV plane is placed about 3 source
+pixels to the left when its horizontal PPF downscale is exactly 1.5, for
+example NV12 300 pixels wide scaled to 100, where luma uses TPZ and
+chroma sits on the 2/3 PPF limit. 1.495 and TPZ at 1.51 are both
+correct, as is the same scale on BCM2711 and BCM2712, and vertically.
+
+Use TPZ for chroma at that limit on BCM2835.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -640,6 +640,11 @@ static int vc4_plane_setup_clipping_and_
+ 		vc4_state->x_scaling[1] =
+ 			vc4_get_scaling_mode(vc4_state->src_w[1],
+ 					     vc4_state->crtc_w);
++		/* The BCM2835 HVS misplaces chroma with a PPF downscale of exactly 1.5 */
++		if (to_vc4_dev(state->plane->dev)->gen == VC4_GEN_4 &&
++		    vc4_state->x_scaling[1] == VC4_SCALING_PPF &&
++		    vc4_state->src_w[1] * 2 >= (vc4_state->crtc_w * 3) << 16)
++			vc4_state->x_scaling[1] = VC4_SCALING_TPZ;
+ 		vc4_state->y_scaling[1] =
+ 			vc4_get_scaling_mode(vc4_state->src_h[1],
+ 					     vc4_state->crtc_h);

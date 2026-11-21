@@ -1,0 +1,426 @@
+From a1e4f546b739f6f3c84353fe10ff3ef77b5fba06 Mon Sep 17 00:00:00 2001
+From: Marta Momotko <marta.momotko@raspberrypi.com>
+Date: Fri, 23 Oct 2026 16:13:45 +0100
+Subject: [PATCH] ARM: dts: Add Raspberry Pi Zero 3 W
+
+Add a device tree for the Raspberry Pi Zero 3 W.
+
+Signed-off-by: Marta Momotko <marta.momotko@raspberrypi.com>
+---
+ arch/arm/boot/dts/broadcom/Makefile           |   2 +
+ .../dts/broadcom/bcm2711-rpi-zero-3-w.dts     | 373 ++++++++++++++++++
+ arch/arm64/boot/dts/broadcom/Makefile         |   1 +
+ .../dts/broadcom/bcm2711-rpi-zero-3-w.dts     |   2 +
+ 4 files changed, 378 insertions(+)
+ create mode 100644 arch/arm/boot/dts/broadcom/bcm2711-rpi-zero-3-w.dts
+ create mode 100644 arch/arm64/boot/dts/broadcom/bcm2711-rpi-zero-3-w.dts
+
+--- a/arch/arm/boot/dts/broadcom/Makefile
++++ b/arch/arm/boot/dts/broadcom/Makefile
+@@ -16,6 +16,7 @@ DTC_FLAGS_bcm2837-rpi-zero-2-w := -@
+ DTC_FLAGS_bcm2711-rpi-400 := -@
+ DTC_FLAGS_bcm2711-rpi-4-b := -@
+ DTC_FLAGS_bcm2711-rpi-cm4-io := -@
++DTC_FLAGS_bcm2711-rpi-zero-3-w := -@
+ DTC_FLAGS_bcm2835-rpi-zero := -@
+ DTC_FLAGS_bcm2835-rpi-zero-w := -@
+ dtb-$(CONFIG_ARCH_BCM2835) += \
+@@ -35,6 +36,7 @@ dtb-$(CONFIG_ARCH_BCM2835) += \
+ 	bcm2711-rpi-400.dtb \
+ 	bcm2711-rpi-4-b.dtb \
+ 	bcm2711-rpi-cm4-io.dtb \
++	bcm2711-rpi-zero-3-w.dtb \
+ 	bcm2835-rpi-zero.dtb \
+ 	bcm2835-rpi-zero-w.dtb
+ 
+--- /dev/null
++++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-zero-3-w.dts
+@@ -0,0 +1,373 @@
++// SPDX-License-Identifier: GPL-2.0
++/dts-v1/;
++#define BCM2711
++#define i2c0 i2c0if
++#include "bcm2711.dtsi"
++#include "bcm2711-rpi.dtsi"
++/delete-node/&i2c0mux;
++#include "bcm283x-rpi-wifi-bt.dtsi"
++#include <dt-bindings/leds/common.h>
++#undef i2c0
++#include "bcm270x.dtsi"
++#define i2c0 i2c0mux
++#undef i2c0
++
++/ {
++	compatible = "raspberrypi,model-zero-3-w", "brcm,bcm2711";
++	model = "Raspberry Pi Zero 3 W";
++
++	chosen {
++		/* 8250 auxiliary UART instead of pl011 */
++		stdout-path = "serial1:115200n8";
++	};
++
++	leds: leds {
++		compatible = "gpio-leds";
++
++		led_act: led-act {
++			label = "ACT";
++			gpios = <&gpio 47 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
++			linux,default-trigger = "actpwr";
++		};
++	};
++
++	sd_io_1v8_reg: regulator-sd-io-1v8 {
++		compatible = "regulator-gpio";
++		regulator-name = "vdd-sd-io";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-settling-time-us = <5000>;
++		gpios = <&gpio 56 GPIO_ACTIVE_HIGH>;
++		states = <1800000 0x1>,
++			 <3300000 0x0>;
++		status = "okay";
++	};
++
++	sd_vcc_reg: regulator-sd-vcc {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-sd";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		enable-active-high;
++		gpio = <&gpio 49 GPIO_ACTIVE_HIGH>;
++	};
++
++	pwr_button {
++		compatible = "gpio-keys";
++
++		pwr_key: pwr {
++			label = "pwr_button";
++			linux,code = <116>; // KEY_POWER
++			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
++			debounce-interval = <50>; // ms
++		};
++	};
++};
++
++&bt {
++	shutdown-gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
++};
++
++&ddc0 {
++	status = "okay";
++};
++
++/* Permanently disable DDC1 */
++&ddc1 {
++	status = "disabled";
++};
++
++/delete-node/ &expgpio;
++
++&gpio {
++	/*
++	 * These names are (mostly) from the schematic.
++	 *
++	 * Legend:
++	 * "FOO" = GPIO line named "FOO" on the schematic
++	 * "FOO_N" = GPIO line named "FOO" on schematic, active low
++	 */
++	gpio-line-names = "ID_SDA",		/*  0 */
++			  "ID_SCL",
++			  "GPIO2",
++			  "GPIO3",
++			  "GPIO4",
++			  "GPIO5",		/*  5 */
++			  "GPIO6",
++			  "GPIO7",
++			  "GPIO8",
++			  "GPIO9",
++			  "GPIO10",		/* 10 */
++			  "GPIO11",
++			  "GPIO12",
++			  "GPIO13",
++			  /* Serial port */
++			  "GPIO14",
++			  "GPIO15",		/* 15 */
++			  "GPIO16",
++			  "GPIO17",
++			  "GPIO18",
++			  "GPIO19",
++			  "GPIO20",		/* 20 */
++			  "GPIO21",
++			  "GPIO22",
++			  "GPIO23",
++			  "GPIO24",
++			  "GPIO25",		/* 25 */
++			  "GPIO26",
++			  "GPIO27",
++			  "BT_ON",
++			  "WL_ON",
++			  /* Used by BT module */
++			  "BT_CTS",		/* 30 */
++			  "BT_RTS",
++			  "BT_TXD",
++			  "BT_RXD",
++			  /* Used by Wifi */
++			  "WIFI_SDIO_CLK",
++			  "WIFI_SDIO_CMD",		/* 35 */
++			  "WIFI_SDIO_D0",
++			  "WIFI_SDIO_D1",
++			  "WIFI_SDIO_D2",
++			  "WIFI_SDIO_D3",
++			  /* Used by SPI flash */
++			  "FLASH_MISO",		/* 40 */
++			  "FLASH_MOSI",
++			  "ACT_CLK_R",
++			  "SPIFLASH_CE_N",
++			  "SDA0",
++			  "SCL0",		/* 45 */
++			  "PWR_GPIO",
++			  "PWR_LED_ON",
++			  "PWR_GPIO",
++			  "SD_PWR_ON",
++			  "PCIE_DET_WAKE",		/* 50 */
++			  "PCIE_PWR_EN",
++			  "CAM_GPIO1",
++			  "CAM_GPIO0",
++			  "SD_OC_N",
++			  "USB_MUX_SEL",		/* 55 */
++			  "VDD_SD_IO_SEL",
++			  "-";
++};
++
++&hdmi0 {
++	status = "okay";
++};
++
++/* Permanently disable HDMI1 */
++&hdmi1 {
++	status = "disabled";
++};
++
++&pixelvalve0 {
++	status = "okay";
++};
++
++&pixelvalve1 {
++	status = "okay";
++};
++
++&pixelvalve2 {
++	status = "okay";
++};
++
++/* EMMC2 is used to drive the eMMC/SD card */
++&emmc2 {
++	bus-width = <8>;
++	vqmmc-supply = <&sd_io_1v8_reg>;
++	vmmc-supply = <&sd_vcc_reg>;
++	broken-cd;
++	status = "okay";
++};
++
++&pcie0 {
++	pci@0,0 {
++		device_type = "pci";
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		reg = <0 0 0 0 0>;
++	};
++};
++
++/* uart0 communicates with the BT module */
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_ctsrts_gpio30 &uart0_gpio32>;
++	uart-has-rtscts;
++};
++
++/* uart1 is mapped to the pin header */
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_gpio14>;
++	status = "okay";
++};
++
++&vc4 {
++	status = "okay";
++};
++
++&vec {
++	status = "disabled";
++};
++
++&wifi_pwrseq {
++	reset-gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
++};
++
++// =============================================
++// Downstream rpi- changes
++
++#include "bcm271x-rpi-bt.dtsi"
++
++&bt {
++	shutdown-gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
++};
++
++&minibt {
++	shutdown-gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
++};
++
++/ {
++	soc {
++		/delete-node/ pixelvalve@7e807000;
++		/delete-node/ hdmi@7e902000;
++	};
++};
++
++#include "bcm2711-rpi-ds.dtsi"
++#include "bcm283x-rpi-csi1-4lane.dtsi"
++#include "bcm283x-rpi-i2c0mux_0_44.dtsi"
++
++/ {
++	/delete-node/ wifi-pwrseq;
++};
++
++&mmcnr {
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdio_pins>;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&uart0 {
++	pinctrl-0 = <&uart0_pins &bt_pins>;
++	status = "okay";
++};
++
++&uart1 {
++	pinctrl-0 = <&uart1_pins>;
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
++	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
++
++	spidev0: spidev@0{
++		compatible = "spidev";
++		reg = <0>;	/* CE0 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <125000000>;
++	};
++
++	spidev1: spidev@1{
++		compatible = "spidev";
++		reg = <1>;	/* CE1 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <125000000>;
++	};
++};
++
++&gpio {
++	bt_pins: bt_pins {
++		brcm,pins = "-"; // non-empty to keep btuart happy, //4 = 0
++				 // to fool pinctrl
++		brcm,function = <0>;
++		brcm,pull = <2>;
++	};
++
++	uart0_pins: uart0_pins {
++		brcm,pins = <32 33>;
++		brcm,function = <BCM2835_FSEL_ALT3>;
++		brcm,pull = <0 2>;
++	};
++
++	uart1_pins: uart1_pins {
++		brcm,pins;
++		brcm,function;
++		brcm,pull;
++	};
++
++	uart1_bt_pins: uart1_bt_pins {
++		brcm,pins = <32 33 30 31>;
++		brcm,function = <BCM2835_FSEL_ALT5>; /* alt5=UART1 */
++		brcm,pull = <0 2 2 0>;
++	};
++};
++
++&i2c0if {
++	clock-frequency = <100000>;
++};
++
++&i2c1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2s {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s_pins>;
++};
++
++// =============================================
++// Board specific stuff here
++
++&sdhost {
++	status = "disabled";
++};
++
++
++&gpio {
++	audio_pins: audio_pins {
++		brcm,pins = <>;
++		brcm,function = <>;
++	};
++};
++
++&vchiq {
++	pinctrl-names = "default";
++	pinctrl-0 = <&audio_pins>;
++};
++
++&cam1_reg {
++	gpio = <&gpio 53 GPIO_ACTIVE_HIGH>;
++};
++
++cam0_reg: &cam_dummy_reg {
++};
++
++i2c_csi_dsi0: &i2c0 {
++};
++
++/ {
++	__overrides__ {
++		audio = <&chosen>,"bootargs{on='snd_bcm2835.enable_hdmi=1',off='snd_bcm2835.enable_hdmi=0'}";
++
++		act_led_gpio = <&led_act>,"gpios:4";
++		act_led_activelow = <&led_act>,"gpios:8";
++		act_led_trigger = <&led_act>,"linux,default-trigger";
++
++		pcie_tperst_clk_ms = <&pcie0>,"brcm,tperst-clk-ms:0";
++	};
++};
+--- a/arch/arm64/boot/dts/broadcom/Makefile
++++ b/arch/arm64/boot/dts/broadcom/Makefile
+@@ -6,6 +6,7 @@ DTC_FLAGS := -@
+ dtb-$(CONFIG_ARCH_BCM2835) += bcm2711-rpi-400.dtb \
+ 			      bcm2711-rpi-4-b.dtb \
+ 			      bcm2711-rpi-cm4-io.dtb \
++			      bcm2711-rpi-zero-3-w.dtb \
+ 			      bcm2712-rpi-5-b.dtb \
+ 			      bcm2712-d-rpi-5-b.dtb \
+ 			      bcm2837-rpi-2-b.dtb \
+--- /dev/null
++++ b/arch/arm64/boot/dts/broadcom/bcm2711-rpi-zero-3-w.dts
+@@ -0,0 +1,2 @@
++// SPDX-License-Identifier: GPL-2.0
++#include "arm/broadcom/bcm2711-rpi-zero-3-w.dts"

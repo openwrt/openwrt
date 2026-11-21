@@ -1,0 +1,73 @@
+From c2376b915276625f6119799ac64aa17ba161b367 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 3 Aug 2026 12:12:00 +0100
+Subject: [PATCH] ASoC: iqaudio-codec: Add mic-only start-up delay
+
+Prior to this change, every stream start was subject to a 1 second delay
+to allow for the microphone circuitry to settle, even if a microphone is
+not being used. This blocking delay, as well as being pointless for non-
+capture applications, can be problematic for synchronous use-cases such
+as alsa_recover() in PipeWire.
+
+Add a dedicated widget to handle the microphone delay, and link it into
+the microphone routes.
+
+See: https://github.com/raspberrypi/linux/issues/7525
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ sound/soc/bcm/iqaudio-codec.c | 27 +++++++++++++--------------
+ 1 file changed, 13 insertions(+), 14 deletions(-)
+
+--- a/sound/soc/bcm/iqaudio-codec.c
++++ b/sound/soc/bcm/iqaudio-codec.c
+@@ -59,20 +59,15 @@ static int snd_rpi_iqaudio_pll_control(s
+ 	return ret;
+ }
+ 
+-static int snd_rpi_iqaudio_post_dapm_event(struct snd_soc_dapm_widget *w,
+-                              struct snd_kcontrol *kcontrol,
+-                              int event)
++static int snd_rpi_iqaudio_mic_bias_event(struct snd_soc_dapm_widget *w,
++					  struct snd_kcontrol *kcontrol,
++					  int event)
+ {
+-     switch (event) {
+-     case SND_SOC_DAPM_POST_PMU:
+-           /* Delay for mic bias ramp */
+-           msleep(1000);
+-           break;
+-     default:
+-           break;
+-     }
++	if (event == SND_SOC_DAPM_POST_PMU)
++		/* Delay for mic bias ramp */
++		msleep(1000);
+ 
+-     return 0;
++	return 0;
+ }
+ 
+ static const struct snd_kcontrol_new dapm_controls[] = {
+@@ -90,7 +85,9 @@ static const struct snd_soc_dapm_widget
+ 	SND_SOC_DAPM_SUPPLY("PLL Control", SND_SOC_NOPM, 0, 0,
+ 			    snd_rpi_iqaudio_pll_control,
+ 			    SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
+-	SND_SOC_DAPM_POST("Post Power Up Event", snd_rpi_iqaudio_post_dapm_event),
++	SND_SOC_DAPM_SUPPLY("Mic Bias Ramp", SND_SOC_NOPM, 0, 0,
++			    snd_rpi_iqaudio_mic_bias_event,
++			    SND_SOC_DAPM_POST_PMU),
+ };
+ 
+ static const struct snd_soc_dapm_route audio_map[] = {
+@@ -105,8 +102,10 @@ static const struct snd_soc_dapm_route a
+ 	/* Assume Mic1 is linked to Headset and Mic2 to on-board mic */
+ 	{"MIC1", NULL, "MIC Jack"},
+ 	{"MIC Jack", NULL, "PLL Control"},
++	{"MIC Jack", NULL, "Mic Bias Ramp"},
+ 	{"MIC2", NULL, "Onboard MIC"},
+ 	{"Onboard MIC", NULL, "PLL Control"},
++	{"Onboard MIC", NULL, "Mic Bias Ramp"},
+ };
+ 
+ /* machine stream operations */

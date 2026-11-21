@@ -1,0 +1,67 @@
+From 3c61d145753eb999c33d769cc66930ba6add14bd Mon Sep 17 00:00:00 2001
+From: Christian Taedcke <christian.taedcke@weidmueller.com>
+Date: Thu, 22 Oct 2026 11:38:47 +0200
+Subject: [PATCH] net: macb: reprogram TBQP after shuffling the TX ring on
+ link-up
+
+gem_shuffle_tx_one_ring() rotates the software TX ring so that the
+tail sits at index 0 and resets queue->tx_tail to 0, but it never
+reprograms the hardware transmit buffer queue pointer (TBQP). Other
+paths that reset tx_tail to the ring base (macb_init_buffers() and
+macb_tx_error_task()) also reprogram TBQP to queue->tx_ring_dma; this
+path does not, leaving TBQP pointing at a stale descriptor.
+
+gem_shuffle_tx_rings() runs on every link-up from
+macb_mac_link_up(). After a few link up/down flaps that leave
+un-completed descriptors in the ring, the stale TBQP keeps pointing at
+a descriptor whose used bit is set. When TX is re-enabled on link-up,
+the GEM reads that used descriptor and raises TXUBR. macb_interrupt()
+schedules the TX NAPI, macb_tx_poll() makes no progress (work_done ==
+0) and macb_tx_restart() re-issues TSTART, which makes the controller
+read the same used descriptor again and re-assert TXUBR. As the MAC
+interrupt is level-triggered, it never deasserts and one CPU is pegged
+at 100% in the threaded handler, eventually triggering "sched: RT
+throttling activated" and a dead network interface.
+
+Fix it by reprogramming TBQP to the ring base on every path of
+gem_shuffle_tx_one_ring() that resets tx_tail to 0, mirroring
+macb_tx_error_task(). The early return for an already-aligned tail is
+left untouched as TBQP is already consistent there. This is safe
+because the shuffle runs from macb_mac_link_up() while TE is still
+disabled, so the transmitter is halted.
+
+Fixes: 881a0263d502 ("net: macb: Shuffle the tx ring before enabling tx")
+Cc: stable@vger.kernel.org
+Assisted-by: Claude:claude-opus-4-8
+Link: https://lore.kernel.org/netdev/20261022-std-macb-v14-send-v1-2-9187bc545bf6@beckhoff.com/
+Signed-off-by: Christian Taedcke <christian.taedcke@weidmueller.com>
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -854,7 +854,7 @@ static void gem_shuffle_tx_one_ring(stru
+ 	if (!count) {
+ 		queue->tx_head = 0;
+ 		queue->tx_tail = 0;
+-		goto unlock;
++		goto reset_hw_ptr;
+ 	}
+ 
+ 	shift = tail % ring_size;
+@@ -903,6 +903,13 @@ static void gem_shuffle_tx_one_ring(stru
+ 	/* Make descriptor updates visible to hardware */
+ 	wmb();
+ 
++reset_hw_ptr:
++	/* tx_tail was reset to the ring base, so TBQP must be reprogrammed
++	 * to match; otherwise it keeps pointing at a stale descriptor. Safe
++	 * to write directly here as TX is still disabled (called from
++	 * macb_mac_link_up() before TE is set).
++	 */
++	queue_writel(queue, TBQP, lower_32_bits(queue->tx_ring_dma));
+ unlock:
+ 	spin_unlock_irqrestore(&queue->tx_ptr_lock, flags);
+ }

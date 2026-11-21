@@ -1,0 +1,33 @@
+From 27986930de4b45190f7556ccc5f9377be2ffc0e9 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 16:47:52 +0000
+Subject: [PATCH] drm/vc4: Reject YUV sources smaller than a chroma sample
+
+A YUV source less than one chroma sample wide or tall is rendered the
+wrong colour on BCM2835, BCM2711 and BCM2712 (a 4:2:0 source 1 line tall
+picks up the next chroma line, and 1 pixel wide is wrong throughout).
+BCM2712 already rejected the 1 pixel wide case, which also corrupts the
+next plane's LBM. Reject both directions on all generations.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -624,6 +624,14 @@ static int vc4_plane_setup_clipping_and_
+ 			       vc4_state->y_scaling[0] == VC4_SCALING_NONE);
+ 
+ 	if (num_planes > 1) {
++		/*
++		 * A source smaller than one chroma sample is rendered the wrong
++		 * colour, and on BCM2712 one that narrow corrupts other planes.
++		 */
++		if ((vc4_state->src_w[0] >> 16) < h_subsample ||
++		    (vc4_state->src_h[0] >> 16) < v_subsample)
++			return -EINVAL;
++
+ 		vc4_state->is_yuv = true;
+ 
+ 		vc4_state->src_w[1] = vc4_state->src_w[0] / h_subsample;

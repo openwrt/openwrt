@@ -1,0 +1,46 @@
+From 268c0eb2935958115f5547a4d8d7d879310f95fb Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 14 Sep 2026 16:30:57 +0100
+Subject: [PATCH] drm/vc4: Ignore chroma siting on a non-subsampled axis
+
+Chroma siting describes where the chroma samples sit relative to the luma
+samples, so it only says anything on an axis that is actually subsampled.
+On a full-resolution axis - vertically for 4:2:2, both axes for 4:4:4 -
+the chroma is by definition cosited with the luma, but the property was
+applied there regardless, shifting the chroma away from the luma.
+
+Fixes: b7fcc0d961dd ("vc4/drm:plane: Make use of chroma siting parameter")
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -928,6 +928,9 @@ static void vc4_write_scaling_parameters
+ 	bool no_interpolate = state->scaling_filter == DRM_SCALING_FILTER_NEAREST_NEIGHBOR;
+ 	unsigned int hsub = channel ? info->hsub : 1;
+ 	unsigned int vsub = channel ? info->vsub : 1;
++	/* Chroma siting only has any meaning on a subsampled axis */
++	int siting_h = hsub > 1 ? state->chroma_siting_h : 0;
++	int siting_v = vsub > 1 ? state->chroma_siting_v : 0;
+ 
+ 	if (vc4_state->is_yuv444_unity)
+ 		no_interpolate = 1;
+@@ -938,14 +941,14 @@ static void vc4_write_scaling_parameters
+ 	if (vc4_state->x_scaling[channel] == VC4_SCALING_PPF) {
+ 		vc4_write_ppf(vc4_state, vc4_state->src_w[channel],
+ 			      vc4_state->crtc_w, vc4_state->src_x, channel,
+-			      hsub, state->chroma_siting_h, no_interpolate);
++			      hsub, siting_h, no_interpolate);
+ 	}
+ 
+ 	/* Ch0 V-PPF Words 0-1: Scaling Parameters, Context */
+ 	if (vc4_state->y_scaling[channel] == VC4_SCALING_PPF) {
+ 		vc4_write_ppf(vc4_state, vc4_state->src_h[channel],
+ 			      vc4_state->crtc_h, vc4_state->src_y, channel,
+-			      vsub, state->chroma_siting_v, no_interpolate);
++			      vsub, siting_v, no_interpolate);
+ 		vc4_dlist_write(vc4_state, 0xc0c0c0c0);
+ 	}
+ 

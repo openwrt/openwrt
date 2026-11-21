@@ -1,0 +1,38 @@
+From 1d574924c77365ce8ae0d2acd4b382eaf74cb5b3 Mon Sep 17 00:00:00 2001
+From: Yu Dukai <646689853@qq.com>
+Date: Wed, 21 Oct 2026 12:11:00 +0800
+Subject: [PATCH] ARM: dts: overlays: waveshare-panel-v2: Use valid compatible
+ strings
+
+Update the overlay parameters for the 4-lane panels to the "-4lane" form
+used by the driver and the binding now. The parameter names are left
+unchanged, so existing configurations keep working.
+
+Signed-off-by: Yu Dukai <646689853@qq.com>
+---
+ .../overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts   | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
+@@ -96,16 +96,16 @@
+ 			     <&display_mcu>, "pre-power-on?";
+ 		9_0_inch_b = <&dsi_panel>, "compatible=waveshare,9.0-dsi-touch-b",
+ 			     <&touch>, "touchscreen-inverted-x";
+-		9_0_inch_b_4lane = <&dsi_panel>, "compatible=waveshare,9.0-dsi-touch-b,4lane",
++		9_0_inch_b_4lane = <&dsi_panel>, "compatible=waveshare,9.0-dsi-touch-b-4lane",
+ 				   <&touch>, "touchscreen-inverted-x";
+ 		10_1_inch_a = <&dsi_panel>, "compatible=waveshare,10.1-dsi-touch-a";
+ 		10_1_inch_a_4lane = <&dsi_panel>, "compatible=waveshare,10.1-dsi-touch-a-4lane";
+ 		10_1_inch_b = <&dsi_panel>, "compatible=waveshare,10.1-dsi-touch-b",
+ 			      <&touch>, "touchscreen-inverted-y";
+-		10_1_inch_b_4lane = <&dsi_panel>, "compatible=waveshare,10.1-dsi-touch-b,4lane",
++		10_1_inch_b_4lane = <&dsi_panel>, "compatible=waveshare,10.1-dsi-touch-b-4lane",
+ 				    <&touch>, "touchscreen-inverted-y";
+-		10_1_inch_e_4lane = <&dsi_panel>, "compatible=waveshare,10.1-dsi-touch-e,4lane";
+-		12_3_inch_a_4lane = <&dsi_panel>, "compatible=waveshare,12.3-dsi-touch-a,4lane",
++		10_1_inch_e_4lane = <&dsi_panel>, "compatible=waveshare,10.1-dsi-touch-e-4lane";
++		12_3_inch_a_4lane = <&dsi_panel>, "compatible=waveshare,12.3-dsi-touch-a-4lane",
+ 				    <&touch>, "touchscreen-swapped-x-y",
+ 				    <&touch>, "touchscreen-inverted-y";
+ 		disable_touch = <&touch>, "status=disabled";

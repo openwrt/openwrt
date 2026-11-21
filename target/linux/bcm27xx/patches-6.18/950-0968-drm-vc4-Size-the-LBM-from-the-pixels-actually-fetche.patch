@@ -1,0 +1,53 @@
+From 0f9adcd0dc7eb7605c9e016e32662950abad3404 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 16 Nov 2026 18:07:06 +0000
+Subject: [PATCH] drm/vc4: Size the LBM from the pixels actually fetched
+
+The mode_set functions fetch every pixel the source rectangle touches,
+including partial ones at each end, but the LBM was sized from the
+integer source width. A plane with a fractional source position or size
+that is vertically scaled overran its LBM into the next plane's,
+corrupting both.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -808,7 +808,8 @@ static u32 __vc4_lbm_size(struct drm_pla
+ 	if (vc4_state->x_scaling[0] == VC4_SCALING_TPZ)
+ 		pix_per_line = vc4_state->crtc_w;
+ 	else
+-		pix_per_line = vc4_state->src_w[0] >> 16;
++		pix_per_line = vc4_src_span(vc4_state->src_x,
++					    vc4_state->src_w[0]);
+ 
+ 	if (!vc4_state->is_yuv) {
+ 		if (vc4_state->y_scaling[0] == VC4_SCALING_TPZ)
+@@ -878,7 +879,9 @@ static unsigned int vc4_lbm_channel_size
+ 	const struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
+ 	const struct drm_format_info *info = state->fb->format;
+ 	unsigned int components, words, wpc;
+-	unsigned int width, lines;
++	unsigned int width, lines, src_w;
++
++	src_w = vc4_src_span(vc4_state->src_x, vc4_state->src_w[0]);
+ 
+ 	/* LBM is meant to use the smaller of source or dest width, but there
+ 	 * is a issue with UV scaling that the size required for the second
+@@ -887,11 +890,11 @@ static unsigned int vc4_lbm_channel_size
+ 	 * source, repeats that pixel out to crtc_w, so it needs crtc_w.
+ 	 */
+ 	if (info->hsub > 1 && channel == 1)
+-		width = state->src_w >> 16;
++		width = src_w;
+ 	else if (vc4_state->x_scaling[channel] == VC4_SCALING_TPZ)
+ 		width = state->crtc_w;
+ 	else
+-		width = min(state->src_w >> 16, state->crtc_w);
++		width = min(src_w, state->crtc_w);
+ 	width = round_up(width / info->hsub, 4);
+ 
+ 	wpc = vc4_lbm_words_per_component(state, channel);

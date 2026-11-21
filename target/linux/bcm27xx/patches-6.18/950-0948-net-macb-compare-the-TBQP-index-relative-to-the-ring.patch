@@ -1,0 +1,35 @@
+From 65e933d3e2f0a90aeea5931d841de32043a572f5 Mon Sep 17 00:00:00 2001
+From: Nicolai Buchwitz <nb@tipi-net.de>
+Date: Sat, 7 Nov 2026 14:44:42 +0100
+Subject: [PATCH] net: macb: compare the TBQP index relative to the ring base
+
+macb_tx_restart() treats the raw TBQP value divided by the descriptor
+size as a ring index. With 24-byte descriptors the ring base is never
+a multiple of the descriptor size, so the index is off and the
+comparison with the head index means nothing. The restart then kicks
+a running DMA most of the time and skips the one case where it should
+kick.
+
+Take the index relative to the ring base.
+
+Fixes: 5ad7f18cd82c ("net: macb: Restart tx only if queue pointer is lagging")
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -1980,9 +1980,9 @@ static void macb_tx_restart(struct macb_
+ 	if (queue->tx_head == queue->tx_tail)
+ 		goto out_tx_ptr_unlock;
+ 
+-	tbqp = queue_readl(queue, TBQP) / macb_dma_desc_get_size(bp);
+-	tbqp = macb_adj_dma_desc_idx(bp, macb_tx_ring_wrap(bp, tbqp));
+-	head_idx = macb_adj_dma_desc_idx(bp, macb_tx_ring_wrap(bp, queue->tx_head));
++	tbqp = queue_readl(queue, TBQP) - lower_32_bits(queue->tx_ring_dma);
++	tbqp /= macb_dma_desc_get_size(bp);
++	head_idx = macb_tx_ring_wrap(bp, queue->tx_head);
+ 
+ 	if (tbqp == head_idx)
+ 		goto out_tx_ptr_unlock;

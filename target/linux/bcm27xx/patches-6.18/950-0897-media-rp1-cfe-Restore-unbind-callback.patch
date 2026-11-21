@@ -1,0 +1,71 @@
+From acb95e8bc5a8ff008ed8a87d33894fe3edc45fe1 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Thu, 15 Oct 2026 11:19:49 +0100
+Subject: [PATCH] media: rp1-cfe: Restore unbind callback
+
+Commit 113a659b4662 ("drm/vc4: Don't assume 4:2:0 subsampling in the
+scaler phase calculation") inadvertently reverted the rp1-cfe changes
+from commit 3d107ae687bb ("media: rp1-cfe: Add an unbind callback to
+tear down the graph"). Restore them.
+
+Fixes: 113a659b4662 ("drm/vc4: Don't assume 4:2:0 subsampling in the scaler phase calculation")
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ .../media/platform/raspberrypi/rp1_cfe/cfe.c  | 25 +++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--- a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
++++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
+@@ -1915,6 +1915,13 @@ static int cfe_register_node(struct cfe_
+ 	struct cfe_node *node = &cfe->node[id];
+ 	int ret;
+ 
++	/*
++	 * The node may be re-registered after the source subdev has been
++	 * unbound and rebound. The embedded video_device must be reset before
++	 * being re-registered.
++	 */
++	memset(&node->video_dev, 0, sizeof(node->video_dev));
++
+ 	node->cfe = cfe;
+ 	node->id = id;
+ 
+@@ -2038,6 +2045,7 @@ static void cfe_unregister_nodes(struct
+ 		if (check_state(cfe, NODE_REGISTERED, i)) {
+ 			clear_state(cfe, NODE_REGISTERED, i);
+ 			video_unregister_device(&node->video_dev);
++			vb2_queue_release(&node->buffer_queue);
+ 		}
+ 	}
+ }
+@@ -2168,6 +2176,22 @@ static int cfe_async_bound(struct v4l2_a
+ 	return 0;
+ }
+ 
++static void cfe_async_unbind(struct v4l2_async_notifier *notifier,
++			     struct v4l2_subdev *subdev,
++			     struct v4l2_async_connection *asd)
++{
++	struct cfe_device *cfe = to_cfe_device(notifier->v4l2_dev);
++
++	if (cfe->sensor != subdev)
++		return;
++
++	cfe_unregister_nodes(cfe);
++	media_entity_remove_links(&cfe->csi2.sd.entity);
++	media_entity_remove_links(&cfe->fe.sd.entity);
++
++	cfe->sensor = NULL;
++}
++
+ static int cfe_async_complete(struct v4l2_async_notifier *notifier)
+ {
+ 	struct cfe_device *cfe = to_cfe_device(notifier->v4l2_dev);
+@@ -2177,6 +2201,7 @@ static int cfe_async_complete(struct v4l
+ 
+ static const struct v4l2_async_notifier_operations cfe_async_ops = {
+ 	.bound = cfe_async_bound,
++	.unbind = cfe_async_unbind,
+ 	.complete = cfe_async_complete,
+ };
+ 

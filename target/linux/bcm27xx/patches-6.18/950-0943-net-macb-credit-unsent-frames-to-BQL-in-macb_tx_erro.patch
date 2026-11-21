@@ -1,0 +1,55 @@
+From cd3820841695fd3a3d4fa3622b3ecc5b7ede441b Mon Sep 17 00:00:00 2001
+From: Nicolai Buchwitz <nb@tipi-net.de>
+Date: Sat, 7 Nov 2026 21:58:47 +0100
+Subject: [PATCH] net: macb: credit unsent frames to BQL in
+ macb_tx_error_task()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+commit 7b42f4a88e76df58b90760cd5292bd90c26293eb upstream.
+
+The frames dropped on a TX error are never returned to BQL. Each error
+shrinks the BQL budget for good until the queue stops with an empty
+ring.
+
+netdev_tx_reset_queue() is not safe here as the task runs without
+tx_ptr_lock, so macb_start_xmit() may still be queueing.
+
+Cc: stable+noautosel@kernel.org # not seen in real life
+Fixes: e6a532185daa ("net: cadence: macb: Implement BQL")
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+Reviewed-by: Théo Lebrun <theo.lebrun@bootlin.com>
+Link: https://patch.msgid.link/20261107-nb-macb-tx-error-task-net-v1-1-a2aac5d64d52@tipi-net.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -1357,10 +1357,8 @@ static void macb_tx_error_task(struct wo
+ 					    skb->data);
+ 				bp->dev->stats.tx_packets++;
+ 				queue->stats.tx_packets++;
+-				packets++;
+ 				bp->dev->stats.tx_bytes += skb->len;
+ 				queue->stats.tx_bytes += skb->len;
+-				bytes += skb->len;
+ 			}
+ 		} else {
+ 			/* "Buffers exhausted mid-frame" errors may only happen
+@@ -1374,6 +1372,12 @@ static void macb_tx_error_task(struct wo
+ 			desc->ctrl = ctrl | MACB_BIT(TX_USED);
+ 		}
+ 
++		/* BQL has to see every frame leaving the ring, sent or not */
++		if (skb) {
++			packets++;
++			bytes += skb->len;
++		}
++
+ 		macb_tx_unmap(bp, tx_skb, 0);
+ 	}
+ 

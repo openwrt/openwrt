@@ -3,13 +3,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bcm27xx-utils
-PKG_VERSION:=2026.09.17
+PKG_VERSION:=2026.11.16
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/raspberrypi/utils.git
-PKG_SOURCE_VERSION:=ebc4a56bac3a896d5c14e56fe27dcd6cb36dd373
-PKG_MIRROR_HASH:=e5c6c22bb0fbb450cebaf72622c9453d31f25f215cb59c89898c2cf725ebb2a7
+PKG_SOURCE_VERSION:=7e9cdb55b7d782231c0d827151d2a5620ae0255c
+PKG_MIRROR_HASH:=8959b292b12cf4bc30f3451a86aa003d34df727804497b8503eee8c0c6c1298a
 
 PKG_FLAGS:=nonshared
 PKG_BUILD_FLAGS:=no-lto
@@ -110,6 +110,7 @@ define Package/bcm27xx-utils/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/raspinfo $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/rpi-eeprom-ab $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/rpi-gpu-usage $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/rpi-manufacture-info $(1)/usr/bin
 
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/vcgencmd $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/vclog $(1)/usr/bin

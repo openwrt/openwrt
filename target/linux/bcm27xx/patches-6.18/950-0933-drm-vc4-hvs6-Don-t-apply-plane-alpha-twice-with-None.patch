@@ -1,0 +1,30 @@
+From 3be3695764ae78e6c3b350a554dcf6fe4ea2d747 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 10:57:48 +0000
+Subject: [PATCH] drm/vc4: hvs6: Don't apply plane alpha twice with "None"
+ blend mode
+
+With the "None" pixel blend mode the HVS takes the plane alpha property
+as a fixed alpha. For a format with an alpha channel ALPHA_MIX was also
+set, multiplying the plane alpha in a second time, so a plane alpha of
+0.5 blended at 0.25. Seen on both BCM2712 C1 and D0.
+
+Don't set ALPHA_MIX when the blend mode is "None".
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -2184,7 +2184,8 @@ static int vc6_plane_mode_set(struct drm
+ 	 * In any case we use the alpha property value as the fixed alpha.
+ 	 */
+ 	mix_plane_alpha = state->alpha != DRM_BLEND_ALPHA_OPAQUE &&
+-			  fb->format->has_alpha;
++			  fb->format->has_alpha &&
++			  state->pixel_blend_mode != DRM_MODE_BLEND_PIXEL_NONE;
+ 
+ 	/* Control Word 0: Scaling Configuration & Element Validity*/
+ 	vc4_dlist_write(vc4_state,

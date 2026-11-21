@@ -1,0 +1,51 @@
+From 4cf926b47a3d124153bd39b64020eeff8084a3e8 Mon Sep 17 00:00:00 2001
+From: Nicolai Buchwitz <nb@tipi-net.de>
+Date: Sat, 7 Nov 2026 21:58:48 +0100
+Subject: [PATCH] net: macb: take tx_ptr_lock in macb_tx_error_task()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+commit c45ceb26e0dc71bb048bda7e50cdab609ef5b5af upstream.
+
+The error task resets the TX ring under bp->lock while macb_start_xmit()
+updates it under tx_ptr_lock. Stopping the queues does not wait for an
+xmit already running on another CPU, so a frame mapped during the reset
+is lost and its skb and DMA mapping leak.
+
+Take tx_ptr_lock like macb_start_xmit() does.
+
+Cc: stable+noautosel@kernel.org # not seen in real life
+Fixes: 138badbc21a0 ("net: macb: use NAPI for TX completion path")
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+Reviewed-by: Théo Lebrun <theo.lebrun@bootlin.com>
+Link: https://patch.msgid.link/20261107-nb-macb-tx-error-task-net-v1-2-a2aac5d64d52@tipi-net.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -1313,7 +1313,8 @@ static void macb_tx_error_task(struct wo
+ 	 * network engine about the macb/gem being halted.
+ 	 */
+ 	napi_disable(&queue->napi_tx);
+-	spin_lock_irqsave(&bp->lock, flags);
++	spin_lock_irqsave(&queue->tx_ptr_lock, flags);
++	spin_lock(&bp->lock);
+ 
+ 	/* Make sure nobody is trying to queue up new packets */
+ 	netif_tx_stop_all_queues(bp->dev);
+@@ -1409,7 +1410,9 @@ static void macb_tx_error_task(struct wo
+ 	netif_tx_start_all_queues(bp->dev);
+ 	macb_writel(bp, NCR, macb_readl(bp, NCR) | MACB_BIT(TSTART));
+ 
+-	spin_unlock_irqrestore(&bp->lock, flags);
++	spin_unlock(&bp->lock);
++	spin_unlock_irqrestore(&queue->tx_ptr_lock, flags);
++
+ 	napi_enable(&queue->napi_tx);
+ }
+ 

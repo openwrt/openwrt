@@ -1,0 +1,36 @@
+From c27018b10a9120db6344ad7397b6453fd6fc6463 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 16:47:52 +0000
+Subject: [PATCH] drm/vc4: Fix unscaled YUV444 on BCM2835 and BCM2711
+
+vc4_plane_mode_set() programs double the width for YUV444 so that all of
+the chroma is fetched, but when the plane wasn't horizontally scaled the
+luma was output at that doubled width too, drawing the plane twice as
+wide as its CRTC rectangle.
+
+Enable the luma scaler at 1:1 for YUV444, as vc6_plane_mode_set()
+already does.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -1431,6 +1431,15 @@ static int vc4_plane_mode_set(struct drm
+ 	if (ret)
+ 		return ret;
+ 
++	/* The doubled YUV444 width below has to be scaled back for the luma */
++	if ((fb->format->format == DRM_FORMAT_YUV444 ||
++	     fb->format->format == DRM_FORMAT_YVU444) &&
++	    vc4_state->x_scaling[0] == VC4_SCALING_NONE) {
++		vc4_state->x_scaling[0] = VC4_SCALING_PPF;
++		vc4_state->is_unity = false;
++		vc4_state->is_yuv444_unity = true;
++	}
++
+ 	if (!vc4_state->src_w[0] || !vc4_state->src_h[0] ||
+ 	    !vc4_state->crtc_w || !vc4_state->crtc_h) {
+ 		/* 0 source size probably means the plane is offscreen */

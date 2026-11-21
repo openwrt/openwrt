@@ -1,0 +1,24 @@
+From e045ff670093cf3d515d121ab2678ce295f61f43 Mon Sep 17 00:00:00 2001
+From: John Cox <jc@kynesim.co.uk>
+Date: Mon, 9 Nov 2026 14:39:31 +0000
+Subject: [PATCH] media/hevc_d: Fix debug if coeff bufs cannot be allocated
+
+Debug prints the size of the PU buffers on coeff alloc failure. Fix
+so it prints the requested size of the coeff buffers
+
+Signed-off-by: John Cox <jc@kynesim.co.uk>
+---
+ drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
++++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
+@@ -2366,7 +2366,7 @@ int hevc_d_h265_start(struct hevc_d_ctx
+ 				DMA_ATTR_NO_KERNEL_MAPPING)) {
+ 			v4l2_err(&dev->v4l2_dev,
+ 				 "Failed to alloc %#zx Coeff%d buffer\n",
+-				 pu_size, i);
++				 coeff_size, i);
+ 			goto fail;
+ 		}
+ 	}

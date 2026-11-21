@@ -1,0 +1,2765 @@
+From 1ef6cc7ed24c672f06be075101794a9028217c4c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig=20=28The=20Capable=20Hub=29?=
+ <u.kleine-koenig@baylibre.com>
+Date: Wed, 13 May 2026 19:23:04 +0200
+Subject: [PATCH] ASoC: Use named initializers for arrays of i2c_device_data
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+commit 910714d4e79ba654d8a4e8103bb624d4f62e57f8 upstream.
+
+While being less compact, using named initializers allows to more easily
+see which members of the structs are assigned which value without having
+to lookup the declaration of the struct. And it's also more robust
+against changes to the struct definition.
+
+The mentioned robustness is relevant for a planned change to struct
+i2c_device_id that replaces .driver_data by an anonymous union.
+
+While touching all these arrays, unify indention and usage of commas.
+
+This patch doesn't modify the compiled arrays, only their representation
+in source form benefits. The former was confirmed with x86 and arm64
+builds.
+
+Signed-off-by: Uwe Kleine-König (The Capable Hub) <u.kleine-koenig@baylibre.com>
+Reviewed-by: Charles Keepax <ckeepax@opensource.cirrus.com>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Link: https://patch.msgid.link/ae2ff4898eb340bd8bcafb7b75443eb4a0ce3e76.1778692164.git.u.kleine-koenig@baylibre.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ .../hda/codecs/side-codecs/cs35l41_hda_i2c.c  |  4 +-
+ .../hda/codecs/side-codecs/cs35l56_hda_i2c.c  |  8 ++--
+ .../hda/codecs/side-codecs/tas2781_hda_i2c.c  |  4 +-
+ sound/soc/codecs/ad193x-i2c.c                 |  4 +-
+ sound/soc/codecs/adau1372-i2c.c               |  2 +-
+ sound/soc/codecs/adau1373.c                   |  2 +-
+ sound/soc/codecs/adau1701.c                   |  8 ++--
+ sound/soc/codecs/adau1761-i2c.c               |  8 ++--
+ sound/soc/codecs/adau1781-i2c.c               |  4 +-
+ sound/soc/codecs/adau1977-i2c.c               |  6 +--
+ sound/soc/codecs/adau7118-i2c.c               |  4 +-
+ sound/soc/codecs/adav803.c                    |  2 +-
+ sound/soc/codecs/ak4118.c                     |  4 +-
+ sound/soc/codecs/ak4535.c                     |  2 +-
+ sound/soc/codecs/ak4613.c                     |  2 +-
+ sound/soc/codecs/ak4619.c                     |  2 +-
+ sound/soc/codecs/ak4642.c                     |  8 ++--
+ sound/soc/codecs/ak4671.c                     |  2 +-
+ sound/soc/codecs/alc5623.c                    |  8 ++--
+ sound/soc/codecs/alc5632.c                    |  4 +-
+ sound/soc/codecs/aw87390.c                    |  2 +-
+ sound/soc/codecs/aw88081.c                    |  4 +-
+ sound/soc/codecs/aw88166.c                    |  2 +-
+ sound/soc/codecs/aw88261.c                    |  2 +-
+ sound/soc/codecs/aw88395/aw88395.c            |  2 +-
+ sound/soc/codecs/aw88399.c                    |  2 +-
+ sound/soc/codecs/cs35l32.c                    |  4 +-
+ sound/soc/codecs/cs35l33.c                    |  4 +-
+ sound/soc/codecs/cs35l34.c                    |  4 +-
+ sound/soc/codecs/cs35l35.c                    |  4 +-
+ sound/soc/codecs/cs35l36.c                    |  4 +-
+ sound/soc/codecs/cs35l41-i2c.c                | 10 ++---
+ sound/soc/codecs/cs35l45-i2c.c                |  4 +-
+ sound/soc/codecs/cs35l56-i2c.c                |  6 +--
+ sound/soc/codecs/cs4265.c                     |  2 +-
+ sound/soc/codecs/cs4270.c                     |  4 +-
+ sound/soc/codecs/cs4271-i2c.c                 |  2 +-
+ sound/soc/codecs/cs42l42-i2c.c                |  4 +-
+ sound/soc/codecs/cs42l51-i2c.c                |  2 +-
+ sound/soc/codecs/cs42l52.c                    |  2 +-
+ sound/soc/codecs/cs42l56.c                    |  2 +-
+ sound/soc/codecs/cs42l73.c                    |  4 +-
+ sound/soc/codecs/cs42l84.c                    |  4 +-
+ sound/soc/codecs/cs42xx8-i2c.c                |  6 +--
+ sound/soc/codecs/cs43130.c                    | 10 ++---
+ sound/soc/codecs/cs4341.c                     |  2 +-
+ sound/soc/codecs/cs4349.c                     |  4 +-
+ sound/soc/codecs/cs530x-i2c.c                 |  6 +--
+ sound/soc/codecs/cs53l30.c                    |  4 +-
+ sound/soc/codecs/cx2072x.c                    |  6 +--
+ sound/soc/codecs/da7210.c                     |  2 +-
+ sound/soc/codecs/da7213.c                     |  2 +-
+ sound/soc/codecs/da7218.c                     |  4 +-
+ sound/soc/codecs/da7219.c                     |  2 +-
+ sound/soc/codecs/da732x.c                     |  2 +-
+ sound/soc/codecs/da9055.c                     |  2 +-
+ sound/soc/codecs/es8311.c                     |  2 +-
+ sound/soc/codecs/es8316.c                     |  4 +-
+ sound/soc/codecs/es8323.c                     |  2 +-
+ sound/soc/codecs/es8326.c                     |  4 +-
+ sound/soc/codecs/es8328-i2c.c                 |  4 +-
+ sound/soc/codecs/es8375.c                     |  2 +-
+ sound/soc/codecs/es8389.c                     |  2 +-
+ sound/soc/codecs/fs210x.c                     |  6 +--
+ sound/soc/codecs/isabelle.c                   |  2 +-
+ sound/soc/codecs/lm4857.c                     |  2 +-
+ sound/soc/codecs/lm49453.c                    |  2 +-
+ sound/soc/codecs/max9768.c                    |  2 +-
+ sound/soc/codecs/max98088.c                   |  4 +-
+ sound/soc/codecs/max98090.c                   |  4 +-
+ sound/soc/codecs/max98095.c                   |  2 +-
+ sound/soc/codecs/max98371.c                   |  2 +-
+ sound/soc/codecs/max98373-i2c.c               |  4 +-
+ sound/soc/codecs/max98388.c                   |  4 +-
+ sound/soc/codecs/max98390.c                   |  4 +-
+ sound/soc/codecs/max98396.c                   |  6 +--
+ sound/soc/codecs/max9850.c                    |  2 +-
+ sound/soc/codecs/max98504.c                   |  2 +-
+ sound/soc/codecs/max98520.c                   |  4 +-
+ sound/soc/codecs/max9860.c                    |  2 +-
+ sound/soc/codecs/max9867.c                    |  2 +-
+ sound/soc/codecs/max9877.c                    |  2 +-
+ sound/soc/codecs/max98925.c                   |  2 +-
+ sound/soc/codecs/max98926.c                   |  2 +-
+ sound/soc/codecs/max98927.c                   |  4 +-
+ sound/soc/codecs/ml26124.c                    |  2 +-
+ sound/soc/codecs/mt6660.c                     |  4 +-
+ sound/soc/codecs/nau8325.c                    |  2 +-
+ sound/soc/codecs/nau8540.c                    |  2 +-
+ sound/soc/codecs/nau8810.c                    |  6 +--
+ sound/soc/codecs/nau8821.c                    |  2 +-
+ sound/soc/codecs/nau8822.c                    |  2 +-
+ sound/soc/codecs/nau8824.c                    |  2 +-
+ sound/soc/codecs/nau8825.c                    |  2 +-
+ sound/soc/codecs/ntp8835.c                    |  4 +-
+ sound/soc/codecs/ntp8918.c                    |  4 +-
+ sound/soc/codecs/pcm1681.c                    |  4 +-
+ sound/soc/codecs/pcm1789-i2c.c                |  2 +-
+ sound/soc/codecs/pcm179x-i2c.c                |  2 +-
+ sound/soc/codecs/pcm186x-i2c.c                |  8 ++--
+ sound/soc/codecs/pcm3168a-i2c.c               |  2 +-
+ sound/soc/codecs/pcm512x-i2c.c                | 14 +++---
+ sound/soc/codecs/pcm6240.c                    | 44 +++++++++----------
+ sound/soc/codecs/rt1011.c                     |  2 +-
+ sound/soc/codecs/rt1015.c                     |  2 +-
+ sound/soc/codecs/rt1016.c                     |  2 +-
+ sound/soc/codecs/rt1019.c                     |  2 +-
+ sound/soc/codecs/rt1305.c                     |  4 +-
+ sound/soc/codecs/rt1308.c                     |  2 +-
+ sound/soc/codecs/rt1318.c                     |  2 +-
+ sound/soc/codecs/rt274.c                      |  4 +-
+ sound/soc/codecs/rt286.c                      |  6 +--
+ sound/soc/codecs/rt298.c                      |  4 +-
+ sound/soc/codecs/rt5514.c                     |  2 +-
+ sound/soc/codecs/rt5616.c                     |  2 +-
+ sound/soc/codecs/rt5631.c                     |  4 +-
+ sound/soc/codecs/rt5640.c                     |  6 +--
+ sound/soc/codecs/rt5645.c                     |  4 +-
+ sound/soc/codecs/rt5651.c                     |  2 +-
+ sound/soc/codecs/rt5659.c                     |  4 +-
+ sound/soc/codecs/rt5660.c                     |  2 +-
+ sound/soc/codecs/rt5663.c                     |  4 +-
+ sound/soc/codecs/rt5665.c                     |  4 +-
+ sound/soc/codecs/rt5668.c                     |  4 +-
+ sound/soc/codecs/rt5670.c                     |  6 +--
+ sound/soc/codecs/rt5682-i2c.c                 |  4 +-
+ sound/soc/codecs/rt5682s.c                    |  4 +-
+ sound/soc/codecs/sgtl5000.c                   |  4 +-
+ sound/soc/codecs/sma1303.c                    |  4 +-
+ sound/soc/codecs/sma1307.c                    |  4 +-
+ sound/soc/codecs/src4xxx-i2c.c                |  2 +-
+ sound/soc/codecs/ssm2518.c                    |  2 +-
+ sound/soc/codecs/ssm2602-i2c.c                |  6 +--
+ sound/soc/codecs/ssm4567.c                    |  2 +-
+ sound/soc/codecs/sta32x.c                     |  6 +--
+ sound/soc/codecs/sta350.c                     |  2 +-
+ sound/soc/codecs/sta529.c                     |  2 +-
+ sound/soc/codecs/tas2552.c                    |  2 +-
+ sound/soc/codecs/tas2562.c                    |  6 +--
+ sound/soc/codecs/tas2764.c                    |  2 +-
+ sound/soc/codecs/tas2770.c                    |  2 +-
+ sound/soc/codecs/tas2780.c                    |  2 +-
+ sound/soc/codecs/tas2781-i2c.c                | 26 +++++------
+ sound/soc/codecs/tas5086.c                    |  2 +-
+ sound/soc/codecs/tas571x.c                    | 14 +++---
+ sound/soc/codecs/tas5720.c                    |  6 +--
+ sound/soc/codecs/tas5805m.c                   |  2 +-
+ sound/soc/codecs/tas6424.c                    |  2 +-
+ sound/soc/codecs/tda7419.c                    |  2 +-
+ sound/soc/codecs/tfa9879.c                    |  2 +-
+ sound/soc/codecs/tlv320adc3xxx.c              |  6 +--
+ sound/soc/codecs/tlv320adcx140.c              |  8 ++--
+ sound/soc/codecs/tlv320aic23-i2c.c            |  4 +-
+ sound/soc/codecs/tlv320aic31xx.c              | 16 +++----
+ sound/soc/codecs/tlv320aic32x4-i2c.c          |  6 +--
+ sound/soc/codecs/tlv320aic3x-i2c.c            | 10 ++---
+ sound/soc/codecs/ts3a227e.c                   |  2 +-
+ sound/soc/codecs/tscs42xx.c                   |  4 +-
+ sound/soc/codecs/tscs454.c                    |  2 +-
+ sound/soc/codecs/uda1342.c                    |  2 +-
+ sound/soc/codecs/uda1380.c                    |  2 +-
+ sound/soc/codecs/wm1250-ev1.c                 |  2 +-
+ sound/soc/codecs/wm2000.c                     |  2 +-
+ sound/soc/codecs/wm2200.c                     |  2 +-
+ sound/soc/codecs/wm5100.c                     |  2 +-
+ sound/soc/codecs/wm8510.c                     |  2 +-
+ sound/soc/codecs/wm8523.c                     |  2 +-
+ sound/soc/codecs/wm8580.c                     |  4 +-
+ sound/soc/codecs/wm8711.c                     |  2 +-
+ sound/soc/codecs/wm8728.c                     |  2 +-
+ sound/soc/codecs/wm8731-i2c.c                 |  2 +-
+ sound/soc/codecs/wm8737.c                     |  2 +-
+ sound/soc/codecs/wm8741.c                     |  2 +-
+ sound/soc/codecs/wm8750.c                     |  4 +-
+ sound/soc/codecs/wm8753.c                     |  2 +-
+ sound/soc/codecs/wm8776.c                     |  4 +-
+ sound/soc/codecs/wm8804-i2c.c                 |  2 +-
+ sound/soc/codecs/wm8900.c                     |  2 +-
+ sound/soc/codecs/wm8903.c                     |  2 +-
+ sound/soc/codecs/wm8904.c                     |  6 +--
+ sound/soc/codecs/wm8940.c                     |  2 +-
+ sound/soc/codecs/wm8955.c                     |  2 +-
+ sound/soc/codecs/wm8960.c                     |  2 +-
+ sound/soc/codecs/wm8961.c                     |  2 +-
+ sound/soc/codecs/wm8962.c                     |  2 +-
+ sound/soc/codecs/wm8971.c                     |  2 +-
+ sound/soc/codecs/wm8974.c                     |  2 +-
+ sound/soc/codecs/wm8978.c                     |  2 +-
+ sound/soc/codecs/wm8983.c                     |  2 +-
+ sound/soc/codecs/wm8985.c                     |  4 +-
+ sound/soc/codecs/wm8988.c                     |  2 +-
+ sound/soc/codecs/wm8990.c                     |  2 +-
+ sound/soc/codecs/wm8991.c                     |  2 +-
+ sound/soc/codecs/wm8993.c                     |  2 +-
+ sound/soc/codecs/wm8995.c                     |  4 +-
+ sound/soc/codecs/wm8996.c                     |  2 +-
+ sound/soc/codecs/wm9081.c                     |  2 +-
+ sound/soc/codecs/wm9090.c                     |  4 +-
+ 198 files changed, 376 insertions(+), 376 deletions(-)
+
+--- a/sound/hda/codecs/side-codecs/cs35l41_hda_i2c.c
++++ b/sound/hda/codecs/side-codecs/cs35l41_hda_i2c.c
+@@ -39,8 +39,8 @@ static void cs35l41_hda_i2c_remove(struc
+ }
+ 
+ static const struct i2c_device_id cs35l41_hda_i2c_id[] = {
+-	{ "cs35l41-hda" },
+-	{}
++	{ .name = "cs35l41-hda" },
++	{ }
+ };
+ 
+ static const struct acpi_device_id cs35l41_acpi_hda_match[] = {
+--- a/sound/hda/codecs/side-codecs/cs35l56_hda_i2c.c
++++ b/sound/hda/codecs/side-codecs/cs35l56_hda_i2c.c
+@@ -51,10 +51,10 @@ static void cs35l56_hda_i2c_remove(struc
+ }
+ 
+ static const struct i2c_device_id cs35l56_hda_i2c_id[] = {
+-	{ "cs35l54-hda", 0x3554 },
+-	{ "cs35l56-hda", 0x3556 },
+-	{ "cs35l57-hda", 0x3557 },
+-	{}
++	{ .name = "cs35l54-hda", .driver_data = 0x3554 },
++	{ .name = "cs35l56-hda", .driver_data = 0x3556 },
++	{ .name = "cs35l57-hda", .driver_data = 0x3557 },
++	{ }
+ };
+ 
+ static const struct acpi_device_id cs35l56_acpi_hda_match[] = {
+--- a/sound/hda/codecs/side-codecs/tas2781_hda_i2c.c
++++ b/sound/hda/codecs/side-codecs/tas2781_hda_i2c.c
+@@ -825,8 +825,8 @@ static const struct dev_pm_ops tas2781_h
+ };
+ 
+ static const struct i2c_device_id tas2781_hda_i2c_id[] = {
+-	{ "tas2781-hda" },
+-	{}
++	{ .name = "tas2781-hda" },
++	{ }
+ };
+ 
+ static const struct acpi_device_id tas2781_acpi_hda_match[] = {
+--- a/sound/soc/codecs/ad193x-i2c.c
++++ b/sound/soc/codecs/ad193x-i2c.c
+@@ -14,8 +14,8 @@
+ #include "ad193x.h"
+ 
+ static const struct i2c_device_id ad193x_id[] = {
+-	{ "ad1936", AD193X },
+-	{ "ad1937", AD193X },
++	{ .name = "ad1936", .driver_data = AD193X },
++	{ .name = "ad1937", .driver_data = AD193X },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ad193x_id);
+--- a/sound/soc/codecs/adau1372-i2c.c
++++ b/sound/soc/codecs/adau1372-i2c.c
+@@ -21,7 +21,7 @@ static int adau1372_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id adau1372_i2c_ids[] = {
+-	{ "adau1372" },
++	{ .name = "adau1372" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, adau1372_i2c_ids);
+--- a/sound/soc/codecs/adau1373.c
++++ b/sound/soc/codecs/adau1373.c
+@@ -1599,7 +1599,7 @@ static int adau1373_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id adau1373_i2c_id[] = {
+-	{ "adau1373" },
++	{ .name = "adau1373" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, adau1373_i2c_id);
+--- a/sound/soc/codecs/adau1701.c
++++ b/sound/soc/codecs/adau1701.c
+@@ -860,10 +860,10 @@ exit_regulators_disable:
+ }
+ 
+ static const struct i2c_device_id adau1701_i2c_id[] = {
+-	{ "adau1401" },
+-	{ "adau1401a" },
+-	{ "adau1701" },
+-	{ "adau1702" },
++	{ .name = "adau1401" },
++	{ .name = "adau1401a" },
++	{ .name = "adau1701" },
++	{ .name = "adau1702" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, adau1701_i2c_id);
+--- a/sound/soc/codecs/adau1761-i2c.c
++++ b/sound/soc/codecs/adau1761-i2c.c
+@@ -33,10 +33,10 @@ static void adau1761_i2c_remove(struct i
+ }
+ 
+ static const struct i2c_device_id adau1761_i2c_ids[] = {
+-	{ "adau1361", ADAU1361 },
+-	{ "adau1461", ADAU1761 },
+-	{ "adau1761", ADAU1761 },
+-	{ "adau1961", ADAU1361 },
++	{ .name = "adau1361", .driver_data = ADAU1361 },
++	{ .name = "adau1461", .driver_data = ADAU1761 },
++	{ .name = "adau1761", .driver_data = ADAU1761 },
++	{ .name = "adau1961", .driver_data = ADAU1361 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, adau1761_i2c_ids);
+--- a/sound/soc/codecs/adau1781-i2c.c
++++ b/sound/soc/codecs/adau1781-i2c.c
+@@ -33,8 +33,8 @@ static void adau1781_i2c_remove(struct i
+ }
+ 
+ static const struct i2c_device_id adau1781_i2c_ids[] = {
+-	{ "adau1381", ADAU1381 },
+-	{ "adau1781", ADAU1781 },
++	{ .name = "adau1381", .driver_data = ADAU1381 },
++	{ .name = "adau1781", .driver_data = ADAU1781 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, adau1781_i2c_ids);
+--- a/sound/soc/codecs/adau1977-i2c.c
++++ b/sound/soc/codecs/adau1977-i2c.c
+@@ -28,9 +28,9 @@ static int adau1977_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id adau1977_i2c_ids[] = {
+-	{ "adau1977", ADAU1977 },
+-	{ "adau1978", ADAU1978 },
+-	{ "adau1979", ADAU1978 },
++	{ .name = "adau1977", .driver_data = ADAU1977 },
++	{ .name = "adau1978", .driver_data = ADAU1978 },
++	{ .name = "adau1979", .driver_data = ADAU1978 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, adau1977_i2c_ids);
+--- a/sound/soc/codecs/adau7118-i2c.c
++++ b/sound/soc/codecs/adau7118-i2c.c
+@@ -68,8 +68,8 @@ static const struct of_device_id adau711
+ MODULE_DEVICE_TABLE(of, adau7118_of_match);
+ 
+ static const struct i2c_device_id adau7118_id[] = {
+-	{"adau7118"},
+-	{}
++	{ .name = "adau7118" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, adau7118_id);
+ 
+--- a/sound/soc/codecs/adav803.c
++++ b/sound/soc/codecs/adav803.c
+@@ -14,7 +14,7 @@
+ #include "adav80x.h"
+ 
+ static const struct i2c_device_id adav803_id[] = {
+-	{ "adav803" },
++	{ .name = "adav803" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, adav803_id);
+--- a/sound/soc/codecs/ak4118.c
++++ b/sound/soc/codecs/ak4118.c
+@@ -395,8 +395,8 @@ MODULE_DEVICE_TABLE(of, ak4118_of_match)
+ #endif
+ 
+ static const struct i2c_device_id ak4118_id_table[] = {
+-	{ "ak4118" },
+-	{}
++	{ .name = "ak4118" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ak4118_id_table);
+ 
+--- a/sound/soc/codecs/ak4535.c
++++ b/sound/soc/codecs/ak4535.c
+@@ -430,7 +430,7 @@ static int ak4535_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id ak4535_i2c_id[] = {
+-	{ "ak4535" },
++	{ .name = "ak4535" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ak4535_i2c_id);
+--- a/sound/soc/codecs/ak4613.c
++++ b/sound/soc/codecs/ak4613.c
+@@ -303,7 +303,7 @@ static const struct of_device_id ak4613_
+ MODULE_DEVICE_TABLE(of, ak4613_of_match);
+ 
+ static const struct i2c_device_id ak4613_i2c_id[] = {
+-	{ "ak4613", (kernel_ulong_t)&ak4613_regmap_cfg },
++	{ .name = "ak4613", .driver_data = (kernel_ulong_t)&ak4613_regmap_cfg },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ak4613_i2c_id);
+--- a/sound/soc/codecs/ak4619.c
++++ b/sound/soc/codecs/ak4619.c
+@@ -831,7 +831,7 @@ static const struct of_device_id ak4619_
+ MODULE_DEVICE_TABLE(of, ak4619_of_match);
+ 
+ static const struct i2c_device_id ak4619_i2c_id[] = {
+-	{ "ak4619", (kernel_ulong_t)&ak4619_regmap_cfg },
++	{ .name = "ak4619", .driver_data = (kernel_ulong_t)&ak4619_regmap_cfg },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ak4619_i2c_id);
+--- a/sound/soc/codecs/ak4642.c
++++ b/sound/soc/codecs/ak4642.c
+@@ -672,10 +672,10 @@ static const struct of_device_id ak4642_
+ MODULE_DEVICE_TABLE(of, ak4642_of_match);
+ 
+ static const struct i2c_device_id ak4642_i2c_id[] = {
+-	{ "ak4642", (kernel_ulong_t)&ak4642_drvdata },
+-	{ "ak4643", (kernel_ulong_t)&ak4643_drvdata },
+-	{ "ak4648", (kernel_ulong_t)&ak4648_drvdata },
+-	{}
++	{ .name = "ak4642", .driver_data = (kernel_ulong_t)&ak4642_drvdata },
++	{ .name = "ak4643", .driver_data = (kernel_ulong_t)&ak4643_drvdata },
++	{ .name = "ak4648", .driver_data = (kernel_ulong_t)&ak4648_drvdata },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ak4642_i2c_id);
+ 
+--- a/sound/soc/codecs/ak4671.c
++++ b/sound/soc/codecs/ak4671.c
+@@ -646,7 +646,7 @@ static int ak4671_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id ak4671_i2c_id[] = {
+-	{ "ak4671" },
++	{ .name = "ak4671" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ak4671_i2c_id);
+--- a/sound/soc/codecs/alc5623.c
++++ b/sound/soc/codecs/alc5623.c
+@@ -968,10 +968,10 @@ static const struct regmap_config alc562
+ };
+ 
+ static const struct i2c_device_id alc5623_i2c_table[] = {
+-	{"alc5621", 0x21},
+-	{"alc5622", 0x22},
+-	{"alc5623", 0x23},
+-	{}
++	{ .name = "alc5621", .driver_data = 0x21 },
++	{ .name = "alc5622", .driver_data = 0x22 },
++	{ .name = "alc5623", .driver_data = 0x23 },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, alc5623_i2c_table);
+ 
+--- a/sound/soc/codecs/alc5632.c
++++ b/sound/soc/codecs/alc5632.c
+@@ -1092,8 +1092,8 @@ static const struct regmap_config alc563
+ };
+ 
+ static const struct i2c_device_id alc5632_i2c_table[] = {
+-	{"alc5632", 0x5c},
+-	{}
++	{ .name = "alc5632", .driver_data = 0x5c },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, alc5632_i2c_table);
+ 
+--- a/sound/soc/codecs/aw87390.c
++++ b/sound/soc/codecs/aw87390.c
+@@ -443,7 +443,7 @@ static int aw87390_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id aw87390_i2c_id[] = {
+-	{ AW87390_I2C_NAME },
++	{ .name = AW87390_I2C_NAME },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, aw87390_i2c_id);
+--- a/sound/soc/codecs/aw88081.c
++++ b/sound/soc/codecs/aw88081.c
+@@ -1240,8 +1240,8 @@ static const struct snd_soc_component_dr
+ };
+ 
+ static const struct i2c_device_id aw88081_i2c_id[] = {
+-	{ AW88081_I2C_NAME, AW88081},
+-	{ AW88083_I2C_NAME, AW88083},
++	{ .name = AW88081_I2C_NAME, .driver_data = AW88081 },
++	{ .name = AW88083_I2C_NAME, .driver_data = AW88083 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, aw88081_i2c_id);
+--- a/sound/soc/codecs/aw88166.c
++++ b/sound/soc/codecs/aw88166.c
+@@ -1910,7 +1910,7 @@ static int aw88166_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id aw88166_i2c_id[] = {
+-	{ AW88166_I2C_NAME },
++	{ .name = AW88166_I2C_NAME },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, aw88166_i2c_id);
+--- a/sound/soc/codecs/aw88261.c
++++ b/sound/soc/codecs/aw88261.c
+@@ -1269,7 +1269,7 @@ static int aw88261_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id aw88261_i2c_id[] = {
+-	{ AW88261_I2C_NAME },
++	{ .name = AW88261_I2C_NAME },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, aw88261_i2c_id);
+--- a/sound/soc/codecs/aw88395/aw88395.c
++++ b/sound/soc/codecs/aw88395/aw88395.c
+@@ -558,7 +558,7 @@ static int aw88395_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id aw88395_i2c_id[] = {
+-	{ AW88395_I2C_NAME },
++	{ .name = AW88395_I2C_NAME },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, aw88395_i2c_id);
+--- a/sound/soc/codecs/aw88399.c
++++ b/sound/soc/codecs/aw88399.c
+@@ -2323,7 +2323,7 @@ static int aw88399_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id aw88399_i2c_id[] = {
+-	{ AW88399_I2C_NAME },
++	{ .name = AW88399_I2C_NAME },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, aw88399_i2c_id);
+--- a/sound/soc/codecs/cs35l32.c
++++ b/sound/soc/codecs/cs35l32.c
+@@ -555,8 +555,8 @@ MODULE_DEVICE_TABLE(of, cs35l32_of_match
+ 
+ 
+ static const struct i2c_device_id cs35l32_id[] = {
+-	{"cs35l32"},
+-	{}
++	{ .name = "cs35l32" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, cs35l32_id);
+--- a/sound/soc/codecs/cs35l33.c
++++ b/sound/soc/codecs/cs35l33.c
+@@ -1272,8 +1272,8 @@ static const struct of_device_id cs35l33
+ MODULE_DEVICE_TABLE(of, cs35l33_of_match);
+ 
+ static const struct i2c_device_id cs35l33_id[] = {
+-	{"cs35l33"},
+-	{}
++	{ .name = "cs35l33" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, cs35l33_id);
+--- a/sound/soc/codecs/cs35l34.c
++++ b/sound/soc/codecs/cs35l34.c
+@@ -1185,8 +1185,8 @@ static const struct of_device_id cs35l34
+ MODULE_DEVICE_TABLE(of, cs35l34_of_match);
+ 
+ static const struct i2c_device_id cs35l34_id[] = {
+-	{"cs35l34"},
+-	{}
++	{ .name = "cs35l34" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs35l34_id);
+ 
+--- a/sound/soc/codecs/cs35l35.c
++++ b/sound/soc/codecs/cs35l35.c
+@@ -1639,8 +1639,8 @@ static const struct of_device_id cs35l35
+ MODULE_DEVICE_TABLE(of, cs35l35_of_match);
+ 
+ static const struct i2c_device_id cs35l35_id[] = {
+-	{"cs35l35"},
+-	{}
++	{ .name = "cs35l35" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, cs35l35_id);
+--- a/sound/soc/codecs/cs35l36.c
++++ b/sound/soc/codecs/cs35l36.c
+@@ -1920,8 +1920,8 @@ static const struct of_device_id cs35l36
+ MODULE_DEVICE_TABLE(of, cs35l36_of_match);
+ 
+ static const struct i2c_device_id cs35l36_id[] = {
+-	{"cs35l36"},
+-	{}
++	{ .name = "cs35l36" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, cs35l36_id);
+--- a/sound/soc/codecs/cs35l41-i2c.c
++++ b/sound/soc/codecs/cs35l41-i2c.c
+@@ -20,11 +20,11 @@
+ #include "cs35l41.h"
+ 
+ static const struct i2c_device_id cs35l41_id_i2c[] = {
+-	{ "cs35l40" },
+-	{ "cs35l41" },
+-	{ "cs35l51" },
+-	{ "cs35l53" },
+-	{}
++	{ .name = "cs35l40" },
++	{ .name = "cs35l41" },
++	{ .name = "cs35l51" },
++	{ .name = "cs35l53" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, cs35l41_id_i2c);
+--- a/sound/soc/codecs/cs35l45-i2c.c
++++ b/sound/soc/codecs/cs35l45-i2c.c
+@@ -53,8 +53,8 @@ static const struct of_device_id cs35l45
+ MODULE_DEVICE_TABLE(of, cs35l45_of_match);
+ 
+ static const struct i2c_device_id cs35l45_id_i2c[] = {
+-	{ "cs35l45" },
+-	{}
++	{ .name = "cs35l45" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs35l45_id_i2c);
+ 
+--- a/sound/soc/codecs/cs35l56-i2c.c
++++ b/sound/soc/codecs/cs35l56-i2c.c
+@@ -70,9 +70,9 @@ static void cs35l56_i2c_remove(struct i2
+ }
+ 
+ static const struct i2c_device_id cs35l56_id_i2c[] = {
+-	{ "cs35l56", 0x3556 },
+-	{ "cs35l63", 0x3563 },
+-	{}
++	{ .name = "cs35l56", .driver_data = 0x3556 },
++	{ .name = "cs35l63", .driver_data = 0x3563 },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs35l56_id_i2c);
+ 
+--- a/sound/soc/codecs/cs4265.c
++++ b/sound/soc/codecs/cs4265.c
+@@ -638,7 +638,7 @@ static const struct of_device_id cs4265_
+ MODULE_DEVICE_TABLE(of, cs4265_of_match);
+ 
+ static const struct i2c_device_id cs4265_id[] = {
+-	{ "cs4265" },
++	{ .name = "cs4265" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs4265_id);
+--- a/sound/soc/codecs/cs4270.c
++++ b/sound/soc/codecs/cs4270.c
+@@ -734,8 +734,8 @@ static int cs4270_i2c_probe(struct i2c_c
+  * cs4270_id - I2C device IDs supported by this driver
+  */
+ static const struct i2c_device_id cs4270_id[] = {
+-	{"cs4270"},
+-	{}
++	{ .name = "cs4270" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs4270_id);
+ 
+--- a/sound/soc/codecs/cs4271-i2c.c
++++ b/sound/soc/codecs/cs4271-i2c.c
+@@ -23,7 +23,7 @@ static int cs4271_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id cs4271_i2c_id[] = {
+-	{ "cs4271" },
++	{ .name = "cs4271" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs4271_i2c_id);
+--- a/sound/soc/codecs/cs42l42-i2c.c
++++ b/sound/soc/codecs/cs42l42-i2c.c
+@@ -78,8 +78,8 @@ static const struct acpi_device_id __may
+ MODULE_DEVICE_TABLE(acpi, cs42l42_acpi_match);
+ 
+ static const struct i2c_device_id cs42l42_id[] = {
+-	{"cs42l42"},
+-	{}
++	{ .name = "cs42l42" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, cs42l42_id);
+--- a/sound/soc/codecs/cs42l51-i2c.c
++++ b/sound/soc/codecs/cs42l51-i2c.c
+@@ -14,7 +14,7 @@
+ #include "cs42l51.h"
+ 
+ static const struct i2c_device_id cs42l51_i2c_id[] = {
+-	{ "cs42l51" },
++	{ .name = "cs42l51" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs42l51_i2c_id);
+--- a/sound/soc/codecs/cs42l52.c
++++ b/sound/soc/codecs/cs42l52.c
+@@ -1225,7 +1225,7 @@ MODULE_DEVICE_TABLE(of, cs42l52_of_match
+ 
+ 
+ static const struct i2c_device_id cs42l52_id[] = {
+-	{ "cs42l52" },
++	{ .name = "cs42l52" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs42l52_id);
+--- a/sound/soc/codecs/cs42l56.c
++++ b/sound/soc/codecs/cs42l56.c
+@@ -1352,7 +1352,7 @@ MODULE_DEVICE_TABLE(of, cs42l56_of_match
+ 
+ 
+ static const struct i2c_device_id cs42l56_id[] = {
+-	{ "cs42l56" },
++	{ .name = "cs42l56" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs42l56_id);
+--- a/sound/soc/codecs/cs42l73.c
++++ b/sound/soc/codecs/cs42l73.c
+@@ -1368,8 +1368,8 @@ static const struct of_device_id cs42l73
+ MODULE_DEVICE_TABLE(of, cs42l73_of_match);
+ 
+ static const struct i2c_device_id cs42l73_id[] = {
+-	{"cs42l73"},
+-	{}
++	{ .name = "cs42l73" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, cs42l73_id);
+--- a/sound/soc/codecs/cs42l84.c
++++ b/sound/soc/codecs/cs42l84.c
+@@ -1087,8 +1087,8 @@ static const struct of_device_id cs42l84
+ MODULE_DEVICE_TABLE(of, cs42l84_of_match);
+ 
+ static const struct i2c_device_id cs42l84_id[] = {
+-	{ "cs42l84" },
+-	{}
++	{ .name = "cs42l84" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs42l84_id);
+ 
+--- a/sound/soc/codecs/cs42xx8-i2c.c
++++ b/sound/soc/codecs/cs42xx8-i2c.c
+@@ -52,9 +52,9 @@ static const struct of_device_id cs42xx8
+ MODULE_DEVICE_TABLE(of, cs42xx8_of_match);
+ 
+ static const struct i2c_device_id cs42xx8_i2c_id[] = {
+-	{"cs42448", (kernel_ulong_t)&cs42448_data},
+-	{"cs42888", (kernel_ulong_t)&cs42888_data},
+-	{}
++	{ .name = "cs42448", .driver_data = (kernel_ulong_t)&cs42448_data },
++	{ .name = "cs42888", .driver_data = (kernel_ulong_t)&cs42888_data },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs42xx8_i2c_id);
+ 
+--- a/sound/soc/codecs/cs43130.c
++++ b/sound/soc/codecs/cs43130.c
+@@ -2753,11 +2753,11 @@ MODULE_DEVICE_TABLE(acpi, cs43130_acpi_m
+ 
+ 
+ static const struct i2c_device_id cs43130_i2c_id[] = {
+-	{"cs43130"},
+-	{"cs4399"},
+-	{"cs43131"},
+-	{"cs43198"},
+-	{}
++	{ .name = "cs43130" },
++	{ .name = "cs4399" },
++	{ .name = "cs43131" },
++	{ .name = "cs43198" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, cs43130_i2c_id);
+--- a/sound/soc/codecs/cs4341.c
++++ b/sound/soc/codecs/cs4341.c
+@@ -248,7 +248,7 @@ static int cs4341_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id cs4341_i2c_id[] = {
+-	{ "cs4341" },
++	{ .name = "cs4341" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs4341_i2c_id);
+--- a/sound/soc/codecs/cs4349.c
++++ b/sound/soc/codecs/cs4349.c
+@@ -358,8 +358,8 @@ static const struct of_device_id cs4349_
+ MODULE_DEVICE_TABLE(of, cs4349_of_match);
+ 
+ static const struct i2c_device_id cs4349_i2c_id[] = {
+-	{"cs4349"},
+-	{}
++	{ .name = "cs4349" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, cs4349_i2c_id);
+--- a/sound/soc/codecs/cs530x-i2c.c
++++ b/sound/soc/codecs/cs530x-i2c.c
+@@ -28,9 +28,9 @@ static const struct of_device_id cs530x_
+ MODULE_DEVICE_TABLE(of, cs530x_of_match);
+ 
+ static const struct i2c_device_id cs530x_i2c_id[] = {
+-	{ "cs5302", CS5302 },
+-	{ "cs5304", CS5304 },
+-	{ "cs5308", CS5308 },
++	{ .name = "cs5302", .driver_data = CS5302 },
++	{ .name = "cs5304", .driver_data = CS5304 },
++	{ .name = "cs5308", .driver_data = CS5308 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cs530x_i2c_id);
+--- a/sound/soc/codecs/cs53l30.c
++++ b/sound/soc/codecs/cs53l30.c
+@@ -1082,8 +1082,8 @@ static const struct of_device_id cs53l30
+ MODULE_DEVICE_TABLE(of, cs53l30_of_match);
+ 
+ static const struct i2c_device_id cs53l30_id[] = {
+-	{ "cs53l30" },
+-	{}
++	{ .name = "cs53l30" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, cs53l30_id);
+--- a/sound/soc/codecs/cx2072x.c
++++ b/sound/soc/codecs/cx2072x.c
+@@ -1681,9 +1681,9 @@ static void cx2072x_i2c_remove(struct i2
+ }
+ 
+ static const struct i2c_device_id cx2072x_i2c_id[] = {
+-	{ "cx20721" },
+-	{ "cx20723" },
+-	{}
++	{ .name = "cx20721" },
++	{ .name = "cx20723" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, cx2072x_i2c_id);
+ 
+--- a/sound/soc/codecs/da7210.c
++++ b/sound/soc/codecs/da7210.c
+@@ -1238,7 +1238,7 @@ static int da7210_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id da7210_i2c_id[] = {
+-	{ "da7210" },
++	{ .name = "da7210" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, da7210_i2c_id);
+--- a/sound/soc/codecs/da7213.c
++++ b/sound/soc/codecs/da7213.c
+@@ -2291,7 +2291,7 @@ static const struct dev_pm_ops da7213_pm
+ };
+ 
+ static const struct i2c_device_id da7213_i2c_id[] = {
+-	{ "da7213" },
++	{ .name = "da7213" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, da7213_i2c_id);
+--- a/sound/soc/codecs/da7218.c
++++ b/sound/soc/codecs/da7218.c
+@@ -3281,8 +3281,8 @@ static int da7218_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id da7218_i2c_id[] = {
+-	{ "da7217", DA7217_DEV_ID },
+-	{ "da7218", DA7218_DEV_ID },
++	{ .name = "da7217", .driver_data = DA7217_DEV_ID },
++	{ .name = "da7218", .driver_data = DA7218_DEV_ID },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, da7218_i2c_id);
+--- a/sound/soc/codecs/da7219.c
++++ b/sound/soc/codecs/da7219.c
+@@ -2710,7 +2710,7 @@ static int da7219_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id da7219_i2c_id[] = {
+-	{ "da7219", },
++	{ .name = "da7219" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, da7219_i2c_id);
+--- a/sound/soc/codecs/da732x.c
++++ b/sound/soc/codecs/da732x.c
+@@ -1546,7 +1546,7 @@ err:
+ }
+ 
+ static const struct i2c_device_id da732x_i2c_id[] = {
+-	{ "da7320"},
++	{ .name = "da7320" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, da732x_i2c_id);
+--- a/sound/soc/codecs/da9055.c
++++ b/sound/soc/codecs/da9055.c
+@@ -1511,7 +1511,7 @@ static int da9055_i2c_probe(struct i2c_c
+  * and PMIC, which must be different to operate together.
+  */
+ static const struct i2c_device_id da9055_i2c_id[] = {
+-	{ "da9055-codec" },
++	{ .name = "da9055-codec" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, da9055_i2c_id);
+--- a/sound/soc/codecs/es8311.c
++++ b/sound/soc/codecs/es8311.c
+@@ -944,7 +944,7 @@ static int es8311_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id es8311_id[] = {
+-	{ "es8311" },
++	{ .name = "es8311" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, es8311_id);
+--- a/sound/soc/codecs/es8316.c
++++ b/sound/soc/codecs/es8316.c
+@@ -895,8 +895,8 @@ static int es8316_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id es8316_i2c_id[] = {
+-	{"es8316" },
+-	{}
++	{ .name = "es8316" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, es8316_i2c_id);
+ 
+--- a/sound/soc/codecs/es8323.c
++++ b/sound/soc/codecs/es8323.c
+@@ -757,7 +757,7 @@ static int es8323_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id es8323_i2c_id[] = {
+-	{ "es8323" },
++	{ .name = "es8323" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, es8323_i2c_id);
+--- a/sound/soc/codecs/es8326.c
++++ b/sound/soc/codecs/es8326.c
+@@ -1335,8 +1335,8 @@ static void es8326_i2c_remove(struct i2c
+ }
+ 
+ static const struct i2c_device_id es8326_i2c_id[] = {
+-	{"es8326" },
+-	{}
++	{ .name = "es8326" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, es8326_i2c_id);
+ 
+--- a/sound/soc/codecs/es8328-i2c.c
++++ b/sound/soc/codecs/es8328-i2c.c
+@@ -16,8 +16,8 @@
+ #include "es8328.h"
+ 
+ static const struct i2c_device_id es8328_id[] = {
+-	{ "es8328" },
+-	{ "es8388" },
++	{ .name = "es8328" },
++	{ .name = "es8388" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, es8328_id);
+--- a/sound/soc/codecs/es8375.c
++++ b/sound/soc/codecs/es8375.c
+@@ -754,7 +754,7 @@ static void es8375_i2c_shutdown(struct i
+ }
+ 
+ static const struct i2c_device_id es8375_id[] = {
+-	{"es8375"},
++	{ .name = "es8375" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, es8375_id);
+--- a/sound/soc/codecs/es8389.c
++++ b/sound/soc/codecs/es8389.c
+@@ -1015,7 +1015,7 @@ MODULE_DEVICE_TABLE(of, es8389_if_dt_ids
+ #endif
+ 
+ static const struct i2c_device_id es8389_i2c_id[] = {
+-	{"es8389"},
++	{ .name = "es8389" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, es8389_i2c_id);
+--- a/sound/soc/codecs/fs210x.c
++++ b/sound/soc/codecs/fs210x.c
+@@ -1557,9 +1557,9 @@ static void fs210x_i2c_remove(struct i2c
+ }
+ 
+ static const struct i2c_device_id fs210x_i2c_id[] = {
+-	{ "fs2104" },
+-	{ "fs2105s" },
+-	{}
++	{ .name = "fs2104" },
++	{ .name = "fs2105s" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, fs210x_i2c_id);
+ 
+--- a/sound/soc/codecs/isabelle.c
++++ b/sound/soc/codecs/isabelle.c
+@@ -1133,7 +1133,7 @@ static int isabelle_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id isabelle_i2c_id[] = {
+-	{ "isabelle" },
++	{ .name = "isabelle" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, isabelle_i2c_id);
+--- a/sound/soc/codecs/lm4857.c
++++ b/sound/soc/codecs/lm4857.c
+@@ -128,7 +128,7 @@ static int lm4857_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id lm4857_i2c_id[] = {
+-	{ "lm4857" },
++	{ .name = "lm4857" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, lm4857_i2c_id);
+--- a/sound/soc/codecs/lm49453.c
++++ b/sound/soc/codecs/lm49453.c
+@@ -1442,7 +1442,7 @@ static int lm49453_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id lm49453_i2c_id[] = {
+-	{ "lm49453" },
++	{ .name = "lm49453" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, lm49453_i2c_id);
+--- a/sound/soc/codecs/max9768.c
++++ b/sound/soc/codecs/max9768.c
+@@ -213,7 +213,7 @@ static int max9768_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id max9768_i2c_id[] = {
+-	{ "max9768" },
++	{ .name = "max9768" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, max9768_i2c_id);
+--- a/sound/soc/codecs/max98088.c
++++ b/sound/soc/codecs/max98088.c
+@@ -1722,8 +1722,8 @@ static const struct snd_soc_component_dr
+ };
+ 
+ static const struct i2c_device_id max98088_i2c_id[] = {
+-       { "max98088", MAX98088 },
+-       { "max98089", MAX98089 },
++       { .name = "max98088", .driver_data = MAX98088 },
++       { .name = "max98089", .driver_data = MAX98089 },
+        { }
+ };
+ MODULE_DEVICE_TABLE(i2c, max98088_i2c_id);
+--- a/sound/soc/codecs/max98090.c
++++ b/sound/soc/codecs/max98090.c
+@@ -2539,8 +2539,8 @@ static const struct regmap_config max980
+ };
+ 
+ static const struct i2c_device_id max98090_i2c_id[] = {
+-	{ "max98090", MAX98090 },
+-	{ "max98091", MAX98091 },
++	{ .name = "max98090", .driver_data = MAX98090 },
++	{ .name = "max98091", .driver_data = MAX98091 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, max98090_i2c_id);
+--- a/sound/soc/codecs/max98095.c
++++ b/sound/soc/codecs/max98095.c
+@@ -2107,7 +2107,7 @@ static const struct snd_soc_component_dr
+ };
+ 
+ static const struct i2c_device_id max98095_i2c_id[] = {
+-	{ "max98095", MAX98095 },
++	{ .name = "max98095", .driver_data = MAX98095 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, max98095_i2c_id);
+--- a/sound/soc/codecs/max98371.c
++++ b/sound/soc/codecs/max98371.c
+@@ -400,7 +400,7 @@ static int max98371_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id max98371_i2c_id[] = {
+-	{ "max98371" },
++	{ .name = "max98371" },
+ 	{ }
+ };
+ 
+--- a/sound/soc/codecs/max98373-i2c.c
++++ b/sound/soc/codecs/max98373-i2c.c
+@@ -576,8 +576,8 @@ static int max98373_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id max98373_i2c_id[] = {
+-	{ "max98373"},
+-	{ },
++	{ .name = "max98373" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, max98373_i2c_id);
+--- a/sound/soc/codecs/max98388.c
++++ b/sound/soc/codecs/max98388.c
+@@ -977,8 +977,8 @@ static int max98388_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id max98388_i2c_id[] = {
+-	{ "max98388"},
+-	{ },
++	{ .name = "max98388" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, max98388_i2c_id);
+--- a/sound/soc/codecs/max98390.c
++++ b/sound/soc/codecs/max98390.c
+@@ -1104,8 +1104,8 @@ static int max98390_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id max98390_i2c_id[] = {
+-	{ "max98390"},
+-	{},
++	{ .name = "max98390" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, max98390_i2c_id);
+--- a/sound/soc/codecs/max98396.c
++++ b/sound/soc/codecs/max98396.c
+@@ -1890,9 +1890,9 @@ static int max98396_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id max98396_i2c_id[] = {
+-	{ "max98396", CODEC_TYPE_MAX98396},
+-	{ "max98397", CODEC_TYPE_MAX98397},
+-	{ },
++	{ .name = "max98396", .driver_data = CODEC_TYPE_MAX98396 },
++	{ .name = "max98397", .driver_data = CODEC_TYPE_MAX98397 },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, max98396_i2c_id);
+--- a/sound/soc/codecs/max9850.c
++++ b/sound/soc/codecs/max9850.c
+@@ -320,7 +320,7 @@ static int max9850_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id max9850_i2c_id[] = {
+-	{ "max9850" },
++	{ .name = "max9850" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, max9850_i2c_id);
+--- a/sound/soc/codecs/max98504.c
++++ b/sound/soc/codecs/max98504.c
+@@ -363,7 +363,7 @@ MODULE_DEVICE_TABLE(of, max98504_of_matc
+ #endif
+ 
+ static const struct i2c_device_id max98504_i2c_id[] = {
+-	{ "max98504" },
++	{ .name = "max98504" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, max98504_i2c_id);
+--- a/sound/soc/codecs/max98520.c
++++ b/sound/soc/codecs/max98520.c
+@@ -734,8 +734,8 @@ static int max98520_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id max98520_i2c_id[] = {
+-	{ "max98520"},
+-	{ },
++	{ .name = "max98520" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, max98520_i2c_id);
+--- a/sound/soc/codecs/max9860.c
++++ b/sound/soc/codecs/max9860.c
+@@ -709,7 +709,7 @@ static void max9860_remove(struct i2c_cl
+ }
+ 
+ static const struct i2c_device_id max9860_i2c_id[] = {
+-	{ "max9860", },
++	{ .name = "max9860" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, max9860_i2c_id);
+--- a/sound/soc/codecs/max9867.c
++++ b/sound/soc/codecs/max9867.c
+@@ -684,7 +684,7 @@ static int max9867_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id max9867_i2c_id[] = {
+-	{ "max9867" },
++	{ .name = "max9867" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, max9867_i2c_id);
+--- a/sound/soc/codecs/max9877.c
++++ b/sound/soc/codecs/max9877.c
+@@ -151,7 +151,7 @@ static int max9877_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id max9877_i2c_id[] = {
+-	{ "max9877" },
++	{ .name = "max9877" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, max9877_i2c_id);
+--- a/sound/soc/codecs/max98925.c
++++ b/sound/soc/codecs/max98925.c
+@@ -617,7 +617,7 @@ static int max98925_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id max98925_i2c_id[] = {
+-	{ "max98925" },
++	{ .name = "max98925" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, max98925_i2c_id);
+--- a/sound/soc/codecs/max98926.c
++++ b/sound/soc/codecs/max98926.c
+@@ -565,7 +565,7 @@ err_out:
+ }
+ 
+ static const struct i2c_device_id max98926_i2c_id[] = {
+-	{ "max98926" },
++	{ .name = "max98926" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, max98926_i2c_id);
+--- a/sound/soc/codecs/max98927.c
++++ b/sound/soc/codecs/max98927.c
+@@ -873,8 +873,8 @@ static void max98927_i2c_remove(struct i
+ }
+ 
+ static const struct i2c_device_id max98927_i2c_id[] = {
+-	{ "max98927"},
+-	{ },
++	{ .name = "max98927" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, max98927_i2c_id);
+--- a/sound/soc/codecs/ml26124.c
++++ b/sound/soc/codecs/ml26124.c
+@@ -572,7 +572,7 @@ static int ml26124_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id ml26124_i2c_id[] = {
+-	{ "ml26124" },
++	{ .name = "ml26124" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ml26124_i2c_id);
+--- a/sound/soc/codecs/mt6660.c
++++ b/sound/soc/codecs/mt6660.c
+@@ -558,8 +558,8 @@ static const struct of_device_id __maybe
+ MODULE_DEVICE_TABLE(of, mt6660_of_id);
+ 
+ static const struct i2c_device_id mt6660_i2c_id[] = {
+-	{"mt6660" },
+-	{},
++	{ .name = "mt6660" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, mt6660_i2c_id);
+ 
+--- a/sound/soc/codecs/nau8325.c
++++ b/sound/soc/codecs/nau8325.c
+@@ -870,7 +870,7 @@ err:
+ }
+ 
+ static const struct i2c_device_id nau8325_i2c_ids[] = {
+-	{ "nau8325" },
++	{ .name = "nau8325" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, nau8325_i2c_ids);
+--- a/sound/soc/codecs/nau8540.c
++++ b/sound/soc/codecs/nau8540.c
+@@ -965,7 +965,7 @@ static int nau8540_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id nau8540_i2c_ids[] = {
+-	{ "nau8540" },
++	{ .name = "nau8540" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, nau8540_i2c_ids);
+--- a/sound/soc/codecs/nau8810.c
++++ b/sound/soc/codecs/nau8810.c
+@@ -895,9 +895,9 @@ static int nau8810_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id nau8810_i2c_id[] = {
+-	{ "nau8810" },
+-	{ "nau8812" },
+-	{ "nau8814" },
++	{ .name = "nau8810" },
++	{ .name = "nau8812" },
++	{ .name = "nau8814" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, nau8810_i2c_id);
+--- a/sound/soc/codecs/nau8821.c
++++ b/sound/soc/codecs/nau8821.c
+@@ -1970,7 +1970,7 @@ static int nau8821_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id nau8821_i2c_ids[] = {
+-	{ "nau8821" },
++	{ .name = "nau8821" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, nau8821_i2c_ids);
+--- a/sound/soc/codecs/nau8822.c
++++ b/sound/soc/codecs/nau8822.c
+@@ -1193,7 +1193,7 @@ static int nau8822_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id nau8822_i2c_id[] = {
+-	{ "nau8822" },
++	{ .name = "nau8822" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, nau8822_i2c_id);
+--- a/sound/soc/codecs/nau8824.c
++++ b/sound/soc/codecs/nau8824.c
+@@ -2020,7 +2020,7 @@ static int nau8824_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id nau8824_i2c_ids[] = {
+-	{ "nau8824" },
++	{ .name = "nau8824" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, nau8824_i2c_ids);
+--- a/sound/soc/codecs/nau8825.c
++++ b/sound/soc/codecs/nau8825.c
+@@ -2934,7 +2934,7 @@ static void nau8825_i2c_remove(struct i2
+ {}
+ 
+ static const struct i2c_device_id nau8825_i2c_ids[] = {
+-	{ "nau8825" },
++	{ .name = "nau8825" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, nau8825_i2c_ids);
+--- a/sound/soc/codecs/ntp8835.c
++++ b/sound/soc/codecs/ntp8835.c
+@@ -454,8 +454,8 @@ static int ntp8835_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id ntp8835_i2c_id[] = {
+-	{ "ntp8835" },
+-	{}
++	{ .name = "ntp8835" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ntp8835_i2c_id);
+ 
+--- a/sound/soc/codecs/ntp8918.c
++++ b/sound/soc/codecs/ntp8918.c
+@@ -370,8 +370,8 @@ static int ntp8918_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id ntp8918_i2c_id[] = {
+-	{ "ntp8918" },
+-	{}
++	{ .name = "ntp8918" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ntp8918_i2c_id);
+ 
+--- a/sound/soc/codecs/pcm1681.c
++++ b/sound/soc/codecs/pcm1681.c
+@@ -290,8 +290,8 @@ static const struct snd_soc_component_dr
+ };
+ 
+ static const struct i2c_device_id pcm1681_i2c_id[] = {
+-	{"pcm1681"},
+-	{}
++	{ .name = "pcm1681" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, pcm1681_i2c_id);
+ 
+--- a/sound/soc/codecs/pcm1789-i2c.c
++++ b/sound/soc/codecs/pcm1789-i2c.c
+@@ -41,7 +41,7 @@ MODULE_DEVICE_TABLE(of, pcm1789_of_match
+ #endif
+ 
+ static const struct i2c_device_id pcm1789_i2c_ids[] = {
+-	{ "pcm1789" },
++	{ .name = "pcm1789" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, pcm1789_i2c_ids);
+--- a/sound/soc/codecs/pcm179x-i2c.c
++++ b/sound/soc/codecs/pcm179x-i2c.c
+@@ -38,7 +38,7 @@ MODULE_DEVICE_TABLE(of, pcm179x_of_match
+ #endif
+ 
+ static const struct i2c_device_id pcm179x_i2c_ids[] = {
+-	{ "pcm179x" },
++	{ .name = "pcm179x" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, pcm179x_i2c_ids);
+--- a/sound/soc/codecs/pcm186x-i2c.c
++++ b/sound/soc/codecs/pcm186x-i2c.c
+@@ -23,10 +23,10 @@ static const struct of_device_id pcm186x
+ MODULE_DEVICE_TABLE(of, pcm186x_of_match);
+ 
+ static const struct i2c_device_id pcm186x_i2c_id[] = {
+-	{ "pcm1862", PCM1862 },
+-	{ "pcm1863", PCM1863 },
+-	{ "pcm1864", PCM1864 },
+-	{ "pcm1865", PCM1865 },
++	{ .name = "pcm1862", .driver_data = PCM1862 },
++	{ .name = "pcm1863", .driver_data = PCM1863 },
++	{ .name = "pcm1864", .driver_data = PCM1864 },
++	{ .name = "pcm1865", .driver_data = PCM1865 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, pcm186x_i2c_id);
+--- a/sound/soc/codecs/pcm3168a-i2c.c
++++ b/sound/soc/codecs/pcm3168a-i2c.c
+@@ -33,7 +33,7 @@ static void pcm3168a_i2c_remove(struct i
+ }
+ 
+ static const struct i2c_device_id pcm3168a_i2c_id[] = {
+-	{ "pcm3168a", },
++	{ .name = "pcm3168a" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, pcm3168a_i2c_id);
+--- a/sound/soc/codecs/pcm512x-i2c.c
++++ b/sound/soc/codecs/pcm512x-i2c.c
+@@ -35,13 +35,13 @@ static void pcm512x_i2c_remove(struct i2
+ }
+ 
+ static const struct i2c_device_id pcm512x_i2c_id[] = {
+-	{ "pcm5121", },
+-	{ "pcm5122", },
+-	{ "pcm5141", },
+-	{ "pcm5142", },
+-	{ "pcm5242", },
+-	{ "tas5754", },
+-	{ "tas5756", },
++	{ .name = "pcm5121" },
++	{ .name = "pcm5122" },
++	{ .name = "pcm5141" },
++	{ .name = "pcm5142" },
++	{ .name = "pcm5242" },
++	{ .name = "tas5754" },
++	{ .name = "tas5756" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, pcm512x_i2c_id);
+--- a/sound/soc/codecs/pcm6240.c
++++ b/sound/soc/codecs/pcm6240.c
+@@ -27,28 +27,28 @@
+ #include "pcm6240.h"
+ 
+ static const struct i2c_device_id pcmdevice_i2c_id[] = {
+-	{ "adc3120",  ADC3120  },
+-	{ "adc5120",  ADC5120  },
+-	{ "adc6120",  ADC6120  },
+-	{ "dix4192",  DIX4192  },
+-	{ "pcm1690",  PCM1690  },
+-	{ "pcm3120",  PCM3120  },
+-	{ "pcm3140",  PCM3140  },
+-	{ "pcm5120",  PCM5120  },
+-	{ "pcm5140",  PCM5140  },
+-	{ "pcm6120",  PCM6120  },
+-	{ "pcm6140",  PCM6140  },
+-	{ "pcm6240",  PCM6240  },
+-	{ "pcm6260",  PCM6260  },
+-	{ "pcm9211",  PCM9211  },
+-	{ "pcmd3140", PCMD3140 },
+-	{ "pcmd3180", PCMD3180 },
+-	{ "pcmd512x", PCMD512X },
+-	{ "taa5212",  TAA5212  },
+-	{ "taa5412",  TAA5412  },
+-	{ "tad5212",  TAD5212  },
+-	{ "tad5412",  TAD5412  },
+-	{}
++	{ .name = "adc3120", .driver_data = ADC3120 },
++	{ .name = "adc5120", .driver_data = ADC5120 },
++	{ .name = "adc6120", .driver_data = ADC6120 },
++	{ .name = "dix4192", .driver_data = DIX4192 },
++	{ .name = "pcm1690", .driver_data = PCM1690 },
++	{ .name = "pcm3120", .driver_data = PCM3120 },
++	{ .name = "pcm3140", .driver_data = PCM3140 },
++	{ .name = "pcm5120", .driver_data = PCM5120 },
++	{ .name = "pcm5140", .driver_data = PCM5140 },
++	{ .name = "pcm6120", .driver_data = PCM6120 },
++	{ .name = "pcm6140", .driver_data = PCM6140 },
++	{ .name = "pcm6240", .driver_data = PCM6240 },
++	{ .name = "pcm6260", .driver_data = PCM6260 },
++	{ .name = "pcm9211", .driver_data = PCM9211 },
++	{ .name = "pcmd3140", .driver_data = PCMD3140 },
++	{ .name = "pcmd3180", .driver_data = PCMD3180 },
++	{ .name = "pcmd512x", .driver_data = PCMD512X },
++	{ .name = "taa5212", .driver_data = TAA5212 },
++	{ .name = "taa5412", .driver_data = TAA5412 },
++	{ .name = "tad5212", .driver_data = TAD5212 },
++	{ .name = "tad5412", .driver_data = TAD5412 },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, pcmdevice_i2c_id);
+ 
+--- a/sound/soc/codecs/rt1011.c
++++ b/sound/soc/codecs/rt1011.c
+@@ -2206,7 +2206,7 @@ MODULE_DEVICE_TABLE(acpi, rt1011_acpi_ma
+ #endif
+ 
+ static const struct i2c_device_id rt1011_i2c_id[] = {
+-	{ "rt1011" },
++	{ .name = "rt1011" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt1011_i2c_id);
+--- a/sound/soc/codecs/rt1015.c
++++ b/sound/soc/codecs/rt1015.c
+@@ -1097,7 +1097,7 @@ static const struct regmap_config rt1015
+ };
+ 
+ static const struct i2c_device_id rt1015_i2c_id[] = {
+-	{ "rt1015" },
++	{ .name = "rt1015" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt1015_i2c_id);
+--- a/sound/soc/codecs/rt1016.c
++++ b/sound/soc/codecs/rt1016.c
+@@ -608,7 +608,7 @@ static const struct regmap_config rt1016
+ };
+ 
+ static const struct i2c_device_id rt1016_i2c_id[] = {
+-	{ "rt1016" },
++	{ .name = "rt1016" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt1016_i2c_id);
+--- a/sound/soc/codecs/rt1019.c
++++ b/sound/soc/codecs/rt1019.c
+@@ -540,7 +540,7 @@ static const struct regmap_config rt1019
+ };
+ 
+ static const struct i2c_device_id rt1019_i2c_id[] = {
+-	{ "rt1019" },
++	{ .name = "rt1019" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt1019_i2c_id);
+--- a/sound/soc/codecs/rt1305.c
++++ b/sound/soc/codecs/rt1305.c
+@@ -981,8 +981,8 @@ MODULE_DEVICE_TABLE(acpi, rt1305_acpi_ma
+ #endif
+ 
+ static const struct i2c_device_id rt1305_i2c_id[] = {
+-	{ "rt1305" },
+-	{ "rt1306" },
++	{ .name = "rt1305" },
++	{ .name = "rt1306" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt1305_i2c_id);
+--- a/sound/soc/codecs/rt1308.c
++++ b/sound/soc/codecs/rt1308.c
+@@ -795,7 +795,7 @@ MODULE_DEVICE_TABLE(acpi, rt1308_acpi_ma
+ #endif
+ 
+ static const struct i2c_device_id rt1308_i2c_id[] = {
+-	{ "rt1308" },
++	{ .name = "rt1308" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt1308_i2c_id);
+--- a/sound/soc/codecs/rt1318.c
++++ b/sound/soc/codecs/rt1318.c
+@@ -1140,7 +1140,7 @@ static const struct regmap_config rt1318
+ };
+ 
+ static const struct i2c_device_id rt1318_i2c_id[] = {
+-	{ "rt1318" },
++	{ .name = "rt1318" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt1318_i2c_id);
+--- a/sound/soc/codecs/rt274.c
++++ b/sound/soc/codecs/rt274.c
+@@ -1099,8 +1099,8 @@ MODULE_DEVICE_TABLE(of, rt274_of_match);
+ #endif
+ 
+ static const struct i2c_device_id rt274_i2c_id[] = {
+-	{"rt274"},
+-	{}
++	{ .name = "rt274" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt274_i2c_id);
+ 
+--- a/sound/soc/codecs/rt286.c
++++ b/sound/soc/codecs/rt286.c
+@@ -1075,9 +1075,9 @@ static const struct regmap_config rt286_
+ };
+ 
+ static const struct i2c_device_id rt286_i2c_id[] = {
+-	{"rt286"},
+-	{"rt288"},
+-	{}
++	{ .name = "rt286" },
++	{ .name = "rt288" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt286_i2c_id);
+ 
+--- a/sound/soc/codecs/rt298.c
++++ b/sound/soc/codecs/rt298.c
+@@ -1137,8 +1137,8 @@ static const struct regmap_config rt298_
+ };
+ 
+ static const struct i2c_device_id rt298_i2c_id[] = {
+-	{"rt298"},
+-	{}
++	{ .name = "rt298" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt298_i2c_id);
+ 
+--- a/sound/soc/codecs/rt5514.c
++++ b/sound/soc/codecs/rt5514.c
+@@ -1198,7 +1198,7 @@ static const struct regmap_config rt5514
+ };
+ 
+ static const struct i2c_device_id rt5514_i2c_id[] = {
+-	{ "rt5514" },
++	{ .name = "rt5514" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5514_i2c_id);
+--- a/sound/soc/codecs/rt5616.c
++++ b/sound/soc/codecs/rt5616.c
+@@ -1320,7 +1320,7 @@ static const struct regmap_config rt5616
+ };
+ 
+ static const struct i2c_device_id rt5616_i2c_id[] = {
+-	{ "rt5616" },
++	{ .name = "rt5616" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5616_i2c_id);
+--- a/sound/soc/codecs/rt5631.c
++++ b/sound/soc/codecs/rt5631.c
+@@ -1669,8 +1669,8 @@ static const struct snd_soc_component_dr
+ };
+ 
+ static const struct i2c_device_id rt5631_i2c_id[] = {
+-	{ "rt5631" },
+-	{ "alc5631" },
++	{ .name = "rt5631" },
++	{ .name = "alc5631" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5631_i2c_id);
+--- a/sound/soc/codecs/rt5640.c
++++ b/sound/soc/codecs/rt5640.c
+@@ -2952,9 +2952,9 @@ static const struct regmap_config rt5640
+ };
+ 
+ static const struct i2c_device_id rt5640_i2c_id[] = {
+-	{ "rt5640" },
+-	{ "rt5639" },
+-	{ "rt5642" },
++	{ .name = "rt5640" },
++	{ .name = "rt5639" },
++	{ .name = "rt5642" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5640_i2c_id);
+--- a/sound/soc/codecs/rt5645.c
++++ b/sound/soc/codecs/rt5645.c
+@@ -3649,8 +3649,8 @@ static const struct regmap_config temp_r
+ };
+ 
+ static const struct i2c_device_id rt5645_i2c_id[] = {
+-	{ "rt5645" },
+-	{ "rt5650" },
++	{ .name = "rt5645" },
++	{ .name = "rt5650" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5645_i2c_id);
+--- a/sound/soc/codecs/rt5651.c
++++ b/sound/soc/codecs/rt5651.c
+@@ -2199,7 +2199,7 @@ MODULE_DEVICE_TABLE(acpi, rt5651_acpi_ma
+ #endif
+ 
+ static const struct i2c_device_id rt5651_i2c_id[] = {
+-	{ "rt5651" },
++	{ .name = "rt5651" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5651_i2c_id);
+--- a/sound/soc/codecs/rt5659.c
++++ b/sound/soc/codecs/rt5659.c
+@@ -3815,8 +3815,8 @@ static const struct regmap_config rt5659
+ };
+ 
+ static const struct i2c_device_id rt5659_i2c_id[] = {
+-	{ "rt5658" },
+-	{ "rt5659" },
++	{ .name = "rt5658" },
++	{ .name = "rt5659" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5659_i2c_id);
+--- a/sound/soc/codecs/rt5660.c
++++ b/sound/soc/codecs/rt5660.c
+@@ -1224,7 +1224,7 @@ static const struct regmap_config rt5660
+ };
+ 
+ static const struct i2c_device_id rt5660_i2c_id[] = {
+-	{ "rt5660" },
++	{ .name = "rt5660" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5660_i2c_id);
+--- a/sound/soc/codecs/rt5663.c
++++ b/sound/soc/codecs/rt5663.c
+@@ -3307,8 +3307,8 @@ static const struct regmap_config temp_r
+ };
+ 
+ static const struct i2c_device_id rt5663_i2c_id[] = {
+-	{ "rt5663" },
+-	{}
++	{ .name = "rt5663" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5663_i2c_id);
+ 
+--- a/sound/soc/codecs/rt5665.c
++++ b/sound/soc/codecs/rt5665.c
+@@ -4534,8 +4534,8 @@ static const struct regmap_config rt5665
+ };
+ 
+ static const struct i2c_device_id rt5665_i2c_id[] = {
+-	{"rt5665"},
+-	{}
++	{ .name = "rt5665" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5665_i2c_id);
+ 
+--- a/sound/soc/codecs/rt5668.c
++++ b/sound/soc/codecs/rt5668.c
+@@ -2335,8 +2335,8 @@ static const struct regmap_config rt5668
+ };
+ 
+ static const struct i2c_device_id rt5668_i2c_id[] = {
+-	{"rt5668b"},
+-	{}
++	{ .name = "rt5668b" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5668_i2c_id);
+ 
+--- a/sound/soc/codecs/rt5670.c
++++ b/sound/soc/codecs/rt5670.c
+@@ -2871,9 +2871,9 @@ static const struct regmap_config rt5670
+ };
+ 
+ static const struct i2c_device_id rt5670_i2c_id[] = {
+-	{ "rt5670" },
+-	{ "rt5671" },
+-	{ "rt5672" },
++	{ .name = "rt5670" },
++	{ .name = "rt5671" },
++	{ .name = "rt5672" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5670_i2c_id);
+--- a/sound/soc/codecs/rt5682-i2c.c
++++ b/sound/soc/codecs/rt5682-i2c.c
+@@ -324,8 +324,8 @@ static const struct acpi_device_id rt568
+ MODULE_DEVICE_TABLE(acpi, rt5682_acpi_match);
+ 
+ static const struct i2c_device_id rt5682_i2c_id[] = {
+-	{"rt5682"},
+-	{}
++	{ .name = "rt5682" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5682_i2c_id);
+ 
+--- a/sound/soc/codecs/rt5682s.c
++++ b/sound/soc/codecs/rt5682s.c
+@@ -3324,8 +3324,8 @@ static const struct acpi_device_id rt568
+ MODULE_DEVICE_TABLE(acpi, rt5682s_acpi_match);
+ 
+ static const struct i2c_device_id rt5682s_i2c_id[] = {
+-	{"rt5682s"},
+-	{}
++	{ .name = "rt5682s" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, rt5682s_i2c_id);
+ 
+--- a/sound/soc/codecs/sgtl5000.c
++++ b/sound/soc/codecs/sgtl5000.c
+@@ -1809,8 +1809,8 @@ static void sgtl5000_i2c_shutdown(struct
+ }
+ 
+ static const struct i2c_device_id sgtl5000_id[] = {
+-	{"sgtl5000"},
+-	{},
++	{ .name = "sgtl5000" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, sgtl5000_id);
+--- a/sound/soc/codecs/sma1303.c
++++ b/sound/soc/codecs/sma1303.c
+@@ -1793,8 +1793,8 @@ static void sma1303_i2c_remove(struct i2
+ }
+ 
+ static const struct i2c_device_id sma1303_i2c_id[] = {
+-	{"sma1303"},
+-	{}
++	{ .name = "sma1303" },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, sma1303_i2c_id);
+ 
+--- a/sound/soc/codecs/sma1307.c
++++ b/sound/soc/codecs/sma1307.c
+@@ -2036,8 +2036,8 @@ static void sma1307_i2c_remove(struct i2
+ }
+ 
+ static const struct i2c_device_id sma1307_i2c_id[] = {
+-	{ "sma1307a" },
+-	{ "sma1307aq" },
++	{ .name = "sma1307a" },
++	{ .name = "sma1307aq" },
+ 	{ }
+ };
+ 
+--- a/sound/soc/codecs/src4xxx-i2c.c
++++ b/sound/soc/codecs/src4xxx-i2c.c
+@@ -19,7 +19,7 @@ static int src4xxx_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id src4xxx_i2c_ids[] = {
+-	{ "src4392" },
++	{ .name = "src4392" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, src4xxx_i2c_ids);
+--- a/sound/soc/codecs/ssm2518.c
++++ b/sound/soc/codecs/ssm2518.c
+@@ -793,7 +793,7 @@ MODULE_DEVICE_TABLE(of, ssm2518_dt_ids);
+ #endif
+ 
+ static const struct i2c_device_id ssm2518_i2c_ids[] = {
+-	{ "ssm2518" },
++	{ .name = "ssm2518" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ssm2518_i2c_ids);
+--- a/sound/soc/codecs/ssm2602-i2c.c
++++ b/sound/soc/codecs/ssm2602-i2c.c
+@@ -26,9 +26,9 @@ static int ssm2602_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id ssm2602_i2c_id[] = {
+-	{ "ssm2602", SSM2602 },
+-	{ "ssm2603", SSM2602 },
+-	{ "ssm2604", SSM2604 },
++	{ .name = "ssm2602", .driver_data = SSM2602 },
++	{ .name = "ssm2603", .driver_data = SSM2602 },
++	{ .name = "ssm2604", .driver_data = SSM2604 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ssm2602_i2c_id);
+--- a/sound/soc/codecs/ssm4567.c
++++ b/sound/soc/codecs/ssm4567.c
+@@ -471,7 +471,7 @@ static int ssm4567_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id ssm4567_i2c_ids[] = {
+-	{ "ssm4567" },
++	{ .name = "ssm4567" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ssm4567_i2c_ids);
+--- a/sound/soc/codecs/sta32x.c
++++ b/sound/soc/codecs/sta32x.c
+@@ -1152,9 +1152,9 @@ static int sta32x_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id sta32x_i2c_id[] = {
+-	{ "sta326" },
+-	{ "sta328" },
+-	{ "sta329" },
++	{ .name = "sta326" },
++	{ .name = "sta328" },
++	{ .name = "sta329" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, sta32x_i2c_id);
+--- a/sound/soc/codecs/sta350.c
++++ b/sound/soc/codecs/sta350.c
+@@ -1238,7 +1238,7 @@ static void sta350_i2c_remove(struct i2c
+ {}
+ 
+ static const struct i2c_device_id sta350_i2c_id[] = {
+-	{ "sta350" },
++	{ .name = "sta350" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, sta350_i2c_id);
+--- a/sound/soc/codecs/sta529.c
++++ b/sound/soc/codecs/sta529.c
+@@ -363,7 +363,7 @@ static int sta529_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id sta529_i2c_id[] = {
+-	{ "sta529" },
++	{ .name = "sta529" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, sta529_i2c_id);
+--- a/sound/soc/codecs/tas2552.c
++++ b/sound/soc/codecs/tas2552.c
+@@ -745,7 +745,7 @@ static void tas2552_i2c_remove(struct i2
+ }
+ 
+ static const struct i2c_device_id tas2552_id[] = {
+-	{ "tas2552" },
++	{ .name = "tas2552" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tas2552_id);
+--- a/sound/soc/codecs/tas2562.c
++++ b/sound/soc/codecs/tas2562.c
+@@ -725,9 +725,9 @@ static int tas2562_parse_dt(struct tas25
+ }
+ 
+ static const struct i2c_device_id tas2562_id[] = {
+-	{ "tas2562", TAS2562 },
+-	{ "tas2564", TAS2564 },
+-	{ "tas2110", TAS2110 },
++	{ .name = "tas2562", .driver_data = TAS2562 },
++	{ .name = "tas2564", .driver_data = TAS2564 },
++	{ .name = "tas2110", .driver_data = TAS2110 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tas2562_id);
+--- a/sound/soc/codecs/tas2764.c
++++ b/sound/soc/codecs/tas2764.c
+@@ -922,7 +922,7 @@ static int tas2764_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id tas2764_i2c_id[] = {
+-	{ "tas2764"},
++	{ .name = "tas2764" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tas2764_i2c_id);
+--- a/sound/soc/codecs/tas2770.c
++++ b/sound/soc/codecs/tas2770.c
+@@ -862,7 +862,7 @@ static int tas2770_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id tas2770_i2c_id[] = {
+-	{ "tas2770"},
++	{ .name = "tas2770" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tas2770_i2c_id);
+--- a/sound/soc/codecs/tas2780.c
++++ b/sound/soc/codecs/tas2780.c
+@@ -624,7 +624,7 @@ static int tas2780_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id tas2780_i2c_id[] = {
+-	{ "tas2780"},
++	{ .name = "tas2780" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tas2780_i2c_id);
+--- a/sound/soc/codecs/tas2781-i2c.c
++++ b/sound/soc/codecs/tas2781-i2c.c
+@@ -100,19 +100,19 @@ static const struct bulk_reg_val tas2781
+ };
+ 
+ static const struct i2c_device_id tasdevice_id[] = {
+-	{ "tas2020", TAS2020 },
+-	{ "tas2118", TAS2118 },
+-	{ "tas2120", TAS2120 },
+-	{ "tas2320", TAS2320 },
+-	{ "tas2563", TAS2563 },
+-	{ "tas2570", TAS2570 },
+-	{ "tas2572", TAS2572 },
+-	{ "tas2781", TAS2781 },
+-	{ "tas5802", TAS5802 },
+-	{ "tas5815", TAS5815 },
+-	{ "tas5825", TAS5825 },
+-	{ "tas5827", TAS5827 },
+-	{ "tas5828", TAS5828 },
++	{ .name = "tas2020", .driver_data = TAS2020 },
++	{ .name = "tas2118", .driver_data = TAS2118 },
++	{ .name = "tas2120", .driver_data = TAS2120 },
++	{ .name = "tas2320", .driver_data = TAS2320 },
++	{ .name = "tas2563", .driver_data = TAS2563 },
++	{ .name = "tas2570", .driver_data = TAS2570 },
++	{ .name = "tas2572", .driver_data = TAS2572 },
++	{ .name = "tas2781", .driver_data = TAS2781 },
++	{ .name = "tas5802", .driver_data = TAS5802 },
++	{ .name = "tas5815", .driver_data = TAS5815 },
++	{ .name = "tas5825", .driver_data = TAS5825 },
++	{ .name = "tas5827", .driver_data = TAS5827 },
++	{ .name = "tas5828", .driver_data = TAS5828 },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(i2c, tasdevice_id);
+--- a/sound/soc/codecs/tas5086.c
++++ b/sound/soc/codecs/tas5086.c
+@@ -891,7 +891,7 @@ static const struct snd_soc_component_dr
+ };
+ 
+ static const struct i2c_device_id tas5086_i2c_id[] = {
+-	{ "tas5086" },
++	{ .name = "tas5086" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tas5086_i2c_id);
+--- a/sound/soc/codecs/tas571x.c
++++ b/sound/soc/codecs/tas571x.c
+@@ -1063,13 +1063,13 @@ static const struct of_device_id tas571x
+ MODULE_DEVICE_TABLE(of, tas571x_of_match);
+ 
+ static const struct i2c_device_id tas571x_i2c_id[] = {
+-	{ "tas5707", (kernel_ulong_t) &tas5707_chip },
+-	{ "tas5711", (kernel_ulong_t) &tas5711_chip },
+-	{ "tas5717", (kernel_ulong_t) &tas5717_chip },
+-	{ "tas5719", (kernel_ulong_t) &tas5717_chip },
+-	{ "tas5721", (kernel_ulong_t) &tas5721_chip },
+-	{ "tas5733", (kernel_ulong_t) &tas5733_chip },
+-	{ "tas5753", (kernel_ulong_t) &tas5753_chip },
++	{ .name = "tas5707", .driver_data = (kernel_ulong_t)&tas5707_chip },
++	{ .name = "tas5711", .driver_data = (kernel_ulong_t)&tas5711_chip },
++	{ .name = "tas5717", .driver_data = (kernel_ulong_t)&tas5717_chip },
++	{ .name = "tas5719", .driver_data = (kernel_ulong_t)&tas5717_chip },
++	{ .name = "tas5721", .driver_data = (kernel_ulong_t)&tas5721_chip },
++	{ .name = "tas5733", .driver_data = (kernel_ulong_t)&tas5733_chip },
++	{ .name = "tas5753", .driver_data = (kernel_ulong_t)&tas5753_chip },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tas571x_i2c_id);
+--- a/sound/soc/codecs/tas5720.c
++++ b/sound/soc/codecs/tas5720.c
+@@ -716,9 +716,9 @@ static struct snd_soc_dai_driver tas5720
+ };
+ 
+ static const struct i2c_device_id tas5720_id[] = {
+-	{ "tas5720", TAS5720 },
+-	{ "tas5720a-q1", TAS5720A_Q1 },
+-	{ "tas5722", TAS5722 },
++	{ .name = "tas5720", .driver_data = TAS5720 },
++	{ .name = "tas5720a-q1", .driver_data = TAS5720A_Q1 },
++	{ .name = "tas5722", .driver_data = TAS5722 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tas5720_id);
+--- a/sound/soc/codecs/tas5805m.c
++++ b/sound/soc/codecs/tas5805m.c
+@@ -582,7 +582,7 @@ static void tas5805m_i2c_remove(struct i
+ }
+ 
+ static const struct i2c_device_id tas5805m_i2c_id[] = {
+-	{ "tas5805m", },
++	{ .name = "tas5805m" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tas5805m_i2c_id);
+--- a/sound/soc/codecs/tas6424.c
++++ b/sound/soc/codecs/tas6424.c
+@@ -792,7 +792,7 @@ static void tas6424_i2c_remove(struct i2
+ }
+ 
+ static const struct i2c_device_id tas6424_i2c_ids[] = {
+-	{ "tas6424" },
++	{ .name = "tas6424" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tas6424_i2c_ids);
+--- a/sound/soc/codecs/tda7419.c
++++ b/sound/soc/codecs/tda7419.c
+@@ -614,7 +614,7 @@ static int tda7419_probe(struct i2c_clie
+ }
+ 
+ static const struct i2c_device_id tda7419_i2c_id[] = {
+-	{ "tda7419" },
++	{ .name = "tda7419" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tda7419_i2c_id);
+--- a/sound/soc/codecs/tfa9879.c
++++ b/sound/soc/codecs/tfa9879.c
+@@ -296,7 +296,7 @@ static int tfa9879_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id tfa9879_i2c_id[] = {
+-	{ "tfa9879" },
++	{ .name = "tfa9879" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tfa9879_i2c_id);
+--- a/sound/soc/codecs/tlv320adc3xxx.c
++++ b/sound/soc/codecs/tlv320adc3xxx.c
+@@ -1391,9 +1391,9 @@ static const struct snd_soc_component_dr
+ };
+ 
+ static const struct i2c_device_id adc3xxx_i2c_id[] = {
+-	{ "tlv320adc3001", ADC3001 },
+-	{ "tlv320adc3101", ADC3101 },
+-	{}
++	{ .name = "tlv320adc3001", .driver_data = ADC3001 },
++	{ .name = "tlv320adc3101", .driver_data = ADC3101 },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, adc3xxx_i2c_id);
+ 
+--- a/sound/soc/codecs/tlv320adcx140.c
++++ b/sound/soc/codecs/tlv320adcx140.c
+@@ -1196,10 +1196,10 @@ static int adcx140_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id adcx140_i2c_id[] = {
+-	{ "tlv320adc3140", 0 },
+-	{ "tlv320adc5140", 1 },
+-	{ "tlv320adc6140", 2 },
+-	{}
++	{ .name = "tlv320adc3140", .driver_data = 0 },
++	{ .name = "tlv320adc5140", .driver_data = 1 },
++	{ .name = "tlv320adc6140", .driver_data = 2 },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, adcx140_i2c_id);
+ 
+--- a/sound/soc/codecs/tlv320aic23-i2c.c
++++ b/sound/soc/codecs/tlv320aic23-i2c.c
+@@ -28,8 +28,8 @@ static int tlv320aic23_i2c_probe(struct
+ }
+ 
+ static const struct i2c_device_id tlv320aic23_id[] = {
+-	{"tlv320aic23"},
+-	{}
++	{ .name = "tlv320aic23" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, tlv320aic23_id);
+--- a/sound/soc/codecs/tlv320aic31xx.c
++++ b/sound/soc/codecs/tlv320aic31xx.c
+@@ -1628,14 +1628,14 @@ static void aic31xx_configure_ocmv(struc
+ }
+ 
+ static const struct i2c_device_id aic31xx_i2c_id[] = {
+-	{ "tlv320aic310x", AIC3100 },
+-	{ "tlv320aic311x", AIC3110 },
+-	{ "tlv320aic3100", AIC3100 },
+-	{ "tlv320aic3110", AIC3110 },
+-	{ "tlv320aic3120", AIC3120 },
+-	{ "tlv320aic3111", AIC3111 },
+-	{ "tlv320dac3100", DAC3100 },
+-	{ "tlv320dac3101", DAC3101 },
++	{ .name = "tlv320aic310x", .driver_data = AIC3100 },
++	{ .name = "tlv320aic311x", .driver_data = AIC3110 },
++	{ .name = "tlv320aic3100", .driver_data = AIC3100 },
++	{ .name = "tlv320aic3110", .driver_data = AIC3110 },
++	{ .name = "tlv320aic3120", .driver_data = AIC3120 },
++	{ .name = "tlv320aic3111", .driver_data = AIC3111 },
++	{ .name = "tlv320dac3100", .driver_data = DAC3100 },
++	{ .name = "tlv320dac3101", .driver_data = DAC3101 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, aic31xx_i2c_id);
+--- a/sound/soc/codecs/tlv320aic32x4-i2c.c
++++ b/sound/soc/codecs/tlv320aic32x4-i2c.c
+@@ -38,9 +38,9 @@ static void aic32x4_i2c_remove(struct i2
+ }
+ 
+ static const struct i2c_device_id aic32x4_i2c_id[] = {
+-	{ "tlv320aic32x4", (kernel_ulong_t)AIC32X4_TYPE_AIC32X4 },
+-	{ "tlv320aic32x6", (kernel_ulong_t)AIC32X4_TYPE_AIC32X6 },
+-	{ "tas2505", (kernel_ulong_t)AIC32X4_TYPE_TAS2505 },
++	{ .name = "tlv320aic32x4", .driver_data = (kernel_ulong_t)AIC32X4_TYPE_AIC32X4 },
++	{ .name = "tlv320aic32x6", .driver_data = (kernel_ulong_t)AIC32X4_TYPE_AIC32X6 },
++	{ .name = "tas2505", .driver_data = (kernel_ulong_t)AIC32X4_TYPE_TAS2505 },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(i2c, aic32x4_i2c_id);
+--- a/sound/soc/codecs/tlv320aic3x-i2c.c
++++ b/sound/soc/codecs/tlv320aic3x-i2c.c
+@@ -18,11 +18,11 @@
+ #include "tlv320aic3x.h"
+ 
+ static const struct i2c_device_id aic3x_i2c_id[] = {
+-	{ "tlv320aic3x", AIC3X_MODEL_3X },
+-	{ "tlv320aic33", AIC3X_MODEL_33 },
+-	{ "tlv320aic3007", AIC3X_MODEL_3007 },
+-	{ "tlv320aic3104", AIC3X_MODEL_3104 },
+-	{ "tlv320aic3106", AIC3X_MODEL_3106 },
++	{ .name = "tlv320aic3x", .driver_data = AIC3X_MODEL_3X },
++	{ .name = "tlv320aic33", .driver_data = AIC3X_MODEL_33 },
++	{ .name = "tlv320aic3007", .driver_data = AIC3X_MODEL_3007 },
++	{ .name = "tlv320aic3104", .driver_data = AIC3X_MODEL_3104 },
++	{ .name = "tlv320aic3106", .driver_data = AIC3X_MODEL_3106 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, aic3x_i2c_id);
+--- a/sound/soc/codecs/ts3a227e.c
++++ b/sound/soc/codecs/ts3a227e.c
+@@ -424,7 +424,7 @@ static const struct dev_pm_ops ts3a227e_
+ };
+ 
+ static const struct i2c_device_id ts3a227e_i2c_ids[] = {
+-	{ "ts3a227e" },
++	{ .name = "ts3a227e" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, ts3a227e_i2c_ids);
+--- a/sound/soc/codecs/tscs42xx.c
++++ b/sound/soc/codecs/tscs42xx.c
+@@ -1485,8 +1485,8 @@ static int tscs42xx_i2c_probe(struct i2c
+ }
+ 
+ static const struct i2c_device_id tscs42xx_i2c_id[] = {
+-	{ "tscs42A1" },
+-	{ "tscs42A2" },
++	{ .name = "tscs42A1" },
++	{ .name = "tscs42A2" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tscs42xx_i2c_id);
+--- a/sound/soc/codecs/tscs454.c
++++ b/sound/soc/codecs/tscs454.c
+@@ -3456,7 +3456,7 @@ static int tscs454_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id tscs454_i2c_id[] = {
+-	{ "tscs454" },
++	{ .name = "tscs454" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, tscs454_i2c_id);
+--- a/sound/soc/codecs/uda1342.c
++++ b/sound/soc/codecs/uda1342.c
+@@ -326,7 +326,7 @@ static DEFINE_RUNTIME_DEV_PM_OPS(uda1342
+ 				 uda1342_suspend, uda1342_resume, NULL);
+ 
+ static const struct i2c_device_id uda1342_i2c_id[] = {
+-	 { "uda1342" },
++	 { .name = "uda1342" },
+ 	 { }
+ };
+ MODULE_DEVICE_TABLE(i2c, uda1342_i2c_id);
+--- a/sound/soc/codecs/uda1380.c
++++ b/sound/soc/codecs/uda1380.c
+@@ -780,7 +780,7 @@ static int uda1380_i2c_probe(struct i2c_
+ }
+ 
+ static const struct i2c_device_id uda1380_i2c_id[] = {
+-	{ "uda1380" },
++	{ .name = "uda1380" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, uda1380_i2c_id);
+--- a/sound/soc/codecs/wm1250-ev1.c
++++ b/sound/soc/codecs/wm1250-ev1.c
+@@ -204,7 +204,7 @@ static int wm1250_ev1_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm1250_ev1_i2c_id[] = {
+-	{ "wm1250-ev1" },
++	{ .name = "wm1250-ev1" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm1250_ev1_i2c_id);
+--- a/sound/soc/codecs/wm2000.c
++++ b/sound/soc/codecs/wm2000.c
+@@ -929,7 +929,7 @@ out:
+ }
+ 
+ static const struct i2c_device_id wm2000_i2c_id[] = {
+-	{ "wm2000" },
++	{ .name = "wm2000" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm2000_i2c_id);
+--- a/sound/soc/codecs/wm2200.c
++++ b/sound/soc/codecs/wm2200.c
+@@ -2471,7 +2471,7 @@ static const struct dev_pm_ops wm2200_pm
+ };
+ 
+ static const struct i2c_device_id wm2200_i2c_id[] = {
+-	{ "wm2200" },
++	{ .name = "wm2200" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm2200_i2c_id);
+--- a/sound/soc/codecs/wm5100.c
++++ b/sound/soc/codecs/wm5100.c
+@@ -2669,7 +2669,7 @@ static const struct dev_pm_ops wm5100_pm
+ };
+ 
+ static const struct i2c_device_id wm5100_i2c_id[] = {
+-	{ "wm5100" },
++	{ .name = "wm5100" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm5100_i2c_id);
+--- a/sound/soc/codecs/wm8510.c
++++ b/sound/soc/codecs/wm8510.c
+@@ -668,7 +668,7 @@ static int wm8510_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8510_i2c_id[] = {
+-	{ "wm8510" },
++	{ .name = "wm8510" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8510_i2c_id);
+--- a/sound/soc/codecs/wm8523.c
++++ b/sound/soc/codecs/wm8523.c
+@@ -517,7 +517,7 @@ err_enable:
+ }
+ 
+ static const struct i2c_device_id wm8523_i2c_id[] = {
+-	{ "wm8523" },
++	{ .name = "wm8523" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8523_i2c_id);
+--- a/sound/soc/codecs/wm8580.c
++++ b/sound/soc/codecs/wm8580.c
+@@ -1032,8 +1032,8 @@ static const struct of_device_id wm8580_
+ MODULE_DEVICE_TABLE(of, wm8580_of_match);
+ 
+ static const struct i2c_device_id wm8580_i2c_id[] = {
+-	{ "wm8580", (kernel_ulong_t)&wm8580_data },
+-	{ "wm8581", (kernel_ulong_t)&wm8581_data },
++	{ .name = "wm8580", .driver_data = (kernel_ulong_t)&wm8580_data },
++	{ .name = "wm8581", .driver_data = (kernel_ulong_t)&wm8581_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8580_i2c_id);
+--- a/sound/soc/codecs/wm8711.c
++++ b/sound/soc/codecs/wm8711.c
+@@ -454,7 +454,7 @@ static int wm8711_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8711_i2c_id[] = {
+-	{ "wm8711" },
++	{ .name = "wm8711" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8711_i2c_id);
+--- a/sound/soc/codecs/wm8728.c
++++ b/sound/soc/codecs/wm8728.c
+@@ -295,7 +295,7 @@ static int wm8728_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8728_i2c_id[] = {
+-	{ "wm8728" },
++	{ .name = "wm8728" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8728_i2c_id);
+--- a/sound/soc/codecs/wm8731-i2c.c
++++ b/sound/soc/codecs/wm8731-i2c.c
+@@ -47,7 +47,7 @@ static int wm8731_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8731_i2c_id[] = {
+-	{ "wm8731" },
++	{ .name = "wm8731" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8731_i2c_id);
+--- a/sound/soc/codecs/wm8737.c
++++ b/sound/soc/codecs/wm8737.c
+@@ -639,7 +639,7 @@ static int wm8737_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8737_i2c_id[] = {
+-	{ "wm8737" },
++	{ .name = "wm8737" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8737_i2c_id);
+--- a/sound/soc/codecs/wm8741.c
++++ b/sound/soc/codecs/wm8741.c
+@@ -606,7 +606,7 @@ static int wm8741_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8741_i2c_id[] = {
+-	{ "wm8741" },
++	{ .name = "wm8741" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8741_i2c_id);
+--- a/sound/soc/codecs/wm8750.c
++++ b/sound/soc/codecs/wm8750.c
+@@ -802,8 +802,8 @@ static int wm8750_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8750_i2c_id[] = {
+-	{ "wm8750" },
+-	{ "wm8987" },
++	{ .name = "wm8750" },
++	{ .name = "wm8987" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8750_i2c_id);
+--- a/sound/soc/codecs/wm8753.c
++++ b/sound/soc/codecs/wm8753.c
+@@ -1580,7 +1580,7 @@ static int wm8753_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8753_i2c_id[] = {
+-	{ "wm8753" },
++	{ .name = "wm8753" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8753_i2c_id);
+--- a/sound/soc/codecs/wm8776.c
++++ b/sound/soc/codecs/wm8776.c
+@@ -512,8 +512,8 @@ static int wm8776_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8776_i2c_id[] = {
+-	{ "wm8775", WM8775 },
+-	{ "wm8776", WM8776 },
++	{ .name = "wm8775", .driver_data = WM8775 },
++	{ .name = "wm8776", .driver_data = WM8776 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8776_i2c_id);
+--- a/sound/soc/codecs/wm8804-i2c.c
++++ b/sound/soc/codecs/wm8804-i2c.c
+@@ -31,7 +31,7 @@ static void wm8804_i2c_remove(struct i2c
+ }
+ 
+ static const struct i2c_device_id wm8804_i2c_id[] = {
+-	{ "wm8804" },
++	{ .name = "wm8804" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8804_i2c_id);
+--- a/sound/soc/codecs/wm8900.c
++++ b/sound/soc/codecs/wm8900.c
+@@ -1286,7 +1286,7 @@ static void wm8900_i2c_remove(struct i2c
+ {}
+ 
+ static const struct i2c_device_id wm8900_i2c_id[] = {
+-	{ "wm8900" },
++	{ .name = "wm8900" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8900_i2c_id);
+--- a/sound/soc/codecs/wm8903.c
++++ b/sound/soc/codecs/wm8903.c
+@@ -2201,7 +2201,7 @@ static const struct of_device_id wm8903_
+ MODULE_DEVICE_TABLE(of, wm8903_of_match);
+ 
+ static const struct i2c_device_id wm8903_i2c_id[] = {
+-	{ "wm8903" },
++	{ .name = "wm8903" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8903_i2c_id);
+--- a/sound/soc/codecs/wm8904.c
++++ b/sound/soc/codecs/wm8904.c
+@@ -2620,9 +2620,9 @@ err_enable:
+ }
+ 
+ static const struct i2c_device_id wm8904_i2c_id[] = {
+-	{ "wm8904", WM8904 },
+-	{ "wm8912", WM8912 },
+-	{ "wm8918", WM8904 },   /* Actually a subset, updates to follow */
++	{ .name = "wm8904", .driver_data = WM8904 },
++	{ .name = "wm8912", .driver_data = WM8912 },
++	{ .name = "wm8918", .driver_data = WM8904 },   /* Actually a subset, updates to follow */
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8904_i2c_id);
+--- a/sound/soc/codecs/wm8940.c
++++ b/sound/soc/codecs/wm8940.c
+@@ -849,7 +849,7 @@ static int wm8940_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8940_i2c_id[] = {
+-	{ "wm8940" },
++	{ .name = "wm8940" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8940_i2c_id);
+--- a/sound/soc/codecs/wm8955.c
++++ b/sound/soc/codecs/wm8955.c
+@@ -994,7 +994,7 @@ static int wm8955_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8955_i2c_id[] = {
+-	{ "wm8955" },
++	{ .name = "wm8955" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8955_i2c_id);
+--- a/sound/soc/codecs/wm8960.c
++++ b/sound/soc/codecs/wm8960.c
+@@ -1549,7 +1549,7 @@ static void wm8960_i2c_remove(struct i2c
+ }
+ 
+ static const struct i2c_device_id wm8960_i2c_id[] = {
+-	{ "wm8960" },
++	{ .name = "wm8960" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8960_i2c_id);
+--- a/sound/soc/codecs/wm8961.c
++++ b/sound/soc/codecs/wm8961.c
+@@ -966,7 +966,7 @@ static int wm8961_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8961_i2c_id[] = {
+-	{ "wm8961" },
++	{ .name = "wm8961" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8961_i2c_id);
+--- a/sound/soc/codecs/wm8962.c
++++ b/sound/soc/codecs/wm8962.c
+@@ -3960,7 +3960,7 @@ static const struct dev_pm_ops wm8962_pm
+ };
+ 
+ static const struct i2c_device_id wm8962_i2c_id[] = {
+-	{ "wm8962" },
++	{ .name = "wm8962" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8962_i2c_id);
+--- a/sound/soc/codecs/wm8971.c
++++ b/sound/soc/codecs/wm8971.c
+@@ -691,7 +691,7 @@ static int wm8971_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8971_i2c_id[] = {
+-	{ "wm8971" },
++	{ .name = "wm8971" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8971_i2c_id);
+--- a/sound/soc/codecs/wm8974.c
++++ b/sound/soc/codecs/wm8974.c
+@@ -711,7 +711,7 @@ static int wm8974_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8974_i2c_id[] = {
+-	{ "wm8974" },
++	{ .name = "wm8974" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8974_i2c_id);
+--- a/sound/soc/codecs/wm8978.c
++++ b/sound/soc/codecs/wm8978.c
+@@ -1056,7 +1056,7 @@ static int wm8978_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8978_i2c_id[] = {
+-	{ "wm8978" },
++	{ .name = "wm8978" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8978_i2c_id);
+--- a/sound/soc/codecs/wm8983.c
++++ b/sound/soc/codecs/wm8983.c
+@@ -1059,7 +1059,7 @@ static int wm8983_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8983_i2c_id[] = {
+-	{ "wm8983" },
++	{ .name = "wm8983" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8983_i2c_id);
+--- a/sound/soc/codecs/wm8985.c
++++ b/sound/soc/codecs/wm8985.c
+@@ -1194,8 +1194,8 @@ static int wm8985_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8985_i2c_id[] = {
+-	{ "wm8985", WM8985 },
+-	{ "wm8758", WM8758 },
++	{ .name = "wm8985", .driver_data = WM8985 },
++	{ .name = "wm8758", .driver_data = WM8758 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8985_i2c_id);
+--- a/sound/soc/codecs/wm8988.c
++++ b/sound/soc/codecs/wm8988.c
+@@ -896,7 +896,7 @@ static int wm8988_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8988_i2c_id[] = {
+-	{ "wm8988" },
++	{ .name = "wm8988" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8988_i2c_id);
+--- a/sound/soc/codecs/wm8990.c
++++ b/sound/soc/codecs/wm8990.c
+@@ -1238,7 +1238,7 @@ static int wm8990_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8990_i2c_id[] = {
+-	{ "wm8990" },
++	{ .name = "wm8990" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8990_i2c_id);
+--- a/sound/soc/codecs/wm8991.c
++++ b/sound/soc/codecs/wm8991.c
+@@ -1314,7 +1314,7 @@ static int wm8991_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8991_i2c_id[] = {
+-	{ "wm8991" },
++	{ .name = "wm8991" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8991_i2c_id);
+--- a/sound/soc/codecs/wm8993.c
++++ b/sound/soc/codecs/wm8993.c
+@@ -1732,7 +1732,7 @@ static void wm8993_i2c_remove(struct i2c
+ }
+ 
+ static const struct i2c_device_id wm8993_i2c_id[] = {
+-	{ "wm8993" },
++	{ .name = "wm8993" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8993_i2c_id);
+--- a/sound/soc/codecs/wm8995.c
++++ b/sound/soc/codecs/wm8995.c
+@@ -2258,8 +2258,8 @@ static int wm8995_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm8995_i2c_id[] = {
+-	{"wm8995"},
+-	{}
++	{ .name = "wm8995" },
++	{ }
+ };
+ 
+ MODULE_DEVICE_TABLE(i2c, wm8995_i2c_id);
+--- a/sound/soc/codecs/wm8996.c
++++ b/sound/soc/codecs/wm8996.c
+@@ -3071,7 +3071,7 @@ static void wm8996_i2c_remove(struct i2c
+ }
+ 
+ static const struct i2c_device_id wm8996_i2c_id[] = {
+-	{ "wm8996" },
++	{ .name = "wm8996" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm8996_i2c_id);
+--- a/sound/soc/codecs/wm9081.c
++++ b/sound/soc/codecs/wm9081.c
+@@ -1360,7 +1360,7 @@ static void wm9081_i2c_remove(struct i2c
+ {}
+ 
+ static const struct i2c_device_id wm9081_i2c_id[] = {
+-	{ "wm9081" },
++	{ .name = "wm9081" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm9081_i2c_id);
+--- a/sound/soc/codecs/wm9090.c
++++ b/sound/soc/codecs/wm9090.c
+@@ -606,8 +606,8 @@ static int wm9090_i2c_probe(struct i2c_c
+ }
+ 
+ static const struct i2c_device_id wm9090_id[] = {
+-	{ "wm9090" },
+-	{ "wm9093" },
++	{ .name = "wm9090" },
++	{ .name = "wm9093" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, wm9090_id);

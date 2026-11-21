@@ -1,0 +1,45 @@
+From 9cef3b41865f86309ce6662fb75bb68dcf6f2882 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 10:43:07 +0000
+Subject: [PATCH] drm/vc4: Size the vc6 LBM for H-TPZ from the destination
+ width
+
+A 1 pixel source is scaled with TPZ, which cannot upscale and instead
+repeats the last pixel out to the destination size. H-TPZ runs before
+the vertical scaler, so the lines written to the LBM are crtc_w wide.
+
+vc4_lbm_channel_size() sized the LBM from min(src_w, crtc_w), so a 1x1
+source upscaled to a large rectangle got a single LBM line and overran
+into the LBM of whichever plane was allocated after it, corrupting
+both. The vc4/vc5 path already uses crtc_w for H-TPZ.
+
+Fixes: https://github.com/raspberrypi/linux/issues/7701
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -842,6 +842,7 @@ static unsigned int vc4_lbm_components(c
+ static unsigned int vc4_lbm_channel_size(const struct drm_plane_state *state,
+ 					 unsigned int channel)
+ {
++	const struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
+ 	const struct drm_format_info *info = state->fb->format;
+ 	unsigned int components, words, wpc;
+ 	unsigned int width, lines;
+@@ -849,9 +850,13 @@ static unsigned int vc4_lbm_channel_size
+ 	/* LBM is meant to use the smaller of source or dest width, but there
+ 	 * is a issue with UV scaling that the size required for the second
+ 	 * channel is based on the source width only.
++	 * H-TPZ runs before the vertical scaler and, when upscaling a 1 pixel
++	 * source, repeats that pixel out to crtc_w, so it needs crtc_w.
+ 	 */
+ 	if (info->hsub > 1 && channel == 1)
+ 		width = state->src_w >> 16;
++	else if (vc4_state->x_scaling[channel] == VC4_SCALING_TPZ)
++		width = state->crtc_w;
+ 	else
+ 		width = min(state->src_w >> 16, state->crtc_w);
+ 	width = round_up(width / info->hsub, 4);

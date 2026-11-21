@@ -1,0 +1,49 @@
+From 8fafbac7e4c87430e7ef104da511d9143311e204 Mon Sep 17 00:00:00 2001
+From: Nicolai Buchwitz <nb@tipi-net.de>
+Date: Sun, 18 Oct 2026 11:41:56 +0200
+Subject: [PATCH] net: macb: flush the IER write before re-checking the ring
+
+The IER write at the end of macb_tx_poll() is posted. The ring check
+right after it can run before TCOMP is unmasked, and a frame that
+completes in that window never raises an interrupt. With TSO this
+happens when TXUBR triggers a poll while the frame is still on the
+wire. The completed frame is never reaped and BQL keeps the queue
+stopped.
+
+Read IMR back after the write so the check runs with TCOMP unmasked.
+macb_rx_poll() has the same window.
+
+Fixes: 138badbc21a0 ("net: macb: use NAPI for TX completion path")
+Fixes: 0bf476fc3624 ("net: macb: Fix lost RX packet wakeup race in NAPI receive")
+Link: https://lore.kernel.org/netdev/20260514215459.36109-3-lukasz@raczylo.com/
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -1924,7 +1924,11 @@ static int macb_rx_poll(struct napi_stru
+ 		 * potentially race with the interrupt handler doing the same
+ 		 * actions if an interrupt is raised just after enabling them,
+ 		 * but this should be harmless.
++		 *
++		 * The IER write is posted. Flush it before checking the ring,
++		 * a completion in between would raise no interrupt.
+ 		 */
++		queue_readl(queue, IMR);
+ 		if (macb_rx_pending(queue)) {
+ 			queue_writel(queue, IDR, bp->rx_intr_mask);
+ 			if (bp->caps & MACB_CAPS_ISR_CLEAR_ON_WRITE)
+@@ -2019,7 +2023,11 @@ static int macb_tx_poll(struct napi_stru
+ 		 * potentially race with the interrupt handler doing the same
+ 		 * actions if an interrupt is raised just after enabling them,
+ 		 * but this should be harmless.
++		 *
++		 * The IER write is posted. Flush it before checking the ring,
++		 * a completion in between would raise no interrupt.
+ 		 */
++		queue_readl(queue, IMR);
+ 		if (macb_tx_complete_pending(queue)) {
+ 			queue_writel(queue, IDR, MACB_BIT(TCOMP));
+ 			if (bp->caps & MACB_CAPS_ISR_CLEAR_ON_WRITE)

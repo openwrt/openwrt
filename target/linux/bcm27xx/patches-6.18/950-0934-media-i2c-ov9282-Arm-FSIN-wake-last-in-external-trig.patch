@@ -1,0 +1,64 @@
+From 31a34885388835dce2460744d7961f2b9e7dc416 Mon Sep 17 00:00:00 2001
+From: Filip Dumitru <filip.stefan.dumitru@gmail.com>
+Date: Wed, 4 Nov 2026 14:56:31 -0500
+Subject: [PATCH] media: i2c: ov9282: Arm FSIN wake last in external trigger
+ setup
+
+ov9282_apply_trigger_config() sets the FSIN wake bit in
+LOW_POWER_MODE_CTRL (0x3030) before it writes NUM_FRAME_ON_TRIG, the
+sleep period and TIMING_23 (no auto wake). FSIN comes from an external
+source and is not gated while the driver is setting up, so an edge
+that arrives after the arm write but before the rest of the sequence
+wakes the sensor with those registers still at their power-on defaults.
+When that happens the sensor can be left free-running at its internal
+frame rate and ignore FSIN until the next stream start.
+
+Write the arm bit last, once everything the wake path depends on is
+already set. Nothing else changes.
+
+On a stereo pair of OV9281 modules on a Raspberry Pi 5 (6.18.34),
+triggered at 30 Hz, with an msleep(100) added just after the point
+where the stock driver arms so that edges always land inside the
+window:
+
+  arm bit   free-running starts
+  early     12/40
+  last       0/40
+
+Without the forced delay, neither ordering failed in 80 starts. The
+natural window (arm write to end of setup) is about 2 ms with the
+stock order.
+
+Link: https://github.com/raspberrypi/linux/issues/5349
+Fixes: 01732af7d1a3 ("media: i2c: ov9282: Add external FSIN trigger snapshot mode")
+Signed-off-by: Filip Dumitru <filip.stefan.dumitru@gmail.com>
+---
+ drivers/media/i2c/ov9282.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/media/i2c/ov9282.c
++++ b/drivers/media/i2c/ov9282.c
+@@ -985,11 +985,6 @@ static int ov9282_apply_trigger_config(s
+ 	if (ret)
+ 		return ret;
+ 
+-	/* External trigger snapshot */
+-	ret = ov9282_write_reg(ov9282, OV9282_REG_LOW_POWER_MODE_CTRL, 1, 0x04);
+-	if (ret)
+-		return ret;
+-
+ 	/* 1 frame per trigger */
+ 	ret = ov9282_write_reg(ov9282, OV9282_REG_NUM_FRAME_ON_TRIG, 1, 0x01);
+ 	if (ret)
+@@ -1008,6 +1003,11 @@ static int ov9282_apply_trigger_config(s
+ 	if (ret)
+ 		return ret;
+ 
++	/* External trigger snapshot */
++	ret = ov9282_write_reg(ov9282, OV9282_REG_LOW_POWER_MODE_CTRL, 1, 0x04);
++	if (ret)
++		return ret;
++
+ 	return 0;
+ }
+ 

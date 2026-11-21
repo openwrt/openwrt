@@ -1,0 +1,61 @@
+From 9bef51722028cc926146e142cbb8ec379961d202 Mon Sep 17 00:00:00 2001
+From: Awss Al-Mubarak <awss@awssalmubarak.com>
+Date: Sat, 17 Oct 2026 19:47:39 +0100
+Subject: [PATCH] fbcon: Restore the pseudo palette after drawing the
+ fullscreen logo
+
+fb_set_logo_from_file() allocates a palette for the fullscreen logo,
+copies the console colours into it and installs it as
+info->pseudo_palette for good. The driver's own palette is never put
+back and the new one is never freed, so it leaks once the framebuffer
+is unregistered, for example when simplefb is unbound. The copy also
+reads 32 entries from the driver's pseudo palette, which has 16 in
+simplefb.
+
+Allocate the palette in fb_show_logo_line(), install it only while
+the logo is drawn, then restore the driver's palette and free it, as
+the built-in logo path already does. The logo only uses entries from
+32 up, so the console colours no longer need copying.
+
+Fixes: 19e0758ee533 ("Fullscreen Splash Images")
+Signed-off-by: Awss Al-Mubarak <awss@awssalmubarak.com>
+---
+ drivers/video/fbdev/core/fb_logo.c | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
+
+--- a/drivers/video/fbdev/core/fb_logo.c
++++ b/drivers/video/fbdev/core/fb_logo.c
+@@ -459,13 +459,7 @@ static int fb_set_logo_from_file(struct
+ 		pr_err("Palette overflow. Entries clipped\n");
+ 
+ 	// Set logo palette
+-	palette = kzalloc(256 * 4, GFP_KERNEL);
+-	if (!palette)
+-		goto cleanup;
+ 	fb_set_logo_RGB_palette(info, &image_palette, palette, current_rows);
+-	if (info->pseudo_palette)
+-		memcpy(palette, info->pseudo_palette, 32 * sizeof(uint32_t));
+-	info->pseudo_palette = palette;
+ 
+ 	image->width = min_t(unsigned int, width, info->var.xres);
+ 	image->height = min_t(unsigned int, height, info->var.yres);
+@@ -503,9 +497,18 @@ static int fb_show_logo_line(struct fb_i
+ 		return 0;
+ 
+ 	if (fullscreen_logo_enabled) {
++		palette = kzalloc(256 * 4, GFP_KERNEL);
++		if (!palette)
++			return 0;
++
+ 		if (fb_set_logo_from_file(info, fullscreen_logo_path,
+-					  &image, palette))
++					  &image, palette)) {
++			kfree(palette);
+ 			return 0;
++		}
++
++		saved_pseudo_palette = info->pseudo_palette;
++		info->pseudo_palette = palette;
+ 	} else {
+ 		image.depth = 8;
+ 		image.data = logo->data;

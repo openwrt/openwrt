@@ -1,0 +1,49 @@
+From 8affea20e40196baa94158a2db1cbc5949529e29 Mon Sep 17 00:00:00 2001
+From: Hans Verkuil <hverkuil+cisco@kernel.org>
+Date: Tue, 6 Oct 2026 13:28:25 +0200
+Subject: [PATCH] misc: rp1-pio: buf_size was overwritten, which was confusing
+
+In rp1_pio_sm_config_xfer_internal() the buf_size argument was
+overwritten when calculating the aligned buffer sizes. Use a
+new variable for that rather than changing the argument.
+
+That was rather confusing.
+
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/misc/rp1-pio.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/misc/rp1-pio.c
++++ b/drivers/misc/rp1-pio.c
+@@ -1134,12 +1134,12 @@ static int rp1_pio_sm_config_xfer_intern
+ 		dma->buf_size = buf_size * buf_count;
+ 		dma->buf_count = 0;
+ 		/* Round up the allocations */
+-		buf_size = ROUND_UP(dma->buf_size, PAGE_SIZE);
++		uint size = ROUND_UP(dma->buf_size, PAGE_SIZE);
+ 
+ 		/* Alloc and map bounce buffer */
+ 		struct dma_buf_info *dbi = &dma->bufs[0];
+ 
+-		dbi->buf = dma_alloc_coherent(dma->chan->device->dev, buf_size,
++		dbi->buf = dma_alloc_coherent(dma->chan->device->dev, size,
+ 					      &dbi->dma_addr, GFP_KERNEL);
+ 		if (!dbi->buf) {
+ 			ret = -ENOMEM;
+@@ -1152,13 +1152,13 @@ static int rp1_pio_sm_config_xfer_intern
+ 	} else {
+ 		dma->buf_size = buf_size;
+ 		/* Round up the allocations */
+-		buf_size = ROUND_UP(buf_size, PAGE_SIZE);
++		uint size = ROUND_UP(buf_size, PAGE_SIZE);
+ 
+ 		/* Alloc and map bounce buffers */
+ 		for (dma->buf_count = 0; dma->buf_count < buf_count; dma->buf_count++) {
+ 			struct dma_buf_info *dbi = &dma->bufs[dma->buf_count];
+ 
+-			dbi->buf = dma_alloc_coherent(dma->chan->device->dev, buf_size,
++			dbi->buf = dma_alloc_coherent(dma->chan->device->dev, size,
+ 						      &dbi->dma_addr, GFP_KERNEL);
+ 			if (!dbi->buf) {
+ 				ret = -ENOMEM;

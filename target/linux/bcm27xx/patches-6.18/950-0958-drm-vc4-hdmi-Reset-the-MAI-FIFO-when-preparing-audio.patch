@@ -1,0 +1,42 @@
+From 62a56e350fcfd1c5e204c62dac4ea4ee205eb24e Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 11 Nov 2026 20:06:33 +0000
+Subject: [PATCH] drm/vc4: hdmi: Reset the MAI FIFO when preparing audio
+
+The MAI FIFO is only reset, and its DLATE/error flags cleared, in
+vc4_hdmi_audio_startup, which runs when the PCM is opened. Recovery
+from an xrun (and a stop/prepare/start by e.g. PipeWire) only calls
+prepare, so the FIFO is restarted without being reset.
+
+After an underrun this leaves DLATE set and the multichannel audio
+shifted by half a frame: on an 8 channel stream FL/FR carry RL/RR and
+so on, until the device is closed and reopened.
+
+Reset and flush the FIFO and clear the status flags in prepare too.
+
+Checked with an HDMI analyser, 8 channels at 48kHz and 192kHz, with
+forced underruns: without this every run is rotated by 4 channels,
+with it the channel order is correct.
+
+Link: https://github.com/raspberrypi/linux/issues/7750
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -2070,6 +2070,13 @@ static int vc4_hdmi_audio_prepare(struct
+ 	vc4_hdmi_audio_set_mai_clock(vc4_hdmi, sample_rate);
+ 
+ 	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
++	/* Also reached on xrun recovery, where startup is not called */
++	HDMI_WRITE(HDMI_MAI_CTL,
++		   VC4_HD_MAI_CTL_RESET |
++		   VC4_HD_MAI_CTL_FLUSH |
++		   VC4_HD_MAI_CTL_DLATE |
++		   VC4_HD_MAI_CTL_ERRORE |
++		   VC4_HD_MAI_CTL_ERRORF);
+ 	HDMI_WRITE(HDMI_MAI_CTL,
+ 		   VC4_SET_FIELD(channels, VC4_HD_MAI_CTL_CHNUM) |
+ 		   VC4_HD_MAI_CTL_WHOLSMP |

@@ -1,0 +1,64 @@
+From 72538df94f7c0aebdd79edc397aff9d61987631e Mon Sep 17 00:00:00 2001
+From: Arthur Guilliman <auroraxq@protonmail.com>
+Date: Tue, 29 Sep 2026 10:49:14 +0800
+Subject: [PATCH] overlays: i2c-rtc: Add quartz-load-femtofarads
+
+Expose the existing DT property on pcf85063/pcf85063a so 12.5 pF
+crystals can be selected from config.txt.
+
+Signed-off-by: Arthur Guilliman <auroraxq@protonmail.com>
+---
+ arch/arm/boot/dts/overlays/README              | 6 ++++++
+ arch/arm/boot/dts/overlays/i2c-rtc-common.dtsi | 6 ++++--
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -2492,6 +2492,9 @@ Params: abx80x                  Select o
+                                 and Vdd < Vddsw and Vbackup > Vddsw)
+                                 (RV3028, RV3032)
+ 
++        quartz-load-femtofarads  Quartz load capacitance in femtofarads,
++                                7000 or 12500 (PCF85063, PCF85063A)
++
+ 
+ Name:   i2c-rtc-gpio
+ Info:   Adds support for a number of I2C Real Time Clock devices
+@@ -2574,6 +2577,9 @@ Params: abx80x                  Select o
+                                 and Vdd < Vddsw and Vbackup > Vddsw)
+                                 (RV3028, RV3032)
+ 
++        quartz-load-femtofarads  Quartz load capacitance in femtofarads,
++                                7000 or 12500 (PCF85063, PCF85063A)
++
+         i2c_gpio_sda            GPIO used for I2C data (default "23")
+ 
+         i2c_gpio_scl            GPIO used for I2C clock (default "24")
+--- a/arch/arm/boot/dts/overlays/i2c-rtc-common.dtsi
++++ b/arch/arm/boot/dts/overlays/i2c-rtc-common.dtsi
+@@ -209,7 +209,7 @@
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 
+-			pcf85063@51 {
++			pcf85063: pcf85063@51 {
+ 				compatible = "nxp,pcf85063";
+ 				reg = <0x51>;
+ 			};
+@@ -222,7 +222,7 @@
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 
+-			pcf85063a@51 {
++			pcf85063a: pcf85063a@51 {
+ 				compatible = "nxp,pcf85063a";
+ 				reg = <0x51>;
+ 			};
+@@ -378,5 +378,7 @@
+ 				<&m41t62>,"wakeup-source?",
+ 				<&m41t80>,"wakeup-source?",
+ 				<&pcf8563>,"wakeup-source?";
++		quartz-load-femtofarads = <&pcf85063>,"quartz-load-femtofarads:0",
++					  <&pcf85063a>,"quartz-load-femtofarads:0";
+ 	};
+ };

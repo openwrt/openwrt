@@ -1,0 +1,82 @@
+From a273c8de3882c0220a0c2d85cd3f360a6dde7da0 Mon Sep 17 00:00:00 2001
+From: Hugo Karlsson <huggek@klattorp.se>
+Date: Sun, 8 Nov 2026 16:42:39 +0100
+Subject: [PATCH] power: supply: max17040: derive status from an online
+ supplier
+
+commit e41d85503762f5526c640de07ad8631906eae68d upstream.
+
+The MAX1704x gauges cannot tell whether the cell is charging, so
+POWER_SUPPLY_PROP_STATUS is taken from a supplier. A supplier that only
+reports input power, such as a gpio-charger without a charge-status
+GPIO, has no STATUS property, and the battery then reports
+POWER_SUPPLY_STATUS_UNKNOWN even though the core knows whether it is
+being supplied.
+
+This is the case on the Geekworm X1202/X1206 UPS boards for the
+Raspberry Pi 5, which pair a MAX1704x gauge with a GPIO that signals input
+power.
+
+When no supplier reports a status, fall back to
+power_supply_am_i_supplied(): report Discharging when no supplier is
+online, Full when one is online and the gauge reads 100 %, and Charging
+otherwise. Keep Unknown when the battery has no supplier at all.
+
+Also notify userspace when a supplier changes, so the status follows
+the charger being plugged in or removed without waiting for the next
+SOC change.
+
+Assisted-by: Claude:claude-opus-5-5 [Claude Code]
+Signed-off-by: Hugo Karlsson <huggek@klattorp.se>
+Link: https://patch.msgid.link/20261108154241.198160-3-huggek@klattorp.se
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+---
+ drivers/power/supply/max17040_battery.c | 23 ++++++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
+
+--- a/drivers/power/supply/max17040_battery.c
++++ b/drivers/power/supply/max17040_battery.c
+@@ -228,6 +228,26 @@ static int max17040_get_online(struct ma
+ 	return 1;
+ }
+ 
++/*
++ * Used when no supplier reports a status, e.g. a gpio-charger that only
++ * signals input power: derive the status from whether a supplier is online.
++ */
++static int max17040_get_supplied_status(struct power_supply *psy,
++					struct max17040_chip *chip)
++{
++	int ret;
++
++	ret = power_supply_am_i_supplied(psy);
++	if (ret < 0)
++		return POWER_SUPPLY_STATUS_UNKNOWN;
++	if (!ret)
++		return POWER_SUPPLY_STATUS_DISCHARGING;
++	if (max17040_get_soc(chip) >= 100)
++		return POWER_SUPPLY_STATUS_FULL;
++
++	return POWER_SUPPLY_STATUS_CHARGING;
++}
++
+ static int max17040_get_of_data(struct max17040_chip *chip)
+ {
+ 	struct device *dev = &chip->client->dev;
+@@ -423,7 +443,7 @@ static int max17040_get_property(struct
+ 	case POWER_SUPPLY_PROP_STATUS:
+ 		ret = power_supply_get_property_from_supplier(psy, psp, val);
+ 		if (ret == -ENODEV)
+-			val->intval = POWER_SUPPLY_STATUS_UNKNOWN;
++			val->intval = max17040_get_supplied_status(psy, chip);
+ 		else if (ret)
+ 			return ret;
+ 		break;
+@@ -467,6 +487,7 @@ static const struct power_supply_desc ma
+ 	.get_property		= max17040_get_property,
+ 	.set_property		= max17040_set_property,
+ 	.property_is_writeable  = max17040_prop_writeable,
++	.external_power_changed	= power_supply_changed,
+ 	.properties		= max17040_battery_props,
+ 	.num_properties		= ARRAY_SIZE(max17040_battery_props),
+ };

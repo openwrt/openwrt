@@ -1,0 +1,49 @@
+From 07b2ae412969662a1ddfdfe9ee5247dedee166a6 Mon Sep 17 00:00:00 2001
+From: Hans Verkuil <hverkuil+cisco@kernel.org>
+Date: Mon, 5 Oct 2026 13:44:20 +0200
+Subject: [PATCH] misc: rp1-pio: guard against unreasonable buffer allocations
+
+Refuse total buffer sizes of > 512 MB. This also guards against
+overflows if userspace passes values like ~0.
+
+Also allow buf_count values > 4 for cyclic DMA: the limit of 4 is
+specific to non-cyclic DMA.
+
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/misc/rp1-pio.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+--- a/drivers/misc/rp1-pio.c
++++ b/drivers/misc/rp1-pio.c
+@@ -79,6 +79,13 @@
+ #define DMA_BOUNCE_BUFFER_SIZE 0x1000
+ #define DMA_BOUNCE_BUFFER_COUNT 4
+ 
++/*
++ * Upper bound on the buffer memory a transfer may ask the driver to
++ * allocate, i.e. on buf_size * buf_count, for cyclic and non-cyclic
++ * transfers alike. Larger requests are rejected with -EINVAL.
++ */
++#define RP1_PIO_MAX_TOTAL_BUF_SIZE (512 * 1024 * 1024)
++
+ struct dma_xfer_state {
+ 	struct dma_info *dma;
+ 	void (*callback)(void *param);
+@@ -1052,7 +1059,15 @@ static int rp1_pio_sm_config_xfer_intern
+ 		return -EINVAL;
+ 	if ((buf_count || buf_size) &&
+ 	    (!buf_size || (buf_size & 3) ||
+-	     !buf_count || buf_count > DMA_BOUNCE_BUFFER_COUNT))
++	     !buf_count || (!cyclic && buf_count > DMA_BOUNCE_BUFFER_COUNT)))
++		return -EINVAL;
++
++	/*
++	 * Sanity check for insane amounts of buffer data.
++	 * This also guards against potential overflow issues if either
++	 * buf_size or buf_count are e.g. ~0.
++	 */
++	if (buf_count && buf_size > RP1_PIO_MAX_TOTAL_BUF_SIZE / buf_count)
+ 		return -EINVAL;
+ 	/* Cyclic DMA is currently only supported for FROM_SM */
+ 	if (cyclic && dir == RP1_PIO_DIR_TO_SM)

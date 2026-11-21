@@ -1,0 +1,26 @@
+From 4e5bc4af71b8414c19f5b9b2e1580699b5dde9a1 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Fri, 23 Oct 2026 11:18:18 +0100
+Subject: [PATCH] pinctrl: bcm2835: Allow interrupts on GPIOs 54-57
+
+The driver already allows BCM2711's GPIOs 54-57 to be controlled, but an
+interrupt for one of these will not be handled, likely causing an
+interrupt storm. Extend the mask for bank 2 to include these higher
+GPIOs.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/pinctrl/bcm/pinctrl-bcm2835.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
++++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
+@@ -485,7 +485,7 @@ static void bcm2835_gpio_irq_handler(str
+ 		bcm2835_gpio_irq_handle_bank(pc, 1, 0x00003fff);
+ 		break;
+ 	case 2: /* IRQ2 covers GPIOs 46-57 */
+-		bcm2835_gpio_irq_handle_bank(pc, 1, 0x003fc000);
++		bcm2835_gpio_irq_handle_bank(pc, 1, 0x03ffc000);
+ 		break;
+ 	}
+ 

@@ -1,0 +1,75 @@
+From b0b7d2006113562307ade2f6a075b03f3a781346 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Thu, 22 Oct 2026 09:44:00 +0000
+Subject: [PATCH] drm/vc4: Keep the source offset for an async page flip
+
+vc4_plane_async_set_fb() pointed the plane at the start of the new
+framebuffer, adjusted only for a Y reflection, so the plane's source
+crop was dropped: a primary plane scanning out from (64,48) of its
+framebuffer showed the new one from (0,0) after a legacy async page
+flip.
+
+Record the offset the mode_set functions computed for the source
+position, reflection and tiling, and apply it to the new framebuffer.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_drv.h   |  2 ++
+ drivers/gpu/drm/vc4/vc4_plane.c | 16 +++++-----------
+ 2 files changed, 7 insertions(+), 11 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -442,6 +442,8 @@ struct vc4_plane_state {
+ 	u32 pos0_offset;
+ 	u32 pos2_offset;
+ 	u32 ptr0_offset[DRM_FORMAT_MAX_PLANES];
++	/* Offset of the first pixel scanned out from the start of the fb */
++	u32 ptr0_src_offset;
+ 	u32 lbm_offset;
+ 
+ 	/* Offset where the plane's dlist was last stored in the
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -1841,6 +1841,7 @@ static int vc4_plane_mode_set(struct drm
+ 	 * The pointers may be any byte address.
+ 	 */
+ 	vc4_state->ptr0_offset[0] = vc4_state->dlist_count;
++	vc4_state->ptr0_src_offset = offsets[0];
+ 
+ 	for (i = 0; i < num_planes; i++) {
+ 		struct drm_gem_dma_object *bo = drm_fb_dma_get_gem_obj(fb, i);
+@@ -2307,6 +2308,8 @@ static int vc6_plane_mode_set(struct drm
+ 
+ 		/* Pointer Word 0 */
+ 		vc4_state->ptr0_offset[i] = vc4_state->dlist_count;
++		if (!i)
++			vc4_state->ptr0_src_offset = offsets[idx];
+ 		vc4_dlist_write(vc4_state,
+ 				(rotation & DRM_MODE_REFLECT_Y ? SCALER6_PTR0_VFLIP : 0) |
+ 				/*
+@@ -2540,22 +2543,13 @@ void vc4_plane_async_set_fb(struct drm_p
+ 	struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
+ 	struct drm_gem_dma_object *bo = drm_fb_dma_get_gem_obj(fb, 0);
+ 	struct vc4_dev *vc4 = to_vc4_dev(plane->dev);
+-	dma_addr_t dma_addr = bo->dma_addr + fb->offsets[0];
+-	unsigned int rotation;
++	dma_addr_t dma_addr = bo->dma_addr + fb->offsets[0] +
++			      vc4_state->ptr0_src_offset;
+ 	int idx;
+ 
+ 	if (!drm_dev_enter(plane->dev, &idx))
+ 		return;
+ 
+-	rotation = drm_rotation_simplify(state->rotation,
+-					 DRM_MODE_ROTATE_0 |
+-					 DRM_MODE_REFLECT_X |
+-					 DRM_MODE_REFLECT_Y);
+-
+-	/* We must point to the last line when Y reflection is enabled. */
+-	if (rotation & DRM_MODE_REFLECT_Y)
+-		dma_addr += fb->pitches[0] * ((vc4_state->src_h[0] >> 16) - 1);
+-
+ 	/* We're skipping the address adjustment for negative origin,
+ 	 * because this is only called on the primary plane.
+ 	 */

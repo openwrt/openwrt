@@ -110,29 +110,32 @@ define Device/rpi-2
   DEVICE_ALT0_MODEL := 3A+/3B/3B+/CM3/Zero2/Zero2W/CM0
   DEVICE_ALT0_VARIANT := (32bit)
   DEVICE_ALT1_VENDOR := Raspberry Pi
-  DEVICE_ALT1_MODEL := 4B/400/CM4/CM4S
+  DEVICE_ALT1_MODEL := 4A/4B/400/CM4/CM4S/Zero3W
   DEVICE_ALT1_VARIANT := (32bit)
   DEVICE_DTS := \
 	broadcom/bcm2709-rpi-2-b broadcom/bcm2710-rpi-2-b \
 	broadcom/bcm2710-rpi-3-b broadcom/bcm2710-rpi-3-b-plus \
-	broadcom/bcm2710-rpi-cm3 broadcom/bcm2711-rpi-4-b \
-	broadcom/bcm2711-rpi-400 broadcom/bcm2711-rpi-cm4-io \
-	broadcom/bcm2711-rpi-cm4 broadcom/bcm2711-rpi-cm4s \
+	broadcom/bcm2710-rpi-cm3 broadcom/bcm2711-rpi-4-a \
+	broadcom/bcm2711-rpi-4-b broadcom/bcm2711-rpi-400 \
+	broadcom/bcm2711-rpi-cm4-io broadcom/bcm2711-rpi-cm4 \
+	broadcom/bcm2711-rpi-cm4s broadcom/bcm2711-rpi-zero-3-w \
 	broadcom/bcm2710-rpi-zero-2 broadcom/bcm2710-rpi-zero-2-w \
 	broadcom/bcm2710-rpi-cm0
   SUPPORTED_DEVICES := \
 	rpi-2-b \
 	rpi-3-a-plus \
 	rpi-3-b rpi-3-b-plus \
-	rpi-4-b rpi-400 \
+	rpi-4-a rpi-4-b rpi-400 \
 	rpi-cm rpi-cm3 \
-	rpi-zero-2 rpi-zero-2-w rpi-cm0 \
+	rpi-zero-2 rpi-zero-2-w rpi-zero-3-w rpi-cm0 \
 	raspberrypi,2-model-b raspberrypi,2-model-b-rev2 \
 	raspberrypi,3-model-a-plus raspberrypi,3-model-b \
 	raspberrypi,3-model-b-plus raspberrypi,3-compute-module \
 	raspberrypi,compute-module-3 raspberrypi,400 \
-	raspberrypi,4-compute-module raspberrypi,4-compute-module-s raspberrypi,4-model-b \
-	raspberrypi,model-zero-2 raspberrypi,model-zero-2-w raspberrypi,0-compute-module
+	raspberrypi,4-compute-module raspberrypi,4-compute-module-s \
+	raspberrypi,4-model-a raspberrypi,4-model-b \
+	raspberrypi,model-zero-2 raspberrypi,model-zero-2-w \
+	raspberrypi,model-zero-3-w raspberrypi,0-compute-module
   DEVICE_PACKAGES := \
 	$(WIFI_43430_FW) \
 	$(WIFI_43455_FW) \
@@ -175,20 +178,24 @@ ifeq ($(SUBTARGET),bcm2710)
 endif
 
 define Device/rpi-4
-  DEVICE_MODEL := 4B/400/CM4/CM4S
+  DEVICE_MODEL := 4A/4B/400/CM4/CM4S/Zero3W
   DEVICE_VARIANT := (64bit)
   KERNEL_IMG := kernel8.img
   DEVICE_DTS := \
+	broadcom/bcm2711-rpi-4-a \
 	broadcom/bcm2711-rpi-4-b \
 	broadcom/bcm2711-rpi-400 \
 	broadcom/bcm2711-rpi-cm4-io \
 	broadcom/bcm2711-rpi-cm4 \
-	broadcom/bcm2711-rpi-cm4s
+	broadcom/bcm2711-rpi-cm4s \
+	broadcom/bcm2711-rpi-zero-3-w
   SUPPORTED_DEVICES := \
 	raspberrypi,400 \
 	raspberrypi,4-compute-module \
 	raspberrypi,4-compute-module-s \
-	raspberrypi,4-model-b
+	raspberrypi,4-model-a \
+	raspberrypi,4-model-b \
+	raspberrypi,model-zero-3-w
   DEVICE_PACKAGES := \
 	$(WIFI_43455_FW) \
 	$(BRCM_WIFI_DRIVER) \

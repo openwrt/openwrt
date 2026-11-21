@@ -1,0 +1,30 @@
+From 8cc8cd1dab2318d89c164e6961eefdd734f41126 Mon Sep 17 00:00:00 2001
+From: JLab13 <jlab13@icloud.com>
+Date: Fri, 30 Oct 2026 17:03:19 +0200
+Subject: [PATCH] spi: rp2040-gpio-bridge: Use of_property_present() for i2c
+ lock flag
+
+The overlays set fast_xfer_requires_i2c_lock = <1>, so now that probe
+gets that far, reading it with of_property_read_bool() warns:
+
+  OF: /axi/pcie@1000120000/rp1/i2c@88000/spi@40: Read of boolean property 'fast_xfer_requires_i2c_lock' with a value.
+
+Only its presence matters, so use of_property_present().
+
+Signed-off-by: JLab13 <jlab13@icloud.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/spi/spi-rp2040-gpio-bridge.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/spi/spi-rp2040-gpio-bridge.c
++++ b/drivers/spi/spi-rp2040-gpio-bridge.c
+@@ -1035,7 +1035,7 @@ static void rp2040_gbdg_parse_dt(struct
+ 
+ 	rp2040_gbdg->fast_xfer_data_index = of_args[0].args[0];
+ 	rp2040_gbdg->fast_xfer_clock_index = of_args[1].args[0];
+-	rp2040_gbdg->fast_xfer_requires_i2c_lock = of_property_read_bool(
++	rp2040_gbdg->fast_xfer_requires_i2c_lock = of_property_present(
+ 		client->dev.of_node, "fast_xfer_requires_i2c_lock");
+ 
+ 	rp2040_gbdg->gpio_base = of_iomap(dn, 0);

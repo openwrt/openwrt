@@ -1,0 +1,36 @@
+From 58741ff6db79f59c42ffd6e2210de0b278102487 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Wed, 16 Sep 2026 16:52:45 +0100
+Subject: [PATCH] media: sony-starvis2: Allow the use of on sensor digital gain
+
+Whilst normally digital gain would be applied in the ISP, there
+are some situations where it is an advantage to allow the use of
+the on-sensor digital gain too. Allow it.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/media/i2c/sony-starvis2.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/media/i2c/sony-starvis2.c
++++ b/drivers/media/i2c/sony-starvis2.c
+@@ -82,15 +82,15 @@ MODULE_PARM_DESC(hcg_mode, "Enable HCG m
+ #define STARVIS2_EXPOSURE_DEFAULT         1000
+ 
+ /*
+- * Analogue gain control
+- * Range is from 0 to 100 (0dB - 30dB) with 0.3dB step size
++ * Gain control
++ * Range is from 0 to 100 (0dB - 30dB) analogue gain with 0.3dB step size
+  * Values from 101 to 240 are valid but correspond to additional digital gain
+- * (0.3dB - 42dB) so don't expose it to userspace
++ * (0.3dB - 42dB).
+  */
+ #define STARVIS2_REG_GAIN			CCI_REG16_LE(0x3070)
+ #define STARVIS2_ANA_GAIN_MIN_NORMAL      0
+ #define STARVIS2_ANA_GAIN_MIN_HCG         34
+-#define STARVIS2_ANA_GAIN_MAX_NORMAL      100
++#define STARVIS2_ANA_GAIN_MAX_NORMAL      240
+ #define STARVIS2_ANA_GAIN_STEP            1
+ #define STARVIS2_ANA_GAIN_DEFAULT         0
+ 

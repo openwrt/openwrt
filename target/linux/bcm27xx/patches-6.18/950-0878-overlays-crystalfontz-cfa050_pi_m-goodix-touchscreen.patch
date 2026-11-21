@@ -1,0 +1,24 @@
+From 55ceac59490f0b662696837e128962fb56e2017c Mon Sep 17 00:00:00 2001
+From: Mark W <213702+MWP@users.noreply.github.com>
+Date: Wed, 30 Sep 2026 18:28:12 +0930
+Subject: [PATCH] overlays: crystalfontz-cfa050_pi_m goodix touchscreen fix
+
+Correcting a fault in the overlay which only became apparent with the update of goodix.c (commit 7363096).
+The problem was masked before the update by the driver releasing the reset line to input after reset and the PCF8574's high output then let the GT928 run.
+
+Signed-off-by: Mark Williams <mark@crystalfontz.com>
+---
+ arch/arm/boot/dts/overlays/crystalfontz-cfa050_pi_m-overlay.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/crystalfontz-cfa050_pi_m-overlay.dts
++++ b/arch/arm/boot/dts/overlays/crystalfontz-cfa050_pi_m-overlay.dts
+@@ -114,7 +114,7 @@
+ 				interrupt-parent = <&gpio>;
+ 				interrupts = <26 2>; //gpio 26, 2=high-to-low trigger
+ 				irq-gpios = <&gpio 26 0>; //gpio 26, 0=active-high
+-				reset-gpios = <&pcf8574a 1 1>;
++				reset-gpios = <&pcf8574a 1 0>;
+ 				touchscreen-inverted-x;
+ 				touchscreen-inverted-y;
+ 			};

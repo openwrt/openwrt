@@ -1,0 +1,30 @@
+From e752d5801648651cd65abb727ecc63e9080cbea2 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Fri, 23 Oct 2026 09:19:22 +0000
+Subject: [PATCH] fbcon: Show fullscreen logo even when quiet
+
+fbcon_init() suppresses the logo when console_loglevel is at or below
+CONSOLE_LOGLEVEL_QUIET, so "quiet" (or loglevel<=4) on the command line
+stops the fullscreen splash appearing at all. A user who has asked for
+fullscreen_logo=1 has explicitly requested a splash, so don't let quiet
+override it.
+
+Suggested-by: flyeriNsomniac
+Link: https://github.com/raspberrypi/linux/issues/7081
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/video/fbdev/core/fbcon.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/video/fbdev/core/fbcon.c
++++ b/drivers/video/fbdev/core/fbcon.c
+@@ -1055,7 +1055,8 @@ static void fbcon_init(struct vc_data *v
+ 
+ 	info = fbcon_info_from_console(vc->vc_num);
+ 
+-	if (logo_shown < 0 && console_loglevel <= CONSOLE_LOGLEVEL_QUIET)
++	if (logo_shown < 0 && console_loglevel <= CONSOLE_LOGLEVEL_QUIET &&
++	    !fullscreen_logo_enabled)
+ 		logo_shown = FBCON_LOGO_DONTSHOW;
+ 
+ 	if (vc != svc || logo_shown == FBCON_LOGO_DONTSHOW ||

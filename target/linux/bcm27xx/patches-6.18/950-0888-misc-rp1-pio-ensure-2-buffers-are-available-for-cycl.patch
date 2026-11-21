@@ -1,0 +1,36 @@
+From 25cce5411ad214dd43992fb2a8a18a20b05ffd8e Mon Sep 17 00:00:00 2001
+From: Hans Verkuil <hverkuil+cisco@kernel.org>
+Date: Tue, 29 Sep 2026 10:58:02 +0200
+Subject: [PATCH] misc: rp1-pio: ensure >= 2 buffers are available for cyclic
+ DMA
+
+In the case of cyclic DMA it was possible to accept < 2
+buffers or a zero buffer size. Check this and return -EINVAL
+in that case.
+
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+Assisted-by: Claude-Code:claude-opus-5
+---
+ drivers/misc/rp1-pio.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+--- a/drivers/misc/rp1-pio.c
++++ b/drivers/misc/rp1-pio.c
+@@ -1069,9 +1069,14 @@ static int rp1_pio_sm_config_xfer_intern
+ 	 */
+ 	if (buf_count && buf_size > RP1_PIO_MAX_TOTAL_BUF_SIZE / buf_count)
+ 		return -EINVAL;
+-	/* Cyclic DMA is currently only supported for FROM_SM */
+-	if (cyclic && dir == RP1_PIO_DIR_TO_SM)
+-		return -EINVAL;
++	if (cyclic) {
++		/*
++		 * Cyclic DMA is currently not supported for TO_SM, and
++		 * needs at least two real buffers to cycle through.
++		 */
++		if (tx || !buf_size || buf_count < 2)
++			return -EINVAL;
++	}
+ 
+ 	dma_mask = 1 << (sm * 2 + dir);
+ 

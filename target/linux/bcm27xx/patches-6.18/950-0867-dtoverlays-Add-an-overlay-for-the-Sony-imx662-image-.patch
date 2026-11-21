@@ -1,0 +1,69 @@
+From 76cb11855c7b524e890e67a243f89c581cae1e09 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Mon, 21 Sep 2026 12:16:28 +0100
+Subject: [PATCH] dtoverlays: Add an overlay for the Sony imx662 image sensor
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ arch/arm/boot/dts/overlays/Makefile           |  1 +
+ arch/arm/boot/dts/overlays/README             | 33 +++++++++++++++++++
+ arch/arm/boot/dts/overlays/imx662-overlay.dts |  1 +
+ 3 files changed, 35 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/imx662-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -157,6 +157,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
+ 	imx500.dtbo \
+ 	imx500-pi5.dtbo \
+ 	imx519.dtbo \
++	imx662.dtbo \
+ 	imx708.dtbo \
+ 	interludeaudio-analog.dtbo \
+ 	interludeaudio-digital.dtbo \
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -3278,6 +3278,39 @@ Params: rotation                Mounting
+                                 but vcm=off will disable.
+ 
+ 
++Name:   imx662
++Info:   Sony imx662 camera module.
++        Uses Unicam 1, which is the standard camera connector on most Pi
++        variants.
++Load:   dtoverlay=imx662,<param>
++Params: 4lane                   Enable 4 CSI2 data lanes (default is for 2 lane
++                                operation), which requires a Pi5 or CM.
++        clock-frequency         Sets the clock frequency to match that used on
++                                the board.
++                                Valid values are 24, 27, 37.125, 72, or
++                                74.25MHz.
++                                The default is 24MHz.
++        link-frequency          Confgures the link frequency to be used. Note
++                                that the permitted values vary based on
++                                clock-frequency and number of lanes.
++                                The default is 445.5MHz for 891Mbit/s.
++        all-link-frequencies    Define all permitted link frequencies to allow
++                                for user selection of the preferred rate.
++                                Does NOT include 1188Mbit/s as that is not
++                                reliable.
++        orientation             Sensor orientation (0 = front, 1 = rear,
++                                2 = external, default external)
++        rotation                Mounting rotation of the camera sensor (0 or
++                                180, default 0)
++        media-controller        Configure use of Media Controller API for
++                                configuring the sensor (default on)
++        cam0                    Adopt the default configuration for CAM0 on a
++                                Compute Module (CSI0, i2c_vc, and cam0_reg).
++        vcm                     Enable ad5398 VCM associated with the sensor.
++        compatible              Allows overriding of the compatible if automatic
++                                detection at probe is undesirable.
++
++
+ Name:   imx708
+ Info:   Sony IMX708 camera module.
+         Uses Unicam 1, which is the standard camera connector on most Pi
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/imx662-overlay.dts
+@@ -0,0 +1 @@
++#include "starvis2-overlay.dts"

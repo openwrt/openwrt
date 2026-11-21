@@ -1,0 +1,228 @@
+From 6e1ba052d8a8e8b6c117108fb5bdcadf0209209c Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 28 Sep 2026 10:18:16 +0100
+Subject: [PATCH] misc: rp1-pio: Handle signals correctly
+
+In the event of a signal being received, the transfer functions should
+return -ERESTARTSYS, having updated the ioctl args in place to prevent
+any duplication, so that the ioctl will be automatically retried once
+the signal has been dealt with.
+
+Also remove a few unnecessary error messages for non-error conditions.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/misc/rp1-pio.c | 88 ++++++++++++++++++++++++++++++++----------
+ 1 file changed, 67 insertions(+), 21 deletions(-)
+
+--- a/drivers/misc/rp1-pio.c
++++ b/drivers/misc/rp1-pio.c
+@@ -69,6 +69,10 @@
+ #define HANDLER(_n, _f) \
+ 	[_IOC_NR(PIO_IOC_ ## _n)] = { #_n, rp1_pio_ ## _f, _IOC_SIZE(PIO_IOC_ ## _n) }
+ 
++/* A handler that records its progress in its args if it is interrupted */
++#define HANDLER_RESTARTABLE(_n, _f) \
++	[_IOC_NR(PIO_IOC_ ## _n)] = { #_n, rp1_pio_ ## _f, _IOC_SIZE(PIO_IOC_ ## _n), true }
++
+ 
+ #define ROUND_UP(x, y) (((x) + (y) - 1) - (((x) + (y) - 1) % (y)))
+ 
+@@ -1195,10 +1199,24 @@ static int rp1_pio_sm_config_xfer_v2_use
+ 					       args->flags);
+ }
+ 
++/*
++ * Record the progress of a transfer in its arguments. If the call is
++ * interrupted, the updated arguments are copied back to the caller, so that
++ * a restarted call resumes where this one stopped rather than repeating it.
++ */
++static void rp1_pio_sm_xfer_progress(struct rp1_pio_sm_xfer_data32_args *args,
++				     size_t bytes)
++{
++	args->data += bytes;
++	args->data_bytes -= bytes;
++}
++
+ static int rp1_pio_sm_tx_user(struct rp1_pio_device *pio, struct dma_info *dma,
+-				  const void __user *userbuf, size_t bytes)
++			      struct rp1_pio_sm_xfer_data32_args *args)
+ {
+ 	struct platform_device *pdev = pio->pdev;
++	const void __user *userbuf = args->data;
++	size_t bytes = args->data_bytes;
+ 	struct dma_async_tx_descriptor *desc;
+ 	struct device *dev = &pdev->dev;
+ 	int ret = 0;
+@@ -1209,10 +1227,8 @@ static int rp1_pio_sm_tx_user(struct rp1
+ 
+ 		/* grab the next free buffer, waiting if they're all full */
+ 		if (dma->head_idx - dma->tail_idx == dma->buf_count) {
+-			if (down_interruptible(&dma->buf_sem)) {
+-				dev_err(dev, "DMA bounce interrupted\n");
+-				break;
+-			}
++			if (down_interruptible(&dma->buf_sem))
++				return -ERESTARTSYS;
+ 			dma->tail_idx++;
+ 		}
+ 
+@@ -1220,9 +1236,8 @@ static int rp1_pio_sm_tx_user(struct rp1
+ 
+ 		sg_dma_len(&dbi->sgl) = copy_bytes;
+ 
+-		ret = copy_from_user(dbi->buf, userbuf, copy_bytes);
+-		if (ret < 0)
+-			break;
++		if (copy_from_user(dbi->buf, userbuf, copy_bytes))
++			return -EFAULT;
+ 
+ 		userbuf += copy_bytes;
+ 
+@@ -1249,6 +1264,7 @@ static int rp1_pio_sm_tx_user(struct rp1
+ 
+ 		dma->head_idx++;
+ 		bytes -= copy_bytes;
++		rp1_pio_sm_xfer_progress(args, copy_bytes);
+ 	}
+ 
+ 	return ret;
+@@ -1297,9 +1313,10 @@ static int rp1_pio_sm_rx_submit(struct r
+  * chunk (reads can be any size up to buf_size, and need not match it).
+  */
+ static int rp1_pio_sm_rx_user(struct rp1_pio_device *pio, struct dma_info *dma,
+-				  void __user *userbuf, size_t bytes)
++			      struct rp1_pio_sm_xfer_data32_args *args)
+ {
+-	struct device *dev = &pio->pdev->dev;
++	void __user *userbuf = args->data;
++	size_t bytes = args->data_bytes;
+ 	int ret;
+ 
+ 	if (!bytes)
+@@ -1358,16 +1375,16 @@ static int rp1_pio_sm_rx_user(struct rp1
+ 		if (len > bytes)
+ 			return -EINVAL;
+ 
+-		if (down_interruptible(&dma->buf_sem)) {
+-			dev_err(dev, "DMA wait interrupted\n");
+-			return -ETIMEDOUT;
+-		}
++		if (down_interruptible(&dma->buf_sem))
++			return -ERESTARTSYS;
++
+ 		dma->tail_idx++;
+ 
+ 		if (copy_to_user(userbuf, dbi->buf, len))
+ 			return -EFAULT;
+ 		userbuf += len;
+ 		bytes -= len;
++		rp1_pio_sm_xfer_progress(args, len);
+ 	}
+ 
+ 	return 0;
+@@ -1394,22 +1411,28 @@ static int rp1_pio_sm_xfer_data32_user(s
+ 		return -EINVAL;
+ 
+ 	if (args->dir == RP1_PIO_DIR_TO_SM)
+-		return rp1_pio_sm_tx_user(pio, dma, args->data, args->data_bytes);
++		return rp1_pio_sm_tx_user(pio, dma, args);
+ 	else
+-		return rp1_pio_sm_rx_user(pio, dma, args->data, args->data_bytes);
++		return rp1_pio_sm_rx_user(pio, dma, args);
+ }
+ 
+ static int rp1_pio_sm_xfer_data_user(struct rp1_pio_client *client, void *param)
+ {
+ 	struct rp1_pio_sm_xfer_data_args *args = param;
+ 	struct rp1_pio_sm_xfer_data32_args args32;
++	int ret;
+ 
+ 	args32.sm = args->sm;
+ 	args32.dir = args->dir;
+ 	args32.data_bytes = args->data_bytes;
+ 	args32.data = args->data;
+ 
+-	return rp1_pio_sm_xfer_data32_user(client, &args32);
++	ret = rp1_pio_sm_xfer_data32_user(client, &args32);
++
++	args->data_bytes = args32.data_bytes;
++	args->data = args32.data;
++
++	return ret;
+ }
+ 
+ int rp1_pio_sm_config_xfer(struct rp1_pio_client *client, uint sm, uint dir,
+@@ -1509,10 +1532,11 @@ struct handler_info {
+ 	const char *name;
+ 	int (*func)(struct rp1_pio_client *client, void *param);
+ 	int argsize;
++	bool restartable;
+ } ioctl_handlers[] = {
+ 	HANDLER(SM_CONFIG_XFER, sm_config_xfer_user),
+-	HANDLER(SM_XFER_DATA, sm_xfer_data_user),
+-	HANDLER(SM_XFER_DATA32, sm_xfer_data32_user),
++	HANDLER_RESTARTABLE(SM_XFER_DATA, sm_xfer_data_user),
++	HANDLER_RESTARTABLE(SM_XFER_DATA32, sm_xfer_data32_user),
+ 	HANDLER(SM_CONFIG_XFER32, sm_config_xfer32_user),
+ 	HANDLER(SM_CONFIG_XFER_V2, sm_config_xfer_v2_user),
+ 
+@@ -1735,6 +1759,10 @@ static long rp1_pio_ioctl(struct file *f
+ 	if (ret > 0) {
+ 		if (copy_to_user(argp, argbuf, ret))
+ 			ret = -EFAULT;
++	} else if (ret == -ERESTARTSYS && hdlr->restartable) {
++		/* Pass back the progress, so that a restart resumes from there */
++		if (copy_to_user(argp, argbuf, sz))
++			ret = -EFAULT;
+ 	}
+ 
+ 	return ret;
+@@ -1779,6 +1807,7 @@ static long rp1_pio_compat_ioctl(struct
+ 	{
+ 		struct rp1_pio_sm_xfer_data_args_compat compat_param;
+ 		struct rp1_pio_sm_xfer_data_args param;
++		int ret;
+ 
+ 		if (copy_from_user(&compat_param, compat_ptr(ioctl_param), sizeof(compat_param)))
+ 			return -EFAULT;
+@@ -1786,12 +1815,21 @@ static long rp1_pio_compat_ioctl(struct
+ 		param.dir = compat_param.dir;
+ 		param.data_bytes = compat_param.data_bytes;
+ 		param.data = compat_ptr(compat_param.data);
+-		return rp1_pio_sm_xfer_data_user(client, &param);
++		ret = rp1_pio_sm_xfer_data_user(client, &param);
++		if (ret == -ERESTARTSYS) {
++			compat_param.data_bytes = param.data_bytes;
++			compat_param.data = ptr_to_compat(param.data);
++			if (copy_to_user(compat_ptr(ioctl_param), &compat_param,
++					 sizeof(compat_param)))
++				ret = -EFAULT;
++		}
++		return ret;
+ 	}
+ 	case PIO_IOC_SM_XFER_DATA32_COMPAT:
+ 	{
+ 		struct rp1_pio_sm_xfer_data32_args_compat compat_param;
+ 		struct rp1_pio_sm_xfer_data32_args param;
++		int ret;
+ 
+ 		if (copy_from_user(&compat_param, compat_ptr(ioctl_param), sizeof(compat_param)))
+ 			return -EFAULT;
+@@ -1799,7 +1837,15 @@ static long rp1_pio_compat_ioctl(struct
+ 		param.dir = compat_param.dir;
+ 		param.data_bytes = compat_param.data_bytes;
+ 		param.data = compat_ptr(compat_param.data);
+-		return rp1_pio_sm_xfer_data32_user(client, &param);
++		ret = rp1_pio_sm_xfer_data32_user(client, &param);
++		if (ret == -ERESTARTSYS) {
++			compat_param.data_bytes = param.data_bytes;
++			compat_param.data = ptr_to_compat(param.data);
++			if (copy_to_user(compat_ptr(ioctl_param), &compat_param,
++					 sizeof(compat_param)))
++				ret = -EFAULT;
++		}
++		return ret;
+ 	}
+ 
+ 	case PIO_IOC_READ_HW_COMPAT:

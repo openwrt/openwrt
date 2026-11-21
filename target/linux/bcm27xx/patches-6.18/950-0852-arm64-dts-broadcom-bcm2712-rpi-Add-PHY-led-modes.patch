@@ -1,0 +1,24 @@
+From d9e1735f53397e2f9f51b4215da341613f8f8b1b Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Thu, 17 Sep 2026 12:09:27 +0100
+Subject: [PATCH] arm64: dts: broadcom: bcm2712-rpi: Add PHY led-modes
+
+Add a led-modes property as an instruction to other PHYs to accept
+Broadcom-compatible configuration. The default values are the same as
+the defaults in the Broadcom driver.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts
++++ b/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts
+@@ -176,6 +176,7 @@ rp1_target: &pcie2 {
+ 	phy1: ethernet-phy@1 {
+ 		reg = <0x1>;
+ 		brcm,powerdown-enable;
++		led-modes = <0 8>;
+ 	};
+ };
+ 

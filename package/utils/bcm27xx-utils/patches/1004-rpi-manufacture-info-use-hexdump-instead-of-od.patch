@@ -1,0 +1,24 @@
+From 16ef1657a333bdf7e8972320908c44c9b407ed17 Mon Sep 17 00:00:00 2001
+From: Joshua Covington <joshuacov@gmail.com>
+Date: Sun, 15 Nov 2026 23:30:09 +0000
+Subject: [PATCH] rpi-manufacture-info: use hexdump instead of od
+
+od is not available in the default OpenWrt busybox configuration,
+which leaves the board revision empty. Use hexdump instead.
+
+Signed-off-by: Joshua Covington <joshuacov@gmail.com>
+---
+ rpi-manufacture-info/rpi-manufacture-info | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/rpi-manufacture-info/rpi-manufacture-info
++++ b/rpi-manufacture-info/rpi-manufacture-info
+@@ -171,7 +171,7 @@ fi
+ # Running board revision, as used by the OS.
+ dt_revision=/proc/device-tree/system/linux,revision
+ if [ -r "${dt_revision}" ]; then
+-   running_revision=$(od -v -An -t x1 "${dt_revision}" | tr -d ' \n')
++   running_revision=$(hexdump -v -e '1/1 "%02x"' "${dt_revision}")
+ else
+    running_revision=$(sed -n 's/^Revision[[:space:]]*: *\([0-9a-fA-F]*\)$/\1/p' /proc/cpuinfo)
+ fi

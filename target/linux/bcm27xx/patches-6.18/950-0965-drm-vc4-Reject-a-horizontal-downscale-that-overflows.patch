@@ -1,0 +1,31 @@
+From 8c4f2d084a59280c56f73d2a2aaf0694b6200606 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 16:47:51 +0000
+Subject: [PATCH] drm/vc4: Reject a horizontal downscale that overflows the TPZ
+ scale
+
+The TPZ scale field is 21 bits of 16.16, so a horizontal downscale of
+more than 32x doesn't fit. VC4_SET_FIELD() warned and masked it, and the
+plane was scanned out the wrong colour. Unlike the vertical direction,
+there is no line skipping to bring the ratio down, so reject it in
+atomic check.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -664,6 +664,11 @@ static int vc4_plane_setup_clipping_and_
+ 		    (vc4_state->crtc_h << 16) > vc4_state->src_h[i] &&
+ 		    (vc4_state->is_yuv || (vc4_state->src_y & 0xffff)))
+ 			vc4_state->y_scaling[i] = VC4_SCALING_PPF;
++
++		if (vc4_state->x_scaling[i] == VC4_SCALING_TPZ &&
++		    vc4_state->src_w[i] / vc4_state->crtc_w >
++		    FIELD_MAX(SCALER_TPZ0_SCALE_MASK))
++			return -EINVAL;
+ 	}
+ 
+ 	return 0;

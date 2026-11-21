@@ -1,0 +1,51 @@
+From 0b01f0becf392cfd07b95da431f56431d3356776 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Tue, 15 Sep 2026 16:43:50 +0100
+Subject: [PATCH] drm/vc4: Add the missing half-destination-pixel term to the
+ PPF phase
+
+vc4_write_ppf() starts the phase at
+
+    (src_x - siting - 1/2) / subsample
+
+but output pixel r samples the source at (r + 1/2) * scale - 1/2, so
+the initial phase also needs half a destination pixel's worth of
+source:
+
+    (src_x - siting - 1/2) / subsample + scale/2
+
+Without it everything the PPF touches is displaced by half a
+destination pixel's worth of source. For 4:2:0 chroma composited 1:1
+that is 0.25 chroma pixels, i.e. half a luma line, and since the luma
+at 1:1 goes through SCALING_NONE rather than the PPF, the chroma ends
+up half a line adrift of the luma it belongs to.
+
+Measured on a Pi 5 by compositing a synthetic 4:2:0 frame 1:1 and
+capturing it through the writeback connector: with cosited chroma and
+CHROMA_SITING_V=0 the chroma came back 0.371 luma rows early (0.378
+rows on the horizontal axis), against a luma control that measured
+0.000. The siting properties themselves scale correctly at -1.00 luma
+pixels per unit.
+
+Fixes: ac69c01fa825 ("drm/vc4: plane: Handle fractional coordinates using the phase field")
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -721,6 +721,13 @@ static void vc4_write_ppf(struct vc4_pla
+ 	offset >>= sub_shift;
+ 
+ 	/*
++	 * Output pixel r samples the source at (r + 1/2) * scale - 1/2, so the
++	 * phase the first output pixel starts at needs half a destination
++	 * pixel's worth of source added to it.
++	 */
++	offset += (s32)(scale >> (17 - PHASE_BITS));
++
++	/*
+ 	 * There may be a also small error introduced by precision of scale.
+ 	 * Add half of that as a compromise
+ 	 */

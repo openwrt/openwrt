@@ -1,0 +1,69 @@
+From 3b0051a83226f526e2c6918f6fd434e0655eb05d Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Tue, 29 Sep 2026 13:41:32 +0100
+Subject: [PATCH] misc: rp1-pio: Use the correct dev in dma_free
+
+Although it hasn't been an issue due to the specifics of the Pi 5
+platform, DMA buffers should be allocated and freed with the same "dev"
+parameter. Guarantee that by deriving the dev pointer from the given
+dma_info pointer.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/misc/rp1-pio.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+--- a/drivers/misc/rp1-pio.c
++++ b/drivers/misc/rp1-pio.c
+@@ -1002,18 +1002,21 @@ static void rp1_pio_sm_dma_flush_rx(stru
+ 	dma_free_coherent(dma_dev, len, buf, dma_addr);
+ }
+ 
+-static void rp1_pio_sm_dma_free(struct device *dev, struct dma_info *dma)
++static void rp1_pio_sm_dma_free(struct dma_info *dma)
+ {
++	/* The buffers were allocated for the DMA controller, so free them there */
++	struct device *dma_dev = dma->chan->device->dev;
++
+ 	dmaengine_terminate_all(dma->chan);
+ 	if (dma->cyclic) {
+ 		dma->buf_count = 0;
+-		dma_free_coherent(dev, ROUND_UP(dma->buf_size, PAGE_SIZE),
++		dma_free_coherent(dma_dev, ROUND_UP(dma->buf_size, PAGE_SIZE),
+ 				  dma->bufs[0].buf,
+ 				  dma->bufs[0].dma_addr);
+ 	} else {
+ 		while (dma->buf_count > 0) {
+ 			dma->buf_count--;
+-			dma_free_coherent(dev, ROUND_UP(dma->buf_size, PAGE_SIZE),
++			dma_free_coherent(dma_dev, ROUND_UP(dma->buf_size, PAGE_SIZE),
+ 					  dma->bufs[dma->buf_count].buf,
+ 					  dma->bufs[dma->buf_count].dma_addr);
+ 		}
+@@ -1068,7 +1071,7 @@ static int rp1_pio_sm_config_xfer_intern
+ 
+ 	/* dma_release_channel() sleeps, so free the old channel outside the lock. */
+ 	if (reconfigure)
+-		rp1_pio_sm_dma_free(dev, dma);
++		rp1_pio_sm_dma_free(dma);
+ 
+ 	sema_init(&dma->buf_sem, 0);
+ 
+@@ -1199,7 +1202,7 @@ static int rp1_pio_sm_config_xfer_intern
+ 	return 0;
+ 
+ err_dma_free:
+-	rp1_pio_sm_dma_free(dev, dma);
++	rp1_pio_sm_dma_free(dma);
+ 
+ err_unclaim:
+ 	spin_lock(&pio->lock);
+@@ -1712,7 +1715,7 @@ void rp1_pio_close(struct rp1_pio_client
+ 			/* The SMs have been disabled, so this is safe */
+ 			if ((i & 1) == RP1_PIO_DIR_FROM_SM)
+ 				rp1_pio_sm_dma_flush_rx(dma);
+-			rp1_pio_sm_dma_free(&pio->pdev->dev, dma);
++			rp1_pio_sm_dma_free(dma);
+ 		}
+ 	}
+ 

@@ -1,0 +1,38 @@
+From 47ddaefc9ab4bd2cc6cbf354d6363efdfd8995ad Mon Sep 17 00:00:00 2001
+From: Yu Dukai <646689853@qq.com>
+Date: Tue, 20 Oct 2026 15:44:54 +0800
+Subject: [PATCH] drm/panel: waveshare-dsi-v2: Update Waveshare
+ 10.1-DSI-TOUCH-A display timing
+
+On the Compute Module 4, the Waveshare 10.1-DSI-TOUCH-A panel lights up
+correctly on DSI0 but fails to light up on DSI1 with the current timing.
+
+Update the display timing accordingly so that the panel also works on
+DSI1: widen the horizontal sync pulse from 20 to 30 pixels and raise the
+pixel clock from 70 MHz to 71 MHz. The new timing totals 890x1324
+pixels, which gives a refresh rate of about 60.2 Hz.
+
+The mode is shared by the two-lane and four-lane variants of the panel.
+
+Signed-off-by: Yu Dukai <646689853@qq.com>
+---
+ drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
++++ b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
+@@ -1974,11 +1974,11 @@ static const struct drm_display_mode ws_
+ };
+ 
+ static const struct drm_display_mode ws_panel_10_1_a_mode = {
+-	.clock = 70000,
++	.clock = 71000,
+ 	.hdisplay = 800,
+ 	.hsync_start = 800 + 40,
+-	.hsync_end = 800 + 40 + 20,
+-	.htotal = 800 + 40 + 20 + 20,
++	.hsync_end = 800 + 40 + 30,
++	.htotal = 800 + 40 + 30 + 20,
+ 	.vdisplay = 1280,
+ 	.vsync_start = 1280 + 20,
+ 	.vsync_end = 1280 + 20 + 20,

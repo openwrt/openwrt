@@ -1,0 +1,120 @@
+From 2027e3b64d8e70627a7aed7991d459f33913de45 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Tue, 15 Sep 2026 18:09:45 +0100
+Subject: [PATCH] media: sony-starvis2: Add support for HCG mode
+
+HCG (High Conversion Gain) adds additional gain within the sensor,
+but also requires that the minimum analogue gain is 34 rather than
+0 when in the default LCG mode.
+
+Add a module parameter that is read during probe and at the start
+of enable_streams, and adjust settings accordingly.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/media/i2c/sony-starvis2.c | 41 ++++++++++++++++++++++++++++---
+ 1 file changed, 37 insertions(+), 4 deletions(-)
+
+--- a/drivers/media/i2c/sony-starvis2.c
++++ b/drivers/media/i2c/sony-starvis2.c
+@@ -27,6 +27,7 @@
+ #include <linux/i2c.h>
+ #include <linux/media-bus-format.h>
+ #include <linux/module.h>
++#include <linux/moduleparam.h>
+ #include <linux/property.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/regulator/consumer.h>
+@@ -38,6 +39,10 @@
+ #include <media/v4l2-rect.h>
+ #include <media/v4l2-subdev.h>
+ 
++static bool hcg_mode;
++module_param(hcg_mode, bool, 0664);
++MODULE_PARM_DESC(hcg_mode, "Enable HCG mode");
++
+ /* Standby or streaming mode */
+ #define STARVIS2_REG_MODE_SELECT          CCI_REG8(0x3000)
+ #define STARVIS2_MODE_STANDBY             0x01
+@@ -84,10 +89,14 @@
+  */
+ #define STARVIS2_REG_GAIN			CCI_REG16_LE(0x3070)
+ #define STARVIS2_ANA_GAIN_MIN_NORMAL      0
++#define STARVIS2_ANA_GAIN_MIN_HCG         34
+ #define STARVIS2_ANA_GAIN_MAX_NORMAL      100
+ #define STARVIS2_ANA_GAIN_STEP            1
+ #define STARVIS2_ANA_GAIN_DEFAULT         0
+ 
++#define STARVIS2_REG_FDG_SEL0		CCI_REG8(0x3030)
++#define STARVIS2_FDG_SEL0_HCG		BIT(0)
++
+ /* Crop */
+ #define STARVIS2_REG_WINMODE		CCI_REG8(0x3018)
+ #define STARVIS2_REG_PIX_HST		CCI_REG16_LE(0x303c)
+@@ -1647,6 +1656,8 @@ struct starvis2 {
+ 	struct v4l2_ctrl *vblank;
+ 	struct v4l2_ctrl *hblank;
+ 	struct v4l2_ctrl *link_freq;
++	struct v4l2_ctrl *gain;
++	bool hcg_mode;
+ 
+ 	/* Track VMAX for exposure updates */
+ 	u32 vmax;
+@@ -1925,6 +1936,17 @@ static int starvis2_enable_streams(struc
+ 	if (ret < 0)
+ 		return ret;
+ 
++	starvis2->hcg_mode = hcg_mode;
++	__v4l2_ctrl_modify_range(starvis2->gain,
++				 starvis2->hcg_mode ?
++					  STARVIS2_ANA_GAIN_MIN_HCG :
++					  STARVIS2_ANA_GAIN_MIN_NORMAL,
++				 STARVIS2_ANA_GAIN_MAX_NORMAL,
++				 STARVIS2_ANA_GAIN_STEP,
++				 starvis2->hcg_mode ?
++					  STARVIS2_ANA_GAIN_MIN_HCG :
++					  STARVIS2_ANA_GAIN_DEFAULT);
++
+ 	crop = v4l2_subdev_state_get_crop(state, pad);
+ 	ret = starvis2_program_window(starvis2, crop);
+ 	if (ret) {
+@@ -1939,6 +1961,9 @@ static int starvis2_enable_streams(struc
+ 		goto err_rpm_put;
+ 	}
+ 
++	cci_write(starvis2->cci, STARVIS2_REG_FDG_SEL0,
++		  starvis2->hcg_mode ? STARVIS2_FDG_SEL0_HCG : 0, &ret);
++
+ 	cci_write(starvis2->cci, STARVIS2_REG_MODE_SELECT,
+ 		  STARVIS2_MODE_STREAMING, &ret);
+ 	usleep_range(STARVIS2_STREAM_DELAY_US, STARVIS2_STREAM_DELAY_US +
+@@ -2221,10 +2246,16 @@ static int starvis2_init_controls(struct
+ 					       STARVIS2_EXPOSURE_STEP,
+ 					       STARVIS2_EXPOSURE_DEFAULT);
+ 
+-	v4l2_ctrl_new_std(ctrl_hdlr, &starvis2_ctrl_ops, V4L2_CID_ANALOGUE_GAIN,
+-			  STARVIS2_ANA_GAIN_MIN_NORMAL,
+-			  STARVIS2_ANA_GAIN_MAX_NORMAL, STARVIS2_ANA_GAIN_STEP,
+-			  STARVIS2_ANA_GAIN_DEFAULT);
++	starvis2->gain = v4l2_ctrl_new_std(ctrl_hdlr, &starvis2_ctrl_ops,
++					   V4L2_CID_ANALOGUE_GAIN,
++					   starvis2->hcg_mode ?
++						  STARVIS2_ANA_GAIN_MIN_HCG :
++						  STARVIS2_ANA_GAIN_MIN_NORMAL,
++					   STARVIS2_ANA_GAIN_MAX_NORMAL,
++					   STARVIS2_ANA_GAIN_STEP,
++					   starvis2->hcg_mode ?
++						  STARVIS2_ANA_GAIN_MIN_HCG :
++						  STARVIS2_ANA_GAIN_DEFAULT);
+ 
+ 	v4l2_ctrl_new_std(ctrl_hdlr, &starvis2_ctrl_ops, V4L2_CID_HFLIP,
+ 			  0, 1, 1, 0);
+@@ -2363,6 +2394,8 @@ static int starvis2_probe(struct i2c_cli
+ 	pm_runtime_set_active(dev);
+ 	pm_runtime_enable(dev);
+ 
++	starvis2->hcg_mode = hcg_mode;
++
+ 	ret = starvis2_init_controls(starvis2);
+ 	if (ret)
+ 		goto error_pm_runtime;
