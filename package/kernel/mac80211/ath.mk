@@ -1,6 +1,6 @@
 PKG_DRIVERS += \
 	ath ath5k ath6kl ath6kl-sdio ath6kl-usb ath9k ath9k-common ath9k-htc ath10k ath10k-smallbuffers \
-	ath11k ath11k-ahb ath11k-pci ath12k carl9170 owl-loader ar5523 wil6210 qcom-qmi-helpers
+	ath11k ath11k-smallbuffers ath11k-ahb ath11k-pci ath12k carl9170 owl-loader ar5523 wil6210 qcom-qmi-helpers
 
 PKG_CONFIG_DEPENDS += \
 	CONFIG_PACKAGE_ATH_DEBUG \
@@ -40,6 +40,12 @@ ifdef CONFIG_PACKAGE_MAC80211_TRACING
 	WIL6210_TRACING
 endif
 
+ifeq ($(BUILD_VARIANT),smallbuffers)
+  cflags-y += \
+	-DCONFIG_ATH10K_SMALLBUFFERS \
+	-DCONFIG_ATH11K_SMALLBUFFERS
+endif
+
 config-$(call config_package,qcom-qmi-helpers) += QCOM_QMI_HELPERS
 config-$(call config_package,ath,regular smallbuffers) += ATH_CARDS ATH_COMMON
 config-$(CONFIG_PACKAGE_ATH_DEBUG) += ATH_DEBUG ATH10K_DEBUG ATH11K_DEBUG ATH12K_DEBUG ATH9K_STATION_STATISTICS
@@ -64,8 +70,9 @@ config-$(CONFIG_ATH12K_THERMAL) += ATH12K_THERMAL
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k,regular) += ATH10K ATH10K_PCI
-config-$(call config_package,ath10k-smallbuffers,smallbuffers) += ATH10K ATH10K_PCI ATH10K_SMALLBUFFERS
-config-$(call config_package,ath11k) += ATH11K
+config-$(call config_package,ath10k-smallbuffers,smallbuffers) += ATH10K ATH10K_PCI
+config-$(call config_package,ath11k,regular) += ATH11K
+config-$(call config_package,ath11k-smallbuffers,smallbuffers) += ATH11K
 config-$(call config_package,ath11k-ahb) += ATH11K_AHB
 config-$(call config_package,ath11k-pci) += ATH11K_PCI
 config-$(call config_package,ath12k) += ATH12K
@@ -312,14 +319,22 @@ define KernelPackage/ath10k-smallbuffers
   PROVIDES:=@kmod-ath10k-any
 endef
 
-define KernelPackage/ath11k
+define KernelPackage/ath11k/Default
   $(call KernelPackage/mac80211/Default)
   TITLE:=Qualcomm 802.11ax wireless chipset support (common code)
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath11k
   DEPENDS+= +kmod-ath +@DRIVER_11AC_SUPPORT +@DRIVER_11AX_SUPPORT \
   +kmod-crypto-michael-mic +ATH11K_THERMAL:kmod-hwmon-core \
   +ATH11K_THERMAL:kmod-thermal +kmod-qcom-qmi-helpers
+  PROVIDES:=kmod-ath11k
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k.ko
+endef
+
+define KernelPackage/ath11k
+  $(call KernelPackage/ath11k/Default)
+  VARIANT:=regular
+  DEFAULT_VARIANT:=1
+  CONFLICTS:=kmod-ath11k-smallbuffers
 endef
 
 define KernelPackage/ath11k/description
@@ -331,9 +346,15 @@ define KernelPackage/ath11k/config
 
        config ATH11K_THERMAL
                bool "Enable thermal sensors and throttling support"
-               depends on PACKAGE_kmod-ath11k
+               depends on PACKAGE_kmod-ath11k || PACKAGE_kmod-ath11k-smallbuffers
                default y if TARGET_qualcommax
 
+endef
+
+define KernelPackage/ath11k-smallbuffers
+  $(call KernelPackage/ath11k/Default)
+  TITLE+= (small buffers for low-RAM devices)
+  VARIANT:=smallbuffers
 endef
 
 define KernelPackage/ath11k-ahb
