@@ -65,6 +65,19 @@ define Device/alfa-network_ap120c-ax
 endef
 TARGET_DEVICES += alfa-network_ap120c-ax
 
+define Device/arista_c-200
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Arista
+	DEVICE_MODEL := C-200
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@cp01-c3
+	SOC := ipq6010
+	DEVICE_PACKAGES := ipq-wifi-arista_c-200 kmod-tpm-tis-spi
+endef
+TARGET_DEVICES += arista_c-200
+
 define Device/cambiumnetworks_xe3-4
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
