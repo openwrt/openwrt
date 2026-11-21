@@ -45,6 +45,8 @@
 #define RTL931X_SPEED_MASK			(15 << RTL931X_SPEED_SHIFT)
 #define RTL931X_TX_PAUSE_EN			BIT(16)
 #define RTL931X_RX_PAUSE_EN			BIT(17)
+/* EEE enables: 100M@18, 1G@20, 2.5G@21, 5G@22, 10G@23 (bit 19 reserved) */
+#define RTL931X_MAC_FORCE_EEE_MASK		(BIT(18) | GENMASK(23, 20))
 
 /* MAC maximum packet length (jumbo frame) control.
  *
@@ -134,6 +136,8 @@ int otto_mac_930x_link_state_source_set(struct otto_dsa_priv *priv, int port,
 int otto_mac_931x_force_mode_ctrl(int p);
 int otto_mac_931x_port_ctrl(int p);
 int otto_mac_931x_max_len_reg(int p);
+void otto_mac_931x_set_eee(struct otto_dsa_priv *priv, int port, bool enable);
+void otto_mac_931x_init_eee(struct otto_dsa_priv *priv, bool enable);
 int otto_mac_931x_link_state_source_set(struct otto_dsa_priv *priv, int port,
 					enum rtldsa_mac_link_state_source source,
 					phy_interface_t interface);
