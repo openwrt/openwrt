@@ -1,0 +1,328 @@
+From 5072dfc59f6b422d33ea383e38019b535f5ad3f8 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Fri, 20 Nov 2026 17:04:47 +0000
+Subject: [PATCH] crypto: gcm: overlap EIP93 CTR and software GHASH on MT7621 TX
+
+Hash outbound ciphertext on another physical core after EIP93 AES-CTR
+completes, while EIP93 encrypts the next request. Choose an online
+CPU outside the boot CPU sibling set for the GHASH worker.
+
+Complete outbound requests in submission order. Without this, GHASH
+workers overtook earlier requests and OpenVPN DCO rejected late packet
+IDs. The queue also covers requests that take the software fallback.
+Keep the queue alive until its last request and worker finish.
+
+Keep inbound packets on the existing path. On an MR500 v1 gigabit test
+the inbound overlap reduced throughput and caused queue drops above
+90 Mbit/s, whereas the normal path carried 100 Mbit/s without loss.
+
+Enable only for EIP93 CTR plus synchronous generic GHASH. Bound
+concurrent TX hashing requests to 16 and retain the ordinary AES/GHASH
+processing when a worker cannot be allocated. Enable this experimental
+path with gcm.eip93_parallel=1; it is disabled by default.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+--- a/crypto/gcm.c
++++ b/crypto/gcm.c
+@@ -12,22 +12,43 @@
+ #include <crypto/scatterwalk.h>
+ #include <crypto/gcm.h>
+ #include <crypto/hash.h>
++#include <linux/atomic.h>
++#include <linux/cpu.h>
+ #include <linux/err.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/list.h>
+ #include <linux/module.h>
++#include <linux/refcount.h>
+ #include <linux/slab.h>
++#include <linux/spinlock.h>
++#include <linux/topology.h>
++#include <linux/workqueue.h>
+ 
+ struct gcm_instance_ctx {
+ 	struct crypto_skcipher_spawn ctr;
+ 	struct crypto_ahash_spawn ghash;
+ };
+ 
++/* Keep the queue alive if the last completion releases its AEAD tfm. */
++struct gcm_tx_queue {
++	refcount_t refs;
++	spinlock_t lock;
++	struct list_head pending;
++	struct work_struct work;
++};
++
+ struct crypto_gcm_ctx {
+ 	struct crypto_skcipher *ctr;
+ 	struct crypto_ahash *ghash;
++	bool eip93_parallel;
++	struct gcm_tx_queue *tx_queue;
+ };
+ 
++static bool eip93_parallel;
++module_param(eip93_parallel, bool, 0444);
++MODULE_PARM_DESC(eip93_parallel, "Enable experimental MT7621 EIP93 GCM overlap");
++
+ struct crypto_rfc4106_ctx {
+ 	struct crypto_aead *child;
+ 	u8 nonce[4];
+@@ -66,6 +87,13 @@ struct crypto_gcm_req_priv_ctx {
+ 	struct scatterlist dst[3];
+ 	struct scatterlist sg;
+ 	struct crypto_gcm_ghash_ctx ghash_ctx;
++	struct gcm_eip93_enc_work *enc_work;
++	struct list_head tx_node;
++	struct gcm_tx_queue *tx_queue;
++	struct aead_request *tx_req;
++	int tx_err;
++	bool tx_ready;
++	bool tx_ordered;
+ 	union {
+ 		struct ahash_request ahreq;
+ 		struct skcipher_request skreq;
+@@ -427,9 +455,104 @@ static int gcm_encrypt_continue(struct a
+ 	return gcm_hash(req, flags);
+ }
+ 
++struct gcm_eip93_enc_work {
++	struct work_struct work;
++	struct aead_request *req;
++	int cpu;
++};
++
++static atomic_t gcm_eip93_tx_inflight = ATOMIC_INIT(0);
++static int gcm_eip93_hash_cpu(void);
++
++static void gcm_tx_queue_put(struct gcm_tx_queue *queue)
++{
++	if (refcount_dec_and_test(&queue->refs))
++		kfree(queue);
++}
++
++static void gcm_tx_drain_work(struct work_struct *work)
++{
++	struct gcm_tx_queue *queue =
++		container_of(work, struct gcm_tx_queue, work);
++	struct crypto_gcm_req_priv_ctx *pctx;
++	struct aead_request *req;
++	unsigned long flags;
++	int err;
++
++	for (;;) {
++		spin_lock_irqsave(&queue->lock, flags);
++		if (list_empty(&queue->pending)) {
++			spin_unlock_irqrestore(&queue->lock, flags);
++			break;
++		}
++		pctx = list_first_entry(&queue->pending,
++					struct crypto_gcm_req_priv_ctx, tx_node);
++		if (!pctx->tx_ready) {
++			spin_unlock_irqrestore(&queue->lock, flags);
++			break;
++		}
++		list_del_init(&pctx->tx_node);
++		req = pctx->tx_req;
++		err = pctx->tx_err;
++		spin_unlock_irqrestore(&queue->lock, flags);
++
++		aead_request_complete(req, err);
++		gcm_tx_queue_put(queue);
++	}
++	gcm_tx_queue_put(queue);
++}
++
++static void gcm_tx_complete(struct aead_request *req, int err)
++{
++	struct crypto_gcm_req_priv_ctx *pctx = crypto_gcm_reqctx(req);
++	struct gcm_tx_queue *queue = pctx->tx_queue;
++	unsigned long flags;
++
++	if (!pctx->tx_ordered) {
++		aead_request_complete(req, err);
++		return;
++	}
++
++	spin_lock_irqsave(&queue->lock, flags);
++	pctx->tx_err = err;
++	pctx->tx_ready = true;
++	spin_unlock_irqrestore(&queue->lock, flags);
++	refcount_inc(&queue->refs);
++	if (!queue_work(system_highpri_wq, &queue->work))
++		gcm_tx_queue_put(queue);
++}
++
++static void gcm_eip93_encrypt_work(struct work_struct *work)
++{
++	struct gcm_eip93_enc_work *enc =
++		container_of(work, struct gcm_eip93_enc_work, work);
++	struct aead_request *req = enc->req;
++	int err = gcm_encrypt_continue(req, 0);
++
++	atomic_dec(&gcm_eip93_tx_inflight);
++	kfree_sensitive(enc);
++	gcm_tx_complete(req, err);
++}
++
+ static void gcm_encrypt_done(void *data, int err)
+ {
+ 	struct aead_request *req = data;
++	struct gcm_eip93_enc_work *enc = crypto_gcm_reqctx(req)->enc_work;
++
++	if (err == -EINPROGRESS) {
++		aead_request_complete(req, err);
++		return;
++	}
++
++	if (enc) {
++		if (!err) {
++			queue_work_on(enc->cpu, system_highpri_wq, &enc->work);
++			return;
++		}
++		atomic_dec(&gcm_eip93_tx_inflight);
++		kfree_sensitive(enc);
++		goto out;
++	}
+ 
+ 	if (err)
+ 		goto out;
+@@ -439,21 +562,82 @@ static void gcm_encrypt_done(void *data,
+ 		return;
+ 
+ out:
+-	aead_request_complete(req, err);
++	gcm_tx_complete(req, err);
+ }
+ 
+ static int crypto_gcm_encrypt(struct aead_request *req)
+ {
+ 	struct crypto_gcm_req_priv_ctx *pctx = crypto_gcm_reqctx(req);
++	struct crypto_gcm_ctx *ctx = crypto_aead_ctx(crypto_aead_reqtfm(req));
+ 	struct skcipher_request *skreq = &pctx->u.skreq;
+ 	u32 flags = aead_request_flags(req);
++	struct gcm_eip93_enc_work *enc = NULL;
++	gfp_t gfp = flags & CRYPTO_TFM_REQ_MAY_SLEEP ? GFP_KERNEL : GFP_ATOMIC;
++	bool ordered;
++	int cpu, err;
+ 
+ 	crypto_gcm_init_common(req);
++	pctx->enc_work = NULL;
++	/* Include fallback requests so later GHASH work cannot overtake them. */
++	pctx->tx_ordered = ctx->eip93_parallel;
++	ordered = pctx->tx_ordered;
++	if (pctx->tx_ordered) {
++		unsigned long irq_flags;
++		struct gcm_tx_queue *queue = ctx->tx_queue;
++
++		refcount_inc(&queue->refs);
++		pctx->tx_queue = queue;
++		pctx->tx_req = req;
++		pctx->tx_ready = false;
++		INIT_LIST_HEAD(&pctx->tx_node);
++		spin_lock_irqsave(&queue->lock, irq_flags);
++		list_add_tail(&pctx->tx_node, &queue->pending);
++		spin_unlock_irqrestore(&queue->lock, irq_flags);
++	}
++	if (ordered && req->cryptlen >= 512 &&
++	    req->cryptlen <= 1536) {
++		cpu = gcm_eip93_hash_cpu();
++		if (cpu < nr_cpu_ids &&
++		    atomic_add_unless(&gcm_eip93_tx_inflight, 1, 16)) {
++			enc = kmalloc(sizeof(*enc), gfp);
++			if (enc) {
++				enc->req = req;
++				enc->cpu = cpu;
++				INIT_WORK(&enc->work, gcm_eip93_encrypt_work);
++				pctx->enc_work = enc;
++			} else {
++				atomic_dec(&gcm_eip93_tx_inflight);
++			}
++		}
++	}
+ 	crypto_gcm_init_crypt(req, req->cryptlen);
+-	skcipher_request_set_callback(skreq, flags, gcm_encrypt_done, req);
+-
+-	return crypto_skcipher_encrypt(skreq) ?:
+-	       gcm_encrypt_continue(req, flags);
++	skcipher_request_set_callback(skreq,
++				      enc ? flags & ~CRYPTO_TFM_REQ_MAY_BACKLOG :
++				      flags, gcm_encrypt_done, req);
++
++	err = crypto_skcipher_encrypt(skreq);
++	if (!enc) {
++		if (!ordered)
++			return err ?: gcm_encrypt_continue(req, flags);
++		if (err == -EINPROGRESS ||
++		    (err == -EBUSY && flags & CRYPTO_TFM_REQ_MAY_BACKLOG))
++			return err;
++		if (!err)
++			err = gcm_encrypt_continue(req, flags);
++		if (err != -EINPROGRESS)
++			gcm_tx_complete(req, err);
++		return -EINPROGRESS;
++	}
++	if (err == -EINPROGRESS)
++		return err;
++	if (err) {
++		atomic_dec(&gcm_eip93_tx_inflight);
++		kfree_sensitive(enc);
++		gcm_tx_complete(req, err);
++		return -EINPROGRESS;
++	}
++	queue_work_on(enc->cpu, system_highpri_wq, &enc->work);
++	return -EINPROGRESS;
+ }
+ 
+ static int crypto_gcm_verify(struct aead_request *req)
+@@ -492,6 +676,17 @@ static int gcm_dec_hash_continue(struct
+ 	return crypto_skcipher_decrypt(skreq) ?: crypto_gcm_verify(req);
+ }
+ 
++static int gcm_eip93_hash_cpu(void)
++{
++	int target;
++
++	/* Keep GHASH on a single core away from the boot CPU's siblings. */
++	for_each_online_cpu(target)
++		if (!cpumask_test_cpu(target, topology_sibling_cpumask(0)))
++			return target;
++	return nr_cpu_ids;
++}
++
+ static int crypto_gcm_decrypt(struct aead_request *req)
+ {
+ 	struct crypto_aead *aead = crypto_aead_reqtfm(req);
+@@ -533,6 +728,22 @@ static int crypto_gcm_init_tfm(struct cr
+ 
+ 	ctx->ctr = ctr;
+ 	ctx->ghash = ghash;
++	ctx->tx_queue = NULL;
++	ctx->eip93_parallel = IS_ENABLED(CONFIG_SOC_MT7621) && eip93_parallel &&
++		!strcmp(crypto_skcipher_driver_name(ctr), "ctr(aes-eip93)") &&
++		!strcmp(crypto_ahash_driver_name(ghash), "ghash-generic") &&
++		!(crypto_ahash_tfm(ghash)->__crt_alg->cra_flags & CRYPTO_ALG_ASYNC);
++	if (ctx->eip93_parallel) {
++		ctx->tx_queue = kzalloc(sizeof(*ctx->tx_queue), GFP_KERNEL);
++		if (ctx->tx_queue) {
++			refcount_set(&ctx->tx_queue->refs, 1);
++			spin_lock_init(&ctx->tx_queue->lock);
++			INIT_LIST_HEAD(&ctx->tx_queue->pending);
++			INIT_WORK(&ctx->tx_queue->work, gcm_tx_drain_work);
++		} else {
++			ctx->eip93_parallel = false;
++		}
++	}
+ 
+ 	align = crypto_aead_alignmask(tfm);
+ 	align &= ~(crypto_tfm_ctx_alignment() - 1);
+@@ -554,6 +765,8 @@ static void crypto_gcm_exit_tfm(struct c
+ {
+ 	struct crypto_gcm_ctx *ctx = crypto_aead_ctx(tfm);
+ 
++	if (ctx->tx_queue)
++		gcm_tx_queue_put(ctx->tx_queue);
+ 	crypto_free_ahash(ctx->ghash);
+ 	crypto_free_skcipher(ctx->ctr);
+ }

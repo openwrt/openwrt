@@ -46,7 +46,7 @@ Signed-off-by: Aviana Cruz <gwencroft@proton.me>
  static int eip93_skcipher_send_req(struct crypto_async_request *async)
  {
  	struct skcipher_request *req = skcipher_request_cast(async);
-@@ -52,12 +59,21 @@ static int eip93_skcipher_cra_init(struc
+@@ -50,12 +57,21 @@ static int eip93_skcipher_cra_init(struc
  	struct eip93_crypto_ctx *ctx = crypto_tfm_ctx(tfm);
  	struct eip93_alg_template *tmpl = container_of(tfm->__crt_alg,
  				struct eip93_alg_template, alg.skcipher.base);
@@ -71,7 +71,7 @@ Signed-off-by: Aviana Cruz <gwencroft@proton.me>
  	ctx->eip93 = tmpl->eip93;
  	ctx->type = tmpl->type;
  
-@@ -75,6 +91,8 @@ static void eip93_skcipher_cra_exit(stru
+@@ -73,6 +89,8 @@ static void eip93_skcipher_cra_exit(stru
  	dma_unmap_single(ctx->eip93->dev, ctx->sa_record_base,
  			 sizeof(*ctx->sa_record), DMA_TO_DEVICE);
  	kfree(ctx->sa_record);
@@ -80,7 +80,7 @@ Signed-off-by: Aviana Cruz <gwencroft@proton.me>
  }
  
  static int eip93_skcipher_setkey(struct crypto_skcipher *ctfm, const u8 *key,
-@@ -117,6 +135,14 @@ static int eip93_skcipher_setkey(struct
+@@ -115,6 +133,14 @@ static int eip93_skcipher_setkey(struct
  
  	if (flags & EIP93_ALG_AES) {
  		struct crypto_aes_ctx aes;
@@ -95,7 +95,7 @@ Signed-off-by: Aviana Cruz <gwencroft@proton.me>
  
  		ctx->blksize = AES_BLOCK_SIZE;
  		ret = aes_expandkey(&aes, key, keylen);
-@@ -133,12 +159,13 @@ static int eip93_skcipher_setkey(struct
+@@ -131,12 +157,13 @@ static int eip93_skcipher_setkey(struct
  	return 0;
  }
  
@@ -110,7 +110,7 @@ Signed-off-by: Aviana Cruz <gwencroft@proton.me>
  	int ret;
  
  	if (!req->cryptlen)
-@@ -153,6 +180,21 @@ static int eip93_skcipher_crypt(struct s
+@@ -151,6 +178,21 @@ static int eip93_skcipher_crypt(struct s
  				crypto_skcipher_blocksize(skcipher)))
  			return -EINVAL;
  
@@ -132,7 +132,7 @@ Signed-off-by: Aviana Cruz <gwencroft@proton.me>
  	ctx->sa_record_base = dma_map_single(ctx->eip93->dev, ctx->sa_record,
  					     sizeof(*ctx->sa_record), DMA_TO_DEVICE);
  	ret = dma_mapping_error(ctx->eip93->dev, ctx->sa_record_base);
-@@ -181,7 +223,7 @@ static int eip93_skcipher_encrypt(struct
+@@ -179,7 +221,7 @@ static int eip93_skcipher_encrypt(struct
  	rctx->flags = tmpl->flags;
  	rctx->flags |= EIP93_ENCRYPT;
  
@@ -141,7 +141,7 @@ Signed-off-by: Aviana Cruz <gwencroft@proton.me>
  }
  
  static int eip93_skcipher_decrypt(struct skcipher_request *req)
-@@ -196,7 +238,7 @@ static int eip93_skcipher_decrypt(struct
+@@ -194,7 +236,7 @@ static int eip93_skcipher_decrypt(struct
  	rctx->flags = tmpl->flags;
  	rctx->flags |= EIP93_DECRYPT;
  
