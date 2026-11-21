@@ -69,7 +69,9 @@ function device_log_append(config) {
 function device_country_code(config) {
 	let status = global.ubus.call('network.wireless', 'status');
 	for (let name, radio in status) {
-		if (!radio.config.country)
+		/* the country of a radio with no enabled interface (netifd gives
+		 * a disabled radio none) is not the system's */
+		if (!radio.config.country || !length(radio.interfaces))
 			continue;
 		config.country_code = radio.config.country;
 	}
