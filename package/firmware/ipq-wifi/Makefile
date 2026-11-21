@@ -139,6 +139,7 @@ ALLWIFIBOARDS:= \
 	zte_mf286c \
 	zte_mf287 \
 	zte_mf287plus \
+	zte_mf288 \
 	zte_t5400 \
 	zyxel_nbg7815 \
 	zyxel_nwa110ax \
@@ -360,6 +361,7 @@ $(eval $(call generate-ipq-wifi-package,zte_mf286ar,ZTE MF286A/R))
 $(eval $(call generate-ipq-wifi-package,zte_mf286c,ZTE MF286C))
 $(eval $(call generate-ipq-wifi-package,zte_mf287,ZTE MF287))
 $(eval $(call generate-ipq-wifi-package,zte_mf287plus,ZTE MF287Plus))
+$(eval $(call generate-ipq-wifi-package,zte_mf288,ZTE MF288))
 $(eval $(call generate-ipq-wifi-package,zte_t5400,ZTE T5400))
 $(eval $(call generate-ipq-wifi-package,zyxel_nbg7815,Zyxel NBG7815))
 $(eval $(call generate-ipq-wifi-package,zyxel_nwa110ax,Zyxel NWA110AX))
