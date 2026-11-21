@@ -1,0 +1,84 @@
+From 8d722eeac1a7964cf6f77b464e87082418e9657e Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sun, 19 Apr 2026 16:40:10 +0300
+Subject: [PATCH] wifi: rtw89: usb: Support 2 bulk in endpoints
+
+RTL8912AU has 2 bulk in endpoints, not 1, so raise the limit.
+
+The second bulk-in is for USB interrupt mode for SER (system error
+recovery) flow. SER is not currently implemented for USB devices in
+rtw89.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/3d30c8d1-fa25-48d0-b27d-7d634c5aa005@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -511,7 +511,7 @@ static void rtw89_usb_rx_resubmit(struct
+ 	rxcb->rx_skb = rx_skb;
+ 
+ 	usb_fill_bulk_urb(rxcb->rx_urb, rtwusb->udev,
+-			  usb_rcvbulkpipe(rtwusb->udev, rtwusb->in_pipe),
++			  usb_rcvbulkpipe(rtwusb->udev, rtwusb->in_pipe[0]),
+ 			  rxcb->rx_skb->data, RTW89_USB_RECVBUF_SZ,
+ 			  rtw89_usb_read_port_complete, rxcb);
+ 
+@@ -948,6 +948,7 @@ static int rtw89_usb_parse(struct rtw89_
+ 	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
+ 	struct usb_endpoint_descriptor *endpoint;
+ 	int num_out_pipes = 0;
++	int num_in_pipes = 0;
+ 	u8 num;
+ 	int i;
+ 
+@@ -963,13 +964,14 @@ static int rtw89_usb_parse(struct rtw89_
+ 
+ 		if (usb_endpoint_dir_in(endpoint) &&
+ 		    usb_endpoint_xfer_bulk(endpoint)) {
+-			if (rtwusb->in_pipe) {
++			if (num_in_pipes >= RTW89_MAX_BULKIN_NUM) {
+ 				rtw89_err(rtwdev,
+-					  "found more than 1 bulk in endpoint\n");
++					  "found more than %d bulk in endpoint\n",
++					  RTW89_MAX_BULKIN_NUM);
+ 				return -EINVAL;
+ 			}
+ 
+-			rtwusb->in_pipe = num;
++			rtwusb->in_pipe[num_in_pipes++] = num;
+ 		}
+ 
+ 		if (usb_endpoint_dir_out(endpoint) &&
+@@ -985,6 +987,11 @@ static int rtw89_usb_parse(struct rtw89_
+ 		}
+ 	}
+ 
++	if (num_in_pipes < 1) {
++		rtw89_err(rtwdev, "no bulk in endpoints found\n");
++		return -EINVAL;
++	}
++
+ 	if (num_out_pipes < 1) {
+ 		rtw89_err(rtwdev, "no bulk out endpoints found\n");
+ 		return -EINVAL;
+--- a/drivers/net/wireless/realtek/rtw89/usb.h
++++ b/drivers/net/wireless/realtek/rtw89/usb.h
+@@ -18,6 +18,7 @@
+ #define RTW89_USB_MOD512_PADDING	4
+ 
+ #define RTW89_MAX_ENDPOINT_NUM		9
++#define RTW89_MAX_BULKIN_NUM		2
+ #define RTW89_MAX_BULKOUT_NUM		7
+ 
+ #define R_AX_RXAGG_0_V1			0x6000
+@@ -65,7 +66,7 @@ struct rtw89_usb {
+ 
+ 	atomic_t continual_io_error;
+ 
+-	u8 in_pipe;
++	u8 in_pipe[RTW89_MAX_BULKIN_NUM];
+ 	u8 out_pipe[RTW89_MAX_BULKOUT_NUM];
+ 
+ 	struct workqueue_struct *rxwq;

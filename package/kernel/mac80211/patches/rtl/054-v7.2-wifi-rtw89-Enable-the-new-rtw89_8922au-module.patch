@@ -1,0 +1,58 @@
+From f07d1009e9729f65adadcbc1cf7a2b10e807ba05 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sun, 19 Apr 2026 16:49:45 +0300
+Subject: [PATCH] wifi: rtw89: Enable the new rtw89_8922au module
+
+Tested without MLO, mostly in station mode and a little in AP mode.
+
+It can reach 1.5 Gbps RX, 1 Gbps TX speed.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/c0bd60ba-4e2d-41cb-8b0c-38454a341d7a@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/Kconfig
++++ b/drivers/net/wireless/realtek/rtw89/Kconfig
+@@ -178,6 +178,19 @@ config RTW89_8922AE
+ 
+ 	  The variant 8922AE-VS has the same features except 1024-QAM.
+ 
++config RTW89_8922AU
++	tristate "Realtek 8922AU USB wireless network (Wi-Fi 7) adapter"
++	depends on m
++	depends on USB
++	select RTW89_CORE
++	select RTW89_USB
++	select RTW89_8922A
++	help
++	  Select this option will enable support for 8922AU chipset
++
++	  802.11be USB wireless network (Wi-Fi 7) adapter
++	  supporting 2x2 2GHz/5GHz/6GHz 4096-QAM 160MHz channels.
++
+ config RTW89_DEBUG
+ 	bool
+ 
+--- a/drivers/net/wireless/realtek/rtw89/Makefile
++++ b/drivers/net/wireless/realtek/rtw89/Makefile
+@@ -88,6 +88,9 @@ rtw89_8922a-objs := rtw8922a.o \
+ obj-$(CPTCFG_RTW89_8922AE) += rtw89_8922ae.o
+ rtw89_8922ae-objs := rtw8922ae.o
+ 
++obj-$(CPTCFG_RTW89_8922AU) += rtw89_8922au.o
++rtw89_8922au-objs := rtw8922au.o
++
+ rtw89_core-$(CPTCFG_RTW89_DEBUG) += debug.o
+ 
+ obj-$(CPTCFG_RTW89_PCI) += rtw89_pci.o
+--- a/local-symbols
++++ b/local-symbols
+@@ -421,6 +421,7 @@ RTW89_8852BTE=
+ RTW89_8852CE=
+ RTW89_8852CU=
+ RTW89_8922AE=
++RTW89_8922AU=
+ RTW89_DEBUG=
+ RTW89_DEBUGMSG=
+ RTW89_DEBUGFS=

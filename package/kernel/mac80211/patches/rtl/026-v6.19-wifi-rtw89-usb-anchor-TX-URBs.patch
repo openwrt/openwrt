@@ -1,0 +1,98 @@
+From 26a42d804aa89f6e62be68126114a4b62a8fe713 Mon Sep 17 00:00:00 2001
+From: Fedor Pchelkin <pchelkin@ispras.ru>
+Date: Tue, 4 Nov 2025 16:57:14 +0300
+Subject: [PATCH] wifi: rtw89: usb: anchor TX URBs
+
+During HCI reset all pending TX URBs should be canceled.  Use anchor to
+keep track of them and have an ability to cancel them synchronously.
+
+Note however that canceling RX URBs can't be done here in
+rtw89_usb_ops_reset() as it breaks driver initialization.
+
+Found by Linux Verification Center (linuxtesting.org).
+
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Fedor Pchelkin <pchelkin@ispras.ru>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20251104135720.321110-8-pchelkin@ispras.ru
+---
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -221,7 +221,6 @@ static void rtw89_usb_write_port_complet
+ 	}
+ 
+ 	kfree(txcb);
+-	usb_free_urb(urb);
+ }
+ 
+ static int rtw89_usb_write_port(struct rtw89_dev *rtwdev, u8 ch_dma,
+@@ -247,10 +246,17 @@ static int rtw89_usb_write_port(struct r
+ 	usb_fill_bulk_urb(urb, usbd, pipe, data, len,
+ 			  rtw89_usb_write_port_complete, context);
+ 	urb->transfer_flags |= URB_ZERO_PACKET;
+-	ret = usb_submit_urb(urb, GFP_ATOMIC);
++	usb_anchor_urb(urb, &rtwusb->tx_submitted);
+ 
++	ret = usb_submit_urb(urb, GFP_ATOMIC);
+ 	if (ret)
+-		usb_free_urb(urb);
++		usb_unanchor_urb(urb);
++
++	/* release our reference to this URB, USB core will eventually free it
++	 * on its own after the completion callback finishes (or URB is
++	 * immediately freed here if its submission has failed)
++	 */
++	usb_free_urb(urb);
+ 
+ 	if (ret == -ENODEV)
+ 		set_bit(RTW89_FLAG_UNPLUGGED, rtwdev->flags);
+@@ -557,6 +563,11 @@ static void rtw89_usb_cancel_rx_bufs(str
+ 	}
+ }
+ 
++static void rtw89_usb_cancel_tx_bufs(struct rtw89_usb *rtwusb)
++{
++	usb_kill_anchored_urbs(&rtwusb->tx_submitted);
++}
++
+ static void rtw89_usb_free_rx_bufs(struct rtw89_usb *rtwusb)
+ {
+ 	struct rtw89_usb_rx_ctrl_block *rxcb;
+@@ -658,7 +669,9 @@ static void rtw89_usb_deinit_tx(struct r
+ 
+ static void rtw89_usb_ops_reset(struct rtw89_dev *rtwdev)
+ {
+-	/* TODO: anything to do here? */
++	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
++
++	rtw89_usb_cancel_tx_bufs(rtwusb);
+ }
+ 
+ static int rtw89_usb_ops_start(struct rtw89_dev *rtwdev)
+@@ -895,6 +908,8 @@ static int rtw89_usb_intf_init(struct rt
+ 	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
+ 	int ret;
+ 
++	init_usb_anchor(&rtwusb->tx_submitted);
++
+ 	ret = rtw89_usb_parse(rtwdev, intf);
+ 	if (ret)
+ 		return ret;
+@@ -1021,6 +1036,7 @@ void rtw89_usb_disconnect(struct usb_int
+ 	rtwusb = rtw89_usb_priv(rtwdev);
+ 
+ 	rtw89_usb_cancel_rx_bufs(rtwusb);
++	rtw89_usb_cancel_tx_bufs(rtwusb);
+ 
+ 	rtw89_core_unregister(rtwdev);
+ 	rtw89_core_deinit(rtwdev);
+--- a/drivers/net/wireless/realtek/rtw89/usb.h
++++ b/drivers/net/wireless/realtek/rtw89/usb.h
+@@ -60,6 +60,7 @@ struct rtw89_usb {
+ 	struct sk_buff_head rx_free_queue;
+ 	struct work_struct rx_work;
+ 	struct work_struct rx_urb_work;
++	struct usb_anchor tx_submitted;
+ 
+ 	struct sk_buff_head tx_queue[RTW89_TXCH_NUM];
+ };

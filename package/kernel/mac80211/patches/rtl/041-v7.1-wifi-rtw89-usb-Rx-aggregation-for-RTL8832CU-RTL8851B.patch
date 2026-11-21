@@ -1,0 +1,243 @@
+From eef6d4449e8a540fde792968a26d8aa514af8089 Mon Sep 17 00:00:00 2001
+From: Shin-Yi Lin <isaiah@realtek.com>
+Date: Thu, 12 Mar 2026 13:57:24 +0800
+Subject: [PATCH] wifi: rtw89: usb: Rx aggregation for RTL8832CU/RTL8851BU
+
+USB RX Aggregation is a performance optimization technique used
+in USB network devices to increase throughput.
+
+Instead of sending every received network packet to the host computer
+individually, the device hardware groups multiple smaller packets
+into a single, large USB Bulk Transfer.
+
+ * toAP/toNB use iperf3 respectively.
+
+With Cisco BE6000 - iperf3 tcp 10 pair (to another NB)
+
+[6G 160Mhz]:
+
+ RTL8832CU-USB3.0
+       before   after
+ TX    941      941
+ RX    847      919
+
+ RTL8832CU-USB2.0
+       before   after
+ TX    293      286
+ RX    342      356
+
+[5G 80Mhz]:
+
+ RTL8832CU-USB3.0
+       before   after
+ TX    864      877
+ RX    864      902
+
+ RTL8832CU-USB2.0
+       before   after
+ TX    279      271
+ RX    327      349
+
+ RTL8851BU
+       before   after
+ TX    115      114
+ RX    295      306
+
+Signed-off-by: Shin-Yi Lin <isaiah@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20260312055724.12177-1-pkshih@realtek.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/rtw8851bu.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8851bu.c
+@@ -15,6 +15,7 @@ static const struct rtw89_usb_info rtw88
+ 	.usb3_mac_npi_config_intf_0	= R_AX_USB3_MAC_NPI_CONFIG_INTF_0,
+ 	.usb_endpoint_0			= R_AX_USB_ENDPOINT_0,
+ 	.usb_endpoint_2			= R_AX_USB_ENDPOINT_2,
++	.rx_agg_alignment		= 8,
+ 	.bulkout_id = {
+ 		[RTW89_DMA_ACH0] = 3,
+ 		[RTW89_DMA_ACH1] = 4,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852au.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852au.c
+@@ -15,6 +15,7 @@ static const struct rtw89_usb_info rtw88
+ 	.usb3_mac_npi_config_intf_0	= R_AX_USB3_MAC_NPI_CONFIG_INTF_0,
+ 	.usb_endpoint_0			= R_AX_USB_ENDPOINT_0,
+ 	.usb_endpoint_2			= R_AX_USB_ENDPOINT_2,
++	.rx_agg_alignment		= 8,
+ 	.bulkout_id = {
+ 		[RTW89_DMA_ACH0] = 3,
+ 		[RTW89_DMA_ACH2] = 5,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852bu.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852bu.c
+@@ -15,6 +15,7 @@ static const struct rtw89_usb_info rtw88
+ 	.usb3_mac_npi_config_intf_0	= R_AX_USB3_MAC_NPI_CONFIG_INTF_0,
+ 	.usb_endpoint_0			= R_AX_USB_ENDPOINT_0,
+ 	.usb_endpoint_2			= R_AX_USB_ENDPOINT_2,
++	.rx_agg_alignment		= 8,
+ 	.bulkout_id = {
+ 		[RTW89_DMA_ACH0] = 3,
+ 		[RTW89_DMA_ACH1] = 4,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852cu.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852cu.c
+@@ -15,6 +15,7 @@ static const struct rtw89_usb_info rtw88
+ 	.usb3_mac_npi_config_intf_0	= R_AX_USB3_MAC_NPI_CONFIG_INTF_0_V1,
+ 	.usb_endpoint_0			= R_AX_USB_ENDPOINT_0_V1,
+ 	.usb_endpoint_2			= R_AX_USB_ENDPOINT_2_V1,
++	.rx_agg_alignment		= 8,
+ 	.bulkout_id = {
+ 		[RTW89_DMA_ACH0] = 3,
+ 		[RTW89_DMA_ACH2] = 5,
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -408,11 +408,14 @@ static int rtw89_usb_ops_tx_write(struct
+ static void rtw89_usb_rx_handler(struct work_struct *work)
+ {
+ 	struct rtw89_usb *rtwusb = container_of(work, struct rtw89_usb, rx_work);
++	const struct rtw89_usb_info *info = rtwusb->info;
+ 	struct rtw89_dev *rtwdev = rtwusb->rtwdev;
+ 	struct rtw89_rx_desc_info desc_info;
++	s32 aligned_offset, remaining;
+ 	struct sk_buff *rx_skb;
+ 	struct sk_buff *skb;
+ 	u32 pkt_offset;
++	u8 *pkt_ptr;
+ 	int limit;
+ 
+ 	for (limit = 0; limit < 200; limit++) {
+@@ -425,23 +428,38 @@ static void rtw89_usb_rx_handler(struct
+ 			goto free_or_reuse;
+ 		}
+ 
+-		memset(&desc_info, 0, sizeof(desc_info));
+-		rtw89_chip_query_rxdesc(rtwdev, &desc_info, rx_skb->data, 0);
+-
+-		skb = rtw89_alloc_skb_for_rx(rtwdev, desc_info.pkt_size);
+-		if (!skb) {
+-			rtw89_debug(rtwdev, RTW89_DBG_HCI,
+-				    "failed to allocate RX skb of size %u\n",
+-				    desc_info.pkt_size);
+-			goto free_or_reuse;
+-		}
+-
+-		pkt_offset = desc_info.offset + desc_info.rxd_len;
++		pkt_ptr = rx_skb->data;
++		remaining = rx_skb->len;
+ 
+-		skb_put_data(skb, rx_skb->data + pkt_offset,
+-			     desc_info.pkt_size);
+-
+-		rtw89_core_rx(rtwdev, &desc_info, skb);
++		do {
++			memset(&desc_info, 0, sizeof(desc_info));
++			rtw89_chip_query_rxdesc(rtwdev, &desc_info, pkt_ptr, 0);
++
++			pkt_offset = desc_info.offset + desc_info.rxd_len;
++			if (remaining < (pkt_offset + desc_info.pkt_size)) {
++				rtw89_debug(rtwdev, RTW89_DBG_HCI,
++					    "Failed to get remaining RX pkt %u > %u\n",
++					    pkt_offset + desc_info.pkt_size, remaining);
++				goto free_or_reuse;
++			}
++
++			skb = rtw89_alloc_skb_for_rx(rtwdev, desc_info.pkt_size);
++			if (!skb) {
++				rtw89_debug(rtwdev, RTW89_DBG_HCI,
++					    "failed to allocate RX skb of size %u\n",
++					    desc_info.pkt_size);
++				goto free_or_reuse;
++			}
++
++			skb_put_data(skb, pkt_ptr + pkt_offset, desc_info.pkt_size);
++			rtw89_core_rx(rtwdev, &desc_info, skb);
++
++			/* next frame */
++			pkt_offset += desc_info.pkt_size;
++			aligned_offset = ALIGN(pkt_offset, info->rx_agg_alignment);
++			pkt_ptr += aligned_offset;
++			remaining -= aligned_offset;
++		} while (remaining > 0);
+ 
+ free_or_reuse:
+ 		if (skb_queue_len(&rtwusb->rx_free_queue) >= RTW89_USB_RX_SKB_NUM)
+@@ -745,6 +763,44 @@ static int rtw89_usb_ops_mac_pre_deinit(
+ 	return 0; /* Nothing to do. */
+ }
+ 
++static void rtw89_usb_rx_agg_cfg_v1(struct rtw89_dev *rtwdev)
++{
++	const u32 rxagg_0 = FIELD_PREP_CONST(B_AX_RXAGG_0_EN, 1) |
++			    FIELD_PREP_CONST(B_AX_RXAGG_0_NUM_TH, 0) |
++			    FIELD_PREP_CONST(B_AX_RXAGG_0_TIME_32US_TH, 32) |
++			    FIELD_PREP_CONST(B_AX_RXAGG_0_BUF_SZ_4K, 5);
++
++	rtw89_write32(rtwdev, R_AX_RXAGG_0, rxagg_0);
++}
++
++static void rtw89_usb_rx_agg_cfg_v2(struct rtw89_dev *rtwdev)
++{
++	const u32 rxagg_0 = FIELD_PREP_CONST(B_AX_RXAGG_0_EN, 1) |
++			    FIELD_PREP_CONST(B_AX_RXAGG_0_NUM_TH, 255) |
++			    FIELD_PREP_CONST(B_AX_RXAGG_0_TIME_32US_TH, 32) |
++			    FIELD_PREP_CONST(B_AX_RXAGG_0_BUF_SZ_1K, 20);
++
++	rtw89_write32(rtwdev, R_AX_RXAGG_0_V1, rxagg_0);
++	rtw89_write32(rtwdev, R_AX_RXAGG_1_V1, 0x1F);
++}
++
++static void rtw89_usb_rx_agg_cfg(struct rtw89_dev *rtwdev)
++{
++	switch (rtwdev->chip->chip_id) {
++	case RTL8851B:
++	case RTL8852A:
++	case RTL8852B:
++		rtw89_usb_rx_agg_cfg_v1(rtwdev);
++		break;
++	case RTL8852C:
++		rtw89_usb_rx_agg_cfg_v2(rtwdev);
++		break;
++	default:
++		rtw89_warn(rtwdev, "%s: USB RX agg not support\n", __func__);
++		return;
++	}
++}
++
+ static int rtw89_usb_ops_mac_post_init(struct rtw89_dev *rtwdev)
+ {
+ 	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
+@@ -773,6 +829,8 @@ static int rtw89_usb_ops_mac_post_init(s
+ 		rtw89_write8(rtwdev, info->usb_endpoint_2 + 1, NUMP);
+ 	}
+ 
++	rtw89_usb_rx_agg_cfg(rtwdev);
++
+ 	return 0;
+ }
+ 
+--- a/drivers/net/wireless/realtek/rtw89/usb.h
++++ b/drivers/net/wireless/realtek/rtw89/usb.h
+@@ -20,6 +20,17 @@
+ #define RTW89_MAX_ENDPOINT_NUM		9
+ #define RTW89_MAX_BULKOUT_NUM		7
+ 
++#define R_AX_RXAGG_0_V1			0x6000
++#define B_AX_RXAGG_0_EN			BIT(31)
++#define B_AX_RXAGG_0_NUM_TH		GENMASK(23, 16)
++#define B_AX_RXAGG_0_TIME_32US_TH	GENMASK(15, 8)
++#define B_AX_RXAGG_0_BUF_SZ_1K		GENMASK(7, 0)
++
++#define R_AX_RXAGG_1_V1			0x6004
++
++#define R_AX_RXAGG_0			0x8900
++#define B_AX_RXAGG_0_BUF_SZ_4K		GENMASK(7, 0)
++
+ struct rtw89_usb_info {
+ 	u32 usb_host_request_2;
+ 	u32 usb_wlan0_1;
+@@ -27,6 +38,7 @@ struct rtw89_usb_info {
+ 	u32 usb3_mac_npi_config_intf_0;
+ 	u32 usb_endpoint_0;
+ 	u32 usb_endpoint_2;
++	u8 rx_agg_alignment;
+ 	u8 bulkout_id[RTW89_DMA_CH_NUM];
+ };
+ 

@@ -1,0 +1,122 @@
+From d5da3d9fb05f6e2b2685c58b37067749b342b518 Mon Sep 17 00:00:00 2001
+From: Fedor Pchelkin <pchelkin@ispras.ru>
+Date: Tue, 4 Nov 2025 16:57:17 +0300
+Subject: [PATCH] wifi: rtw89: process TX wait skbs for USB via C2H handler
+
+TX wait skbs need to be completed when they are done.  PCIe part does this
+inside rtw89_pci_tx_status() during RPP processing.  Other HCIs use a
+mechanism based on C2H firmware messages.
+
+Store TX wait skbs inside TX report queue so that it'll be possible to
+identify completed items inside the C2H handler.  Try to do this as
+similar to PCIe path as possible.  When the corresponding TX wait skb is
+found inside TX report queue, unlink it from there and call
+rtw89_core_tx_wait_complete() to mark the completion.
+
+If the callee waiting for the completion has already timed out, the TX
+wait skb is placed into TX wait list (like PCIe part does).
+
+It's important that during HCI reset all pending TX wait frames should be
+completed inside hci.ops->reset method before calling
+rtw89_tx_wait_list_clear().
+
+Found by Linux Verification Center (linuxtesting.org).
+
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Fedor Pchelkin <pchelkin@ispras.ru>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20251104135720.321110-11-pchelkin@ispras.ru
+---
+--- a/drivers/net/wireless/realtek/rtw89/core.c
++++ b/drivers/net/wireless/realtek/rtw89/core.c
+@@ -1135,7 +1135,7 @@ rtw89_core_tx_update_desc_info(struct rt
+ 	if (addr_cam->valid && desc_info->mlo)
+ 		upd_wlan_hdr = true;
+ 
+-	if (rtw89_is_tx_rpt_skb(tx_req->skb))
++	if (rtw89_is_tx_rpt_skb(rtwdev, tx_req->skb))
+ 		rtw89_tx_rpt_init(rtwdev, tx_req);
+ 
+ 	is_bmc = (is_broadcast_ether_addr(hdr->addr1) ||
+@@ -1267,14 +1267,13 @@ static int rtw89_core_tx_write_link(stru
+ 	tx_req.rtwvif_link = rtwvif_link;
+ 	tx_req.rtwsta_link = rtwsta_link;
+ 	tx_req.desc_info.sw_mld = sw_mld;
++	rcu_assign_pointer(skb_data->wait, wait);
+ 
+ 	rtw89_traffic_stats_accu(rtwdev, rtwvif, skb, true, true);
+ 	rtw89_wow_parse_akm(rtwdev, skb);
+ 	rtw89_core_tx_update_desc_info(rtwdev, &tx_req);
+ 	rtw89_core_tx_wake(rtwdev, &tx_req);
+ 
+-	rcu_assign_pointer(skb_data->wait, wait);
+-
+ 	ret = rtw89_hci_tx_write(rtwdev, &tx_req);
+ 	if (ret) {
+ 		rtw89_err(rtwdev, "failed to transmit skb to HCI\n");
+--- a/drivers/net/wireless/realtek/rtw89/core.h
++++ b/drivers/net/wireless/realtek/rtw89/core.h
+@@ -6327,6 +6327,7 @@ static inline int rtw89_hci_tx_write(str
+ static inline void rtw89_hci_reset(struct rtw89_dev *rtwdev)
+ {
+ 	rtwdev->hci.ops->reset(rtwdev);
++	/* hci.ops->reset must complete all pending TX wait SKBs */
+ 	rtw89_tx_wait_list_clear(rtwdev);
+ }
+ 
+@@ -7417,6 +7418,12 @@ static inline struct sk_buff *rtw89_allo
+ 	return dev_alloc_skb(length);
+ }
+ 
++static inline bool rtw89_core_is_tx_wait(struct rtw89_dev *rtwdev,
++					 struct rtw89_tx_skb_data *skb_data)
++{
++	return rcu_access_pointer(skb_data->wait);
++}
++
+ static inline bool rtw89_core_tx_wait_complete(struct rtw89_dev *rtwdev,
+ 					       struct rtw89_tx_skb_data *skb_data,
+ 					       u8 tx_status)
+--- a/drivers/net/wireless/realtek/rtw89/mac.h
++++ b/drivers/net/wireless/realtek/rtw89/mac.h
+@@ -1644,19 +1644,26 @@ void rtw89_tx_rpt_init(struct rtw89_dev
+ }
+ 
+ static inline
+-bool rtw89_is_tx_rpt_skb(struct sk_buff *skb)
++bool rtw89_is_tx_rpt_skb(struct rtw89_dev *rtwdev, struct sk_buff *skb)
+ {
++	struct rtw89_tx_skb_data *skb_data = RTW89_TX_SKB_CB(skb);
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 
+-	return info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS;
++	return rtw89_core_is_tx_wait(rtwdev, skb_data) ||
++	       (info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS);
+ }
+ 
+ static inline
+ void rtw89_tx_rpt_tx_status(struct rtw89_dev *rtwdev, struct sk_buff *skb,
+ 			    u8 tx_status)
+ {
+-	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++	struct rtw89_tx_skb_data *skb_data = RTW89_TX_SKB_CB(skb);
++	struct ieee80211_tx_info *info;
++
++	if (rtw89_core_tx_wait_complete(rtwdev, skb_data, tx_status))
++		return;
+ 
++	info = IEEE80211_SKB_CB(skb);
+ 	ieee80211_tx_info_clear_status(info);
+ 
+ 	if (tx_status == RTW89_TX_DONE)
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -194,7 +194,7 @@ static void rtw89_usb_write_port_complet
+ 
+ 		skb_pull(skb, txdesc_size);
+ 
+-		if (rtw89_is_tx_rpt_skb(skb)) {
++		if (rtw89_is_tx_rpt_skb(rtwdev, skb)) {
+ 			if (urb->status == 0)
+ 				rtw89_tx_rpt_skb_add(rtwdev, skb);
+ 			else

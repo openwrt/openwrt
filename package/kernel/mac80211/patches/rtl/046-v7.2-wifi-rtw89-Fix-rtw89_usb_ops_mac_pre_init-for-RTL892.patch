@@ -1,0 +1,24 @@
+From 0cc43249ea97946cc8d5e315246bad8369c31f27 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sun, 19 Apr 2026 16:42:38 +0300
+Subject: [PATCH] wifi: rtw89: Fix rtw89_usb_ops_mac_pre_init() for RTL8922AU
+
+Return early because RTL8922AU doesn't need to do anything here.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/58bf4dc4-dd4d-4caa-b6c0-e90749769cea@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -756,6 +756,9 @@ static int rtw89_usb_ops_mac_pre_init(st
+ 	const struct rtw89_usb_info *info = rtwusb->info;
+ 	u32 val32;
+ 
++	if (rtwdev->chip->chip_id == RTL8922A)
++		return 0;
++
+ 	rtw89_write32_set(rtwdev, info->usb_host_request_2,
+ 			  B_AX_R_USBIO_MODE);
+ 

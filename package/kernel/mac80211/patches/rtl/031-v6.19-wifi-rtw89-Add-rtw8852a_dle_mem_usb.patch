@@ -1,0 +1,124 @@
+From 0eea5e0f03db84d3d1a1a8926fca12295bda1f04 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Fri, 7 Nov 2025 18:07:06 +0200
+Subject: [PATCH] wifi: rtw89: Add rtw8852a_dle_mem_usb
+
+Add rtw8852a_dle_mem_usb and its various quotas and sizes in struct
+rtw89_mac_size_set.
+
+"dle" could be "Data Link Engine" or "Double Link Engine". These are
+some parameters needed for RTL8852AU.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/d0a09039-97a8-4501-b023-510c126d8c61@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/mac.c
++++ b/drivers/net/wireless/realtek/rtw89/mac.c
+@@ -1666,6 +1666,8 @@ const struct rtw89_mac_size_set rtw89_ma
+ 	/* PCIE 64 */
+ 	.wde_size0 = {RTW89_WDE_PG_64, 4095, 1,},
+ 	.wde_size0_v1 = {RTW89_WDE_PG_64, 3328, 0, 0,},
++	/* 8852A USB */
++	.wde_size1 = {RTW89_WDE_PG_64, 768, 0,},
+ 	/* DLFW */
+ 	.wde_size4 = {RTW89_WDE_PG_64, 0, 4096,},
+ 	.wde_size4_v1 = {RTW89_WDE_PG_64, 0, 3328, 0,},
+@@ -1689,6 +1691,8 @@ const struct rtw89_mac_size_set rtw89_ma
+ 	/* PCIE */
+ 	.ple_size0 = {RTW89_PLE_PG_128, 1520, 16,},
+ 	.ple_size0_v1 = {RTW89_PLE_PG_128, 2688, 240, 212992,},
++	/* 8852A USB */
++	.ple_size1 = {RTW89_PLE_PG_128, 3184, 16,},
+ 	.ple_size3_v1 = {RTW89_PLE_PG_128, 2928, 0, 212992,},
+ 	/* DLFW */
+ 	.ple_size4 = {RTW89_PLE_PG_128, 64, 1472,},
+@@ -1712,6 +1716,8 @@ const struct rtw89_mac_size_set rtw89_ma
+ 	/* PCIE 64 */
+ 	.wde_qt0 = {3792, 196, 0, 107,},
+ 	.wde_qt0_v1 = {3302, 6, 0, 20,},
++	/* 8852A USB */
++	.wde_qt1 = {512, 196, 0, 60,},
+ 	/* DLFW */
+ 	.wde_qt4 = {0, 0, 0, 0,},
+ 	/* PCIE 64 */
+@@ -1740,6 +1746,9 @@ const struct rtw89_mac_size_set rtw89_ma
+ 	.ple_qt13 = {0, 0, 16, 48, 0, 0, 0, 0, 0, 0, 0,},
+ 	/* PCIE 64 */
+ 	.ple_qt18 = {147, 0, 16, 20, 17, 13, 89, 0, 32, 14, 8, 0,},
++	/* 8852A USB SCC */
++	.ple_qt25 = {1536, 0, 16, 48, 13, 13, 360, 0, 32, 40, 8, 0,},
++	.ple_qt26 = {2654, 0, 1134, 48, 64, 13, 1478, 0, 64, 128, 120, 0,},
+ 	/* USB 52C USB3.0 */
+ 	.ple_qt42 = {1068, 0, 16, 48, 4, 13, 178, 0, 16, 1, 8, 16, 0,},
+ 	/* USB 52C USB3.0 */
+--- a/drivers/net/wireless/realtek/rtw89/mac.h
++++ b/drivers/net/wireless/realtek/rtw89/mac.h
+@@ -922,6 +922,7 @@ struct rtw89_mac_size_set {
+ 	const struct rtw89_hfc_prec_cfg hfc_prec_cfg_c0;
+ 	const struct rtw89_hfc_prec_cfg hfc_prec_cfg_c2;
+ 	const struct rtw89_dle_size wde_size0;
++	const struct rtw89_dle_size wde_size1;
+ 	const struct rtw89_dle_size wde_size0_v1;
+ 	const struct rtw89_dle_size wde_size4;
+ 	const struct rtw89_dle_size wde_size4_v1;
+@@ -935,6 +936,7 @@ struct rtw89_mac_size_set {
+ 	const struct rtw89_dle_size wde_size25;
+ 	const struct rtw89_dle_size wde_size31;
+ 	const struct rtw89_dle_size ple_size0;
++	const struct rtw89_dle_size ple_size1;
+ 	const struct rtw89_dle_size ple_size0_v1;
+ 	const struct rtw89_dle_size ple_size3_v1;
+ 	const struct rtw89_dle_size ple_size4;
+@@ -948,6 +950,7 @@ struct rtw89_mac_size_set {
+ 	const struct rtw89_dle_size ple_size33;
+ 	const struct rtw89_dle_size ple_size34;
+ 	const struct rtw89_wde_quota wde_qt0;
++	const struct rtw89_wde_quota wde_qt1;
+ 	const struct rtw89_wde_quota wde_qt0_v1;
+ 	const struct rtw89_wde_quota wde_qt4;
+ 	const struct rtw89_wde_quota wde_qt6;
+@@ -965,6 +968,8 @@ struct rtw89_mac_size_set {
+ 	const struct rtw89_ple_quota ple_qt9;
+ 	const struct rtw89_ple_quota ple_qt13;
+ 	const struct rtw89_ple_quota ple_qt18;
++	const struct rtw89_ple_quota ple_qt25;
++	const struct rtw89_ple_quota ple_qt26;
+ 	const struct rtw89_ple_quota ple_qt42;
+ 	const struct rtw89_ple_quota ple_qt43;
+ 	const struct rtw89_ple_quota ple_qt44;
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852a.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852a.c
+@@ -65,6 +65,19 @@ static const struct rtw89_dle_mem rtw885
+ 			       NULL},
+ };
+ 
++static const struct rtw89_dle_mem rtw8852a_dle_mem_usb[] = {
++	[RTW89_QTA_SCC] = {RTW89_QTA_SCC, &rtw89_mac_size.wde_size1,
++			   &rtw89_mac_size.ple_size1, &rtw89_mac_size.wde_qt1,
++			   &rtw89_mac_size.wde_qt1, &rtw89_mac_size.ple_qt25,
++			   &rtw89_mac_size.ple_qt26},
++	[RTW89_QTA_DLFW] = {RTW89_QTA_DLFW, &rtw89_mac_size.wde_size4,
++			    &rtw89_mac_size.ple_size4, &rtw89_mac_size.wde_qt4,
++			    &rtw89_mac_size.wde_qt4, &rtw89_mac_size.ple_qt13,
++			    &rtw89_mac_size.ple_qt13},
++	[RTW89_QTA_INVALID] = {RTW89_QTA_INVALID, NULL, NULL, NULL, NULL, NULL,
++			       NULL},
++};
++
+ static const struct rtw89_reg2_def  rtw8852a_pmac_ht20_mcs7_tbl[] = {
+ 	{0x44AC, 0x00000000},
+ 	{0x44B0, 0x00000000},
+@@ -2226,7 +2239,10 @@ const struct rtw89_chip_info rtw8852a_ch
+ 	.dis_2g_40m_ul_ofdma	= true,
+ 	.rsvd_ple_ofst		= 0x6f800,
+ 	.hfc_param_ini		= {rtw8852a_hfc_param_ini_pcie, NULL, NULL},
+-	.dle_mem		= {rtw8852a_dle_mem_pcie, NULL, NULL, NULL},
++	.dle_mem		= {rtw8852a_dle_mem_pcie,
++				   rtw8852a_dle_mem_usb,
++				   rtw8852a_dle_mem_usb,
++				   NULL},
+ 	.wde_qempty_acq_grpnum	= 16,
+ 	.wde_qempty_mgq_grpsel	= 16,
+ 	.rf_base_addr		= {0xc000, 0xd000},

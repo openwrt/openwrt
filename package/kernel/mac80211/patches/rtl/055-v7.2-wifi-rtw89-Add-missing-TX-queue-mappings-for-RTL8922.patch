@@ -1,0 +1,38 @@
+From cc9cdac8009979e5b77a9d05841ab2d9ca03e68e Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sat, 16 May 2026 15:32:12 +0300
+Subject: [PATCH] wifi: rtw89: Add missing TX queue mappings for RTL8922AU
+
+A user with MLO-capable router reports:
+
+[ 753.080409] rtw89_8922au_git 2-2:1.0: Cannot map qsel to dma v2: 26
+[ 753.080417] rtw89_8922au_git 2-2:1.0: Cannot map qsel to dma v2: 26
+[ 813.649426] rtw89_8922au_git 2-2:1.0: Cannot map qsel to dma v2: 26
+[ 813.649445] rtw89_8922au_git 2-2:1.0: Cannot map qsel to dma v2: 26
+[ 813.855983] rtw89_8922au_git 2-2:1.0: Cannot map qsel to dma v2: 26
+
+Map RTW89_TX_QSEL_B1_MGMT and RTW89_TX_QSEL_B1_HI to RTW89_TXCH_CH10.
+This is probably the right channel for these queues.
+
+This function is also used for RTL8852AU and RTL8852CU, but those
+currently aren't used in DBCC mode with rtw89 so it makes no difference
+for them.
+
+Link: https://github.com/morrownr/rtw89/issues/83#issuecomment-4314735734
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/0c8e0cf1-13e9-4c67-a67f-5f6f79fd0658@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/core.c
++++ b/drivers/net/wireless/realtek/rtw89/core.c
+@@ -774,6 +774,9 @@ u8 rtw89_core_get_ch_dma_v2(struct rtw89
+ 	case RTW89_TX_QSEL_B0_MGMT:
+ 	case RTW89_TX_QSEL_B0_HI:
+ 		return RTW89_TXCH_CH8;
++	case RTW89_TX_QSEL_B1_MGMT:
++	case RTW89_TX_QSEL_B1_HI:
++		return RTW89_TXCH_CH10;
+ 	}
+ }
+ EXPORT_SYMBOL(rtw89_core_get_ch_dma_v2);

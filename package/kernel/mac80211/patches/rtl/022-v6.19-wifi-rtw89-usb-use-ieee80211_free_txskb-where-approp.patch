@@ -1,0 +1,53 @@
+From 45a6a88f011fc57ba8518f4d032cc2b4f6543c12 Mon Sep 17 00:00:00 2001
+From: Fedor Pchelkin <pchelkin@ispras.ru>
+Date: Tue, 4 Nov 2025 16:57:10 +0300
+Subject: [PATCH] wifi: rtw89: usb: use ieee80211_free_txskb() where appropriate
+
+rtw89_usb_ops_tx_kick_off() may need to release skb if a failure occurs.
+It operates mainly on skbs coming from the core wireless stack and the
+ones containing firmware commands.
+
+Use ieee80211_free_txskb() for the former case.
+
+Suggested-by: Ping-Ke Shih <pkshih@realtek.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Fedor Pchelkin <pchelkin@ispras.ru>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20251104135720.321110-4-pchelkin@ispras.ru
+---
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -258,6 +258,15 @@ static int rtw89_usb_write_port(struct r
+ 	return ret;
+ }
+ 
++static void rtw89_usb_tx_free_skb(struct rtw89_dev *rtwdev, u8 txch,
++				  struct sk_buff *skb)
++{
++	if (txch == RTW89_TXCH_CH12)
++		dev_kfree_skb_any(skb);
++	else
++		ieee80211_free_txskb(rtwdev->hw, skb);
++}
++
+ static void rtw89_usb_ops_tx_kick_off(struct rtw89_dev *rtwdev, u8 txch)
+ {
+ 	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
+@@ -272,7 +281,7 @@ static void rtw89_usb_ops_tx_kick_off(st
+ 
+ 		txcb = kmalloc(sizeof(*txcb), GFP_ATOMIC);
+ 		if (!txcb) {
+-			dev_kfree_skb_any(skb);
++			rtw89_usb_tx_free_skb(rtwdev, txch, skb);
+ 			continue;
+ 		}
+ 
+@@ -291,7 +300,7 @@ static void rtw89_usb_ops_tx_kick_off(st
+ 
+ 			skb_dequeue(&txcb->tx_ack_queue);
+ 			kfree(txcb);
+-			dev_kfree_skb_any(skb);
++			rtw89_usb_tx_free_skb(rtwdev, txch, skb);
+ 		}
+ 	}
+ }

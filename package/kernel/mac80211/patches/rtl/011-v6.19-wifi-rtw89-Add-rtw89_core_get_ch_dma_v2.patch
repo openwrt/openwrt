@@ -1,0 +1,149 @@
+From 89acd6c49322db4603a122e20780904021dc0491 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sat, 1 Nov 2025 21:20:38 +0200
+Subject: [PATCH] wifi: rtw89: Add rtw89_core_get_ch_dma_v2()
+
+RTL8852CU, RTL8852AU, and RTL8922AU need a different mapping of TX
+queue to DMA channel compared to their PCI versions, so make
+get_ch_dma in struct rtw89_chip_ops an array and add
+rtw89_core_get_ch_dma_v2().
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/6c7b2f01-2c78-47c8-a4c4-98cd3060d7f3@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/core.c
++++ b/drivers/net/wireless/realtek/rtw89/core.c
+@@ -759,6 +759,25 @@ u8 rtw89_core_get_ch_dma_v1(struct rtw89
+ }
+ EXPORT_SYMBOL(rtw89_core_get_ch_dma_v1);
+ 
++u8 rtw89_core_get_ch_dma_v2(struct rtw89_dev *rtwdev, u8 qsel)
++{
++	switch (qsel) {
++	default:
++		rtw89_warn(rtwdev, "Cannot map qsel to dma v2: %d\n", qsel);
++		fallthrough;
++	case RTW89_TX_QSEL_BE_0:
++	case RTW89_TX_QSEL_VO_0:
++		return RTW89_TXCH_ACH0;
++	case RTW89_TX_QSEL_BK_0:
++	case RTW89_TX_QSEL_VI_0:
++		return RTW89_TXCH_ACH2;
++	case RTW89_TX_QSEL_B0_MGMT:
++	case RTW89_TX_QSEL_B0_HI:
++		return RTW89_TXCH_CH8;
++	}
++}
++EXPORT_SYMBOL(rtw89_core_get_ch_dma_v2);
++
+ static void
+ rtw89_core_tx_update_mgmt_info(struct rtw89_dev *rtwdev,
+ 			       struct rtw89_core_tx_request *tx_req)
+--- a/drivers/net/wireless/realtek/rtw89/core.h
++++ b/drivers/net/wireless/realtek/rtw89/core.h
+@@ -3767,7 +3767,7 @@ struct rtw89_chip_ops {
+ 	void (*fill_txdesc_fwcmd)(struct rtw89_dev *rtwdev,
+ 				  struct rtw89_tx_desc_info *desc_info,
+ 				  void *txdesc);
+-	u8 (*get_ch_dma)(struct rtw89_dev *rtwdev, u8 qsel);
++	u8 (*get_ch_dma[RTW89_HCI_TYPE_NUM])(struct rtw89_dev *rtwdev, u8 qsel);
+ 	int (*cfg_ctrl_path)(struct rtw89_dev *rtwdev, bool wl);
+ 	int (*mac_cfg_gnt)(struct rtw89_dev *rtwdev,
+ 			   const struct rtw89_mac_ax_coex_gnt *gnt_cfg);
+@@ -7261,7 +7261,7 @@ u8 rtw89_chip_get_ch_dma(struct rtw89_de
+ {
+ 	const struct rtw89_chip_info *chip = rtwdev->chip;
+ 
+-	return chip->ops->get_ch_dma(rtwdev, qsel);
++	return chip->ops->get_ch_dma[rtwdev->hci.type](rtwdev, qsel);
+ }
+ 
+ static inline
+@@ -7515,6 +7515,7 @@ void rtw89_core_fill_txdesc_fwcmd_v2(str
+ 				     void *txdesc);
+ u8 rtw89_core_get_ch_dma(struct rtw89_dev *rtwdev, u8 qsel);
+ u8 rtw89_core_get_ch_dma_v1(struct rtw89_dev *rtwdev, u8 qsel);
++u8 rtw89_core_get_ch_dma_v2(struct rtw89_dev *rtwdev, u8 qsel);
+ void rtw89_core_rx(struct rtw89_dev *rtwdev,
+ 		   struct rtw89_rx_desc_info *desc_info,
+ 		   struct sk_buff *skb);
+--- a/drivers/net/wireless/realtek/rtw89/rtw8851b.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8851b.c
+@@ -2537,7 +2537,9 @@ static const struct rtw89_chip_ops rtw88
+ 	.query_rxdesc		= rtw89_core_query_rxdesc,
+ 	.fill_txdesc		= rtw89_core_fill_txdesc,
+ 	.fill_txdesc_fwcmd	= rtw89_core_fill_txdesc,
+-	.get_ch_dma		= rtw89_core_get_ch_dma,
++	.get_ch_dma		= {rtw89_core_get_ch_dma,
++				   rtw89_core_get_ch_dma,
++				   NULL,},
+ 	.cfg_ctrl_path		= rtw89_mac_cfg_ctrl_path,
+ 	.mac_cfg_gnt		= rtw89_mac_cfg_gnt,
+ 	.stop_sch_tx		= rtw89_mac_stop_sch_tx,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852a.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852a.c
+@@ -2179,7 +2179,9 @@ static const struct rtw89_chip_ops rtw88
+ 	.query_rxdesc		= rtw89_core_query_rxdesc,
+ 	.fill_txdesc		= rtw89_core_fill_txdesc,
+ 	.fill_txdesc_fwcmd	= rtw89_core_fill_txdesc,
+-	.get_ch_dma		= rtw89_core_get_ch_dma,
++	.get_ch_dma		= {rtw89_core_get_ch_dma,
++				   rtw89_core_get_ch_dma_v2,
++				   NULL,},
+ 	.cfg_ctrl_path		= rtw89_mac_cfg_ctrl_path,
+ 	.mac_cfg_gnt		= rtw89_mac_cfg_gnt,
+ 	.stop_sch_tx		= rtw89_mac_stop_sch_tx,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852b.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852b.c
+@@ -842,7 +842,9 @@ static const struct rtw89_chip_ops rtw88
+ 	.query_rxdesc		= rtw89_core_query_rxdesc,
+ 	.fill_txdesc		= rtw89_core_fill_txdesc,
+ 	.fill_txdesc_fwcmd	= rtw89_core_fill_txdesc,
+-	.get_ch_dma		= rtw89_core_get_ch_dma,
++	.get_ch_dma		= {rtw89_core_get_ch_dma,
++				   rtw89_core_get_ch_dma,
++				   NULL,},
+ 	.cfg_ctrl_path		= rtw89_mac_cfg_ctrl_path,
+ 	.mac_cfg_gnt		= rtw89_mac_cfg_gnt,
+ 	.stop_sch_tx		= rtw89_mac_stop_sch_tx,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852bt.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852bt.c
+@@ -708,7 +708,9 @@ static const struct rtw89_chip_ops rtw88
+ 	.query_rxdesc		= rtw89_core_query_rxdesc,
+ 	.fill_txdesc		= rtw89_core_fill_txdesc,
+ 	.fill_txdesc_fwcmd	= rtw89_core_fill_txdesc,
+-	.get_ch_dma		= rtw89_core_get_ch_dma,
++	.get_ch_dma		= {rtw89_core_get_ch_dma,
++				   NULL,
++				   NULL,},
+ 	.cfg_ctrl_path		= rtw89_mac_cfg_ctrl_path,
+ 	.mac_cfg_gnt		= rtw89_mac_cfg_gnt,
+ 	.stop_sch_tx		= rtw89_mac_stop_sch_tx,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852c.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852c.c
+@@ -2962,7 +2962,9 @@ static const struct rtw89_chip_ops rtw88
+ 	.query_rxdesc		= rtw89_core_query_rxdesc,
+ 	.fill_txdesc		= rtw89_core_fill_txdesc_v1,
+ 	.fill_txdesc_fwcmd	= rtw89_core_fill_txdesc_fwcmd_v1,
+-	.get_ch_dma		= rtw89_core_get_ch_dma,
++	.get_ch_dma		= {rtw89_core_get_ch_dma,
++				   rtw89_core_get_ch_dma_v2,
++				   NULL,},
+ 	.cfg_ctrl_path		= rtw89_mac_cfg_ctrl_path_v1,
+ 	.mac_cfg_gnt		= rtw89_mac_cfg_gnt_v1,
+ 	.stop_sch_tx		= rtw89_mac_stop_sch_tx_v1,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8922a.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8922a.c
+@@ -2872,7 +2872,9 @@ static const struct rtw89_chip_ops rtw89
+ 	.query_rxdesc		= rtw89_core_query_rxdesc_v2,
+ 	.fill_txdesc		= rtw89_core_fill_txdesc_v2,
+ 	.fill_txdesc_fwcmd	= rtw89_core_fill_txdesc_fwcmd_v2,
+-	.get_ch_dma		= rtw89_core_get_ch_dma,
++	.get_ch_dma		= {rtw89_core_get_ch_dma,
++				   rtw89_core_get_ch_dma_v2,
++				   NULL,},
+ 	.cfg_ctrl_path		= rtw89_mac_cfg_ctrl_path_v2,
+ 	.mac_cfg_gnt		= rtw89_mac_cfg_gnt_v2,
+ 	.stop_sch_tx		= rtw89_mac_stop_sch_tx_v2,

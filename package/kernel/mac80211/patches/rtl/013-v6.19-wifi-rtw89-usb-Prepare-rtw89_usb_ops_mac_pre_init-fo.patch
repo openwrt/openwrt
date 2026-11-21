@@ -1,0 +1,89 @@
+From 7697701d6c0356cecda03be516023cb527ddb007 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sat, 1 Nov 2025 21:22:56 +0200
+Subject: [PATCH] wifi: rtw89: usb: Prepare rtw89_usb_ops_mac_pre_init() for RTL8852CU
+
+The registers used in rtw89_usb_ops_mac_pre_init() are located at
+different offsets in RTL8852CU, so move them to struct rtw89_usb_info,
+which is filled in each chip's driver.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/36b823c9-2cb5-4191-8492-2a291f9dc1db@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/rtw8851bu.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8851bu.c
+@@ -5,9 +5,13 @@
+ #include <linux/module.h>
+ #include <linux/usb.h>
+ #include "rtw8851b.h"
++#include "reg.h"
+ #include "usb.h"
+ 
+ static const struct rtw89_usb_info rtw8851b_usb_info = {
++	.usb_host_request_2		= R_AX_USB_HOST_REQUEST_2,
++	.usb_wlan0_1			= R_AX_USB_WLAN0_1,
++	.hci_func_en			= R_AX_HCI_FUNC_EN,
+ 	.bulkout_id = {
+ 		[RTW89_DMA_ACH0] = 3,
+ 		[RTW89_DMA_ACH1] = 4,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852bu.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852bu.c
+@@ -5,9 +5,13 @@
+ #include <linux/module.h>
+ #include <linux/usb.h>
+ #include "rtw8852b.h"
++#include "reg.h"
+ #include "usb.h"
+ 
+ static const struct rtw89_usb_info rtw8852b_usb_info = {
++	.usb_host_request_2		= R_AX_USB_HOST_REQUEST_2,
++	.usb_wlan0_1			= R_AX_USB_WLAN0_1,
++	.hci_func_en			= R_AX_HCI_FUNC_EN,
+ 	.bulkout_id = {
+ 		[RTW89_DMA_ACH0] = 3,
+ 		[RTW89_DMA_ACH1] = 4,
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -679,20 +679,23 @@ static int rtw89_usb_ops_deinit(struct r
+ 
+ static int rtw89_usb_ops_mac_pre_init(struct rtw89_dev *rtwdev)
+ {
++	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
++	const struct rtw89_usb_info *info = rtwusb->info;
+ 	u32 val32;
+ 
+-	rtw89_write32_set(rtwdev, R_AX_USB_HOST_REQUEST_2, B_AX_R_USBIO_MODE);
++	rtw89_write32_set(rtwdev, info->usb_host_request_2,
++			  B_AX_R_USBIO_MODE);
+ 
+ 	/* fix USB IO hang suggest by chihhanli@realtek.com */
+-	rtw89_write32_clr(rtwdev, R_AX_USB_WLAN0_1,
++	rtw89_write32_clr(rtwdev, info->usb_wlan0_1,
+ 			  B_AX_USBRX_RST | B_AX_USBTX_RST);
+ 
+-	val32 = rtw89_read32(rtwdev, R_AX_HCI_FUNC_EN);
++	val32 = rtw89_read32(rtwdev, info->hci_func_en);
+ 	val32 &= ~(B_AX_HCI_RXDMA_EN | B_AX_HCI_TXDMA_EN);
+-	rtw89_write32(rtwdev, R_AX_HCI_FUNC_EN, val32);
++	rtw89_write32(rtwdev, info->hci_func_en, val32);
+ 
+ 	val32 |= B_AX_HCI_RXDMA_EN | B_AX_HCI_TXDMA_EN;
+-	rtw89_write32(rtwdev, R_AX_HCI_FUNC_EN, val32);
++	rtw89_write32(rtwdev, info->hci_func_en, val32);
+ 	/* fix USB TRX hang suggest by chihhanli@realtek.com */
+ 
+ 	return 0;
+--- a/drivers/net/wireless/realtek/rtw89/usb.h
++++ b/drivers/net/wireless/realtek/rtw89/usb.h
+@@ -21,6 +21,9 @@
+ #define RTW89_MAX_BULKOUT_NUM		7
+ 
+ struct rtw89_usb_info {
++	u32 usb_host_request_2;
++	u32 usb_wlan0_1;
++	u32 hci_func_en;
+ 	u8 bulkout_id[RTW89_DMA_CH_NUM];
+ };
+ 
