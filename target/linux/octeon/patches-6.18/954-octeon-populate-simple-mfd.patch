@@ -1,0 +1,24 @@
+From db2320eabf4b205f5db0ce230d8d6878f7fe3f57 Mon Sep 17 00:00:00 2001
+From: Henry Essinghigh <henry@essinghigh.dev>
+Date: Fri, 30 Oct 2026 00:38:47 +0000
+Subject: [PATCH] MIPS: Octeon: populate simple-mfd child devices
+
+Add "simple-mfd" to the bus match table so that devices below a
+syscon/simple-mfd node (e.g. register-bit-led LEDs on the PA-220 CPLD)
+are created.
+
+Signed-off-by: Henry Essinghigh <henry@essinghigh.dev>
+---
+ arch/mips/cavium-octeon/octeon-platform.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/mips/cavium-octeon/octeon-platform.c
++++ b/arch/mips/cavium-octeon/octeon-platform.c
+@@ -454,6 +454,7 @@ static const struct of_device_id octeon_
+ 	{ .compatible = "cavium,octeon-3860-bootbus", },
+ 	{ .compatible = "cavium,mdio-mux", },
+ 	{ .compatible = "gpio-leds", },
++	{ .compatible = "simple-mfd", },
+ 	{},
+ };
+ 
