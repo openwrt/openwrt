@@ -56,3 +56,19 @@ define KernelPackage/hasivo-mcu-sensor/description
 endef
 
 $(eval $(call KernelPackage,hasivo-mcu-sensor))
+
+define KernelPackage/hwmon-ctf230x
+  SUBMENU:=$(HWMON_MENU)
+  TITLE:=SensyLink CTF2302/CTF2304 fan controller and temperature sensor
+  KCONFIG:=CONFIG_SENSORS_CTF230X
+  FILES:=$(LINUX_DIR)/drivers/hwmon/ctf230x.ko
+  DEPENDS:=@TARGET_realtek +kmod-hwmon-core +kmod-i2c-core
+  AUTOLOAD:=$(call AutoProbe,ctf230x,1)
+endef
+
+define KernelPackage/hwmon-ctf230x/description
+ Kernel module for SensyLink CTF2302/CTF2304 I2C/SMBus fan controllers
+ and temperature sensors.
+endef
+
+$(eval $(call KernelPackage,hwmon-ctf230x))

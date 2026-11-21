@@ -1,0 +1,484 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: René Ammerlaan <taproot_spicier5b@icloud.com>
+Date: Sat, 21 Nov 2026 11:55:21 +0200
+Subject: realtek: add SensyLink CTF230x fan controller support
+
+Add an hwmon driver and DT bindings for SensyLink CTF2302/CTF2304 I2C
+fan controllers (temperature, tachometer, and PWM control), package it
+as kmod-hwmon-ctf230x, and enable it on the XikeStor SKS8310-8X.
+
+Signed-off-by: René Ammerlaan <taproot_spicier5b@icloud.com>
+---
+--- a/drivers/hwmon/Kconfig
++++ b/drivers/hwmon/Kconfig
+@@ -538,6 +538,16 @@ config SENSORS_CROS_EC
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called cros_ec_hwmon.
+ 
++config SENSORS_CTF230X
++	tristate "SensyLink CTF2302/CTF2304 fan controller and temperature sensor"
++	depends on I2C
++	help
++	  If you say yes here you get support for the SensyLink CTF2302
++	  and CTF2304 I2C/SMBus fan controllers and temperature sensors.
++
++	  This driver can also be built as a module. If so, the module
++	  will be called ctf230x.
++
+ config SENSORS_DRIVETEMP
+ 	tristate "Hard disk drives with temperature sensors"
+ 	depends on SCSI && ATA
+--- a/drivers/hwmon/Makefile
++++ b/drivers/hwmon/Makefile
+@@ -65,6 +65,7 @@ obj-$(CONFIG_SENSORS_CORETEMP)	+= corete
+ obj-$(CONFIG_SENSORS_CORSAIR_CPRO) += corsair-cpro.o
+ obj-$(CONFIG_SENSORS_CORSAIR_PSU) += corsair-psu.o
+ obj-$(CONFIG_SENSORS_CROS_EC)	+= cros_ec_hwmon.o
++obj-$(CONFIG_SENSORS_CTF230X)	+= ctf230x.o
+ obj-$(CONFIG_SENSORS_DA9052_ADC)+= da9052-hwmon.o
+ obj-$(CONFIG_SENSORS_DA9055)+= da9055-hwmon.o
+ obj-$(CONFIG_SENSORS_DELL_SMM)	+= dell-smm-hwmon.o
+--- /dev/null
++++ b/drivers/hwmon/ctf230x.c
+@@ -0,0 +1,379 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Hardware monitoring driver for SensyLink CTF2302/CTF2304 fan controllers
++ */
++
++#include <linux/bitfield.h>
++#include <linux/bitops.h>
++#include <linux/bits.h>
++#include <linux/device.h>
++#include <linux/err.h>
++#include <linux/hwmon.h>
++#include <linux/i2c.h>
++#include <linux/limits.h>
++#include <linux/mod_devicetable.h>
++#include <linux/module.h>
++#include <linux/property.h>
++#include <linux/types.h>
++
++/* 16-bit big-endian registers */
++#define CTF230X_REG_TEMP_LOCAL		0x00
++#define CTF230X_REG_TEMP_REMOTE		0x01
++#define CTF2302_REG_TACH		0x05	/* 2 PWM channels */
++#define CTF2304_REG_TACH		0x09	/* 4 PWM channels */
++#define CTF230X_REG_CONFIG		0x10
++#define CTF230X_REG_FAN_MODE		0x11
++#define CTF230X_REG_PWM			0x40
++#define CTF230X_REG_FAN_CURVE		0x48
++#define CTF230X_REG_FAN_CFG		0x4e
++#define CTF230X_REG_DEVID		0xfe
++
++#define CTF230X_DEVID			0x5959
++
++#define CTF230X_CONFIG_DEFAULT		0x0004
++#define CTF230X_FAN_CURVE_DEFAULT	0x2c06
++#define CTF230X_FAN_CFG_DEFAULT		0x8888
++
++#define CTF230X_FAN_MODE_MANUAL		0x5511
++#define CTF230X_FAN_MODE_AUTO		0x5555
++#define CTF230X_FAN_MODE_FULL		0xffff
++
++#define CTF230X_PWM_DUTY_MASK		GENMASK(15, 8)
++#define CTF230X_PWM_LSB_MASK		GENMASK(7, 0)
++#define CTF230X_PWM_DEFAULT		0x006e
++#define CTF230X_PWM_MAX			255
++
++#define CTF230X_TEMP_MASK		GENMASK(15, 4)
++#define CTF230X_TACH_MASK		GENMASK(15, 4)
++#define CTF230X_TACH_STALL		0x0fff
++#define CTF230X_TACH_NUMERATOR		983040U
++
++struct ctf230x_data {
++	struct i2c_client *client;
++	u8 tach_reg;
++	u8 pwm;
++};
++
++static int ctf230x_set_auto(struct i2c_client *client)
++{
++	int ret;
++
++	ret = i2c_smbus_write_word_swapped(client, CTF230X_REG_PWM,
++					   CTF230X_PWM_DEFAULT);
++	if (ret)
++		return ret;
++
++	return i2c_smbus_write_word_swapped(client, CTF230X_REG_FAN_MODE,
++					    CTF230X_FAN_MODE_AUTO);
++}
++
++static int ctf230x_set_manual_pwm(struct ctf230x_data *data, u8 duty)
++{
++	u8 lsb = CTF230X_PWM_DEFAULT;
++	u16 regval;
++	int ret;
++
++	ret = i2c_smbus_read_word_swapped(data->client, CTF230X_REG_PWM);
++	if (ret >= 0 && (ret & CTF230X_PWM_LSB_MASK))
++		lsb = FIELD_GET(CTF230X_PWM_LSB_MASK, (u16)ret);
++
++	regval = FIELD_PREP(CTF230X_PWM_DUTY_MASK, duty) | lsb;
++
++	ret = i2c_smbus_write_word_swapped(data->client, CTF230X_REG_PWM,
++					   regval);
++	if (ret)
++		return ret;
++
++	ret = i2c_smbus_write_word_swapped(data->client, CTF230X_REG_FAN_MODE,
++					   CTF230X_FAN_MODE_MANUAL);
++	if (ret)
++		return ret;
++
++	data->pwm = duty;
++	return 0;
++}
++
++static int ctf230x_read(struct device *dev, enum hwmon_sensor_types type,
++			u32 attr, int channel, long *val)
++{
++	struct ctf230x_data *data = dev_get_drvdata(dev);
++	struct i2c_client *client = data->client;
++	u8 reg;
++	int ret;
++
++	switch (type) {
++	case hwmon_temp:
++		if (attr != hwmon_temp_input)
++			return -EOPNOTSUPP;
++		reg = channel ? CTF230X_REG_TEMP_REMOTE :
++				CTF230X_REG_TEMP_LOCAL;
++		ret = i2c_smbus_read_word_swapped(client, reg);
++		if (ret < 0)
++			return ret;
++		*val = sign_extend32(FIELD_GET(CTF230X_TEMP_MASK, (u16)ret),
++				     11) * 125 / 2;
++		return 0;
++	case hwmon_fan:
++		if (attr != hwmon_fan_input)
++			return -EOPNOTSUPP;
++		ret = i2c_smbus_read_word_swapped(client, data->tach_reg);
++		if (ret < 0)
++			return ret;
++		ret = FIELD_GET(CTF230X_TACH_MASK, (u16)ret);
++		if (ret == CTF230X_TACH_STALL) {
++			*val = 0;
++			return 0;
++		}
++		if (!ret)
++			return -ENODATA;
++		*val = CTF230X_TACH_NUMERATOR / ret;
++		return 0;
++	case hwmon_pwm:
++		ret = i2c_smbus_read_word_swapped(client, CTF230X_REG_FAN_MODE);
++		if (ret < 0)
++			return ret;
++		switch (attr) {
++		case hwmon_pwm_enable:
++			if (ret == CTF230X_FAN_MODE_FULL)
++				*val = 0;
++			else if (ret == CTF230X_FAN_MODE_MANUAL)
++				*val = 1;
++			else
++				*val = 2;
++			return 0;
++		case hwmon_pwm_input:
++			if (ret == CTF230X_FAN_MODE_FULL) {
++				*val = CTF230X_PWM_MAX;
++				return 0;
++			}
++			ret = i2c_smbus_read_word_swapped(client,
++							  CTF230X_REG_PWM);
++			if (ret < 0)
++				return ret;
++			*val = FIELD_GET(CTF230X_PWM_DUTY_MASK, (u16)ret);
++			return 0;
++		default:
++			return -EOPNOTSUPP;
++		}
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++static int ctf230x_read_string(struct device *dev, enum hwmon_sensor_types type,
++			       u32 attr, int channel, const char **str)
++{
++	if (type != hwmon_temp || attr != hwmon_temp_label)
++		return -EOPNOTSUPP;
++
++	*str = channel ? "remote" : "local";
++	return 0;
++}
++
++static int ctf230x_write(struct device *dev, enum hwmon_sensor_types type,
++			 u32 attr, int channel, long val)
++{
++	struct ctf230x_data *data = dev_get_drvdata(dev);
++	struct i2c_client *client = data->client;
++
++	if (type != hwmon_pwm)
++		return -EOPNOTSUPP;
++
++	switch (attr) {
++	case hwmon_pwm_enable:
++		switch (val) {
++		case 0:
++			return i2c_smbus_write_word_swapped(client,
++							    CTF230X_REG_FAN_MODE,
++							    CTF230X_FAN_MODE_FULL);
++		case 1:
++			return ctf230x_set_manual_pwm(data, data->pwm);
++		case 2:
++			return ctf230x_set_auto(client);
++		default:
++			return -EINVAL;
++		}
++	case hwmon_pwm_input:
++		if (val < 0 || val > CTF230X_PWM_MAX)
++			return -EINVAL;
++		return ctf230x_set_manual_pwm(data, val);
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++static umode_t ctf230x_is_visible(const void *drvdata,
++				  enum hwmon_sensor_types type,
++				  u32 attr, int channel)
++{
++	switch (type) {
++	case hwmon_temp:
++		return (attr == hwmon_temp_input || attr == hwmon_temp_label) ?
++		       0444 : 0;
++	case hwmon_fan:
++		return attr == hwmon_fan_input ? 0444 : 0;
++	case hwmon_pwm:
++		return (attr == hwmon_pwm_input || attr == hwmon_pwm_enable) ?
++		       0644 : 0;
++	default:
++		return 0;
++	}
++}
++
++static const struct hwmon_channel_info *const ctf230x_info[] = {
++	HWMON_CHANNEL_INFO(chip, HWMON_C_REGISTER_TZ),
++	HWMON_CHANNEL_INFO(temp,
++			   HWMON_T_INPUT | HWMON_T_LABEL,
++			   HWMON_T_INPUT | HWMON_T_LABEL),
++	HWMON_CHANNEL_INFO(fan, HWMON_F_INPUT),
++	HWMON_CHANNEL_INFO(pwm, HWMON_PWM_INPUT | HWMON_PWM_ENABLE),
++	NULL
++};
++
++static const struct hwmon_ops ctf230x_hwmon_ops = {
++	.is_visible = ctf230x_is_visible,
++	.read = ctf230x_read,
++	.read_string = ctf230x_read_string,
++	.write = ctf230x_write,
++};
++
++static const struct hwmon_chip_info ctf230x_chip_info = {
++	.ops = &ctf230x_hwmon_ops,
++	.info = ctf230x_info,
++};
++
++static int ctf230x_init_client(struct i2c_client *client, u16 fan_cfg,
++			       u16 fan_curve)
++{
++	const struct {
++		u8 reg;
++		u16 val;
++	} regs[] = {
++		{ CTF230X_REG_FAN_CFG, fan_cfg },
++		{ CTF230X_REG_FAN_CURVE, fan_curve },
++		{ CTF230X_REG_PWM, CTF230X_PWM_DEFAULT },
++		{ CTF230X_REG_CONFIG, CTF230X_CONFIG_DEFAULT },
++		{ CTF230X_REG_FAN_MODE, CTF230X_FAN_MODE_AUTO },
++	};
++	unsigned int i;
++	int ret;
++
++	for (i = 0; i < ARRAY_SIZE(regs); i++) {
++		ret = i2c_smbus_write_word_swapped(client, regs[i].reg,
++						   regs[i].val);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++}
++
++static void ctf230x_restore_auto(void *client)
++{
++	ctf230x_set_auto(client);
++}
++
++static void ctf230x_shutdown(struct i2c_client *client)
++{
++	ctf230x_set_auto(client);
++}
++
++static int ctf230x_probe(struct i2c_client *client)
++{
++	struct device *dev = &client->dev;
++	struct ctf230x_data *data;
++	struct device *hwmon_dev;
++	u16 fan_curve = CTF230X_FAN_CURVE_DEFAULT;
++	u16 fan_cfg = CTF230X_FAN_CFG_DEFAULT;
++	u32 prop;
++	int ret;
++
++	if (!i2c_check_functionality(client->adapter, I2C_FUNC_SMBUS_WORD_DATA))
++		return -EOPNOTSUPP;
++
++	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++
++	data->client = client;
++	data->tach_reg = (uintptr_t)i2c_get_match_data(client);
++	if (!data->tach_reg)
++		return -ENODEV;
++	data->pwm = CTF230X_PWM_MAX;
++
++	if (!device_property_read_u32(dev, "sensylink,fan-curve", &prop)) {
++		if (prop > U16_MAX)
++			return dev_err_probe(dev, -EINVAL,
++					     "invalid fan-curve 0x%x\n", prop);
++		fan_curve = prop;
++	}
++
++	if (!device_property_read_u32(dev, "sensylink,fan-cfg", &prop)) {
++		if (prop > U16_MAX)
++			return dev_err_probe(dev, -EINVAL,
++					     "invalid fan-cfg 0x%x\n", prop);
++		fan_cfg = prop;
++	}
++
++	ret = i2c_smbus_read_word_swapped(client, CTF230X_REG_DEVID);
++	if (ret < 0)
++		return dev_err_probe(dev, ret, "failed to read device ID\n");
++
++	if (ret == 0x0000 || ret == 0xffff)
++		return dev_err_probe(dev, -ENODEV,
++				     "device not responding (ID 0x%04x)\n",
++				     ret);
++
++	if (ret != CTF230X_DEVID)
++		dev_warn(dev, "unexpected device ID 0x%04x (expected 0x%04x)\n",
++			 ret, CTF230X_DEVID);
++
++	ret = ctf230x_init_client(client, fan_cfg, fan_curve);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to initialize chip\n");
++
++	ret = devm_add_action_or_reset(dev, ctf230x_restore_auto, client);
++	if (ret)
++		return ret;
++
++	hwmon_dev = devm_hwmon_device_register_with_info(dev, client->name,
++							 data,
++							 &ctf230x_chip_info,
++							 NULL);
++	return PTR_ERR_OR_ZERO(hwmon_dev);
++}
++
++static const struct i2c_device_id ctf230x_id[] = {
++	{ "ctf2302", CTF2302_REG_TACH },
++	{ "ctf2304", CTF2304_REG_TACH },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, ctf230x_id);
++
++static const struct of_device_id ctf230x_of_match[] = {
++	{
++		.compatible = "sensylink,ctf2302",
++		.data = (void *)(uintptr_t)CTF2302_REG_TACH,
++	},
++	{
++		.compatible = "sensylink,ctf2304",
++		.data = (void *)(uintptr_t)CTF2304_REG_TACH,
++	},
++	{ }
++};
++MODULE_DEVICE_TABLE(of, ctf230x_of_match);
++
++static struct i2c_driver ctf230x_driver = {
++	.driver = {
++		.name = "ctf230x",
++		.of_match_table = ctf230x_of_match,
++	},
++	.probe = ctf230x_probe,
++	.shutdown = ctf230x_shutdown,
++	.id_table = ctf230x_id,
++};
++module_i2c_driver(ctf230x_driver);
++
++MODULE_AUTHOR("René Ammerlaan <taproot_spicier5b@icloud.com>");
++MODULE_DESCRIPTION("SensyLink CTF2302/CTF2304 fan controller driver");
++MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/Documentation/devicetree/bindings/hwmon/sensylink,ctf230x.yaml
+@@ -0,0 +1,59 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/hwmon/sensylink,ctf230x.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: SensyLink CTF2302/CTF2304 fan controller and temperature sensor
++
++maintainers:
++  - René Ammerlaan <taproot_spicier5b@icloud.com>
++
++description:
++  SensyLink I2C/SMBus fan controllers with local/remote temperature sensors.
++  CTF2302 has 2 PWM channels (tach 0x05); CTF2304 has 4 PWM channels (tach 0x09).
++
++properties:
++  compatible:
++    enum:
++      - sensylink,ctf2302
++      - sensylink,ctf2304
++
++  reg:
++    maxItems: 1
++
++  "#thermal-sensor-cells":
++    const: 1
++
++  sensylink,fan-curve:
++    description: Auto-temp curve value for register 0x48 (e.g. 0x2c06, 0x1e04).
++    $ref: /schemas/types.yaml#/definitions/uint32
++    minimum: 0x0000
++    maximum: 0xffff
++    default: 0x2c06
++
++  sensylink,fan-cfg:
++    description: Channel/sensor routing value for register 0x4e (e.g. 0x8888, 0x0000).
++    $ref: /schemas/types.yaml#/definitions/uint32
++    minimum: 0x0000
++    maximum: 0xffff
++    default: 0x8888
++
++required:
++  - compatible
++  - reg
++
++additionalProperties: false
++
++examples:
++  - |
++    i2c {
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        fan-controller@6a {
++            compatible = "sensylink,ctf2302";
++            reg = <0x6a>;
++        };
++    };
++...
