@@ -2,6 +2,7 @@
 
 preinit_mount_ubi_config() {
 	case $(board_name) in
+	alphion,asee-1447|\
 	buffalo,wsr-1500ax2s)
 		mkdir -p /tmp/ubi_Config
 		mount -r -t ubifs ubi0:ubi_Config /tmp/ubi_Config
