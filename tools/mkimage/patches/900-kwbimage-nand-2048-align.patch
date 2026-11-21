@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bob Sponge <myandroidiptvbox@gmail.com>
+Date: Sat, 21 Nov 2026 13:00:00 +0000
+Subject: [PATCH] tools/mkimage: align kwbimage NAND v0/v1 headers to 2048-byte pages
+
+Pad NAND kwbimage v0 and v1 headers to 2048-byte page boundaries so
+the Marvell Armada XP BootROM loads the main image payload cleanly.
+
+Signed-off-by: Bob Sponge <myandroidiptvbox@gmail.com>
+---
+--- a/tools/kwbimage.c
++++ b/tools/kwbimage.c
+@@ -1016,7 +1016,7 @@
+ 	if (blockid == IBR_HDR_UART_ID)
+ 		return ALIGN(headersz, 128);
+ 	else if (blockid == IBR_HDR_NAND_ID)
+-		return ALIGN(headersz, 256);
++		return ALIGN(headersz, 2048);
+ 	else if (blockid == IBR_HDR_SDIO_ID)
+ 		return ALIGN(headersz, 512);
+ 	else if (blockid == IBR_HDR_SATA_ID)
+@@ -1054,6 +1054,8 @@
+ 	 */
+ 	headersz = image_headersz_v0(&has_ext);
+ 	*dataoff = image_headersz_align(headersz, image_get_bootfrom());
++	if (image_get_bootfrom() == IBR_HDR_NAND_ID)
++		headersz = *dataoff;
+
+ 	image = malloc(headersz);
+ 	if (!image) {
+@@ -1496,6 +1498,8 @@
+ 	if (headersz == 0)
+ 		return NULL;
+ 	*dataoff = image_headersz_align(headersz, image_get_bootfrom());
++	if (image_get_bootfrom() == IBR_HDR_NAND_ID)
++		headersz = *dataoff;
+
+ 	image = malloc(headersz);
+ 	if (!image) {
