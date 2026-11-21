@@ -1,0 +1,120 @@
+From 576b4a777e91037983363b9a0d0e219c2f488cb4 Mon Sep 17 00:00:00 2001
+From: Christopher Griffin <christophergriffin05@gmail.com>
+Date: Wed, 4 Nov 2026 03:32:40 -0600
+Subject: [PATCH] Do not show a hidden SSID in unsolicited broadcast Probe
+ Responses
+
+hostapd_unsol_bcast_probe_resp() builds the 6 GHz unsolicited broadcast
+Probe Response frame template with the SSID element of a solicited
+Probe Response frame, which always carries the actual SSID. With
+ignore_broadcast_ssid set, the Beacon frames hide the SSID, but the
+unsolicited broadcast Probe Response frames, sent to all every
+unsol_bcast_probe_resp_interval, show it.
+
+Write the SSID element of the unsolicited template as in Beacon frames:
+empty with ignore_broadcast_ssid=1, zeroed with 2. Move that code from
+ieee802_11_build_ap_params() into a helper for both. Solicited Probe
+Response frames and the Probe Response offload template keep the
+actual SSID.
+
+Tested on an Arista W-318 (ath11k, QCN9072) on 6 GHz channel 37 with
+a hidden BSS and unsol_bcast_probe_resp_interval=20, reading the
+templates hostapd passes to nl80211 (nlmon). Before, the unsolicited
+template carried the SSID while the Beacon frame head had an empty
+SSID element. After, both have an empty SSID element, or with
+ignore_broadcast_ssid=2 a zeroed one of the SSID's length. Without
+ignore_broadcast_ssid, both carry the SSID as before.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Christopher Griffin <christophergriffin05@gmail.com>
+Link: https://lists.infradead.org/pipermail/hostap/2026-November/045940.html
+---
+ src/ap/beacon.c | 49 ++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 30 insertions(+), 19 deletions(-)
+
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -88,6 +88,29 @@ static u8 ieee802_11_erp_info(struct hos
+ }
+ 
+ 
++/* SSID element; hide_ssid applies ignore_broadcast_ssid as in Beacon frames */
++static u8 * hostapd_eid_ssid(struct hostapd_data *hapd, u8 *pos,
++			     bool hide_ssid)
++{
++	*pos++ = WLAN_EID_SSID;
++	if (hide_ssid && hapd->conf->ignore_broadcast_ssid == 2) {
++		/* clear the data, but keep the correct length of the SSID */
++		*pos++ = hapd->conf->ssid.ssid_len;
++		os_memset(pos, 0, hapd->conf->ssid.ssid_len);
++		pos += hapd->conf->ssid.ssid_len;
++	} else if (hide_ssid && hapd->conf->ignore_broadcast_ssid) {
++		*pos++ = 0; /* empty SSID */
++	} else {
++		*pos++ = hapd->conf->ssid.ssid_len;
++		os_memcpy(pos, hapd->conf->ssid.ssid,
++			  hapd->conf->ssid.ssid_len);
++		pos += hapd->conf->ssid.ssid_len;
++	}
++
++	return pos;
++}
++
++
+ static u8 * hostapd_eid_ds_params(struct hostapd_data *hapd, u8 *eid)
+ {
+ 	enum hostapd_hw_mode hw_mode = hapd->iconf->hw_mode;
+@@ -719,6 +742,8 @@ static size_t he_elem_len(struct hostapd
+ struct probe_resp_params {
+ 	const struct ieee80211_mgmt *req;
+ 	bool is_p2p;
++	/* Unsolicited broadcast Probe Response template */
++	bool unsol_bcast;
+ 
+ 	/* Generated IEs will be included inside an ML element */
+ 	struct hostapd_data *mld_ap;
+@@ -847,11 +872,9 @@ static u8 * hostapd_probe_resp_fill_elem
+ 	hapd = hostapd_mbssid_get_tx_bss(hapd);
+ 	epos = pos + len;
+ 
+-	*pos++ = WLAN_EID_SSID;
+-	*pos++ = hapd->conf->ssid.ssid_len;
+-	os_memcpy(pos, hapd->conf->ssid.ssid,
+-		  hapd->conf->ssid.ssid_len);
+-	pos += hapd->conf->ssid.ssid_len;
++	/* An unsolicited broadcast Probe Response frame is sent to all, like
++	 * a Beacon frame, so it must not show the SSID a Beacon frame hides. */
++	pos = hostapd_eid_ssid(hapd, pos, params->unsol_bcast);
+ 
+ 	/* Supported rates */
+ 	pos = hostapd_eid_supp_rates(hapd, pos);
+@@ -1910,6 +1933,7 @@ u8 * hostapd_unsol_bcast_probe_resp(stru
+ 	os_memset(&probe_params, 0, sizeof(probe_params));
+ 	probe_params.req = NULL;
+ 	probe_params.is_p2p = false;
++	probe_params.unsol_bcast = true;
+ 	probe_params.known_bss = NULL;
+ 	probe_params.known_bss_len = 0;
+ 	probe_params.mld_ap = NULL;
+@@ -2375,20 +2399,7 @@ int ieee802_11_build_ap_params(struct ho
+ 	pos = &head->u.beacon.variable[0];
+ 
+ 	/* SSID */
+-	*pos++ = WLAN_EID_SSID;
+-	if (hapd->conf->ignore_broadcast_ssid == 2) {
+-		/* clear the data, but keep the correct length of the SSID */
+-		*pos++ = hapd->conf->ssid.ssid_len;
+-		os_memset(pos, 0, hapd->conf->ssid.ssid_len);
+-		pos += hapd->conf->ssid.ssid_len;
+-	} else if (hapd->conf->ignore_broadcast_ssid) {
+-		*pos++ = 0; /* empty SSID */
+-	} else {
+-		*pos++ = hapd->conf->ssid.ssid_len;
+-		os_memcpy(pos, hapd->conf->ssid.ssid,
+-			  hapd->conf->ssid.ssid_len);
+-		pos += hapd->conf->ssid.ssid_len;
+-	}
++	pos = hostapd_eid_ssid(hapd, pos, true);
+ 
+ 	/* Supported rates */
+ 	pos = hostapd_eid_supp_rates(hapd, pos);
