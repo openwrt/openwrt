@@ -1,0 +1,52 @@
+From e3e33d0f2cf8d6a92df69c2b6522091a754f4164 Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Sat, 21 Nov 2026 14:57:48 +0000
+Subject: [PATCH] net: dsa: b53: clear the flow accelerator trap ports before
+ the rules
+
+b53_fa_trap_clear() turns the CFP rules off and clears them before it
+resets fa_trap_ports. During that time b53_fa_trap_active() still
+reports the traps as on, so a TCP or IPv6 flow can be offloaded after
+its rules are gone. It then runs without them until the next stats poll
+takes it out, as the flows offloaded before the clear do.
+
+Clear fa_trap_ports first, so that no new flow is admitted once the
+rules start to go, and write it with WRITE_ONCE(), as
+b53_fa_trap_active() reads it with READ_ONCE(). A flow whose check ran
+just before the clear can still be offloaded; the re-check in
+bgmac_fa_flow_allowed() takes it out with the others.
+
+With a test build on an RT-N18U, b53_fa_trap_clear() took 160 us in
+each of ten runs, which is how long the window was. In a test build that
+stretched the clear to 2 s, a TCP flow that started during it was
+offloaded and ran without the traps until the next stats poll. With this
+change it stayed in software.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -744,10 +744,10 @@ static void b53_fa_trap_clear(struct b53
+ 	static const u32 zero[B53_CFP_NUM_KEY_REGS];
+ 	int i;
+ 
++	WRITE_ONCE(dev->fa_trap_ports, 0);
+ 	b53_write8(dev, B53_CFP_PAGE, B53_CFP_CTRL, 0);
+ 	for (i = 0; i < B53_FA_TRAP_NUM; i++)
+ 		b53_cfp_write_tcam(dev, i, zero, zero);
+-	dev->fa_trap_ports = 0;
+ }
+ 
+ /* The flow accelerator in front of port 8 forwards the frames of the
+@@ -803,7 +803,7 @@ static void b53_fa_trap_update(struct b5
+ 
+ 	b53_write8(dev, B53_CFP_PAGE, B53_CFP_CTRL, src);
+ 	dev->fa_trap_port = trap;
+-	dev->fa_trap_ports = src;
++	WRITE_ONCE(dev->fa_trap_ports, src);
+ 	dev_info(ds->dev, "flow accelerator traps to port %d\n", trap);
+ }
+ 
