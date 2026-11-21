@@ -1,0 +1,32 @@
+From 6ce4e22a92f706f998d93a737a5deafc7e5d22fb Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 12 Nov 2026 01:49:15 +0000
+Subject: [PATCH] arm64: dts: rockchip: rk356x: Clock the vdec at 400 MHz
+
+The decoder AXI, core and CABAC clocks are assigned 297 MHz, the rate
+the vendor kernel derives as a quarter of its 1188 MHz GPLL. This dtsi
+runs the GPLL at 1200 MHz, from which the closest rate below 297 MHz
+is 240 MHz.
+
+Assign 400 MHz, a third of the GPLL. The vendor kernel clocks the
+decoder at a third of its GPLL for streams above 1920x1088 and lists
+400 MHz at 900 mV as the highest decoder operating point.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm64/boot/dts/rockchip/rk356x-base.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
+@@ -644,8 +644,8 @@
+ 				  <&cru CLK_RKVDEC_CORE>,
+ 				  <&cru CLK_RKVDEC_CA>,
+ 				  <&cru CLK_RKVDEC_HEVC_CA>;
+-		assigned-clock-rates = <297000000>, <297000000>,
+-				       <297000000>, <600000000>;
++		assigned-clock-rates = <400000000>, <400000000>,
++				       <400000000>, <600000000>;
+ 		iommus = <&vdec_mmu>;
+ 		power-domains = <&power RK3568_PD_RKVDEC>;
+ 		resets = <&cru SRST_A_RKVDEC>, <&cru SRST_H_RKVDEC>,

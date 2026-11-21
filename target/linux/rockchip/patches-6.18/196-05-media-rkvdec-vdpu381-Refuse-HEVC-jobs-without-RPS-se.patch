@@ -1,0 +1,59 @@
+From 57582ceef513693a1417341c9a5b3dc84720e7d3 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 13 Nov 2026 22:04:58 +0000
+Subject: [PATCH] media: rkvdec: vdpu381: refuse HEVC jobs without RPS sets
+
+When the SPS uses short-term or long-term reference picture sets and
+the matching EXT_SPS_ST_RPS or EXT_SPS_LT_RPS control was never set or
+holds fewer sets than the SPS counts, rkvdec_hevc_run() logs a warning
+and starts the decoder with an RPS table that does not belong to the
+stream, which at best gives wrong pictures. On the VDPU346 of the
+RK3568, which uses this back end, such decodes also raise error
+interrupts and time out, the IOMMU force reset fails, and the system
+stops responding until the hardware watchdog resets it.
+
+Refuse the job as the VDPU383 back end does: log an error and return
+-EINVAL before any table is assembled, so that rkvdec_device_run()
+returns the buffers with VB2_BUF_STATE_ERROR and the hardware is not
+started. The request's controls are completed first, as
+rkvdec_vp9_run() does, so that the request is signalled as complete.
+
+Fixes: c9a59dc2acc7 ("media: rkvdec: Add HEVC support for the VDPU381 variant")
+Cc: stable@vger.kernel.org
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../rockchip/rkvdec/rkvdec-vdpu381-hevc.c     | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
+@@ -596,21 +596,18 @@ static int rkvdec_hevc_run(struct rkvdec
+ 
+ 	rkvdec_hevc_run_preamble(ctx, &run);
+ 
+-	rkvdec_hevc_assemble_hw_scaling_list(ctx, &run, &tbl->scaling_list,
+-					     &hevc_ctx->scaling_matrix_cache);
+-	assemble_hw_pps(ctx, &run);
+-
+-	/*
+-	 * On vdpu381, not setting the long and short term ref sets will just output wrong frames.
+-	 * Let's just warn about it and let the decoder run anyway.
+-	 */
+ 	if ((!run.ext_sps_lt_rps && run.sps->num_long_term_ref_pics_sps) ||
+ 	    (!run.ext_sps_st_rps && run.sps->num_short_term_ref_pic_sets)) {
+-		dev_warn_ratelimited(rkvdec->dev, "Long and short term RPS not set\n");
+-	} else {
+-		rkvdec_hevc_assemble_hw_rps(&run, &tbl->rps, &hevc_ctx->st_cache);
++		dev_err_ratelimited(rkvdec->dev, "Long and short term RPS not set\n");
++		rkvdec_run_postamble(ctx, &run.base);
++		return -EINVAL;
+ 	}
+ 
++	rkvdec_hevc_assemble_hw_scaling_list(ctx, &run, &tbl->scaling_list,
++					     &hevc_ctx->scaling_matrix_cache);
++	assemble_hw_pps(ctx, &run);
++	rkvdec_hevc_assemble_hw_rps(&run, &tbl->rps, &hevc_ctx->st_cache);
++
+ 	config_registers(ctx, &run);
+ 
+ 	rkvdec_run_postamble(ctx, &run.base);

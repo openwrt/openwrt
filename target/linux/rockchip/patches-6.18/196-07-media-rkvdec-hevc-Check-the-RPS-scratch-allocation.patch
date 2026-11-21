@@ -1,0 +1,139 @@
+From 4c7a0e820e483a0c91a833c8a29c71b6b17adf61 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 13 Nov 2026 22:04:58 +0000
+Subject: [PATCH] media: rkvdec: hevc: check the RPS scratch allocation
+
+rkvdec_hevc_prepare_hw_st_rps() uses the array returned by kzalloc()
+without checking it, so a failed allocation while a decode job is
+prepared dereferences a NULL pointer. Return -ENOMEM through
+rkvdec_hevc_assemble_hw_rps() and let both back ends refuse the job
+after completing the request's controls.
+
+Fixes: c9a59dc2acc7 ("media: rkvdec: Add HEVC support for the VDPU381 variant")
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../rockchip/rkvdec/rkvdec-hevc-common.c      | 26 ++++++++++++++-----
+ .../rockchip/rkvdec/rkvdec-hevc-common.h      |  4 +--
+ .../rockchip/rkvdec/rkvdec-vdpu381-hevc.c     |  7 ++++-
+ .../rockchip/rkvdec/rkvdec-vdpu383-hevc.c     |  7 ++++-
+ 4 files changed, 33 insertions(+), 11 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
+@@ -329,24 +329,27 @@ static void st_ref_pic_set_calculate(str
+ 	st_rps->num_delta_pocs = st_rps->num_positive_pics + st_rps->num_negative_pics;
+ }
+ 
+-static void rkvdec_hevc_prepare_hw_st_rps(struct rkvdec_hevc_run *run, struct rkvdec_rps *rps,
+-					  struct rkvdec_hevc_st_rps_cache *cache)
++static int rkvdec_hevc_prepare_hw_st_rps(struct rkvdec_hevc_run *run, struct rkvdec_rps *rps,
++					 struct rkvdec_hevc_st_rps_cache *cache)
+ {
+ 	u8 num_sets = run->sps->num_short_term_ref_pic_sets;
+ 	size_t size;
+ 	int idx;
+ 
+ 	if (!run->ext_sps_st_rps)
+-		return;
++		return 0;
+ 
+ 	size = num_sets * sizeof(*cache->sets);
+ 	if (cache->num_sets == num_sets && !memcmp(cache->sets, run->ext_sps_st_rps, size))
+-		return;
++		return 0;
+ 
+ 	struct calculated_rps_st_set *calculated_rps_st_sets =
+ 		kzalloc(sizeof(struct calculated_rps_st_set) *
+ 			run->sps->num_short_term_ref_pic_sets, GFP_KERNEL);
+ 
++	if (!calculated_rps_st_sets)
++		return -ENOMEM;
++
+ 	for (idx = 0; idx < run->sps->num_short_term_ref_pic_sets; idx++) {
+ 		const struct v4l2_ctrl_hevc_ext_sps_st_rps *rps_data = &run->ext_sps_st_rps[idx];
+ 
+@@ -362,13 +365,22 @@ static void rkvdec_hevc_prepare_hw_st_rp
+ 
+ 	memcpy(cache->sets, run->ext_sps_st_rps, size);
+ 	cache->num_sets = num_sets;
++
++	return 0;
+ }
+ 
+-void rkvdec_hevc_assemble_hw_rps(struct rkvdec_hevc_run *run, struct rkvdec_rps *rps,
+-				 struct rkvdec_hevc_st_rps_cache *st_cache)
++int rkvdec_hevc_assemble_hw_rps(struct rkvdec_hevc_run *run, struct rkvdec_rps *rps,
++				struct rkvdec_hevc_st_rps_cache *st_cache)
+ {
+-	rkvdec_hevc_prepare_hw_st_rps(run, rps, st_cache);
++	int ret;
++
++	ret = rkvdec_hevc_prepare_hw_st_rps(run, rps, st_cache);
++	if (ret)
++		return ret;
++
+ 	rkvdec_hevc_assemble_hw_lt_rps(run, rps);
++
++	return 0;
+ }
+ 
+ struct vb2_buffer *
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.h
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.h
+@@ -71,8 +71,8 @@ void compute_tiles_uniform(struct rkvdec
+ void compute_tiles_non_uniform(struct rkvdec_hevc_run *run, u16 log2_min_cb_size,
+ 			       u16 width, u16 height, s32 pic_in_cts_width,
+ 			       s32 pic_in_cts_height, u16 *column_width, u16 *row_height);
+-void rkvdec_hevc_assemble_hw_rps(struct rkvdec_hevc_run *run, struct rkvdec_rps *rps,
+-				 struct rkvdec_hevc_st_rps_cache *st_cache);
++int rkvdec_hevc_assemble_hw_rps(struct rkvdec_hevc_run *run, struct rkvdec_rps *rps,
++				struct rkvdec_hevc_st_rps_cache *st_cache);
+ void rkvdec_hevc_assemble_hw_scaling_list(struct rkvdec_ctx *ctx,
+ 					  struct rkvdec_hevc_run *run,
+ 					  struct scaling_factor *scaling_factor,
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
+@@ -593,6 +593,7 @@ static int rkvdec_hevc_run(struct rkvdec
+ 	struct rkvdec_hevc_run run;
+ 	struct rkvdec_hevc_ctx *hevc_ctx = ctx->priv;
+ 	struct rkvdec_hevc_priv_tbl *tbl = hevc_ctx->priv_tbl.cpu;
++	int ret;
+ 
+ 	rkvdec_hevc_run_preamble(ctx, &run);
+ 
+@@ -606,7 +607,11 @@ static int rkvdec_hevc_run(struct rkvdec
+ 	rkvdec_hevc_assemble_hw_scaling_list(ctx, &run, &tbl->scaling_list,
+ 					     &hevc_ctx->scaling_matrix_cache);
+ 	assemble_hw_pps(ctx, &run);
+-	rkvdec_hevc_assemble_hw_rps(&run, &tbl->rps, &hevc_ctx->st_cache);
++	ret = rkvdec_hevc_assemble_hw_rps(&run, &tbl->rps, &hevc_ctx->st_cache);
++	if (ret) {
++		rkvdec_run_postamble(ctx, &run.base);
++		return ret;
++	}
+ 
+ 	config_registers(ctx, &run);
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
+@@ -542,6 +542,7 @@ static int rkvdec_hevc_run(struct rkvdec
+ 	struct rkvdec_hevc_ctx *hevc_ctx = ctx->priv;
+ 	struct rkvdec_hevc_priv_tbl *tbl = hevc_ctx->priv_tbl.cpu;
+ 	u32 timeout_threshold;
++	int ret;
+ 
+ 	rkvdec_hevc_run_preamble(ctx, &run);
+ 
+@@ -560,7 +561,11 @@ static int rkvdec_hevc_run(struct rkvdec
+ 	rkvdec_hevc_assemble_hw_scaling_list(ctx, &run, &tbl->scaling_list,
+ 					     &hevc_ctx->scaling_matrix_cache);
+ 	assemble_hw_pps(ctx, &run);
+-	rkvdec_hevc_assemble_hw_rps(&run, &tbl->rps, &hevc_ctx->st_cache);
++	ret = rkvdec_hevc_assemble_hw_rps(&run, &tbl->rps, &hevc_ctx->st_cache);
++	if (ret) {
++		rkvdec_run_postamble(ctx, &run.base);
++		return ret;
++	}
+ 
+ 	config_registers(ctx, &run);
+ 

@@ -1,0 +1,124 @@
+From 4491cedf18bbb5af77ee1e3cf2f9f7904899d577 Mon Sep 17 00:00:00 2001
+From: Michael Bommarito <michael.bommarito@gmail.com>
+Date: Tue, 16 Jun 2026 22:19:01 -0400
+Subject: [PATCH] media: rkvdec: bound HEVC tile loops and PPS id to the array
+ capacity
+
+compute_tiles_uniform() and compute_tiles_non_uniform() loop over
+num_tile_columns_minus1 + 1 / num_tile_rows_minus1 + 1 entries, and
+assemble_hw_pps() writes one COLUMN_WIDTH / ROW_HEIGHT register per tile
+and indexes priv_tbl->param_set[] by pic_parameter_set_id, all taken from
+the untrusted PPS. Use the bounded v4l2_hevc_pps_num_tile_columns() /
+v4l2_hevc_pps_num_tile_rows() helpers for the tile loops, and bail out of
+assemble_hw_pps() before indexing priv_tbl->param_set[] with an
+out-of-range pic_parameter_set_id, so the writes stay within the hardware
+tables.
+
+Fixes: 3595375c2301 ("media: rkvdec: Add HEVC backend")
+Fixes: c9a59dc2acc7 ("media: rkvdec: Add HEVC support for the VDPU381 variant")
+Assisted-by: Claude:claude-opus-4-8
+Cc: stable@vger.kernel.org
+Signed-off-by: Michael Bommarito <michael.bommarito@gmail.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+(cherry picked from commit 81ad46bb33d8fd279aaa33af5296c648814c964b)
+---
+ .../platform/rockchip/rkvdec/rkvdec-hevc-common.c  | 14 ++++++++++----
+ .../media/platform/rockchip/rkvdec/rkvdec-hevc.c   |  7 +++++--
+ .../platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c |  2 ++
+ 3 files changed, 17 insertions(+), 6 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include <linux/v4l2-common.h>
++#include <media/v4l2-hevc.h>
+ #include <media/v4l2-mem2mem.h>
+ 
+ #include "rkvdec.h"
+@@ -37,15 +38,17 @@ void compute_tiles_uniform(struct rkvdec
+ 			   s32 pic_in_cts_height, u16 *column_width, u16 *row_height)
+ {
+ 	const struct v4l2_ctrl_hevc_pps *pps = run->pps;
++	unsigned int num_cols = v4l2_hevc_pps_num_tile_columns(pps);
++	unsigned int num_rows = v4l2_hevc_pps_num_tile_rows(pps);
+ 	int i;
+ 
+-	for (i = 0; i < pps->num_tile_columns_minus1 + 1; i++)
++	for (i = 0; i < num_cols; i++)
+ 		column_width[i] = ((i + 1) * pic_in_cts_width) /
+ 				  (pps->num_tile_columns_minus1 + 1) -
+ 				  (i * pic_in_cts_width) /
+ 				  (pps->num_tile_columns_minus1 + 1);
+ 
+-	for (i = 0; i < pps->num_tile_rows_minus1 + 1; i++)
++	for (i = 0; i < num_rows; i++)
+ 		row_height[i] = ((i + 1) * pic_in_cts_height) /
+ 				(pps->num_tile_rows_minus1 + 1) -
+ 				(i * pic_in_cts_height) /
+@@ -57,17 +60,20 @@ void compute_tiles_non_uniform(struct rk
+ 			       s32 pic_in_cts_height, u16 *column_width, u16 *row_height)
+ {
+ 	const struct v4l2_ctrl_hevc_pps *pps = run->pps;
++	unsigned int num_cols = v4l2_hevc_pps_num_tile_columns(pps);
++	unsigned int num_rows = v4l2_hevc_pps_num_tile_rows(pps);
+ 	s32 sum = 0;
+ 	int i;
+ 
+-	for (i = 0; i < pps->num_tile_columns_minus1; i++) {
++	/* The last tile entry is written after the loop, so iterate one less. */
++	for (i = 0; i < num_cols - 1; i++) {
+ 		column_width[i] = pps->column_width_minus1[i] + 1;
+ 		sum += column_width[i];
+ 	}
+ 	column_width[i] = pic_in_cts_width - sum;
+ 
+ 	sum = 0;
+-	for (i = 0; i < pps->num_tile_rows_minus1; i++) {
++	for (i = 0; i < num_rows - 1; i++) {
+ 		row_height[i] = pps->row_height_minus1[i] + 1;
+ 		sum += row_height[i];
+ 	}
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc.c
+@@ -12,6 +12,7 @@
+  *	Jeffy Chen <jeffy.chen@rock-chips.com>
+  */
+ 
++#include <media/v4l2-hevc.h>
+ #include <media/v4l2-mem2mem.h>
+ 
+ #include "rkvdec.h"
+@@ -135,6 +136,8 @@ static void assemble_hw_pps(struct rkvde
+ 	 * packet unit). so the driver copy SPS/PPS information to the exact PPS
+ 	 * packet unit for HW accessing.
+ 	 */
++	if (pps->pic_parameter_set_id >= ARRAY_SIZE(priv_tbl->param_set))
++		return;
+ 	hw_ps = &priv_tbl->param_set[pps->pic_parameter_set_id];
+ 	memset(hw_ps, 0, sizeof(*hw_ps));
+ 
+@@ -253,9 +256,9 @@ static void assemble_hw_pps(struct rkvde
+ 
+ 	if (pps->flags & V4L2_HEVC_PPS_FLAG_TILES_ENABLED) {
+ 		/* Userspace also provide column width and row height for uniform spacing */
+-		for (i = 0; i <= pps->num_tile_columns_minus1; i++)
++		for (i = 0; i < v4l2_hevc_pps_num_tile_columns(pps); i++)
+ 			WRITE_PPS(pps->column_width_minus1[i], COLUMN_WIDTH(i));
+-		for (i = 0; i <= pps->num_tile_rows_minus1; i++)
++		for (i = 0; i < v4l2_hevc_pps_num_tile_rows(pps); i++)
+ 			WRITE_PPS(pps->row_height_minus1[i], ROW_HEIGHT(i));
+ 	} else {
+ 		WRITE_PPS(DIV_ROUND_UP(sps->pic_width_in_luma_samples, ctb_size_y) - 1,
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
+@@ -145,6 +145,8 @@ static void assemble_hw_pps(struct rkvde
+ 	 * packet unit). so the driver copy SPS/PPS information to the exact PPS
+ 	 * packet unit for HW accessing.
+ 	 */
++	if (pps->pic_parameter_set_id >= ARRAY_SIZE(priv_tbl->param_set))
++		return;
+ 	hw_ps = &priv_tbl->param_set[pps->pic_parameter_set_id];
+ 	memset(hw_ps, 0, sizeof(*hw_ps));
+ 

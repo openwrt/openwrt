@@ -1,0 +1,25 @@
+From 1caf20c57207259fdd4a426290f6aad5dbc8046f Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 12 Nov 2026 09:30:06 +0000
+Subject: [PATCH] media: rkvdec: vdpu381: vp9: Program the read caches
+
+rkvdec_vdpu381_config_cache() configures and clears the three read
+caches before each H.264 and HEVC decode. The vendor kernel does so in
+rkvdec2_run() for every codec. Call it before a VP9 decode as well.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-vp9.c
+@@ -763,6 +763,8 @@ static int rkvdec_vp9_run(struct rkvdec_
+ 
+ 	rkvdec_schedule_watchdog(rkvdec, vp9_ctx->regs.common.reg032_timeout_threshold);
+ 
++	rkvdec_vdpu381_config_cache(rkvdec);
++
+ 	writel(VDPU381_DEC_E_BIT, rkvdec->regs + VDPU381_REG_DEC_E);
+ 
+ 	return 0;
