@@ -1,0 +1,7 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+[ "$#" -le 1 ] || exit 2
+ms=${1:-100}
+case "$ms" in ''|*[!0-9]*) exit 2 ;; esac
+[ "$ms" -le 500 ] 2>/dev/null || exit 2
+printf '%s\n' "$ms" > /sys/module/rtx830_board/parameters/buzzer_ms
