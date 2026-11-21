@@ -1,0 +1,495 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+/*
+ * Copyright (C) 2026 John Crispin <john@phrozen.org>
+ */
+
+/dts-v1/;
+
+#include "dvf99.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Snom D735";
+	compatible = "snom,d735", "dspg,dvf99";
+
+	aliases {
+		serial0 = &uart1;
+		serial1 = &uart2;
+		ethernet0 = &gmac;
+		led-boot = &led_call;
+		led-failsafe = &led_call;
+		led-upgrade = &led_call;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		hook {
+			label = "hook";
+			gpios = <&pinctrl 121 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_PHONE>;
+			debounce-interval = <50>;
+		};
+	};
+
+	spi-leds {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sck-gpios = <&pinctrl 112 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&pinctrl 109 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&pinctrl 113 GPIO_ACTIVE_LOW>;
+		num-chipselects = <1>;
+
+		led_sr: gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			spi-max-frequency = <100000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <2>;
+			enable-gpios = <&pinctrl 111 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-mute {
+			function = LED_FUNCTION_MUTE;
+			gpios = <&pinctrl 28 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
+		};
+
+		led-page {
+			function = "page";
+			gpios = <&pinctrl 29 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
+		};
+
+		led-headset {
+			function = "headset";
+			gpios = <&pinctrl 126 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
+		};
+
+		led-speaker {
+			function = "speaker";
+			gpios = <&pinctrl 127 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
+		};
+
+		led_call: led-call {
+			function = "call";
+			gpios = <&pinctrl 158 GPIO_ACTIVE_LOW>;
+			default-state = "keep";
+		};
+
+		led-message {
+			function = "message";
+			gpios = <&pinctrl 159 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
+		};
+
+		led-line-1-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "line";
+			function-enumerator = <1>;
+			gpios = <&led_sr 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-1-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "line";
+			function-enumerator = <1>;
+			gpios = <&led_sr 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-2-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "line";
+			function-enumerator = <2>;
+			gpios = <&led_sr 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-2-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "line";
+			function-enumerator = <2>;
+			gpios = <&led_sr 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-3-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "line";
+			function-enumerator = <3>;
+			gpios = <&led_sr 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-3-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "line";
+			function-enumerator = <3>;
+			gpios = <&led_sr 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-4-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "line";
+			function-enumerator = <4>;
+			gpios = <&led_sr 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-4-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "line";
+			function-enumerator = <4>;
+			gpios = <&led_sr 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-5-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "line";
+			function-enumerator = <5>;
+			gpios = <&led_sr 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-5-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "line";
+			function-enumerator = <5>;
+			gpios = <&led_sr 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-6-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "line";
+			function-enumerator = <6>;
+			gpios = <&led_sr 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-6-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "line";
+			function-enumerator = <6>;
+			gpios = <&led_sr 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-7-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "line";
+			function-enumerator = <7>;
+			gpios = <&led_sr 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-7-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "line";
+			function-enumerator = <7>;
+			gpios = <&led_sr 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-8-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "line";
+			function-enumerator = <8>;
+			gpios = <&led_sr 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led-line-8-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "line";
+			function-enumerator = <8>;
+			gpios = <&led_sr 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	reg_usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&pinctrl 118 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&dvf9a_pwm 0 20833>;
+		brightness-levels = <0 4 8 16 32 64 128 255>;
+		default-brightness-level = <7>;
+	};
+
+	panel {
+		compatible = "panel-dpi";
+		backlight = <&backlight>;
+
+		panel-timing {
+			clock-frequency = <9778100>;
+			hactive = <320>;
+			vactive = <240>;
+			hfront-porch = <13>;
+			hback-porch = <10>;
+			hsync-len = <10>;
+			vfront-porch = <33>;
+			vback-porch = <2>;
+			vsync-len = <2>;
+			hsync-active = <1>;
+			vsync-active = <0>;
+		};
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&lcdc_out>;
+			};
+		};
+	};
+};
+
+&pinctrl {
+	led-sr-reset-hog {
+		gpio-hog;
+		gpios = <108 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "led-sr-reset";
+	};
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&nand {
+	status = "okay";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "uboot";
+				reg = <0x0000000 0x0200000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "ubootenv";
+				reg = <0x0200000 0x0100000>;
+			};
+
+			partition@300000 {
+				label = "rescuekernel";
+				reg = <0x0300000 0x0400000>;
+				read-only;
+			};
+
+			partition@700000 {
+				label = "rescuefs";
+				reg = <0x0700000 0x0800000>;
+				read-only;
+			};
+
+			partition@f00000 {
+				label = "data";
+				reg = <0x0f00000 0x00c0000>;
+				read-only;
+			};
+
+			partition@fc0000 {
+				label = "ubi";
+				reg = <0x0fc0000 0x7040000>;
+			};
+		};
+	};
+};
+
+&keypad {
+	keypad,num-rows = <6>;
+	keypad,num-columns = <8>;
+	linux,keymap = <
+		MATRIX_KEY(0, 0, KEY_F1)
+		MATRIX_KEY(1, 0, KEY_F10)
+		MATRIX_KEY(2, 0, KEY_UP)
+		MATRIX_KEY(3, 0, KEY_F11)
+		MATRIX_KEY(4, 0, KEY_F12)
+		MATRIX_KEY(5, 0, KEY_F5)
+		MATRIX_KEY(0, 1, KEY_F2)
+		MATRIX_KEY(1, 1, KEY_LEFT)
+		MATRIX_KEY(2, 1, KEY_OK)
+		MATRIX_KEY(3, 1, KEY_RIGHT)
+		MATRIX_KEY(4, 1, KEY_ESC)
+		MATRIX_KEY(5, 1, KEY_F6)
+		MATRIX_KEY(0, 2, KEY_F3)
+		MATRIX_KEY(2, 2, KEY_DOWN)
+		MATRIX_KEY(5, 2, KEY_F7)
+		MATRIX_KEY(0, 3, KEY_F4)
+		MATRIX_KEY(1, 3, KEY_NUMERIC_1)
+		MATRIX_KEY(2, 3, KEY_NUMERIC_2)
+		MATRIX_KEY(3, 3, KEY_NUMERIC_3)
+		MATRIX_KEY(4, 3, KEY_MENU)
+		MATRIX_KEY(5, 3, KEY_F8)
+		MATRIX_KEY(0, 4, KEY_F9)
+		MATRIX_KEY(1, 4, KEY_NUMERIC_4)
+		MATRIX_KEY(2, 4, KEY_NUMERIC_5)
+		MATRIX_KEY(3, 4, KEY_NUMERIC_6)
+		MATRIX_KEY(4, 4, KEY_ADDRESSBOOK)
+		MATRIX_KEY(5, 4, KEY_PROG1)
+		MATRIX_KEY(0, 5, KEY_PROG2)
+		MATRIX_KEY(1, 5, KEY_NUMERIC_7)
+		MATRIX_KEY(2, 5, KEY_NUMERIC_8)
+		MATRIX_KEY(3, 5, KEY_NUMERIC_9)
+		MATRIX_KEY(4, 5, KEY_FORWARD)
+		MATRIX_KEY(5, 5, KEY_MESSENGER)
+		MATRIX_KEY(0, 6, KEY_PROG3)
+		MATRIX_KEY(1, 6, KEY_NUMERIC_STAR)
+		MATRIX_KEY(2, 6, KEY_NUMERIC_0)
+		MATRIX_KEY(3, 6, KEY_NUMERIC_POUND)
+		MATRIX_KEY(4, 6, KEY_PAUSE)
+		MATRIX_KEY(5, 6, KEY_PROG4)
+		MATRIX_KEY(1, 7, KEY_MUTE)
+		MATRIX_KEY(2, 7, KEY_VOLUMEDOWN)
+		MATRIX_KEY(3, 7, KEY_VOLUMEUP)
+		MATRIX_KEY(4, 7, KEY_SOUND)
+	>;
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&css {
+	status = "okay";
+};
+
+&css_mem {
+	status = "okay";
+};
+
+&sec {
+	status = "okay";
+};
+
+&dvf9a {
+	status = "okay";
+};
+
+&dvf9a_codec {
+	dspg,filterless;
+};
+
+&usb {
+	dr_mode = "host";
+	vbus-supply = <&reg_usb_vbus>;
+	status = "okay";
+};
+
+&mmc {
+	bus-width = <4>;
+	max-frequency = <10000000>;
+	cap-sd-highspeed;
+	cap-mmc-highspeed;
+	status = "disabled";
+};
+
+&i2c1 {
+	status = "okay";
+
+	light-sensor@39 {
+		compatible = "silan,sc7lcs30";
+		reg = <0x39>;
+	};
+};
+
+&lcdc {
+	status = "okay";
+
+	port {
+		lcdc_out: endpoint {
+			remote-endpoint = <&panel_in>;
+		};
+	};
+};
+
+&gmac {
+	phy-mode = "rgmii";
+	status = "okay";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+
+	mdio {
+		compatible = "snps,dwmac-mdio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		switch@0 {
+			compatible = "maxlinear,gsw120";
+			reg = <0>;
+			reset-gpios = <&pinctrl 138 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <300000>;
+			reset-deassert-us = <1000000>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					label = "wan";
+					phy-handle = <&switchphy0>;
+					phy-mode = "internal";
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan";
+					phy-handle = <&switchphy1>;
+					phy-mode = "internal";
+				};
+
+				port@5 {
+					reg = <5>;
+					ethernet = <&gmac>;
+					phy-mode = "rgmii";
+					tx-internal-delay-ps = <2000>;
+					rx-internal-delay-ps = <0>;
+
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
+				};
+			};
+
+			mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				switchphy0: ethernet-phy@0 {
+					reg = <0>;
+				};
+
+				switchphy1: ethernet-phy@1 {
+					reg = <1>;
+				};
+			};
+		};
+	};
+};
+
+&watchdog {
+	status = "okay";
+};

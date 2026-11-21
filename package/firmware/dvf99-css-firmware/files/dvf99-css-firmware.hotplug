@@ -1,0 +1,4 @@
+#!/bin/sh
+[ "$ACTION" = ifup ] || exit 0
+[ "$INTERFACE" = wan ] || exit 0
+/usr/sbin/dvf99-css-firmware </dev/null >/dev/null 2>&1 &

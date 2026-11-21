@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 2 Dec 2025 09:57:21 +0000
+Subject: [PATCH] net: dsa: mxl-gsw1xx: fix SerDes RX polarity
+
+According to MaxLinear engineer Benny Weng the RX lane of the SerDes
+port of the GSW1xx switches is inverted in hardware, and the
+SGMII_PHY_RX0_CFG2_INVERT bit is set by default in order to compensate
+for that. Hence also set the SGMII_PHY_RX0_CFG2_INVERT bit by default in
+gsw1xx_pcs_reset().
+
+Fixes: 22335939ec90 ("net: dsa: add driver for MaxLinear GSW1xx switch family")
+Reported-by: Rasmus Villemoes <ravi@prevas.dk>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://patch.msgid.link/ca10e9f780c0152ecf9ae8cbac5bf975802e8f99.1764668951.git.daniel@makrotopia.org
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/lantiq/mxl-gsw1xx.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq/mxl-gsw1xx.c
++++ b/drivers/net/dsa/lantiq/mxl-gsw1xx.c
+@@ -255,10 +255,16 @@ static int gsw1xx_pcs_reset(struct gsw1x
+ 	      FIELD_PREP(GSW1XX_SGMII_PHY_RX0_CFG2_FILT_CNT,
+ 			 GSW1XX_SGMII_PHY_RX0_CFG2_FILT_CNT_DEF);
+ 
+-	/* TODO: Take care of inverted RX pair once generic property is
++	/* RX lane seems to be inverted internally, so bit
++	 * GSW1XX_SGMII_PHY_RX0_CFG2_INVERT needs to be set for normal
++	 * (ie. non-inverted) operation.
++	 *
++	 * TODO: Take care of inverted RX pair once generic property is
+ 	 *       available
+ 	 */
+ 
++	val |= GSW1XX_SGMII_PHY_RX0_CFG2_INVERT;
++
+ 	ret = regmap_write(priv->sgmii, GSW1XX_SGMII_PHY_RX0_CFG2, val);
+ 	if (ret < 0)
+ 		return ret;

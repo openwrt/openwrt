@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config SND_SOC_DVF99_CSS
+	tristate "DSPG DVF99 cordless subsystem PCM support"
+	depends on ARCH_DSPG || COMPILE_TEST
+	depends on RPMSG_DVF99_DUA && HAS_DMA
+	help
+	  Say Y or M to play and record audio through the firmware of the
+	  cordless subsystem of the DSP Group DVF99 SoC. The PCM data goes
+	  over its "alsa" coma channel. The driver provides seven PCM
+	  devices, one for each stream that the firmware offers, and sets
+	  up the DSP units of the audio path through the DSP unit API.

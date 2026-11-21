@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config DRM_DVF99_LCDC
+	tristate "DRM support for the DSPG DVF99 LCD controller"
+	depends on DRM && OF
+	depends on ARCH_DSPG || COMPILE_TEST
+	select DRM_BRIDGE
+	select DRM_CLIENT_SELECTION
+	select DRM_GEM_DMA_HELPER
+	select DRM_KMS_HELPER
+	select DRM_PANEL_BRIDGE
+	help
+	  Choose this option for DRM support of the parallel RGB LCD
+	  controller of the DSP Group DVF99 SoC.

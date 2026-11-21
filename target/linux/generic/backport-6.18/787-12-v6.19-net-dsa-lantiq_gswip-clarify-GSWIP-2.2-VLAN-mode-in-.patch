@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 21 Oct 2025 12:16:30 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: clarify GSWIP 2.2 VLAN mode in
+ comment
+
+The comment above writing the default PVID incorrectly states that
+"GSWIP 2.2 (GRX300) and later program here the VID directly."
+The truth is that even GSWIP 2.2 and newer maintain the behavior of
+GSWIP 2.1 unless the VLANMD bit in PCE Global Control Register 1 is
+set ("GSWIP2.2 VLAN Mode").
+Fix the misleading comment accordingly.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Acked-by; Hauke Mehrtens <hauke@hauke-m.de>:
+Acked-by; Hauke Mehrtens <hauke@hauke-m.de>:
+Link: https://patch.msgid.link/018056a575503d9797f3222f71a988e825316be0.1761045000.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -588,7 +588,11 @@ static void gswip_port_commit_pvid(struc
+ 			  FIELD_PREP(GSWIP_PCE_VCTRL_VINR, vinr),
+ 			  GSWIP_PCE_VCTRL(port));
+ 
+-	/* GSWIP 2.2 (GRX300) and later program here the VID directly. */
++	/* Note that in GSWIP 2.2 VLAN mode the VID needs to be programmed
++	 * directly instead of referencing the index in the Active VLAN Tablet.
++	 * However, without the VLANMD bit (9) in PCE_GCTRL_1 (0x457) even
++	 * GSWIP 2.2 and newer hardware maintain the GSWIP 2.1 behavior.
++	 */
+ 	gswip_switch_w(priv, idx, GSWIP_PCE_DEFPVID(port));
+ }
+ 

@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Wed, 15 Oct 2025 23:33:25 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: disallow changes to privately
+ set up VID 0
+
+User space can force the altering of VID 0 as it was privately set up by
+this driver.
+
+For example, when the port joins a VLAN-aware bridge,
+dsa_user_manage_vlan_filtering() will set NETIF_F_HW_VLAN_CTAG_FILTER.
+If the port is subsequently brought up and CONFIG_VLAN_8021Q is enabled,
+the vlan_vid0_add() function will want to make sure we are capable of
+accepting packets tagged with VID 0.
+
+Generally, DSA/switchdev drivers want to suppress that bit of help from
+the 8021q layer, and handle VID 0 filters themselves. The 8021q layer
+might actually be even detrimential, because VLANs added through
+vlan_vid_add() pass through dsa_user_vlan_rx_add_vid(), which is
+documented as this:
+
+	/* This API only allows programming tagged, non-PVID VIDs */
+	.flags = 0,
+
+so it will force VID 0 to be reconfigured as egress-tagged, non-PVID.
+Whereas the driver configures it as PVID and egress-untagged, the exact
+opposite.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/9f68340c34b5312c3b8c6c7ecf3cfce574a3f65d.1760566491.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -1000,6 +1000,9 @@ static int gswip_port_vlan_add(struct ds
+ 	bool pvid = vlan->flags & BRIDGE_VLAN_INFO_PVID;
+ 	int err;
+ 
++	if (vlan->vid == GSWIP_VLAN_UNAWARE_PVID)
++		return 0;
++
+ 	err = gswip_port_vlan_prepare(ds, port, vlan, extack);
+ 	if (err)
+ 		return err;
+@@ -1023,6 +1026,9 @@ static int gswip_port_vlan_del(struct ds
+ 	struct gswip_priv *priv = ds->priv;
+ 	bool pvid = vlan->flags & BRIDGE_VLAN_INFO_PVID;
+ 
++	if (vlan->vid == GSWIP_VLAN_UNAWARE_PVID)
++		return 0;
++
+ 	/* We have to receive all packets on the CPU port and should not
+ 	 * do any VLAN filtering here. This is also called with bridge
+ 	 * NULL and then we do not know for which bridge to configure

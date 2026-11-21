@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 3 Nov 2025 12:19:25 +0000
+Subject: [PATCH] net: dsa: lantiq_gswip: define and use
+ GSWIP_TABLE_MAC_BRIDGE_VAL1_VALID
+
+When adding FDB entries to the MAC bridge table on GSWIP 2.2 or later it
+is needed to set an (undocumented) bit to mark the entry as valid. If this
+bit isn't set for entries in the MAC bridge table, then those entries won't
+be considered as valid MAC addresses.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/e02fe0d946c98920bc55b5f389a8f56382aae7df.1762170107.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.h        | 1 +
+ drivers/net/dsa/lantiq/lantiq_gswip_common.c | 7 ++++++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.h
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.h
+@@ -224,6 +224,7 @@
+ #define  GSWIP_TABLE_MAC_BRIDGE_KEY3_FID	GENMASK(5, 0)	/* Filtering identifier */
+ #define  GSWIP_TABLE_MAC_BRIDGE_VAL0_PORT	GENMASK(7, 4)	/* Port on learned entries */
+ #define  GSWIP_TABLE_MAC_BRIDGE_VAL1_STATIC	BIT(0)		/* Static, non-aging entry */
++#define  GSWIP_TABLE_MAC_BRIDGE_VAL1_VALID	BIT(1)		/* Valid bit */
+ 
+ #define XRX200_GPHY_FW_ALIGN	(16 * 1024)
+ 
+--- a/drivers/net/dsa/lantiq/lantiq_gswip_common.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip_common.c
+@@ -1149,7 +1149,12 @@ static int gswip_port_fdb(struct dsa_swi
+ 	mac_bridge.key[2] = addr[1] | (addr[0] << 8);
+ 	mac_bridge.key[3] = FIELD_PREP(GSWIP_TABLE_MAC_BRIDGE_KEY3_FID, fid);
+ 	mac_bridge.val[0] = add ? BIT(port) : 0; /* port map */
+-	mac_bridge.val[1] = GSWIP_TABLE_MAC_BRIDGE_VAL1_STATIC;
++	if (GSWIP_VERSION_GE(priv, GSWIP_VERSION_2_2_ETC))
++		mac_bridge.val[1] = add ? (GSWIP_TABLE_MAC_BRIDGE_VAL1_STATIC |
++					   GSWIP_TABLE_MAC_BRIDGE_VAL1_VALID) : 0;
++	else
++		mac_bridge.val[1] = GSWIP_TABLE_MAC_BRIDGE_VAL1_STATIC;
++
+ 	mac_bridge.valid = add;
+ 
+ 	err = gswip_pce_table_entry_write(priv, &mac_bridge);

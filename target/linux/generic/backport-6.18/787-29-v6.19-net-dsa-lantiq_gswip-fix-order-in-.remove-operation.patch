@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 9 Dec 2025 01:28:20 +0000
+Subject: [PATCH] net: dsa: lantiq_gswip: fix order in .remove operation
+
+Russell King pointed out that disabling the switch by clearing
+GSWIP_MDIO_GLOB_ENABLE before calling dsa_unregister_switch() is
+problematic, as it violates a Golden Rule of driver development to
+always first unpublish userspace interfaces and then disable the
+hardware.
+
+Fix this, and also simplify the probe() function, by introducing a
+dsa_switch_ops teardown() operation which takes care of clearing the
+GSWIP_MDIO_GLOB_ENABLE bit.
+
+Fixes: 14fceff4771e5 ("net: dsa: Add Lantiq / Intel DSA driver for vrx200")
+Suggested-by: "Russell King (Oracle)" <linux@armlinux.org.uk>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/4ebd72a29edc1e4059b9666a26a0bb5d906a829a.1765241054.git.daniel@makrotopia.org
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c        |  3 ---
+ drivers/net/dsa/lantiq/lantiq_gswip_common.c | 13 ++++++++++---
+ 2 files changed, 10 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -444,9 +444,6 @@ static void gswip_remove(struct platform
+ 	if (!priv)
+ 		return;
+ 
+-	/* disable the switch */
+-	gswip_disable_switch(priv);
+-
+ 	dsa_unregister_switch(priv->ds);
+ 
+ 	for (i = 0; i < priv->num_gphy_fw; i++)
+--- a/drivers/net/dsa/lantiq/lantiq_gswip_common.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip_common.c
+@@ -752,6 +752,13 @@ static int gswip_setup(struct dsa_switch
+ 	return 0;
+ }
+ 
++static void gswip_teardown(struct dsa_switch *ds)
++{
++	struct gswip_priv *priv = ds->priv;
++
++	regmap_clear_bits(priv->mdio, GSWIP_MDIO_GLOB, GSWIP_MDIO_GLOB_ENABLE);
++}
++
+ static enum dsa_tag_protocol gswip_get_tag_protocol(struct dsa_switch *ds,
+ 						    int port,
+ 						    enum dsa_tag_protocol mp)
+@@ -1629,6 +1636,7 @@ static const struct phylink_mac_ops gswi
+ static const struct dsa_switch_ops gswip_switch_ops = {
+ 	.get_tag_protocol	= gswip_get_tag_protocol,
+ 	.setup			= gswip_setup,
++	.teardown		= gswip_teardown,
+ 	.port_setup		= gswip_port_setup,
+ 	.port_enable		= gswip_port_enable,
+ 	.port_disable		= gswip_port_disable,
+@@ -1716,15 +1724,14 @@ int gswip_probe_common(struct gswip_priv
+ 
+ 	err = gswip_validate_cpu_port(priv->ds);
+ 	if (err)
+-		goto disable_switch;
++		goto unregister_switch;
+ 
+ 	dev_info(priv->dev, "probed GSWIP version %lx mod %lx\n",
+ 		 GSWIP_VERSION_REV(version), GSWIP_VERSION_MOD(version));
+ 
+ 	return 0;
+ 
+-disable_switch:
+-	gswip_disable_switch(priv);
++unregister_switch:
+ 	dsa_unregister_switch(priv->ds);
+ 
+ 	return err;

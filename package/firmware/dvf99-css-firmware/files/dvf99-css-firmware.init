@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
+START=20
+STOP=90
+
+css_rproc() {
+	local r
+
+	for r in /sys/class/remoteproc/remoteproc*; do
+		[ "$(cat "$r/firmware" 2>/dev/null)" = css-loader ] || continue
+		echo "$r"
+		return 0
+	done
+
+	return 1
+}
+
+start() {
+	local r
+
+	[ -f /lib/firmware/css-loader ] || {
+		logger -t css "no /lib/firmware/css-loader, CSS not started"
+		return 1
+	}
+
+	r=$(css_rproc) || {
+		logger -t css "no remoteproc for css-loader"
+		return 1
+	}
+
+	[ "$(cat "$r/state")" = offline ] || return 0
+	echo start > "$r/state"
+}
+
+stop() {
+	local r
+
+	r=$(css_rproc) || return 0
+	[ "$(cat "$r/state")" = running ] || return 0
+	echo stop > "$r/state"
+}

@@ -1,0 +1,52 @@
+/* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
+/*
+ * Copyright (C) 2026 John Crispin <john@phrozen.org>
+ */
+
+#ifndef _DT_BINDINGS_RESET_DSPG_DVF99_CMU_H
+#define _DT_BINDINGS_RESET_DSPG_DVF99_CMU_H
+
+#define DVF99_RST_GDMAC			0
+#define DVF99_RST_CSS_ARM9		1
+#define DVF99_RST_RTC			2
+#define DVF99_RST_ETHMAC		3
+#define DVF99_RST_SECURE		4
+#define DVF99_RST_UART1			6
+#define DVF99_RST_UART2			7
+#define DVF99_RST_TDM1			9
+#define DVF99_RST_TDM2			10
+#define DVF99_RST_QSPI			11
+#define DVF99_RST_SDC			13
+#define DVF99_RST_NFC			14
+#define DVF99_RST_CSS_DCLASS		18
+#define DVF99_RST_CIU			19
+#define DVF99_RST_LCDC			21
+#define DVF99_RST_SEC			22
+#define DVF99_RST_CSS			23
+#define DVF99_RST_GPU			24
+#define DVF99_RST_MCU_ETM		27
+#define DVF99_RST_CSS_DRT		28
+#define DVF99_RST_CSS_ADPCM		29
+#define DVF99_RST_CSS_BMP		30
+#define DVF99_RST_CSS_ETM		31
+#define DVF99_RST_TIMER1_2		32
+#define DVF99_RST_TIMER3_4		33
+#define DVF99_RST_PMU			34
+#define DVF99_RST_COM_RFAPU		35
+#define DVF99_RST_I2C1			36
+#define DVF99_RST_I2C2			37
+#define DVF99_RST_SPI1			38
+#define DVF99_RST_SPI2			39
+#define DVF99_RST_SLVMII		40
+#define DVF99_RST_USB11			41
+#define DVF99_RST_MPMC_CLK		42
+#define DVF99_RST_DRAM_CTL		44
+#define DVF99_RST_CSS_TIMERS		45
+#define DVF99_RST_CSS_GDMAC		47
+#define DVF99_RST_CCU0			52
+#define DVF99_RST_USB20_MAC_RST		54
+#define DVF99_RST_USB20_MAC_PHYIF	55
+#define DVF99_RST_USB20_PHY_POR		57
+#define DVF99_RST_CORESIGHT		62
+
+#endif

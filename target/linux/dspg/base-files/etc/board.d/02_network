@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+board_config_update
+
+case "$(board_name)" in
+snom,d735)
+	ucidef_set_interface_lan "lan"
+	ucidef_set_interface_wan "wan"
+	wan_mac=$(mtd_get_mac_ascii ubootenv ethaddr)
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "lan" $(macaddr_setbit_la $wan_mac)
+	[ -n "$wan_mac" ] && ucidef_set_label_macaddr $wan_mac
+	;;
+*)
+	ucidef_set_interface_lan "eth0"
+	;;
+esac
+
+board_config_flush
+
+exit 0

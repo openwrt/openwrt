@@ -906,6 +906,27 @@ endef
 
 $(eval $(call KernelPackage,dsa-mxl862xx))
 
+define KernelPackage/dsa-mxl-gsw1xx
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MaxLinear GSW1xx switch family DSA support
+  DEPENDS:=+kmod-dsa +kmod-regmap-core
+  KCONFIG:= \
+	CONFIG_NET_DSA_LANTIQ_COMMON \
+	CONFIG_NET_DSA_MXL_GSW1XX \
+	CONFIG_NET_DSA_TAG_MXL_GSW1XX
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/dsa/lantiq/lantiq_gswip_common.ko \
+	$(LINUX_DIR)/drivers/net/dsa/lantiq/mxl-gsw1xx.ko \
+	$(LINUX_DIR)/net/dsa/tag_mxl-gsw1xx.ko
+  AUTOLOAD:=$(call AutoProbe,mxl-gsw1xx)
+endef
+
+define KernelPackage/dsa-mxl-gsw1xx/description
+  DSA based kernel modules for the MaxLinear GSW1xx switch family
+endef
+
+$(eval $(call KernelPackage,dsa-mxl-gsw1xx))
+
 define KernelPackage/dsa-qca8k
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Qualcomm Atheros QCA8xxx switch family DSA support

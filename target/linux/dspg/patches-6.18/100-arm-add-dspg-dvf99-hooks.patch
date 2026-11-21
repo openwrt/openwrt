@@ -1,0 +1,273 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] arm: add DSPG DVF99 platform hooks
+
+Wire up the DSPG DVF99 platform, the PLICU interrupt controller, the
+CMU clock driver, the pin controller, the SPI controller, the LCD
+controller, the keypad, the DVF9A PWM and the UART driver.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -379,6 +379,8 @@ source "arch/arm/mach-davinci/Kconfig"
+ 
+ source "arch/arm/mach-digicolor/Kconfig"
+ 
++source "arch/arm/mach-dspg/Kconfig"
++
+ source "arch/arm/mach-dove/Kconfig"
+ 
+ source "arch/arm/mach-ep93xx/Kconfig"
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -338,6 +338,13 @@ choice
+ 		  Say Y here if you want the debug print routines to direct
+ 		  their output to the UA0 serial port in the CX92755.
+ 
++	config DEBUG_DSPG_UART1
++		bool "Kernel low-level debugging messages via DSPG UART1"
++		depends on ARCH_DSPG
++		help
++		  Say Y here if you want the debug print routines to direct
++		  their output to UART1 of the DSPG DVF99.
++
+ 	config DEBUG_EP93XX
+ 		bool "Kernel low-level debugging messages via ep93xx UART"
+ 		depends on ARCH_EP93XX
+@@ -1532,6 +1539,7 @@ config DEBUG_LL_INCLUDE
+ 	default "debug/zynq.S" if DEBUG_ZYNQ_UART0 || DEBUG_ZYNQ_UART1
+ 	default "debug/bcm63xx.S" if DEBUG_BCM63XX_UART || DEBUG_BCMBCA
+ 	default "debug/digicolor.S" if DEBUG_DIGICOLOR_UA0
++	default "debug/dspg.S" if DEBUG_DSPG_UART1
+ 	default "debug/brcmstb.S" if DEBUG_BRCMSTB_UART
+ 	default "mach/debug-macro.S"
+ 
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -265,6 +265,14 @@ config COMMON_CLK_FSL_SAI
+ 	  purpose clock output. Ideally, it can be used to drive an audio
+ 	  codec (sometimes known as MCLK).
+ 
++config COMMON_CLK_DVF99
++	bool "Clock driver for the DSPG DVF99 SoC"
++	depends on ARCH_DSPG || COMPILE_TEST
++	select RESET_CONTROLLER
++	help
++	  This driver supports the clock and reset unit of the DSP Group
++	  DVF99 SoC.
++
+ config COMMON_CLK_GEMINI
+ 	bool "Clock driver for Cortina Systems Gemini SoC"
+ 	depends on ARCH_GEMINI || COMPILE_TEST
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -61,6 +61,7 @@ obj-$(CONFIG_COMMON_CLK_EYEQ)		+= clk-ey
+ obj-$(CONFIG_COMMON_CLK_FIXED_MMIO)	+= clk-fixed-mmio.o
+ obj-$(CONFIG_COMMON_CLK_FSL_FLEXSPI)	+= clk-fsl-flexspi.o
+ obj-$(CONFIG_COMMON_CLK_FSL_SAI)	+= clk-fsl-sai.o
++obj-$(CONFIG_COMMON_CLK_DVF99)		+= clk-dvf99.o
+ obj-$(CONFIG_COMMON_CLK_GEMINI)		+= clk-gemini.o
+ obj-$(CONFIG_COMMON_CLK_ASPEED)		+= clk-aspeed.o
+ obj-$(CONFIG_MACH_ASPEED_G6)		+= clk-ast2600.o
+--- a/drivers/gpu/drm/Kconfig
++++ b/drivers/gpu/drm/Kconfig
+@@ -367,6 +367,8 @@ source "drivers/gpu/drm/pl111/Kconfig"
+ 
+ source "drivers/gpu/drm/tve200/Kconfig"
+ 
++source "drivers/gpu/drm/dvf99/Kconfig"
++
+ source "drivers/gpu/drm/xen/Kconfig"
+ 
+ source "drivers/gpu/drm/vboxvideo/Kconfig"
+--- a/drivers/gpu/drm/Makefile
++++ b/drivers/gpu/drm/Makefile
+@@ -216,6 +216,7 @@ obj-y			+= sysfb/
+ obj-y			+= tiny/
+ obj-$(CONFIG_DRM_PL111) += pl111/
+ obj-$(CONFIG_DRM_TVE200) += tve200/
++obj-$(CONFIG_DRM_DVF99_LCDC) += dvf99/
+ obj-$(CONFIG_DRM_ADP) += adp/
+ obj-$(CONFIG_DRM_XEN) += xen/
+ obj-$(CONFIG_DRM_VBOXVIDEO) += vboxvideo/
+--- a/drivers/input/keyboard/Kconfig
++++ b/drivers/input/keyboard/Kconfig
+@@ -210,6 +210,16 @@ config KEYBOARD_DLINK_DIR685
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called dlink-dir685-touchkeys.
+ 
++config KEYBOARD_DVF99
++	tristate "DSPG DVF99 keypad support"
++	depends on ARCH_DSPG || COMPILE_TEST
++	select INPUT_MATRIXKMAP
++	help
++	  Say Y here to enable the matrix keypad controller of the DSP
++	  Group DVF99 SoC.
++
++	  To compile this driver as a module, choose M here.
++
+ config KEYBOARD_LKKBD
+ 	tristate "DECstation/VAXstation LK201/LK401 keyboard"
+ 	select SERIO
+--- a/drivers/input/keyboard/Makefile
++++ b/drivers/input/keyboard/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_KEYBOARD_CLPS711X)		+= clps
+ obj-$(CONFIG_KEYBOARD_CROS_EC)		+= cros_ec_keyb.o
+ obj-$(CONFIG_KEYBOARD_CYPRESS_SF)	+= cypress-sf.o
+ obj-$(CONFIG_KEYBOARD_DLINK_DIR685)	+= dlink-dir685-touchkeys.o
++obj-$(CONFIG_KEYBOARD_DVF99)		+= dvf99-keypad.o
+ obj-$(CONFIG_KEYBOARD_EP93XX)		+= ep93xx_keypad.o
+ obj-$(CONFIG_KEYBOARD_GOLDFISH_EVENTS)	+= goldfish_events.o
+ obj-$(CONFIG_KEYBOARD_GPIO)		+= gpio_keys.o
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -176,6 +176,11 @@ config DAVINCI_CP_INTC
+ 	select GENERIC_IRQ_CHIP
+ 	select IRQ_DOMAIN
+ 
++config DSPG_PLICU
++	bool
++	select IRQ_DOMAIN
++	select IRQ_DOMAIN_HIERARCHY
++
+ config DW_APB_ICTL
+ 	bool
+ 	select GENERIC_IRQ_CHIP
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -76,6 +76,7 @@ obj-$(CONFIG_KEYSTONE_IRQ)		+= irq-keyst
+ obj-$(CONFIG_MIPS_GIC)			+= irq-mips-gic.o
+ obj-$(CONFIG_ARCH_MEDIATEK)		+= irq-mtk-sysirq.o irq-mtk-cirq.o
+ obj-$(CONFIG_ARCH_DIGICOLOR)		+= irq-digicolor.o
++obj-$(CONFIG_DSPG_PLICU)		+= irq-dspg-plicu.o
+ obj-$(CONFIG_ARCH_SA1100)		+= irq-sa11x0.o
+ obj-$(CONFIG_INGENIC_IRQ)		+= irq-ingenic.o
+ obj-$(CONFIG_INGENIC_TCU_IRQ)		+= irq-ingenic-tcu.o
+--- a/drivers/pinctrl/Kconfig
++++ b/drivers/pinctrl/Kconfig
+@@ -207,6 +207,16 @@ config PINCTRL_DIGICOLOR
+ 	select PINMUX
+ 	select GENERIC_PINCONF
+ 
++config PINCTRL_DVF99
++	bool
++	depends on ARCH_DSPG || COMPILE_TEST
++	select PINMUX
++	select GENERIC_PINCONF
++	select GPIOLIB
++	select GPIOLIB_IRQCHIP
++	select IRQ_DOMAIN_HIERARCHY
++	select MFD_SYSCON
++
+ config PINCTRL_EIC7700
+ 	tristate "EIC7700 PINCTRL driver"
+ 	depends on ARCH_ESWIN || COMPILE_TEST
+--- a/drivers/pinctrl/Makefile
++++ b/drivers/pinctrl/Makefile
+@@ -23,6 +23,7 @@ obj-$(CONFIG_PINCTRL_CY8C95X0)	+= pinctr
+ obj-$(CONFIG_PINCTRL_DA850_PUPD) += pinctrl-da850-pupd.o
+ obj-$(CONFIG_PINCTRL_DA9062)	+= pinctrl-da9062.o
+ obj-$(CONFIG_PINCTRL_DIGICOLOR)	+= pinctrl-digicolor.o
++obj-$(CONFIG_PINCTRL_DVF99)	+= pinctrl-dvf99.o
+ obj-$(CONFIG_PINCTRL_EIC7700)	+= pinctrl-eic7700.o
+ obj-$(CONFIG_PINCTRL_EQUILIBRIUM)   += pinctrl-equilibrium.o
+ obj-$(CONFIG_PINCTRL_EP93XX)	+= pinctrl-ep93xx.o
+--- a/drivers/pwm/Kconfig
++++ b/drivers/pwm/Kconfig
+@@ -239,6 +239,14 @@ config PWM_DWC
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called pwm-dwc.
+ 
++config PWM_DVF9A
++	tristate "DSPG DVF9A PWM support"
++	depends on ARCH_DSPG || COMPILE_TEST
++	depends on HAS_IOMEM
++	help
++	  Generic PWM framework driver for the two PWM outputs of the DSP
++	  Group DVF9A companion block, as found next to the DVF99 SoC.
++
+ config PWM_EP93XX
+ 	tristate "Cirrus Logic EP93xx PWM support"
+ 	depends on ARCH_EP93XX || COMPILE_TEST
+--- a/drivers/pwm/Makefile
++++ b/drivers/pwm/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_PWM_CRC)		+= pwm-crc.o
+ obj-$(CONFIG_PWM_CROS_EC)	+= pwm-cros-ec.o
+ obj-$(CONFIG_PWM_DWC_CORE)	+= pwm-dwc-core.o
+ obj-$(CONFIG_PWM_DWC)		+= pwm-dwc.o
++obj-$(CONFIG_PWM_DVF9A)		+= pwm-dvf9a.o
+ obj-$(CONFIG_PWM_EP93XX)	+= pwm-ep93xx.o
+ obj-$(CONFIG_PWM_FSL_FTM)	+= pwm-fsl-ftm.o
+ obj-$(CONFIG_PWM_GPIO)		+= pwm-gpio.o
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -404,6 +404,13 @@ config SPI_DLN2
+ 	 This driver can also be built as a module.  If so, the module
+ 	 will be called spi-dln2.
+ 
++config SPI_DVF99
++	tristate "DSPG DVF99 SPI controller"
++	depends on ARCH_DSPG || COMPILE_TEST
++	help
++	  This enables support for the SPI1 controller of the DSP Group
++	  DVF99 SoC.
++
+ config SPI_EP93XX
+ 	tristate "Cirrus Logic EP93xx SPI controller"
+ 	depends on ARCH_EP93XX || COMPILE_TEST
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -49,6 +49,7 @@ obj-$(CONFIG_SPI_COLDFIRE_QSPI)		+= spi-
+ obj-$(CONFIG_SPI_CS42L43)		+= spi-cs42l43.o
+ obj-$(CONFIG_SPI_DAVINCI)		+= spi-davinci.o
+ obj-$(CONFIG_SPI_DLN2)			+= spi-dln2.o
++obj-$(CONFIG_SPI_DVF99)			+= spi-dvf99.o
+ obj-$(CONFIG_SPI_DESIGNWARE)		+= spi-dw.o
+ spi-dw-y				:= spi-dw-core.o
+ spi-dw-$(CONFIG_SPI_DW_DMA)		+= spi-dw-dma.o
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -1570,6 +1570,21 @@ config SERIAL_SUNPLUS_CONSOLE
+ 	  you can alter that using a kernel command line option such as
+ 	  "console=ttySUPx".
+ 
++config SERIAL_DSPG_UART
++	tristate "DSPG DVF UART support"
++	depends on ARCH_DSPG || COMPILE_TEST
++	select SERIAL_CORE
++	help
++	  Support for the UART of the DSP Group DVF SoCs.
++
++config SERIAL_DSPG_UART_CONSOLE
++	bool "Console on DSPG DVF UART"
++	depends on SERIAL_DSPG_UART=y
++	select SERIAL_CORE_CONSOLE
++	select SERIAL_EARLYCON
++	help
++	  Use a DSPG DVF UART as the system console.
++
+ config SERIAL_NUVOTON_MA35D1
+ 	tristate "Nuvoton MA35D1 family UART support"
+ 	depends on ARCH_MA35 || COMPILE_TEST
+--- a/drivers/tty/serial/Makefile
++++ b/drivers/tty/serial/Makefile
+@@ -85,6 +85,7 @@ obj-$(CONFIG_SERIAL_SPRD)		+= sprd_seria
+ obj-$(CONFIG_SERIAL_ST_ASC)		+= st-asc.o
+ obj-$(CONFIG_SERIAL_STM32)		+= stm32-usart.o
+ obj-$(CONFIG_SERIAL_SUNPLUS)		+= sunplus-uart.o
++obj-$(CONFIG_SERIAL_DSPG_UART)	+= dspg-uart.o
+ obj-$(CONFIG_SERIAL_TEGRA)		+= serial-tegra.o
+ obj-$(CONFIG_SERIAL_TEGRA_TCU)		+= tegra-tcu.o
+ obj-$(CONFIG_SERIAL_TEGRA_UTC)		+= tegra-utc.o
+--- a/include/uapi/linux/serial_core.h
++++ b/include/uapi/linux/serial_core.h
+@@ -231,6 +231,8 @@
+ /* Sunplus UART */
+ #define PORT_SUNPLUS	123
+ 
++#define PORT_DSPG	124
++
+ /* Generic type identifier for ports which type is not important to userspace. */
+ #define PORT_GENERIC	(-1)
+ 
