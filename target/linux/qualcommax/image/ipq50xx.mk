@@ -507,6 +507,7 @@ define Device/xunison_exigo-hub-d50-5g
 		kmod-mhi-pci-generic \
 		kmod-mhi-wwan-ctrl \
 		kmod-mhi-wwan-mbim \
+		kmod-usb-serial-option \
 		umbim
 endef
 TARGET_DEVICES += xunison_exigo-hub-d50-5g
