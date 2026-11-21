@@ -378,6 +378,25 @@ platform_do_upgrade() {
 		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
 		nand_do_upgrade "$1"
 		;;
+	tenbay,wr3000k)
+		local boot_slot
+
+		boot_slot="$(cmdline_get_var ubi.mtd)"
+		case "$boot_slot" in
+		""|ubi)
+			CI_UBIPART="ubi"
+			;;
+		ubi1)
+			CI_UBIPART="ubi1"
+			;;
+		*)
+			echo "Unsupported UBI boot partition: $boot_slot"
+			nand_do_upgrade_failed
+			return 1
+			;;
+		esac
+		nand_do_upgrade "$1"
+		;;
 	nradio,c8-668gl)
 		CI_DATAPART="rootfs_data"
 		CI_KERNPART="kernel_2nd"
@@ -497,6 +516,15 @@ platform_check_image() {
 		}
 
 		return 0
+		;;
+	tenbay,wr3000k)
+		if [ "$(cmdline_get_var ubi.mtd)" = ubi1 ] &&
+		   [ "$(fwtool -q -i - "$1" | jsonfilter -e '@.tenbay_wr3000k_ubi1')" != 1 ]; then
+			echo "This image does not support booting from ubi1."
+			return 1
+		fi
+		nand_do_platform_check "$board" "$1"
+		return $?
 		;;
 	*)
 		nand_do_platform_check "$board" "$1"
