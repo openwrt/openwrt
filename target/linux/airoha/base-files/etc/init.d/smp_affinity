@@ -1,0 +1,37 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+USE_PROCD=1
+
+set_affinity() {
+	local name="$1"
+	local mask="$2"
+
+	for irq in $(awk -v n="$name" '$0 ~ n { sub(":", "", $1); print $1 }' /proc/interrupts); do
+		[ -f "/proc/irq/$irq/smp_affinity" ] && echo "$mask" > "/proc/irq/$irq/smp_affinity"
+	done
+}
+
+apply_affinity() {
+	# CPU0 is default (mask 1/3) for Ethernet, XPON, USB 2.0, 2.4 GHz NPU (mt76-npu.0).
+	# Move 5 GHz Wi-Fi (heavy Wi-Fi 6 RX on NPU.1 and MT7916 WED/WA TX) to CPU1.
+	set_affinity "mt76-npu.1" 2
+	set_affinity "mt7915e" 2
+
+	for rps in /sys/class/net/phy1-ap*/queues/rx-*/rps_cpus /sys/class/net/wlan1*/queues/rx-*/rps_cpus; do
+		[ -f "$rps" ] && echo 2 > "$rps"
+	done
+}
+
+start_service() {
+	apply_affinity
+}
+
+service_triggers() {
+	procd_add_reload_trigger "network"
+	procd_add_raw_trigger "interface.*" 1000 /etc/init.d/smp_affinity reload
+}
+
+reload_service() {
+	apply_affinity
+}

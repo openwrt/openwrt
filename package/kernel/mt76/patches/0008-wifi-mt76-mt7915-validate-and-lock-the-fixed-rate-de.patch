@@ -1,0 +1,57 @@
+From 8ffdb2c7bf224932d34e0d6eb731ca0d4a56a8b8 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Tue, 13 Oct 2026 21:00:00 +0200
+Subject: [PATCH] [PATCH 8/8] wifi: mt76: mt7915: validate and lock the fixed rate
+
+ debugfs write
+
+mt7915_sta_fixed_rate_set() is the only debugfs write handler in mt7915
+that does not take dev->mt76.mutex, and
+mt7915_mcu_set_fixed_rate_ctrl() takes neither the mutex nor an RCU
+read lock either.
+
+The bandwidth, GI and HE LTF values are parsed straight from the user,
+and phy.bw is then the loop bound and part of the shift amount:
+
+	for (i = 0; i <= phy.bw; i++) {
+		phy.sgi |= gi << (i << sta->deflink.he_cap.has_he);
+		phy.he_ltf |= he_ltf << (i << sta->deflink.he_cap.has_he);
+	}
+
+i and phy.bw are u8, so phy.bw == 255 makes i <= phy.bw permanently
+true and the loop never terminates, and any phy.bw above 15 shifts an
+u8 by up to 510. Reject the values the documented ranges do not allow
+and hold the device mutex across the command.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+ mt7915/debugfs.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/mt7915/debugfs.c
++++ b/mt7915/debugfs.c
+@@ -1455,6 +1455,14 @@ static ssize_t mt7915_sta_fixed_rate_set
+ 		goto out;
+ 	}
+ 
++	/* phy.bw is the loop bound and the shift amount below, gi and he_ltf
++	 * are the shifted values; all three come from the user
++	 */
++	if (phy.bw > IEEE80211_STA_RX_BW_160 || gi > 2 || he_ltf > 2)
++		return -EINVAL;
++
++	mutex_lock(&dev->mt76.mutex);
++
+ 	phy.ldpc = (phy.bw || phy.ldpc) * GENMASK(2, 0);
+ 	for (i = 0; i <= phy.bw; i++) {
+ 		phy.sgi |= gi << (i << sta->deflink.he_cap.has_he);
+@@ -1465,6 +1473,9 @@ static ssize_t mt7915_sta_fixed_rate_set
+ out:
+ 	vif = container_of((void *)msta->vif, struct ieee80211_vif, drv_priv);
+ 	ret = mt7915_mcu_set_fixed_rate_ctrl(dev, vif, sta, &msta->wcid, &phy, field);
++
++	mutex_unlock(&dev->mt76.mutex);
++
+ 	if (ret)
+ 		return -EFAULT;
+ 

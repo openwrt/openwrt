@@ -1,0 +1,233 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Airoha Team <airoha@airoha.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: airoha: host PPE init, bind limits and protocol configuration for AN7563
+
+On AN7552/AN7563 the NPU firmware only offloads Wi-Fi, so host programs
+the PPE directly:
+- Initialize PPE registers (PPE_GLO_CFG, PPE_FLOW_CFG, PPE_IP_PROTO_CHK).
+- Disable FOE fast path bit on AN7563 (matches vendor hw_nat).
+- Configure IP protocol list (TCP/UDP in PPE_IP_PROT_0/1), bind limits
+  (PPE_BIND_LMT_0/1), keepalive and unbind ageing so flows can bind.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -4466,6 +4466,30 @@ static const struct airoha_eth_soc_data
+ };
+ 
+ /*
++ * AN7563/AN7552: the NPU firmware of the vendor BSP (an7552_MT7916, also
++ * the one on the stock XX530v V2) only offloads WiFi, its hw_nat programs
++ * the PPE from the host.  Values read from PPE1 of a running stock unit
++ * (5.4.55, hw_nat loaded): PPE_GLO_CFG 0x1fb50e00, PPE_FLOW_CFG
++ * 0x1fb50e04, PPE_IP_PROTO_CHK 0x1fb50e08, PPE_IP_PROT_0/1 0x1fb50e0c/10,
++ * PPE_BIND_LMT_0/1 0x1fb50e2c/30,
++ * PPE_KA 0x1fb50e34, PPE_UNB_AGE 0x1fb50e38 and the keep alive and ageing
++ * bits of PPE_TB_CFG 0x1fb50e1c (0x87c0ffb4).
++ */
++static const struct airoha_ppe_host_cfg an7563_ppe_host_cfg = {
++	.glo_cfg = 0x00678743,
++	.flow_cfg = 0x06b9f700,
++	.ip_proto_chk = 0x000f000f,
++	.ip_proto = { 0x04291106, 0x00003a01 },
++	.bind_limit0 = 0x0fa00fa0,
++	.bind_limit1 = 0x00011f40,
++	.keepalive = 0x01010001,
++	.unbind_age = 0x03e80003,
++	.tb_cfg_age = PPE_TB_CFG_KEEPALIVE_MASK | PPE_TB_CFG_AGE_TCP_FIN_MASK |
++		      PPE_TB_CFG_AGE_UDP_MASK | PPE_TB_CFG_AGE_TCP_MASK |
++		      PPE_TB_CFG_AGE_UNBIND_MASK | PPE_TB_CFG_AGE_NON_L4_MASK,
++};
++
++/*
+  * AN7563/AN7552 shares the AN7583 front-end port and source-port layout.
+  * The vendor SDK does not document which SCU reset lines gate its HSGMII
+  * and XFP MACs, so no xsi reset is requested here.
+@@ -4473,6 +4497,11 @@ static const struct airoha_eth_soc_data
+ static const struct airoha_eth_soc_data an7563_soc_data = {
+ 	.version = 0x7583,
+ 	.num_ppe = 1,
++	.ppe_host = &an7563_ppe_host_cfg,
++	/* vendor hw_nat ra_nat_ic_dis.h: SUPPORT_FAST_PATH is EN7580,
++	 * EN7581 and AN7583 only, not AN7552
++	 */
++	.ppe_no_fast_path = true,
+ 	.ops = {
+ 		.get_sport = airoha_an7583_get_sport,
+ 		.get_vip_port = airoha_an7583_get_vip_port,
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -646,14 +646,40 @@ struct airoha_ppe {
+ 	struct airoha_foe_stats *foe_stats;
+ 	dma_addr_t foe_stats_dma;
+ 
++	/* PPE configured by the host, without the NPU (soc->ppe_host) */
++	bool host_ready;
++
+ 	struct dentry *debugfs_dir;
+ };
+ 
++/*
++ * PPE registers the NPU firmware writes on PPE_FUNC_SET_WAIT_HWNAT_INIT.
++ * SoCs whose NPU firmware has no PPE support give them here and the host
++ * programs the PPE itself, as the vendor hw_nat driver does.
++ */
++struct airoha_ppe_host_cfg {
++	u32 glo_cfg;
++	u32 flow_cfg;
++	u32 ip_proto_chk;
++	/* TCP, UDP, ... and ICMP: without them the PPE sees no L4, only 3T */
++	u32 ip_proto[2];
++	/* with these left at their reset value, 0, the PPE creates no entries */
++	u32 bind_limit0;
++	u32 bind_limit1;
++	u32 keepalive;
++	u32 unbind_age;
++	/* PPE_TB_CFG: keep alive and ageing of the bound entries */
++	u32 tb_cfg_age;
++};
++
+ struct airoha_eth_soc_data {
+ 	u16 version;
+ 	const char * const *xsi_rsts_names;
+ 	int num_xsi_rsts;
+ 	int num_ppe;
++	const struct airoha_ppe_host_cfg *ppe_host;
++	/* PPE has no fast path (AIROHA_FOE_IB2_FAST_PATH) */
++	bool ppe_no_fast_path;
+ 	struct {
+ 		int (*get_sport)(struct airoha_gdm_port *port, int nbq);
+ 		u32 (*get_vip_port)(struct airoha_gdm_port *port, int nbq);
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -413,7 +413,8 @@ static int airoha_ppe_foe_entry_prepare(
+ 			/* For downlink traffic consume SRAM memory for hw
+ 			 * forwarding descriptors queue.
+ 			 */
+-			if (airoha_is_lan_gdm_dev(dev))
++			if (airoha_is_lan_gdm_dev(dev) &&
++			    !eth->soc->ppe_no_fast_path)
+ 				val |= AIROHA_FOE_IB2_FAST_PATH;
+ 			if (dsa_port >= 0)
+ 				val |= FIELD_PREP(AIROHA_FOE_IB2_NBQ,
+@@ -794,12 +795,13 @@ static int airoha_ppe_foe_commit_entry(s
+ 	rcu_read_lock();
+ 
+ 	npu = rcu_dereference(eth->npu);
+-	if (!npu) {
++	if (!npu && !ppe->host_ready) {
+ 		err = -ENODEV;
+ 		goto unlock;
+ 	}
+ 
+-	if (!rx_wlan)
++	/* flow stats are kept by the NPU */
++	if (npu && !rx_wlan)
+ 		airoha_ppe_foe_flow_stats_update(ppe, npu, hwe, hash);
+ 
+ 	if (hash < sram_num_entries)
+@@ -1448,12 +1450,56 @@ static int airoha_ppe_wait_for_npu_init(
+ 	return err;
+ }
+ 
++/*
++ * No PPE support in the NPU firmware: write what PPE_FUNC_SET_WAIT_HWNAT_INIT
++ * would, then the usual host setup, and enable the engines last.
++ */
++static void airoha_ppe_host_setup(struct airoha_eth *eth)
++{
++	const struct airoha_ppe_host_cfg *cfg = eth->soc->ppe_host;
++	struct airoha_ppe *ppe = eth->ppe;
++	int i;
++
++	for (i = 0; i < eth->soc->num_ppe; i++) {
++		airoha_fe_wr(eth, REG_PPE_IP_PROTO_CHK(i), cfg->ip_proto_chk);
++		airoha_fe_wr(eth, REG_PPE_IP_PROTO(i, 0), cfg->ip_proto[0]);
++		airoha_fe_wr(eth, REG_PPE_IP_PROTO(i, 1), cfg->ip_proto[1]);
++		airoha_fe_wr(eth, REG_PPE_PPE_FLOW_CFG(i), cfg->flow_cfg);
++	}
++
++	airoha_ppe_hw_init(ppe);
++
++	for (i = 0; i < eth->soc->num_ppe; i++) {
++		airoha_fe_wr(eth, REG_PPE_BIND_LIMIT0(i), cfg->bind_limit0);
++		airoha_fe_wr(eth, REG_PPE_BIND_LIMIT1(i), cfg->bind_limit1);
++		airoha_fe_wr(eth, REG_PPE_KEEPALIVE(i), cfg->keepalive);
++		airoha_fe_wr(eth, REG_PPE_UNBIND_AGE(i), cfg->unbind_age);
++		airoha_fe_set(eth, REG_PPE_TB_CFG(i), cfg->tb_cfg_age);
++	}
++
++	for (i = 0; i < eth->soc->num_ppe; i++)
++		airoha_fe_wr(eth, REG_PPE_GLO_CFG(i), cfg->glo_cfg);
++
++	ppe->host_ready = true;
++}
++
++static bool airoha_ppe_offload_ready(struct airoha_eth *eth)
++{
++	return eth->ppe->host_ready || rcu_access_pointer(eth->npu);
++}
++
+ static int airoha_ppe_offload_setup(struct airoha_eth *eth)
+ {
+-	struct airoha_npu *npu = airoha_ppe_npu_get(eth);
+ 	struct airoha_ppe *ppe = eth->ppe;
+ 	int err, ppe_num_stats_entries;
++	struct airoha_npu *npu;
+ 
++	if (eth->soc->ppe_host) {
++		airoha_ppe_host_setup(eth);
++		return 0;
++	}
++
++	npu = airoha_ppe_npu_get(eth);
+ 	if (IS_ERR(npu))
+ 		return PTR_ERR(npu);
+ 
+@@ -1503,7 +1549,7 @@ int airoha_ppe_setup_tc_block_cb(struct
+ 
+ 	mutex_lock(&flow_offload_mutex);
+ 
+-	if (!eth->npu)
++	if (!airoha_ppe_offload_ready(eth))
+ 		err = airoha_ppe_offload_setup(eth);
+ 	if (!err)
+ 		err = airoha_ppe_flow_offload_cmd(eth, type_data);
+@@ -1691,6 +1737,14 @@ void airoha_ppe_deinit(struct airoha_eth
+ 		npu->ops.ppe_deinit(npu);
+ 		airoha_npu_put(npu);
+ 	}
++	if (eth->ppe->host_ready) {
++		int i;
++
++		for (i = 0; i < eth->soc->num_ppe; i++)
++			airoha_fe_clear(eth, REG_PPE_GLO_CFG(i),
++					PPE_GLO_CFG_EN_MASK);
++		eth->ppe->host_ready = false;
++	}
+ 
+ 	mutex_unlock(&flow_offload_mutex);
+ 
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -284,6 +284,9 @@
+ #define PPE_IP_PROTO_CHK_IPV4_MASK		GENMASK(31, 16)
+ #define PPE_IP_PROTO_CHK_IPV6_MASK		GENMASK(15, 0)
+ 
++/* four IP protocol numbers per register (PPE_IP_PROT_0..3 of the vendor) */
++#define REG_PPE_IP_PROTO(_n, _m)		((((_n) ? PPE2_BASE : PPE1_BASE) + 0x20c) + ((_m) << 2))
++
+ #define REG_PPE_TB_CFG(_n)			(((_n) ? PPE2_BASE : PPE1_BASE) + 0x21c)
+ #define PPE_SRAM_TB_NUM_ENTRY_MASK		GENMASK(26, 24)
+ #define PPE_TB_CFG_KEEPALIVE_MASK		GENMASK(13, 12)
+@@ -315,6 +318,8 @@
+ #define PPE_BIND_AGE0_DELTA_NON_L4		GENMASK(30, 16)
+ #define PPE_BIND_AGE0_DELTA_UDP			GENMASK(14, 0)
+ 
++#define REG_PPE_KEEPALIVE(_n)			(((_n) ? PPE2_BASE : PPE1_BASE) + 0x234)
++
+ #define REG_PPE_UNBIND_AGE(_n)			(((_n) ? PPE2_BASE : PPE1_BASE) + 0x238)
+ #define PPE_UNBIND_AGE_MIN_PACKETS_MASK		GENMASK(31, 16)
+ #define PPE_UNBIND_AGE_DELTA_MASK		GENMASK(7, 0)

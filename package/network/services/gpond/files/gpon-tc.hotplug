@@ -1,0 +1,44 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+#
+# Re-apply the tc filters, policers and multicast port limits of gpond when
+# one of the devices they sit on appears (netifd creates the VLAN devices and
+# bridges of pon0 after the services started, and again whenever it restarts
+# an interface).  Only the devices named in the "vrule", "police" and "mport"
+# sections of /etc/config/gpon are looked at - pon0 and what rides on it, and
+# a UNI device the OLT manages - so that an unrelated interface (lan, wlan,
+# eth1, a VPN) coming up does not cause a reload.  The services reload their
+# own state when /etc/config/gpon changes; a device that goes away takes its
+# filters with it.
+
+[ "$ACTION" = add ] || exit 0
+[ -n "$DEVICENAME" ] || exit 0
+
+. /lib/functions.sh
+
+hit_vlan=
+hit_qos=
+hit_mcast=
+
+match() {
+	local s="$1" dev br
+
+	config_get dev "$s" device
+	config_get br "$s" bridge
+	[ "$dev" = "$DEVICENAME" ] || [ "$br" = "$DEVICENAME" ] || return 1
+}
+
+config_load gpon
+_vlan_hit() { match "$1" && hit_vlan=1; }
+_qos_hit() { match "$1" && hit_qos=1; }
+_mcast_hit() { match "$1" && hit_mcast=1; }
+
+config_foreach _vlan_hit vrule
+config_foreach _qos_hit police
+config_foreach _mcast_hit mport
+
+[ -n "$hit_vlan" ] && /etc/init.d/gpon-vlan reload
+[ -n "$hit_qos" ] && /etc/init.d/gpon-qos reload
+[ -n "$hit_mcast" ] && /etc/init.d/gpon-mcast reload
+
+exit 0

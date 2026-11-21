@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Airoha Team <airoha@airoha.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: airoha: allow internal phy-mode on WAN GDM for xPON
+
+On AN7552/AN7563 the GPON MAC sits behind GDM2 inside the SoC.
+The PON SerDes is driven by the xPON PHY driver, so there is no PCS
+to attach and no external PHY. Accept phy-mode = "internal" with a
+fixed-link on GDM ports other than GDM1 and skip the PCS lookup.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3925,6 +3925,17 @@ static int airoha_setup_phylink(struct n
+ 
+ 		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
+ 			  config->supported_interfaces);
++	} else if (phy_mode == PHY_INTERFACE_MODE_INTERNAL) {
++		/*
++		 * A WAN GDM wired to the on-chip xPON MAC has neither a PCS
++		 * nor an external PHY: the link is described with fixed-link
++		 * and the xPON client driver reports the carrier.
++		 */
++		config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
++					   MAC_1000FD | MAC_2500FD;
++
++		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
++			  config->supported_interfaces);
+ 	} else {
+ 		config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
+ 					   MAC_10 | MAC_100 | MAC_1000 |

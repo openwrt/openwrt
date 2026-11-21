@@ -1,0 +1,645 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] mt7915: wed_tune latency and airtime fairness
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mt7915/mmio.c
++++ b/mt7915/mmio.c
+@@ -13,10 +13,18 @@
+ #include "../trace.h"
+ #include "../dma.h"
+ 
+-static bool wed_enable;
++static bool wed_enable = true;
+ module_param(wed_enable, bool, 0644);
+ MODULE_PARM_DESC(wed_enable, "Enable Wireless Ethernet Dispatch support");
+ 
++unsigned int mt7915_wed_target_delay = 25;
++module_param_named(wed_target_delay, mt7915_wed_target_delay, uint, 0644);
++MODULE_PARM_DESC(wed_target_delay, "WED queue target delay in ms, 10..1000 (default 25)");
++
++bool mt7915_wed_autotune = true;
++module_param_named(wed_autotune, mt7915_wed_autotune, bool, 0644);
++MODULE_PARM_DESC(wed_autotune, "Per-station RED thresholds from the PHY rate (1, default) or computed by the WA firmware (0)");
++
+ static const u32 mt7915_reg[] = {
+ 	[INT_SOURCE_CSR]		= 0xd7010,
+ 	[INT_MASK_CSR]			= 0xd7014,
+--- a/mt7915/mcu.h
++++ b/mt7915/mcu.h
+@@ -287,6 +287,13 @@ enum {
+ 	MCU_WA_PARAM_PDMA_RX = 0x04,
+ 	MCU_WA_PARAM_CPU_UTIL = 0x0b,
+ 	MCU_WA_PARAM_RED = 0x0e,
++	MCU_WA_PARAM_AC_TAIL_DROP_LOWER = 0x13,
++	MCU_WA_PARAM_AC_TAIL_DROP_UPPER = 0x14,
++	MCU_WA_QUERY_MSDU_DEBUG = 0x16,
++	MCU_WA_QUERY_AC_TAIL_DROP = 0x17,
++	MCU_WA_QUERY_CTXD_INFO = 0x18,
++	MCU_WA_QUERY_TXFREE_INFO = 0x19,
++	MCU_WA_QUERY_SDO_INFO = 0x22,
+ 	MCU_WA_PARAM_WED_VERSION = 0x32,
+ 	MCU_WA_PARAM_RED_SETTING = 0x40,
+ };
+--- a/mt76_connac_mcu.h
++++ b/mt76_connac_mcu.h
+@@ -1267,6 +1267,7 @@ enum {
+ 	MCU_EXT_CMD_ID_RADIO_ON_OFF_CTRL = 0x05,
+ 	MCU_EXT_CMD_PM_STATE_CTRL = 0x07,
+ 	MCU_EXT_CMD_CHANNEL_SWITCH = 0x08,
++	MCU_EXT_CMD_AP_PWR_SAVING_CAP = 0x0f,
+ 	MCU_EXT_CMD_SET_TX_POWER_CTRL = 0x11,
+ 	MCU_EXT_CMD_FW_LOG_2_HOST = 0x13,
+ 	MCU_EXT_CMD_TXBF_ACTION = 0x1e,
+--- a/mt7915/mt7915.h
++++ b/mt7915/mt7915.h
+@@ -155,6 +155,7 @@ struct mt7915_sta {
+ 	int ack_signal;
+ 	struct ewma_avg_signal avg_ack_signal;
+ 
++	u16 wed_tokens;
+ 	unsigned long changed;
+ 	unsigned long jiffies;
+ 	struct mt76_connac_sta_key_conf bip;
+@@ -339,6 +340,9 @@ struct mt7915_dev {
+ 	} twt;
+ 
+ 	bool vow_atf_en;
++	u16 wed_target_ms;	/* wed_target_delay in use, 0: none yet */
++	bool wed_autotune;	/* wed_autotune in use */
++	u16 wed_band_hi[2];
+ 
+ 	struct reset_control *rstc;
+ 	void __iomem *dcm;
+@@ -469,6 +473,13 @@ u32 mt7915_wed_init_buf(void *ptr, dma_a
+ u32 mt7916_wed_tx_only_init_buf(void *ptr, dma_addr_t phys, int token_id);
+ void mt7915_mac_tx_free_prepare(struct mt7915_dev *dev);
+ 
++extern unsigned int mt7915_wed_target_delay;
++extern bool mt7915_wed_autotune;
++int mt7915_mcu_wed_tune_update(struct mt7915_dev *dev, bool force);
++bool mt7915_wed_tune_changed(struct mt7915_dev *dev);
++int mt7915_mcu_wed_wa_debug(struct mt7915_dev *dev, u8 cmd);
++int mt7915_mcu_set_dscp_pri(struct mt7915_dev *dev, struct mt7915_vif *mvif);
++
+ int mt7915_register_device(struct mt7915_dev *dev);
+ void mt7915_unregister_device(struct mt7915_dev *dev);
+ int mt7915_eeprom_init(struct mt7915_dev *dev);
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -2355,14 +2355,19 @@ mt7915_mcu_init_rx_airtime(struct mt7915
+ 		__le32 get_status;
+ 		u8 _rsv[12];
+ 
+-		bool airtime_en;
+-		bool mibtime_en;
+-		bool earlyend_en;
+-		u8 _rsv1[9];
+-
+-		bool airtime_clear;
+-		bool mibtime_clear;
+-		u8 _rsv2[98];
++		union {
++			struct {
++				bool airtime_en;
++				bool mibtime_en;
++				bool earlyend_en;
++				u8 _rsv1[9];
++			};
++			struct {
++				bool airtime_clear;
++				bool mibtime_clear;
++				u8 _rsv2[110];
++			};
++		};
+ 	} __packed req = {
+ 		.field = cpu_to_le16(RX_AIRTIME_BITWISE_CTRL),
+ 		.sub_field = cpu_to_le16(RX_AIRTIME_CLEAR_EN),
+@@ -2375,6 +2380,7 @@ mt7915_mcu_init_rx_airtime(struct mt7915
+ 	if (ret)
+ 		return ret;
+ 
++	memset(&req, 0, sizeof(req));
+ 	req.field = cpu_to_le16(RX_AIRTIME_FEATURE_CTRL);
+ 	req.sub_field = cpu_to_le16(RX_AIRTIME_CLEAR_EN);
+ 	req.airtime_en = true;
+@@ -2383,9 +2389,13 @@ mt7915_mcu_init_rx_airtime(struct mt7915
+ 				 sizeof(req), true);
+ }
+ 
++#define RED_GLOBAL_TOKEN_WATERMARK	2
++#define RED_BAND_TOKEN_WATERMARK	4
++#define RED_STA_AC_DROP_THRESHOLD	5
++#define RED_DUMP_CTRL			8
++
+ static int mt7915_red_set_watermark(struct mt7915_dev *dev)
+ {
+-#define RED_GLOBAL_TOKEN_WATERMARK 2
+ 	struct {
+ 		__le32 args[3];
+ 		u8 cmd;
+@@ -2407,6 +2417,338 @@ static int mt7915_red_set_watermark(stru
+ 				 sizeof(req), false);
+ }
+ 
++static int mt7915_wa_set_ps_flush(struct mt7915_dev *dev, u16 per_sta,
++				  u16 total_thld)
++{
++	struct {
++		__le16 per_sta_max;
++		__le16 total_thld;
++		u8 enable;
++		u8 __rsv[3];
++	} __packed req = {
++		.per_sta_max = cpu_to_le16(per_sta),
++		.total_thld = cpu_to_le16(total_thld),
++		.enable = 1,
++	};
++
++	return mt76_mcu_send_msg(&dev->mt76,
++				 MCU_WA_EXT_CMD(AP_PWR_SAVING_CAP),
++				 &req, sizeof(req), false);
++}
++
++int mt7915_mcu_set_dscp_pri(struct mt7915_dev *dev, struct mt7915_vif *mvif)
++{
++	struct {
++		u8 bss_idx;
++		u8 enable;
++		u8 __rsv[2];
++		u8 map[64];
++	} __packed req = {
++		.bss_idx = mvif->mt76.idx,
++		.enable = 1,
++	};
++	int dscp;
++
++	if (is_mt7915(&dev->mt76) || mvif->mt76.idx >= 0x30)
++		return 0;
++
++	/* RFC 8325 DSCP-to-UP map matching cfg80211_classify8021d() */
++	for (dscp = 0; dscp < 64; dscp++)
++		req.map[dscp] = dscp >> 3;
++
++	/* AF11, AF12, AF13, CS2 -> UP 0 (AC_BE instead of AC_BK) */
++	req.map[10] = 0;
++	req.map[12] = 0;
++	req.map[14] = 0;
++	req.map[16] = 0;
++
++	/* AF21, AF22, AF23 -> UP 3 (AC_BE) */
++	req.map[18] = 3;
++	req.map[20] = 3;
++	req.map[22] = 3;
++
++	/* CS3, AF31, AF32, AF33 -> UP 4 (AC_VI) */
++	req.map[24] = 4;
++	req.map[26] = 4;
++	req.map[28] = 4;
++	req.map[30] = 4;
++
++	/* VA, EF -> UP 6 (AC_VO) */
++	req.map[44] = 6;
++	req.map[46] = 6;
++
++	/* CS6 -> UP 7 (AC_VO) */
++	req.map[48] = 7;
++
++	return mt76_mcu_send_msg(&dev->mt76, MCU_WA_EXT_CMD(SET_QOS_MAP),
++				 &req, sizeof(req), false);
++}
++
++static int mt7915_red_set_watermarks(struct mt7915_dev *dev,
++				     u16 all_hi, u16 all_lo,
++				     u16 b0_hi, u16 b0_lo,
++				     u16 b1_hi, u16 b1_lo)
++{
++	struct {
++		__le32 args[3];
++		u8 cmd;
++		u8 version;
++		u8 __rsv1[4];
++		__le16 len;
++		__le16 high_mark;
++		__le16 low_mark;
++		__le16 band_high_mark[2];
++		__le16 band_low_mark[2];
++		__le16 page_high_mark;
++		__le16 page_low_mark;
++	} __packed req = {
++		.args[0] = cpu_to_le32(MCU_WA_PARAM_RED_SETTING),
++		.cmd = RED_BAND_TOKEN_WATERMARK,
++		.len = cpu_to_le16(sizeof(req) - sizeof(req.args)),
++		.high_mark = cpu_to_le16(all_hi),
++		.low_mark = cpu_to_le16(all_lo),
++		.band_high_mark[0] = cpu_to_le16(b0_hi),
++		.band_high_mark[1] = cpu_to_le16(b1_hi),
++		.band_low_mark[0] = cpu_to_le16(b0_lo),
++		.band_low_mark[1] = cpu_to_le16(b1_lo),
++	};
++	int ret;
++
++	ret = mt76_mcu_send_msg(&dev->mt76, MCU_WA_PARAM_CMD(SET), &req,
++				sizeof(req), false);
++	if (ret < 0)
++		return ret;
++
++	req.cmd = RED_GLOBAL_TOKEN_WATERMARK;
++	return mt76_mcu_send_msg(&dev->mt76, MCU_WA_PARAM_CMD(SET), &req,
++				 sizeof(req), false);
++}
++
++static int mt7915_red_set_sta_dropth(struct mt7915_dev *dev, u16 wcid,
++				     u16 tokens)
++{
++	struct {
++		__le32 args[3];
++		u8 cmd;
++		u8 version;
++		u8 __rsv1[4];
++		__le16 len;
++		__le16 wcid;
++		u8 ac;
++		u8 __rsv2;
++		__le16 token_dropth;
++		__le16 __rsv3;
++		__le16 page_dropth;
++		__le16 __rsv4[3];
++	} __packed req = {
++		.args[0] = cpu_to_le32(MCU_WA_PARAM_RED_SETTING),
++		.cmd = RED_STA_AC_DROP_THRESHOLD,
++		.len = cpu_to_le16(sizeof(req) - sizeof(req.args)),
++		.wcid = cpu_to_le16(wcid),
++		.ac = 1, /* AC_BE in WA */
++		.token_dropth = cpu_to_le16(tokens),
++		.page_dropth = cpu_to_le16(tokens),
++	};
++
++	return mt76_mcu_send_msg(&dev->mt76, MCU_WA_PARAM_CMD(SET), &req,
++				 sizeof(req), false);
++}
++
++
++static int mt7915_wa_set_ac_tail_drop(struct mt7915_dev *dev, u8 band, u8 ac,
++				      u16 lower, u16 upper)
++{
++	u32 qidx = band * 5 + ac;
++	int ret;
++
++	ret = mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(SET),
++				MCU_WA_PARAM_AC_TAIL_DROP_UPPER, qidx, upper);
++	if (ret)
++		return ret;
++
++	return mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(SET),
++				 MCU_WA_PARAM_AC_TAIL_DROP_LOWER, qidx, lower);
++}
++
++int mt7915_mcu_wed_wa_debug(struct mt7915_dev *dev, u8 cmd)
++{
++	struct {
++		__le32 args[3];
++		u8 cmd;
++		u8 version;
++		u8 __rsv1[4];
++		__le16 len;
++	} __packed req = {
++		.args[0] = cpu_to_le32(MCU_WA_PARAM_RED_SETTING),
++		.cmd = RED_DUMP_CTRL,
++		.len = cpu_to_le16(sizeof(req) - sizeof(req.args)),
++	};
++	int ret;
++
++	/* the WA debug shell (SDO, RED, AC tail drop) only exists on MT7916+ */
++	if (is_mt7915(&dev->mt76))
++		return -EOPNOTSUPP;
++
++	if (!dev->fw.debug_wa)
++		mt7915_mcu_fw_log_2_host(dev, MCU_FW_LOG_WA,
++					 MCU_FW_LOG_TO_HOST);
++
++	if (cmd <= 1) {
++		mt76_mcu_send_msg(&dev->mt76, MCU_WA_PARAM_CMD(SET),
++				  &req, sizeof(req), false);
++		mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(QUERY),
++				  MCU_WA_QUERY_AC_TAIL_DROP, 0, 0);
++		mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(QUERY),
++				  MCU_WA_QUERY_MSDU_DEBUG, 0, 0);
++		ret = mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(QUERY),
++					MCU_WA_QUERY_SDO_INFO, 0, 0);
++	} else {
++		ret = mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(QUERY),
++					cmd, 0, 0);
++	}
++
++	if (!dev->fw.debug_wa)
++		mt7915_mcu_fw_log_2_host(dev, MCU_FW_LOG_WA, 0);
++
++	return ret;
++}
++
++static u16 mt7915_wed_target_ms(void)
++{
++	return clamp_t(unsigned int, READ_ONCE(mt7915_wed_target_delay), 10, 1000);
++}
++
++/* wed_target_delay or wed_autotune changed since the last update */
++bool mt7915_wed_tune_changed(struct mt7915_dev *dev)
++{
++	return mt7915_wed_target_ms() != dev->wed_target_ms ||
++	       READ_ONCE(mt7915_wed_autotune) != dev->wed_autotune;
++}
++
++int mt7915_mcu_wed_tune_update(struct mt7915_dev *dev, bool force)
++{
++	u32 max_rate_mbps[2] = { 72, 400 };
++	u16 target_ms, b_hi[2], b_lo[2], all_hi, all_lo;
++	bool autotune;
++	u8 band;
++	int i, ret;
++
++	/* MT7915 WA has no RED_SETTING/drop-threshold/SDO commands */
++	if (is_mt7915(&dev->mt76))
++		return 0;
++
++	if (!mtk_wed_device_active(&dev->mt76.mmio.wed))
++		return 0;
++
++	target_ms = mt7915_wed_target_ms();
++	autotune = READ_ONCE(mt7915_wed_autotune);
++	if (target_ms != dev->wed_target_ms || autotune != dev->wed_autotune) {
++		dev->wed_target_ms = target_ms;
++		dev->wed_autotune = autotune;
++		force = true;
++	}
++
++	for (i = 1; i < MT7915_WTBL_STA; i++) {
++		struct mt76_wcid *wcid =
++			rcu_dereference_protected(dev->mt76.wcid[i],
++						  lockdep_is_held(&dev->mt76.mutex));
++		struct mt7915_sta *msta;
++		struct rate_info rate;
++		u32 rate_100k, rate_mbps, max_tok, tok, diff;
++
++		if (!wcid || !wcid->sta)
++			continue;
++
++		msta = container_of(wcid, struct mt7915_sta, wcid);
++		band = wcid->phy_idx ? 1 : 0;
++
++		spin_lock_bh(&dev->mt76.sta_poll_lock);
++		rate = wcid->rate;
++		spin_unlock_bh(&dev->mt76.sta_poll_lock);
++
++		/*
++		 * Idle stations report the legacy rate of management or null
++		 * frames (1/6 Mbps); keep their last data threshold.
++		 */
++		if (rate.flags & (RATE_INFO_FLAGS_MCS |
++				  RATE_INFO_FLAGS_VHT_MCS |
++				  RATE_INFO_FLAGS_HE_MCS))
++			rate_100k = cfg80211_calculate_bitrate(&rate);
++		else
++			rate_100k = 0;
++
++		if (!rate_100k && msta->wed_tokens && !force)
++			continue;
++
++		rate_mbps = rate_100k ? max_t(u32, rate_100k / 10, 10) :
++					(band ? 400 : 72);
++		if (rate_mbps > max_rate_mbps[band])
++			max_rate_mbps[band] = rate_mbps;
++
++		max_tok = band ? 3072 : 1024;
++
++		/* the band watermarks below still follow the station rates */
++		if (!autotune) {
++			/*
++			 * The WA firmware computes the threshold of a station
++			 * the host never set one for.  One the host did set
++			 * cannot be handed back: RED_RELEASE_STA_THRES_FROM_HOST
++			 * hung the MT7916 WA firmware.  Lift it to the band
++			 * maximum instead; the firmware takes the station over
++			 * when it associates again.
++			 */
++			if (msta->wed_tokens && msta->wed_tokens != max_tok) {
++				msta->wed_tokens = max_tok;
++				mt7915_red_set_sta_dropth(dev, i, max_tok);
++			}
++			continue;
++		}
++
++		tok = clamp_t(u32, (rate_mbps * target_ms) / 16, 64, max_tok);
++		diff = abs((int)tok - (int)msta->wed_tokens);
++		if (force || !msta->wed_tokens || diff > msta->wed_tokens / 5) {
++			msta->wed_tokens = tok;
++			mt7915_red_set_sta_dropth(dev, i, tok);
++		}
++	}
++
++	b_hi[0] = clamp_t(u32, (max_rate_mbps[0] * target_ms) / 8, 384, 1024);
++	b_lo[0] = (b_hi[0] * 3) / 4;
++	b_hi[1] = clamp_t(u32, (max_rate_mbps[1] * target_ms) / 8, 512, 3072);
++	b_lo[1] = (b_hi[1] * 3) / 4;
++
++	if (!force &&
++	    abs((int)b_hi[0] - (int)dev->wed_band_hi[0]) <= dev->wed_band_hi[0] / 5 &&
++	    abs((int)b_hi[1] - (int)dev->wed_band_hi[1]) <= dev->wed_band_hi[1] / 5)
++		return 0;
++
++	dev->wed_band_hi[0] = b_hi[0];
++	dev->wed_band_hi[1] = b_hi[1];
++
++	all_hi = clamp_t(u32, (u32)b_hi[0] + b_hi[1], 1024,
++			 MT7915_HW_TOKEN_SIZE - 256);
++	all_lo = (all_hi * 3) / 4;
++
++	ret = mt7915_red_set_watermarks(dev, all_hi, all_lo,
++					b_hi[0], b_lo[0], b_hi[1], b_lo[1]);
++	if (ret < 0)
++		return ret;
++
++	mt7915_wa_set_ps_flush(dev, 32, clamp_t(u16, all_lo / 2, 128, 1024));
++
++	for (band = 0; band < 2; band++) {
++		u16 hi = b_hi[band];
++
++		mt7915_wa_set_ac_tail_drop(dev, band, 0, 32, max_t(u16, 64, hi / 2));
++		mt7915_wa_set_ac_tail_drop(dev, band, 1, 64, hi);
++		mt7915_wa_set_ac_tail_drop(dev, band, 2, 64, max_t(u16, 128, hi / 2));
++		mt7915_wa_set_ac_tail_drop(dev, band, 3, 64, max_t(u16, 96, hi / 4));
++		mt7915_wa_set_ac_tail_drop(dev, band, 4, 16, 128);
++	}
++
++	return 0;
++}
++
+ static int mt7915_mcu_set_red(struct mt7915_dev *dev, bool enabled)
+ {
+ #define RED_DISABLE		0
+@@ -2426,8 +2755,15 @@ static int mt7915_mcu_set_red(struct mt7
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	return mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(SET),
+-				 MCU_WA_PARAM_RED, enabled, 0);
++	ret = mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(SET),
++				MCU_WA_PARAM_RED, enabled, 0);
++	if (ret < 0)
++		return ret;
++
++	if (enabled)
++		mt7915_mcu_wed_tune_update(dev, true);
++
++	return 0;
+ }
+ 
+ int mt7915_mcu_init_firmware(struct mt7915_dev *dev)
+@@ -3814,6 +4150,7 @@ int mt7915_mcu_set_vow_feature_ctrl(stru
+ 
+ int mt7915_mcu_set_vow_band(struct mt7915_dev *dev, struct mt7915_vif *mvif)
+ {
++	u8 grp = mt7915_vow_sta_bss_grp(&mvif->mt76);
+ 	struct module_ctrl {
+ 		__le16 action;
+ 		__le16 sub_action;
+@@ -3825,7 +4162,7 @@ int mt7915_mcu_set_vow_band(struct mt791
+ 	} __packed req = {
+ 		.action = cpu_to_le16(0x1),
+ 		.sub_action = cpu_to_le16(0x4),
+-		.group_idx = mt7915_vow_sta_bss_grp(&mvif->mt76),
++		.group_idx = grp < 16 ? grp : (mvif->mt76.idx & 0xf),
+ 		.band_idx = mvif->mt76.band_idx,
+ 	};
+ 
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -2060,9 +2060,15 @@ void mt7915_mac_work(struct work_struct
+ 	mutex_lock(&mphy->dev->mutex);
+ 
+ 	mt76_update_survey(mphy);
++	if (!mphy->band_idx && !is_mt7915(mphy->dev) &&
++	    mt7915_wed_tune_changed(phy->dev))
++		mt7915_mcu_wed_tune_update(phy->dev, true);
++
+ 	if (++mphy->mac_work_count == 5) {
+ 		mphy->mac_work_count = 0;
+ 
++		if (!mphy->band_idx && !is_mt7915(mphy->dev))
++			mt7915_mcu_wed_tune_update(phy->dev, false);
+ 		mt7915_mac_update_stats(phy);
+ 		mt7915_mac_severe_check(phy);
+ 
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -274,8 +274,12 @@ static int mt7915_add_interface(struct i
+ 	memset(&mvif->cap, -1, sizeof(mvif->cap));
+ 
+ 	rcu_assign_pointer(dev->mt76.wcid[idx], &mvif->sta.wcid);
++	if (!is_mt7915(&dev->mt76))
++		mt7915_mcu_set_dscp_pri(dev, mvif);
+ 	mt7915_mcu_add_bss_info(phy, vif, true);
+ 	mt7915_mcu_add_sta(dev, vif, NULL, CONN_STATE_PORT_SECURE, true);
++	if (!is_mt7915(&dev->mt76))
++		mt7915_mcu_set_vow_band(dev, mvif);
+ 
+ 	mutex_unlock(&dev->mt76.mutex);
+ 
+@@ -290,9 +294,6 @@ out:
+ 		phy->monitor_vif = NULL;
+ 	mutex_unlock(&dev->mt76.mutex);
+ 
+-	if (!is_mt7915(&dev->mt76))
+-		mt7915_mcu_set_vow_band(dev, mvif);
+-
+ 	return ret;
+ }
+ 
+@@ -869,6 +870,7 @@ int mt7915_mac_sta_event(struct mt76_dev
+ 		msta->wcid.tx_info |= MT_WCID_TX_INFO_SET;
+ 		msta->wcid.sta = 1;
+ 		msta->wcid.sta_disabled = 0;
++		mt7915_mcu_wed_tune_update(dev, true);
+ 
+ 		return 0;
+ 
+--- a/mt7915/debugfs.c
++++ b/mt7915/debugfs.c
+@@ -220,6 +220,45 @@ static int mt7915_vow_atf_get(void *data
+ DEFINE_DEBUGFS_ATTRIBUTE(fops_vow_atf, mt7915_vow_atf_get, mt7915_vow_atf_set,
+ 			 "%lld\n");
+ 
++static int mt7915_wed_target_delay_set(void *data, u64 val)
++{
++	struct mt7915_dev *dev = data;
++	int ret;
++
++	if (val < 10 || val > 1000)
++		return -EINVAL;
++
++	mutex_lock(&dev->mt76.mutex);
++	WRITE_ONCE(mt7915_wed_target_delay, (unsigned int)val);
++	ret = mt7915_mcu_wed_tune_update(dev, true);
++	mutex_unlock(&dev->mt76.mutex);
++
++	return ret;
++}
++
++static int mt7915_wed_target_delay_get(void *data, u64 *val)
++{
++	*val = READ_ONCE(mt7915_wed_target_delay);
++	return 0;
++}
++
++DEFINE_DEBUGFS_ATTRIBUTE(fops_wed_target_delay, mt7915_wed_target_delay_get,
++			 mt7915_wed_target_delay_set, "%lld\n");
++
++static int mt7915_wa_debug_set(void *data, u64 val)
++{
++	struct mt7915_dev *dev = data;
++	int ret;
++
++	mutex_lock(&dev->mt76.mutex);
++	ret = mt7915_mcu_wed_wa_debug(dev, val);
++	mutex_unlock(&dev->mt76.mutex);
++
++	return ret;
++}
++
++DEFINE_DEBUGFS_ATTRIBUTE(fops_wa_debug, NULL, mt7915_wa_debug_set, "%lld\n");
++
+ static int
+ mt7915_radar_trigger(void *data, u64 val)
+ {
+@@ -1335,8 +1374,12 @@ int mt7915_init_debugfs(struct mt7915_ph
+ 	debugfs_create_devm_seqfile(dev->mt76.dev, "twt_stats", dir,
+ 				    mt7915_twt_stats);
+ 	debugfs_create_file("rf_regval", 0600, dir, dev, &fops_rf_regval);
+-	if (!is_mt7915(&dev->mt76))
++	if (!is_mt7915(&dev->mt76)) {
+ 		debugfs_create_file("vow_atf", 0600, dir, dev, &fops_vow_atf);
++		debugfs_create_file("wed_target_delay", 0600, dir, dev,
++				    &fops_wed_target_delay);
++		debugfs_create_file("wa_debug", 0200, dir, dev, &fops_wa_debug);
++	}
+ 
+ 	if (!dev->dbdc_support || phy->mt76->band_idx) {
+ 		debugfs_create_u32("dfs_hw_pattern", 0400, dir,
++--- a/mt7915/init.c
+++++ b/mt7915/init.c
++@@ -457,8 +457,11 @@ static void mt7915_init_wiphy(struct mt7
++ 
++ 	hw->max_tx_fragments = 4;
++ 
++-	if (!phy->dev->dbdc_support)
+++	if (mtk_wed_device_active(&dev->mt76.mmio.wed)) {
+++		wiphy->txq_memory_limit = 4 << 20; /* 4 MiB */
+++		wiphy->txq_limit = 1024;
+++	} else if (!phy->dev->dbdc_support) {
++ 		wiphy->txq_memory_limit = 32 << 20; /* 32 MiB */
+++	}
++ 
++ 	if (phy->mt76->cap.has_2ghz) {
+

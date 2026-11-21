@@ -1,0 +1,298 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] mt7915 wed without rx on mt7916
+
+The WED of the Airoha AN7552 only carries the TX (the RX is the NPU's), so
+mtk_wed_get_rx_capa() is false.  The MT7916 queue configuration took every
+WED for the one of the MT7986 and gave the data and WA event queues the WED
+RX interrupts.  With a TX only WED keep the host (or NPU) configuration of
+the RX queues but keep their interrupts the WED's, as the card raises them
+there once it is attached: the WA event ring (MT_INT_WED_RX_DONE_WA_MT7916,
+bit 17: with bit 1 the first WA event is never served and the first MCU
+message after the firmware start times out), the tx free ring
+(MT_INT_WED_RX_DONE_WA_MAIN_MT7916, the RX done of the WED's RX1) and the
+TX done interrupts (MT_INT_WED_TX_DONE_BAND0/1).
+
+The NPU sets rx_token_size up before the WED attaches: keep the larger one.
+The forward path gives the real wcid (8 bits in the PPE entry) instead of the
+0x3ff of a WED that looks the station up itself.
+
+Also for the TX-only WED on MT7916:
+- Enable MT_TXD7_HW_AMSDU and MT_CT_INFO_APPLY_TXD in the WED buffer templates
+  (mt7916_wed_tx_only_init_buf) since there is no WO MCU rewriting the TXD.
+- Reserve the upper token half (4096..8191) for the WED BM at attach time
+  (dev->mt76.token_size = wed->wlan.token_start) and leave offload_enable /
+  offload_disable NULL so host packets never collide with WED_TX_BM_TKID and
+  airoha_wed_flow_add() never blocks in wait_event_timeout(..., HZ).
+- Include MT_INT_WED_TX_DONE_BAND0/1 in MT_INT_TX_DONE_MCU and clean up the
+  host data TX rings in mt7915_poll_tx() when the TX-only WED is active.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mt7915/dma.c
++++ b/mt7915/dma.c
+@@ -31,6 +31,10 @@ static int mt7915_poll_tx(struct napi_st
+ 
+ 	dev = container_of(napi, struct mt7915_dev, mt76.tx_napi);
+ 
++	if (is_mt7916(&dev->mt76) &&
++	    mtk_wed_device_active(&dev->mt76.mmio.wed) &&
++	    !mtk_wed_get_rx_capa(&dev->mt76.mmio.wed))
++		mt7915_mac_tx_free_prepare(dev);
+ 	mt76_connac_tx_cleanup(&dev->mt76);
+ 	if (napi_complete_done(napi, 0))
+ 		mt7915_irq_enable(dev, MT_INT_TX_DONE_MCU);
+@@ -40,6 +44,8 @@ static int mt7915_poll_tx(struct napi_st
+ 
+ static void mt7915_dma_config(struct mt7915_dev *dev)
+ {
++	bool wed_tx_only;
++
+ #define Q_CONFIG(q, wfdma, int, id) do {		\
+ 		if (wfdma)				\
+ 			dev->wfdma_mask |= (1 << (q));	\
+@@ -84,7 +90,19 @@ static void mt7915_dma_config(struct mt7
+ 		MCUQ_CONFIG(MT_MCUQ_FWDL, WFDMA0, MT_INT_TX_DONE_FWDL,
+ 			    MT7915_TXQ_FWDL);
+ 
+-		if (is_mt7916(&dev->mt76) && mtk_wed_device_active(&dev->mt76.mmio.wed)) {
++		/*
++		 * A WED that does not take the RX (the one of the Airoha
++		 * AN7552, TX only) leaves the data and WA event queues to the
++		 * host or the NPU.  The interrupts stay the WED's, which is
++		 * where the card raises them once it is attached: the WA
++		 * event ring (RX done WA), the tx free ring and the TX done.
++		 */
++		wed_tx_only = is_mt7916(&dev->mt76) &&
++			      mtk_wed_device_active(&dev->mt76.mmio.wed) &&
++			      !mtk_wed_get_rx_capa(&dev->mt76.mmio.wed);
++
++		if (is_mt7916(&dev->mt76) && mtk_wed_device_active(&dev->mt76.mmio.wed) &&
++		    !wed_tx_only) {
+ 			RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0, MT_INT_WED_RX_DONE_BAND0_MT7916,
+ 				   MT7916_RXQ_BAND0);
+ 			RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0, MT_INT_WED_RX_DONE_WA_MT7916,
+@@ -107,25 +125,42 @@ static void mt7915_dma_config(struct mt7
+ 			if (mt76_npu_device_active(&dev->mt76)) {
+ 				RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0, 0,
+ 					   MT7916_RXQ_BAND0);
+-				RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0, MT_INT_RX_DONE_WA,
++				RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0,
++					   wed_tx_only ? MT_INT_WED_RX_DONE_WA_MT7916 :
++							 MT_INT_RX_DONE_WA,
+ 					   MT7916_RXQ_MCU_WA);
+ 				RXQ_CONFIG(MT_RXQ_BAND1, WFDMA0, 0,
+ 					   MT7916_RXQ_BAND1);
+-				RXQ_CONFIG(MT_RXQ_MAIN_WA, WFDMA0, MT_INT_RX_DONE_WA_MAIN_MT7916,
++				RXQ_CONFIG(MT_RXQ_MAIN_WA, WFDMA0,
++					   wed_tx_only ? MT_INT_WED_RX_DONE_WA_MAIN_MT7916 :
++							 MT_INT_RX_DONE_WA_MAIN_MT7916,
+ 					   MT7916_RXQ_MCU_WA_MAIN);
+ 			} else {
+-				RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0, MT_INT_RX_DONE_BAND0_MT7916,
++				RXQ_CONFIG(MT_RXQ_MAIN, WFDMA0,
++					   wed_tx_only ? MT_INT_WED_RX_DONE_BAND0_MT7916 :
++							 MT_INT_RX_DONE_BAND0_MT7916,
+ 					   MT7916_RXQ_BAND0);
+-				RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0, MT_INT_RX_DONE_WA,
++				RXQ_CONFIG(MT_RXQ_MCU_WA, WFDMA0,
++					   wed_tx_only ? MT_INT_WED_RX_DONE_WA_MT7916 :
++							 MT_INT_RX_DONE_WA,
+ 					   MT7916_RXQ_MCU_WA);
+-				RXQ_CONFIG(MT_RXQ_BAND1, WFDMA0, MT_INT_RX_DONE_BAND1_MT7916,
++				RXQ_CONFIG(MT_RXQ_BAND1, WFDMA0,
++					   (wed_tx_only && !dev->hif2) ?
++					   MT_INT_WED_RX_DONE_BAND1_MT7916 :
++					   MT_INT_RX_DONE_BAND1_MT7916,
+ 					   MT7916_RXQ_BAND1);
+-				RXQ_CONFIG(MT_RXQ_MAIN_WA, WFDMA0, MT_INT_RX_DONE_WA_MAIN_MT7916,
++				RXQ_CONFIG(MT_RXQ_MAIN_WA, WFDMA0,
++					   wed_tx_only ? MT_INT_WED_RX_DONE_WA_MAIN_MT7916 :
++							 MT_INT_RX_DONE_WA_MAIN_MT7916,
+ 					   MT7916_RXQ_MCU_WA_MAIN);
+ 			}
+-			TXQ_CONFIG(0, WFDMA0, MT_INT_TX_DONE_BAND0,
++			TXQ_CONFIG(0, WFDMA0,
++				   wed_tx_only ? MT_INT_WED_TX_DONE_BAND0 :
++						 MT_INT_TX_DONE_BAND0,
+ 				   MT7915_TXQ_BAND0);
+-			TXQ_CONFIG(1, WFDMA0, MT_INT_TX_DONE_BAND1,
++			TXQ_CONFIG(1, WFDMA0,
++				   wed_tx_only ? MT_INT_WED_TX_DONE_BAND1 :
++						 MT_INT_TX_DONE_BAND1,
+ 				   MT7915_TXQ_BAND1);
+ 		}
+ 	}
+@@ -431,9 +466,22 @@ void mt7915_dma_npu_fallback(struct mt79
+ 	if (dev->mt76.q_rx[MT_RXQ_BAND1].ndesc) {
+ 		mt76_queue_rx_reset(dev, MT_RXQ_BAND1);
+ 		mask |= MT_INT_RX(MT_RXQ_BAND1);
+ 	}
+-	if (mask)
+-		mt7915_irq_enable(dev, mask);
++	if (!mask)
++		return;
++
++	if (mtk_wed_device_active(&dev->mt76.mmio.wed)) {
++		u32 wed_irq_mask = dev->mt76.mmio.irqmask | mask |
++				   MT_INT_TX_DONE_BAND0 | MT_INT_TX_DONE_BAND1;
++
++		if (!is_mt798x(&dev->mt76))
++			mt76_wr(dev, MT_INT_WED_MASK_CSR, wed_irq_mask);
++		else
++			mt76_wr(dev, MT_INT_MASK_CSR, wed_irq_mask);
++		mtk_wed_device_start(&dev->mt76.mmio.wed, wed_irq_mask);
++	}
++
++	mt7915_irq_enable(dev, mask);
+ }
+ 
+ int mt7915_dma_init(struct mt7915_dev *dev, struct mt7915_phy *phy2)
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -839,7 +839,20 @@ u32 mt7915_wed_init_buf(void *ptr, dma_a
+ 	return MT_TXD_SIZE + sizeof(*txp);
+ }
+ 
+-static void
++u32 mt7916_wed_tx_only_init_buf(void *ptr, dma_addr_t phys, int token_id)
++{
++	struct mt76_connac_fw_txp *txp = ptr + MT_TXD_SIZE;
++	__le32 *txwi = ptr;
++	u32 size;
++
++	size = mt7915_wed_init_buf(ptr, phys, token_id);
++	txwi[7] = cpu_to_le32(MT_TXD7_HW_AMSDU);
++	txp->flags = cpu_to_le16(MT_CT_INFO_APPLY_TXD);
++
++	return size;
++}
++
++void
+ mt7915_mac_tx_free_prepare(struct mt7915_dev *dev)
+ {
+ 	struct mt76_dev *mdev = &dev->mt76;
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -816,6 +816,9 @@ __mt7915_drop_sta(void *ptr, u8 *mac, st
+ 		return;
+ 
+ 	msta = (struct mt7915_sta *)sta->drv_priv;
++	if (mtk_wed_device_active(&data->dev->mt76.mmio.wed))
++		mtk_wed_device_flow_flush(&data->dev->mt76.mmio.wed,
++					  msta->wcid.idx, NULL, NULL);
+ 	mt7915_mcu_add_sta(data->dev, vif, sta, CONN_STATE_DISCONNECT, false);
+ 	msta->wcid.tx_info &= ~MT_WCID_TX_INFO_SET;
+ 	msta->wcid.sta_disabled = 1;
+@@ -884,6 +887,9 @@ int mt7915_mac_sta_event(struct mt76_dev
+ 			mt7915_mac_twt_teardown_flow(dev, msta, i);
+ 		mutex_unlock(&dev->mt76.mutex);
+ 
++		if (mtk_wed_device_active(&mdev->mmio.wed))
++			mtk_wed_device_flow_flush(&mdev->mmio.wed,
++						  msta->wcid.idx, NULL, NULL);
+ 		mt7915_mcu_add_sta(dev, vif, sta, CONN_STATE_DISCONNECT, false);
+ 		msta->wcid.tx_info &= ~MT_WCID_TX_INFO_SET;
+ 		msta->wcid.sta_disabled = 1;
+@@ -900,6 +906,10 @@ void mt7915_mac_sta_remove(struct mt76_d
+ 	struct mt7915_dev *dev = container_of(mdev, struct mt7915_dev, mt76);
+ 	struct mt7915_sta *msta = (struct mt7915_sta *)sta->drv_priv;
+ 
++	if (mtk_wed_device_active(&mdev->mmio.wed))
++		mtk_wed_device_flow_flush(&mdev->mmio.wed, msta->wcid.idx,
++					  NULL, NULL);
++
+ 	mt7915_mac_wtbl_update(dev, msta->wcid.idx,
+ 			       MT_WTBL_UPDATE_ADM_COUNT_CLEAR);
+ 
+@@ -1817,8 +1827,16 @@ mt7915_net_fill_forward_path(struct ieee
+ 	path->mtk_wdma.wdma_idx = wed->wdma_idx;
+ 	path->mtk_wdma.bss = mvif->mt76.idx;
+ 	path->mtk_wdma.queue = phy->mt76->band_idx;
+-	if (test_bit(MT_WCID_FLAG_4ADDR, &msta->wcid.flags) ||
+-	    is_mt7915(&dev->mt76))
++	if (!mtk_wed_get_rx_capa(wed)) {
++		/*
++		 * A TX only WED takes the station from the 8 bits of the PPE
++		 * entry, there is no 0x3ff "look it up" wcid.
++		 */
++		if (msta->wcid.idx > U8_MAX)
++			return -EIO;
++		path->mtk_wdma.wcid = msta->wcid.idx;
++	} else if (test_bit(MT_WCID_FLAG_4ADDR, &msta->wcid.flags) ||
++		   is_mt7915(&dev->mt76))
+ 		path->mtk_wdma.wcid = msta->wcid.idx;
+ 	else
+ 		path->mtk_wdma.wcid = 0x3ff;
+--- a/mt7915/mmio.c
++++ b/mt7915/mmio.c
+@@ -710,20 +710,31 @@ int mt7915_mmio_wed_init(struct mt7915_d
+ 		wed->wlan.rx_tbit[1] = 19;
+ 	}
+ 
+-	wed->wlan.init_buf = mt7915_wed_init_buf;
+-	wed->wlan.offload_enable = mt76_wed_offload_enable;
+-	wed->wlan.offload_disable = mt76_wed_offload_disable;
++	if (is_mt7916(&dev->mt76) && !mtk_wed_get_rx_capa(wed)) {
++		wed->wlan.init_buf = mt7916_wed_tx_only_init_buf;
++		wed->wlan.offload_enable = NULL;
++		wed->wlan.offload_disable = NULL;
++	} else {
++		wed->wlan.init_buf = mt7915_wed_init_buf;
++		wed->wlan.offload_enable = mt76_wed_offload_enable;
++		wed->wlan.offload_disable = mt76_wed_offload_disable;
++	}
+ 	wed->wlan.init_rx_buf = mt76_wed_init_rx_buf;
+ 	wed->wlan.release_rx_buf = mt76_wed_release_rx_buf;
+ 	wed->wlan.update_wo_rx_stats = mt7915_mmio_wed_update_rx_stats;
+ 	wed->wlan.reset = mt7915_mmio_wed_reset;
+ 	wed->wlan.reset_complete = mt76_wed_reset_complete;
+ 
+-	dev->mt76.rx_token_size = wed->wlan.rx_npkt;
++	/* the NPU, set up before, needs its larger RX token space */
++	dev->mt76.rx_token_size = max_t(u16, dev->mt76.rx_token_size,
++					wed->wlan.rx_npkt);
+ 
+ 	if (mtk_wed_device_attach(wed))
+ 		return 0;
+ 
++	if (is_mt7916(&dev->mt76) && !mtk_wed_get_rx_capa(wed))
++		dev->mt76.token_size = wed->wlan.token_start;
++
+ 	*irq = wed->irq;
+ 	dev->mt76.dma_dev = wed->dev;
+ 
+--- a/mt7915/mt7915.h
++++ b/mt7915/mt7915.h
+@@ -466,6 +466,8 @@ void mt7915_wfsys_reset(struct mt7915_de
+ irqreturn_t mt7915_irq_handler(int irq, void *dev_instance);
+ u64 __mt7915_get_tsf(struct ieee80211_hw *hw, struct mt7915_vif *mvif);
+ u32 mt7915_wed_init_buf(void *ptr, dma_addr_t phys, int token_id);
++u32 mt7916_wed_tx_only_init_buf(void *ptr, dma_addr_t phys, int token_id);
++void mt7915_mac_tx_free_prepare(struct mt7915_dev *dev);
+ 
+ int mt7915_register_device(struct mt7915_dev *dev);
+ void mt7915_unregister_device(struct mt7915_dev *dev);
+--- a/mt7915/regs.h
++++ b/mt7915/regs.h
+@@ -730,6 +730,7 @@ enum offs_rev {
+ 
+ #define MT_INT_RX(q)			(dev->q_int_mask[__RXQ(q)])
+ #define MT_INT_TX_MCU(q)		(dev->q_int_mask[(q)])
++#define MT_INT_TX(q)			(dev->q_int_mask[__TXQ(q)])
+ 
+ #define MT_INT_RX_DONE_MCU		(MT_INT_RX(MT_RXQ_MCU) |	\
+ 					 MT_INT_RX(MT_RXQ_MCU_WA))
+@@ -756,7 +757,10 @@ enum offs_rev {
+ 
+ #define MT_INT_TX_DONE_MCU		(MT_INT_TX_MCU(MT_MCUQ_WA) |	\
+ 					 MT_INT_TX_MCU(MT_MCUQ_WM) |	\
+-					 MT_INT_TX_MCU(MT_MCUQ_FWDL))
++					 MT_INT_TX_MCU(MT_MCUQ_FWDL) |	\
++					 ((MT_INT_TX(0) | MT_INT_TX(1)) & \
++					  (MT_INT_WED_TX_DONE_BAND0 |	\
++					   MT_INT_WED_TX_DONE_BAND1)))
+ 
+ #define MT_MCU_CMD			__REG(INT_MCU_CMD_SOURCE)
+ #define MT_MCU_CMD_STOP_DMA_FW_RELOAD	BIT(1)

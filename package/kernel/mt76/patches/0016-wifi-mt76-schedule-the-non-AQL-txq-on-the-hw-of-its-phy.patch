@@ -1,0 +1,34 @@
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Tue, 17 Nov 2026 22:00:00 +0100
+Subject: [PATCH] wifi: mt76: schedule the non-AQL txq on the hw of its phy
+
+mt76_tx_check_non_aql() schedules the txqs of the station again with
+ieee80211_schedule_txq(dev->hw, ...), which always resolves to the
+primary phy's ieee80211_hw. On a device with one ieee80211_hw per band
+(mt7915/mt7916 DBDC) every hw owns its own active_txqs list and
+active_txq_lock. The txq of a station on the second band then gets
+linked into the list of the primary hw under its lock, while the
+scheduler of the second hw works on the same node under another lock.
+That corrupts the list ("list_add corruption" in
+__ieee80211_schedule_txq(), called from mt76_txq_schedule()).
+
+Use mt76_phy_hw() with the phy_idx of the wcid, as the power save paths
+in __mt76_tx_complete_skb() and mt76_sta_ps_transition() already do.
+
+Also fixed in MediaTek's softmac_mt76 (1c944e4a, cherry-picked there from
+10a3a40e4c2c).
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/tx.c
++++ b/tx.c
+@@ -253,7 +253,8 @@
+ 		if (!sta->txq[i])
+ 			continue;
+ 
+-		ieee80211_schedule_txq(dev->hw, sta->txq[i]);
++		ieee80211_schedule_txq(mt76_phy_hw(dev, wcid->phy_idx),
++				       sta->txq[i]);
+ 	}
+ }
+ 

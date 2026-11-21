@@ -1,0 +1,25 @@
+From: Chad Monroe <chad@monroe.io>
+Date: Wed, 25 Mar 2026 18:50:40 -0700
+Subject: [PATCH] wifi: mt76: do not force survey update in mt76_get_survey()
+
+All drivers already refresh survey data every 100-250ms via
+mac_work, so forcing another update on every survey dump is
+redundant.
+
+Signed-off-by: Chad Monroe <chad@monroe.io>
+---
+ mac80211.c |    3 ---
+ 1 file changed, 3 deletions(-)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1162,9 +1162,6 @@ int mt76_get_survey(struct ieee80211_hw
+ 
+ 		sband = mt76_get_survey_sband(phy, &idx);
+ 
+-		if (idx == 0 && phy->dev->drv->update_survey)
+-			mt76_update_survey(phy);
+-
+ 		if (sband || !hw->wiphy->n_radio)
+ 			break;
+ 	}
