@@ -73,6 +73,12 @@ define Trusted-Firmware-A/rk3588-tpl
   TPL:=rk35/rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.19.bin
 endef
 
+define Trusted-Firmware-A/rv1106-tpl
+  NAME:=Rockchip RV1103/RV1106 SoCs
+  BUILD_SUBTARGET:=armv7
+  TPL:=rv11/rv1106_ddr_924MHz_v1.15.bin
+endef
+
 TFA_TARGETS:= \
 	rk3308 \
 	rk3308-tpl-rock-pi-s \
@@ -81,7 +87,8 @@ TFA_TARGETS:= \
 	rk3568 \
 	rk3568-tpl-e25 \
 	rk3576-tpl \
-	rk3588-tpl
+	rk3588-tpl \
+	rv1106-tpl
 
 ifeq ($(BUILD_VARIANT),rk3308-tpl-rock-pi-s)
   define Download/rk3308-tpl-rock-pi-s
