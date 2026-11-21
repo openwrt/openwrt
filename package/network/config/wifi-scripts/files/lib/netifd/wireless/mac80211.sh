@@ -1237,6 +1237,7 @@ drv_mac80211_setup() {
 	for_each_interface "ap" mac80211_check_ap
 
 	[ -f "$hostapd_conf_file" ] && mv "$hostapd_conf_file" "$hostapd_conf_file.prev"
+	[ -f "$hostapd_conf_file.prev" ] && hostapd_config_file "$hostapd_conf_file.prev"
 
 	for_each_interface "sta adhoc mesh" mac80211_set_noscan
 	[ -n "$has_ap" ] && mac80211_hostapd_setup_base "$phy"
