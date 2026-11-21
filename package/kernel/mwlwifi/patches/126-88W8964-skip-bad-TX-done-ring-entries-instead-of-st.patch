@@ -1,0 +1,63 @@
+From 0a638308e44d873389095fa0c23196e28ab2402d Mon Sep 17 00:00:00 2001
+From: Anders Kaseorg <andersk@mit.edu>
+Date: Thu, 29 Oct 2026 19:28:18 +0000
+Subject: 88W8964: skip bad TX done ring entries instead of stalling
+
+When pcie_tx_done_ndp() finds a TX done ring entry with an invalid
+index or an empty buffer slot, it logs "corruption for index of buffer"
+or "buffer is NULL for tx done ring" and stops without advancing past
+the entry. It has already cleared the entry's index to 0, so every
+later poll reads the same entry again, now as slot 0: it logs the same
+message again if that slot is empty, or returns whatever frame is in
+slot 0 although the firmware still holds it. No later frame is ever
+returned, so the TX ring fills up, and pcie_tx_set_skb() then loops
+forever looking for a free slot. A tester saw the message repeat every
+~180 ms after changing the Wi-Fi encryption on a WRT3200ACM, followed
+by a reboot.
+
+Skip the bad entry and go on with the next one. Don't count it as a
+returned descriptor.
+
+Based on the same change in neheb/mwlwifi commit 92b4dd1 by Rosen
+Penev.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Anders Kaseorg <andersk@mit.edu>
+---
+ hif/pcie/8964/tx_ndp.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -436,16 +436,17 @@ void pcie_tx_done_ndp(struct ieee80211_h
+ 
+ 		index = le32_to_cpu(ptx_ring_done->user);
+ 		ptx_ring_done->user = 0;
++		/* Skip a bad entry rather than stall the ring on it. */
+ 		if (index >= MAX_TX_RING_SEND_SIZE) {
+ 			wiphy_err(hw->wiphy,
+ 				  "corruption for index of buffer\n");
+-			break;
++			goto next;
+ 		}
+ 		skb = desc->tx_vbuflist[index];
+ 		if (!skb) {
+ 			wiphy_err(hw->wiphy,
+ 				  "buffer is NULL for tx done ring\n");
+-			break;
++			goto next;
+ 		}
+ 		dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 				 desc->pphys_tx_buflist[index],
+@@ -491,9 +492,10 @@ void pcie_tx_done_ndp(struct ieee80211_h
+ 		ieee80211_tx_status_skb(hw, skb);
+ 
+ bypass_ack:
++		desc->tx_desc_busy_cnt--;
++next:
+ 		if (++tx_done_tail >= MAX_TX_RING_DONE_SIZE)
+ 			tx_done_tail = 0;
+-		desc->tx_desc_busy_cnt--;
+ 	}
+ 
+ 	writel(tx_done_tail, pcie_priv->iobase1 +
