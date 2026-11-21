@@ -54,6 +54,13 @@ linksys,wrt32x)
 	ucidef_set_led_usbport "usb2" "USB 2" "pca963x:venom:blue:usb3_1" "usb2-port1" "usb3-port1"
 	ucidef_set_led_usbport "usb2_ss" "USB 2 SS" "pca963x:venom:blue:usb3_2" "usb3-port1"
 	;;
+lenovo,ix4-300d)
+	ucidef_set_led_brightness "power" "POWER" "ix4-300d:power:white" "1"
+	ucidef_set_led_default "sys" "SYS" "ix4-300d:sys:blue" "1"
+	ucidef_set_led_default "sysfail" "SYSFAIL" "ix4-300d:sysfail:red" "0"
+	ucidef_set_led_default "hddfail" "HDDFAIL" "ix4-300d:hddfail:red" "0"
+	ucidef_set_led_ide "hdd" "HDD" "ix4-300d:hdd:blue"
+	;;
 esac
 
 board_config_flush

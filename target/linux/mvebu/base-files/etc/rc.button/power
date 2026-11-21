@@ -1,0 +1,14 @@
+#!/bin/sh
+
+case "$(cat /tmp/sysinfo/board_name 2>/dev/null)" in
+lenovo,ix4-300d)
+	[ "${ACTION}" = "released" ] || exit 0
+	if [ "${SEEN:-0}" -ge 4 ]; then
+		logger -t button "Power button held (${SEEN}s): powering off"
+		exec /sbin/poweroff
+	else
+		logger -t button "Power button short press (${SEEN}s): rebooting"
+		exec /sbin/reboot
+	fi
+	;;
+esac

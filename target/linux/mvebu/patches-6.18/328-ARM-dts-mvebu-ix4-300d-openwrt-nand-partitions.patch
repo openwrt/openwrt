@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bob Sponge <myandroidiptvbox@gmail.com>
+Date: Sat, 21 Nov 2026 13:00:00 +0000
+Subject: [PATCH] ARM: dts: mvebu: ix4-300d: define OpenWrt NAND partitions
+
+Define OpenWrt NAND partition layout (u-boot, u-boot-env, ubi) for
+the Lenovo Iomega ix4-300d.
+
+Signed-off-by: Bob Sponge <myandroidiptvbox@gmail.com>
+---
+--- a/arch/arm/boot/dts/marvell/armada-xp-lenovo-ix4-300d.dts
++++ b/arch/arm/boot/dts/marvell/armada-xp-lenovo-ix4-300d.dts
+@@ -106,28 +106,21 @@
+ 						partition@e0000 {
+ 							label = "u-boot-env";
+ 							reg = <0x000e0000 0x00020000>;
+-							read-only;
+ 						};
+
+ 						partition@100000 {
+ 							label = "u-boot-env2";
+ 							reg = <0x00100000 0x00020000>;
+-							read-only;
+ 						};
+
+ 						partition@120000 {
+-							label = "zImage";
+-							reg = <0x00120000 0x00400000>;
+-						};
+-
+-						partition@520000 {
+-							label = "initrd";
+-							reg = <0x00520000 0x00400000>;
+-						};
+-
+-						partition@e00000 {
+-							label = "boot";
+-							reg = <0x00e00000 0x3f200000>;
++							label = "kernel";
++							reg = <0x00120000 0x01000000>;
++						};
++
++						partition@1120000 {
++							label = "ubi";
++							reg = <0x01120000 0x3eee0000>;
+ 						};
+ 					};
+ 				};

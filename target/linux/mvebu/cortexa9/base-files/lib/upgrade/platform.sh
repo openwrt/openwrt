@@ -42,7 +42,8 @@ platform_do_upgrade() {
 		;;
 	buffalo,ls421de|\
 	wd,cloud-ex2-ultra|\
-	wd,cloud-mirror-gen2)
+	wd,cloud-mirror-gen2|\
+	lenovo,ix4-300d)
 		nand_do_upgrade "$1"
 		;;
 	zyxel,nas326)

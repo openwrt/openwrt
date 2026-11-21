@@ -63,6 +63,11 @@ mvebu_setup_interfaces()
 		# eth2 is SFP
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6" "eth0 eth2"
 		;;
+		lenovo,ix4-300d)
+		# Both eth0 and eth1 must be initialized at boot on the ix4-300d;
+		# otherwise poweroff triggers a reboot instead of shutting down.
+		ucidef_set_interface "lan" device "eth0 eth1" protocol "dhcp"
+		;;
 	*)
 		ucidef_set_interface_lan "eth0"
 		;;
