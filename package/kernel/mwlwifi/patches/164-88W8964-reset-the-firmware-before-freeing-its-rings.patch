@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:15:14 -0700
+Subject: [PATCH] 88W8964: reset the firmware before freeing its rings
+
+pcie_deinit_ndp() freed the RX and TX rings and only then reset the
+firmware, which could still DMA into the buffers. Reset it first.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ 92b4dd1 ("88W8964: return all TX frames to mac80211 and fix TX path
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/pcie.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -933,6 +933,9 @@ static void pcie_deinit_ndp(struct ieee8
+ 	struct mwl_priv *priv = hw->priv;
+ 	struct pcie_priv *pcie_priv = priv->hif.priv;
+ 
++	/* Stop the firmware before freeing the buffers it may still use. */
++	pcie_reset(hw);
++
+ 	/* The tasklets are disabled while the radio is stopped, and
+ 	 * tasklet_kill() never returns for one that was scheduled in the
+ 	 * meantime. Let them run, as no-ops, so they can be killed.
+@@ -945,7 +948,6 @@ static void pcie_deinit_ndp(struct ieee8
+ 
+ 	pcie_rx_deinit_ndp(hw);
+ 	pcie_tx_deinit_ndp(hw);
+-	pcie_reset(hw);
+ }
+ 
+ static int pcie_get_info_ndp(struct ieee80211_hw *hw, char *buf, size_t size)

@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: don't aggregate an A-MSDU that was put back
+ on the queue
+
+When no TX descriptor is free, pcie_8864_tx_skbs() puts the frame it
+dequeued back at the head of the queue. For an A-MSDU, that is the
+aggregate built by pcie_tx_do_amsdu(), which was then passed to
+pcie_tx_do_amsdu() again on the next run. Skip frames that already
+carry the A-MSDU present bit.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/tx.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/hif/pcie/8864/tx.c
++++ b/hif/pcie/8864/tx.c
+@@ -576,7 +576,12 @@ void pcie_8864_tx_skbs(unsigned long dat
+ 			tx_info = IEEE80211_SKB_CB(tx_skb);
+ 			tx_ctrl = (struct pcie_tx_ctrl *)tx_info->driver_data;
+ 
+-			if (tx_ctrl->tx_priority >= SYSADPT_TX_WMM_QUEUES)
++			/* An A-MSDU put back on the queue is already
++			 * aggregated.
++			 */
++			if (tx_ctrl->tx_priority >= SYSADPT_TX_WMM_QUEUES &&
++			    !(tx_ctrl->qos_ctrl &
++			      IEEE80211_QOS_CTL_A_MSDU_PRESENT))
+ 				tx_skb = pcie_tx_do_amsdu(priv, num,
+ 							  tx_skb, tx_info);
+ 

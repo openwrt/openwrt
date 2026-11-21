@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: set the TX descriptor flags instead of ORing
+ them in
+
+The 88W8864 reuses its TX descriptors. pcie_tx_skb() ORed
+DONT_ENCRYPT and NO_CCK_RATE into the flags of the descriptor and
+nothing cleared them, so a DONT_ENCRYPT set for one frame stayed set
+for every later frame in that slot. Set the flags for each frame.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/tx.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/hif/pcie/8864/tx.c
++++ b/hif/pcie/8864/tx.c
+@@ -247,6 +247,7 @@ static inline void pcie_tx_skb(struct mw
+ 	struct pcie_dma_data *dma_data;
+ 	struct ieee80211_hdr *wh;
+ 	dma_addr_t dma;
++	u32 flags = 0;
+ 	int tailpad = 0;
+ 	struct ieee80211_key_conf *k_conf;
+ 
+@@ -271,9 +272,10 @@ static inline void pcie_tx_skb(struct mw
+ 	wh = &dma_data->wh;
+ 
+ 	if (tx_info->flags & IEEE80211_TX_INTFL_DONT_ENCRYPT)
+-		tx_desc->flags |= PCIE_TX_WCB_FLAGS_DONT_ENCRYPT;
++		flags |= PCIE_TX_WCB_FLAGS_DONT_ENCRYPT;
+ 	if (tx_info->flags & IEEE80211_TX_CTL_NO_CCK_RATE)
+-		tx_desc->flags |= PCIE_TX_WCB_FLAGS_NO_CCK_RATE;
++		flags |= PCIE_TX_WCB_FLAGS_NO_CCK_RATE;
++	tx_desc->flags = cpu_to_le32(flags);
+ 	tx_desc->tx_priority = tx_ctrl->tx_priority;
+ 	tx_desc->qos_ctrl = cpu_to_le16(tx_ctrl->qos_ctrl);
+ 	tx_desc->pkt_len = cpu_to_le16(tx_skb->len);

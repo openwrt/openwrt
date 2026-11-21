@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:15:14 -0700
+Subject: [PATCH] 88W8964: unmap TX buffers with their mapped length
+
+TX buffers were unmapped with skb->len. For data frames whose status is
+reported right after queueing, pcie_tx_skb_ndp() pushes the 802.11
+header back onto the skb, so skb->len had grown by the header length
+by the time the buffer was unmapped. Remember the mapped length and
+unmap with it.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ 92b4dd1 ("88W8964: return all TX frames to mac80211 and fix TX path
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8964/tx_ndp.c | 9 ++++++---
+ hif/pcie/dev.h         | 1 +
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -134,7 +134,7 @@ static void pcie_tx_ring_cleanup_ndp(str
+ 		if (tx_skb) {
+ 			dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 					 desc->pphys_tx_buflist[i],
+-					 tx_skb->len,
++					 desc->tx_buflen[i],
+ 					 DMA_TO_DEVICE);
+ 			dev_kfree_skb_any(tx_skb);
+ 			desc->pphys_tx_buflist[i] = 0;
+@@ -211,6 +211,7 @@ static inline int pcie_tx_skb_ndp(struct
+ 	struct ieee80211_hdr *wh;
+ 	u32 ctrl = 0;
+ 	dma_addr_t dma;
++	u32 index;
+ 
+ 	spin_lock_bh(&pcie_priv->tx_desc_lock);
+ 
+@@ -280,7 +281,9 @@ static inline int pcie_tx_skb_ndp(struct
+ 
+ 	pnext_tx_desc->data = cpu_to_le32(dma);
+ 	pnext_tx_desc->ctrl = cpu_to_le32(ctrl);
+-	pnext_tx_desc->user = cpu_to_le32(pcie_tx_set_skb(priv, tx_skb, dma));
++	index = pcie_tx_set_skb(priv, tx_skb, dma);
++	desc->tx_buflen[index] = tx_skb->len;
++	pnext_tx_desc->user = cpu_to_le32(index);
+ 
+ 	if ((tx_ctrl->flags & TX_CTRL_TYPE_DATA) &&
+ 	    (tx_ctrl->rate != 0)) {
+@@ -455,7 +458,7 @@ void pcie_tx_done_ndp(struct ieee80211_h
+ 		}
+ 		dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 				 desc->pphys_tx_buflist[index],
+-				 skb->len,
++				 desc->tx_buflen[index],
+ 				 DMA_TO_DEVICE);
+ 		desc->pphys_tx_buflist[index] = 0;
+ 		desc->tx_vbuflist[index] = NULL;
+--- a/hif/pcie/dev.h
++++ b/hif/pcie/dev.h
+@@ -483,6 +483,7 @@ struct pcie_desc_data_ndp {
+ 	/* keept the skb owned by fw */
+ 	dma_addr_t pphys_tx_buflist[MAX_TX_RING_SEND_SIZE];
+ 	struct sk_buff *tx_vbuflist[MAX_TX_RING_SEND_SIZE];
++	u16 tx_buflen[MAX_TX_RING_SEND_SIZE]; /* mapped length of the skb */
+ 	u32 tx_vbuflist_idx;              /* idx to empty slot in tx_vbuflist*/
+ 	struct sk_buff *rx_vbuflist[MAX_NUM_RX_DESC];
+ 	struct tx_ring_done *ptx_ring_done;

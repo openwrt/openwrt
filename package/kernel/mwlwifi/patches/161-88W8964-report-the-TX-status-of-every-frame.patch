@@ -1,0 +1,255 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:15:14 -0700
+Subject: [PATCH] 88W8964: report the TX status of every frame
+
+Data frames sent with a rate have their status reported right after
+queueing, and the driver keeps a reference until the firmware is done.
+Data frames sent without a rate, including the QoS null frames used to
+probe clients, never had their status reported at all: TX completion
+freed every data frame. The completion path also decided from the
+driver data in the tx_info whether a status was still due, but
+reporting the status can overwrite that data. Frames the firmware still
+held on removal were freed with dev_kfree_skb_any(), so their ACK
+status entries were never released.
+
+Track per TX buffer whether mac80211 already has the status, report it
+on completion for every other frame, and return the frames the firmware
+still holds with ieee80211_free_txskb() on removal. A (re)association
+response whose status was reported from a copy is marked the same way.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ 92b4dd1 ("88W8964: return all TX frames to mac80211 and fix TX path
+ bugs") and backported to db97edf2 on top of the OpenWrt patches.
+ Skipping bad TX done ring entries is left to "88W8964: skip bad TX
+ done ring entries instead of stalling" from openwrt/openwrt#25830.]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8964/tx_ndp.c | 137 ++++++++++++++++++++++-------------------
+ hif/pcie/dev.h         |   2 +
+ 2 files changed, 77 insertions(+), 62 deletions(-)
+
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -41,6 +41,7 @@
+ #define TX_CTRL_TYPE_DATA       BIT(0)
+ #define TX_CTRL_EAPOL           BIT(1)
+ #define TX_CTRL_TCP_ACK         BIT(2)
++#define TX_CTRL_STATUS_SENT     BIT(4)
+ 
+ /* Transmission information to transmit a socket buffer.
+  */
+@@ -119,28 +120,78 @@ static int pcie_tx_ring_init_ndp(struct
+ 	return 0;
+ }
+ 
++/* Unmap a TX buffer that the firmware has returned, or that it will never
++ * return, and hand the skb back to mac80211.
++ */
++static void pcie_tx_return_skb_ndp(struct ieee80211_hw *hw, u32 index,
++				   bool dropped)
++{
++	struct mwl_priv *priv = hw->priv;
++	struct pcie_priv *pcie_priv = priv->hif.priv;
++	struct pcie_desc_data_ndp *desc = &pcie_priv->desc_data_ndp;
++	struct sk_buff *skb = desc->tx_vbuflist[index];
++	struct ieee80211_tx_info *tx_info;
++	struct pcie_tx_ctrl_ndp *tx_ctrl;
++	struct pcie_dma_data *dma_data;
++	u16 hdrlen;
++
++	dma_unmap_single(&(pcie_priv->pdev)->dev,
++			 desc->pphys_tx_buflist[index],
++			 desc->tx_buflen[index],
++			 DMA_TO_DEVICE);
++	desc->pphys_tx_buflist[index] = 0;
++	desc->tx_vbuflist[index] = NULL;
++
++	/* The status of this frame (or of a copy of it) has already been
++	 * reported; what is left is only the driver's reference.
++	 */
++	if (__test_and_clear_bit(index, desc->tx_status_sent)) {
++		dev_kfree_skb_any(skb);
++		return;
++	}
++
++	tx_info = IEEE80211_SKB_CB(skb);
++	tx_ctrl = (struct pcie_tx_ctrl_ndp *)tx_info->driver_data;
++
++	if (tx_ctrl->flags & TX_CTRL_TYPE_DATA) {
++		skb_push(skb, tx_ctrl->hdrlen);
++	} else {
++		/* Remove H/W dma header */
++		dma_data = (struct pcie_dma_data *)skb->data;
++		hdrlen = ieee80211_hdrlen(dma_data->wh.frame_control);
++		if (ieee80211_is_qos_nullfunc(dma_data->wh.frame_control) ||
++		   ieee80211_is_data_qos(dma_data->wh.frame_control)) {
++			memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen - IEEE80211_QOS_CTL_LEN);
++			*((__le16 *)(dma_data->data - IEEE80211_QOS_CTL_LEN)) = tx_ctrl->qos;
++		} else
++			memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
++		skb_pull(skb, sizeof(*dma_data) - hdrlen);
++	}
++
++	if (dropped) {
++		ieee80211_free_txskb(hw, skb);
++		return;
++	}
++
++	pcie_tx_prepare_info(priv, 0, tx_info);
++	ieee80211_tx_status_skb(hw, skb);
++}
++
+ static void pcie_tx_ring_cleanup_ndp(struct mwl_priv *priv)
+ {
+ 	struct pcie_priv *pcie_priv = priv->hif.priv;
+ 	struct pcie_desc_data_ndp *desc = &pcie_priv->desc_data_ndp;
+-	struct sk_buff *tx_skb;
+ 	int i;
+ 
+ 	for (i = 0; i < PCIE_NUM_OF_DESC_DATA; i++)
+ 		ieee80211_purge_tx_queue(priv->hw, &pcie_priv->txq[i]);
+ 
+-	for (i = 0; i < MAX_TX_RING_SEND_SIZE; i++) {
+-		tx_skb = desc->tx_vbuflist[i];
+-		if (tx_skb) {
+-			dma_unmap_single(&(pcie_priv->pdev)->dev,
+-					 desc->pphys_tx_buflist[i],
+-					 desc->tx_buflen[i],
+-					 DMA_TO_DEVICE);
+-			dev_kfree_skb_any(tx_skb);
+-			desc->pphys_tx_buflist[i] = 0;
+-			desc->tx_vbuflist[i] = NULL;
+-		}
+-	}
++	/* Frames the firmware still holds would otherwise keep their
++	 * mac80211 ACK status entries alive.
++	 */
++	for (i = 0; i < MAX_TX_RING_SEND_SIZE; i++)
++		if (desc->tx_vbuflist[i])
++			pcie_tx_return_skb_ndp(priv->hw, i, true);
+ 	desc->tx_sent_tail = 0;
+ 	desc->tx_sent_head = 0;
+ 	desc->tx_done_tail = 0;
+@@ -285,12 +336,14 @@ static inline int pcie_tx_skb_ndp(struct
+ 	desc->tx_buflen[index] = tx_skb->len;
+ 	pnext_tx_desc->user = cpu_to_le32(index);
+ 
+-	if ((tx_ctrl->flags & TX_CTRL_TYPE_DATA) &&
+-	    (tx_ctrl->rate != 0)) {
++	if (tx_ctrl->flags & TX_CTRL_STATUS_SENT) {
++		__set_bit(index, desc->tx_status_sent);
++	} else if ((tx_ctrl->flags & TX_CTRL_TYPE_DATA) &&
++		   (tx_ctrl->rate != 0)) {
++		__set_bit(index, desc->tx_status_sent);
+ 		skb_push(tx_skb, tx_ctrl->hdrlen);
+ 		skb_get(tx_skb);
+ 		pcie_tx_prepare_info(priv, tx_ctrl->rate, tx_info);
+-		tx_ctrl->flags |= TX_CTRL_TYPE_DATA;
+ 		ieee80211_tx_status_skb(priv->hw, tx_skb);
+ 	}
+ 
+@@ -427,11 +480,6 @@ void pcie_tx_done_ndp(struct ieee80211_h
+ 	u32 tx_done_head, tx_done_tail;
+ 	struct tx_ring_done *ptx_ring_done;
+ 	u32 index;
+-	struct sk_buff *skb;
+-	struct ieee80211_tx_info *tx_info;
+-	struct pcie_tx_ctrl_ndp *tx_ctrl;
+-	struct pcie_dma_data *dma_data;
+-	u16 hdrlen;
+ 
+ 	spin_lock_bh(&pcie_priv->tx_desc_lock);
+ 
+@@ -450,52 +498,13 @@ void pcie_tx_done_ndp(struct ieee80211_h
+ 				  "corruption for index of buffer\n");
+ 			break;
+ 		}
+-		skb = desc->tx_vbuflist[index];
+-		if (!skb) {
++		if (!desc->tx_vbuflist[index]) {
+ 			wiphy_err(hw->wiphy,
+ 				  "buffer is NULL for tx done ring\n");
+ 			break;
+ 		}
+-		dma_unmap_single(&(pcie_priv->pdev)->dev,
+-				 desc->pphys_tx_buflist[index],
+-				 desc->tx_buflen[index],
+-				 DMA_TO_DEVICE);
+-		desc->pphys_tx_buflist[index] = 0;
+-		desc->tx_vbuflist[index] = NULL;
+-
+-		tx_info = IEEE80211_SKB_CB(skb);
+-		tx_ctrl = (struct pcie_tx_ctrl_ndp *)
+-			tx_info->driver_data;
+-
+-		if (tx_ctrl->flags & TX_CTRL_TYPE_DATA) {
+-			dev_kfree_skb_any(skb);
+-			goto bypass_ack;
+-		} else {
+-			/* Remove H/W dma header */
+-			dma_data = (struct pcie_dma_data *)skb->data;
+-
+-			if (ieee80211_is_assoc_resp(
+-			    dma_data->wh.frame_control) ||
+-			    ieee80211_is_reassoc_resp(
+-			    dma_data->wh.frame_control)) {
+-				dev_kfree_skb_any(skb);
+-				goto bypass_ack;
+-			}
+-			hdrlen = ieee80211_hdrlen(
+-				dma_data->wh.frame_control);
+-			if (ieee80211_is_qos_nullfunc(dma_data->wh.frame_control) ||
+-			   ieee80211_is_data_qos(dma_data->wh.frame_control)) {
+-				memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen - IEEE80211_QOS_CTL_LEN);
+-				*((__le16 *)(dma_data->data - IEEE80211_QOS_CTL_LEN)) = tx_ctrl->qos;
+-			} else
+-				memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
+-			skb_pull(skb, sizeof(*dma_data) - hdrlen);
+-		}
+-
+-		pcie_tx_prepare_info(priv, 0, tx_info);
+-		ieee80211_tx_status_skb(hw, skb);
++		pcie_tx_return_skb_ndp(hw, index, false);
+ 
+-bypass_ack:
+ 		if (++tx_done_tail >= MAX_TX_RING_DONE_SIZE)
+ 			tx_done_tail = 0;
+ 		desc->tx_desc_busy_cnt--;
+@@ -531,6 +540,7 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 	bool eapol_frame = false;
+ 	bool start_ba_session = false;
+ 	struct pcie_tx_ctrl_ndp *tx_ctrl;
++	bool status_sent = false;
+ 
+ 	tx_info = IEEE80211_SKB_CB(skb);
+ 	k_conf = tx_info->control.hw_key;
+@@ -605,6 +615,7 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 				ack_info = IEEE80211_SKB_CB(ack_skb);
+ 				pcie_tx_prepare_info(priv, 0, ack_info);
+ 				ieee80211_tx_status_skb(hw, ack_skb);
++				status_sent = true;
+ 			}
+ 		}
+ 
+@@ -672,6 +683,8 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 	tx_ctrl->tx_que_priority = tx_que_priority;
+ 	tx_ctrl->hdrlen = ieee80211_hdrlen(wh->frame_control);
+ 	tx_ctrl->flags = 0;
++	if (status_sent)
++		tx_ctrl->flags |= TX_CTRL_STATUS_SENT;
+ 	tx_ctrl->qos = qos;
+ 	if (!mgmtframe)
+ 		tx_ctrl->flags |= TX_CTRL_TYPE_DATA;
+--- a/hif/pcie/dev.h
++++ b/hif/pcie/dev.h
+@@ -484,6 +484,8 @@ struct pcie_desc_data_ndp {
+ 	dma_addr_t pphys_tx_buflist[MAX_TX_RING_SEND_SIZE];
+ 	struct sk_buff *tx_vbuflist[MAX_TX_RING_SEND_SIZE];
+ 	u16 tx_buflen[MAX_TX_RING_SEND_SIZE]; /* mapped length of the skb */
++	/* mac80211 already has the status of the skb */
++	DECLARE_BITMAP(tx_status_sent, MAX_TX_RING_SEND_SIZE);
+ 	u32 tx_vbuflist_idx;              /* idx to empty slot in tx_vbuflist*/
+ 	struct sk_buff *rx_vbuflist[MAX_NUM_RX_DESC];
+ 	struct tx_ring_done *ptx_ring_done;

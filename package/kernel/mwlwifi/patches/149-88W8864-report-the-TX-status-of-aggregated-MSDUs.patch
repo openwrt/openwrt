@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Oct 2026 19:28:27 -0700
+Subject: [PATCH] 88W8864: report the TX status of aggregated MSDUs
+
+pcie_tx_do_amsdu() copies the tx_info of the first MSDU into the
+A-MSDU, so its status is reported when the A-MSDU completes, and frees
+the original. The MSDUs aggregated after the first were freed as well,
+so mac80211 never got their status. Report it when they are added to
+the A-MSDU.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+[Robert Peerenboom: split out of neheb/mwlwifi (upstream branch) commit
+ dcb73e4dca ("88W8864/88W8997: fix RX refill, TX status and teardown
+ bugs") and backported to db97edf2 on top of the OpenWrt patches]
+Signed-off-by: Robert Peerenboom <development@mindrush.de>
+---
+ hif/pcie/8864/tx.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/hif/pcie/8864/tx.c
++++ b/hif/pcie/8864/tx.c
+@@ -342,6 +342,7 @@ struct sk_buff *pcie_tx_do_amsdu(struct
+ 	u16 len;
+ 	u8 *data;
+ 	int iv_len = 0;
++	bool first = false;
+ 
+ 	sta = (struct ieee80211_sta *)tx_ctrl->sta;
+ 	sta_info = mwl_dev_get_sta(sta);
+@@ -400,6 +401,7 @@ struct sk_buff *pcie_tx_do_amsdu(struct
+ 		tx_ctrl->qos_ctrl |= IEEE80211_QOS_CTL_A_MSDU_PRESENT;
+ 		amsdu_info = IEEE80211_SKB_CB(amsdu->skb);
+ 		memcpy(amsdu_info, tx_info, sizeof(*tx_info));
++		first = true;
+ 	} else if (amsdu->pad)
+ 			skb_put_zero(amsdu->skb, amsdu->pad);
+ 
+@@ -421,7 +423,13 @@ struct sk_buff *pcie_tx_do_amsdu(struct
+ 
+ 	amsdu->num++;
+ 	amsdu->pad = ((len + ETH_HLEN) % 4) ? (4 - (len + ETH_HLEN) % 4) : 0;
+-	dev_kfree_skb_any(tx_skb);
++	/* The status of the first MSDU is reported with the A-MSDU. */
++	if (first) {
++		dev_kfree_skb_any(tx_skb);
++	} else {
++		pcie_tx_prepare_info(priv, 0, tx_info);
++		ieee80211_tx_status_skb(priv->hw, tx_skb);
++	}
+ 	if (amsdu->num > SYSADPT_AMSDU_FRAGMENT_THRESHOLD) {
+ 		amsdu->num = 0;
+ 		spin_unlock_bh(&sta_info->amsdu_lock);
