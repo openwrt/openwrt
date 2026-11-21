@@ -1,0 +1,12 @@
+#!/bin/sh
+
+mf283v_start_usb_recovery()
+{
+	(
+		trap '' HUP
+		echo "<6>mf283v: starting USB recovery gadget" > /dev/kmsg
+		exec /usr/sbin/mf283v-openwrt-usb
+	) &
+}
+
+boot_hook_add preinit_main mf283v_start_usb_recovery
