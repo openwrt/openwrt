@@ -1,0 +1,257 @@
+From 48d3e6828c910ca84be82f2300974e0715b8a240 Mon Sep 17 00:00:00 2001
+From: Hongjian Zhang <hongjian.zhang@gl-inet.com>
+Date: Thu, 5 Nov 2026 15:04:26 +0800
+Subject: [PATCH] net: mediatek: support RTL8366UB VLAN-aware PPE egress
+
+Substitute DSA user devices with their conduit for PPE lookup. Use an
+outer management VID for standalone ports and VLAN-unaware bridges.
+For VLAN-filtering bridges, require exactly one valid business VID and
+reject unsupported encapsulations so the flow stays in software.
+
+Keep the bridge-resolved business VID even for an untagged user-port
+egress. Run the common bridge path bookkeeping so FDB moves tear down
+these direct-transmit flows as well. Preserve the upstream wireless
+WCID interface by applying this patch after the 797 wireless series.
+
+Signed-off-by: Hongjian Zhang <hongjian.zhang@gl-inet.com>
+---
+ .../net/ethernet/mediatek/mtk_ppe_offload.c   | 102 +++++++++++-------
+ net/netfilter/nf_flow_table_path.c            |  39 +++++++
+ 2 files changed, 105 insertions(+), 36 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -173,26 +173,23 @@ mtk_flow_mangle_ipv4(const struct flow_a
+ 	return 0;
+ }
+ 
+-/*
+- * Inspect *dev as a DSA user netdev.  On success, substitute *dev with
+- * the conduit netdev, return the DSA user port's dp->index, and in
+- * *push_vid hand back either 0 (native MTK tag; the PPE injects its
+- * magic etype later via mtk_foe_entry_set_dsa()) or the outer 802.1Q
+- * VID the PPE should push on the egressing frame (tag_8021q taggers
+- * that use an outer Q-in-Q tag with a standalone per-port VID, i.e.
+- * the MxL862xx tag_8021q tagger), or the full VLAN TCI for the
+- * VLAN-shaped YT922x four-byte port tag.
+- *
+- * push_vid may be NULL for callers that only want the idev->conduit
+- * substitution (e.g. ingress-side ppe_idx selection, where no VID
+- * is to be pushed on the flow entry).
+- *
+- * Other tag_8021q-based taggers (sja1105, ocelot_8021q, ...) use
+- * different tag layers and/or bridge-scoped VIDs; do not extend the
+- * switch below to cover them without per-tagger review.
++enum mtk_flow_dsa_tag_mode {
++	MTK_FLOW_DSA_TAG_NATIVE,
++	MTK_FLOW_DSA_TAG_8021Q,
++	MTK_FLOW_DSA_TAG_NONE,
++};
++
++struct mtk_flow_dsa_tag {
++	enum mtk_flow_dsa_tag_mode mode;
++	u16 tci;
++};
++
++/* Substitute a DSA user device with its conduit and return its port index.
++ * On egress, distinguish native MTK headers, outer VLAN-shaped CPU tags
++ * (including the full Motorcomm TCI) and business-VLAN-only RTL8366UB frames.
+  */
+ static int
+-mtk_flow_get_dsa_port(struct net_device **dev, u16 *push_vid)
++mtk_flow_get_dsa_port(struct net_device **dev, struct mtk_flow_dsa_tag *tag)
+ {
+ #if IS_ENABLED(CONFIG_NET_DSA)
+ 	struct dsa_port *dp;
+@@ -203,12 +200,14 @@ mtk_flow_get_dsa_port(struct net_device
+ 
+ 	switch (dp->cpu_dp->tag_ops->proto) {
+ 	case DSA_TAG_PROTO_MTK:
+-		if (push_vid)
+-			*push_vid = 0;
++		if (tag)
++			tag->mode = MTK_FLOW_DSA_TAG_NATIVE;
+ 		break;
+ 	case DSA_TAG_PROTO_MXL862_8021Q:
+-		if (push_vid)
+-			*push_vid = dsa_tag_8021q_standalone_vid(dp);
++		if (tag) {
++			tag->mode = MTK_FLOW_DSA_TAG_8021Q;
++			tag->tci = dsa_tag_8021q_standalone_vid(dp);
++		}
+ 		break;
+ 	case DSA_TAG_PROTO_YT922X_4B:
+ 		/* The software tagger supplies access-port PVIDs. PPE cannot
+@@ -218,8 +217,28 @@ mtk_flow_get_dsa_port(struct net_device
+ 			return -EOPNOTSUPP;
+ 		if (!yt922x_4b_port_tag(dp->index))
+ 			return -ENODEV;
+-		if (push_vid)
+-			*push_vid = yt922x_4b_port_tag(dp->index);
++		if (tag) {
++			tag->mode = MTK_FLOW_DSA_TAG_8021Q;
++			tag->tci = yt922x_4b_port_tag(dp->index);
++		}
++		break;
++	case DSA_TAG_PROTO_RTL8366UB_8021Q:
++		if (tag) {
++			struct net_device *br = dsa_port_bridge_dev_get(dp);
++
++			if (br && dsa_port_is_vlan_filtering(dp)) {
++				tag->mode = MTK_FLOW_DSA_TAG_NONE;
++			} else {
++				tag->mode = MTK_FLOW_DSA_TAG_8021Q;
++				if (br) {
++					int bridge_num = dsa_port_bridge_num_get(dp);
++
++					tag->tci = dsa_tag_8021q_bridge_vid(bridge_num);
++				} else {
++					tag->tci = dsa_tag_8021q_standalone_vid(dp);
++				}
++			}
++		}
+ 		break;
+ 	default:
+ 		return -ENODEV;
+@@ -235,15 +254,15 @@ mtk_flow_get_dsa_port(struct net_device
+ 
+ static int
+ mtk_flow_set_output_device(struct mtk_eth *eth, struct mtk_foe_entry *foe,
+-			   struct net_device *dev, const u8 *dest_mac,
++			   struct net_device *dev, const struct mtk_flow_data *data,
+ 			   int *wed_index, u16 *wcid, unsigned int num_tags)
+ {
++	struct mtk_flow_dsa_tag tag = {};
+ 	struct mtk_wdma_info info = {};
+ 	struct mtk_mac *mac;
+ 	int pse_port, dsa_port, queue, err;
+-	u16 push_vid = 0;
+ 
+-	if (mtk_flow_get_wdma_info(dev, dest_mac, &info) == 0) {
++	if (mtk_flow_get_wdma_info(dev, data->eth.h_dest, &info) == 0) {
+ 		mtk_foe_entry_set_wdma(eth, foe, info.wdma_idx, info.queue,
+ 				       info.bss, info.wcid, info.amsdu);
+ 		if (mtk_is_netsys_v2_or_greater(eth)) {
+@@ -268,7 +287,7 @@ mtk_flow_set_output_device(struct mtk_et
+ 		goto out;
+ 	}
+ 
+-	dsa_port = mtk_flow_get_dsa_port(&dev, &push_vid);
++	dsa_port = mtk_flow_get_dsa_port(&dev, &tag);
+ 
+ 	if (dev == eth->netdev[0])
+ 		pse_port = PSE_GDM1_PORT;
+@@ -280,17 +299,28 @@ mtk_flow_set_output_device(struct mtk_et
+ 		return -EOPNOTSUPP;
+ 
+ 	if (dsa_port >= 0) {
+-		if (push_vid) {
+-			/* Reserve one of the PPE's two VLAN slots for the CPU tag.
+-			 * Preserve the full TCI: YT9224 port 7 uses bit 12 (DEI).
+-			 */
++		switch (tag.mode) {
++		case MTK_FLOW_DSA_TAG_NATIVE:
++			mtk_foe_entry_set_dsa(eth, foe, dsa_port);
++			break;
++		case MTK_FLOW_DSA_TAG_8021Q:
++			/* Preserve the complete CPU tag, including Motorcomm DEI. */
+ 			if (num_tags >= 2)
+ 				return -EOPNOTSUPP;
+-			err = mtk_foe_entry_set_vlan(eth, foe, push_vid);
++			err = mtk_foe_entry_set_vlan(eth, foe, tag.tci);
+ 			if (err)
+ 				return err;
+-		} else {
+-			mtk_foe_entry_set_dsa(eth, foe, dsa_port);
++			break;
++		case MTK_FLOW_DSA_TAG_NONE:
++			/* The CPU link carries exactly the bridge business VID,
++			 * even if the destination user port is untagged.
++			 */
++			if (data->vlan.num != 1 || data->pppoe.num ||
++			    data->vlan.vlans[0].proto != htons(ETH_P_8021Q) ||
++			    !data->vlan.vlans[0].id ||
++			    data->vlan.vlans[0].id >= 3072)
++				return -EOPNOTSUPP;
++			break;
+ 		}
+ 	}
+ 
+@@ -549,7 +579,7 @@ mtk_flow_offload_replace(struct mtk_eth
+ 			return err;
+ 	}
+ 
+-	err = mtk_flow_set_output_device(eth, &foe, odev, data.eth.h_dest,
++	err = mtk_flow_set_output_device(eth, &foe, odev, &data,
+ 					 &wed_index, &wcid,
+ 					 data.vlan.num + data.pppoe.num);
+ 	if (err)
+--- a/net/netfilter/nf_flow_table_path.c
++++ b/net/netfilter/nf_flow_table_path.c
+@@ -7,6 +7,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/netfilter/nf_conntrack_common.h>
+ #include <linux/netfilter/nf_tables.h>
++#include <net/dsa.h>
+ #include <net/ip.h>
+ #include <net/inet_dscp.h>
+ #include <net/netfilter/nf_tables.h>
+@@ -98,6 +99,24 @@ struct nft_forward_info {
+ 	enum flow_offload_xmit_type xmit_type;
+ };
+ 
++/* RTL8366UB uses the business VLAN, rather than an internal DSA tag, to
++ * classify CPU-originated frames on a VLAN-filtering bridge. Keep that VID
++ * on the CPU link; the switch performs untagging at the user-port egress.
++ */
++static bool
++nft_bridge_vlan_keep_tag(const struct net_device_path_stack *stack, int index)
++{
++	const struct net_device_path *bridge = &stack->path[index];
++	const struct net_device_path *dsa;
++
++	if (!bridge->bridge.vlan_id || index + 1 >= stack->num_paths)
++		return false;
++
++	dsa = &stack->path[index + 1];
++	return dsa->type == DEV_PATH_DSA &&
++	       dsa->dsa.proto == DSA_TAG_PROTO_RTL8366UB_8021Q;
++}
++
+ static int nft_dev_path_info(const struct net_device_path_stack *stack,
+ 			     struct nft_forward_info *info,
+ 			     unsigned char *ha, struct nf_flowtable *flowtable)
+@@ -145,6 +164,25 @@ static int nft_dev_path_info(const struc
+ 			if (is_zero_ether_addr(info->h_source))
+ 				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
+ 
++			if (nft_bridge_vlan_keep_tag(stack, i)) {
++				n = info->num_encaps;
++
++				/* Use the VID resolved by the bridge, including its
++				 * PVID when routing through the bridge itself. An
++				 * untagged destination port may have another PVID.
++				 */
++				if (!n ||
++				    info->encap[n - 1].id != path->bridge.vlan_id ||
++				    info->encap[n - 1].proto != path->bridge.vlan_proto) {
++					if (n >= NF_FLOW_TABLE_ENCAP_MAX)
++						return -1;
++					info->encap[n].id = path->bridge.vlan_id;
++					info->encap[n].proto = path->bridge.vlan_proto;
++					info->num_encaps++;
++				}
++				goto bridge_done;
++			}
++
+ 			switch (path->bridge.vlan_mode) {
+ 			case DEV_PATH_BR_VLAN_UNTAG_HW:
+ 				if (info->num_encaps == 0)
+@@ -169,6 +207,7 @@ static int nft_dev_path_info(const struc
+ 			case DEV_PATH_BR_VLAN_KEEP:
+ 				break;
+ 			}
++bridge_done:
+ 			info->bridge_path = 1;
+ 			info->port_vlans = 0;
+ 			n = info->num_encaps;
