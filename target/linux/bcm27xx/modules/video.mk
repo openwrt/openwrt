@@ -64,7 +64,7 @@ define KernelPackage/rp1-hevc-dec
     CONFIG_VIDEO_RPI_HEVC_DEC
   FILES:=$(LINUX_DIR)/drivers/media/platform/raspberrypi/hevc_dec/rpi-hevc-dec.ko
   AUTOLOAD:=$(call AutoLoad,67,rpi-hevc-dec)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-video-core +kmod-video-dma-contig +kmod-video-videobuf2 +kmod-video-mem2mem
+  DEPENDS:=@TARGET_bcm27xx_bcm2711||TARGET_bcm27xx_bcm2712 +kmod-video-core +kmod-video-dma-contig +kmod-video-videobuf2 +kmod-video-mem2mem
 endef
 
 define KernelPackage/rp1-hevc-dec/description
@@ -154,7 +154,9 @@ define KernelPackage/drm-vc4
   DEPENDS:= \
     @TARGET_bcm27xx +kmod-drm +kmod-drm-exec \
     +kmod-drm-display-helper +kmod-drm-dma-helper \
-    +kmod-cec-core +kmod-sound-core +kmod-sound-soc-core
+    +kmod-cec-core +kmod-sound-core +kmod-sound-soc-core \
+    +kmod-sound-soc-hdmi-codec \
+    +kmod-bcm27xx-i2c
   KCONFIG:= \
     CONFIG_DRM_VC4 \
     CONFIG_DRM_VC4_HDMI_CEC=y
@@ -166,6 +168,26 @@ endef
 define KernelPackage/drm-vc4/description
   Direct Rendering Manager (DRM) support for Broadcom VideoCore IV GPU
   used in BCM2835, BCM2836 and BCM2837 SoCs (e.g. Raspberry Pi).
+endef
+
+define Package/kmod-drm-vc4/postinst
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ] && [ -f /boot/distroconfig.txt ] && \
+   ! grep -qsE '^dtoverlay=vc4-f?kms-v3d' /boot/config.txt /boot/distroconfig.txt; then
+	[ -z "$$(tail -c 1 /boot/distroconfig.txt)" ] || echo >> /boot/distroconfig.txt
+	printf '[all]\ndtoverlay=vc4-kms-v3d\n' >> /boot/distroconfig.txt
+	echo "kmod-drm-vc4: vc4-kms-v3d overlay added, reboot to apply"
+fi
+endef
+
+define Package/kmod-drm-vc4/prerm
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ] && [ -f /boot/distroconfig.txt ] && \
+   grep -q '^dtoverlay=vc4-kms-v3d$$' /boot/distroconfig.txt; then
+	sed -i -e '/^\[all\]$$/{N;/\ndtoverlay=vc4-kms-v3d$$/d;P;D}' \
+		-e '/^dtoverlay=vc4-kms-v3d$$/d' /boot/distroconfig.txt
+	echo "kmod-drm-vc4: vc4-kms-v3d overlay removed, reboot to apply"
+fi
 endef
 
 $(eval $(call KernelPackage,drm-vc4))
