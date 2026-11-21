@@ -373,7 +373,7 @@ opkg_target = \
 		-f $(mkfs_cur_target_dir).conf
 
 apk_target = \
-	$(call apk,$(mkfs_cur_target_dir)) --no-scripts \
+	$(call apk,$(mkfs_cur_target_dir)) \
 		--repositories-file /dev/null --repository file://$(PACKAGE_DIR_ALL)/packages.adb
 
 
@@ -381,10 +381,14 @@ target-dir-%: FORCE
 ifneq ($(CONFIG_USE_APK),)
 	rm -rf $(mkfs_cur_target_dir)
 	$(CP) $(TARGET_DIR_ORIG) $(mkfs_cur_target_dir)
+# If mkfs_packages_remove is non-empty, but the grep results in an empty list,
+# apk del will be called without any packages to remove. This is fine, apk will
+# just return successfully in this case.
 	$(if $(mkfs_packages_remove), \
-		-$(apk_target) del $(mkfs_packages_remove))
+		$(apk_target) del --no-scripts \
+			$$($(apk_target) info | grep -xF $(foreach pkg,$(mkfs_packages_remove),-e '$(pkg)')))
 	$(if $(mkfs_packages_add), \
-		$(apk_target) add $(mkfs_packages_add))
+		$(apk_target) add --no-scripts $(mkfs_packages_add))
 else
 	rm -rf $(mkfs_cur_target_dir) $(mkfs_cur_target_dir).opkg
 	$(CP) $(TARGET_DIR_ORIG) $(mkfs_cur_target_dir)
