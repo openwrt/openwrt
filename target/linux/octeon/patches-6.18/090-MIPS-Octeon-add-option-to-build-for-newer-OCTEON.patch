@@ -1,0 +1,56 @@
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] MIPS: Octeon: add option to build for newer OCTEON
+
+The kernel is built with -march=octeon. Build for octeon+ instead,
+and add an option for octeon2 or octeon3 to use their newer
+instructions.
+
+With -march=octeon3 gas turns on the virt ASE and warns at every .set
+that lowers the ISA. With CONFIG_WERROR this breaks the build. Pass
+-mno-virt, .set virt still works.
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+---
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -182,7 +182,12 @@ cflags-$(CONFIG_CPU_SB1)	+= $(call cc-op
+ cflags-$(CONFIG_CPU_SB1)	+= $(call cc-option,-mno-mips3d)
+ cflags-$(CONFIG_CPU_R10000)	+= $(call cc-option,-march=r10000,-march=mips4) \
+ 			-Wa,--trap
+-cflags-$(CONFIG_CPU_CAVIUM_OCTEON) += -march=octeon -Wa,--trap
++cflags-$(CONFIG_CAVIUM_OCTEON_MARCH_OCTEONPLUS) += -march=octeon+ -Wa,--trap
++cflags-$(CONFIG_CAVIUM_OCTEON_MARCH_OCTEON2) += -march=octeon2 -Wa,--trap
++# gas turns the virt ASE on for octeon3 and then warns at every .set that
++# lowers the ISA below release 2; keep it off, .set virt still enables it
++cflags-$(CONFIG_CAVIUM_OCTEON_MARCH_OCTEON3) += -march=octeon3 -Wa,--trap \
++			-Wa,-mno-virt
+ cflags-$(CONFIG_CAVIUM_CN63XXP1) += -Wa,-mfix-cn63xxp1
+ cflags-$(CONFIG_CPU_BMIPS)	+= -march=mips32 -Wa,--trap
+ 
+--- a/arch/mips/cavium-octeon/Kconfig
++++ b/arch/mips/cavium-octeon/Kconfig
+@@ -11,6 +11,24 @@ config CAVIUM_CN63XXP1
+ 	  non-CN63XXP1 hardware, so it is recommended to select "n"
+ 	  unless it is known the workarounds are needed.
+ 
++choice
++	prompt "OCTEON instruction set"
++	default CAVIUM_OCTEON_MARCH_OCTEONPLUS
++	help
++	  Build the kernel for this OCTEON and newer. It does not boot
++	  on older ones.
++
++config CAVIUM_OCTEON_MARCH_OCTEONPLUS
++	bool "OCTEON Plus (-march=octeon+)"
++
++config CAVIUM_OCTEON_MARCH_OCTEON2
++	bool "OCTEON II (-march=octeon2)"
++
++config CAVIUM_OCTEON_MARCH_OCTEON3
++	bool "OCTEON III (-march=octeon3)"
++
++endchoice
++
+ config CAVIUM_OCTEON_CVMSEG_SIZE
+ 	int "Number of L1 cache lines reserved for CVMSEG memory"
+ 	range 0 54
