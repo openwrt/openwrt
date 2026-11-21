@@ -31,6 +31,61 @@ define Device/askey_sbe1v1k
 endef
 TARGET_DEVICES += askey_sbe1v1k
 
+define Device/jiorouter_ax6000-jidu6j11-common
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := JioRouter
+	DEVICE_MODEL := AX6000
+	SOC := ipq9554
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := kmod-ath11k-ahb kmod-ath11k-pci \
+		ath11k-firmware-ipq9574 ath11k-firmware-qcn9074 \
+		ipq-wifi-jiorouter_ax6000-jidu6j11
+endef
+
+define Device/jiorouter_ax6000-jidu6111
+	$(call Device/jiorouter_ax6000-jidu6j11-common)
+	DEVICE_VARIANT := JIDU6111
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6111
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6111
+
+define Device/jiorouter_ax6000-jidu6411
+	$(call Device/jiorouter_ax6000-jidu6j11-common)
+	DEVICE_VARIANT := JIDU6411
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6411
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6411
+
+define Device/jiorouter_ax6000-jidu6611
+	$(call Device/jiorouter_ax6000-jidu6j11-common)
+	DEVICE_VARIANT := JIDU6611
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6611
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6611
+
+define Device/jiorouter_ax6000-jidu6711
+	$(call Device/jiorouter_ax6000-jidu6j11-common)
+	DEVICE_VARIANT := JIDU6711
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6711
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6711
+
+define Device/jiorouter_ax6000-jidu6811
+	$(call Device/jiorouter_ax6000-jidu6j11-common)
+	DEVICE_VARIANT := JIDU6811
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6811
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6811
+
+define Device/jiorouter_ax6000-jidu6911
+	$(call Device/jiorouter_ax6000-jidu6j11-common)
+	DEVICE_VARIANT := JIDU6911
+	DEVICE_DTS := ipq9554-jiorouter-ax6000-jidu6911
+endef
+TARGET_DEVICES += jiorouter_ax6000-jidu6911
+
 define Device/linksys_ln6001
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Linksys
