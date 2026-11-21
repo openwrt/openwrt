@@ -235,6 +235,35 @@
 					reg = <3>; /* Port */
 				};
 			};
+
+			interface@4 {
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "cavium,octeon-3860-pip-interface";
+				reg = <4>; /* Interface */
+
+				ethernet@0 {
+					status = "disabled";
+					compatible = "cavium,octeon-3860-pip-port";
+					reg = <0>; /* Port */
+
+					/* AGL is RGMII-only */
+					phy-mode = "rgmii";
+
+					/* AGL link partner is not MDIO-managed */
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
+
+					/* Optional RGMII clock delay-line tuning */
+					// cavium,agl-rx-clk-set = <0>;
+					// cavium,agl-tx-clk-set = <2>;
+					// cavium,agl-rx-clk-bypass;
+					// cavium,agl-tx-clk-bypass;
+				};
+			};
 		};
 
 		twsi0: i2c@1180000001000 {
