@@ -190,6 +190,7 @@ platform_do_upgrade() {
 	glinet,gl-be10000-ubootmod|\
 	globitel,bt-r320|\
 	h3c,magic-nx30-pro|\
+	huasifei,ws1610|\
 	imou,hx21|\
 	jcg,q30-pro|\
 	jdcloud,re-cp-03|\
@@ -451,6 +452,7 @@ platform_check_image() {
 	glinet,gl-be10000-ubootmod|\
 	globitel,bt-r320|\
 	h3c,magic-nx30-pro|\
+	huasifei,ws1610|\
 	jcg,q30-pro|\
 	jdcloud,re-cp-03|\
 	konka,komi-a31|\
