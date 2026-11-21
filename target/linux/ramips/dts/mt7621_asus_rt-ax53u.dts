@@ -78,8 +78,11 @@
 		};
 
 		/*
-		 * u-boot gets split here while keeping u-boot read-only,
-		 * which allows safe usage of fw_setenv
+		 * This is where u-boot keeps its environment, but the block
+		 * is erased until saveenv is run from the u-boot console.
+		 * Until then u-boot runs from its compiled-in defaults and
+		 * fw_setenv would replace them with a generic environment
+		 * that this bootloader cannot boot from.
 		 */
 		partition@80000 {
 			label = "u-boot-env";
