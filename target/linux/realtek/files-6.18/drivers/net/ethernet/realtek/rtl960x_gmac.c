@@ -787,6 +787,9 @@ static int rtl960x_gmac_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	/* Stop any DMA left running by the bootloader (e.g. after TFTP boot) */
+	rtl960x_gmac_stop_hw(priv);
+
 	irq = platform_get_irq(pdev, 0);
 	if (irq < 0)
 		return irq;
