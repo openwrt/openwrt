@@ -1,0 +1,58 @@
+From 7abe0578e07736b0021a338afc867465bcae95bd Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Sat, 21 Nov 2026 14:57:48 +0000
+Subject: [PATCH] net: bgmac: stop the flow accelerator when bgmac_open() fails
+
+bgmac_open() opens the flow accelerator first. When the DMA setup or
+the IRQ request fails after that, it returns with the accelerator still
+marked active, and bgmac_stop() is not called for a device that did not
+open. Call fa_stop on those error paths, as bgmac_stop() does.
+
+No effect of the old behaviour was found. The conduit's user ports
+close before it stops, and the flowtable finishes their offload work
+when they do, so no flow reaches the driver until the conduit opens
+again. With this patch a failed open leaves the accelerator stopped, as
+bgmac_stop() does and as bgmac_fa_open() expects.
+
+On an RT-N18U, a test build that fails the DMA setup or the IRQ
+request on demand logged fa_stop after each failed open of the
+conduit, and the next open found the accelerator inactive. Without
+this patch the next open found it still active. Either way, the
+accelerator offloaded as before once the conduit opened again.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ drivers/net/ethernet/broadcom/bgmac.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -1187,14 +1187,14 @@ static int bgmac_open(struct net_device
+ 
+ 	err = bgmac_dma_init(bgmac);
+ 	if (err)
+-		return err;
++		goto err_fa_stop;
+ 
+ 	err = request_irq(bgmac->irq, bgmac_interrupt, IRQF_SHARED,
+ 			  net_dev->name, net_dev);
+ 	if (err < 0) {
+ 		dev_err(bgmac->dev, "IRQ request error: %d!\n", err);
+ 		bgmac_dma_cleanup(bgmac);
+-		return err;
++		goto err_fa_stop;
+ 	}
+ 	napi_enable(&bgmac->napi);
+ 
+@@ -1206,6 +1206,11 @@ static int bgmac_open(struct net_device
+ 	netif_start_queue(net_dev);
+ 
+ 	return 0;
++
++err_fa_stop:
++	if (bgmac->fa_stop)
++		bgmac->fa_stop(bgmac);
++	return err;
+ }
+ 
+ static int bgmac_stop(struct net_device *net_dev)
