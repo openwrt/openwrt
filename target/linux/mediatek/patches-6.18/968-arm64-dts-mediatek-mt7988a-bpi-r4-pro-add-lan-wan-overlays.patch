@@ -1,3 +1,11 @@
+From 1446eff88786abf08f94a3939014618f5bc6b255 Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Fri, 14 Aug 2026 22:42:13 +0200
+Subject: [PATCH] arm64: dts: mediatek: bpi-r4-pro: add LAN/WAN overlays
+
+Add device tree overlays for the BananaPi BPI-R4 Pro 8X to select
+whether its PHY and SFP ports are used as LAN or WAN.
+---
 --- a/arch/arm64/boot/dts/mediatek/Makefile
 +++ b/arch/arm64/boot/dts/mediatek/Makefile
 @@ -27,6 +27,10 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-b

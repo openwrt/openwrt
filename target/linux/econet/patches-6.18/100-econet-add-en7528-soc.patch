@@ -1,4 +1,6 @@
+From fab098cb6121647ca9cc6e501d56ebe8a9ea550b Mon Sep 17 00:00:00 2001
 From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Mon, 29 Dec 2025 13:12:20 +0400
 Subject: mips: econet: add EN7528 SoC support
 
 The EN7528 is a little endian dual-core MIPS 1004Kc SoC used in xPON
@@ -12,6 +14,7 @@ This adds boot support for the EN7528 SoC family:
 - CPS SMP ops registration for multi-core support
 
 Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
+---
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -392,13 +392,13 @@ config MACH_DECSTATION

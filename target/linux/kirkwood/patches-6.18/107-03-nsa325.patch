@@ -1,3 +1,12 @@
+From b6db23018357e66a83de4b8bb5e1e86874d6049f Mon Sep 17 00:00:00 2001
+From: Adrian Schmutzler <freifunk@adrianschmutzler.de>
+Date: Wed, 19 Feb 2020 16:39:32 +0100
+Subject: [PATCH] ARM: dts: kirkwood-nsa325: add LED aliases and triggers
+
+Add the LED aliases used by OpenWrt to indicate the boot, failsafe,
+running and upgrade states and assign default triggers to the LEDs of
+the ZyXEL NSA325.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-nsa325.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-nsa325.dts
 @@ -15,6 +15,13 @@

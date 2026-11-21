@@ -1,3 +1,13 @@
+From a5ebd1656a6099ee3080ced1ca2ec28959ab767f Mon Sep 17 00:00:00 2001
+From: Markus Wigge <mwigge@marcant.net>
+Date: Tue, 16 Mar 2010 10:41:26 +0000
+Subject: [PATCH] pcmcia: yenta_socket: fix support on BCM47xx
+
+Make the yenta_socket driver work on the Linksys WRT54G3G (BCM47xx):
+skip the part of the socket setup this board does not like, use a fixed
+IRQ mask as the IRQ mask probing is broken and generate an interrupt on
+card insertion and removal.
+---
 --- a/drivers/pcmcia/yenta_socket.c
 +++ b/drivers/pcmcia/yenta_socket.c
 @@ -926,6 +926,8 @@ static struct cardbus_type cardbus_type[

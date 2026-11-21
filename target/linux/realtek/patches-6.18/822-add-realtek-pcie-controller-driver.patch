@@ -1,3 +1,11 @@
+From 779c6d37691a3b8f5b1496b2b5c04f7e3821aeb7 Mon Sep 17 00:00:00 2001
+From: Rustam Adilov <adilov@tutamail.com>
+Date: Tue, 1 Sep 2026 21:20:49 +0500
+Subject: [PATCH] PCI: add Realtek PCIe controller driver to the build
+
+Hook the PCIe host controller driver for Realtek SoCs into Kconfig and
+the Makefile.
+---
 --- a/drivers/pci/controller/Kconfig
 +++ b/drivers/pci/controller/Kconfig
 @@ -223,6 +223,15 @@ config PCIE_MT7621

@@ -1,3 +1,12 @@
+From 2f184801c3b88bbccf114d517df2943814f33e15 Mon Sep 17 00:00:00 2001
+From: Tianling Shen <cnsztl@immortalwrt.org>
+Date: Sat, 11 Oct 2025 19:31:21 +0800
+Subject: [PATCH] arm64: dts: rockchip: rock-2: update LED properties
+
+Add the LED aliases used by OpenWrt to indicate the boot, failsafe,
+running and upgrade states and replace the default heartbeat trigger of
+the Radxa ROCK 2A/2F, so that the LED reflects these states.
+---
 --- a/arch/arm64/boot/dts/rockchip/rk3528-rock-2.dtsi
 +++ b/arch/arm64/boot/dts/rockchip/rk3528-rock-2.dtsi
 @@ -38,7 +38,7 @@
