@@ -1,0 +1,127 @@
+From 92fcea3d34904e763bce39cc560d99b81271a4ff Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Date: Wed, 18 Nov 2026 10:57:06 +0800
+Subject: [PATCH] wifi: mt76: mt7996: handle secondary HIF routing and fallback
+
+When MT7990 has a second PCIe HIF, route band 1 TX and TX-free
+notifications through its register window and WED instance. Preserve
+its interrupt bit when combining WED status.
+
+If only the primary WED attaches, program and acknowledge the secondary
+host interrupt path. Reject WED TX paths for host-owned secondary rings,
+while retaining primary-WED RX flow flush, idle and priority handling.
+
+Keep single-HIF operation on the primary WED, including band 1 TX ring1.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+---
+ mt7996/dma.c  |  6 +++---
+ mt7996/init.c |  3 ++-
+ mt7996/main.c | 11 ++++++++---
+ mt7996/mmio.c | 12 +++++++++++-
+ mt7996/regs.h |  1 +
+ 5 files changed, 25 insertions(+), 8 deletions(-)
+
+--- a/mt7996/dma.c
++++ b/mt7996/dma.c
+@@ -820,15 +820,15 @@ int mt7996_dma_init(struct mt7996_dev *d
+ 	}
+ 
+ 	if (!mt7996_has_wa(dev) && dev->hif2) {
+-		if (mtk_wed_device_active(wed)) {
++		if (mtk_wed_device_active(wed_hif2)) {
+ 			dev->mt76.q_rx[MT_RXQ_TXFREE_BAND1].flags = MT_WED_Q_TXFREE;
+-			dev->mt76.q_rx[MT_RXQ_TXFREE_BAND1].wed = wed;
++			dev->mt76.q_rx[MT_RXQ_TXFREE_BAND1].wed = wed_hif2;
+ 		}
+ 		ret = mt76_queue_alloc(dev, &dev->mt76.q_rx[MT_RXQ_TXFREE_BAND1],
+ 				       MT_RXQ_ID(MT_RXQ_TXFREE_BAND1),
+ 				       MT7996_RX_MCU_RING_SIZE,
+ 				       MT7996_RX_BUF_SIZE,
+-				       MT_RXQ_RING_BASE(MT_RXQ_TXFREE_BAND1));
++				       MT_RXQ_RING_BASE(MT_RXQ_TXFREE_BAND1) + hif1_ofs);
+ 		if (ret)
+ 			return ret;
+ 	}
+--- a/mt7996/init.c
++++ b/mt7996/init.c
+@@ -722,7 +722,8 @@ static int mt7996_register_phy(struct mt
+ 		return 0;
+ 
+ 	if (dev->hif2 &&
+-	    ((is_mt7992(&dev->mt76) && band == MT_BAND1) ||
++	    (((is_mt7992(&dev->mt76) || is_mt7990(&dev->mt76)) &&
++	      band == MT_BAND1) ||
+ 	     (is_mt7996(&dev->mt76) && band == MT_BAND2 &&
+ 	      !mt76_npu_device_active(&dev->mt76)))) {
+ 		hif1_ofs = MT_WFDMA0_PCIE1(0) - MT_WFDMA0(0);
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -3107,7 +3107,8 @@ mt7996_sta_wed(struct mt7996_dev *dev, s
+ {
+ 	if (dev->hif2 &&
+ 	    ((is_mt7996(&dev->mt76) && msta_link->wcid.phy_idx == MT_BAND2) ||
+-	     (is_mt7992(&dev->mt76) && msta_link->wcid.phy_idx == MT_BAND1)))
++	     ((is_mt7992(&dev->mt76) || is_mt7990(&dev->mt76)) &&
++	      msta_link->wcid.phy_idx == MT_BAND1)))
+ 		return &dev->mt76.mmio.wed_hif2;
+ 
+ 	return &dev->mt76.mmio.wed;
+@@ -3127,8 +3128,12 @@ mt7996_sta_flow_wed(struct mt7996_dev *d
+ 		return NULL;
+ 
+ 	wed = mt7996_sta_wed(dev, msta_link);
+-	if (!mtk_wed_device_active(wed))
+-		return NULL;
++	if (!mtk_wed_device_active(wed)) {
++		/* RX offload uses the primary WED even with host-only TX. */
++		wed = &dev->mt76.mmio.wed;
++		if (!mtk_wed_device_active(wed) || !mtk_wed_get_rx_capa(wed))
++			return NULL;
++	}
+ 
+ 	*wcid_idx = msta_link->wcid.idx;
+ 
+--- a/mt7996/mmio.c
++++ b/mt7996/mmio.c
+@@ -764,6 +764,8 @@ void mt7996_dual_hif_set_irq_mask(struct
+ 			if (mtk_wed_device_active(&mdev->mmio.wed_hif2)) {
+ 				mtk_wed_device_irq_set_mask(&mdev->mmio.wed_hif2,
+ 							    mdev->mmio.irqmask);
++			} else {
++				mt76_wr(dev, MT_INT1_MASK_CSR, mdev->mmio.irqmask);
+ 			}
+ 		} else {
+ 			mt76_wr(dev, MT_INT_MASK_CSR, mdev->mmio.irqmask);
+@@ -811,12 +813,20 @@ static void mt7996_irq_tasklet(struct ta
+ 
+ 		if (intr1 & MT_INT_RX_TXFREE_BAND1_EXT)
+ 			napi_schedule(&dev->mt76.napi[MT_RXQ_BAND1_WA]);
++	} else if (dev->hif2 && mtk_wed_device_active(wed)) {
++		mt76_wr(dev, MT_INT1_MASK_CSR, 0);
++		intr1 = mt76_rr(dev, MT_INT1_SOURCE_CSR);
++		intr1 &= dev->mt76.mmio.irqmask;
++		mt76_wr(dev, MT_INT1_SOURCE_CSR, intr1);
+ 	}
+ 
+ 	if (mtk_wed_device_active(wed)) {
+ 		mtk_wed_device_irq_set_mask(wed, 0);
+ 		intr = mtk_wed_device_irq_get(wed, dev->mt76.mmio.irqmask);
+-		intr |= (intr1 & ~MT_INT_TX_RX_DONE_EXT);
++		if (is_mt7990(&dev->mt76) || !mtk_wed_device_active(wed_hif2))
++			intr |= intr1;
++		else
++			intr |= intr1 & ~MT_INT_TX_RX_DONE_EXT;
+ 	} else {
+ 		mt76_wr(dev, MT_INT_MASK_CSR, 0);
+ 		if (dev->hif2)
+--- a/mt7996/regs.h
++++ b/mt7996/regs.h
+@@ -610,6 +610,7 @@ enum offs_rev {
+ 
+ #define MT_INT_BAND1_RX_DONE			(MT_INT_RX(MT_RXQ_BAND1) |	\
+ 						 MT_INT_RX(MT_RXQ_BAND1_WA) |	\
++						 MT_INT_RX(MT_RXQ_TXFREE_BAND1) |	\
+ 						 MT_INT_RX(MT_RXQ_MAIN_WA) |	\
+ 						 MT_INT_RX(MT_RXQ_TXFREE_BAND0))
+ 
