@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oleksij Rempel <o.rempel@pengutronix.de>
+Date: Mon, 16 Nov 2026 20:10:12 +0100
+Subject: [PATCH] net: ieee8021q: print traffic type and queue
+ count with %u
+
+Switch the out-of-range diagnostic in ieee8021q_tt_to_tc() from %d to
+%u. The traffic class count num_queues is an unsigned int and the
+traffic type is an enumeration, so printing them as unsigned matches
+their types. The print sits on the range-check error path, which still
+rejects a negative traffic type; %u only changes how an out-of-range
+value is rendered, not which values are rejected.
+
+Signed-off-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Reviewed-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Reviewed-by: Alvin Šipraga <alvin.sipraga@analog.com>
+---
+--- a/net/core/ieee8021q_helpers.c
++++ b/net/core/ieee8021q_helpers.c
+@@ -99,7 +99,7 @@ static const u8 ieee8021q_1queue_tt_tc_m
+ int ieee8021q_tt_to_tc(enum ieee8021q_traffic_type tt, unsigned int num_queues)
+ {
+ 	if (tt < 0 || tt >= IEEE8021Q_TT_MAX) {
+-		pr_err("Requested Traffic Type (%d) is out of range (%d)\n", tt,
++		pr_err("Requested Traffic Type (%u) is out of range (%u)\n", tt,
+ 		       IEEE8021Q_TT_MAX);
+ 		return -EINVAL;
+ 	}
+@@ -131,7 +131,7 @@ int ieee8021q_tt_to_tc(enum ieee8021q_tr
+ 		return ieee8021q_1queue_tt_tc_map[tt];
+ 	}
+ 
+-	pr_err("Invalid number of queues %d\n", num_queues);
++	pr_err("Invalid number of queues %u\n", num_queues);
+ 
+ 	return -EINVAL;
+ }

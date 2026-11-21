@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oleksij Rempel <o.rempel@pengutronix.de>
+Date: Mon, 16 Nov 2026 20:10:17 +0100
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: store the egress
+ queue count per chip
+
+Store the number of egress queues in the per-chip info structure and
+advertise it through ds->num_tx_queues, following the ksz driver
+(struct ksz_chip_data.num_tx_queues).
+
+The queue count is a per-chip hardware property, and this driver supports
+several chips of the rtl8367c family. All currently supported chips expose
+eight queues, but keeping the count in chip_info lets the QoS code that
+follows program the priority-to-queue map via the ieee8021q helpers for
+whatever queue count a chip carries, so the 802.1Q collapse is correct
+rather than hard-coded to eight.
+
+Signed-off-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Reviewed-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Reviewed-by: Alvin Šipraga <alvin.sipraga@analog.com>
+---
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -698,6 +698,7 @@ struct rtl8365mb_extint {
+  * @extints: available external interfaces
+  * @jam_table: chip-specific initialization jam table
+  * @jam_size: size of the chip's jam table
++ * @num_tx_queues: number of egress queues exposed by the chip
+  *
+  * These data are specific to a given chip in the family of switches supported
+  * by this driver. When adding support for another chip in the family, a new
+@@ -711,6 +712,7 @@ struct rtl8365mb_chip_info {
+ 	const struct rtl8365mb_extint extints[RTL8365MB_MAX_NUM_EXTINTS];
+ 	const struct rtl8365mb_jam_tbl_entry *jam_table;
+ 	size_t jam_size;
++	unsigned int num_tx_queues;
+ };
+ 
+ /* Chip info for each supported switch in the family */
+@@ -734,6 +736,7 @@ static const struct rtl8365mb_chip_info
+ 		},
+ 		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+ 		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
++		.num_tx_queues = 8,
+ 	},
+ 	{
+ 		.name = "RTL8367S",
+@@ -747,6 +750,7 @@ static const struct rtl8365mb_chip_info
+ 		},
+ 		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+ 		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
++		.num_tx_queues = 8,
+ 	},
+ 	{
+ 		.name = "RTL8367SB",
+@@ -762,6 +766,7 @@ static const struct rtl8365mb_chip_info
+ 		},
+ 		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+ 		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
++		.num_tx_queues = 8,
+ 	},
+ 	{
+ 		.name = "RTL8367RB-VB",
+@@ -776,6 +781,7 @@ static const struct rtl8365mb_chip_info
+ 		},
+ 		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+ 		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
++		.num_tx_queues = 8,
+ 	},
+ };
+ 
+@@ -3201,6 +3207,8 @@ static int rtl8365mb_setup(struct dsa_sw
+ 		goto out_teardown_irq;
+ 	}
+ 
++	ds->num_tx_queues = mb->chip_info->num_tx_queues;
++
+ 	/* Start statistics counter polling */
+ 	ret = rtl8365mb_stats_setup(priv);
+ 	if (ret) {
