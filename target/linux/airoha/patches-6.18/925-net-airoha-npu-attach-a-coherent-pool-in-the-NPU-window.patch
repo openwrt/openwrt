@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Chris Scott <gilroyscott1970@gmail.com>
+Date: Sat, 25 Oct 2026 01:41:49 +1000
+Subject: [PATCH] net: airoha: npu: attach a coherent pool in the NPU window
+
+The EN7581 NPU can only address host DRAM at 0x80000000-0xbfffffff;
+higher addresses alias the lower 1 GiB. The coherent buffers allocated
+on the NPU device are all shared with the NPU: since mt76 uses the NPU
+device as dma_dev, these are the NPU TX/RX descriptor rings, the HW-RRO
+ba_bitmap/addr_elem/msdu_pg/session buffers and the NPU TXD buffers.
+On a 2 GiB board nothing keeps them below 0xc0000000; they normally
+land there only because of early-boot allocation order. With low DRAM
+reserved away on W1700K the SoC hangs right after mt7996 firmware load.
+
+If the NPU node has an optional "dma" reserved-memory region, attach it
+as the device coherent pool so all of these come from the window. The
+mailbox buffers already come from coherent memory via the earlier
+coherent-mailbox patch in this tree.
+
+Unlike a restricted-dma-pool this leaves streaming mappings alone.
+Packet buffers are passed through to the WiFi DMA engine: on W1700K
+with 96% of TX skbs and ~20% of RX page_pool buffers above 0xc0000000,
+host-path traffic and sha256 file round-trips stay intact, at the same
+throughput as without a pool, whereas a restricted-dma-pool (swiotlb
+bouncing) costs ~22% of host-path TX.
+
+A device coherent pool has no fallback once full; mt76 and the mailbox
+use ~10.7 MiB with MT7996, so the DT region should be 16 MiB.
+
+This patch was written with the help of Claude (Anthropic, claude-
+opus-5-5).
+
+Backported to 6.18 on top of the coherent-mailbox patch: the probe hunk
+inserts before the mailbox buffer allocation instead of before
+airoha_npu_run_firmware().
+
+Link: https://lore.kernel.org/r/20261024154150.45733-3-gilroyscott1970@gmail.com
+Link: https://lore.kernel.org/r/atCRsquzA1UxSpCc@mediatek.com
+Tested-by: Daniel Pawlik <pawlik.dan@gmail.com>
+Signed-off-by: Chris Scott <gilroyscott1970@gmail.com>
+---
+
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -717,6 +717,11 @@ static const struct regmap_config regmap
+ 	.disable_locking	= true,
+ };
+ 
++static void airoha_npu_rmem_release(void *data)
++{
++	of_reserved_mem_device_release(data);
++}
++
+ static int airoha_npu_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -800,6 +805,19 @@ static int airoha_npu_probe(struct platf
+ 	if (err)
+ 		return err;
+ 
++	if (of_property_match_string(dev->of_node, "memory-region-names",
++				     "dma") >= 0) {
++		err = of_reserved_mem_device_init_by_name(dev, dev->of_node,
++							  "dma");
++		if (err)
++			return err;
++
++		err = devm_add_action_or_reset(dev, airoha_npu_rmem_release,
++					       dev);
++		if (err)
++			return err;
++	}
++
+ 	for (i = 0; i < ARRAY_SIZE(npu->cores); i++) {
+ 		struct airoha_npu_core *core = &npu->cores[i];
+ 
