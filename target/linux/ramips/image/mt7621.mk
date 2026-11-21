@@ -784,7 +784,8 @@ define Device/cudy_c200p
   DEVICE_MODEL := C200P
   IMAGE_SIZE := 15872k
   UIMAGE_NAME := R74
-  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls kmod-usb3
+  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls kmod-usb3 \
+	kmod-pse-icplus-ip804
 endef
 TARGET_DEVICES += cudy_c200p
 
