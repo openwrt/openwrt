@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bob Sponge <myandroidiptvbox@gmail.com>
+Date: Sat, 21 Nov 2026 13:00:00 +0000
+Subject: [PATCH] arm: mvebu: ix4-300d: align NAND BootROM image layout
+
+Align NAND BootROM SPL and main image offsets for 2048-byte page NAND
+on the Lenovo Iomega ix4-300d.
+
+Signed-off-by: Bob Sponge <myandroidiptvbox@gmail.com>
+---
+--- a/tools/kwbimage.c
++++ b/tools/kwbimage.c
+@@ -1016,7 +1016,7 @@
+ 	if (blockid == IBR_HDR_UART_ID)
+ 		return ALIGN(headersz, 128);
+ 	else if (blockid == IBR_HDR_NAND_ID)
+-		return ALIGN(headersz, 256);
++		return ALIGN(headersz, 2048);
+ 	else if (blockid == IBR_HDR_SDIO_ID)
+ 		return ALIGN(headersz, 512);
+ 	else if (blockid == IBR_HDR_SATA_ID)
+@@ -1054,6 +1054,8 @@
+ 	 */
+ 	headersz = image_headersz_v0(&has_ext);
+ 	*dataoff = image_headersz_align(headersz, image_get_bootfrom());
++	if (image_get_bootfrom() == IBR_HDR_NAND_ID)
++		headersz = *dataoff;
+
+ 	image = malloc(headersz);
+ 	if (!image) {
+@@ -1496,6 +1498,8 @@
+ 	if (headersz == 0)
+ 		return NULL;
+ 	*dataoff = image_headersz_align(headersz, image_get_bootfrom());
++	if (image_get_bootfrom() == IBR_HDR_NAND_ID)
++		headersz = *dataoff;
+
+ 	image = malloc(headersz);
+ 	if (!image) {
+--- a/arch/arm/mach-mvebu/Makefile
++++ b/arch/arm/mach-mvebu/Makefile
+@@ -69,7 +69,7 @@
+
+ ifneq ($(CONFIG_MVEBU_SPL_BOOT_DEVICE_NAND),)
+ KWB_REPLACE += NAND_PAGE_SIZE NAND_BLKSZ NAND_BADBLK_LOCATION
+-KWB_CFG_NAND_PAGE_SIZE = $(CONFIG_SYS_NAND_PAGE_SIZE)
++KWB_CFG_NAND_PAGE_SIZE = 0x0
+ KWB_CFG_NAND_BLKSZ = $(CONFIG_SYS_NAND_BLOCK_SIZE)
+ KWB_CFG_NAND_BADBLK_LOCATION = $(CONFIG_MVEBU_SPL_NAND_BADBLK_LOCATION)
+ endif

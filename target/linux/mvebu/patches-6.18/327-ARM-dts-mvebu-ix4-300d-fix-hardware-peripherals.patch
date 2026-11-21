@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bob Sponge <myandroidiptvbox@gmail.com>
+Date: Sat, 21 Nov 2026 13:00:00 +0000
+Subject: [PATCH] ARM: dts: mvebu: ix4-300d: fix hardware peripherals
+
+Fix PCA9555 LEDs, ADT7473 thermal monitor/fan, PCIe SATA/USB3, and
+Ethernet PHYs on the Lenovo Iomega ix4-300d.
+
+Signed-off-by: Bob Sponge <myandroidiptvbox@gmail.com>
+---
+--- a/arch/arm/boot/dts/marvell/armada-xp-lenovo-ix4-300d.dts
++++ b/arch/arm/boot/dts/marvell/armada-xp-lenovo-ix4-300d.dts
+@@ -88,6 +88,8 @@
+ 					reg = <0>;
+ 					label = "pxa3xx_nand-0";
+ 					nand-rb = <0>;
++					nand-ecc-strength = <4>;
++					nand-ecc-step-size = <512>;
+ 					nand-on-flash-bbt;
+
+ 					partitions {
+@@ -153,19 +155,21 @@
+
+ 		select-button {
+ 			label = "Select Button";
+-			linux,code = <BTN_SELECT>;
++			linux,code = <BTN_0>;
+ 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+ 		};
+
+ 		scroll-button {
+ 			label = "Scroll Button";
+-			linux,code = <KEY_SCROLLDOWN>;
++			linux,code = <BTN_1>;
+ 			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
+
+ 	spi-3 {
+ 		compatible = "spi-gpio";
++		pinctrl-0 = <&spi3_pins>;
++		pinctrl-names = "default";
+ 		status = "okay";
+ 		sck-gpios  = <&gpio0 25 GPIO_ACTIVE_LOW>;
+ 		mosi-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>; /*gpio 47*/
+@@ -186,7 +190,7 @@
+
+ 	gpio-leds {
+ 		compatible = "gpio-leds";
+-		pinctrl-0 = <&hdd_led_pin>;
++		pinctrl-0 = <&hdd_led_pin &lcd_pins>;
+ 		pinctrl-names = "default";
+
+ 		hdd-led {
+@@ -197,7 +201,7 @@
+
+ 		power-led {
+ 			label = "ix4-300d:power:white";
+-			gpios = <&gpio_spi 1 GPIO_ACTIVE_LOW>;
++			gpios = <&gpio_spi 1 GPIO_ACTIVE_HIGH>;
+ 			/* init blinking while booting */
+ 			linux,default-trigger = "timer";
+ 			default-state = "on";
+@@ -205,13 +209,13 @@
+
+ 		sysfail-led {
+ 			label = "ix4-300d:sysfail:red";
+-			gpios = <&gpio_spi 2 GPIO_ACTIVE_HIGH>;
++			gpios = <&gpio_spi 2 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+ 		};
+
+ 		sys-led {
+ 			label = "ix4-300d:sys:blue";
+-			gpios = <&gpio_spi 3 GPIO_ACTIVE_HIGH>;
++			gpios = <&gpio_spi 3 GPIO_ACTIVE_LOW>;
+ 			default-state = "off";
+ 		};
+
+@@ -290,4 +294,16 @@
+ 		marvell,pins = "mpp26";
+ 		marvell,function = "gpio";
+ 	};
++
++	spi3_pins: spi3-pins {
++		marvell,pins = "mpp25", "mpp27", "mpp47";
++		marvell,function = "gpio";
++	};
++
++	lcd_pins: lcd-pins {
++		marvell,pins = "mpp28", "mpp29", "mpp30", "mpp31",
++			"mpp32", "mpp33", "mpp34", "mpp35",
++			"mpp36", "mpp37", "mpp38", "mpp39", "mpp40";
++		marvell,function = "gpio";
++	};
+ };

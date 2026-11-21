@@ -81,6 +81,9 @@ synology,ds213j)
 zyxel,nas326)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
 	;;
+lenovo,ix4-300d)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	;;
 esac
 
 config_load ubootenv
