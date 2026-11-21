@@ -158,8 +158,6 @@
 
 	phy4: ethernet-phy@4 {
 		device_type = "ethernet-phy";
-		interrupts = <17 8>;
-		interrupt-parent = <&gpio>;
 		compatible = "vitesse,vsc8504", "ethernet-phy-ieee802.3-c22";
 		reg = <4>;
 		sfp = <&sfp>;
@@ -167,24 +165,18 @@
 
 	phy5: ethernet-phy@5 {
 		device_type = "ethernet-phy";
-		interrupts = <17 8>;
-		interrupt-parent = <&gpio>;
 		compatible = "vitesse,vsc8504", "ethernet-phy-ieee802.3-c22";
 		reg = <5>;
 	};
 
 	phy6: ethernet-phy@6 {
 		device_type = "ethernet-phy";
-		interrupts = <17 8>;
-		interrupt-parent = <&gpio>;
 		compatible = "vitesse,vsc8504", "ethernet-phy-ieee802.3-c22";
 		reg = <6>;
 	};
 
 	phy7: ethernet-phy@7 {
 		device_type = "ethernet-phy";
-		interrupts = <17 8>;
-		interrupt-parent = <&gpio>;
 		compatible = "vitesse,vsc8504", "ethernet-phy-ieee802.3-c22";
 		reg = <7>;
 	};
@@ -198,8 +190,9 @@
 
 		ethernet@1 {
 			label = "lan0";
+			openwrt,netdev-name = "lan0";
 			status = "okay";
-			phy-mode = "sgmii";
+			phy-mode = "qsgmii";
 			phy-handle = <&phy5>;
 			nvmem-cells = <&macaddr_eeprom_0 1>;
 			nvmem-cell-names = "mac-address";
@@ -207,8 +200,9 @@
 
 		ethernet@2 {
 			label = "lan1";
+			openwrt,netdev-name = "lan1";
 			status = "okay";
-			phy-mode = "sgmii";
+			phy-mode = "qsgmii";
 			phy-handle = <&phy6>;
 			nvmem-cells = <&macaddr_eeprom_0 2>;
 			nvmem-cell-names = "mac-address";
@@ -216,8 +210,9 @@
 
 		ethernet@3 {
 			label = "lan2";
+			openwrt,netdev-name = "lan2";
 			status = "okay";
-			phy-mode = "sgmii";
+			phy-mode = "qsgmii";
 			phy-handle = <&phy7>;
 			nvmem-cells = <&macaddr_eeprom_0 3>;
 			nvmem-cell-names = "mac-address";
