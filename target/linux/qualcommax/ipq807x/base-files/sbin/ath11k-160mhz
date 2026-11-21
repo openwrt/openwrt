@@ -96,7 +96,7 @@ TOPO=$(rd $((BDF + 64)) 1)
 
 # the layout the loaded driver brought up: two phys means 160 MHz
 running() {
-	case "$(ls /sys/class/ieee80211 2>/dev/null | wc -l)" in
+	case "$(ls /sys/bus/platform/drivers/ath11k/*/ieee80211 2>/dev/null | wc -l)" in
 	2) echo 160 ;;
 	3) echo 80 ;;
 	*) echo none ;;
