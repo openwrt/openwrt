@@ -136,6 +136,7 @@ struct rtldsa_port {
 	u64 pm;
 	u16 pvid;
 	bool eee_enabled;
+	bool eee_tx_lpi;
 	bool has_pcs;
 	bool inband;
 	int led_set;
@@ -442,6 +443,7 @@ struct rtldsa_config {
 	void (*stp_set)(struct otto_dsa_priv *priv, u16 msti, int port, int state);
 	int mac_link_sts;
 	struct rtldsa_mac_force_mode_cfg mac_force_mode;
+	u32 mac_force_mode_eee_mask;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
 	int (*mac_link_state_source_set)(struct otto_dsa_priv *priv,
@@ -498,8 +500,9 @@ struct rtldsa_config {
 	void (*write_cam)(int idx, struct otto_l2_entry *e);
 	int rma_bpdu_fld_pmask;
 	int spcl_trap_eapol_ctrl;
-	void (*init_eee)(struct otto_dsa_priv *priv, bool enable);
-	void (*set_mac_eee)(struct otto_dsa_priv *priv, int port, bool enable);
+	/* EEE operations are called with reg_mutex held */
+	void (*mac_init_eee)(struct otto_dsa_priv *priv, bool enable);
+	void (*mac_set_eee)(struct otto_dsa_priv *priv, int port, bool enable);
 	u64 (*l2_hash_seed)(u64 mac, u32 vid);
 	u32 (*l2_hash_key)(struct otto_dsa_priv *priv, u64 seed);
 	u64 (*read_mcast_pmask)(int idx);
