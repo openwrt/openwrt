@@ -1,0 +1,84 @@
+From 3df7167a5c143294a3a9fb0529ecb8fc765a0fb8 Mon Sep 17 00:00:00 2001
+From: Tomasz Maciej Nowak <tmn505@gmail.com>
+Date: Fri, 6 Nov 2026 14:29:05 +0100
+Subject: [PATCH 15/16] rockchip: rv1106: read CPU ID from OTP
+
+Cpuid is at 0xa instead of usual 0x7.
+
+Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
+---
+ arch/arm/dts/rv1106.dtsi        | 38 +++++++++++++++++++++++++++++++++
+ arch/arm/mach-rockchip/Kconfig  |  3 +++
+ include/configs/rv1106_common.h |  2 ++
+ 3 files changed, 43 insertions(+)
+
+--- a/arch/arm/dts/rv1106.dtsi
++++ b/arch/arm/dts/rv1106.dtsi
+@@ -118,6 +118,44 @@
+ 		status = "disabled";
+ 	};
+ 
++	otp: otp@ff3d0000 {
++		compatible = "rockchip,rv1106-otp";
++		reg = <0xff3d0000 0x4000>;
++		clocks = <&cru CLK_USER_OTPC_NS>, <&cru CLK_SBPI_OTPC_NS>,
++			 <&cru PCLK_OTPC_NS>, <&cru PCLK_OTP_MASK>,
++			 <&cru CLK_OTPC_ARB>, <&cru CLK_PMC_OTP>;
++		clock-names = "usr", "sbpi", "apb", "phy", "arb", "pmc";
++		resets = <&cru SRST_USER_OTPC_NS>, <&cru SRST_SBPI_OTPC_NS>,
++			 <&cru SRST_P_OTPC_NS>, <&cru SRST_P_OTP_MASK>,
++			 <&cru SRST_OTPC_ARB>, <&cru SRST_PMC_OTP>;
++		reset-names = "usr", "sbpi", "apb", "phy", "arb", "pmc";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		cpu_code: cpu-code@2 {
++			reg = <0x02 0x2>;
++		};
++		otp_cpu_version: cpu-version@8 {
++			reg = <0x08 0x1>;
++			bits = <3 3>;
++		};
++		otp_id: id@a {
++			reg = <0x0a 0x10>;
++		};
++		cpu_leakage: cpu-leakage@1a {
++			reg = <0x1a 0x1>;
++		};
++		log_leakage: log-leakage@1b {
++			reg = <0x1b 0x1>;
++		};
++		macphy_bgs: macphy-bgs@2d {
++			reg = <0x2d 0x1>;
++		};
++		macphy_txlevel: macphy-txlevel@2e {
++			reg = <0x2e 0x2>;
++		};
++	};
++
+ 	uart0: serial@ff4a0000 {
+ 		compatible = "rockchip,rv1106-uart", "snps,dw-apb-uart";
+ 		reg = <0xff4a0000 0x100>;
+--- a/arch/arm/mach-rockchip/Kconfig
++++ b/arch/arm/mach-rockchip/Kconfig
+@@ -539,6 +539,9 @@ config ROCKCHIP_RV1106
+ 	select SUPPORT_SPL
+ 	select SPL
+ 	imply ROCKCHIP_COMMON_BOARD
++	imply MISC
++	imply MISC_INIT_R
++	imply ROCKCHIP_OTP
+ 	help
+ 	  The Rockchip RV1106 is an ARM-based SoC with a single Cortex-A7
+ 	  32-bit core which integrates NEON and FPU. It contains a built-in
+--- a/include/configs/rv1106_common.h
++++ b/include/configs/rv1106_common.h
+@@ -5,6 +5,8 @@
+ #ifndef __CONFIG_RV1106_COMMON_H
+ #define __CONFIG_RV1106_COMMON_H
+ 
++#define CFG_CPUID_OFFSET		0xa
++
+ #include "rockchip-common.h"
+ 
+ #define CFG_IRAM_BASE			0xff6c0000

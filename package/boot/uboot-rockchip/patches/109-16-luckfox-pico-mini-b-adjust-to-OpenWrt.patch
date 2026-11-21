@@ -1,0 +1,76 @@
+From 79bd98ee4606074f2f6f1b1dd750e7a2ef6b5ebd Mon Sep 17 00:00:00 2001
+From: Tomasz Maciej Nowak <tmn505@gmail.com>
+Date: Wed, 4 Nov 2026 15:56:16 +0100
+Subject: [PATCH 16/16] luckfox-pico-mini-b: adjust to OpenWrt
+
+* partition layout
+* ubi command
+* disable exotic options
+* more space for kernel image
+* environment adjustment
+
+Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
+---
+ arch/arm/dts/rv1103-luckfox-pico-mini-b.dts  | 7 +------
+ board/luckfox/pico/pico.env                  | 6 ++++--
+ configs/luckfox-pico-mini-b-rv1103_defconfig | 9 +++++++++
+ 3 files changed, 14 insertions(+), 8 deletions(-)
+
+--- a/arch/arm/dts/rv1103-luckfox-pico-mini-b.dts
++++ b/arch/arm/dts/rv1103-luckfox-pico-mini-b.dts
+@@ -125,13 +125,8 @@
+ 			};
+ 
+ 			partition@240000 {
+-				label = "boot";
+-				reg = <0x00240000 0x00800000>;
+-			};
+-
+-			partition@a40000 {
+ 				label = "ubi";
+-				reg = <0x00a40000 0x075c0000>;
++				reg = <0x00240000 0x07dc0000>;
+ 			};
+ 		};
+ 	};
+--- a/board/luckfox/pico/pico.env
++++ b/board/luckfox/pico/pico.env
+@@ -1,4 +1,7 @@
+ kernel_addr_r=0x00800000
+-fdt_addr_r=0x02000000
++fdt_addr_r=0x02f00000
+ ramdisk_addr_r=0x03000000
+-bootargs=console=ttyS2,115200 mtdparts=spi0.0:256K(env),1M@256K(idblock),1M(uboot),8M(boot),-(ubi) ro rootwait ubi.mtd=ubi ubi.block=0,rootfs root=/dev/ubiblock0_0 rootfstype=squashfs
++bootargs=earlycon=uart8250,mmio32,0xff4c0000 console=ttyS2,115200 mtdparts=spi-nand0:256K(env),1M@256K(idblock),1M(uboot),-(ubi) rootwait ubi.mtd=ubi root=/dev/ubiblock0_1 rootfstype=squashfs cma=1M
++bootcmd=bootflow scan; ubi part ubi; ubi read ${kernel_addr_r} kernel; bootm ${kernel_addr_r}
++bootstopkey=st
++recovery=mw.l 0xff020200 0xef08a53c; reset
+--- a/configs/luckfox-pico-mini-b-rv1103_defconfig
++++ b/configs/luckfox-pico-mini-b-rv1103_defconfig
+@@ -21,6 +21,9 @@ CONFIG_TARGET_LUCKFOX_PICO_RV1103=y
+ CONFIG_SPL_SYS_MALLOC_F_LEN=0x100000
+ CONFIG_SYS_BOOTM_LEN=0x04000000
+ CONFIG_SYS_LOAD_ADDR=0x00008000
++CONFIG_SYS_MALLOC_LEN=0x200000
++CONFIG_SYS_MALLOC_F_LEN=0x8000
++CONFIG_STACK_SIZE=0x100000
+ CONFIG_DEBUG_UART_BASE=0xff4c0000
+ CONFIG_DEBUG_UART_CLOCK=24000000
+ # CONFIG_DEBUG_UART_BOARD_INIT is not set
+@@ -40,10 +43,16 @@ CONFIG_SPL_NO_BSS_LIMIT=y
+ CONFIG_SPL_MTD=y
+ CONFIG_SPL_SPI_NAND_LOAD=y
+ CONFIG_SYS_SPI_U_BOOT_OFFS=0x140000
++# CONFIG_EFI_LOADER is not set
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++# CONFIG_CMD_ELF_BOOTVX is not set
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MMC=y
+ CONFIG_CMD_MTD=y
+ CONFIG_CMD_SPI=y
++CONFIG_CMD_UBI=y
+ # CONFIG_CMD_SETEXPR is not set
+ CONFIG_CMD_CACHE=y
+ CONFIG_CMD_TIME=y

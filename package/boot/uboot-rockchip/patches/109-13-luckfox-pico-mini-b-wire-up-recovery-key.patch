@@ -1,0 +1,110 @@
+From 5e54ed01f84391e1c333975ff5ced02eec681ebc Mon Sep 17 00:00:00 2001
+From: Tomasz Maciej Nowak <tmn505@gmail.com>
+Date: Wed, 4 Nov 2026 15:42:54 +0100
+Subject: [PATCH 13/16] luckfox-pico-mini-b: wire-up recovery key
+
+Enable easy enter to download mode by holding recovery key on boot.
+
+Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
+---
+ arch/arm/dts/rv1103-luckfox-pico-mini-b.dts  | 20 ++++++++++++++++++++
+ board/luckfox/pico/pico.c                    | 20 ++++++++++++++++++++
+ configs/luckfox-pico-mini-b-rv1103_defconfig |  3 +++
+ 3 files changed, 43 insertions(+)
+
+--- a/arch/arm/dts/rv1103-luckfox-pico-mini-b.dts
++++ b/arch/arm/dts/rv1103-luckfox-pico-mini-b.dts
+@@ -5,6 +5,7 @@
+ 
+ /dts-v1/;
+ 
++#include <dt-bindings/input/linux-event-codes.h>
+ #include "rv1103.dtsi"
+ 
+ / {
+@@ -20,6 +21,20 @@
+ 		stdout-path = "serial2:115200n8";
+ 	};
+ 
++	keys {
++		compatible = "adc-keys";
++		io-channels = <&saradc 0>;
++		io-channel-names = "buttons";
++		poll-interval = <100>;
++		keyup-threshold-microvolt = <1800000>;
++
++		button-recovery {
++			label = "Recovery";
++			linux,code = <KEY_SYSRQ>;
++			press-threshold-microvolt = <0>;
++		};
++	};
++
+ 	vcc_1v8: regulator-vcc-1v8 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vcc_1v8";
+@@ -64,6 +79,11 @@
+ 	cpu-supply = <&vdd_arm>;
+ };
+ 
++&saradc {
++	vref-supply = <&vcc_1v8>;
++	status = "okay";
++};
++
+ &sdmmc {
+ 	bus-width = <4>;
+ 	cap-sd-highspeed;
+--- a/board/luckfox/pico/pico.c
++++ b/board/luckfox/pico/pico.c
+@@ -2,7 +2,9 @@
+ //
+ // Copyright 2026 Simon Glass <sjg@chromium.org>
+ 
++#include <adc.h>
+ #include <asm/global_data.h>
++#include <asm/arch-rockchip/hardware.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -17,3 +19,21 @@ phys_addr_t board_get_usable_ram_top(phy
+ {
+ 	return gd->ram_top;
+ }
++
++#define KEY_DOWN_MIN_VAL	0
++#define KEY_DOWN_MAX_VAL	30
++
++int rockchip_dnl_key_pressed(void)
++{
++	unsigned int val;
++
++	if (adc_channel_single_shot("saradc@ff3c0000", 0, &val)) {
++		printf("%s read adc key val failed\n", __func__);
++		return false;
++	}
++
++	if ((val >= KEY_DOWN_MIN_VAL) && (val <= KEY_DOWN_MAX_VAL))
++		return true;
++	else
++		return false;
++}
+--- a/configs/luckfox-pico-mini-b-rv1103_defconfig
++++ b/configs/luckfox-pico-mini-b-rv1103_defconfig
+@@ -34,6 +34,7 @@ CONFIG_FIT_VERBOSE=y
+ CONFIG_FIT_BEST_MATCH=y
+ CONFIG_LEGACY_IMAGE_FORMAT=y
+ CONFIG_BOOTDELAY=1
++CONFIG_BOARD_LATE_INIT=y
+ # CONFIG_DISPLAY_CPUINFO is not set
+ CONFIG_SPL_NO_BSS_LIMIT=y
+ CONFIG_SPL_MTD=y
+@@ -54,6 +55,8 @@ CONFIG_SYSCON=y
+ CONFIG_SPL_SYSCON=y
+ CONFIG_CLK=y
+ CONFIG_SPL_CLK=y
++CONFIG_ADC=y
++CONFIG_SARADC_ROCKCHIP=y
+ CONFIG_ROCKCHIP_GPIO=y
+ CONFIG_SYS_I2C_ROCKCHIP=y
+ CONFIG_MMC_DW=y

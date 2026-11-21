@@ -1,0 +1,109 @@
+From 8ddb84399853480f5a960152c0aabc23762984b3 Mon Sep 17 00:00:00 2001
+From: Simon Glass <sjg@chromium.org>
+Date: Tue, 7 Jul 2026 09:31:13 -0600
+Subject: [PATCH 09/16] rockchip: Support legacy images when booting from RAM
+
+The ramboot loader used for maskrom-mode USB boot only handles FIT
+payloads, but the maskrom usb472 image contains a legacy image on
+32-bit boards without OP-TEE, since the FIT template requires either
+TF-A or OP-TEE. Such boards print 'Trying to boot from RAM' and then
+hang.
+
+Use the binman payload symbols to locate a legacy image placed
+directly after SPL and load it with spl_load(). This allows boards
+like the Luckfox Pico Mini and the Omega4 to run U-Boot entirely from
+RAM in maskrom mode
+
+Signed-off-by: Simon Glass <sjg@chromium.org>
+---
+ arch/arm/mach-rockchip/spl.c | 53 +++++++++++++++++++++++-------------
+ 1 file changed, 34 insertions(+), 19 deletions(-)
+
+--- a/arch/arm/mach-rockchip/spl.c
++++ b/arch/arm/mach-rockchip/spl.c
+@@ -14,6 +14,7 @@
+ #include <mapmem.h>
+ #include <ram.h>
+ #include <spl.h>
++#include <spl_load.h>
+ #include <asm/arch-rockchip/bootrom.h>
+ #include <asm/arch-rockchip/timer.h>
+ #include <asm/global_data.h>
+@@ -153,15 +154,14 @@ void spl_board_prepare_for_boot(void)
+ 	cleanup_before_linux();
+ }
+ 
+-#if CONFIG_IS_ENABLED(RAM_DEVICE) && IS_ENABLED(CONFIG_SPL_LOAD_FIT)
++#if CONFIG_IS_ENABLED(RAM_DEVICE)
+ binman_sym_declare_optional(ulong, payload, image_pos);
+ binman_sym_declare_optional(ulong, payload, size);
+ 
+ static ulong ramboot_load_read(struct spl_load_info *load, ulong sector,
+ 			       ulong count, void *buf)
+ {
+-	ulong addr = IF_ENABLED_INT(CONFIG_SPL_LOAD_FIT,
+-				    CONFIG_SPL_LOAD_FIT_ADDRESS);
++	ulong addr = (ulong)load->priv;
+ 
+ 	memcpy(buf, map_sysmem(addr + sector, 0), count);
+ 	return count;
+@@ -170,29 +170,44 @@ static ulong ramboot_load_read(struct sp
+ static int ramboot_load_image(struct spl_image_info *spl_image,
+ 			      struct spl_boot_device *bootdev)
+ {
+-	struct legacy_img_hdr *header;
+-	ulong addr = IF_ENABLED_INT(CONFIG_SPL_LOAD_FIT,
+-				    CONFIG_SPL_LOAD_FIT_ADDRESS);
+ 	ulong image_pos = binman_sym(ulong, payload, image_pos);
+ 	ulong size = binman_sym(ulong, payload, size);
++	struct legacy_img_hdr *header;
++	struct spl_load_info load;
+ 
+-	if (addr == CFG_SYS_SDRAM_BASE || addr == CONFIG_SPL_TEXT_BASE)
+-		return -ENODEV;
++	if (IS_ENABLED(CONFIG_SPL_LOAD_FIT)) {
++		ulong addr = IF_ENABLED_INT(CONFIG_SPL_LOAD_FIT,
++					    CONFIG_SPL_LOAD_FIT_ADDRESS);
++
++		if (addr == CFG_SYS_SDRAM_BASE || addr == CONFIG_SPL_TEXT_BASE)
++			return -ENODEV;
++
++		if (image_pos != BINMAN_SYM_MISSING &&
++		    size != BINMAN_SYM_MISSING) {
++			header = map_sysmem(image_pos, 0);
++			if (image_get_magic(header) == FDT_MAGIC) {
++				memmove(map_sysmem(addr, 0), header, size);
++				memset(header, 0, sizeof(*header));
++			}
++		}
+ 
+-	if (image_pos != BINMAN_SYM_MISSING && size != BINMAN_SYM_MISSING) {
+-		header = map_sysmem(image_pos, 0);
++		header = map_sysmem(addr, 0);
+ 		if (image_get_magic(header) == FDT_MAGIC) {
+-			memmove(map_sysmem(addr, 0), header, size);
+-			memset(header, 0, sizeof(*header));
++			spl_load_init(&load, ramboot_load_read,
++				      map_sysmem(addr, 0), 1);
++			return spl_load_simple_fit(spl_image, &load, 0,
++						   header);
+ 		}
+ 	}
+ 
+-	header = map_sysmem(addr, 0);
+-	if (image_get_magic(header) == FDT_MAGIC) {
+-		struct spl_load_info load;
+-
+-		spl_load_init(&load, ramboot_load_read, NULL, 1);
+-		return spl_load_simple_fit(spl_image, &load, 0, header);
++	/* Fall back to a legacy image placed directly after SPL */
++	if (image_pos != BINMAN_SYM_MISSING && size != BINMAN_SYM_MISSING) {
++		header = map_sysmem(image_pos, 0);
++		if (image_get_magic(header) == IH_MAGIC) {
++			spl_load_init(&load, ramboot_load_read,
++				      map_sysmem(image_pos, 0), 1);
++			return spl_load(spl_image, bootdev, &load, size, 0);
++		}
+ 	}
+ 
+ 	return -ENODEV;

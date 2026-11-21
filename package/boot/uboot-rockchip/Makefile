@@ -19,6 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=rockchip
+  UBOOT_IMAGE:=u-boot-rockchip.bin
   UENV:=default
   HIDDEN:=1
 endef
@@ -438,6 +439,23 @@ define U-Boot/rock-5c-rk3588s
     radxa_rock-5c
 endef
 
+# RV1103/RV1106 boards
+
+define U-Boot/rv1106/Default
+  BUILD_SUBTARGET:=armv7
+  DEPENDS:= \
+	+PACKAGE_u-boot-$(1):trusted-firmware-a-rv1106-tpl
+  TPL:=rv1106_ddr_924MHz_v1.15.bin
+endef
+
+define U-Boot/luckfox-pico-mini-b-rv1103
+  $(U-Boot/rv1106/Default)
+  NAME:=Luckfox Pico Mini B
+  UBOOT_IMAGE:=idbloader.img u-boot.img u-boot-rockchip-usb471.bin u-boot-rockchip-usb472.bin
+  BUILD_DEVICES:= \
+    luckfox_webbee
+endef
+
 UBOOT_TARGETS := \
   nanopc-t4-rk3399 \
   nanopi-r4s-rk3399 \
@@ -484,7 +502,8 @@ UBOOT_TARGETS := \
   nanopi-r6c-rk3588s \
   nanopi-r6s-rk3588s \
   rock5a-rk3588s \
-  rock-5c-rk3588s
+  rock-5c-rk3588s \
+  luckfox-pico-mini-b-rv1103
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
@@ -493,7 +512,7 @@ UBOOT_CUSTOMIZE_CONFIG := \
 	--set-str MKIMAGE_DTC_PATH $(PKG_BUILD_DIR)/scripts/dtc/dtc
 
 UBOOT_MAKE_FLAGS += \
-  BL31=$(STAGING_DIR_IMAGE)/$(ATF) \
+  $(if $(ATF),BL31=$(STAGING_DIR_IMAGE)/$(ATF)) \
   $(if $(TPL),ROCKCHIP_TPL=$(STAGING_DIR_IMAGE)/$(TPL))
 
 define Build/Configure
@@ -508,7 +527,8 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/u-boot-rockchip.bin $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-u-boot-rockchip.bin
+	$(foreach img,$(UBOOT_IMAGE), \
+		$(CP) $(PKG_BUILD_DIR)/$(img) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(img);)
 endef
 
 define Package/u-boot/install/default

@@ -1,0 +1,43 @@
+From 5ac9c5e2280f892851b71034986e92254c0495da Mon Sep 17 00:00:00 2001
+From: Simon Xue <xxm@rock-chips.com>
+Date: Tue, 28 Mar 2023 09:13:26 +0800
+Subject: [PATCH 11/16] adc: rockchip-saradc: add support for RV1106
+
+The Successive Approximation ADC (SARADC) in RV1106 uses the v2
+controller and supports:
+- 10-bit resolution
+- Up to 1MS/s sampling rate
+- 2 single-ended input channels
+
+Signed-off-by: Simon Xue <xxm@rock-chips.com>
+Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
+---
+ drivers/adc/rockchip-saradc.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/adc/rockchip-saradc.c
++++ b/drivers/adc/rockchip-saradc.c
+@@ -355,6 +355,14 @@ static const struct rockchip_saradc_data
+ 	.start_channel = rockchip_saradc_start_channel_v2,
+ };
+ 
++static const struct rockchip_saradc_data rv1106_saradc_data = {
++	.num_bits = 10,
++	.num_channels = 2,
++	.clk_rate = 1000000,
++	.channel_data = rockchip_saradc_channel_data_v2,
++	.start_channel = rockchip_saradc_start_channel_v2,
++};
++
+ static const struct udevice_id rockchip_saradc_ids[] = {
+ 	{ .compatible = "rockchip,saradc",
+ 	  .data = (ulong)&saradc_data },
+@@ -366,6 +374,8 @@ static const struct udevice_id rockchip_
+ 	  .data = (ulong)&rk3528_saradc_data },
+ 	{ .compatible = "rockchip,rk3588-saradc",
+ 	  .data = (ulong)&rk3588_saradc_data },
++	{ .compatible = "rockchip,rv1106-saradc",
++	  .data = (ulong)&rv1106_saradc_data },
+ 	{ }
+ };
+ 

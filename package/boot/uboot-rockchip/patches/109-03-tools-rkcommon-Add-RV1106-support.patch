@@ -1,0 +1,26 @@
+From 08f3d48e99f1f33e27d7fbb7056e45c2b2d1f096 Mon Sep 17 00:00:00 2001
+From: Simon Glass <sjg@chromium.org>
+Date: Tue, 7 Jul 2026 09:31:07 -0600
+Subject: [PATCH 03/16] tools: rkcommon: Add RV1106 support
+
+Add rv1106 to the list of supported SoCs. Like the RV1103B, it uses
+the version-2 image header, for which the 4-byte header tag is unused.
+
+The RV1103 is a package variant of the RV1106 and uses the same boot
+image format, so this entry covers both
+
+Signed-off-by: Simon Glass <sjg@chromium.org>
+---
+ tools/rkcommon.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/tools/rkcommon.c
++++ b/tools/rkcommon.c
+@@ -160,6 +160,7 @@ static struct spl_info spl_infos[] = {
+ 	{ "rk3568", "RK35", 0x10000 - 0x1000, false, RK_HEADER_V2 },
+ 	{ "rk3576", "RK35", 0x80000 - 0x1000, false, RK_HEADER_V2, 8 },
+ 	{ "rk3588", "RK35", 0x100000 - 0x1000, false, RK_HEADER_V2 },
++	{ "rv1106", "110C", 0x40000 - 0x1000, false, RK_HEADER_V2 },
+ 	{ "rv1108", "RK11", 0x1800, false, RK_HEADER_V1 },
+ 	{ "rv1126", "110B", 0x10000 - 0x1000, false, RK_HEADER_V1 },
+ };
