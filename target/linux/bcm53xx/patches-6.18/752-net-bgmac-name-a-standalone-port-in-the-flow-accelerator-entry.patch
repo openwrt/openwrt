@@ -1,0 +1,331 @@
+From dc7e04cd95427a355181e0d5daa664b5a5bcce11 Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Sat, 21 Nov 2026 14:57:47 +0000
+Subject: [PATCH] net: bgmac: name a standalone port in the flow accelerator
+ entry
+
+The flow accelerator hands its output to the switch on port 8. With
+opcode 0 in the flow entry the switch looks the frame up in its address
+table, and a standalone port does not learn, so each next hop behind
+one was pinned with a static entry. That table holds one entry per
+address and VLAN for standalone and bridged ports alike. A host on a
+bridged port with the MAC of the host behind a standalone port lost its
+entry to the pin. A static entry for that address on another port, as a
+container given a switch port can add to its own bridge, replaced the
+pin, and the accelerator's frames went to that port.
+
+For a flow to a standalone port, write the port into the flow entry's
+port map with opcode 1 instead. The switch then sends the frame to that
+port without a lookup, and nothing is written to its table. In an IPv4
+entry the map is bits 10:1 and the opcode bits 19:17 of word 6, the
+positions used by Florian Fainelli's bgmac flowtable offload series for
+net-next. In an IPv6 entry the same fields are in word 7, as the valid
+bit is: on a BCM47081 an IPv6 flow went to the port its map named, and
+an empty map dropped it. Flows to bridged ports keep opcode 0, so the
+switch follows a host that moves to another bridge port with each
+frame. With the port written into the flow, the frames would go to the
+old port until the flowtable took the flow down, up to two seconds in a
+test.
+
+b53_fa_port_map() gives the map: BIT(port) for a standalone port, 0 for
+a bridged one, and an error for a port whose CPU port is on another
+switch, which the map cannot name. A flow takes the map when it is
+parsed. A flow to a standalone port takes no PVID, as such a port has
+none, and bgmac_fa_flow_allowed() does not compare one for it: the map
+and the PVID are read at different times, and a port that left a bridge
+in between would otherwise give a mapped flow the bridge's PVID. A next
+hop is shared only by flows with the same map, and
+bgmac_fa_flow_allowed() takes out a flow whose port's map has changed
+since it was offloaded, as when the port joined or left a bridge.
+
+The next hop no longer adds its VLAN with b53_fa_vlan(), which leaves
+that helper without a caller. With VLAN filtering on, DSA has the VLAN
+of an 802.1Q upper in the switch's table with its port and port 8, and
+frames to such an upper of a standalone port reached it without the
+extra membership, by the port map and by the address lookup alike. With
+filtering off, b53 writes no entry for that VLAN and the switch drops
+nothing for want of one. On a bridged port the membership added on top
+kept a trunk port in a VLAN for 2 to 3 s after the bridge took it out.
+
+Measured on an RT-N18U. TCP over the WAN port ran in the accelerator at
+945 to 949 Mbit/s with VLAN filtering off and on, with no entry for the
+next hop in the switch table, and IPv6 over an 802.1Q upper of a
+standalone port at 926 Mbit/s each way. While a host on a LAN port had
+the MAC of the host behind the WAN port, an upload to the WAN host ran
+in the accelerator at 949 Mbit/s, and a download to the LAN host ran
+there at 948 Mbit/s while an upload to the WAN host stayed offloaded.
+The switch kept the LAN host's learned entry. With a static entry for
+the WAN host's MAC added on a LAN port under one or two offloaded
+uploads, the accelerator kept sending to the WAN port and the uploads
+stayed in it.
+
+Link: https://lore.kernel.org/netdev/20261116222519.1416501-8-florian.fainelli@broadcom.com/
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c         | 17 +++++
+ drivers/net/ethernet/broadcom/bgmac-fa.c | 94 ++++++++----------------
+ include/linux/dsa/b53.h                  |  6 ++
+ 3 files changed, 54 insertions(+), 63 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -3231,6 +3231,23 @@ bool b53_fa_vlan_ok(struct dsa_switch *d
+ }
+ EXPORT_SYMBOL(b53_fa_vlan_ok);
+ 
++/* For the driver of the flow accelerator: the port map that names a
++ * standalone @port in a flow entry, 0 for a bridged port, which the
++ * address table serves, or an error for a port it cannot reach.
++ */
++int b53_fa_port_map(struct dsa_switch *ds, int port)
++{
++	struct dsa_port *dp = dsa_to_port(ds, port);
++
++	if (ds->ops != &b53_switch_ops)
++		return -EOPNOTSUPP;
++	if (!dsa_port_is_user(dp) || READ_ONCE(dp->cpu_dp)->ds != ds)
++		return -EOPNOTSUPP;
++
++	return READ_ONCE(dp->bridge) ? 0 : BIT(port);
++}
++EXPORT_SYMBOL(b53_fa_port_map);
++
+ static const struct b53_arl_ops b53_arl_ops_25 = {
+ 	.arl_read_entry = b53_arl_read_entry_25,
+ 	.arl_write_entry = b53_arl_write_entry_25,
+--- a/drivers/net/ethernet/broadcom/bgmac-fa.c
++++ b/drivers/net/ethernet/broadcom/bgmac-fa.c
+@@ -139,6 +139,9 @@
+ #define FA_FLOW_DIP			128	/* 32 bits */
+ #define FA_FLOW_SIP			160	/* 32 bits */
+ #define FA_FLOW_OVRW_DEST		192	/* NAT of the destination */
++#define FA_FLOW_DEST_MAP		193	/* 10 bits, switch ports */
++#define FA_FLOW_OPCODE			209	/* 3 bits */
++#define  FA_FLOW_OP_MAP			1	/* to the ports in the map */
+ #define FA_FLOW_VALID			212
+ #define FA_FLOW_IPV4			255
+ 
+@@ -148,6 +151,8 @@
+ #define FA_FLOW6_DPORT			191	/* 16 bits */
+ #define FA_FLOW6_SPORT			207	/* 16 bits */
+ #define FA_FLOW6_TCP			223
++#define FA_FLOW6_DEST_MAP		225	/* 10 bits */
++#define FA_FLOW6_OPCODE			241	/* 3 bits */
+ #define FA_FLOW6_VALID			244
+ 
+ /* next hop entry */
+@@ -174,7 +179,7 @@ struct bgmac_fa_next_hop {
+ 	struct dsa_port *dp;		/* egress port */
+ 	u16 vid;			/* VLAN tag to add, or 0 */
+ 	int refs;
+-	bool fdb;			/* static switch FDB entry added for it */
++	u16 map;			/* egress port map, 0: address lookup */
+ };
+ 
+ struct bgmac_fa_pool {
+@@ -449,32 +454,18 @@ static int bgmac_fa_bucket(const struct
+ 
+ /* ---------- next hops and pools, shared and refcounted ---------- */
+ 
+-/* another next hop that adds this VLAN tag towards this port */
+-static bool bgmac_fa_vlan_in_use(struct bgmac_fa *fa,
+-				 const struct bgmac_fa_next_hop *nh)
+-{
+-	int i;
+-
+-	for (i = 0; i < FA_NEXT_HOPS; i++)
+-		if (&fa->next_hop[i] != nh && fa->next_hop[i].refs &&
+-		    fa->next_hop[i].dp == nh->dp &&
+-		    fa->next_hop[i].vid == nh->vid)
+-			return true;
+-	return false;
+-}
+-
+ static int bgmac_fa_next_hop_get(struct bgmac *bgmac, const u8 *mac,
+-				 struct dsa_port *dp, u16 vid)
++				 struct dsa_port *dp, u16 vid, u16 map)
+ {
+ 	struct bgmac_fa *fa = bgmac->fa;
+-	struct bgmac_fa_next_hop *nh;
+ 	u32 d[FA_NEXT_HOP_WORDS] = {};
++	struct bgmac_fa_next_hop *nh;
+ 	int i, free = -1, err;
+ 
+ 	for (i = 0; i < FA_NEXT_HOPS; i++) {
+ 		nh = &fa->next_hop[i];
+ 		if (nh->refs && nh->dp == dp && nh->vid == vid &&
+-		    ether_addr_equal(nh->mac, mac)) {
++		    nh->map == map && ether_addr_equal(nh->mac, mac)) {
+ 			nh->refs++;
+ 			return i;
+ 		}
+@@ -487,15 +478,7 @@ static int bgmac_fa_next_hop_get(struct
+ 	nh = &fa->next_hop[free];
+ 	nh->dp = dp;
+ 	nh->vid = vid;
+-
+-	/* The switch drops the FA's tagged output unless the egress port
+-	 * and the FA's own port are members of the VLAN.
+-	 */
+-	if (vid && !bgmac_fa_vlan_in_use(fa, nh)) {
+-		err = b53_fa_vlan(dp->ds, dp->index, vid, true);
+-		if (err)
+-			goto clear;
+-	}
++	nh->map = map;
+ 
+ 	/* Ethernet, the VLAN tag or none, destination address */
+ 	fa_put_bits(d, FA_NH_TAG_OP, 2, vid ? FA_NH_TAG_CTAG : FA_NH_TAG_NONE);
+@@ -504,34 +487,13 @@ static int bgmac_fa_next_hop_get(struct
+ 	err = bgmac_fa_tbl_write(bgmac, FA_TBL_NEXT_HOP, free, d,
+ 				 FA_NEXT_HOP_WORDS);
+ 	if (err)
+-		goto vlan;
++		goto clear;
+ 
+ 	ether_addr_copy(nh->mac, mac);
+ 	nh->refs = 1;
+-	nh->fdb = false;
+-
+-	/* The FA hands its output to the switch with a tag that leaves the
+-	 * forwarding to the switch's address table. DSA keeps learning off
+-	 * on standalone ports, so without an entry for the next hop the
+-	 * switch floods the frame to all ports of the VLAN.
+-	 */
+-	if (!dsa_port_bridge_dev_get(dp) && dp->ds->ops->port_fdb_add) {
+-		struct dsa_db db = { .type = DSA_DB_PORT, .dp = dp };
+-
+-		err = dp->ds->ops->port_fdb_add(dp->ds, dp->index, mac, vid, db);
+-		if (err)
+-			netdev_warn(bgmac->net_dev,
+-				    "flow accelerator: no switch FDB entry for %pM on port %d: %d\n",
+-				    mac, dp->index, err);
+-		else
+-			nh->fdb = true;
+-	}
+ 
+ 	return free;
+ 
+-vlan:
+-	if (vid && !bgmac_fa_vlan_in_use(fa, nh))
+-		b53_fa_vlan(dp->ds, dp->index, vid, false);
+ clear:
+ 	nh->dp = NULL;
+ 	nh->vid = 0;
+@@ -542,21 +504,11 @@ static void bgmac_fa_next_hop_put(struct
+ {
+ 	struct bgmac_fa_next_hop *nh = &bgmac->fa->next_hop[i];
+ 	u32 d[FA_NEXT_HOP_WORDS] = {};
+-	struct dsa_port *dp = nh->dp;
+ 
+ 	if (--nh->refs)
+ 		return;
+ 
+ 	bgmac_fa_tbl_write(bgmac, FA_TBL_NEXT_HOP, i, d, FA_NEXT_HOP_WORDS);
+-	if (nh->fdb) {
+-		struct dsa_db db = { .type = DSA_DB_PORT, .dp = dp };
+-
+-		dp->ds->ops->port_fdb_del(dp->ds, dp->index, nh->mac, nh->vid,
+-					  db);
+-		nh->fdb = false;
+-	}
+-	if (nh->vid && !bgmac_fa_vlan_in_use(bgmac->fa, nh))
+-		b53_fa_vlan(dp->ds, dp->index, nh->vid, false);
+ 	nh->dp = NULL;
+ 	nh->vid = 0;
+ }
+@@ -615,6 +567,7 @@ struct bgmac_fa_rule {
+ 	bool snat, dnat;		/* neither: routing only */
+ 	u16 push_vid;			/* VLAN tag to add */
+ 	bool pvid;
++	u16 map;			/* b53_fa_port_map() of out */
+ 	struct dsa_port *in, *out;
+ };
+ 
+@@ -680,7 +633,7 @@ static int bgmac_fa_parse(struct bgmac *
+ 	bool snat_port = false, dnat_port = false;
+ 	bool vlan = false, pop = false;
+ 	struct net_device *out = NULL;
+-	int i, vid;
++	int i, vid, map;
+ 
+ 	memset(r, 0, sizeof(*r));
+ 
+@@ -859,10 +812,15 @@ static int bgmac_fa_parse(struct bgmac *
+ 	if (!r->out)
+ 		return -EOPNOTSUPP;
+ 
++	map = b53_fa_port_map(r->out->ds, r->out->index);
++	if (map < 0)
++		return -EOPNOTSUPP;
++	r->map = map;
++
+ 	if (r->push_vid && !bgmac_fa_push_ok(r->in, r->out, r->push_vid))
+ 		return -EOPNOTSUPP;
+ 	if (!r->push_vid) {
+-		vid = bgmac_fa_pvid(r->in, r->out);
++		vid = r->map ? 0 : bgmac_fa_pvid(r->in, r->out);
+ 		if (vid < 0 || (vid && pop))
+ 			return -EOPNOTSUPP;
+ 		r->push_vid = vid;
+@@ -996,11 +954,15 @@ static bool bgmac_fa_flow_allowed(struct
+ 	    !b53_fa_trap_active(flow->in->ds, flow->in->index))
+ 		return false;
+ 
+-	if (flow->pvid && bgmac_fa_pvid(flow->in, nh->dp) != nh->vid)
++	if (flow->pvid && !nh->map &&
++	    bgmac_fa_pvid(flow->in, nh->dp) != nh->vid)
+ 		return false;
+ 	if (!flow->pvid && !bgmac_fa_push_ok(flow->in, nh->dp, nh->vid))
+ 		return false;
+ 
++	if (b53_fa_port_map(nh->dp->ds, nh->dp->index) != nh->map)
++		return false;
++
+ 	return true;
+ }
+ 
+@@ -1046,7 +1008,7 @@ static int bgmac_fa_flow_add(struct bgma
+ 	flow->lastused = jiffies;
+ 
+ 	flow->next_hop = bgmac_fa_next_hop_get(bgmac, r.eth, r.out,
+-					       r.push_vid);
++					       r.push_vid, r.map);
+ 	if (flow->next_hop < 0) {
+ 		err = flow->next_hop;
+ 		goto free;
+@@ -1097,6 +1059,12 @@ static int bgmac_fa_flow_add(struct bgma
+ 		fa_put_bits(e, FA_FLOW_VALID, 1, 1);
+ 		fa_put_bits(e, FA_FLOW_IPV4, 1, 1);
+ 	}
++	if (r.map) {
++		fa_put_bits(e, r.t.v6 ? FA_FLOW6_DEST_MAP : FA_FLOW_DEST_MAP, 10,
++			    r.map);
++		fa_put_bits(e, r.t.v6 ? FA_FLOW6_OPCODE : FA_FLOW_OPCODE, 3,
++			    FA_FLOW_OP_MAP);
++	}
+ 
+ 	err = bgmac_fa_tbl_write(bgmac, FA_TBL_FLOW, flow->idx, e,
+ 				 FA_FLOW_WORDS);
+--- a/include/linux/dsa/b53.h
++++ b/include/linux/dsa/b53.h
+@@ -18,6 +18,7 @@ bool b53_fa_trap_active(struct dsa_switc
+ int b53_fa_vlan(struct dsa_switch *ds, int port, u16 vid, bool add);
+ int b53_fa_pvid(struct dsa_switch *ds, int port);
+ bool b53_fa_vlan_ok(struct dsa_switch *ds, int port, u16 vid);
++int b53_fa_port_map(struct dsa_switch *ds, int port);
+ #else
+ static inline bool b53_fa_trap_active(struct dsa_switch *ds, int port)
+ {
+@@ -39,6 +40,11 @@ static inline bool b53_fa_vlan_ok(struct
+ {
+ 	return false;
+ }
++
++static inline int b53_fa_port_map(struct dsa_switch *ds, int port)
++{
++	return -EOPNOTSUPP;
++}
+ #endif
+ 
+ #endif /* _LINUX_DSA_B53_H */
