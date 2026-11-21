@@ -874,6 +874,31 @@ static int uniphy_link_up_usxgmii(struct phylink_pcs *pcs, int speed)
 	return regmap_set_bits(uniphy->regmap, XPCS_DIG_CTRL, XPCS_USXG_ADPT_RESET);
 }
 
+/* A port's RX and TX clocks come from this UNIPHY's RX and TX clocks, as
+ * the GCC rate tables have them. The boot loader can leave a port's TX
+ * source mux on the UNIPHY RX clock at the same 125 MHz, and setting a rate
+ * the clock already has does not change its parent: the MAC then sends on
+ * the clock recovered from the PHY, and frames break where the two drift
+ * apart (an AR8033 on SGMII lost about 0.5% of what it sent). Point the
+ * source mux, the first clock up from the port clock that can take this
+ * UNIPHY clock as a parent, at it.
+ */
+static void uniphy_port_clk_set_source(struct clk *port_clk, struct clk *src)
+{
+	struct clk *clk = port_clk;
+	int i;
+
+	for (i = 0; i < 3; i++) {
+		clk = clk_get_parent(clk);
+		if (!clk)
+			return;
+		if (clk_has_parent(clk, src)) {
+			clk_set_parent(clk, src);
+			return;
+		}
+	}
+}
+
 static void qca_uniphy_pcs_link_up(struct phylink_pcs *pcs,
 				   unsigned int neg_mode,
 				   phy_interface_t interface,
@@ -882,6 +907,11 @@ static void qca_uniphy_pcs_link_up(struct phylink_pcs *pcs,
 	struct qca_uniphy_pcs *upcs = to_qca_uniphy_pcs(pcs);
 	struct qca_uniphy *uniphy = upcs->uniphy;
 	int ret = 0;
+
+	uniphy_port_clk_set_source(uniphy->clks[port_rx_clk_idx(upcs)].clk,
+				   uniphy->rx_clk.hw.clk);
+	uniphy_port_clk_set_source(uniphy->clks[port_tx_clk_idx(upcs)].clk,
+				   uniphy->tx_clk.hw.clk);
 
 	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:
