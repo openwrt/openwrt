@@ -1,0 +1,15 @@
+
+How to use dpns common functions in other modules?
+
+use follow function to get dpns common pdev and you will get dpns common priv
+==== code start =====
+struct platform_device * common_pdev = NULL;
+struct device * common_dev = NULL;
+COMMON_t * common_priv = NULL;
+common_dev = bus_find_device_by_name(&platform_bus_type, NULL, "11000000.dpnsCommon");
+if (common_dev) {
+	common_pdev = to_platform_device(common_dev);
+	if (common_pdev)
+		common_priv = platform_get_drvdata(common_pdev);
+}
+==== code end =====
