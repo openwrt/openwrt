@@ -1,0 +1,48 @@
+From bec9ce848f39aa57925557204a6f7b5bcf755b78 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Fri, 16 Oct 2026 15:16:15 -0700
+Subject: [PATCH] watchdog: gpio: Support watchdogs with a minimum heartbeat
+ interval
+
+Read the optional hw-min-interval-ms property into min_hw_heartbeat_ms so
+the watchdog core defers keepalives that would toggle the GPIO too soon.
+Reject zero intervals and intervals at or above the hardware margin.
+Devices without the property retain their existing behavior.
+
+Remove the arbitrary 65535 ms upper bound on hw_margin_ms as well. There
+is no register width to constrain this software interval, and the MTX-1
+watchdog needs a larger margin with a 1600 ms minimum ping interval.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+Link: https://patch.msgid.link/20261016221617.2223004-4-f.fainelli@gmail.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/watchdog/gpio_wdt.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+--- a/drivers/watchdog/gpio_wdt.c
++++ b/drivers/watchdog/gpio_wdt.c
+@@ -139,10 +139,20 @@ static int gpio_wdt_probe(struct platfor
+ 	ret = device_property_read_u32(dev, "hw_margin_ms", &hw_margin);
+ 	if (ret)
+ 		return ret;
+-	/* Disallow values lower than 2 and higher than 65535 ms */
+-	if (hw_margin < 2 || hw_margin > 65535)
++	/* The core feeds the watchdog at half the hardware margin. */
++	if (hw_margin < 2)
+ 		return -EINVAL;
+ 
++	if (device_property_present(dev, "hw-min-interval-ms")) {
++		ret = device_property_read_u32(dev, "hw-min-interval-ms",
++					       &priv->wdd.min_hw_heartbeat_ms);
++		if (ret)
++			return ret;
++		if (!priv->wdd.min_hw_heartbeat_ms ||
++		    priv->wdd.min_hw_heartbeat_ms >= hw_margin)
++			return -EINVAL;
++	}
++
+ 	priv->always_running = device_property_read_bool(dev, "always-running");
+ 
+ 	watchdog_set_drvdata(&priv->wdd, priv);
