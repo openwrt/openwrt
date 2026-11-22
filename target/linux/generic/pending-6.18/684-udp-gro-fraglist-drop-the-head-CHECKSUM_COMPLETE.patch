@@ -1,0 +1,52 @@
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 05:00:00 +0100
+Subject: [PATCH] udp: gro: do not keep CHECKSUM_COMPLETE on fraglist packets
+
+udp4/6_gro_complete() leave a fraglist GRO packet CHECKSUM_COMPLETE when
+its head came in that way, but skb->csum still covers the first segment
+only, while uh->len now spans all of them. On local delivery,
+udp4_csum_init() validates the aggregate before udp_queue_rcv_skb()
+splits it: the fast check fails and, for packets up to CHECKSUM_BREAK
+(76 bytes), the software fallback checksums the merged payload against
+the first segment's uh->check. All segments are dropped and counted as
+UDP InCsumErrors.
+
+Seen with bcmgenet (Raspberry Pi 4), which reports CHECKSUM_COMPLETE, and
+fraglist GRO enabled by default: a client's back-to-back A and AAAA DNS
+queries are merged and never reach dnsmasq.
+
+Every segment's checksum was validated in udp4/6_gro_receive() before it
+was merged, so drop the stale CHECKSUM_COMPLETE and mark the packet
+CHECKSUM_UNNECESSARY like one that came in as CHECKSUM_NONE.
+
+Fixes: 9fd1ff5d2ac7 ("udp: Support UDP fraglist GRO/GSO.")
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ net/ipv4/udp_offload.c | 3 +++
+ net/ipv6/udp_offload.c | 3 +++
+ 2 files changed, 6 insertions(+)
+
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -973,6 +973,9 @@ INDIRECT_CALLABLE_SCOPE int udp4_gro_com
+ 		skb_shinfo(skb)->gso_type |= (SKB_GSO_FRAGLIST|SKB_GSO_UDP_L4);
+ 		skb_shinfo(skb)->gso_segs = NAPI_GRO_CB(skb)->count;
+
++		/* skb->csum covers the first segment only; all were validated */
++		if (skb->ip_summed == CHECKSUM_COMPLETE)
++			skb->ip_summed = CHECKSUM_NONE;
+ 		__skb_incr_checksum_unnecessary(skb);
+
+ 		return 0;
+--- a/net/ipv6/udp_offload.c
++++ b/net/ipv6/udp_offload.c
+@@ -178,6 +178,9 @@ INDIRECT_CALLABLE_SCOPE int udp6_gro_com
+ 		skb_shinfo(skb)->gso_type |= (SKB_GSO_FRAGLIST|SKB_GSO_UDP_L4);
+ 		skb_shinfo(skb)->gso_segs = NAPI_GRO_CB(skb)->count;
+
++		/* skb->csum covers the first segment only; all were validated */
++		if (skb->ip_summed == CHECKSUM_COMPLETE)
++			skb->ip_summed = CHECKSUM_NONE;
+ 		__skb_incr_checksum_unnecessary(skb);
+
+ 		return 0;
