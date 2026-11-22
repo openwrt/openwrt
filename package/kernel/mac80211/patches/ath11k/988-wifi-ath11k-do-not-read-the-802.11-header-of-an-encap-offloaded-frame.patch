@@ -1,0 +1,24 @@
+From 8ef3c9fda8a40b02f895480915bbc8906963422d Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 02:29:38 +0100
+Subject: [PATCH] wifi: ath11k: do not read the 802.11 header of an encap offloaded frame
+
+ath11k_dp_tx() tests the frame control of the frame for a 4-address
+header. For a frame with IEEE80211_TX_CTL_HW_80211_ENCAP the first bytes
+are the destination address, so the test misfires on addresses that
+happen to look like a 4-address frame control. Skip it for encap
+offloaded frames.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -213,7 +213,8 @@ tcl_ring_sel:
+ 		     FIELD_PREP(DP_TX_DESC_ID_POOL_ID, pool_id);
+ 	ti.encap_type = ath11k_dp_tx_get_encap_type(arvif, skb);
+ 
+-	if (ieee80211_has_a4(hdr->frame_control) &&
++	if (!(info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) &&
++	    ieee80211_has_a4(hdr->frame_control) &&
+ 	    is_multicast_ether_addr(hdr->addr3) && arsta &&
+ 	    arsta->use_4addr_set) {
+ 		ti.meta_data_flags = arsta->tcl_metadata;
