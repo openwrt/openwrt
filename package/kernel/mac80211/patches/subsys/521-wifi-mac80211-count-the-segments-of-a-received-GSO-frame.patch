@@ -1,0 +1,162 @@
+From 9368f130d676019f23dccabb93eca0e720cf8803 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 06:38:44 +0100
+Subject: [PATCH] wifi: mac80211: count the segments of a received GSO frame
+
+A driver with rx decap offload may merge consecutive in-order TCP frames
+of one station into a GSO frame before it hands it over, as GRO would on
+the netdev. ieee80211_rx_8023() counts every frame it takes as one: one
+packet, fragment and MSDU of the station, one packet of the netdev, and
+the bytes of the merged frame, which carries the headers of its first
+segment only. The counters then report fewer frames and bytes than the
+station sent.
+
+Count a TCP GSO frame as its gso_segs frames, and its bytes as those of
+the frames it was merged from: its length plus the headers, up to the
+end of the TCP header, of every segment after the first. Any other frame
+counts as before.
+
+A merged frame to another station of the same interface takes the
+internal forward of ieee80211_rx_8023(), which sets ETH_P_802_3 as the
+protocol and the network header on the MAC header. The segmentation of
+the frame on the way out then fails (skb_mac_gso_segment() finds no
+handler for the protocol, and the mac_len __skb_gso_segment() derives is
+0), and a driver that has the hardware segment it is told the IP header
+starts at offset 0. Give a GSO frame the protocol of its Ethernet header
+and its network header behind it; any other frame is forwarded as before.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -20,6 +20,7 @@
+ #include <linux/export.h>
+ #include <linux/kcov.h>
+ #include <linux/bitops.h>
++#include <linux/tcp.h>
+ #include <kunit/visibility.h>
+ #include <net/mac80211.h>
+ #include <net/ieee80211_radiotap.h>
+@@ -5016,7 +5017,7 @@ static struct ieee80211_sta_rx_stats *
+ ieee80211_fast_rx_stats_update(struct ieee80211_fast_rx *fast_rx,
+ 			       struct link_sta_info *link_sta,
+ 			       struct ieee80211_rx_status *status,
+-			       int orig_len)
++			       int orig_len, unsigned int segs)
+ {
+ 	struct ieee80211_sta_rx_stats *stats;
+ 
+@@ -5053,8 +5054,8 @@ ieee80211_fast_rx_stats_update(struct ie
+ 	stats->last_rx = jiffies;
+ 	stats->last_rate = sta_stats_encode_rate(status);
+ 
+-	stats->fragments++;
+-	stats->packets++;
++	stats->fragments += segs;
++	stats->packets += segs;
+ 
+ 	u64_stats_update_begin(&stats->syncp);
+ 	u64_stats_add(&stats->bytes, orig_len);
+@@ -5063,6 +5064,32 @@ ieee80211_fast_rx_stats_update(struct ie
+ 	return stats;
+ }
+ 
++/* The frames a received 802.3 frame stands for: one, or the segments of a TCP
++ * GSO frame that the driver merged from consecutive frames of a stream, each
++ * of which carried the headers the merged one has. @extra is set to the bytes
++ * of those headers the merged frame no longer carries.
++ */
++static unsigned int ieee80211_rx_8023_segs(struct sk_buff *skb,
++					   unsigned int *extra)
++{
++	unsigned int segs, hdrlen;
++
++	*extra = 0;
++	if (!skb_is_gso(skb) || !skb_is_gso_tcp(skb) ||
++	    !skb_transport_header_was_set(skb))
++		return 1;
++
++	hdrlen = skb_transport_offset(skb) + sizeof(struct tcphdr);
++	if (skb_headlen(skb) < hdrlen)
++		return 1;
++
++	segs = max_t(unsigned int, skb_shinfo(skb)->gso_segs, 1);
++	hdrlen += tcp_hdrlen(skb) - sizeof(struct tcphdr);
++	*extra = (segs - 1) * hdrlen;
++
++	return segs;
++}
++
+ static void ieee80211_rx_8023(struct ieee80211_rx_data *rx,
+ 			      struct ieee80211_fast_rx *fast_rx,
+ 			      int orig_len)
+@@ -5074,6 +5101,8 @@ static void ieee80211_rx_8023(struct iee
+ 	struct sk_buff *skb = rx->skb;
+ 	void *sa = skb->data + ETH_ALEN;
+ 	void *da = skb->data;
++	struct pcpu_sw_netstats *tstats;
++	unsigned int segs, extra;
+ 
+ 	if (rx->link_id >= 0) {
+ 		link_sta = rcu_dereference(sta->link[rx->link_id]);
+@@ -5085,12 +5114,17 @@ static void ieee80211_rx_8023(struct iee
+ 		link_sta = &sta->deflink;
+ 	}
+ 
++	segs = ieee80211_rx_8023_segs(skb, &extra);
+ 	stats = ieee80211_fast_rx_stats_update(fast_rx, link_sta, status,
+-					       orig_len);
++					       orig_len + extra, segs);
+ 
+ 	skb->dev = fast_rx->dev;
+ 
+-	dev_sw_netstats_rx_add(fast_rx->dev, skb->len);
++	tstats = this_cpu_ptr(fast_rx->dev->tstats);
++	u64_stats_update_begin(&tstats->syncp);
++	u64_stats_add(&tstats->rx_packets, segs);
++	u64_stats_add(&tstats->rx_bytes, skb->len + extra);
++	u64_stats_update_end(&tstats->syncp);
+ 
+ 	/* The seqno index has the same property as needed
+ 	 * for the rx_msdu field, i.e. it is IEEE80211_NUM_TIDS
+@@ -5098,7 +5132,7 @@ static void ieee80211_rx_8023(struct iee
+ 	 * frame, so count MSDUs.
+ 	 */
+ 	u64_stats_update_begin(&stats->syncp);
+-	u64_stats_inc(&stats->msdu[rx->seqno_idx]);
++	u64_stats_add(&stats->msdu[rx->seqno_idx], segs);
+ 	u64_stats_update_end(&stats->syncp);
+ 
+ 	ieee80211_flow_learn(rx);
+@@ -5120,9 +5154,21 @@ static void ieee80211_rx_8023(struct iee
+ 			 * reclassifying the frame (see cfg80211_classify8021d).
+ 			 */
+ 			xmit_skb->priority += 256;
+-			xmit_skb->protocol = htons(ETH_P_802_3);
+-			skb_reset_network_header(xmit_skb);
+ 			skb_reset_mac_header(xmit_skb);
++			/* A GSO frame is cut into its segments on the way
++			 * out, which takes the protocol and network header
++			 * it was merged with; with ETH_P_802_3 and a network
++			 * header on the MAC header, the segmentation finds
++			 * no IP header and the TCL is told the IP header
++			 * starts at the MAC header.
++			 */
++			if (skb_is_gso(xmit_skb)) {
++				xmit_skb->protocol = eth_hdr(xmit_skb)->h_proto;
++				skb_set_network_header(xmit_skb, ETH_HLEN);
++			} else {
++				xmit_skb->protocol = htons(ETH_P_802_3);
++				skb_reset_network_header(xmit_skb);
++			}
+ 			dev_queue_xmit(xmit_skb);
+ 		}
+ 
+@@ -5240,7 +5286,7 @@ static bool ieee80211_invoke_fast_rx(str
+ 
+ 	if (status->rx_flags & IEEE80211_RX_AMSDU) {
+ 		ieee80211_fast_rx_stats_update(fast_rx, rx->link_sta, status,
+-					       orig_len);
++					       orig_len, 1);
+ 
+ 		if (__ieee80211_rx_h_amsdu(rx, snap_offs - hdrlen) !=
+ 		    RX_QUEUED)
