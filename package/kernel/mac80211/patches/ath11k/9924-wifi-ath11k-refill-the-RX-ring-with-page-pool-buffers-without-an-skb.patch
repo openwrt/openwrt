@@ -1,0 +1,1343 @@
+From 6a8c51553cab05bb485f770890bf7b6d1f483c73 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 08:14:36 +0100
+Subject: [PATCH] wifi: ath11k: refill the RX ring with page pool buffers without an skb
+
+Every buffer of the refill ring gets an skb when it is posted: build_skb()
+on the page pool fragment, its sk_buff from the slab and the clearing of
+both. A TCP segment that then joins a run of the REO reap's merge gives
+its buffer to the run's head and frees that skb again, unused. In a
+profile of bridged uplink at 850 Mbit/s (IPQ8074, one run) build_skb(),
+__build_skb_around(), __build_skb(), kmem_cache_alloc_noprof(),
+___slab_alloc() and memset take about 5.5 % of all samples.
+
+Post page pool buffers bare: the table entry of such a buffer is its
+address, and the state an skb's control block held (the DMA address, the
+synced length, what the REO entry says) is kept in the buffer where the
+skb's shared info goes once one is built on it. The device writes no more
+than DP_RX_BUFFER_SIZE bytes of a buffer, as the coalescing of an MSDU that
+spans buffers already relies on, and the CPU syncs no more than the skb
+data area in front of the shared info, so neither overwrites that state.
+An skb a table holds anyway, the defragmented frame the driver reinjects,
+is told apart by bit 0 of its entry.
+
+The REO reap takes the buffers in their order without skbs. An MSDU in
+one buffer then gets the checks of ath11k_dp_rx_process_msdu() and the
+part of ath11k_dp_rx_h_mpdu() that only reads the frame (peer, station,
+source address and type, the decryption and error status) on the buffer
+itself, now a function of its own that the skb path calls too, and when
+it is the next segment of an open run with fragments it joins as one,
+with the same checks ath11k_dp_rx_merge_rx() makes of an skb; its page
+pool reference becomes the head's fragment, as skb_try_coalesce() moves
+it, and it never gets an skb. Every other MSDU gets its skb from the NAPI
+cache at that point and takes the old path. An MSDU over several buffers
+gets the skbs of all of them, and the error, exception and monitor paths
+get theirs from the table lookup, which builds one for a buffer without
+and puts it in the buffer's place.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -73,8 +73,11 @@ struct dp_srng {
+ struct dp_rxdma_ring {
+ 	struct dp_srng refill_buf_ring;
+ 	struct page_pool *page_pool;
+-	/* Buffers by the id their descriptor carries, and the ids not in use */
+-	struct sk_buff **bufs;
++	/* Buffers by the id their descriptor carries, and the ids not in use:
++	 * an skb, or on a ring with a page pool the address of a buffer that
++	 * has no skb yet (see ath11k_dp_rx_buf_lookup())
++	 */
++	void **bufs;
+ 	u32 *free_ids;
+ 	u32 num_free;
+ 	u32 num_ids;
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -375,8 +375,7 @@ static int ath11k_dp_rx_bufs_init(struct
+ 	return 0;
+ }
+ 
+-static int ath11k_dp_rx_buf_get_id(struct dp_rxdma_ring *rx_ring,
+-				   struct sk_buff *skb)
++static int ath11k_dp_rx_buf_get_id(struct dp_rxdma_ring *rx_ring, void *buf)
+ {
+ 	u32 id;
+ 
+@@ -384,13 +383,13 @@ static int ath11k_dp_rx_buf_get_id(struc
+ 		return -ENOSPC;
+ 
+ 	id = rx_ring->free_ids[--rx_ring->num_free];
+-	rx_ring->bufs[id] = skb;
++	rx_ring->bufs[id] = buf;
+ 
+ 	return id;
+ }
+ 
+-static struct sk_buff *ath11k_dp_rx_buf_lookup(struct dp_rxdma_ring *rx_ring,
+-					       u32 id)
++/* The table entry of @id as it is, see ath11k_dp_rx_buf_lookup(). */
++static void *ath11k_dp_rx_buf_lookup_ent(struct dp_rxdma_ring *rx_ring, u32 id)
+ {
+ 	if (unlikely(id >= rx_ring->num_ids))
+ 		return NULL;
+@@ -407,6 +406,130 @@ static void ath11k_dp_rx_buf_put_id(stru
+ 	rx_ring->free_ids[rx_ring->num_free++] = id;
+ }
+ 
++/* A buffer of a ring with a page pool has no skb until one is needed: its
++ * table entry is its address, and what the reap learns of it is kept where
++ * the skb's shared info goes once one is built on it. The device writes no
++ * more than DP_RX_BUFFER_SIZE bytes of a buffer and the CPU takes no more
++ * than the DP_RX_PP_DATA_SIZE bytes in front of the shared info back from
++ * it, so neither the device nor an invalidation touches that state. An skb
++ * in such a table, which only the reinjection of a defragmented frame puts
++ * there, has bit 0 of its entry set.
++ */
++#define DP_RX_PP_DATA_SIZE	SKB_WITH_OVERHEAD(DP_RX_PP_FRAG_SIZE)
++#define ATH11K_DP_RX_ENT_SKB	1UL
++
++struct ath11k_dp_rx_bufmeta {
++	void *next;
++	struct ath11k_skb_rxcb cb;
++};
++
++static struct ath11k_dp_rx_bufmeta *ath11k_dp_rx_buf_meta(void *va)
++{
++	BUILD_BUG_ON(sizeof(struct ath11k_dp_rx_bufmeta) >
++		     SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
++	BUILD_BUG_ON(DP_RX_PP_DATA_SIZE < DP_RX_BUFFER_SIZE);
++	BUILD_BUG_ON(DP_RX_PP_DATA_SIZE % L1_CACHE_BYTES);
++
++	return va + DP_RX_PP_DATA_SIZE;
++}
++
++static void *ath11k_dp_rx_skb_ent(struct dp_rxdma_ring *rx_ring,
++				  struct sk_buff *skb)
++{
++	if (!rx_ring->page_pool)
++		return skb;
++
++	return (void *)((unsigned long)skb | ATH11K_DP_RX_ENT_SKB);
++}
++
++/* The skb of table entry @ent, or NULL for a buffer that has none. */
++static struct sk_buff *ath11k_dp_rx_ent_skb(struct dp_rxdma_ring *rx_ring,
++					    void *ent)
++{
++	if (!rx_ring->page_pool)
++		return ent;
++
++	if (!((unsigned long)ent & ATH11K_DP_RX_ENT_SKB))
++		return NULL;
++
++	return (void *)((unsigned long)ent & ~ATH11K_DP_RX_ENT_SKB);
++}
++
++static struct ath11k_skb_rxcb *ath11k_dp_rx_ent_cb(struct dp_rxdma_ring *rx_ring,
++						   void *ent)
++{
++	struct sk_buff *skb = ath11k_dp_rx_ent_skb(rx_ring, ent);
++
++	return skb ? ATH11K_SKB_RXCB(skb) : &ath11k_dp_rx_buf_meta(ent)->cb;
++}
++
++/* The skb built on buffer @va, which takes over the buffer's receive state,
++ * or NULL. The skb's shared info overwrites that state.
++ */
++static struct sk_buff *ath11k_dp_rx_buf_build(void *va, bool napi)
++{
++	struct ath11k_skb_rxcb cb = ath11k_dp_rx_buf_meta(va)->cb;
++	struct sk_buff *skb;
++
++	if (napi)
++		skb = napi_build_skb(va, DP_RX_PP_FRAG_SIZE);
++	else
++		skb = build_skb(va, DP_RX_PP_FRAG_SIZE);
++	if (unlikely(!skb))
++		return NULL;
++
++	skb_mark_for_recycle(skb);
++	*ATH11K_SKB_RXCB(skb) = cb;
++
++	return skb;
++}
++
++static void ath11k_dp_rx_buf_free(struct dp_rxdma_ring *rx_ring, void *va)
++{
++	page_pool_put_full_page(rx_ring->page_pool, virt_to_head_page(va), false);
++}
++
++/* Frees table entry @ent, which the table no longer holds. */
++static void ath11k_dp_rx_ent_free(struct dp_rxdma_ring *rx_ring, void *ent)
++{
++	struct sk_buff *skb = ath11k_dp_rx_ent_skb(rx_ring, ent);
++
++	if (skb)
++		dev_kfree_skb_any(skb);
++	else
++		ath11k_dp_rx_buf_free(rx_ring, ent);
++}
++
++/* The skb of buffer @id. One is built now for a buffer that has none and
++ * takes the buffer's place in the table, so that a caller that leaves the
++ * entry there finds the same skb again; a buffer whose skb cannot be built
++ * is freed with its id. Callers hold bufs_lock.
++ */
++static struct sk_buff *ath11k_dp_rx_buf_lookup(struct dp_rxdma_ring *rx_ring,
++					       u32 id)
++{
++	void *ent = ath11k_dp_rx_buf_lookup_ent(rx_ring, id);
++	struct sk_buff *skb;
++
++	if (!ent)
++		return NULL;
++
++	skb = ath11k_dp_rx_ent_skb(rx_ring, ent);
++	if (skb)
++		return skb;
++
++	skb = ath11k_dp_rx_buf_build(ent, false);
++	if (unlikely(!skb)) {
++		ath11k_dp_rx_buf_put_id(rx_ring, id);
++		ath11k_dp_rx_buf_free(rx_ring, ent);
++		return NULL;
++	}
++
++	rx_ring->bufs[id] = ath11k_dp_rx_skb_ent(rx_ring, skb);
++
++	return skb;
++}
++
+ static bool ath11k_dp_rx_buf_is_pp(struct sk_buff *skb)
+ {
+ 	return skb->pp_recycle && skb->head_frag;
+@@ -465,36 +588,42 @@ static void ath11k_dp_rx_sync_more(struc
+ 	rxcb->sync_len = need;
+ }
+ 
+-static dma_addr_t ath11k_dp_rx_pp_dma_addr(struct sk_buff *skb)
+-{
+-	struct page *page = virt_to_head_page(skb->data);
+-
+-	return page_pool_get_dma_addr(page) +
+-	       (skb->data - (u8 *)page_address(page));
++/* Hands the first @want bytes of buffer @rxcb is the state of back to the
++ * CPU, or the skb data area it gets for a @want of 0 or past its end, as
++ * ath11k_dp_rx_unmap_buf_len() does for a page pool buffer with an skb.
++ */
++static void ath11k_dp_rx_sync_buf(struct ath11k_base *ab,
++				  struct ath11k_skb_rxcb *rxcb,
++				  unsigned int want)
++{
++	unsigned int len = DP_RX_PP_DATA_SIZE;
++
++	if (want && want < len)
++		len = want;
++	dma_sync_single_for_cpu(ab->dev, rxcb->paddr, len, DMA_BIDIRECTIONAL);
++	rxcb->sync_len = len;
+ }
+ 
+-static struct sk_buff *ath11k_dp_rx_pp_alloc_skb(struct dp_rxdma_ring *rx_ring)
++/* ath11k_dp_rx_sync_more() for a buffer without an skb. */
++static void ath11k_dp_rx_sync_buf_more(struct ath11k_base *ab,
++				       struct ath11k_skb_rxcb *rxcb,
++				       unsigned int need)
+ {
+-	struct sk_buff *skb;
+-	unsigned int offset;
+-	struct page *page;
+-	void *va;
+-
+-	page = page_pool_dev_alloc_frag(rx_ring->page_pool, &offset,
+-					DP_RX_PP_FRAG_SIZE);
+-	if (!page)
+-		return NULL;
++	need = min_t(unsigned int, need, DP_RX_PP_DATA_SIZE);
++	if (likely(need <= rxcb->sync_len))
++		return;
+ 
+-	va = page_address(page) + offset;
+-	skb = build_skb(va, DP_RX_PP_FRAG_SIZE);
+-	if (!skb) {
+-		page_pool_put_full_page(rx_ring->page_pool, page, false);
+-		return NULL;
+-	}
++	dma_sync_single_for_cpu(ab->dev, rxcb->paddr + rxcb->sync_len,
++				need - rxcb->sync_len, DMA_BIDIRECTIONAL);
++	rxcb->sync_len = need;
++}
+ 
+-	skb_mark_for_recycle(skb);
++static dma_addr_t ath11k_dp_rx_pp_dma_addr(struct sk_buff *skb)
++{
++	struct page *page = virt_to_head_page(skb->data);
+ 
+-	return skb;
++	return page_pool_get_dma_addr(page) +
++	       (skb->data - (u8 *)page_address(page));
+ }
+ 
+ /* Returns number of Rx buffers replenished */
+@@ -503,20 +632,34 @@ static struct sk_buff *ath11k_dp_rx_pp_a
+  */
+ #define ATH11K_DP_RX_REFILL_CHUNK	16
+ 
+-/* A buffer for the refill of @rx_ring and the address the device writes it
+- * at, or NULL.
++/* A buffer for the refill of @rx_ring, as its table entry, and the address
++ * the device writes it at, or NULL. A buffer of the page pool gets no skb:
++ * its receive state starts out clear, as an skb's would.
+  */
+-static struct sk_buff *ath11k_dp_rx_refill_alloc(struct ath11k_base *ab,
+-						 struct dp_rxdma_ring *rx_ring,
+-						 dma_addr_t *paddr)
++static void *ath11k_dp_rx_refill_alloc(struct ath11k_base *ab,
++				       struct dp_rxdma_ring *rx_ring,
++				       dma_addr_t *paddr)
+ {
++	struct ath11k_dp_rx_bufmeta *meta;
+ 	struct sk_buff *skb;
+ 
+ 	if (rx_ring->page_pool) {
+-		skb = ath11k_dp_rx_pp_alloc_skb(rx_ring);
+-		if (skb)
+-			*paddr = ath11k_dp_rx_pp_dma_addr(skb);
+-		return skb;
++		unsigned int offset;
++		struct page *page;
++		void *va;
++
++		page = page_pool_dev_alloc_frag(rx_ring->page_pool, &offset,
++						DP_RX_PP_FRAG_SIZE);
++		if (!page)
++			return NULL;
++
++		va = page_address(page) + offset;
++		*paddr = page_pool_get_dma_addr(page) + offset;
++		meta = ath11k_dp_rx_buf_meta(va);
++		memset(&meta->cb, 0, sizeof(meta->cb));
++		meta->cb.paddr = *paddr;
++
++		return va;
+ 	}
+ 
+ 	skb = dev_alloc_skb(DP_RX_BUFFER_SIZE + DP_RX_BUFFER_ALIGN_SIZE);
+@@ -540,11 +683,17 @@ static struct sk_buff *ath11k_dp_rx_refi
+ /* Frees a buffer ath11k_dp_rx_refill_alloc() gave that is not on the ring. */
+ static void ath11k_dp_rx_refill_free(struct ath11k_base *ab,
+ 				     struct dp_rxdma_ring *rx_ring,
+-				     struct sk_buff *skb, dma_addr_t paddr)
++				     void *ent, dma_addr_t paddr)
+ {
+-	if (!rx_ring->page_pool)
+-		dma_unmap_single(ab->dev, paddr, skb->len + skb_tailroom(skb),
+-				 DMA_FROM_DEVICE);
++	struct sk_buff *skb = ent;
++
++	if (rx_ring->page_pool) {
++		ath11k_dp_rx_buf_free(rx_ring, ent);
++		return;
++	}
++
++	dma_unmap_single(ab->dev, paddr, skb->len + skb_tailroom(skb),
++			 DMA_FROM_DEVICE);
+ 	dev_kfree_skb_any(skb);
+ }
+ 
+@@ -553,13 +702,13 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 			       int req_entries,
+ 			       enum hal_rx_buf_return_buf_manager mgr)
+ {
+-	struct sk_buff *skbs[ATH11K_DP_RX_REFILL_CHUNK];
++	void *ents[ATH11K_DP_RX_REFILL_CHUNK];
+ 	dma_addr_t paddrs[ATH11K_DP_RX_REFILL_CHUNK];
+ 	int ids[ATH11K_DP_RX_REFILL_CHUNK];
+ 	int n, got, ided, i, j;
+ 	struct hal_srng *srng;
+ 	u32 *desc;
+-	struct sk_buff *skb;
++	void *ent;
+ 	int num_free;
+ 	int num_remain;
+ 	int buf_id;
+@@ -594,17 +743,17 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 	while (num_remain > 0) {
+ 		n = min(num_remain, ATH11K_DP_RX_REFILL_CHUNK);
+ 		for (got = 0; got < n; got++) {
+-			skb = ath11k_dp_rx_refill_alloc(ab, rx_ring, &paddr);
+-			if (!skb)
++			ent = ath11k_dp_rx_refill_alloc(ab, rx_ring, &paddr);
++			if (!ent)
+ 				break;
+-			skbs[got] = skb;
++			ents[got] = ent;
+ 			paddrs[got] = paddr;
+ 		}
+ 
+ 		/* bottom halves are off with the ring lock */
+ 		spin_lock(&rx_ring->bufs_lock);
+ 		for (ided = 0; ided < got; ided++) {
+-			buf_id = ath11k_dp_rx_buf_get_id(rx_ring, skbs[ided]);
++			buf_id = ath11k_dp_rx_buf_get_id(rx_ring, ents[ided]);
+ 			if (buf_id <= 0)
+ 				break;
+ 			ids[ided] = buf_id;
+@@ -616,7 +765,7 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 			if (!desc)
+ 				break;
+ 
+-			ATH11K_SKB_RXCB(skbs[i])->paddr = paddrs[i];
++			ath11k_dp_rx_ent_cb(rx_ring, ents[i])->paddr = paddrs[i];
+ 
+ 			cookie = FIELD_PREP(DP_RXDMA_BUF_COOKIE_PDEV_ID, mac_id) |
+ 				 FIELD_PREP(DP_RXDMA_BUF_COOKIE_BUF_ID, ids[i]);
+@@ -636,7 +785,7 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 				ath11k_dp_rx_buf_put_id(rx_ring, ids[j]);
+ 			spin_unlock(&rx_ring->bufs_lock);
+ 			for (j = i; j < got; j++)
+-				ath11k_dp_rx_refill_free(ab, rx_ring, skbs[j],
++				ath11k_dp_rx_refill_free(ab, rx_ring, ents[j],
+ 							 paddrs[j]);
+ 			break;
+ 		}
+@@ -659,15 +808,21 @@ static int ath11k_dp_rxdma_buf_ring_free
+ 					 struct dp_rxdma_ring *rx_ring)
+ {
+ 	struct sk_buff *skb;
++	void *ent;
+ 	int buf_id;
+ 
+ 	spin_lock_bh(&rx_ring->bufs_lock);
+ 	for (buf_id = 0; buf_id < rx_ring->num_ids; buf_id++) {
+-		skb = rx_ring->bufs[buf_id];
+-		if (!skb)
++		ent = rx_ring->bufs[buf_id];
++		if (!ent)
+ 			continue;
+ 
+ 		ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
++		skb = ath11k_dp_rx_ent_skb(rx_ring, ent);
++		if (!skb) {
++			ath11k_dp_rx_buf_free(rx_ring, ent);
++			continue;
++		}
+ 		/* TODO: Understand where internal driver does this dma_unmap
+ 		 * of rxdma_buffer.
+ 		 */
+@@ -2154,7 +2309,7 @@ static struct sk_buff *ath11k_dp_rx_get_
+  */
+ static u32 ath11k_rx_hash_seed __read_mostly;
+ 
+-static void ath11k_dp_rx_h_hash(struct ath11k *ar, struct sk_buff *msdu, u32 info2)
++static void ath11k_dp_rx_h_hash(struct ath11k *ar, struct sk_buff *msdu)
+ {
+ 	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(msdu);
+ 	u32 hash;
+@@ -2173,35 +2328,53 @@ static void ath11k_dp_rx_h_hash(struct a
+ 	ar->ab->soc_stats.rx_hash_set++;
+ }
+ 
+-static void ath11k_dp_rx_h_csum_offload(struct ath11k *ar, struct sk_buff *msdu)
++enum ath11k_dp_rx_csum {
++	ATH11K_DP_RX_CSUM_UNPARSED,
++	ATH11K_DP_RX_CSUM_BAD,
++	ATH11K_DP_RX_CSUM_GOOD,
++};
++
++/* What the hardware says of the checksums of the frame of @rx_desc. */
++static enum ath11k_dp_rx_csum ath11k_dp_rx_h_csum_check(struct ath11k_base *ab,
++							struct hal_rx_desc *rx_desc)
+ {
+-	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(msdu);
+ 	struct rx_attention *rx_attention;
+-	bool ip_csum_fail, l4_csum_fail;
+ 	u32 info2;
+ 
+-	rx_attention = ath11k_dp_rx_get_attention(ar->ab, rxcb->rx_desc);
+-	ip_csum_fail = ath11k_dp_rx_h_attn_ip_cksum_fail(rx_attention);
+-	l4_csum_fail = ath11k_dp_rx_h_attn_l4_cksum_fail(rx_attention);
+-	info2 = ar->ab->hw_params.hw_ops->rx_desc_get_msdu_start_info2(rxcb->rx_desc);
+-
+-	msdu->ip_summed = CHECKSUM_NONE;
+-
++	info2 = ab->hw_params.hw_ops->rx_desc_get_msdu_start_info2(rx_desc);
+ 	if (!(info2 & (RX_MSDU_START_INFO2_TCP | RX_MSDU_START_INFO2_UDP)) ||
+ 	    (info2 & RX_MSDU_START_INFO2_IP_FRAG) ||
+ 	    !(info2 & RX_MSDU_START_INFO2_IP_FIXED_HDR_VALID) ||
+ 	    !(info2 & RX_MSDU_START_INFO2_IP_TCP_UDP_HDR_VALID))
++		return ATH11K_DP_RX_CSUM_UNPARSED;
++
++	rx_attention = ath11k_dp_rx_get_attention(ab, rx_desc);
++	if (ath11k_dp_rx_h_attn_ip_cksum_fail(rx_attention) ||
++	    ath11k_dp_rx_h_attn_l4_cksum_fail(rx_attention))
++		return ATH11K_DP_RX_CSUM_BAD;
++
++	return ATH11K_DP_RX_CSUM_GOOD;
++}
++
++static void ath11k_dp_rx_h_csum_offload(struct ath11k *ar, struct sk_buff *msdu)
++{
++	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(msdu);
++	enum ath11k_dp_rx_csum csum;
++
++	csum = ath11k_dp_rx_h_csum_check(ar->ab, rxcb->rx_desc);
++
++	msdu->ip_summed = CHECKSUM_NONE;
++
++	if (csum == ATH11K_DP_RX_CSUM_UNPARSED)
+ 		return;
+ 
+ 	/* The hardware hashed the 5-tuple of a frame it parsed, which mac80211's
+ 	 * queue selection and the queueing disciplines would dissect again
+ 	 */
+-	ath11k_dp_rx_h_hash(ar, msdu, info2);
+-
+-	if (ip_csum_fail || l4_csum_fail)
+-		return;
++	ath11k_dp_rx_h_hash(ar, msdu);
+ 
+-	msdu->ip_summed = CHECKSUM_UNNECESSARY;
++	if (csum == ATH11K_DP_RX_CSUM_GOOD)
++		msdu->ip_summed = CHECKSUM_UNNECESSARY;
+ }
+ 
+ int ath11k_dp_rx_crypto_mic_len(struct ath11k *ar, enum hal_encrypt_type enctype)
+@@ -2553,9 +2726,8 @@ static void ath11k_dp_rx_h_undecap(struc
+ }
+ 
+ static struct ath11k_peer *
+-ath11k_dp_rx_h_find_peer(struct ath11k_base *ab, struct sk_buff *msdu)
++ath11k_dp_rx_h_find_peer(struct ath11k_base *ab, struct ath11k_skb_rxcb *rxcb)
+ {
+-	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(msdu);
+ 	struct hal_rx_desc *rx_desc = rxcb->rx_desc;
+ 	struct ath11k_peer *peer = NULL;
+ 
+@@ -2574,23 +2746,35 @@ ath11k_dp_rx_h_find_peer(struct ath11k_b
+ 	return peer;
+ }
+ 
+-static void ath11k_dp_rx_h_mpdu(struct ath11k *ar,
+-				struct sk_buff *msdu,
+-				struct hal_rx_desc *rx_desc,
+-				struct ieee80211_rx_status *rx_status)
++/* What ath11k_dp_rx_h_mpdu_state() found of an MSDU for the part of
++ * ath11k_dp_rx_h_mpdu() that works on its skb.
++ */
++struct ath11k_dp_rx_mpdu_st {
++	enum hal_encrypt_type enctype;
++	bool fill_crypto_hdr;
++	bool is_decrypted;
++};
++
++/* The checks of ath11k_dp_rx_h_mpdu() that read the MSDU of @rxcb, whose
++ * frame starts at @data, without changing it: its peer and station, the
++ * source address and type checks, and the receive status flags of its MPDU.
++ * They need no skb, so that a buffer that joins a run never gets one.
++ */
++static void ath11k_dp_rx_h_mpdu_state(struct ath11k *ar,
++				      struct ath11k_skb_rxcb *rxcb,
++				      struct hal_rx_desc *rx_desc, u8 *data,
++				      struct ieee80211_rx_status *rx_status,
++				      struct ath11k_dp_rx_mpdu_st *st)
+ {
+ 	bool  fill_crypto_hdr;
+ 	enum hal_encrypt_type enctype;
+ 	u8 decap;
+ 	bool is_decrypted = false;
+-	struct ath11k_skb_rxcb *rxcb;
+-	struct ieee80211_hdr *hdr;
+ 	struct ath11k_peer *peer;
+ 	struct rx_attention *rx_attention;
+ 	u32 err_bitmap;
+ 
+ 	/* PN for multicast packets will be checked in mac80211 */
+-	rxcb = ATH11K_SKB_RXCB(msdu);
+ 	fill_crypto_hdr = ath11k_dp_rx_h_attn_is_mcbc(ar->ab, rx_desc);
+ 	rxcb->is_mcbc = fill_crypto_hdr;
+ 
+@@ -2602,7 +2786,7 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 	rxcb->eth_native = false;
+ 
+ 	spin_lock_bh(&ar->ab->base_lock);
+-	peer = ath11k_dp_rx_h_find_peer(ar->ab, msdu);
++	peer = ath11k_dp_rx_h_find_peer(ar->ab, rxcb);
+ 	/* for ath11k_dp_rx_deliver_msdu(), from the same hold of the lock
+ 	 * as the source address check below
+ 	 */
+@@ -2629,7 +2813,7 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 	decap = ath11k_dp_rx_h_msdu_start_decap_type(ar->ab, rx_desc);
+ 	if ((decap == DP_RX_DECAP_TYPE_ETHERNET2_DIX ||
+ 	     decap == DP_RX_DECAP_TYPE_8023) &&
+-	    (!peer || !ether_addr_equal(((struct ethhdr *)msdu->data)->h_source,
++	    (!peer || !ether_addr_equal(((struct ethhdr *)data)->h_source,
+ 					peer->addr)))
+ 		rxcb->eth_native = true;
+ 	/* A frame of the 802.3 decap type, and one with a length field in
+@@ -2639,7 +2823,7 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 	 */
+ 	if (decap == DP_RX_DECAP_TYPE_8023 ||
+ 	    (decap == DP_RX_DECAP_TYPE_ETHERNET2_DIX &&
+-	     ntohs(((struct ethhdr *)msdu->data)->h_proto) < ETH_P_802_3_MIN))
++	     ntohs(((struct ethhdr *)data)->h_proto) < ETH_P_802_3_MIN))
+ 		rxcb->eth_native = true;
+ 	spin_unlock_bh(&ar->ab->base_lock);
+ 
+@@ -2671,11 +2855,24 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 					   RX_FLAG_PN_VALIDATED;
+ 	}
+ 
++	st->enctype = enctype;
++	st->fill_crypto_hdr = fill_crypto_hdr;
++	st->is_decrypted = is_decrypted;
++}
++
++/* The part of ath11k_dp_rx_h_mpdu() that works on the skb of the MSDU. */
++static void ath11k_dp_rx_h_mpdu_finish(struct ath11k *ar, struct sk_buff *msdu,
++				       struct hal_rx_desc *rx_desc,
++				       struct ieee80211_rx_status *rx_status,
++				       const struct ath11k_dp_rx_mpdu_st *st)
++{
++	struct ieee80211_hdr *hdr;
++
+ 	ath11k_dp_rx_h_csum_offload(ar, msdu);
+ 	ath11k_dp_rx_h_undecap(ar, msdu, rx_desc,
+-			       enctype, rx_status, is_decrypted);
++			       st->enctype, rx_status, st->is_decrypted);
+ 
+-	if (!is_decrypted || fill_crypto_hdr)
++	if (!st->is_decrypted || st->fill_crypto_hdr)
+ 		return;
+ 
+ 	if (ath11k_dp_rx_h_msdu_start_decap_type(ar->ab, rx_desc) !=
+@@ -2685,6 +2882,18 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 	}
+ }
+ 
++static void ath11k_dp_rx_h_mpdu(struct ath11k *ar,
++				struct sk_buff *msdu,
++				struct hal_rx_desc *rx_desc,
++				struct ieee80211_rx_status *rx_status)
++{
++	struct ath11k_dp_rx_mpdu_st st;
++
++	ath11k_dp_rx_h_mpdu_state(ar, ATH11K_SKB_RXCB(msdu), rx_desc,
++				  msdu->data, rx_status, &st);
++	ath11k_dp_rx_h_mpdu_finish(ar, msdu, rx_desc, rx_status, &st);
++}
++
+ static void ath11k_dp_rx_h_rate(struct ath11k *ar, struct hal_rx_desc *rx_desc,
+ 				struct ieee80211_rx_status *rx_status)
+ {
+@@ -2840,7 +3049,7 @@ static void ath11k_dp_rx_deliver_msdu(st
+ 		pubsta = rxcb->sta;
+ 	} else {
+ 		spin_lock_bh(&ar->ab->base_lock);
+-		peer = ath11k_dp_rx_h_find_peer(ar->ab, msdu);
++		peer = ath11k_dp_rx_h_find_peer(ar->ab, rxcb);
+ 		if (peer && peer->sta)
+ 			pubsta = peer->sta;
+ 		spin_unlock_bh(&ar->ab->base_lock);
+@@ -2895,7 +3104,7 @@ static void ath11k_dp_rx_deliver_msdu(st
+ 
+ static bool ath11k_dp_rx_check_nwifi_hdr_len_valid(struct ath11k_base *ab,
+ 						   struct hal_rx_desc *rx_desc,
+-						   struct sk_buff *msdu)
++						   u8 *data)
+ {
+ 	struct ieee80211_hdr *hdr;
+ 	u8 decap_type;
+@@ -2905,7 +3114,7 @@ static bool ath11k_dp_rx_check_nwifi_hdr
+ 	if (decap_type != DP_RX_DECAP_TYPE_NATIVE_WIFI)
+ 		return true;
+ 
+-	hdr = (struct ieee80211_hdr *)msdu->data;
++	hdr = (struct ieee80211_hdr *)data;
+ 	hdr_len = ieee80211_hdrlen(hdr->frame_control);
+ 
+ 	if (likely(hdr_len <= DP_MAX_NWIFI_HDR_LEN))
+@@ -2988,7 +3197,7 @@ static int ath11k_dp_rx_process_msdu(str
+ 		}
+ 	}
+ 
+-	if (unlikely(!ath11k_dp_rx_check_nwifi_hdr_len_valid(ab, rx_desc, msdu))) {
++	if (unlikely(!ath11k_dp_rx_check_nwifi_hdr_len_valid(ab, rx_desc, msdu->data))) {
+ 		ret = -EINVAL;
+ 		goto free_out;
+ 	}
+@@ -3038,15 +3247,15 @@ struct ath11k_dp_rx_merge {
+ 	bool flist;
+ };
+ 
+-/* Whether @msdu takes the 802.3 path of ath11k_dp_rx_deliver_msdu() to a
+- * station of its own, on its own: a unicast frame of the Ethernet decap type,
+- * of a peer whose station ath11k_dp_rx_h_mpdu() found and whose source address
+- * it checked, not EAPOL, not of a 4-address station, in one buffer.
++/* Whether the MSDU of @rxcb takes the 802.3 path of
++ * ath11k_dp_rx_deliver_msdu() to a station of its own, on its own: a unicast
++ * frame of the Ethernet decap type, of a peer whose station
++ * ath11k_dp_rx_h_mpdu() found and whose source address it checked, not EAPOL,
++ * not of a 4-address station, in one buffer.
+  */
+-static bool ath11k_dp_rx_merge_ok(struct ath11k *ar, struct sk_buff *msdu)
++static bool ath11k_dp_rx_merge_ok(struct ath11k *ar,
++				  const struct ath11k_skb_rxcb *rxcb)
+ {
+-	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(msdu);
+-
+ 	if (!rxcb->sta_valid || !rxcb->sta || rxcb->is_mcbc ||
+ 	    rxcb->is_eapol || rxcb->eth_native || rxcb->is_frag ||
+ 	    rxcb->is_continuation)
+@@ -3059,21 +3268,19 @@ static bool ath11k_dp_rx_merge_ok(struct
+ 	return !READ_ONCE(ath11k_sta_to_arsta(rxcb->sta)->use_4addr_set);
+ }
+ 
+-/* The headers of @msdu when it is a TCP data segment of an IPv4 or IPv6
+- * frame that carries nothing a merge would lose: one buffer, a checksum the
+- * hardware verified, no VLAN tag, IP options, extension headers or fragment,
+- * a length that is the frame's, a unicast destination, and the flags of a
+- * plain acknowledgment that may push.
++/* The headers of the Ethernet frame of @len bytes at @d when it is a TCP
++ * data segment of an IPv4 or IPv6 frame that carries nothing a merge would
++ * lose: no VLAN tag, IP options, extension headers or fragment, a length that
++ * is the frame's, a unicast destination, and the flags of a plain
++ * acknowledgment that may push.
+  */
+-static bool ath11k_dp_rx_merge_parse(struct sk_buff *msdu,
+-				     struct ath11k_dp_rx_tcp *t)
++static bool ath11k_dp_rx_merge_parse_data(u8 *d, unsigned int len,
++					  struct ath11k_dp_rx_tcp *t)
+ {
+-	unsigned int len = msdu->len, thoff, thlen;
+-	u8 *d = msdu->data;
++	unsigned int thoff, thlen;
+ 	struct tcphdr *th;
+ 
+-	if (skb_is_nonlinear(msdu) || msdu->ip_summed != CHECKSUM_UNNECESSARY ||
+-	    len < ETH_HLEN + sizeof(struct iphdr) + sizeof(*th))
++	if (len < ETH_HLEN + sizeof(struct iphdr) + sizeof(*th))
+ 		return false;
+ 
+ 	t->eth = (struct ethhdr *)d;
+@@ -3120,20 +3327,31 @@ static bool ath11k_dp_rx_merge_parse(str
+ 	return true;
+ }
+ 
+-/* Whether segment @t of @msdu, received with @status, follows the run's last
+- * one as GRO on the netdev would take it: the same station, TID and receive
+- * status, the same Ethernet header, IP header but for the ID, ports,
+- * acknowledgment, window and options, the next sequence number, an IP ID
+- * that goes up by one or stays with DF set, and room under the size GRO
++/* The headers of @msdu as ath11k_dp_rx_merge_parse_data() takes them, for a
++ * frame in one buffer whose checksum the hardware verified.
++ */
++static bool ath11k_dp_rx_merge_parse(struct sk_buff *msdu,
++				     struct ath11k_dp_rx_tcp *t)
++{
++	if (skb_is_nonlinear(msdu) || msdu->ip_summed != CHECKSUM_UNNECESSARY)
++		return false;
++
++	return ath11k_dp_rx_merge_parse_data(msdu->data, msdu->len, t);
++}
++
++/* Whether segment @t of the MSDU of @rxcb, received with @status, follows
++ * the run's last one as GRO on the netdev would take it: the same station,
++ * TID and receive status, the same Ethernet header, IP header but for the
++ * ID, ports, acknowledgment, window and options, the next sequence number, an
++ * IP ID that goes up by one or stays with DF set, and room under the size GRO
+  * stops at. A frame list takes no segment that pushes, as GRO's does not.
+  */
+ static bool ath11k_dp_rx_merge_fits(const struct ath11k_dp_rx_merge *g,
+-				    struct sk_buff *msdu,
++				    const struct ath11k_skb_rxcb *rxcb,
+ 				    const struct ieee80211_rx_status *status,
+ 				    const struct ath11k_dp_rx_tcp *t,
+ 				    bool *fixed)
+ {
+-	const struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(msdu);
+ 	const struct ath11k_skb_rxcb *hcb = ATH11K_SKB_RXCB(g->head);
+ 	const struct ath11k_dp_rx_tcp *h = &g->t;
+ 	unsigned int optlen;
+@@ -3254,6 +3472,28 @@ static void ath11k_dp_rx_merge_flush(str
+ 	ath11k_dp_rx_deliver_msdu(ar, napi, skb, &g->status);
+ }
+ 
++/* Counts a segment of @payload bytes, with IP ID @id, into the run it joined,
++ * and ends the run at a segment that pushes, a short one, and the bound on
++ * its segments.
++ */
++static void ath11k_dp_rx_merge_joined(struct ath11k *ar,
++				      struct napi_struct *napi,
++				      struct ath11k_dp_rx_merge *g,
++				      u16 payload, u16 id, bool push,
++				      bool fixed)
++{
++	if (g->segs == 1)
++		g->fixedid = fixed;
++	g->segs++;
++	g->next_seq += payload;
++	g->last_id = id;
++	if (push)
++		g->t.th->psh = 1;
++
++	if (push || payload < g->mss || g->segs >= g->max_segs)
++		ath11k_dp_rx_merge_flush(ar, napi, g);
++}
++
+ /* Appends segment @t of @msdu to the run: its payload as a fragment of the
+  * head, which takes the page pool buffer it was received in and frees the
+  * segment's skb, or the segment whole to the frame list. A segment that
+@@ -3296,19 +3536,49 @@ static bool ath11k_dp_rx_merge_join(stru
+ 		kfree_skb_partial(msdu, fragstolen);
+ 	}
+ 
+-	if (g->segs == 1)
+-		g->fixedid = fixed;
+-	g->segs++;
+-	g->next_seq += payload;
+-	g->last_id = id;
+-	if (push)
+-		g->t.th->psh = 1;
++	ath11k_dp_rx_merge_joined(ar, napi, g, payload, id, push, fixed);
+ 
+-	/* A segment that ends a write ends the run, as does a short one, and
+-	 * the bound on its size.
+-	 */
+-	if (push || payload < g->mss || g->segs >= g->max_segs)
+-		ath11k_dp_rx_merge_flush(ar, napi, g);
++	return true;
++}
++
++/* Appends segment @t of the MSDU in buffer @va, whose receive state is @rxcb,
++ * received with @status, to a run with fragments when it is the run's next
++ * segment, with the checks ath11k_dp_rx_merge_rx() makes of an skb, which the
++ * buffer then never gets: its payload becomes a fragment of the head, which
++ * takes over the buffer's page pool reference. The buffer is left as it was
++ * when the segment does not join.
++ */
++static bool ath11k_dp_rx_merge_join_buf(struct ath11k *ar,
++					struct napi_struct *napi,
++					struct ath11k_dp_rx_merge *g, void *va,
++					const struct ath11k_skb_rxcb *rxcb,
++					u8 *data, unsigned int len,
++					const struct ieee80211_rx_status *status)
++{
++	struct sk_buff *head = g->head;
++	struct ath11k_dp_rx_tcp t;
++	bool fixed = false;
++	struct page *page;
++
++	if (!head || g->flist || !head->pp_recycle || skb_cloned(head) ||
++	    skb_shinfo(head)->nr_frags >= MAX_SKB_FRAGS)
++		return false;
++
++	if ((status->flag & (RX_FLAG_FAILED_FCS_CRC | RX_FLAG_MMIC_ERROR)) ||
++	    !ath11k_dp_rx_merge_ok(ar, rxcb) ||
++	    ath11k_dp_rx_h_csum_check(ar->ab, rxcb->rx_desc) !=
++	    ATH11K_DP_RX_CSUM_GOOD ||
++	    !ath11k_dp_rx_merge_parse_data(data, len, &t) ||
++	    !ath11k_dp_rx_merge_fits(g, rxcb, status, &t, &fixed))
++		return false;
++
++	page = virt_to_head_page(va);
++	skb_add_rx_frag(head, skb_shinfo(head)->nr_frags, page,
++			data + t.hdr_len - (u8 *)page_address(page),
++			t.payload, DP_RX_PP_FRAG_SIZE);
++
++	ath11k_dp_rx_merge_joined(ar, napi, g, t.payload,
++				  t.v6 ? 0 : ntohs(t.ip4->id), t.th->psh, fixed);
+ 
+ 	return true;
+ }
+@@ -3453,11 +3723,12 @@ static bool ath11k_dp_rx_merge_rx(struct
+ 	bool fixed = false, ok;
+ 
+ 	ok = !(status->flag & (RX_FLAG_FAILED_FCS_CRC | RX_FLAG_MMIC_ERROR)) &&
+-	     ath11k_dp_rx_merge_ok(ar, msdu) &&
++	     ath11k_dp_rx_merge_ok(ar, ATH11K_SKB_RXCB(msdu)) &&
+ 	     ath11k_dp_rx_merge_parse(msdu, &t);
+ 
+ 	if (g->head) {
+-		if (ok && ath11k_dp_rx_merge_fits(g, msdu, status, &t, &fixed) &&
++		if (ok && ath11k_dp_rx_merge_fits(g, ATH11K_SKB_RXCB(msdu),
++						  status, &t, &fixed) &&
+ 		    ath11k_dp_rx_merge_join(ar, napi, g, msdu, &t, fixed))
+ 			return true;
+ 		ath11k_dp_rx_merge_flush(ar, napi, g);
+@@ -3466,33 +3737,245 @@ static bool ath11k_dp_rx_merge_rx(struct
+ 	return ok && !t.th->psh && ath11k_dp_rx_merge_open(g, msdu, status, &t);
+ }
+ 
++/* The buffers of one radio a reap took, in their order, as table entries:
++ * linked through the receive state of a buffer without an skb, and through
++ * skb->next of one with.
++ */
++struct ath11k_dp_rx_bufq {
++	void *head;
++	void *tail;
++};
++
++static void **ath11k_dp_rx_ent_nextp(struct dp_rxdma_ring *rx_ring, void *ent)
++{
++	struct sk_buff *skb = ath11k_dp_rx_ent_skb(rx_ring, ent);
++
++	return skb ? (void **)&skb->next : &ath11k_dp_rx_buf_meta(ent)->next;
++}
++
++static void ath11k_dp_rx_bufq_add(struct dp_rxdma_ring *rx_ring,
++				  struct ath11k_dp_rx_bufq *q, void *ent)
++{
++	*ath11k_dp_rx_ent_nextp(rx_ring, ent) = NULL;
++	if (q->tail)
++		*ath11k_dp_rx_ent_nextp(rx_ring, q->tail) = ent;
++	else
++		q->head = ent;
++	q->tail = ent;
++}
++
++static void *ath11k_dp_rx_bufq_pop(struct dp_rxdma_ring *rx_ring,
++				   struct ath11k_dp_rx_bufq *q)
++{
++	void *ent = q->head;
++	void **next;
++
++	if (!ent)
++		return NULL;
++
++	next = ath11k_dp_rx_ent_nextp(rx_ring, ent);
++	q->head = *next;
++	*next = NULL;
++	if (!q->head)
++		q->tail = NULL;
++
++	return ent;
++}
++
++static void ath11k_dp_rx_bufq_purge(struct dp_rxdma_ring *rx_ring,
++				    struct ath11k_dp_rx_bufq *q)
++{
++	void *ent;
++
++	while ((ent = ath11k_dp_rx_bufq_pop(rx_ring, q)))
++		ath11k_dp_rx_ent_free(rx_ring, ent);
++}
++
++/* The skb of table entry @ent the table no longer holds, built now in the
++ * receive poll for a buffer that has none, or NULL with the buffer freed.
++ */
++static struct sk_buff *ath11k_dp_rx_ent_take(struct dp_rxdma_ring *rx_ring,
++					     void *ent)
++{
++	struct sk_buff *skb = ath11k_dp_rx_ent_skb(rx_ring, ent);
++
++	if (skb)
++		return skb;
++
++	skb = ath11k_dp_rx_buf_build(ent, true);
++	if (unlikely(!skb))
++		ath11k_dp_rx_buf_free(rx_ring, ent);
++
++	return skb;
++}
++
++/* Moves the skbs of the buffers after the first of an MSDU that spans
++ * several, up to the one without the continuation bit, from @q to @list.
++ * Return: false when one of them has no skb, which leaves the MSDU short.
++ */
++static bool ath11k_dp_rx_bufq_take_cont(struct dp_rxdma_ring *rx_ring,
++					struct ath11k_dp_rx_bufq *q,
++					struct sk_buff_head *list)
++{
++	struct sk_buff *skb;
++	bool cont, ok = true;
++	void *ent;
++
++	do {
++		ent = ath11k_dp_rx_bufq_pop(rx_ring, q);
++		if (!ent)
++			break;
++
++		cont = ath11k_dp_rx_ent_cb(rx_ring, ent)->is_continuation;
++		skb = ath11k_dp_rx_ent_take(rx_ring, ent);
++		if (skb)
++			__skb_queue_tail(list, skb);
++		else
++			ok = false;
++	} while (cont);
++
++	return ok;
++}
++
++/* ath11k_dp_rx_process_msdu() and what follows it for the MSDU in buffer @va
++ * of @rx_ring, which has no skb and fills that one buffer: the same checks
++ * on the buffer itself, the join to the run, and only for an MSDU that does
++ * not join, an skb, the part of ath11k_dp_rx_h_mpdu() that changes it, and
++ * the run or mac80211.
++ */
++static void ath11k_dp_rx_process_buf(struct ath11k *ar,
++				     struct napi_struct *napi,
++				     struct dp_rxdma_ring *rx_ring,
++				     struct ath11k_dp_rx_merge *g, void *va,
++				     struct ieee80211_rx_status *rx_status)
++{
++	struct ath11k_skb_rxcb *rxcb = &ath11k_dp_rx_buf_meta(va)->cb;
++	struct ath11k_base *ab = ar->ab;
++	u32 hal_rx_desc_sz = ab->hw_params.hal_desc_sz;
++	struct hal_rx_desc *rx_desc = va;
++	struct ath11k_dp_rx_mpdu_st st;
++	struct rx_attention *rx_attention;
++	struct sk_buff *msdu;
++	u8 l3_pad_bytes;
++	u8 *hdr_status;
++	u16 msdu_len;
++	u8 *data;
++
++	if (ath11k_dp_rx_h_attn_msdu_len_err(ab, rx_desc)) {
++		ath11k_warn(ab, "msdu len not valid\n");
++		goto drop;
++	}
++
++	rx_attention = ath11k_dp_rx_get_attention(ab, rx_desc);
++	if (!ath11k_dp_rx_h_attn_msdu_done(rx_attention)) {
++		ath11k_warn(ab, "msdu_done bit in attention is not set\n");
++		goto drop;
++	}
++
++	rxcb->rx_desc = rx_desc;
++	msdu_len = ath11k_dp_rx_h_msdu_start_msdu_len(ab, rx_desc);
++	l3_pad_bytes = ath11k_dp_rx_h_msdu_end_l3pad(ab, rx_desc);
++
++	if ((msdu_len + hal_rx_desc_sz) > DP_RX_BUFFER_SIZE) {
++		hdr_status = ath11k_dp_rx_h_80211_hdr(ab, rx_desc);
++		ath11k_warn(ab, "invalid msdu len %u\n", msdu_len);
++		ath11k_dbg_dump(ab, ATH11K_DBG_DATA, NULL, "", hdr_status,
++				sizeof(struct ieee80211_hdr));
++		ath11k_dbg_dump(ab, ATH11K_DBG_DATA, NULL, "", rx_desc,
++				sizeof(struct hal_rx_desc));
++		goto drop;
++	}
++
++	ath11k_dp_rx_sync_buf_more(ab, rxcb, hal_rx_desc_sz + l3_pad_bytes +
++				   msdu_len);
++	data = (u8 *)va + hal_rx_desc_sz + l3_pad_bytes;
++
++	if (unlikely(!ath11k_dp_rx_check_nwifi_hdr_len_valid(ab, rx_desc, data)))
++		goto drop;
++
++	ath11k_dp_rx_h_ppdu(ar, rx_desc, rx_status);
++	ath11k_dp_rx_h_mpdu_state(ar, rxcb, rx_desc, data, rx_status, &st);
++	rx_status->flag |= RX_FLAG_SKIP_MONITOR | RX_FLAG_DUP_VALIDATED;
++
++	if (ath11k_dp_rx_merge_join_buf(ar, napi, g, va, rxcb, data, msdu_len,
++					rx_status))
++		return;
++
++	msdu = ath11k_dp_rx_buf_build(va, true);
++	if (unlikely(!msdu))
++		goto drop;
++
++	skb_put(msdu, hal_rx_desc_sz + l3_pad_bytes + msdu_len);
++	skb_pull(msdu, hal_rx_desc_sz + l3_pad_bytes);
++	ath11k_dp_rx_h_mpdu_finish(ar, msdu, rx_desc, rx_status, &st);
++
++	if (ath11k_dp_rx_merge_rx(ar, napi, g, msdu, rx_status))
++		return;
++
++	ath11k_dp_rx_deliver_msdu(ar, napi, msdu, rx_status);
++	return;
++
++drop:
++	ath11k_dbg(ab, ATH11K_DBG_DATA, "Unable to process msdu buffer");
++	ath11k_dp_rx_buf_free(rx_ring, va);
++}
++
+ static void ath11k_dp_rx_process_received_packets(struct ath11k_base *ab,
+ 						  struct napi_struct *napi,
+-						  struct sk_buff_head *msdu_list,
++						  struct dp_rxdma_ring *rx_ring,
++						  struct ath11k_dp_rx_bufq *q,
+ 						  int mac_id)
+ {
++	struct sk_buff_head msdu_list;
+ 	struct sk_buff *msdu;
+ 	struct ath11k *ar;
+ 	struct ieee80211_rx_status rx_status = {};
+ 	struct ath11k_dp_rx_merge merge = {};
++	void *ent;
+ 	int ret;
+ 
+-	if (skb_queue_empty(msdu_list))
++	if (!q->head)
+ 		return;
+ 
+ 	if (unlikely(!rcu_access_pointer(ab->pdevs_active[mac_id]))) {
+-		__skb_queue_purge(msdu_list);
++		ath11k_dp_rx_bufq_purge(rx_ring, q);
+ 		return;
+ 	}
+ 
+ 	ar = ab->pdevs[mac_id].ar;
+ 	if (unlikely(test_bit(ATH11K_CAC_RUNNING, &ar->dev_flags))) {
+-		__skb_queue_purge(msdu_list);
++		ath11k_dp_rx_bufq_purge(rx_ring, q);
+ 		return;
+ 	}
+ 
+-	while ((msdu = __skb_dequeue(msdu_list))) {
+-		ret = ath11k_dp_rx_process_msdu(ar, msdu, msdu_list, &rx_status);
++	__skb_queue_head_init(&msdu_list);
++
++	while ((ent = ath11k_dp_rx_bufq_pop(rx_ring, q))) {
++		if (!ath11k_dp_rx_ent_skb(rx_ring, ent) &&
++		    !ath11k_dp_rx_buf_meta(ent)->cb.is_continuation) {
++			ath11k_dp_rx_process_buf(ar, napi, rx_ring, &merge, ent,
++						 &rx_status);
++			continue;
++		}
++
++		msdu = ath11k_dp_rx_ent_take(rx_ring, ent);
++		if (unlikely(!msdu)) {
++			ath11k_dbg(ab, ATH11K_DBG_DATA,
++				   "Unable to process msdu %d", -ENOMEM);
++			continue;
++		}
++
++		/* An MSDU that spans several buffers takes the skbs of the
++		 * rest, which ath11k_dp_rx_process_msdu() copies from.
++		 */
++		ret = 0;
++		if (ATH11K_SKB_RXCB(msdu)->is_continuation &&
++		    !ath11k_dp_rx_bufq_take_cont(rx_ring, q, &msdu_list))
++			ret = -ENOMEM;
++		if (!ret)
++			ret = ath11k_dp_rx_process_msdu(ar, msdu, &msdu_list,
++							&rx_status);
++		__skb_queue_purge(&msdu_list);
+ 		if (unlikely(ret)) {
+ 			ath11k_dbg(ab, ATH11K_DBG_DATA,
+ 				   "Unable to process msdu %d", ret);
+@@ -3510,11 +3993,12 @@ static void ath11k_dp_rx_process_receive
+ }
+ 
+ /* The refill buffer table entry a REO entry names, or NULL for a cookie that
+- * names none.
++ * names none, and its ring in @ring.
+  */
+-static struct sk_buff **
++static void **
+ ath11k_dp_rx_reo_buf_slot(struct ath11k_base *ab,
+-			  const struct hal_reo_dest_ring *desc)
++			  const struct hal_reo_dest_ring *desc,
++			  struct dp_rxdma_ring **ring)
+ {
+ 	u32 cookie = FIELD_GET(BUFFER_ADDR_INFO1_SW_COOKIE,
+ 			       desc->buf_addr_info.info1);
+@@ -3534,25 +4018,29 @@ ath11k_dp_rx_reo_buf_slot(struct ath11k_
+ 	if (buf_id >= rx_ring->num_ids)
+ 		return NULL;
+ 
++	*ring = rx_ring;
+ 	return &rx_ring->bufs[buf_id];
+ }
+ 
+ /* Starts the loads of the reap of the next REO entries, which are cold by
+  * the time the frames come back: the buffer table entry of the entry after
+- * the next one, and the sk_buff of the next one, whose table entry the reap
+- * before prefetched. Only an address is read from the table, without its
++ * the next one, and the receive state of the next one, whose table entry the
++ * reap before prefetched: the sk_buff, or the line of a buffer without one
++ * that holds its state. Only an address is read from the table, without its
+  * lock: a buffer it no longer holds costs a prefetch to nothing.
+  */
+ static void ath11k_dp_rx_reo_prefetch(struct ath11k_base *ab,
+ 				      struct hal_srng *srng)
+ {
+-	struct sk_buff **slot;
++	struct dp_rxdma_ring *ring;
+ 	struct sk_buff *skb;
++	void **slot;
+ 	void *desc;
++	void *ent;
+ 
+ 	desc = ath11k_hal_srng_dst_peek_ahead(srng, 1);
+ 	if (desc) {
+-		slot = ath11k_dp_rx_reo_buf_slot(ab, desc);
++		slot = ath11k_dp_rx_reo_buf_slot(ab, desc, &ring);
+ 		if (slot)
+ 			prefetch(slot);
+ 	}
+@@ -3561,17 +4049,24 @@ static void ath11k_dp_rx_reo_prefetch(st
+ 	if (!desc)
+ 		return;
+ 
+-	slot = ath11k_dp_rx_reo_buf_slot(ab, desc);
++	slot = ath11k_dp_rx_reo_buf_slot(ab, desc, &ring);
+ 	if (!slot)
+ 		return;
+ 
+-	skb = READ_ONCE(*slot);
+-	if (skb) {
+-		prefetchw(skb);
+-		prefetchw((u8 *)skb + L1_CACHE_BYTES);
+-		prefetchw((u8 *)skb + 2 * L1_CACHE_BYTES);
+-		prefetchw((u8 *)skb + 3 * L1_CACHE_BYTES);
++	ent = READ_ONCE(*slot);
++	if (!ent)
++		return;
++
++	skb = ath11k_dp_rx_ent_skb(ring, ent);
++	if (!skb) {
++		prefetchw(ath11k_dp_rx_buf_meta(ent));
++		return;
+ 	}
++
++	prefetchw(skb);
++	prefetchw((u8 *)skb + L1_CACHE_BYTES);
++	prefetchw((u8 *)skb + 2 * L1_CACHE_BYTES);
++	prefetchw((u8 *)skb + 3 * L1_CACHE_BYTES);
+ }
+ 
+ /* Starts the loads of the descriptor TLVs and the headers of a frame the
+@@ -3580,10 +4075,9 @@ static void ath11k_dp_rx_reo_prefetch(st
+  * descriptor and the first two lines past it. A line past what the device
+  * wrote is not read.
+  */
+-static void ath11k_dp_rx_prefetch_frame(struct ath11k_base *ab,
+-					struct sk_buff *msdu)
++static void ath11k_dp_rx_prefetch_frame(struct ath11k_base *ab, u8 *data)
+ {
+-	u8 *data = msdu->data, *hdr = data + ab->hw_params.hal_desc_sz;
++	u8 *hdr = data + ab->hw_params.hal_desc_sz;
+ 
+ 	prefetch(data);
+ 	prefetch(data + L1_CACHE_BYTES);
+@@ -3600,8 +4094,10 @@ int ath11k_dp_process_rx(struct ath11k_b
+ 	struct ath11k_dp *dp = &ab->dp;
+ 	struct dp_rxdma_ring *rx_ring;
+ 	int num_buffs_reaped[MAX_RADIOS] = {};
+-	struct sk_buff_head msdu_list[MAX_RADIOS];
++	struct ath11k_dp_rx_bufq bufq[MAX_RADIOS] = {};
+ 	struct ath11k_skb_rxcb *rxcb;
++	void *ent;
++	u8 *data;
+ 	int total_msdu_reaped = 0;
+ 	struct hal_srng *srng;
+ 	struct sk_buff *msdu;
+@@ -3613,9 +4109,6 @@ int ath11k_dp_process_rx(struct ath11k_b
+ 	u32 cookie;
+ 	int i;
+ 
+-	for (i = 0; i < MAX_RADIOS; i++)
+-		__skb_queue_head_init(&msdu_list[i]);
+-
+ 	srng = &ab->hal.srng_list[dp->reo_dst_ring[ring_id].ring_id];
+ 
+ 	spin_lock_bh(&srng->lock);
+@@ -3655,8 +4148,8 @@ try_again:
+ 		rx_ring = &ar->dp.rx_refill_buf_ring;
+ 		/* bottom halves are off with the ring lock */
+ 		spin_lock(&rx_ring->bufs_lock);
+-		msdu = ath11k_dp_rx_buf_lookup(rx_ring, buf_id);
+-		if (unlikely(!msdu)) {
++		ent = ath11k_dp_rx_buf_lookup_ent(rx_ring, buf_id);
++		if (unlikely(!ent)) {
+ 			ath11k_warn(ab, "frame rx with invalid buf_id %d\n",
+ 				    buf_id);
+ 			spin_unlock(&rx_ring->bufs_lock);
+@@ -3666,9 +4159,21 @@ try_again:
+ 		ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
+ 		spin_unlock(&rx_ring->bufs_lock);
+ 
+-		rxcb = ATH11K_SKB_RXCB(msdu);
+-		ath11k_dp_rx_unmap_buf_len(ab, msdu, DMA_FROM_DEVICE, want);
+-		ath11k_dp_rx_prefetch_frame(ab, msdu);
++		/* A page pool buffer gets its skb only once its processing
++		 * needs one, which a segment that joins a run never does.
++		 */
++		msdu = ath11k_dp_rx_ent_skb(rx_ring, ent);
++		if (msdu) {
++			rxcb = ATH11K_SKB_RXCB(msdu);
++			ath11k_dp_rx_unmap_buf_len(ab, msdu, DMA_FROM_DEVICE,
++						   want);
++			data = msdu->data;
++		} else {
++			rxcb = &ath11k_dp_rx_buf_meta(ent)->cb;
++			ath11k_dp_rx_sync_buf(ab, rxcb, want);
++			data = ent;
++		}
++		ath11k_dp_rx_prefetch_frame(ab, data);
+ 
+ 		num_buffs_reaped[mac_id]++;
+ 
+@@ -3676,7 +4181,7 @@ try_again:
+ 					desc->info0);
+ 		if (unlikely(push_reason !=
+ 			     HAL_REO_DEST_RING_PUSH_REASON_ROUTING_INSTRUCTION)) {
+-			dev_kfree_skb_any(msdu);
++			ath11k_dp_rx_ent_free(rx_ring, ent);
+ 			ab->soc_stats.hal_reo_error[ring_id]++;
+ 			continue;
+ 		}
+@@ -3696,7 +4201,7 @@ try_again:
+ 				      desc->info0);
+ 
+ 		rxcb->mac_id = mac_id;
+-		__skb_queue_tail(&msdu_list[mac_id], msdu);
++		ath11k_dp_rx_bufq_add(rx_ring, &bufq[mac_id], ent);
+ 
+ 		if (rxcb->is_continuation) {
+ 			done = false;
+@@ -3733,11 +4238,12 @@ try_again:
+ 		if (!num_buffs_reaped[i])
+ 			continue;
+ 
+-		ath11k_dp_rx_process_received_packets(ab, napi, &msdu_list[i], i);
+-
+ 		ar = ab->pdevs[i].ar;
+ 		rx_ring = &ar->dp.rx_refill_buf_ring;
+ 
++		ath11k_dp_rx_process_received_packets(ab, napi, rx_ring,
++						      &bufq[i], i);
++
+ 		ath11k_dp_rxbufs_replenish(ab, i, rx_ring, num_buffs_reaped[i],
+ 					   ab->hw_params.hal_params->rx_buf_rbm);
+ 	}
+@@ -4250,7 +4756,7 @@ mic_fail:
+ 	skb_pull(msdu, hal_rx_desc_sz);
+ 
+ 	if (unlikely(!ath11k_dp_rx_check_nwifi_hdr_len_valid(ar->ab, rx_desc,
+-							     msdu))) {
++							     msdu->data))) {
+ 		dev_kfree_skb_any(msdu);
+ 		return -EINVAL;
+ 	}
+@@ -4421,7 +4927,9 @@ static int ath11k_dp_rx_h_defrag_reo_rei
+ 	}
+ 
+ 	spin_lock_bh(&rx_refill_ring->bufs_lock);
+-	buf_id = ath11k_dp_rx_buf_get_id(rx_refill_ring, defrag_skb);
++	buf_id = ath11k_dp_rx_buf_get_id(rx_refill_ring,
++					 ath11k_dp_rx_skb_ent(rx_refill_ring,
++							      defrag_skb));
+ 	spin_unlock_bh(&rx_refill_ring->bufs_lock);
+ 	if (buf_id < 0) {
+ 		ret = -ENOMEM;
+@@ -4956,7 +5464,7 @@ static int ath11k_dp_rx_h_null_q_desc(st
+ 		skb_pull(msdu, hal_rx_desc_sz + l3pad_bytes);
+ 	}
+ 
+-	if (unlikely(!ath11k_dp_rx_check_nwifi_hdr_len_valid(ar->ab, desc, msdu)))
++	if (unlikely(!ath11k_dp_rx_check_nwifi_hdr_len_valid(ar->ab, desc, msdu->data)))
+ 		return -EINVAL;
+ 
+ 	ath11k_dp_rx_h_ppdu(ar, desc, status);
+@@ -5030,7 +5538,7 @@ static bool ath11k_dp_rx_h_tkip_mic_err(
+ 	skb_put(msdu, hal_rx_desc_sz + l3pad_bytes + msdu_len);
+ 	skb_pull(msdu, hal_rx_desc_sz + l3pad_bytes);
+ 
+-	if (unlikely(!ath11k_dp_rx_check_nwifi_hdr_len_valid(ab, desc, msdu)))
++	if (unlikely(!ath11k_dp_rx_check_nwifi_hdr_len_valid(ab, desc, msdu->data)))
+ 		return true;
+ 
+ 	ath11k_dp_rx_h_ppdu(ar, desc, status);
