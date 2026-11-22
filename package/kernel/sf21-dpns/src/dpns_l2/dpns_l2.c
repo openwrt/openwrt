@@ -7,6 +7,8 @@
 #include <linux/workqueue.h>
 #include <net/switchdev.h>
 #include <linux/if_bridge.h>
+#include <linux/if_vlan.h>
+#include <linux/rtnetlink.h>
 #include <net/cfg80211.h>
 #include <linux/ieee80211.h>
 
@@ -270,6 +272,132 @@ l2_iso_table_update(MAC_t *priv, u8 iport_num, u32 port_bitmap,
 			param.data, sizeof(param));
 }
 
+/*
+ * Hardware L2 forwarding must not cross Linux bridges and must honour the
+ * bridge "isolated" port flag. The NPU looks up destination MACs in one
+ * global table, so without restrictions a host on a port of one bridge
+ * reaches a host on a port of another bridge directly in hardware.
+ *
+ * The L2 isolation table, indexed by 32 + ingress port (entries 0..31 apply
+ * to lookups requested by the CPU, see dpns_mac_hw_search), holds the egress ports
+ * the NPU may forward to. Packets for other ports are sent to the CPU, where
+ * the bridge decides. The same check applies to routed (NAT/LF) flows, so
+ * the host port and ports outside any bridge are always allowed; flows
+ * routed between two different bridges are left to the CPU.
+ */
+#define L2_ISO_ALL_PORTS	GENMASK(DPNS_MAX_PORT - 1, 0)
+#define L2_ISO_PORT_IDX		32
+#define L2_ISO_BR_MAX		4
+
+static bool l2_bridge_iso = true;
+module_param(l2_bridge_iso, bool, 0644);
+MODULE_PARM_DESC(l2_bridge_iso, "Restrict hardware L2 forwarding to ports of the same bridge, honour isolated ports (default on)");
+
+/* bridges a port belongs to, directly or through VLAN upper devices; under RTNL */
+static int l2_port_bridges(struct net_device *dev, struct net_device **br)
+{
+	struct net_device *upper;
+	struct list_head *iter;
+	int n = 0;
+
+	if (netif_is_bridge_port(dev))
+		br[n++] = netdev_master_upper_dev_get(dev);
+
+	rcu_read_lock();
+	netdev_for_each_upper_dev_rcu(dev, upper, iter) {
+		if (n < L2_ISO_BR_MAX && is_vlan_dev(upper) && netif_is_bridge_port(upper))
+			br[n++] = netdev_master_upper_dev_get_rcu(upper);
+	}
+	rcu_read_unlock();
+
+	return n;
+}
+
+static bool l2_share_bridge(struct net_device **a, int na, struct net_device **b, int nb)
+{
+	int i, j;
+
+	for (i = 0; i < na; i++)
+		for (j = 0; j < nb; j++)
+			if (a[i] && a[i] == b[j])
+				return true;
+	return false;
+}
+
+static void l2_iso_sync(MAC_t *priv)
+{
+	static struct net_device *br[DPNS_MAX_PORT][L2_ISO_BR_MAX];
+	COMMON_t *cpriv = priv->cpriv;
+	int nbr[DPNS_MAX_PORT] = {};
+	u32 bridged = 0, allow;
+	int p, q;
+
+	ASSERT_RTNL();
+
+	for (p = 0; p < DPNS_MAX_PORT && p < cpriv->port_count; p++) {
+		dpns_port_t *dp = cpriv->ports[p];
+
+		if (dp && dp->dev && p != DPNS_HOST_PORT)
+			nbr[p] = l2_port_bridges(dp->dev, br[p]);
+		if (nbr[p])
+			bridged |= BIT(p);
+	}
+
+	for (p = 0; p < DPNS_MAX_PORT; p++) {
+		if (p == DPNS_HOST_PORT)
+			continue;
+
+		allow = L2_ISO_ALL_PORTS;
+		if (l2_bridge_iso && nbr[p]) {
+			allow &= ~bridged;
+			for (q = 0; q < DPNS_MAX_PORT; q++) {
+				if (q == p || !nbr[q] || !l2_share_bridge(br[p], nbr[p], br[q], nbr[q]))
+					continue;
+				if (test_bit(p, priv->iso_ports) && test_bit(q, priv->iso_ports))
+					continue;
+				allow |= BIT(q);
+			}
+		}
+
+		/* entries 0..31 must stay open: the driver's own MAC lookups use them */
+		l2_iso_table_update(priv, L2_ISO_PORT_IDX + p, allow, L2_ISO_ALL_PORTS);
+		L2_DBG(DBG_LV, "iso port %d allow 0x%x\n", p, allow);
+	}
+}
+
+/* deferred switchdev attributes, called under RTNL */
+static int dpns_mac_switchdev_blocking_event(struct notifier_block *nb,
+					     unsigned long event, void *ptr)
+{
+	struct net_device *dev = switchdev_notifier_info_to_dev(ptr);
+	struct switchdev_notifier_port_attr_info *info = ptr;
+	MAC_t *priv = container_of(nb, MAC_t, switchdev_blocking_nb);
+	COMMON_t *cpriv = priv->cpriv;
+	const struct switchdev_attr *attr;
+	u8 port_id;
+
+	if (event != SWITCHDEV_PORT_ATTR_SET)
+		return NOTIFY_DONE;
+
+	attr = info->attr;
+	if (attr->id != SWITCHDEV_ATTR_ID_PORT_BRIDGE_FLAGS ||
+	    !(attr->u.brport_flags.mask & BR_ISOLATED))
+		return NOTIFY_DONE;
+
+	if (!cpriv->port_dev_check(cpriv, dev) || cpriv->port_id_by_netdev(cpriv, dev, &port_id))
+		return NOTIFY_DONE;
+
+	if (attr->u.brport_flags.val & BR_ISOLATED)
+		set_bit(port_id, priv->iso_ports);
+	else
+		clear_bit(port_id, priv->iso_ports);
+
+	l2_iso_sync(priv);
+	info->handled = true;
+
+	return NOTIFY_OK;
+}
+
 static void l2_cleanup_ts_timer(struct timer_list *t)
 {
 	MAC_t *priv = timer_container_of(priv, t, l2_cleanup_ts_timer);
@@ -336,7 +464,7 @@ int notify_link_event(MAC_t* priv, u8 port, const u8 *dmac, bool updown, u16 vla
 	struct sf_mac_updown ctx = {0};
 	struct xgmac_dma_priv *dma_priv = priv->cpriv->edma_priv;
 
-	if (port == DPNS_HOST_PORT)
+	if (port == DPNS_HOST_PORT || port >= DPNS_MAX_PORT)
 		return 0;
 	else if (port >= EXTDEV_OFFSET)
 		ctx.is_wifi = true;
@@ -652,6 +780,10 @@ int sf_mac_del_entry(MAC_t* priv, const u8 *dmac, u16 vlan_id, bool is_deled_by_
 				, result_data[1]) <<19 |
 			FIELD_GET(SE_HW_RESULT0_DATA0_BITMAP_0_18,
 				result_data[0]);
+
+	/* fls64(0) - 1 would index ndevs[] out of bounds */
+	if (!port_bitmap || fls64(port_bitmap) > DPNS_MAX_PORT)
+		return 0;
 
 	dev = dma_priv->ndevs[fls64(port_bitmap) - 1];
 	fdb_info.addr = dmac;
@@ -1113,6 +1245,15 @@ static int dpns_mac_netdevice_event(struct notifier_block *unused,
 	if (cpriv->port_id_by_netdev(cpriv, dev, &port_id))
 		return NOTIFY_DONE;
 
+	/* bridge membership changed: update hardware L2 forwarding domains */
+	if (event == NETDEV_CHANGEUPPER || event == NETDEV_UNREGISTER) {
+		info = ptr;
+		if (event == NETDEV_UNREGISTER ||
+		    (netif_is_bridge_master(info->upper_dev) && !info->linking))
+			clear_bit(port_id, priv->iso_ports);
+		l2_iso_sync(priv);
+	}
+
 	if (port_id >= EXTDEV_OFFSET) {
 		if (!(dev->ieee80211_ptr && (dev->ieee80211_ptr->iftype == NL80211_IFTYPE_STATION)))
 			return NOTIFY_DONE;
@@ -1299,6 +1440,7 @@ int dpns_mac_probe(struct platform_device *pdev)
 	mod_timer(&priv->l2_cleanup_ts_timer, jiffies);
 
 	priv->switchdev_notifier.notifier_call = dpns_mac_switchdev_event,
+	priv->switchdev_blocking_nb.notifier_call = dpns_mac_switchdev_blocking_event;
 	priv->netdevice_nb.notifier_call = dpns_mac_netdevice_event;
 
 	hash_init(priv->ts_list);
@@ -1325,6 +1467,12 @@ int dpns_mac_probe(struct platform_device *pdev)
 		goto err_register_switchdev_notifier;
 	}
 
+	err = register_switchdev_blocking_notifier(&priv->switchdev_blocking_nb);
+	if (err) {
+		L2_DBG(ERR_LV, "Failed to register switchdev blocking notifier\n");
+		goto err_register_switchdev_blocking_notifier;
+	}
+
 	err = register_netdevice_notifier(&priv->netdevice_nb);
 	if (err) {
 		L2_DBG(ERR_LV, "Failed to register netdevice notifier\n");
@@ -1337,12 +1485,17 @@ int dpns_mac_probe(struct platform_device *pdev)
 
 	l2_mac_genl_init();
 	mac_init(priv);
+	rtnl_lock();
+	l2_iso_sync(priv);
+	rtnl_unlock();
 	printk("End %s\n", __func__);
 	return 0;
 
 err_procfs_create:
 	unregister_netdevice_notifier(&priv->netdevice_nb);
 err_register_netdevice_notifier:
+	unregister_switchdev_blocking_notifier(&priv->switchdev_blocking_nb);
+err_register_switchdev_blocking_notifier:
 	unregister_switchdev_notifier(&priv->switchdev_notifier);
 err_register_switchdev_notifier:
 	sf_destroy_tslist(priv);
@@ -1367,6 +1520,7 @@ void dpns_mac_remove(struct platform_device *pdev)
 	}
 #endif
 	unregister_netdevice_notifier(&priv->netdevice_nb);
+	unregister_switchdev_blocking_notifier(&priv->switchdev_blocking_nb);
 	unregister_switchdev_notifier(&priv->switchdev_notifier);
 	destroy_workqueue(priv->ubus_wq);
 	destroy_workqueue(priv->owq);

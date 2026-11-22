@@ -498,10 +498,12 @@ struct dpns_mac_priv {
 	struct list_head		mac_table_list;
 
 	struct notifier_block		switchdev_notifier;
+	struct notifier_block		switchdev_blocking_nb;
 	struct notifier_block   	netdevice_nb;
 	struct workqueue_struct 	*owq;
 	struct workqueue_struct 	*ubus_wq;
 	u8 				mibmode;
+	DECLARE_BITMAP(iso_ports, DPNS_MAX_PORT);	/* bridge ports with BR_ISOLATED */
 	atomic_t 			work_cnt;
 
 	DECLARE_BITMAP(mac_tbl_bitmap, MAC_SZ);
