@@ -1,0 +1,189 @@
+From 833118a6ecc6fec2430b1e09d9ede6293fd1c0d1 Mon Sep 17 00:00:00 2001
+From: Murad Rabadanov <the21.21@mail.ru>
+Date: Sun, 22 Nov 2026 13:57:23 +0300
+Subject: [PATCH] mtd: spinand: detect Wooposit SGM7000I by its ONFI page
+
+Some WR3000K units return zeros for READ ID. Probe their ONFI
+parameter page after ID matching fails. Require the Wooposit model
+and vendor fields and a valid CRC before selecting the geometry.
+
+This part uses a three-byte cache address. Shift the column by eight
+bits for cache reads, including reads of the bad-block marker.
+
+Use explicit hex formatting in the failed READ ID log. The U-Boot
+printf implementation prints a pointer for the previous %*phN format.
+
+Link: https://github.com/openwrt/openwrt/issues/23842
+Assisted-by: OpenAI Codex
+Signed-off-by: Murad Rabadanov <the21.21@mail.ru>
+
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -35,6 +35,7 @@
+ #include <linux/bug.h>
+ #include <linux/mtd/casn.h>
+ #include <linux/mtd/spinand.h>
++#include <memalign.h>
+ #include <linux/printk.h>
+ #include <linux/delay.h>
+ #endif
+@@ -434,6 +435,8 @@ static int spinand_load_page_op(struct s
+ 	return spi_mem_exec_op(spinand->slave, &op);
+ }
+ 
++static const struct spinand_manufacturer wooposit_onfi_manufacturer;
++
+ static int spinand_read_from_cache_op(struct spinand_device *spinand,
+ 				      const struct nand_page_io_req *req)
+ {
+@@ -472,7 +475,12 @@ static int spinand_read_from_cache_op(st
+ 		column |= req->pos.plane << fls(nanddev_page_size(nand));
+ 
+ 	while (nbytes) {
+-		ret = spi_mem_dirmap_read(rdesc, column, nbytes, buf);
++		u32 address = column;
++
++		if (spinand->manufacturer == &wooposit_onfi_manufacturer)
++			address <<= 8;
++
++		ret = spi_mem_dirmap_read(rdesc, address, nbytes, buf);
+ 		if (ret < 0)
+ 			return ret;
+ 
+@@ -2188,6 +2196,120 @@ static void spinand_dump_casn(struct spi
+ 		"---Dumping full CASN page ends here.---\n");
+ }
+ 
++static SPINAND_OP_VARIANTS(wooposit_read_cache,
++		SPI_MEM_OP(SPI_MEM_OP_CMD(0x03, 1),
++			   SPI_MEM_OP_ADDR(3, 0, 1),
++			   SPI_MEM_OP_NO_DUMMY,
++			   SPI_MEM_OP_DATA_IN(0, NULL, 1)));
++
++static SPINAND_OP_VARIANTS(wooposit_write_cache,
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(true, 0, NULL, 0));
++
++static SPINAND_OP_VARIANTS(wooposit_update_cache,
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(false, 0, NULL, 0));
++
++static int wooposit_ooblayout_ecc(struct mtd_info *mtd, int section,
++				 struct mtd_oob_region *region)
++{
++	return -ERANGE;
++}
++
++static int wooposit_ooblayout_free(struct mtd_info *mtd, int section,
++				  struct mtd_oob_region *region)
++{
++	if (section)
++		return -ERANGE;
++
++	region->offset = 2;
++	region->length = mtd->oobsize - 2;
++	return 0;
++}
++
++static const struct mtd_ooblayout_ops wooposit_onfi_ooblayout = {
++	.ecc = wooposit_ooblayout_ecc,
++	.rfree = wooposit_ooblayout_free,
++};
++
++static const struct spinand_info wooposit_onfi_table[] = {
++	SPINAND_INFO("SGM7000I-S24W4GH",
++		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE, 0x01),
++		     NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
++		     NAND_ECCREQ(8, 512),
++		     SPINAND_INFO_OP_VARIANTS(&wooposit_read_cache,
++					      &wooposit_write_cache,
++					      &wooposit_update_cache),
++		     0, SPINAND_ECCINFO(&wooposit_onfi_ooblayout, NULL)),
++};
++
++static const struct spinand_manufacturer_ops wooposit_onfi_ops = {};
++
++static const struct spinand_manufacturer wooposit_onfi_manufacturer = {
++	.id = 0xea,
++	.name = "Wooposit",
++	.chips = wooposit_onfi_table,
++	.nchips = ARRAY_SIZE(wooposit_onfi_table),
++	.ops = &wooposit_onfi_ops,
++};
++
++static int spinand_wooposit_onfi_detect(struct spinand_device *spinand)
++{
++	struct nand_page_io_req request = { .pos.page = 1 };
++	u8 prefix[3];
++	u8 cfg, status;
++	int ret, restore;
++	ALLOC_CACHE_ALIGN_BUFFER(u8, raw, 256);
++	struct spi_mem_op op = SPI_MEM_OP(SPI_MEM_OP_CMD(0x03, 1),
++					  SPI_MEM_OP_ADDR(3, 0x300, 1),
++					  SPI_MEM_OP_NO_DUMMY,
++					  SPI_MEM_OP_DATA_IN(256, raw, 1));
++
++	ret = spinand_reset_op(spinand);
++	if (ret)
++		return ret;
++
++	ret = spinand_read_reg_op(spinand, REG_CFG, &cfg);
++	if (ret)
++		return ret;
++
++	ret = spinand_write_reg_op(spinand, REG_CFG, cfg | BIT(6));
++	if (ret)
++		return ret;
++
++	ret = spinand_load_page_op(spinand, &request);
++	if (!ret)
++		ret = spinand_wait(spinand, SPINAND_READ_INITIAL_DELAY_US,
++				   SPINAND_READ_POLL_DELAY_US, &status);
++	if (!ret)
++		ret = spi_mem_exec_op(spinand->slave, &op);
++
++	restore = spinand_write_reg_op(spinand, REG_CFG, cfg);
++	if (ret || restore)
++		return ret ? ret : restore;
++
++	/* The cached parameter page wraps its first three bytes to the end. */
++	if (memcmp(raw + 253, "ONF", 3) || raw[0] != 'I' ||
++	    memcmp(raw + 29, "Wooposit", 8) ||
++	    memcmp(raw + 41, "SGM7000I-S24W4GH", 16) || raw[61] != 0xea)
++		return -ENODEV;
++
++	memcpy(prefix, raw + 253, sizeof(prefix));
++	memmove(raw + sizeof(prefix), raw, 253);
++	memcpy(raw, prefix, sizeof(prefix));
++
++	if (nanddev_crc16(0x4f4e, raw, 254) != (raw[254] | ((u16)raw[255] << 8)))
++		return -EBADMSG;
++
++	spinand->id.data[0] = 0xea;
++	spinand->id.data[1] = 0x01;
++	ret = spinand_match_and_init(spinand, wooposit_onfi_table,
++				     ARRAY_SIZE(wooposit_onfi_table),
++				     SPINAND_READID_METHOD_OPCODE);
++	if (!ret)
++		spinand->manufacturer = &wooposit_onfi_manufacturer;
++
++	return ret;
++}
++
+ static int spinand_detect(struct spinand_device *spinand)
+ {
+ 	struct nand_device *nand = spinand_to_nand(spinand);
+@@ -2229,9 +2351,13 @@ static int spinand_detect(struct spinand
+ 		if (ret)
+ 			goto free_casn;
+ 		ret = spinand_id_detect(spinand);
++		if (ret)
++			ret = spinand_wooposit_onfi_detect(spinand);
+ 		if (ret) {
+-			dev_err(dev, "unknown raw ID %*phN\n", SPINAND_MAX_ID_LEN,
+-				spinand->id.data);
++			dev_err(dev, "unknown raw ID %02x %02x %02x %02x %02x (error %d)\n",
++				spinand->id.data[0], spinand->id.data[1],
++				spinand->id.data[2], spinand->id.data[3],
++				spinand->id.data[4], ret);
+ 			goto free_casn;
+ 		}
+ 	}
