@@ -1,0 +1,177 @@
+From b1f0627663e7b79999a316e0a991e36c7d4eb2f9 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 10:44:02 +0100
+Subject: [PATCH] wifi: ath11k: request only the PPDU stats TLVs it reads
+
+The driver asks the firmware for eight PPDU stats TLVs on every PPDU,
+but ath11k_htt_tlv_ppdu_stats_parse() keeps four of them: the common
+TLV (PPDU airtime), the user rate TLV (rate, NSS and bandwidth of each
+user, which is what the station rate and the airtime accounting use),
+the user completion common TLV (MPDUs tried and succeeded for the retry
+count) and the ack/BA status TLV (acked bytes and MSDUs, TID). The user
+common, scheduler command status, flush and user array TLVs are parsed
+by nothing, yet the firmware builds them and the host walks them for
+every PPDU of every station.
+
+Request the four the driver reads. The pktlog, the extended TX statistics
+and the monitor interface want the whole set (the pktlog lite mode wants
+its own set on top), so enabling any of them requests the full default
+mask as before.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -460,7 +460,9 @@ static ssize_t ath11k_write_enable_extd_
+ 	}
+ 
+ 	ar->debug.extd_tx_stats = filter;
+-	ret = count;
++	ret = ath11k_dp_tx_htt_ppdu_stats_update(ar);
++	if (!ret)
++		ret = count;
+ 
+ out:
+ 	mutex_unlock(&ar->conf_mutex);
+@@ -1027,6 +1029,13 @@ static ssize_t ath11k_write_pktlog_filte
+ 			HTT_RX_FILTER_TLV_FLAGS_MPDU_START)
+ 
+ 	if (mode == ATH11K_PKTLOG_MODE_FULL) {
++		ret = ath11k_dp_tx_htt_h2t_ppdu_stats_req(ar,
++							  HTT_PPDU_STATS_TAG_DEFAULT);
++		if (ret) {
++			ath11k_err(ar->ab, "failed to enable pktlog full: %d\n", ret);
++			goto out;
++		}
++
+ 		rx_filter = HTT_RX_FILTER_TLV_LITE_MODE |
+ 			    HTT_RX_FILTER_TLV_FLAGS_MSDU_START |
+ 			    HTT_RX_FILTER_TLV_FLAGS_MSDU_END |
+@@ -1049,8 +1058,8 @@ static ssize_t ath11k_write_pktlog_filte
+ 		tlv_filter = ath11k_mac_mon_status_filter_default;
+ 		rx_filter = tlv_filter.rx_filter;
+ 
+-		ret = ath11k_dp_tx_htt_h2t_ppdu_stats_req(ar,
+-							  HTT_PPDU_STATS_TAG_DEFAULT);
++		ar->debug.pktlog_mode = mode;
++		ret = ath11k_dp_tx_htt_ppdu_stats_update(ar);
+ 		if (ret) {
+ 			ath11k_err(ar->ab, "failed to send htt ppdu stats req: %d\n",
+ 				   ret);
+--- a/drivers/net/wireless/ath/ath11k/debugfs.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs.h
+@@ -279,6 +279,11 @@ static inline bool ath11k_debugfs_is_pkt
+ 	return (ar->debug.pktlog_mode == ATH11K_PKTLOG_MODE_LITE);
+ }
+ 
++static inline bool ath11k_debugfs_is_pktlog_enabled(struct ath11k *ar)
++{
++	return ar->debug.pktlog_mode;
++}
++
+ static inline bool ath11k_debugfs_is_pktlog_rx_stats_enabled(struct ath11k *ar)
+ {
+ 	return (!ar->debug.pktlog_peer_valid && ar->debug.pktlog_mode);
+@@ -363,6 +368,11 @@ static inline bool ath11k_debugfs_is_pkt
+ {
+ 	return false;
+ }
++
++static inline bool ath11k_debugfs_is_pktlog_enabled(struct ath11k *ar)
++{
++	return false;
++}
+ 
+ static inline bool ath11k_debugfs_is_pktlog_rx_stats_enabled(struct ath11k *ar)
+ {
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -633,6 +633,14 @@ enum htt_ppdu_stats_tag_type {
+ 				   | BIT(HTT_PPDU_STATS_TAG_USR_COMPLTN_FLUSH) \
+ 				   | BIT(HTT_PPDU_STATS_TAG_USR_COMMON_ARRAY))
+ 
++/* The TLVs ath11k_htt_tlv_ppdu_stats_parse() keeps: the PPDU airtime, the
++ * rate of each user, the retry counts and the acked bytes.
++ */
++#define HTT_PPDU_STATS_TAG_USED (BIT(HTT_PPDU_STATS_TAG_COMMON) \
++				| BIT(HTT_PPDU_STATS_TAG_USR_RATE) \
++				| BIT(HTT_PPDU_STATS_TAG_USR_COMPLTN_COMMON) \
++				| BIT(HTT_PPDU_STATS_TAG_USR_COMPLTN_ACK_BA_STATUS))
++
+ #define HTT_PPDU_STATS_TAG_PKTLOG  (BIT(HTT_PPDU_STATS_TAG_USR_MPDU_ENQ_BITMAP_64) | \
+ 				    BIT(HTT_PPDU_STATS_TAG_USR_MPDU_ENQ_BITMAP_256) | \
+ 				    BIT(HTT_PPDU_STATS_TAG_USR_COMPLTN_BA_BITMAP_64) | \
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -1884,6 +1884,26 @@ int ath11k_dp_tx_htt_h2t_ver_req_msg(str
+ 	return 0;
+ }
+ 
++/* The TLVs the driver does not parse (user common, scheduler command status,
++ * flush, user array) go to pktlog and the trace points, and the monitor and
++ * the extended statistics debugfs files want the whole set.
++ */
++static u32 ath11k_dp_tx_htt_ppdu_stats_mask(struct ath11k *ar)
++{
++	if (ath11k_debugfs_is_extd_tx_stats_enabled(ar) ||
++	    ath11k_debugfs_is_pktlog_enabled(ar) ||
++	    test_bit(ATH11K_FLAG_MONITOR_STARTED, &ar->monitor_flags))
++		return HTT_PPDU_STATS_TAG_DEFAULT;
++
++	return HTT_PPDU_STATS_TAG_USED;
++}
++
++int ath11k_dp_tx_htt_ppdu_stats_update(struct ath11k *ar)
++{
++	return ath11k_dp_tx_htt_h2t_ppdu_stats_req(ar,
++						   ath11k_dp_tx_htt_ppdu_stats_mask(ar));
++}
++
+ int ath11k_dp_tx_htt_h2t_ppdu_stats_req(struct ath11k *ar, u32 mask)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.h
+@@ -43,6 +43,7 @@ int ath11k_dp_tx_send_reo_cmd(struct ath
+ 					   enum hal_reo_cmd_status));
+ 
+ int ath11k_dp_tx_htt_h2t_ppdu_stats_req(struct ath11k *ar, u32 mask);
++int ath11k_dp_tx_htt_ppdu_stats_update(struct ath11k *ar);
+ int
+ ath11k_dp_tx_htt_h2t_ext_stats_req(struct ath11k *ar, u8 type,
+ 				   struct htt_ext_stats_cfg_params *cfg_params,
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1196,6 +1196,11 @@ static int ath11k_mac_monitor_start(stru
+ 		return ret;
+ 	}
+ 
++	ret = ath11k_dp_tx_htt_ppdu_stats_update(ar);
++	if (ret)
++		ath11k_warn(ar->ab, "failed to req ppdu stats for monitor: %d\n",
++			    ret);
++
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "monitor started\n");
+ 
+ 	return 0;
+@@ -1226,6 +1231,11 @@ static int ath11k_mac_monitor_stop(struc
+ 		return ret;
+ 	}
+ 
++	ret = ath11k_dp_tx_htt_ppdu_stats_update(ar);
++	if (ret)
++		ath11k_warn(ar->ab, "failed to req ppdu stats for monitor: %d\n",
++			    ret);
++
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "monitor stopped ret %d\n", ret);
+ 
+ 	return 0;
+@@ -6732,8 +6742,7 @@ static int ath11k_mac_op_start(struct ie
+ 		goto err;
+ 	}
+ 
+-	ret = ath11k_dp_tx_htt_h2t_ppdu_stats_req(ar,
+-						  HTT_PPDU_STATS_TAG_DEFAULT);
++	ret = ath11k_dp_tx_htt_ppdu_stats_update(ar);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to req ppdu stats: %d\n", ret);
+ 		goto err;
