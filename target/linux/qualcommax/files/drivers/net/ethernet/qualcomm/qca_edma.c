@@ -2735,6 +2735,8 @@ static const char edma_stat_names[][ETH_GSTRING_LEN] = {
 	"tx_unnamed_frame",
 	"tx_gso_frames",
 	"tx_gso_segs",
+	"tx_fraglist_split",
+	"tx_fraglist_parts",
 	"tx_src_parked",
 	"tx_src_drained",
 	"tx_src_dropped",
@@ -3114,11 +3116,209 @@ static int edma_tx_fraglist(struct sk_buff *skb, unsigned int noff)
 	return 0;
 }
 
+/* Room on the ring for @ndesc descriptors from the producer index, in free
+ * descriptors and in store slots, as edma_ring_xmit() asks of a frame. A
+ * queue without it is stopped against the room it lacks, as there, so that
+ * a completion that frees it starts the queue again.
+ */
+static bool edma_tx_reserve(struct edma_queue *q, struct netdev_queue *txq,
+			    u16 ndesc)
+{
+	struct edma_ring *ring = &q->txdesc_ring;
+	u16 mask = ring->count - 1;
+	bool taken = false;
+	u16 prod, cons, i;
+
+	spin_lock_bh(&q->tx_lock);
+	prod = q->tx_prod;
+	cons = q->tx_cons;
+	if (((cons - prod - 1) & mask) < ndesc) {
+		cons = edma_idx_read(q->priv, EDMA_REG_TXDESC_CONS_IDX(q->txdesc)) &
+		       EDMA_TXDESC_CONS_IDX_MASK;
+		q->tx_cons = cons;
+	}
+
+	for (i = 0; i < ndesc; i++)
+		taken |= !!READ_ONCE(ring->skb_store[(prod + i) & mask]);
+
+	if (!taken && ((cons - prod - 1) & mask) >= ndesc) {
+		spin_unlock_bh(&q->tx_lock);
+		return true;
+	}
+
+	if (q->tx_kick)
+		edma_tx_kick(q);
+	netif_txq_try_stop(txq, taken ? 0 : edma_txdesc_free(q), ndesc);
+	spin_unlock_bh(&q->tx_lock);
+
+	return false;
+}
+
+/* Whether frame list @skb, too long for one frame, is sent as several by
+ * edma_xmit_split(): each segment carries its IP and TCP headers in front of
+ * its payload, as skb_gro_receive_list() leaves them, and takes fewer
+ * descriptors than a frame may, and the whole list fits on its ring at once,
+ * so that the queue can wait for room for all of it.
+ */
+static bool edma_tx_fraglist_splits(struct edma_priv *priv,
+				    const struct sk_buff *skb)
+{
+	u16 ring = priv->q[skb_get_queue_mapping(skb)].txdesc_ring.count;
+	int min_hdr = sizeof(struct tcphdr);
+	const struct sk_buff *seg;
+	u16 ndesc;
+
+	if (!skb_is_gso(skb) ||
+	    !(skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) ||
+	    !skb_transport_header_was_set(skb) ||
+	    skb_shinfo(skb)->nr_frags + 1 >= EDMA_TX_MAX_SEGS)
+		return false;
+
+	ndesc = edma_tx_ndesc(skb);
+	if (ndesc <= EDMA_TX_MAX_SEGS || ndesc > ring - EDMA_TX_RING_THRESH)
+		return false;
+
+	min_hdr += skb_shinfo(skb)->gso_type & SKB_GSO_TCPV6 ?
+		   sizeof(struct ipv6hdr) : sizeof(struct iphdr);
+
+	skb_walk_frags(skb, seg) {
+		if (!skb_headlen(seg) ||
+		    skb_shinfo(seg)->nr_frags + 1 >= EDMA_TX_MAX_SEGS ||
+		    !skb_transport_header_was_set(seg) ||
+		    -skb_network_offset(seg) < min_hdr)
+			return false;
+	}
+
+	return true;
+}
+
+/* Gives frame list @skb of @segs segments, whose IP header is at @noff, the
+ * IP length of what it holds; a list of one segment is that segment, with
+ * the checksum it was received with.
+ */
+static void edma_tx_fraglist_end(struct sk_buff *skb, unsigned int noff,
+				 u16 segs)
+{
+	if (skb_shinfo(skb)->gso_type & SKB_GSO_TCPV4) {
+		struct iphdr *iph = (struct iphdr *)(skb->data + noff);
+		__be16 len = htons(skb->len - noff);
+
+		csum_replace2(&iph->check, iph->tot_len, len);
+		iph->tot_len = len;
+	} else {
+		struct ipv6hdr *ip6h = (struct ipv6hdr *)(skb->data + noff);
+
+		ip6h->payload_len = htons(skb->len - noff - sizeof(*ip6h));
+	}
+
+	if (segs > 1)
+		skb_shinfo(skb)->gso_segs = segs;
+	else
+		skb_gso_reset(skb);
+}
+
+/* Cuts frame list @skb, whose IP header is at @noff behind the link-layer
+ * header and the QCA tag of a DSA frame, at segment boundaries into frame
+ * lists of at most EDMA_TX_MAX_SEGS descriptors each, chained on ->next in
+ * order. A segment that starts a list is made its head as skb_segment_list()
+ * makes a segment a frame: the metadata and link-layer header of @skb in
+ * front of its own IP and TCP header. Each list then is one as the stack
+ * hands it over, which edma_tx_fraglist() makes a TSO frame. Only a list
+ * edma_tx_fraglist_splits() takes, whose head and segments are its own, is
+ * cut.
+ *
+ * Return: 0, or -ENOMEM with @skb as it was.
+ */
+static int edma_tx_fraglist_split(struct sk_buff *skb, unsigned int noff)
+{
+	struct sk_buff *head = skb, *seg, *next, *last = NULL;
+	int nlen = skb_network_header_len(skb);
+	unsigned int gso_type = skb_shinfo(skb)->gso_type;
+	u16 gso_size = skb_shinfo(skb)->gso_size;
+	u16 n = skb_shinfo(skb)->nr_frags + 1;
+	u16 segs = 1;
+
+	/* Room for the copied header first, so that a failure leaves the
+	 * list as it was.
+	 */
+	skb_walk_frags(skb, seg) {
+		u16 d = 1 + skb_shinfo(seg)->nr_frags;
+
+		if (n + d > EDMA_TX_MAX_SEGS) {
+			if (skb_cow_head(seg, noff - skb_network_offset(seg)))
+				return -ENOMEM;
+			n = 0;
+		}
+		n += d;
+	}
+
+	/* The head keeps only itself, and takes its segments back below. */
+	skb_walk_frags(skb, seg) {
+		skb->len -= seg->len;
+		skb->data_len -= seg->len;
+		skb->truesize -= seg->truesize;
+	}
+	seg = skb_shinfo(skb)->frag_list;
+	skb_shinfo(skb)->frag_list = NULL;
+
+	n = skb_shinfo(skb)->nr_frags + 1;
+	for (; seg; seg = next) {
+		u16 d = 1 + skb_shinfo(seg)->nr_frags;
+		int len_diff;
+
+		next = seg->next;
+		seg->next = NULL;
+
+		if (n + d > EDMA_TX_MAX_SEGS) {
+			edma_tx_fraglist_end(head, noff, segs);
+
+			skb_dst_drop(seg);
+			nf_reset_ct(seg);
+			skb_ext_reset(seg);
+			__skb_push(seg, -skb_network_offset(seg));
+			len_diff = skb_network_header_len(seg) - nlen;
+			__skb_push(seg, noff);
+			skb_copy_header(seg, skb);
+			/* the GSO state of @skb, which ending a first part of
+			 * one segment cleared
+			 */
+			skb_shinfo(seg)->gso_size = gso_size;
+			skb_shinfo(seg)->gso_type = gso_type;
+			skb_headers_offset_update(seg, skb_headroom(seg) -
+						  skb_headroom(skb));
+			seg->transport_header += len_diff;
+			memcpy(seg->data, skb->data, noff);
+
+			head->next = seg;
+			head = seg;
+			last = NULL;
+			n = d;
+			segs = 1;
+			continue;
+		}
+
+		if (last)
+			last->next = seg;
+		else
+			skb_shinfo(head)->frag_list = seg;
+		last = seg;
+		head->len += seg->len;
+		head->data_len += seg->len;
+		head->truesize += seg->truesize;
+		n += d;
+		segs++;
+	}
+	edma_tx_fraglist_end(head, noff, segs);
+
+	return 0;
+}
+
 /* A GRO aggregate on its frag_list can need more descriptors than a frame
- * may take; it is segmented in software rather than made linear. So is a
- * GSO frame of segments shorter than the engine cuts, which GRO builds of
- * the size of the first segment it took, and a fraglist aggregate
- * edma_tx_fraglist() cannot make a TSO frame.
+ * may take; it is segmented in software rather than made linear, unless it
+ * is a frame list the driver cuts into frames itself. So is a GSO frame of
+ * segments shorter than the engine cuts, which GRO builds of the size of the
+ * first segment it took, and a fraglist aggregate edma_tx_fraglist() cannot
+ * make a TSO frame.
  */
 static netdev_features_t edma_ndo_features_check(struct sk_buff *skb,
 						 struct net_device *netdev,
@@ -3126,7 +3326,8 @@ static netdev_features_t edma_ndo_features_check(struct sk_buff *skb,
 {
 	if (skb_is_gso(skb) &&
 	    (skb_shinfo(skb)->gso_size < EDMA_TX_MIN_MSS ||
-	     edma_tx_needs_linearize(skb) ||
+	     (edma_tx_needs_linearize(skb) &&
+	      !edma_tx_fraglist_splits(netdev_priv(netdev), skb)) ||
 	     ((skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) &&
 	      edma_tx_fraglist_thoff(skb, skb_network_offset(skb)) < 0)))
 		features &= ~NETIF_F_GSO_MASK;
@@ -3179,15 +3380,11 @@ static u16 edma_tx_port(struct sk_buff *skb, struct net_device *netdev,
 	       ((ffs(ports) - 1) & EDMA_DST_PORT_ID_MASK);
 }
 
-static netdev_tx_t edma_xmit(struct sk_buff *skb, struct net_device *netdev,
-			     u16 src_info, u16 dst_info, bool tagged)
+static netdev_tx_t edma_xmit_frame(struct edma_queue *q, struct sk_buff *skb,
+				   struct net_device *netdev, u16 src_info,
+				   u16 dst_info, bool tagged)
 {
-	struct edma_priv *priv = netdev_priv(netdev);
-	struct edma_queue *q = &priv->q[skb_get_queue_mapping(skb)];
-	const struct edma_soc_data *soc = priv->soc;
-
-	if (skb->len < ETH_HLEN + (tagged ? QCA_HDR_LEN : 0))
-		goto drop;
+	const struct edma_soc_data *soc = q->priv->soc;
 
 	/* The stack hands a GSO frame of one segment on as it is, as
 	 * tcp_gso_segment() has nothing to cut, so the features check does not
@@ -3237,6 +3434,96 @@ drop:
 	edma_tx_flush(q);
 
 	return NETDEV_TX_OK;
+}
+
+/* Sends frame list @skb, too long for one frame, as the frames
+ * edma_tx_fraglist_split() cuts it into, in order and with one doorbell,
+ * once the ring has room for all of them: while it has not, the list waits
+ * whole, as a frame the ring refuses does.
+ */
+static netdev_tx_t edma_xmit_split(struct edma_queue *q, struct sk_buff *skb,
+				   struct net_device *netdev, u16 src_info,
+				   u16 dst_info, bool tagged)
+{
+	struct netdev_queue *txq = netdev_get_tx_queue(netdev, q->idx);
+	bool more = netdev_xmit_more();
+	struct sk_buff *next;
+	u32 parts = 0;
+
+	const struct sk_buff *seg;
+	bool own = !skb_cloned(skb);
+
+	if (!edma_tx_reserve(q, txq, edma_tx_ndesc(skb)))
+		return NETDEV_TX_BUSY;
+
+	/* A list shared with a clone, as a packet tap makes it, is cut into
+	 * its segments in software instead, as the stack would have, which
+	 * copies what it shares. They take no more descriptors than the list.
+	 */
+	skb_walk_frags(skb, seg)
+		own &= !skb_shared(seg) && !skb_cloned(seg);
+	if (!own) {
+		struct sk_buff *segs;
+
+		segs = skb_gso_segment(skb, netdev->features & ~NETIF_F_GSO_MASK);
+		if (IS_ERR_OR_NULL(segs)) {
+			dev_kfree_skb_any(skb);
+			DEV_STATS_INC(netdev, tx_dropped);
+			edma_tx_flush(q);
+			return NETDEV_TX_OK;
+		}
+		consume_skb(skb);
+		skb = segs;
+	} else if (edma_tx_fraglist_split(skb, skb_network_offset(skb))) {
+		dev_kfree_skb_any(skb);
+		DEV_STATS_INC(netdev, tx_dropped);
+		edma_tx_flush(q);
+		return NETDEV_TX_OK;
+	}
+
+	for (; skb; skb = next) {
+		next = skb->next;
+		skb_mark_not_on_list(skb);
+		netdev_xmit_set_more(next ? true : more);
+		/* The room taken above holds every part, so none is refused;
+		 * one that were would not be left behind its successors.
+		 */
+		if (edma_xmit_frame(q, skb, netdev, src_info, dst_info,
+				    tagged) == NETDEV_TX_BUSY) {
+			dev_kfree_skb_any(skb);
+			DEV_STATS_INC(netdev, tx_dropped);
+		}
+		parts++;
+	}
+	netdev_xmit_set_more(more);
+
+	if (own) {
+		q->stats.tx_fraglist_split++;
+		q->stats.tx_fraglist_parts += parts;
+	}
+
+	return NETDEV_TX_OK;
+}
+
+static netdev_tx_t edma_xmit(struct sk_buff *skb, struct net_device *netdev,
+			     u16 src_info, u16 dst_info, bool tagged)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+	struct edma_queue *q = &priv->q[skb_get_queue_mapping(skb)];
+
+	if (skb->len < ETH_HLEN + (tagged ? QCA_HDR_LEN : 0)) {
+		dev_kfree_skb_any(skb);
+		DEV_STATS_INC(netdev, tx_dropped);
+		edma_tx_flush(q);
+		return NETDEV_TX_OK;
+	}
+
+	if (skb_is_gso(skb) && edma_tx_fraglist_splits(priv, skb) &&
+	    edma_tx_fraglist_thoff(skb, skb_network_offset(skb)) >= 0)
+		return edma_xmit_split(q, skb, netdev, src_info, dst_info,
+				       tagged);
+
+	return edma_xmit_frame(q, skb, netdev, src_info, dst_info, tagged);
 }
 
 static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
