@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrii Kuiukoff <andros.ua@gmail.com>
+Date: Sun, 22 Nov 2026 20:41:22 +0200
+Subject: [PATCH] drivers: mtd: parsers: add mtd-extend-to-end property support to ofpart
+
+Add support for a new optional boolean property, "mtd-extend-to-end",
+for partitions described by the "fixed-partitions" OF parser.
+
+When it is set on a partition node, the partition size is not taken
+from the DT "reg" property but is calculated as the space between the
+partition offset and the end of the parent MTD device. The size in
+"reg" must be 0 in this case. Parsing fails with an error if a non-zero
+size is given together with the property, or if the partition offset
+lies beyond the end of the flash.
+
+This allows describing the last partition (typically "ubi") of a board
+without hardcoding the flash size, so a single DTS can be used for
+boards that ship with different flash chip sizes or whose usable size
+changes with bad block management.
+
+Example:
+
+	partition@580000 {
+		label = "ubi";
+		reg = <0x580000 0x0>;
+		mtd-extend-to-end;
+	};
+
+The property is ignored by every DTS that does not set it, so other
+targets and boards are unaffected. This is an OpenWrt-specific
+extension and is not part of the upstream DT bindings.
+
+Based on the MediaTek SDK patch "Add mtd partition extend to end
+support" from mtk-openwrt-feeds. Compared to that version, a size
+given together with the property is reported with pr_err() instead of
+pr_debug(), and a partition offset beyond the end of the flash is
+rejected instead of wrapping the size around.
+
+Link: https://github.com/mediatek/mtk-openwrt-feeds/commit/bb965131de6bf87f67128ec7970d956c2b87f465
+Signed-off-by: Andrii Kuiukoff <andros.ua@gmail.com>
+---
+--- a/drivers/mtd/parsers/ofpart_core.c
++++ b/drivers/mtd/parsers/ofpart_core.c
+@@ -157,6 +157,17 @@ static int parse_fixed_partitions(struct
+ 
+ 		parts[i].offset = of_read_number(reg, a_cells);
+ 		parts[i].size = of_read_number(reg + a_cells, s_cells);
++		if (of_property_read_bool(pp, "mtd-extend-to-end")) {
++			if (parts[i].size) {
++				pr_err("partition len must be 0 if using mtd-extend-to-end.\n");
++				goto ofpart_fail;
++			}
++			if (parts[i].offset >= master->size) {
++				pr_err("partition offset is beyond the end of flash.\n");
++				goto ofpart_fail;
++			}
++			parts[i].size = master->size - parts[i].offset;
++		}
+ 		parts[i].of_node = pp;
+ 
+ 		partname = of_get_property(pp, "label", &len);
