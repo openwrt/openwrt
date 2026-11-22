@@ -1,0 +1,238 @@
+From e93cf05521cd5b85bec011be155a9ced786d5e8f Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 11:32:09 +0100
+Subject: [PATCH] wifi: ath11k: batch the TX completions of a poll
+
+ath11k_dp_tx_completion_handler() takes the id table lock for each
+completion, decrements the radio's pending MSDU count with a fully
+ordered atomic for each, and touches the frame's buffer, control
+buffer and shared info cold, one frame after the other.
+
+Read up to 16 completions at a time, release the ids of all of them under
+one hold of the lock, count the frames done in one atomic update for each
+radio at the end of the poll, and prefetch the buffers of the next two
+frames while the current one is completed. The pending count drops after
+the frames' status has been reported instead of before it, and before the
+starved mark is read, which is what the ordering of the decrement is for.
+The completion of each frame is otherwise unchanged: the status, the
+airtime refund of the frame and of the batch it belongs to, the free list
+and the TXQ push run for each frame in the order of the ring, so the AQL
+charge of a frame is refunded exactly once, and the pending airtime of the
+stations and the radio returns to 0 at idle, as the aql_audit debugfs
+files show. The statuses of the firmware's own completions are handled in
+the same order as before. A completion the firmware released ends its
+chunk: its processing frees the frame at once, and that frame can be the
+batch whose earlier completions in the same chunk still point to it, so
+each of those is done first.
+
+The status parse starts from a cleared status for each completion, where
+it used to reuse one that the flags of an earlier frame stayed in.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -1504,6 +1504,18 @@ static inline void ath11k_dp_tx_status_p
+ 		ts->rate_stats = 0;
+ }
+ 
++#define ATH11K_DP_TX_COMPL_CHUNK 16
++
++struct ath11k_dp_tx_compl_item {
++	struct hal_tx_status ts;
++	struct ath11k_dp_tx_seg seg;
++	struct hal_wbm_release_ring *tx_status;
++	struct sk_buff *msdu;
++	u32 msdu_id;
++	u8 mac_id;
++	bool more;
++};
++
+ int ath11k_dp_tx_completion_handler(struct ath11k_base *ab, int ring_id,
+ 				    int budget)
+ {
+@@ -1512,17 +1524,14 @@ int ath11k_dp_tx_completion_handler(stru
+ 	int hal_ring_id = dp->tx_ring[ring_id].tcl_comp_ring.ring_id;
+ 	struct hal_srng *status_ring = &ab->hal.srng_list[hal_ring_id];
+ 	struct sk_buff *msdu;
+-	struct hal_tx_status ts = {};
+ 	struct dp_tx_ring *tx_ring = &dp->tx_ring[ring_id];
+ 	struct ath11k_dp_tx_compl c = { .free = LIST_HEAD_INIT(c.free) };
+-	struct ath11k_dp_tx_seg seg;
+ 	struct sk_buff *tmp;
+ 	unsigned long push = 0;
++	int pending[MAX_RADIOS] = {};
+ 	int done = 0;
+ 	u32 *desc;
+-	u32 msdu_id;
+-	u8 mac_id, i;
+-	bool more;
++	u8 i;
+ 
+ 	spin_lock_bh(&status_ring->lock);
+ 
+@@ -1551,55 +1560,108 @@ int ath11k_dp_tx_completion_handler(stru
+ 	while (done < budget &&
+ 	       ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_tail) !=
+ 	       tx_ring->tx_status_head) {
+-		struct hal_wbm_release_ring *tx_status;
+-		u32 desc_id;
++		struct ath11k_dp_tx_compl_item items[ATH11K_DP_TX_COMPL_CHUNK];
++		unsigned int n = 0, k;
+ 
+-		done++;
+-		tx_ring->tx_status_tail =
+-			ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_tail);
+-		tx_status = &tx_ring->tx_status[tx_ring->tx_status_tail];
+-		ath11k_dp_tx_status_parse(ab, tx_status, &ts);
+-
+-		desc_id = FIELD_GET(BUFFER_ADDR_INFO1_SW_COOKIE,
+-				    tx_status->buf_addr_info.info1);
+-		mac_id = FIELD_GET(DP_TX_DESC_ID_MAC_ID, desc_id);
+-		msdu_id = FIELD_GET(DP_TX_DESC_ID_MSDU_ID, desc_id);
+-
+-		if (unlikely(ts.buf_rel_source == HAL_WBM_REL_SRC_MODULE_FW)) {
+-			ath11k_dp_tx_process_htt_tx_complete(ab,
+-							     (void *)tx_status,
+-							     mac_id, msdu_id,
+-							     tx_ring, &push);
+-			continue;
++		/* Read the entries of a chunk first, and take the ids of all
++		 * of them under one hold of the lock.
++		 */
++		while (n < ATH11K_DP_TX_COMPL_CHUNK && done < budget &&
++		       ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_tail) !=
++		       tx_ring->tx_status_head) {
++			struct ath11k_dp_tx_compl_item *it = &items[n++];
++			u32 desc_id;
++
++			done++;
++			tx_ring->tx_status_tail =
++				ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_tail);
++			it->tx_status = &tx_ring->tx_status[tx_ring->tx_status_tail];
++			memset(&it->ts, 0, sizeof(it->ts));
++			ath11k_dp_tx_status_parse(ab, it->tx_status, &it->ts);
++
++			desc_id = FIELD_GET(BUFFER_ADDR_INFO1_SW_COOKIE,
++					    it->tx_status->buf_addr_info.info1);
++			it->mac_id = FIELD_GET(DP_TX_DESC_ID_MAC_ID, desc_id);
++			it->msdu_id = FIELD_GET(DP_TX_DESC_ID_MSDU_ID, desc_id);
++			it->msdu = NULL;
++			it->more = false;
++			it->seg.skb = NULL;
++			it->seg.len = 0;
++
++			/* A firmware release frees its frame as soon as it is
++			 * processed, and that frame can be the batch the TQM
++			 * completions read before it in this chunk still
++			 * point to: it ends the chunk, so that each of them is
++			 * done before it.
++			 */
++			if (unlikely(it->ts.buf_rel_source ==
++				     HAL_WBM_REL_SRC_MODULE_FW))
++				break;
+ 		}
+ 
+ 		spin_lock(&tx_ring->tx_idr_lock);
+-		msdu = ath11k_dp_tx_buf_put_id(ab, tx_ring, msdu_id, &more,
+-					       &seg);
++		for (k = 0; k < n; k++) {
++			struct ath11k_dp_tx_compl_item *it = &items[k];
++
++			if (likely(it->ts.buf_rel_source !=
++				   HAL_WBM_REL_SRC_MODULE_FW))
++				it->msdu = ath11k_dp_tx_buf_put_id(ab, tx_ring,
++								   it->msdu_id,
++								   &it->more,
++								   &it->seg);
++		}
+ 		spin_unlock(&tx_ring->tx_idr_lock);
+ 
+-		ar = ab->pdevs[mac_id].ar;
++		for (k = 0; k < n; k++) {
++			struct ath11k_dp_tx_compl_item *it = &items[k];
++
++			/* the next frames' buffers and shared infos are cold:
++			 * the id table held only their pointers
++			 */
++			if (k + 2 < n && items[k + 2].msdu) {
++				prefetch(items[k + 2].msdu);
++				prefetch((u8 *)items[k + 2].msdu +
++					 L1_CACHE_BYTES);
++			}
++			if (k + 1 < n && items[k + 1].msdu)
++				prefetch(skb_shinfo(items[k + 1].msdu));
+ 
+-		if (unlikely(!msdu)) {
+-			/* not the last segment of a batch */
+-			if (more) {
+-				ath11k_dp_tx_complete_seg(ar, seg.skb, &ts,
+-							  seg.len);
+-				if (atomic_dec_and_test(&ar->dp.num_tx_pending))
+-					wake_up(&ar->dp.tx_empty_waitq);
++			if (unlikely(it->ts.buf_rel_source ==
++				     HAL_WBM_REL_SRC_MODULE_FW)) {
++				ath11k_dp_tx_process_htt_tx_complete(ab,
++								     (void *)it->tx_status,
++								     it->mac_id,
++								     it->msdu_id,
++								     tx_ring,
++								     &push);
+ 				continue;
+ 			}
+-			ath11k_warn(ab, "tx completion for unknown msdu_id %d\n",
+-				    msdu_id);
+-			continue;
+-		}
+-		__set_bit(mac_id * IEEE80211_NUM_ACS + skb_get_queue_mapping(msdu),
+-			  &push);
+ 
+-		if (atomic_dec_and_test(&ar->dp.num_tx_pending))
+-			wake_up(&ar->dp.tx_empty_waitq);
++			ar = ab->pdevs[it->mac_id].ar;
++
++			if (unlikely(!it->msdu)) {
++				/* not the last segment of a batch */
++				if (it->more) {
++					ath11k_dp_tx_complete_seg(ar, it->seg.skb,
++								  &it->ts,
++								  it->seg.len);
++					/* counted at the end of the run */
++					pending[it->mac_id]++;
++					continue;
++				}
++				ath11k_warn(ab, "tx completion for unknown msdu_id %d\n",
++					    it->msdu_id);
++				continue;
++			}
++			msdu = it->msdu;
++			__set_bit(it->mac_id * IEEE80211_NUM_ACS +
++				  skb_get_queue_mapping(msdu), &push);
+ 
+-		ath11k_dp_tx_complete_msdu(ar, msdu, &ts, &c, seg.len);
++			pending[it->mac_id]++;
++
++			ath11k_dp_tx_complete_msdu(ar, msdu, &it->ts, &c,
++						   it->seg.len);
++		}
+ 	}
+ 
+ 	list_for_each_entry_safe(msdu, tmp, &c.free, list) {
+@@ -1607,6 +1669,18 @@ int ath11k_dp_tx_completion_handler(stru
+ 		napi_consume_skb(msdu, budget);
+ 	}
+ 
++	/* The frames of the run are done: count them in one step for each
++	 * radio. The decrement is fully ordered and comes before the read of
++	 * the starved mark below, as the one of each frame did.
++	 */
++	for (i = 0; i < ab->num_radios; i++) {
++		if (!pending[i])
++			continue;
++		ar = ab->pdevs[i].ar;
++		if (!atomic_sub_return(pending[i], &ar->dp.num_tx_pending))
++			wake_up(&ar->dp.tx_empty_waitq);
++	}
++
+ 	/* A completion returns the airtime the frame was charged, which is
+ 	 * what an airtime-limited station in that access category is waiting
+ 	 * on. The arrivals that would otherwise start a round are themselves
