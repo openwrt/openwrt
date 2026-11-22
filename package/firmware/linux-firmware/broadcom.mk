@@ -121,6 +121,9 @@ define Package/brcmfmac-nvram-43455-sdio/install
 		$(1)/lib/firmware/brcm/
 	$(LN) \
 		brcmfmac43455-sdio.raspberrypi,4-model-b.txt \
+		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.raspberrypi,4-model-a.txt
+	$(LN) \
+		brcmfmac43455-sdio.raspberrypi,4-model-b.txt \
 		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.raspberrypi,4-compute-module.txt
 	$(LN) \
 		brcmfmac43455-sdio.raspberrypi,4-model-b.txt \
@@ -140,6 +143,9 @@ define Package/brcmfmac-nvram-43455-sdio/install
 	$(LN) \
 		brcmfmac43455-sdio.raspberrypi,4-model-b.txt \
 		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.Raspberry\ Pi\ Foundation-Raspberry\ Pi\ Compute\ Module\ 5.txt
+	$(LN) \
+		brcmfmac43455-sdio.raspberrypi,4-model-b.txt \
+		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.raspberrypi,500.txt
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/brcm/brcmfmac43455-sdio.MINIX-NEO\ Z83-4.txt \
 		$(1)/lib/firmware/brcm/
