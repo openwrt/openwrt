@@ -1,0 +1,24 @@
+From 475539db19530b7e134f58555e1afcae21d419f3 Mon Sep 17 00:00:00 2001
+From: Nick Venenga <nick@venenga.com>
+Date: Wed, 2 Sep 2026 00:59:10 +0000
+Subject: [PATCH] wifi: rtw89: 8922au: add ASUS BE93
+
+ASUS USB-BE93 Mini USB-C adapter
+Originally added and tested here https://github.com/morrownr/rtw89/pull/121
+
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Nick Venenga <nick@venenga.com>
+Link: https://patch.msgid.link/010f01a05fa084ba-80349068-cd1f-4e4e-99f5-8cf6f4c03216-000000@us-east-2.amazonses.com
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+---
+--- a/drivers/net/wireless/realtek/rtw89/rtw8922au.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8922au.c
+@@ -51,6 +51,8 @@ static const struct usb_device_id rtw_89
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8922au_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x0b05, 0x1bd2, 0xff, 0xff, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8922au_info },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x0b05, 0x1d84, 0xff, 0xff, 0xff),
++	  .driver_info = (kernel_ulong_t)&rtw89_8922au_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x0bda, 0x8912, 0xff, 0xff, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8922au_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x0db0, 0xda0e, 0xff, 0xff, 0xff),

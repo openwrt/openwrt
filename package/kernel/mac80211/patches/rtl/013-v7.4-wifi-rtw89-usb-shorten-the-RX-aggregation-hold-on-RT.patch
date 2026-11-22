@@ -1,0 +1,60 @@
+From 83de3a16c7b37064a59305040ba9b0f93b832794 Mon Sep 17 00:00:00 2001
+From: Devin Wittmayer <lucid_duck@justthetip.ca>
+Date: Wed, 7 Oct 2026 14:09:58 -0700
+Subject: [PATCH] wifi: rtw89: usb: shorten the RX aggregation hold on
+ RTL8922AU over USB 3
+
+The RTL8922AU holds received frames for up to a millisecond before
+handing them to the host, a value carried over from the RTL8852CU.
+On USB 3 that adds up to a millisecond of round trip, and under load
+at 160 MHz the access point drops to lower rates and download suffers.
+
+Shorten the hold on USB 3 only. On USB 2 the bus is the limit, and a
+slow host needs the long hold to keep up.
+
+RTL8922AU on USB 3 at 160 MHz, power save off for the round trip:
+
+                         x86, 6 GHz    x86, 5 GHz    Pi 5, 6 GHz
+                        before after  before after  before after
+  TCP down, 1 flow        613  1002     579   948     587  1010  Mbps
+  TCP down, 8 flows       656  1187     629  1080     605  1122  Mbps
+  round trip             2.33  1.29    2.25  1.18    1.42  0.84  ms
+  busiest core, UDP 200M  8.4  12.8     8.3  12.9     2.1   3.3  %
+
+RTL8922AU on USB 2, Raspberry Pi 1 B+ at 5 GHz, 80 MHz:
+
+                        long hold  short hold
+  TCP up, 1 flow            102.3        87.7  Mbps
+  CPU, UDP 20M               50.5        77.4  %
+  loss, UDP 50M               3.8        85.7  %
+
+Fixes: 32cee8a9bb66 ("wifi: rtw89: usb: Enable RX aggregation for RTL8922AU")
+Reported-by: Nick Morrow <morrownr@gmail.com>
+Cc: stable@vger.kernel.org
+Signed-off-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20261007210958.56528-1-lucid_duck@justthetip.ca
+---
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -819,10 +819,15 @@ static void rtw89_usb_rx_agg_cfg_v2(stru
+ 
+ static void rtw89_usb_rx_agg_cfg_v3(struct rtw89_dev *rtwdev)
+ {
+-	const u32 rxagg_0 = FIELD_PREP_CONST(B_BE_RXAGG_0_EN, 1) |
+-			    FIELD_PREP_CONST(B_BE_RXAGG_0_NUM_TH, 255) |
+-			    FIELD_PREP_CONST(B_BE_RXAGG_0_TIME_32US_TH, 32) |
+-			    FIELD_PREP_CONST(B_BE_RXAGG_0_BUF_SZ_1K, 20);
++	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
++	u32 rxagg_0 = FIELD_PREP_CONST(B_BE_RXAGG_0_EN, 1) |
++		      FIELD_PREP_CONST(B_BE_RXAGG_0_NUM_TH, 255) |
++		      FIELD_PREP_CONST(B_BE_RXAGG_0_BUF_SZ_1K, 20);
++
++	if (rtwusb->udev->speed == USB_SPEED_SUPER)
++		rxagg_0 |= FIELD_PREP_CONST(B_BE_RXAGG_0_TIME_32US_TH, 1);
++	else
++		rxagg_0 |= FIELD_PREP_CONST(B_BE_RXAGG_0_TIME_32US_TH, 32);
+ 
+ 	rtw89_write32(rtwdev, R_BE_RXAGG_0_V1, rxagg_0);
+ 	rtw89_write32(rtwdev, R_BE_RXAGG_1_V1, 0x1F);

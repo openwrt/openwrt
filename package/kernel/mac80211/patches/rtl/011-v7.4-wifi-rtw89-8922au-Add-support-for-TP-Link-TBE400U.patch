@@ -1,0 +1,31 @@
+From de2cb461456143a69845c24ce38ac14a61d6e166 Mon Sep 17 00:00:00 2001
+From: Nick Venenga <nick@venenga.com>
+Date: Sat, 29 Aug 2026 14:53:24 +0000
+Subject: [PATCH] wifi: rtw89: 8922au: Add support for TP-Link TBE400U
+
+idVendor=37ad, idProduct=0104 TP-Link TBE400U (USB-C, no external
+antenna)
+idVendor=37ad, idProduct=0106 TP-Link Archer TBE400U Plus (USB-A,
+antenna)
+
+https://github.com/morrownr/rtw89/pull/123
+https://github.com/morrownr/rtw89/commit/c98e6ff31c331be35383b5a500cfaf76620e2d0c
+
+Signed-off-by: Nick Venenga <nick@venenga.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/010f01a04e02d70c-a52abf35-2e60-47a5-99f5-b064b344ac19-000000@us-east-2.amazonses.com
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+---
+--- a/drivers/net/wireless/realtek/rtw89/rtw8922au.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8922au.c
+@@ -63,6 +63,10 @@ static const struct usb_device_id rtw_89
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8922au_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x37ad, 0x0101, 0xff, 0xff, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8922au_info },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x37ad, 0x0104, 0xff, 0xff, 0xff),
++	  .driver_info = (kernel_ulong_t)&rtw89_8922au_info },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x37ad, 0x0106, 0xff, 0xff, 0xff),
++	  .driver_info = (kernel_ulong_t)&rtw89_8922au_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x7392, 0x3822, 0xff, 0xff, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8922au_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x7392, 0x4822, 0xff, 0xff, 0xff),
