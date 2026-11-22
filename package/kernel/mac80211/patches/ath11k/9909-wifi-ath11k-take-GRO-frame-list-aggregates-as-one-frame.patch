@@ -1,0 +1,116 @@
+From acec018752cac42ffaa8931535c9f68bc8a975d1 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 11:26:56 +0100
+Subject: [PATCH] wifi: ath11k: take GRO frame list aggregates as one frame
+
+Offer NETIF_F_GSO_FRAGLIST and NETIF_F_FRAGLIST with the TSO features
+of the Ethernet encap path, so that a frame list aggregate that a bridge
+or router built with GRO reaches mac80211 whole, and passes its TXQ,
+AQL and status once, instead of being split into its frames before it.
+
+The TCL does not take such an aggregate (its payload is in other
+buffers, with a header each), so ath11k_dp_tx_gso() splits it with
+skb_gso_segment(), which uses skb_segment_list() for it, and sends the
+frames one by one with the status and the airtime charge of the
+aggregate: the last frame carries the charge, the others none, as for
+every GSO frame that is split. The aggregate is charged to AQL once by
+ieee80211_tx_dequeue() for its whole length, and refunded once by the
+completion, the flush or the teardown of the last frame; a frame that
+cannot be queued is freed through ieee80211_free_txskb() and refunds the
+same way. The aql_audit debugfs file of the station shows that the
+charged and refunded airtime match.
+
+Count the aggregates and their frames that were split in the soc_dp_stats
+debugfs file, counted before the TCL path is tried, as that path converts
+a frame list into a TCP batch before it can still refuse the frame.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -939,6 +939,9 @@ struct ath11k_soc_dp_stats {
+ 	atomic_t tx_tso_seg;
+ 	atomic_t tx_tso_sw;
+ 	atomic_t tx_sg;
++	/* GRO frame list batches, and their frames, split here */
++	atomic_t tx_fraglist;
++	atomic_t tx_fraglist_seg;
+ 	struct ath11k_soc_dp_tx_err_stats tx_err;
+ 	struct ath11k_dp_ring_bp_stats bp_stats;
+ };
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -730,6 +730,10 @@ static ssize_t ath11k_debugfs_dump_soc_d
+ 			 atomic_read(&soc_stats->tx_tso_seg),
+ 			 atomic_read(&soc_stats->tx_tso_sw),
+ 			 atomic_read(&soc_stats->tx_sg));
++	len += scnprintf(buf + len, size - len,
++			 "GRO frame list batches split in software: %d, their frames: %d\n",
++			 atomic_read(&soc_stats->tx_fraglist),
++			 atomic_read(&soc_stats->tx_fraglist_seg));
+ 
+ 	len += scnprintf(buf + len, size - len, "\nSOC TX STATS:\n");
+ 	len += scnprintf(buf + len, size - len, "\nTCL Ring Full Failures:\n");
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -15,6 +15,11 @@
+ #include "peer.h"
+ #include "mac.h"
+ 
++bool ath11k_dp_tx_fraglist_wanted(struct ath11k_base *ab)
++{
++	return ath11k_dp_tx_tso_wanted(ab);
++}
++
+ /* Whether the netdevs of this device offer TSO and scatter-gather */
+ bool ath11k_dp_tx_tso_wanted(struct ath11k_base *ab)
+ {
+@@ -612,8 +617,9 @@ static void ath11k_dp_tx_ext_unpad(struc
+  * of the last one reports the batch to mac80211. A frame with fragments has
+  * one descriptor, and is a batch of one segment.
+  *
+- * Returns -EAGAIN, with the frame untouched, for one the TCL cannot take
+- * whole. The ids, extension descriptors and ring entries of all segments are
++ * Returns -EAGAIN for one the TCL cannot take whole, with the frame as it
++ * came or, for a frame list, converted into the equal TCP batch, which
++ * software segments then as well. The ids, extension descriptors and ring entries of all segments are
+  * taken before the first is queued.
+  */
+ static int ath11k_dp_tx_ext(struct ath11k *ar, struct ath11k_vif *arvif,
+@@ -900,6 +906,15 @@ int ath11k_dp_tx_gso(struct ath11k *ar,
+ 	struct ieee80211_tx_info *info;
+ 	int ret = 0;
+ 
++	/* counted before the TCL path, which turns a frame list into a TCP
++	 * batch even when it then refuses it
++	 */
++	if (skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) {
++		atomic_inc(&ar->ab->soc_stats.tx_fraglist);
++		atomic_add(skb_shinfo(skb)->gso_segs,
++			   &ar->ab->soc_stats.tx_fraglist_seg);
++	}
++
+ 	if (!ath11k_dp_tx_ext(ar, arvif, skb, held_ring))
+ 		return 0;
+ 
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.h
+@@ -22,6 +22,7 @@ int ath11k_dp_tx_htt_h2t_ver_req_msg(str
+ int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
+ 		 struct ath11k_sta *arsta, struct sk_buff *skb, int held_ring);
+ bool ath11k_dp_tx_tso_wanted(struct ath11k_base *ab);
++bool ath11k_dp_tx_fraglist_wanted(struct ath11k_base *ab);
+ int ath11k_dp_tx_gso(struct ath11k *ar, struct ath11k_vif *arvif,
+ 		     struct ath11k_sta *arsta, struct sk_buff *skb,
+ 		     int held_ring);
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10782,6 +10782,9 @@ static int __ath11k_mac_register(struct
+ 			ar->hw->encap_netdev_features = NETIF_F_SG |
+ 							NETIF_F_TSO |
+ 							NETIF_F_TSO6;
++			if (ath11k_dp_tx_fraglist_wanted(ab))
++				ar->hw->encap_netdev_features |=
++					NETIF_F_GSO_FRAGLIST | NETIF_F_FRAGLIST;
+ 			ar->hw->encap_gso_max_segs =
+ 				ATH11K_DP_TX_TSO_MAX_SEGS;
+ 		}
