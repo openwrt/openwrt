@@ -68,6 +68,25 @@ define Build/Compile
 		modules
 endef
 
+# generic netlink message definitions, used by sf21-dpns-genl
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include/sf21-dpns
+	$(CP) \
+		$(PKG_BUILD_DIR)/dpns_genl/sf_genl.h \
+		$(PKG_BUILD_DIR)/dpns_l2/se_common.h \
+		$(PKG_BUILD_DIR)/dpns_tmu/sf_tmu_regs.h \
+		$(PKG_BUILD_DIR)/dpns_tmu/sf_tmu_genl.h \
+		$(PKG_BUILD_DIR)/dpns_mcast/se_mcast_cfg.h \
+		$(PKG_BUILD_DIR)/dpns_mcast/sf_genl_mcast.h \
+		$(PKG_BUILD_DIR)/dpns_acl/dpns_acl_msg.h \
+		$(PKG_BUILD_DIR)/include/sf_genl_msg.h \
+		$(PKG_BUILD_DIR)/dpns_nat/dpns_nat_genl.h \
+		$(PKG_BUILD_DIR)/dpns_vlan/dpns_vlan_genl.h \
+		$(PKG_BUILD_DIR)/dpns_router/dpns_router_genl.h \
+		$(PKG_BUILD_DIR)/dpns_common/dpns_common_genl.h \
+		$(1)/usr/include/sf21-dpns/
+endef
+
 define KernelPackage/sf21-dpns/install
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/hotplug.d/iface
 	$(INSTALL_BIN) ./files/dpns-wan.sh $(1)/usr/sbin/dpns-wan
