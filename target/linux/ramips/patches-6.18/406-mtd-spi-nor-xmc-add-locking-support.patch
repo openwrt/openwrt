@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ivan Lee <ivanlee2014@163.com>
+Date: Fri, 20 Jun 2026 14:00:00 +0800
+Subject: [PATCH] mtd: spi-nor: xmc: add block protection (lock) support
+
+The XMC (Wuhan Xinxin Semiconductor) XM25Qx flash chips are Winbond
+W25Qxx clones and use the very same status-register block-protection
+scheme (BP0..BP2 + TB) as the GigaDevice gd25q128, which already enables
+SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB.
+
+Without these flags spi-nor never installs the locking ops, so the
+MTD MEMUNLOCK ioctl issued by OpenWrt's "mtd"/sysupgrade ("Unlocking
+firmware ...") returns -EOPNOTSUPP and the block-protection bits left
+set by the vendor U-Boot are never cleared. On such devices the lower
+(kernel) region writes fine but erasing the upper (rootfs) region fails
+with "Failed to erase block", breaking sysupgrade.
+
+Add SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB to the XMC parts so the standard
+status-register unlock path runs. Verified on the Dragonglass DGR7
+(MT7621) which carries an XM25QH128A.
+
+Signed-off-by: Ivan Lee <ivanlee2014@163.com>
+---
+ drivers/mtd/spi-nor/xmc.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/mtd/spi-nor/xmc.c
++++ b/drivers/mtd/spi-nor/xmc.c
+@@ -13,21 +13,25 @@ static const struct flash_info xmc_nor_p
+ 		.id = SNOR_ID(0x20, 0x70, 0x17),
+ 		.name = "XM25QH64A",
+ 		.size = SZ_8M,
++		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB,
+ 		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
+ 	}, {
+ 		.id = SNOR_ID(0x20, 0x40, 0x17),
+ 		.name = "XM25QH64C",
+ 		.size = SZ_8M,
++		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB,
+ 		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
+ 	}, {
+ 		.id = SNOR_ID(0x20, 0x70, 0x18),
+ 		.name = "XM25QH128A",
+ 		.size = SZ_16M,
++		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB,
+ 		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
+ 	}, {
+ 		.id = SNOR_ID(0x20, 0x40, 0x18),
+ 		.name = "XM25QH128C",
+ 		.size = SZ_16M,
++		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB,
+ 		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
+ 	},
+ };
