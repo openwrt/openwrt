@@ -1,0 +1,118 @@
+From 150383510b67efb53a7eac4e6baf244448c6deb9 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 05:16:10 +0100
+Subject: [PATCH] wifi: ath11k: look the peer of a received MSDU up once
+
+ath11k_dp_rx_h_mpdu() looks up the peer of each MSDU by its peer id in the
+rhashtable, under base_lock, for the cipher and the source address check,
+and ath11k_dp_rx_deliver_msdu() looks it up again for the station it hands
+to mac80211, under a second hold of the lock. In a profile of bridged
+uplink at 900 Mbit/s (IPQ8074, one run) the lookup and its hash take 1.7 %
+of all samples (ath11k_peer_find_by_id() 1.12 %, rhashtable_jhash2()
+0.62 %).
+
+Keep the station ath11k_dp_rx_h_mpdu() found in the frame's control block,
+and have ath11k_dp_rx_deliver_msdu() take it from there. The station
+mac80211 gets is then the one of the peer the frame's source address was
+checked against, from the same hold of the lock, where two lookups could
+find different peers if the peer table changed between them. It is used
+after the lock and within the same NAPI poll, as
+ath11k_dp_rx_deliver_msdu() used the station of its own lookup after that
+lock. A frame that does not pass ath11k_dp_rx_h_mpdu(), from the monitor
+and error paths, still looks its peer up; the mark is cleared where those
+frames are reaped and when it is read. The debug message prints the
+station's address.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -141,6 +141,8 @@ struct ath11k_skb_rxcb {
+ 	bool is_eapol;
+ 	/* the Ethernet frame was converted back to an 802.11 frame */
+ 	bool eth_native;
++	/* sta holds the station of the peer ath11k_dp_rx_h_mpdu() found */
++	bool sta_valid;
+ 	struct hal_rx_desc *rx_desc;
+ 	u8 err_rel_src;
+ 	u8 err_code;
+@@ -150,6 +152,7 @@ struct ath11k_skb_rxcb {
+ 	u8 tid;
+ 	u16 peer_id;
+ 	u16 seq_no;
++	struct ieee80211_sta *sta;
+ };
+ 
+ enum ath11k_hw_rev {
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -2521,6 +2521,13 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 
+ 	spin_lock_bh(&ar->ab->base_lock);
+ 	peer = ath11k_dp_rx_h_find_peer(ar->ab, msdu);
++	/* for ath11k_dp_rx_deliver_msdu(), from the same hold of the lock
++	 * as the source address check below
++	 */
++	BUILD_BUG_ON(sizeof(struct ath11k_skb_rxcb) >
++		     sizeof_field(struct sk_buff, cb));
++	rxcb->sta = peer ? peer->sta : NULL;
++	rxcb->sta_valid = true;
+ 	if (peer) {
+ 		if (rxcb->is_mcbc)
+ 			enctype = peer->sec_type_grp;
+@@ -2742,17 +2749,26 @@ static void ath11k_dp_rx_deliver_msdu(st
+ 	if (!(status->flag & RX_FLAG_ONLY_MONITOR))
+ 		decap = ath11k_dp_rx_h_msdu_start_decap_type(ar->ab, rxcb->rx_desc);
+ 
+-	spin_lock_bh(&ar->ab->base_lock);
+-	peer = ath11k_dp_rx_h_find_peer(ar->ab, msdu);
+-	if (peer && peer->sta)
+-		pubsta = peer->sta;
+-	spin_unlock_bh(&ar->ab->base_lock);
++	/* The station ath11k_dp_rx_h_mpdu() found for the frame, if it ran:
++	 * a second lookup in the same poll cannot give one the frame's
++	 * checks were not made against.
++	 */
++	if (rxcb->sta_valid) {
++		rxcb->sta_valid = false;
++		pubsta = rxcb->sta;
++	} else {
++		spin_lock_bh(&ar->ab->base_lock);
++		peer = ath11k_dp_rx_h_find_peer(ar->ab, msdu);
++		if (peer && peer->sta)
++			pubsta = peer->sta;
++		spin_unlock_bh(&ar->ab->base_lock);
++	}
+ 
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_DATA,
+ 		   "rx skb %p len %u peer %pM %d %s sn %u %s%s%s%s%s%s%s %srate_idx %u vht_nss %u freq %u band %u flag 0x%x fcs-err %i mic-err %i amsdu-more %i\n",
+ 		   msdu,
+ 		   msdu->len,
+-		   peer ? peer->addr : NULL,
++		   pubsta ? pubsta->addr : NULL,
+ 		   rxcb->tid,
+ 		   is_mcbc ? "mcast" : "ucast",
+ 		   rxcb->seq_no,
+@@ -3095,6 +3111,7 @@ try_again:
+ 			continue;
+ 		}
+ 
++		rxcb->sta_valid = false;
+ 		rxcb->is_first_msdu = !!(desc->rx_msdu_info.info0 &
+ 					 RX_MSDU_DESC_INFO0_FIRST_MSDU_IN_MPDU);
+ 		rxcb->is_last_msdu = !!(desc->rx_msdu_info.info0 &
+@@ -4579,6 +4596,7 @@ int ath11k_dp_rx_process_wbm_err(struct
+ 			continue;
+ 		}
+ 
++		rxcb->sta_valid = false;
+ 		rxcb->err_rel_src = err_info.err_rel_src;
+ 		rxcb->err_code = err_info.err_code;
+ 		rxcb->rx_desc = (struct hal_rx_desc *)msdu->data;
+@@ -5513,6 +5531,7 @@ static int ath11k_dp_rx_mon_deliver(stru
+ 		rxs->flag |= RX_FLAG_ONLY_MONITOR;
+ 		ath11k_update_radiotap(ar, ppduinfo, mon_skb, rxs);
+ 
++		ATH11K_SKB_RXCB(mon_skb)->sta_valid = false;
+ 		ath11k_dp_rx_deliver_msdu(ar, napi, mon_skb, rxs);
+ 		mon_skb = skb_next;
+ 	} while (mon_skb);
