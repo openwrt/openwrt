@@ -206,7 +206,7 @@ int dpns_vlan_proc_init(struct dpns_vlan_priv *priv)
 	struct proc_dir_entry *dpns_vlan = NULL;
 	g_priv = priv;
 
-	dpns_vlan = proc_create("dpns_vlan", 0666, NULL, &vlan_ctrl);
+	dpns_vlan = proc_create("dpns_vlan", 0600, NULL, &vlan_ctrl);
 
 	if (!dpns_vlan) {
 		VLAN_DBG(ERR_LV, "--proc creat failed!--\n");

@@ -157,6 +157,22 @@ static void acl_set_host_offset(struct acl_genl_msg_add *msg)
                 sf_update(priv->cpriv, ACL_PKT_OFFSET_CFG0, 0, HOST_EXTRACT_DBYTE_EN);
 }
 
+/* Undo a failed acl_add(): drop the entry and rebuild the TCAM from the list,
+ * which also removes the part of the entry that was already written.
+ */
+static int acl_add_undo(struct acl_data *data, bool is_eacl)
+{
+	list_del(&data->list);
+	kfree(data->key);
+	kfree(data->mask);
+	kfree(data->key6);
+	kfree(data->mask6);
+	kfree(data);
+	acl_rewrite(is_eacl);
+
+	return -ENOSPC;
+}
+
 int acl_add(struct acl_genl_msg_add *msg)
 {
         struct acl_data *data, *pos;
@@ -185,6 +201,11 @@ int acl_add(struct acl_genl_msg_add *msg)
                 v6_mode = priv->iv6_mode;
                 index = priv->iacl_last_index;
         }
+
+        /* the index goes into a TCAM command register field */
+        if (msg->key.policy == SPL_POLICY && msg->spl < SPL_MAX &&
+            msg->spl_index >= ACL_SPL_TB_SZ)
+                return -EINVAL;
 
         /* set offset for host_extract_data when use spec_info */
         acl_set_host_offset(msg);
@@ -215,14 +236,14 @@ int acl_add(struct acl_genl_msg_add *msg)
                         ret = acl_write(data, 0);
                         if (ret < 0) {
                                 pr_err("%s table for ipv4 full!\n", msg->is_eacl ? "EACL" : "IACL");
-                                return -ENOSPC;
+                                return acl_add_undo(data, msg->is_eacl);
                         }
                 }
                 if (data->key6) {
                         ret = acl_write(data, 1);
                         if (ret < 0) {
                                 pr_err("%s table for ipv6 full!\n", msg->is_eacl ? "EACL" : "IACL");
-                                return -ENOSPC;
+                                return acl_add_undo(data, msg->is_eacl);
                         }
                 }
         } else {
@@ -232,7 +253,7 @@ int acl_add(struct acl_genl_msg_add *msg)
                                 list_swap(&data->list, &pos->list);
                                 ret = acl_rewrite(msg->is_eacl);
                                 if (ret < 0)
-                                        return ret;
+                                        return acl_add_undo(data, msg->is_eacl);
                                 break;
                         }
                 }

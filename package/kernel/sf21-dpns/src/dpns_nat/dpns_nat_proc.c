@@ -383,7 +383,7 @@ static const struct proc_ops nat_ctrl = {
 };
 void dpns_nat_proc_init(struct dpns_nat_priv *priv)
 {
-	proc_create_data("dpns_nat", 0666, NULL, &nat_ctrl, (void*)priv);
+	proc_create_data("dpns_nat", 0600, NULL, &nat_ctrl, (void*)priv);
 }
 void dpns_nat_proc_exit(void)
 {

@@ -554,7 +554,7 @@ int dpns_acl_probe(struct platform_device *pdev)
 	sf_update(cpriv, TCAM_CONFIG3_RGT, 0, ACL_SPL_ZERO_LIMIT);
 
 	acl_genl_init(priv);
-	proc_create("dpns_acl", 0222, NULL, &acl_ctrl);
+	proc_create("dpns_acl", 0200, NULL, &acl_ctrl);
 
 	printk("End %s\n", __func__);
 	return 0;

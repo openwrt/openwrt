@@ -267,15 +267,22 @@ static int sfgenl_hello_cmd(struct sk_buff *skb, struct genl_info *info)
 static int sfgenl_msg_cmd(struct sk_buff *skb, struct genl_info *info)
 {
         struct nlattr *attr = info->attrs[SF_GENL_ATTR_MSG];
-        size_t msglen = genlmsg_len(info->genlhdr);
         struct sfgenl_msghdr *sf_nlhdr;
         struct sfgenl_msg_ops *op;
+        size_t msglen;
+        void *msgbuf;
         u32 comp_id;
         int err = -ENOENT;
 
         if (!attr) {
                 GENL_DBG(ERR_LV, "attribute is not found\n");
                 return -ENODATA;
+        }
+
+        msglen = nla_len(attr);
+        if (msglen < sizeof(*sf_nlhdr)) {
+                GENL_DBG(ERR_LV, "message too short: %zu\n", msglen);
+                return -EINVAL;
         }
 
         sf_nlhdr = nla_data(attr);
@@ -294,12 +301,26 @@ static int sfgenl_msg_cmd(struct sk_buff *skb, struct genl_info *info)
                 return -EINVAL;
         }
 
+        /*
+         * Component handlers cast the buffer to their message struct without
+         * checking its length: pass a zero-padded copy of the maximum size.
+         */
+        if (sf_nlhdr->buflen > SF_GENL_ATTR_MSG_LEN)
+                return -EINVAL;
+
+        msgbuf = kzalloc(SF_GENL_ATTR_MSG_LEN, GFP_KERNEL);
+        if (!msgbuf)
+                return -ENOMEM;
+        memcpy(msgbuf, sf_nlhdr->buf, sf_nlhdr->buflen);
+
         rcu_read_lock();
         op = rcu_dereference(sf_msg_ops[comp_id]);
         rcu_read_unlock();
 
         if (op && op->msg_recv)
-                err = op->msg_recv(info, sf_nlhdr->buf, sf_nlhdr->buflen);
+                err = op->msg_recv(info, msgbuf, sf_nlhdr->buflen);
+
+        kfree(msgbuf);
 
         return err;
 }
@@ -333,12 +354,14 @@ static int sf_nlmsg_recv(struct sk_buff *skb, struct genl_info *info)
 static const struct genl_ops sf_genl_ops[] = {
         {
                 .cmd    = SF_GENL_CMD_HELLO,
+                .flags  = GENL_ADMIN_PERM,
                 .policy = sf_genl_policy,
                 .doit   = sf_nlmsg_recv,
                 .dumpit = NULL,
         },
         {
                 .cmd    = SF_GENL_CMD_MSG,
+                .flags  = GENL_ADMIN_PERM,
                 .policy = sf_genl_policy,
                 .doit   = sf_nlmsg_recv,
                 .dumpit = NULL,

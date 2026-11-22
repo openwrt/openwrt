@@ -6,7 +6,7 @@
 #include "dpns_common.h"
 #include "dpns_acl_msg.h"
 
-extern void acl_add(struct acl_genl_msg_add *msg);
+extern int acl_add(struct acl_genl_msg_add *msg);
 extern int acl_del(struct acl_genl_msg *msg);
 extern void acl_clear(bool is_eacl);
 extern void acl_dump_table(bool is_eacl);
@@ -119,6 +119,7 @@ static void acl_proc_add(char *add_values[])
 	struct acl_genl_msg_add msg_add = {
 		.method = ACL_ADD,
 	};
+	unsigned long policy;
 	int ret, i;
 	struct acl_data_t *key = &msg_add.key, *mask = &msg_add.mask;
 
@@ -145,7 +146,13 @@ static void acl_proc_add(char *add_values[])
 
 	msg_add.is_eacl = !!(simple_strtoul(add_values[BLOB_ACL_DIR], &add_values[BLOB_ACL_DIR], 10));
 
-	key->policy = simple_strtoul(add_values[BLOB_ACL_POLICY], &add_values[BLOB_ACL_POLICY], 10);
+	policy = simple_strtoul(add_values[BLOB_ACL_POLICY], &add_values[BLOB_ACL_POLICY], 10);
+	/* the key field is 3 bits wide: e.g. 9 would silently become ACT_DROP */
+	if (policy > ACT_SPL) {
+		printk("policy should be in the range 0~%d\n", ACT_SPL);
+		goto error;
+	}
+	key->policy = policy;
 
 	if (msg_add.is_eacl) {
 		if (key->policy == ACT_MIRROR2CPU || key->policy == ACT_MIRROR_INGRESS || key->policy == ACT_MIRROR_EGRESS) {
@@ -174,7 +181,7 @@ static void acl_proc_add(char *add_values[])
 				goto error;
 			} else {
 				msg_add.spl_index = blobmsg_get_u32(add_values[BLOB_ACL_SPEED_INDEX]);
-				if (msg_add.spl_index > ACL_SPL_TB_SZ) {
+				if (msg_add.spl_index >= ACL_SPL_TB_SZ) {
 					printk("spl_index should in range 0~31\n");
 					goto error;
 				}
