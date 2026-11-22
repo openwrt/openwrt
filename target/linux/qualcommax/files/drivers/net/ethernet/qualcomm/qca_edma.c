@@ -9,6 +9,7 @@
 #include <linux/dim.h>
 #include <linux/ethtool.h>
 #include <linux/hash.h>
+#include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
 #include <linux/interrupt.h>
 #include <linux/ip.h>
@@ -26,6 +27,8 @@
 #include <net/dsa.h>
 #include <net/dst_metadata.h>
 #include <net/gso.h>
+#include <net/inet6_hashtables.h>
+#include <net/inet_hashtables.h>
 #include <net/ip6_checksum.h>
 #include <net/netdev_queues.h>
 
@@ -712,6 +715,17 @@ static u32 edma_rx_flow_id(const struct edma_rx_preheader *rxph)
 	return le32_to_cpu(rxph->rx_pre2) & EDMA_RXPH_HASH_MASK;
 }
 
+/* The switch forwarded the frame to the CPU port by its address table, on no
+ * flow and with no exception: a frame the stack receives on the switch port
+ * it came in on, as the metadata dst of edma_rx_slow() names it.
+ */
+static bool edma_rx_is_fwd(const struct net_device *netdev,
+			   const struct edma_rx_preheader *rxph)
+{
+	return netdev_uses_dsa(netdev) &&
+	       !FIELD_GET(EDMA_RXPH_CPU_CODE, le32_to_cpu(rxph->rx_pre4));
+}
+
 static bool edma_rx_flow(struct net_device *netdev, struct sk_buff *skb,
 			 u32 flow)
 {
@@ -964,6 +978,10 @@ static bool edma_gro_fits(const struct edma_gro *g, const struct edma_tcp *t,
 	const struct edma_tcp *h = &g->t;
 	unsigned int optlen;
 
+	/* the segments of a frame list carry the same flags, as GRO's do */
+	if (g->flist && t->th->psh)
+		return false;
+
 	if (flow != g->flow || t->v6 != h->v6 || t->hdr_len != h->hdr_len ||
 	    t->payload > g->mss || ntohl(t->th->seq) != g->next_seq ||
 	    g->head->len + t->payload > g->gso.max_size ||
@@ -1014,6 +1032,30 @@ static void edma_gro_complete(struct edma_gro *g)
 	unsigned int l4len = skb->len - thoff;
 	struct skb_shared_info *shinfo = skb_shinfo(skb);
 
+	/* A frame list keeps the checksum of each segment, verified by the
+	 * engine, as GRO's does: only the IP length of the head changes.
+	 */
+	if (g->flist) {
+		if (t->v6) {
+			t->ip6->payload_len = htons(skb->len - ETH_HLEN -
+						    sizeof(*t->ip6));
+			shinfo->gso_type = SKB_GSO_TCPV6 | SKB_GSO_FRAGLIST;
+		} else {
+			__be16 len = htons(skb->len - ETH_HLEN);
+
+			csum_replace2(&t->ip4->check, t->ip4->tot_len, len);
+			t->ip4->tot_len = len;
+			shinfo->gso_type = SKB_GSO_TCPV4 | SKB_GSO_FRAGLIST;
+		}
+		skb_set_network_header(skb, ETH_HLEN);
+		skb_set_transport_header(skb, thoff);
+		skb->ip_summed = CHECKSUM_UNNECESSARY;
+		skb->csum_level = 0;
+		shinfo->gso_size = g->mss;
+		shinfo->gso_segs = g->segs;
+		return;
+	}
+
 	if (t->v6) {
 		t->ip6->payload_len = htons(skb->len - ETH_HLEN -
 					    sizeof(*t->ip6));
@@ -1043,7 +1085,8 @@ static void edma_gro_complete(struct edma_gro *g)
 
 /* Sends the aggregate the poll holds. It is the frame of the flow that was
  * first in the poll's order and every frame after it of the flow has been
- * merged into it, so nothing of the flow waits behind or ahead of it.
+ * merged into it, so nothing of the flow waits behind or ahead of it. A
+ * forwarded run goes to the receive path, as each of its frames would have.
  */
 static void edma_gro_flush(struct edma_queue *q)
 {
@@ -1059,7 +1102,12 @@ static void edma_gro_flush(struct edma_queue *q)
 		edma_gro_complete(g);
 	g->head = NULL;
 
-	if (edma_rx_flow(netdev, skb, g->flow)) {
+	if (g->flow & EDMA_GRO_FWD) {
+		if (g->segs > 1) {
+			q->stats.rx_fwd_merged += g->segs;
+			q->stats.rx_fwd_aggs++;
+		}
+	} else if (edma_rx_flow(netdev, skb, g->flow)) {
 		edma_rx_netstats(netdev, g->segs, g->bytes);
 		if (g->segs > 1) {
 			q->stats.rx_flow_merged += g->segs;
@@ -1076,7 +1124,8 @@ static void edma_gro_flush(struct edma_queue *q)
 
 /* Appends the payload of @skb, a segment that fits, to the aggregate as a
  * fragment, which takes the page it was received in and leaves the segment's
- * own skb to be freed. The segment that cannot be taken is left as it was.
+ * own skb to be freed, or chains the segment to a frame list whole. The
+ * segment that cannot be taken is left as it was.
  */
 static bool edma_gro_join(struct edma_queue *q, struct sk_buff *skb,
 			  const struct edma_tcp *t, u32 bytes, bool fixed)
@@ -1087,12 +1136,30 @@ static bool edma_gro_join(struct edma_queue *q, struct sk_buff *skb,
 	bool push = t->th->psh, fragstolen;
 	int delta;
 
-	skb_pull(skb, hdr_len);
-	if (!skb_try_coalesce(g->head, skb, &fragstolen, &delta)) {
-		skb_push(skb, hdr_len);
-		return false;
+	if (g->flist) {
+		/* Chained as skb_gro_receive_list() chains a segment: its
+		 * headers stay in front of its payload, where the network
+		 * header names them for whoever cuts the list.
+		 */
+		skb_set_network_header(skb, ETH_HLEN);
+		skb_set_transport_header(skb, (u8 *)t->th - skb->data);
+		__skb_pull(skb, hdr_len);
+		if (g->last == g->head)
+			skb_shinfo(g->head)->frag_list = skb;
+		else
+			g->last->next = skb;
+		g->last = skb;
+		g->head->data_len += skb->len;
+		g->head->len += skb->len;
+		g->head->truesize += skb->truesize;
+	} else {
+		skb_pull(skb, hdr_len);
+		if (!skb_try_coalesce(g->head, skb, &fragstolen, &delta)) {
+			skb_push(skb, hdr_len);
+			return false;
+		}
+		kfree_skb_partial(skb, fragstolen);
 	}
-	kfree_skb_partial(skb, fragstolen);
 
 	if (g->segs == 1)
 		g->fixedid = fixed;
@@ -1112,10 +1179,117 @@ static bool edma_gro_join(struct edma_queue *q, struct sk_buff *skb,
 	return true;
 }
 
+/* The bridge port a forwarded frame of @t leaves by, as the bridge's own
+ * address table says for its destination: the bridge @dev is a port of, the
+ * VLAN an untagged frame is classified into there, and the entry. NULL when
+ * the frame is not bridged, the address is unknown or local, or the entry
+ * names a port the switch learned itself. Called under RCU; the bridge may
+ * forward the frame elsewhere if the entry moves meanwhile, which changes
+ * only the form of the aggregate it gets.
+ */
+static struct net_device *edma_gro_egress(struct net_device *dev,
+					  const struct edma_tcp *t)
+{
+#if IS_REACHABLE(CONFIG_BRIDGE) && IS_ENABLED(CONFIG_NET_SWITCHDEV)
+	struct net_device *br = netdev_master_upper_dev_get_rcu(dev);
+	u16 vid = 0;
+
+	if (!br || !netif_is_bridge_master(br))
+		return NULL;
+	if (br_vlan_enabled(br) && br_vlan_get_pvid_rcu(dev, &vid))
+		return NULL;
+
+	return br_switchdev_fdb_find_port(br, t->eth->h_dest, vid);
+#else
+	return NULL;
+#endif
+}
+
+/* The aggregate a forwarded frame of @t starts on @dev, the netdev of the
+ * port it came in on: none when the stack's GRO there is off or the netdev
+ * has an XDP program, which see every frame alone. When the bridge sends the
+ * stream to a port that segments it in hardware, frames with fragments sized
+ * for that port, as for a routed flow. Otherwise what the stack's GRO on @dev
+ * makes of it: with frame lists on a frame list (@flist), unless a socket of
+ * the host takes the stream, as tcp4_check_fraglist_gro() and
+ * tcp6_check_fraglist_gro() decide, else frames with fragments; either at
+ * most the netdev's GRO size.
+ */
+static bool edma_gro_port(struct net_device *dev, const struct edma_tcp *t,
+			  struct qca_edma_gso *gso, bool *flist)
+{
+	netdev_features_t need = NETIF_F_SG | (t->v6 ? NETIF_F_TSO6 :
+						      NETIF_F_TSO);
+	unsigned int gro_size = min3(READ_ONCE(dev->gro_max_size),
+				     READ_ONCE(dev->gro_ipv4_max_size),
+				     GRO_LEGACY_MAX_SIZE);
+	int iif = dev->ifindex, sdif = 0;
+	struct net_device *egress;
+	struct sock *sk;
+
+	if (netif_elide_gro(dev))
+		return false;
+
+	*flist = false;
+
+	rcu_read_lock();
+	egress = edma_gro_egress(dev, t);
+	if (egress && (egress->features & need) == need) {
+		gso->features = egress->features;
+		gso->max_segs = READ_ONCE(egress->gso_max_segs);
+		gso->max_size = min(READ_ONCE(egress->gso_max_size), gro_size);
+		rcu_read_unlock();
+		return true;
+	}
+
+	gso->features = NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 |
+			NETIF_F_TSO_MANGLEID;
+	gso->max_segs = GSO_MAX_SEGS;
+	gso->max_size = gro_size;
+
+	if (!(dev->features & NETIF_F_GRO_FRAGLIST)) {
+		rcu_read_unlock();
+		return true;
+	}
+
+#if IS_ENABLED(CONFIG_NET_L3_MASTER_DEV)
+	if (netif_is_l3_slave(dev)) {
+		struct net_device *master = netdev_master_upper_dev_get_rcu(dev);
+
+		sdif = iif;
+		iif = master ? master->ifindex : 0;
+	}
+#endif
+
+	if (!t->v6)
+		sk = __inet_lookup_established(dev_net_rcu(dev), t->ip4->saddr,
+					       t->th->source, t->ip4->daddr,
+					       ntohs(t->th->dest), iif, sdif);
+#if IS_ENABLED(CONFIG_IPV6)
+	else
+		sk = __inet6_lookup_established(dev_net_rcu(dev),
+						&t->ip6->saddr, t->th->source,
+						&t->ip6->daddr,
+						ntohs(t->th->dest), iif, sdif);
+#else
+	else
+		sk = NULL;
+#endif
+	rcu_read_unlock();
+
+	if (sk)
+		sock_gen_put(sk);
+	else
+		*flist = true;
+
+	return true;
+}
+
 /* Starts an aggregate with @skb when its flow leaves by a device that takes
  * a merged frame whole: with the segmentation offload for the frame's
  * family and for the IP ID it carries, scatter-gather, and more than one
- * segment.
+ * segment. A forwarded run is started when the stack would merge the frames
+ * of its port itself, to the size and in the form it would.
  */
 static bool edma_gro_open(struct edma_queue *q, struct sk_buff *skb,
 			  const struct edma_rx_preheader *rxph, u32 status,
@@ -1127,16 +1301,28 @@ static bool edma_gro_open(struct edma_queue *q, struct sk_buff *skb,
 	struct edma_gro *g = &q->gro;
 	netdev_features_t need = NETIF_F_SG | (t->v6 ? NETIF_F_TSO6 :
 						      NETIF_F_TSO);
+	bool flist = false;
 
-	if (!ops || !ops->flow_gso)
+	if (!ops)
 		return false;
 
 	skb->dev = priv->netdev;
-	if (!ops->flow_gso(READ_ONCE(priv->sw_ds), skb, flow, &g->gso) ||
-	    (g->gso.features & need) != need || g->gso.max_segs < 2)
+	if (flow & EDMA_GRO_FWD) {
+		struct net_device *dev = ops->port_dev ?
+			ops->port_dev(READ_ONCE(priv->sw_ds), src_port) : NULL;
+
+		if (!dev || !edma_gro_port(dev, t, &g->gso, &flist))
+			return false;
+	} else if (!ops->flow_gso ||
+		   !ops->flow_gso(READ_ONCE(priv->sw_ds), skb, flow, &g->gso)) {
+		return false;
+	}
+	if ((g->gso.features & need) != need || g->gso.max_segs < 2)
 		return false;
 
 	g->head = skb;
+	g->last = skb;
+	g->flist = flist;
 	g->rxph = rxph;
 	g->t = *t;
 	g->flow = flow;
@@ -1153,27 +1339,29 @@ static bool edma_gro_open(struct edma_queue *q, struct sk_buff *skb,
 	return true;
 }
 
-/* A frame the switch routed on a flow: merged into the aggregate the poll
- * holds when it is the next segment of it, else the aggregate is sent and the
+/* A frame the switch routed on a flow, or forwarded from a port as @flow
+ * EDMA_GRO_FWD with the port says: merged into the aggregate the poll holds
+ * when it is the next segment of it, else the aggregate is sent and the
  * frame starts one, or is sent alone. The frames of one flow leave in the
  * order they came in, and a frame never waits behind another flow's: any
  * frame that does not join ends the aggregate before it is handled.
  *
- * Return: false when the flow's driver left the frame to the receive path.
+ * Return: false when the frame is left to the receive path: one forwarded,
+ * or one whose flow's driver did not take it.
  */
 static bool edma_gro_rx(struct edma_queue *q, struct sk_buff *skb,
 			const struct edma_rx_preheader *rxph, u32 status,
-			u32 src_port, u32 pkt_len)
+			u32 src_port, u32 pkt_len, u32 flow)
 {
 	struct net_device *netdev = q->priv->netdev;
-	u32 flow = edma_rx_flow_id(rxph);
 	struct edma_gro *g = &q->gro;
 	struct edma_tcp t;
 	bool fixed = false, ok;
 
 	ok = src_port < EDMA_PORTS &&
 	     !(rxph->rx_pre2 & cpu_to_le32(EDMA_RXPH_CTAG_FLAG)) &&
-	     edma_gro_parse(netdev, skb, status, &t);
+	     edma_gro_parse(netdev, skb, status, &t) &&
+	     !((flow & EDMA_GRO_FWD) && is_multicast_ether_addr(t.eth->h_dest));
 
 	if (g->head) {
 		if (ok && edma_gro_fits(g, &t, flow, &fixed) &&
@@ -1189,7 +1377,7 @@ static bool edma_gro_rx(struct edma_queue *q, struct sk_buff *skb,
 		q->gro_skip = flow + 1;
 	}
 
-	if (!edma_rx_flow(netdev, skb, flow))
+	if ((flow & EDMA_GRO_FWD) || !edma_rx_flow(netdev, skb, flow))
 		return false;
 
 	edma_rx_netstats(netdev, 1, pkt_len);
@@ -1211,7 +1399,7 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 	u16 prod, cons;
 	struct page *page;
 	u32 done = 0, bytes = 0;
-	u32 src_port, desc_status;
+	u32 src_port, desc_status, flow;
 	int pkt_len;
 
 	prod = edma_idx_read(priv, EDMA_REG_RXDESC_PROD_IDX(q->rxdesc)) &
@@ -1322,9 +1510,15 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		 * the ring, so each ring's CPU feeds a queue of its own.
 		 */
 		skb_record_rx_queue(skb, q->idx);
-		if (edma_rx_is_flow(rxph)) {
+		if (edma_rx_is_flow(rxph))
+			flow = edma_rx_flow_id(rxph);
+		else if (edma_rx_is_fwd(netdev, rxph))
+			flow = EDMA_GRO_FWD | src_port;
+		else
+			flow = EDMA_GRO_NONE;
+		if (flow != EDMA_GRO_NONE) {
 			if (edma_gro_rx(q, skb, rxph, desc_status, src_port,
-					pkt_len))
+					pkt_len, flow))
 				goto next;
 		} else {
 			edma_gro_flush(q);
@@ -2407,6 +2601,8 @@ static const char edma_stat_names[][ETH_GSTRING_LEN] = {
 	"rx_flow_single",
 	"rx_flow_merged",
 	"rx_flow_aggs",
+	"rx_fwd_merged",
+	"rx_fwd_aggs",
 	"tx_desc_error",
 	"tx_unnamed_frame",
 	"tx_gso_frames",

@@ -27,6 +27,9 @@ struct qca_edma_gso {
  *	such egress, or when the frame must not leave as a merged one
  * @flow_xmit: send on a frame the switch routed to the CPU port on flow
  *	@flow, finished; returns false to leave it to the receive path
+ * @port_dev: the netdev the stack receives a frame on that the switch
+ *	forwarded to the CPU port from port @port, or NULL for a port that has
+ *	none
  * @vp_rx: take a frame the switch returned that was sent with the virtual
  *	source port @port, with skb->data at its Ethernet header; returns false
  *	when no such port exists, and the frame is dropped
@@ -35,6 +38,7 @@ struct qca_edma_switch_ops {
 	bool (*flow_gso)(struct dsa_switch *ds, const struct sk_buff *skb,
 			 u32 flow, struct qca_edma_gso *gso);
 	bool (*flow_xmit)(struct dsa_switch *ds, struct sk_buff *skb, u32 flow);
+	struct net_device *(*port_dev)(struct dsa_switch *ds, u32 port);
 	bool (*vp_rx)(struct dsa_switch *ds, struct sk_buff *skb, u32 port);
 };
 

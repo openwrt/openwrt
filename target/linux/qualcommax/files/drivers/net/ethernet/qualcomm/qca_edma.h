@@ -345,11 +345,21 @@ struct edma_tcp {
 	bool v6;
 };
 
+/* The key of a run in place of a flow index: a stream the switch forwarded
+ * to the CPU port from the port in the low bits, which no 21-bit flow index
+ * reaches, or no key at all.
+ */
+#define EDMA_GRO_FWD		BIT(30)
+#define EDMA_GRO_NONE		U32_MAX
+
 /* A run of segments of one flow, merged into the first one's skb as its
- * fragments, and what the next segment has to be to join it.
+ * fragments, or chained on its frag_list with their headers when @flist,
+ * and what the next segment has to be to join it. @last is the skb the next
+ * one is chained behind.
  */
 struct edma_gro {
 	struct sk_buff *head;
+	struct sk_buff *last;
 	const struct edma_rx_preheader *rxph;
 	struct qca_edma_gso gso;
 	struct edma_tcp t;
@@ -363,6 +373,7 @@ struct edma_gro {
 	u16 max_segs;
 	u8 src_port;
 	bool fixedid;
+	bool flist;
 };
 
 struct edma_stats {
@@ -377,6 +388,8 @@ struct edma_stats {
 	u64 rx_flow_single;
 	u64 rx_flow_merged;
 	u64 rx_flow_aggs;
+	u64 rx_fwd_merged;
+	u64 rx_fwd_aggs;
 	u64 tx_desc_error;
 	u64 tx_unnamed_frame;
 	u64 tx_gso_frames;

@@ -2897,9 +2897,27 @@ void qca_ppe_port_mirror_del(struct dsa_switch *ds, int port,
 	ppe_mirror_put(priv, BIT(mirror->ingress));
 }
 
+/* The stack receives a frame the switch forwarded to the CPU port on the
+ * netdev of the port it came in on, as the tagger's receive names it. Called
+ * from the EDMA NAPI poll; the netdev lives as long as the switch.
+ */
+static struct net_device *ppe_port_dev(struct dsa_switch *ds, u32 port)
+{
+	struct dsa_port *dp;
+
+	if (port >= ds->num_ports)
+		return NULL;
+	dp = dsa_to_port(ds, port);
+	if (!dp || !dsa_port_is_user(dp))
+		return NULL;
+
+	return dp->user;
+}
+
 static const struct qca_edma_switch_ops qca_ppe_edma_ops = {
 	.flow_gso = ppe_flow_gso,
 	.flow_xmit = ppe_flow_xmit,
+	.port_dev = ppe_port_dev,
 	.vp_rx = ppe_vp_rx,
 };
 
