@@ -381,16 +381,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	{ FT_NORMAL,    FT_NO_TAG,    TP_8021Q, TP_NONE,  true, EVLAN_REASSIGN },
 +};
 +
-+/* User port egress catchall rules for tag_8021q mode.
++/* User port egress rules for tag_8021q mode.
 + * Strip the outer management VID tag from CPU->user frames that were
 + * not matched by any per-VID egress rule. Appended to the user port
-+ * egress EVLAN block when tag_8021q is active.
++ * egress EVLAN block when a management VID is assigned.
 + */
 +static const struct mxl862xx_evlan_rule_desc tag_8021q_egress_strip[] = {
-+	/* Any outer tag + inner present: strip outer (mgmt VID) */
-+	{ FT_NO_FILTER, FT_NO_FILTER, TP_NONE,  TP_NONE,  false, EVLAN_STRIP1 },
-+	/* Any outer tag, no inner: strip it */
-+	{ FT_NO_FILTER, FT_NO_TAG,    TP_NONE,  TP_NONE,  false, EVLAN_STRIP1 },
++	/* Outer management VID with an inner tag: strip the outer tag */
++	{ FT_NORMAL,    FT_NO_FILTER, TP_8021Q, TP_NONE,  true,  EVLAN_STRIP1 },
++	/* Outer management VID without an inner tag: strip it */
++	{ FT_NORMAL,    FT_NO_TAG,    TP_8021Q, TP_NONE,  true,  EVLAN_STRIP1 },
 +};
 +
  static enum dsa_tag_protocol mxl862xx_get_tag_protocol(struct dsa_switch *ds,
@@ -567,7 +567,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	int n_user_ports = 0, n_cpu_ports = 0, max_vlans;
 +	int cpu_egress_rules, cpu_ingress_per_port;
  	int ingress_finals, vid_rules;
-+	int egress_catchalls, evlan_reserved;
++	int egress_strip_rules, evlan_reserved;
 +	int ret, i, rescue, port;
  	struct dsa_port *dp;
 -	int ret, i, rescue;
@@ -616,7 +616,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		vid_rules = ARRAY_SIZE(vid_accept_standard);
 +		cpu_egress_rules = ARRAY_SIZE(cpu_egress_tag_8021q);
 +		cpu_ingress_per_port = ARRAY_SIZE(cpu_ingress_reassign);
-+		egress_catchalls = ARRAY_SIZE(tag_8021q_egress_strip);
++		egress_strip_rules = ARRAY_SIZE(tag_8021q_egress_strip);
  
  		/* Ingress block: fixed at finals count (7 entries) */
  		priv->evlan_ingress_size = ingress_finals;
@@ -628,19 +628,19 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		/* Reserve EVLAN entries for tag_8021q:
 +		 *  - virtual bridge port egress blocks (cpu_egress_rules each)
 +		 *  - CPU port ingress EVLAN (cpu_ingress_per_port each)
-+		 *  - user port egress catchalls for mgmt VID stripping
++		 *  - user port egress rules for management VID stripping
 +		 */
 +		evlan_reserved = n_user_ports * (ingress_finals +
 +						 cpu_egress_rules +
 +						 cpu_ingress_per_port +
-+						 egress_catchalls);
++						 egress_strip_rules);
 +
  		/* Egress block: remaining budget divided equally among
  		 * user ports. Each untagged VID needs vid_rules (2)
  		 * EVLAN entries for tag stripping. Tagged-only VIDs
 -		 * need no EVLAN rules at all.
 +		 * need no EVLAN rules at all. The block also includes
-+		 * space for the tag_8021q egress catchall rules.
++		 * space for the tag_8021q management VID rules.
  		 */
 -		max_vlans = (MXL862XX_TOTAL_EVLAN_ENTRIES -
 -			     n_user_ports * ingress_finals) /
@@ -648,7 +648,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			    (n_user_ports * vid_rules);
 -		priv->evlan_egress_size = vid_rules * max_vlans;
 +		priv->evlan_egress_size = vid_rules * max_vlans +
-+					  egress_catchalls;
++					  egress_strip_rules;
  
 -		/* VLAN Filter block: one per user port. The 1024-entry
 -		 * table is divided equally among user ports. Each port
@@ -918,7 +918,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	const struct mxl862xx_evlan_rule_desc *vid_rules;
  	struct mxl862xx_vf_vid *vfv;
  	u16 old_active = blk->n_active;
-+	int n_vid, n_catch, ret;
++	int n_vid, n_strip, ret;
  	u16 idx = 0, i;
 -	int n_vid, ret;
  
@@ -931,9 +931,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		/* Skip the tag_8021q management VID -- it must NOT get
 +		 * per-VID egress rules. The management VID arrives as
 +		 * the outer tag on CPU->user frames and is stripped by
-+		 * the catchall rules appended below. A per-VID rule
++		 * the management VID rules below. A per-VID rule
 +		 * here would match first (NO_FILTER outer) and prevent
-+		 * the catchall from stripping the tag.
++		 * the management VID rule from stripping the tag.
 +		 */
 +		if (p->tag_8021q_vid && vfv->vid == p->tag_8021q_vid)
 +			continue;
@@ -949,7 +949,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		if (ret)
  			return ret;
  
-@@ -1385,7 +1772,29 @@ static int mxl862xx_evlan_program_egress
+@@ -1385,7 +1772,30 @@ static int mxl862xx_evlan_program_egress
  							idx++, &vid_rules[1],
  							vfv->vid,
  							vfv->untagged,
@@ -960,27 +960,28 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		}
 +	}
 +
-+	/* In tag_8021q mode, append catchall rules that strip the outer
++	/* In tag_8021q mode, append rules that strip only the outer
 +	 * management VID tag from CPU->user frames. The management VID
 +	 * is kept through the forwarding pipeline (CPU ingress EVLAN
 +	 * only reassigns the bridge port, without stripping) and must
 +	 * be removed here before the frame exits the user port.
 +	 */
-+	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q) {
-+		n_catch = ARRAY_SIZE(tag_8021q_egress_strip);
++	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q && p->tag_8021q_vid) {
++		n_strip = ARRAY_SIZE(tag_8021q_egress_strip);
 +
-+		if (idx + n_catch > blk->block_size)
++		if (idx + n_strip > blk->block_size)
 +			return -ENOSPC;
 +
-+		for (i = 0; i < n_catch; i++) {
++		for (i = 0; i < n_strip; i++) {
 +			ret = mxl862xx_evlan_write_rule(priv, blk->block_id,
 +							idx++,
 +							&tag_8021q_egress_strip[i],
-+							0, false, 0, 0);
++							p->tag_8021q_vid,
++							false, 0, 0);
  			if (ret)
  				return ret;
  		}
-@@ -1397,8 +1806,7 @@ static int mxl862xx_evlan_program_egress
+@@ -1397,8 +1807,7 @@ static int mxl862xx_evlan_program_egress
  	 */
  	for (i = idx; i < old_active; i++) {
  		ret = mxl862xx_evlan_deactivate_entry(priv,
@@ -990,7 +991,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		if (ret)
  			return ret;
  	}
-@@ -1423,13 +1831,16 @@ static int mxl862xx_port_vlan_filtering(
+@@ -1423,13 +1832,16 @@ static int mxl862xx_port_vlan_filtering(
  	p->vlan_filtering = vlan_filtering;
  
  	if (changed) {
@@ -1012,7 +1013,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  		ret = mxl862xx_evlan_program_ingress(priv, port);
  		if (ret)
-@@ -1649,22 +2060,581 @@ static void mxl862xx_port_bridge_leave(s
+@@ -1649,22 +2061,581 @@ static void mxl862xx_port_bridge_leave(s
  			port, ERR_PTR(err));
  
  	/* Revert leaving port, omitted by the sync above, to its
@@ -1596,7 +1597,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int mxl862xx_port_setup(struct dsa_switch *ds, int port)
  {
  	struct mxl862xx_priv *priv = ds->priv;
-@@ -1692,33 +2662,52 @@ static int mxl862xx_port_setup(struct ds
+@@ -1692,33 +2663,52 @@ static int mxl862xx_port_setup(struct ds
  	if (dsa_port_is_unused(dp))
  		return 0;
  
@@ -1665,7 +1666,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
  		return ret;
  	ret = mxl862xx_set_bridge_port(ds, port);
-@@ -1734,24 +2723,7 @@ static int mxl862xx_port_setup(struct ds
+@@ -1734,24 +2724,7 @@ static int mxl862xx_port_setup(struct ds
  	if (ret)
  		return ret;
  
@@ -1690,7 +1691,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return 0;
  }
  
-@@ -1773,7 +2745,7 @@ static void mxl862xx_port_teardown(struc
+@@ -1773,7 +2746,7 @@ static void mxl862xx_port_teardown(struc
  	priv->ports[port].setup_done = false;
  }
  
@@ -1699,7 +1700,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  	struct mxl862xx_priv *priv = ds->priv;
  
-@@ -1791,23 +2763,253 @@ static int mxl862xx_get_fid(struct dsa_s
+@@ -1791,23 +2764,253 @@ static int mxl862xx_get_fid(struct dsa_s
  	}
  }
  
@@ -1961,7 +1962,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
  		dev_err(ds->dev, "failed to add FDB entry on port %d\n", port);
  
-@@ -1817,18 +3019,25 @@ static int mxl862xx_port_fdb_add(struct
+@@ -1817,18 +3020,25 @@ static int mxl862xx_port_fdb_add(struct
  static int mxl862xx_port_fdb_del(struct dsa_switch *ds, int port,
  				 const unsigned char *addr, u16 vid, const struct dsa_db db)
  {
@@ -1994,7 +1995,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
  		dev_err(ds->dev, "failed to remove FDB entry on port %d\n", port);
  
-@@ -1867,90 +3076,153 @@ static int mxl862xx_port_fdb_dump(struct
+@@ -1867,90 +3077,153 @@ static int mxl862xx_port_fdb_dump(struct
  	return 0;
  }
  
@@ -2201,7 +2202,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	return ret;
  }
-@@ -2038,6 +3310,9 @@ static void mxl862xx_host_flood_work_fn(
+@@ -2038,6 +3311,9 @@ static void mxl862xx_host_flood_work_fn(
  					       host_flood_work);
  	struct mxl862xx_priv *priv = p->priv;
  	struct dsa_switch *ds = priv->ds;
@@ -2211,7 +2212,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	rtnl_lock();
  
-@@ -2047,13 +3322,34 @@ static void mxl862xx_host_flood_work_fn(
+@@ -2047,13 +3323,34 @@ static void mxl862xx_host_flood_work_fn(
  		return;
  	}
  
@@ -2253,7 +2254,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	rtnl_unlock();
  }
-@@ -2425,7 +3721,9 @@ static void mxl862xx_get_stats64(struct
+@@ -2425,7 +3722,9 @@ static void mxl862xx_get_stats64(struct
  
  static const struct dsa_switch_ops mxl862xx_switch_ops = {
  	.get_tag_protocol = mxl862xx_get_tag_protocol,
@@ -2263,7 +2264,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.port_setup = mxl862xx_port_setup,
  	.port_teardown = mxl862xx_port_teardown,
  	.phylink_get_caps = mxl862xx_phylink_get_caps,
-@@ -2447,6 +3745,8 @@ static const struct dsa_switch_ops mxl86
+@@ -2447,6 +3746,8 @@ static const struct dsa_switch_ops mxl86
  	.port_vlan_filtering = mxl862xx_port_vlan_filtering,
  	.port_vlan_add = mxl862xx_port_vlan_add,
  	.port_vlan_del = mxl862xx_port_vlan_del,
@@ -2272,7 +2273,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.get_strings = mxl862xx_get_strings,
  	.get_sset_count = mxl862xx_get_sset_count,
  	.get_ethtool_stats = mxl862xx_get_ethtool_stats,
-@@ -2503,6 +3803,8 @@ static int mxl862xx_probe(struct mdio_de
+@@ -2503,6 +3804,8 @@ static int mxl862xx_probe(struct mdio_de
  
  	INIT_DELAYED_WORK(&priv->stats_work, mxl862xx_stats_work_fn);
  
@@ -2281,7 +2282,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	dev_set_drvdata(dev, ds);
  
  	err = dsa_register_switch(ds);
-@@ -2533,6 +3835,19 @@ static void mxl862xx_remove(struct mdio_
+@@ -2533,6 +3836,19 @@ static void mxl862xx_remove(struct mdio_
  	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
  	cancel_delayed_work_sync(&priv->stats_work);
  
