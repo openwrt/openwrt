@@ -664,6 +664,38 @@
 			reg = <0x0 0xce01800 0x0 0x800>;
 		};
 
+		pvt: pvt@ce02800 {
+			compatible = "siflower,sf-pvt";
+			reg = <0x0 0x0ce02800 0x0 0x34>;
+			mode = <0>;
+			ts-warning = <85000 0x100000>;
+			ts-fatal = <120000 0x100000>;
+			vm-warning = <1600 0x1000>;
+			vm-fatal = <1300 0x1000>;
+			interrupts = <130 IRQ_TYPE_LEVEL_HIGH>, <131 IRQ_TYPE_LEVEL_HIGH>,
+				     <132 IRQ_TYPE_LEVEL_HIGH>, <133 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "ts-w", "ts-f", "vm-w", "vm-f";
+			clocks = <&topcrm CLK_PVT>;
+			resets = <&reset SF21_RESET_PVT>;
+			status = "disabled";
+		};
+
+		crypto: crypto@e000000 {
+			compatible = "siflower,sf21-crypto";
+			reg = <0x0 0x0e000000 0x0 0x11000>;
+			clocks = <&topcrm CLK_CRYPT_CSR>, <&topcrm CLK_CRYPT_APP>;
+			clock-names = "csr", "app";
+			resets = <&reset SF21_RESET_CRYPT_CSR>, <&reset SF21_RESET_CRYPT_APP>;
+			reset-names = "csr", "app";
+			interrupts = <134 IRQ_TYPE_LEVEL_HIGH>, <135 IRQ_TYPE_LEVEL_HIGH>,
+				     <136 IRQ_TYPE_LEVEL_HIGH>, <137 IRQ_TYPE_LEVEL_HIGH>,
+				     <138 IRQ_TYPE_LEVEL_HIGH>, <139 IRQ_TYPE_LEVEL_HIGH>,
+				     <140 IRQ_TYPE_LEVEL_HIGH>, <141 IRQ_TYPE_LEVEL_HIGH>,
+				     <142 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "tx0", "tx1", "tx2", "tx3", "rx0", "rx1", "rx2", "rx3", "intr";
+			status = "disabled";
+		};
+
 		dpns: dpns@11000000 {
 			compatible = "siflower,sf21-dpns";
 			reg = <0x0 0x11000000 0x0 0x1000000>;
