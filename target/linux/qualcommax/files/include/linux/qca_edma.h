@@ -85,4 +85,8 @@ struct qca_edma_src_stats {
 void qca_edma_src_stats(struct net_device *conduit,
 			struct qca_edma_src_stats *st);
 
+bool qca_ppe_vp_flow_tso(const struct net_device *dev, const u8 *dest, bool v6,
+			 const void *saddr, const void *daddr, __be16 sport,
+			 __be16 dport);
+
 #endif
