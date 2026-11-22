@@ -66,10 +66,14 @@ static LIST_HEAD(dpns_nat_ft_cb_list);
  * and routed (non-NAT) IPv4 flows stay on the software flowtable path.
  * lf4_offload=1 trades NAT44 offload for routed IPv4 offload (routers that do
  * no IPv4 NAT at all).
+ *
+ * The same holds for IPv6: with IPv6 LF lookup enabled, SNAT66 entries are
+ * forwarded without translation. NAT66 flows are therefore left to software
+ * unless lf_offload=0, which offloads NAT66 instead of routed IPv6.
  */
 static bool lf_offload = true;
-module_param(lf_offload, bool, 0644);
-MODULE_PARM_DESC(lf_offload, "Offload IPv6 flows without NAT (routing), default on");
+module_param(lf_offload, bool, 0444);
+MODULE_PARM_DESC(lf_offload, "Offload routed IPv6 (no NAT); disables NAT66 offload, default on");
 
 static bool lf4_offload;
 module_param(lf4_offload, bool, 0444);
@@ -79,8 +83,10 @@ static void dpns_nat_lf_init(struct dpns_nat_priv *priv)
 {
 	struct nat_genl_msg msg = { .is_lf = true, .lf_mode = 7 };
 
-	msg.is_v6_mode = true;
-	dpns_nat_mode_set(priv, &msg);
+	if (lf_offload) {
+		msg.is_v6_mode = true;
+		dpns_nat_mode_set(priv, &msg);
+	}
 	if (lf4_offload) {
 		msg.is_v6_mode = false;
 		dpns_nat_mode_set(priv, &msg);
@@ -1444,6 +1450,9 @@ static int dpns_nat_add(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
 
 	/* NAT44 and routed IPv4 offload are mutually exclusive, see dpns_nat_lf_init() */
 	if (!is_lf && lf4_offload && flow->tuplehash[0].tuple.l3proto == NFPROTO_IPV4)
+		return -EOPNOTSUPP;
+	/* likewise NAT66 and routed IPv6 */
+	if (!is_lf && lf_offload && flow->tuplehash[0].tuple.l3proto == NFPROTO_IPV6)
 		return -EOPNOTSUPP;
 
 	if (atomic_read(&priv->flow_table.nelems) >= NPU_HNAT_SIZE)
