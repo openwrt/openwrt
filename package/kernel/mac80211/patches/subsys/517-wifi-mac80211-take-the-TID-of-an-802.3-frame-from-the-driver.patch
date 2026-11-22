@@ -1,0 +1,44 @@
+From 6ae146480a089a083295bfa81c3a8a759c76744f Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 03:17:31 +0100
+Subject: [PATCH] wifi: mac80211: take the TID of an 802.3 frame from the driver
+
+mac80211 counts the MSDUs of a station per TID, and takes the TID from
+the 802.11 header of a native frame. A frame received in 802.3 format has
+none, so every one of them was counted on TID 0.
+
+Let the driver pass the TID in the receive status. A driver that does not
+set it keeps counting on TID 0.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1766,6 +1766,9 @@ enum mac80211_rx_encoding {
+  * @ampdu_reference: A-MPDU reference number, must be a different value for
+  *	each A-MPDU but the same for each subframe within one A-MPDU
+  * @zero_length_psdu_type: radiotap type of the 0-length PSDU
++ * @tid: the TID of a frame received in 802.3 format (%RX_FLAG_8023), or
++ *	%IEEE80211_NUM_TIDS if it has none; counts the frame in the per-TID
++ *	statistics of its station. Not read for other frames.
+  * @link_valid: if the link which is identified by @link_id is valid. This flag
+  *	is set only when connection is MLO.
+  * @link_id: id of the link used to receive the packet. This is used along with
+@@ -1809,6 +1812,7 @@ struct ieee80211_rx_status {
+ 	u8 chains;
+ 	s8 chain_signal[IEEE80211_MAX_CHAINS];
+ 	u8 zero_length_psdu_type;
++	u8 tid;
+ 	u8 link_valid:1, link_id:4;
+ };
+ 
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -5398,6 +5398,8 @@ static void __ieee80211_rx_handle_8023(s
+ 	rx.local = local;
+ 	rx.list = list;
+ 	rx.link_id = -1;
++	/* the MSDU count of the station is kept per TID */
++	rx.seqno_idx = min_t(u8, status->tid, IEEE80211_NUM_TIDS);
+ 
+ 	I802_DEBUG_INC(local->dot11ReceivedFragmentCount);
+ 
