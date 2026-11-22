@@ -1,0 +1,92 @@
+From eb1d43b5213525b913ba740889f01cf08478bcf4 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 28 Sep 2026 16:47:58 +0100
+Subject: [PATCH] misc: rp1-pio: Clear stale RX data on close
+
+The DMAC's hardware handshake requires a peripheral's DMA request to
+stay asserted until the DMAC acknowledges a burst. If an SM's RX FIFO
+reaches its DMA threshold with no transfer queued - for example when a
+program exits - the request is held, and survives the FIFO being
+cleared or drained. The next user of that SM then gets a phantom burst:
+the first 4 or 8 words it receives are copies of a stale FIFO entry.
+
+When an SM is released, and after it has been disabled, retire any held
+request and leftover data with a throwaway RX transfer of a FIFO's worth
+plus one burst, then stop the channel.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/misc/rp1-pio.c | 41 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+
+--- a/drivers/misc/rp1-pio.c
++++ b/drivers/misc/rp1-pio.c
+@@ -99,6 +99,7 @@ struct dma_info {
+ 	struct dma_chan *chan;
+ 	size_t buf_size;
+ 	size_t buf_count;
++	size_t burst_bytes;
+ 	bool cyclic;
+ 	unsigned int head_idx;
+ 	unsigned int tail_idx;
+@@ -965,6 +966,42 @@ static void rp1_pio_sm_kernel_dma_callba
+ 	kfree(dxs);
+ }
+ 
++/*
++ * Once the RX FIFO reaches its DMA threshold, the DMA request is held until
++ * the DMAC acknowledges a burst, even if the FIFO is emptied in the meantime.
++ * A request still held when the SM is released makes the next user's first
++ * burst read stale data from the empty FIFO, so retire it (and any data that
++ * is left) with a throwaway transfer. Only one request can be outstanding, and
++ * it is satisfied by whatever is at the head of the FIFO, so a full FIFO is the
++ * most that can be pending - the extra burst is just a margin. The SM must
++ * already be disabled, so that no new data can arrive and any bursts complete
++ * almost immediately; the transfer is then stopped, finished or not.
++ */
++static void rp1_pio_sm_dma_flush_rx(struct dma_info *dma)
++{
++	size_t len = RP1_PIO_FIFO_DEPTH * sizeof(uint32_t) + dma->burst_bytes;
++	struct device *dma_dev = dma->chan->device->dev;
++	struct dma_async_tx_descriptor *desc;
++	dma_addr_t dma_addr;
++	void *buf;
++
++	dmaengine_terminate_sync(dma->chan);
++
++	buf = dma_alloc_coherent(dma_dev, len, &dma_addr, GFP_KERNEL);
++	if (!buf)
++		return;
++
++	desc = dmaengine_prep_slave_single(dma->chan, dma_addr, len,
++					   DMA_DEV_TO_MEM, DMA_CTRL_ACK);
++	if (desc && dmaengine_submit(desc) >= 0) {
++		dma_async_issue_pending(dma->chan);
++		fsleep(1000);
++	}
++
++	dmaengine_terminate_sync(dma->chan);
++	dma_free_coherent(dma_dev, len, buf, dma_addr);
++}
++
+ static void rp1_pio_sm_dma_free(struct device *dev, struct dma_info *dma)
+ {
+ 	dmaengine_terminate_all(dma->chan);
+@@ -1116,6 +1153,7 @@ static int rp1_pio_sm_config_xfer_intern
+ 		config.dst_maxburst = dma_caps.max_burst;
+ 	else
+ 		config.src_maxburst = dma_caps.max_burst;
++	dma->burst_bytes = dma_caps.max_burst * sizeof(uint32_t);
+ 
+ 	ret = dmaengine_slave_config(dma->chan, &config);
+ 	if (ret)
+@@ -1671,6 +1709,9 @@ void rp1_pio_close(struct rp1_pio_client
+ 			struct dma_info *dma = &pio->dma_configs[i >> 1][i & 1];
+ 
+ 			claimed &= ~mask;
++			/* The SMs have been disabled, so this is safe */
++			if ((i & 1) == RP1_PIO_DIR_FROM_SM)
++				rp1_pio_sm_dma_flush_rx(dma);
+ 			rp1_pio_sm_dma_free(&pio->pdev->dev, dma);
+ 		}
+ 	}

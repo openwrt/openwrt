@@ -1,0 +1,35 @@
+From aa0d68f034d176c4d352b99fb24b7e8d067db6b7 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 28 Oct 2026 21:10:57 +0000
+Subject: [PATCH] drm/vc4: hdmi: Only ignore hotplug interrupts on forced
+ connectors
+
+vc4.force_hotplug is a per-connector bitmask, and detect only forces
+the connectors whose bit is set. The hotplug interrupt handler instead
+ignored interrupts on every connector whenever any bit was set.
+
+As these connectors use DRM_CONNECTOR_POLL_HPD they are not polled, so
+e.g. force_hotplug=2 (HDMI1 only) left HDMI0 status stuck after a plug
+or unplug.
+
+Check the connector's own bit, matching detect.
+
+Fixes: cb7db28b9e17 ("vc4/hdmi: Ignore hotplug interrupt with force_hotplug")
+Link: https://github.com/raspberrypi/linux/issues/7724
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -2370,7 +2370,8 @@ static irqreturn_t vc4_hdmi_hpd_irq_thre
+ 	struct drm_connector *connector = &vc4_hdmi->connector;
+ 	struct drm_device *dev = connector->dev;
+ 
+-	if (dev && dev->registered && !force_hotplug)
++	if (dev && dev->registered &&
++	    !(force_hotplug & BIT(vc4_hdmi->encoder.type - VC4_ENCODER_TYPE_HDMI0)))
+ 		drm_connector_helper_hpd_irq_event(connector);
+ 
+ 	return IRQ_HANDLED;

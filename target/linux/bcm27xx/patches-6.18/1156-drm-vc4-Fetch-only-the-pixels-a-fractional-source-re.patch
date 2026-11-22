@@ -1,0 +1,116 @@
+From 8d717ec3d811683347cca37c0df93e1a6a9761ec Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 16 Nov 2026 18:06:46 +0000
+Subject: [PATCH] drm/vc4: Fetch only the pixels a fractional source rectangle
+ covers
+
+The mode_set functions added a pixel to the fetch for each end of the
+source rectangle that wasn't pixel aligned. When both ends are partial
+and their fractions add up to less than a pixel, that is one more than
+the source covers, so the pixel beyond the right or bottom edge was
+fetched and filtered into the edge of the plane. With a 2x2 source at
+(16.5, 16.5) scaled to 400x400 the right and bottom edges picked up
+the colour of the pixels outside the source.
+
+The extra pixels were also added after the start of a DRM_MODE_REFLECT_Y
+scan had been found from the integer height, so a vertically reflected
+plane with a fractional source started one line too high: its edge
+showed the line above the source rectangle and lost the last line.
+
+Work out the pixels the source rectangle actually covers before they
+are used.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 52 ++++++++-------------------------
+ 1 file changed, 12 insertions(+), 40 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -780,6 +780,12 @@ static void vc4_write_ppf(struct vc4_pla
+ 			VC4_SET_FIELD(phase, SCALER_PPF_IPHASE));
+ }
+ 
++/* Number of whole pixels covered by a 16.16 source start and size */
++static u32 vc4_src_span(u32 start, u32 size)
++{
++	return ((start + size + 0xffff) >> 16) - (start >> 16);
++}
++
+ static u32 __vc4_lbm_size(struct drm_plane_state *state)
+ {
+ 	struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
+@@ -1437,8 +1443,9 @@ static int vc4_plane_mode_set(struct drm
+ 		vc4_state->vdownsample = 1;
+ 	}
+ 
+-	width = vc4_state->src_w[0] >> 16;
+-	height = vc4_state->src_h[0] >> 16;
++	/* Fetch every pixel the source rectangle touches, including partial ones */
++	width = vc4_src_span(vc4_state->src_x, vc4_state->src_w[0]);
++	height = vc4_src_span(vc4_state->src_y, vc4_state->src_h[0]);
+ 
+ 	/* SCL1 is used for Cb/Cr scaling of planar formats.  For RGB
+ 	 * and 4:4:4, scl1 should be set to scl0 so both channels of
+@@ -1650,24 +1657,6 @@ static int vc4_plane_mode_set(struct drm
+ 		return -EINVAL;
+ 	}
+ 
+-	/* fetch an extra pixel if we don't actually line up with the left edge. */
+-	if ((vc4_state->src_x & 0xffff) && vc4_state->src_x < (state->fb->width << 16))
+-		width++;
+-
+-	/* same for the right side */
+-	if (((vc4_state->src_x + vc4_state->src_w[0]) & 0xffff) &&
+-	    vc4_state->src_x + vc4_state->src_w[0] < (state->fb->width << 16))
+-		width++;
+-
+-	/* now for the top */
+-	if ((vc4_state->src_y & 0xffff) && vc4_state->src_y < (state->fb->height << 16))
+-		height++;
+-
+-	/* and the bottom */
+-	if (((vc4_state->src_y + vc4_state->src_h[0]) & 0xffff) &&
+-	    vc4_state->src_y + vc4_state->src_h[0] < (state->fb->height << 16))
+-		height++;
+-
+ 	/* For YUV444 the hardware wants double the width, otherwise it doesn't
+ 	 * fetch full width of chroma
+ 	 */
+@@ -2023,8 +2012,9 @@ static int vc6_plane_mode_set(struct drm
+ 		return 0;
+ 	}
+ 
+-	width = vc4_state->src_w[0] >> 16;
+-	height = vc4_state->src_h[0] >> 16;
++	/* Fetch every pixel the source rectangle touches, including partial ones */
++	width = vc4_src_span(vc4_state->src_x, vc4_state->src_w[0]);
++	height = vc4_src_span(vc4_state->src_y, vc4_state->src_h[0]);
+ 
+ 	if (vc4_state->y_scaling[0] == VC4_SCALING_TPZ &&
+ 	    vc4_state->src_h[0] / vc4_state->crtc_h > (3 << 16)) {
+@@ -2063,24 +2053,6 @@ static int vc6_plane_mode_set(struct drm
+ 
+ 	src_x = vc4_state->src_x >> 16;
+ 
+-	/* fetch an extra pixel if we don't actually line up with the left edge. */
+-	if ((vc4_state->src_x & 0xffff) && vc4_state->src_x < (state->fb->width << 16))
+-		width++;
+-
+-	/* same for the right side */
+-	if (((vc4_state->src_x + vc4_state->src_w[0]) & 0xffff) &&
+-	    vc4_state->src_x + vc4_state->src_w[0] < (state->fb->width << 16))
+-		width++;
+-
+-	/* now for the top */
+-	if ((vc4_state->src_y & 0xffff) && vc4_state->src_y < (state->fb->height << 16))
+-		height++;
+-
+-	/* and the bottom */
+-	if (((vc4_state->src_y + vc4_state->src_h[0]) & 0xffff) &&
+-	    vc4_state->src_y + vc4_state->src_h[0] < (state->fb->height << 16))
+-		height++;
+-
+ 	switch (base_format_mod) {
+ 	case DRM_FORMAT_MOD_LINEAR:
+ 		tiling = SCALER6_CTL0_ADDR_MODE_LINEAR;

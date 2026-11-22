@@ -1,0 +1,48 @@
+From 8946ad8626ecacee8a8a9cffa433a23f0b118dcd Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Tue, 1 Sep 2026 16:29:02 +0100
+Subject: [PATCH] ASoC: dwc: Revert i2s_stop to the upstream version
+
+Since we started using the DWC I2S block in RP1, the upstream driver
+has improved a lot. Drop the downstream version of i2s_stop, which
+avoided clearing ITER and IRER in order to not block DMA, now that
+upstream uses i2s_disable_dma.
+
+See: https://github.com/raspberrypi/linux/issues/7584
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ sound/soc/dwc/dwc-i2s.c | 18 +++++++++++++-----
+ 1 file changed, 13 insertions(+), 5 deletions(-)
+
+--- a/sound/soc/dwc/dwc-i2s.c
++++ b/sound/soc/dwc/dwc-i2s.c
+@@ -209,15 +209,23 @@ static void i2s_start(struct dw_i2s_dev
+ static void i2s_stop(struct dw_i2s_dev *dev,
+ 		struct snd_pcm_substream *substream)
+ {
+-	if (dev->is_jh7110) {
+-		struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+-		struct snd_soc_dai_link *dai_link = rtd->dai_link;
+ 
+-		dai_link->trigger_stop = SND_SOC_TRIGGER_ORDER_LDC;
+-	}
+ 	i2s_clear_irqs(dev, substream->stream);
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		i2s_write_reg(dev->i2s_base, ITER, 0);
++	else
++		i2s_write_reg(dev->i2s_base, IRER, 0);
++
++	if (!(dev->use_pio || dev->is_jh7110))
++		i2s_disable_dma(dev, substream->stream);
+ 
+ 	i2s_disable_irqs(dev, substream->stream, 8);
++
++
++	if (!dev->active) {
++		i2s_write_reg(dev->i2s_base, CER, 0);
++		i2s_write_reg(dev->i2s_base, IER, 0);
++	}
+ }
+ 
+ static void i2s_pause(struct dw_i2s_dev *dev,

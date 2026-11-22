@@ -1,0 +1,114 @@
+From bf7976475281b31dbd0d81c6a814d42398f82b3a Mon Sep 17 00:00:00 2001
+From: Hans Verkuil <hverkuil+cisco@kernel.org>
+Date: Thu, 1 Oct 2026 15:02:31 +0200
+Subject: [PATCH] misc: rp1-pio: name the DMA direction with a tx bool
+
+rp1_pio_sm_config_xfer_internal() tested dir == RP1_PIO_DIR_TO_SM in
+half a dozen places, which is both repetitive and awkward to read
+where the two arms of the resulting conditionals are not in the
+natural tx/rx order. Derive a tx bool once and use it throughout,
+putting the tx arm first consistently.
+
+Record it in struct dma_info as well, so that code holding only a
+dma_info does not have to recover the direction from the index it was
+looked up by, as rp1_pio_close() had to.
+
+No functional change.
+
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+Assisted-by: Claude-Code:claude-opus-5
+---
+ drivers/misc/rp1-pio.c | 22 +++++++++++++---------
+ 1 file changed, 13 insertions(+), 9 deletions(-)
+
+--- a/drivers/misc/rp1-pio.c
++++ b/drivers/misc/rp1-pio.c
+@@ -101,6 +101,7 @@ struct dma_info {
+ 	size_t buf_count;
+ 	size_t burst_bytes;
+ 	bool cyclic;
++	bool tx;
+ 	unsigned int head_idx;
+ 	unsigned int tail_idx;
+ 	struct dma_buf_info bufs[DMA_BOUNCE_BUFFER_COUNT];
+@@ -1024,6 +1025,7 @@ static void rp1_pio_sm_dma_free(struct d
+ 	dma_release_channel(dma->chan);
+ 	dma->chan = NULL;
+ 	dma->cyclic = false;
++	dma->tx = false;
+ }
+ 
+ static int rp1_pio_sm_config_xfer_internal(struct rp1_pio_client *client, uint sm, uint dir,
+@@ -1037,6 +1039,7 @@ static int rp1_pio_sm_config_xfer_intern
+ 	struct dma_slave_caps dma_caps;
+ 	struct dma_info *dma = NULL;
+ 	bool cyclic = flags & RP1_PIO_SM_CONFIG_XFER_FL_DMA_CYCLE;
++	bool tx = dir == RP1_PIO_DIR_TO_SM;
+ 	bool prefer_light_dma = flags & BIT(0);
+ 	bool force_dma_type = flags & BIT(1);
+ 	bool reconfigure = false;
+@@ -1077,7 +1080,7 @@ static int rp1_pio_sm_config_xfer_intern
+ 
+ 	/* Allocate and configure a DMA channel */
+ 	/* Careful - each SM FIFO has its own DREQ value */
+-	chan_name[0] = (dir == RP1_PIO_DIR_TO_SM) ? 't' : 'r';
++	chan_name[0] = tx ? 't' : 'r';
+ 	chan_name[1] = 'x';
+ 	chan_name[2] = '0' + sm;
+ 	if (prefer_light_dma)
+@@ -1087,6 +1090,7 @@ static int rp1_pio_sm_config_xfer_intern
+ 	chan_name[4] = '\0';
+ 
+ 	dma->cyclic = false;
++	dma->tx = tx;
+ 	dma->chan = dma_request_chan(dev, chan_name);
+ 	if (IS_ERR(dma->chan)) {
+ 		ret = PTR_ERR(dma->chan);
+@@ -1143,18 +1147,18 @@ static int rp1_pio_sm_config_xfer_intern
+ 
+ 	fifo_addr = pio->phys_addr;
+ 	fifo_addr += sm * (RP1_PIO_FIFO_TX1 - RP1_PIO_FIFO_TX0);
+-	fifo_addr += (dir == RP1_PIO_DIR_TO_SM) ? RP1_PIO_FIFO_TX0 : RP1_PIO_FIFO_RX0;
++	fifo_addr += tx ? RP1_PIO_FIFO_TX0 : RP1_PIO_FIFO_RX0;
+ 
+ 	config.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+ 	config.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+ 	config.src_addr = fifo_addr;
+ 	config.dst_addr = fifo_addr;
+-	config.direction = (dir == RP1_PIO_DIR_TO_SM) ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
++	config.direction = tx ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+ 	dma_caps.max_burst = 4;
+ 	dma_get_slave_caps(dma->chan, &dma_caps);
+ 	if (dma_caps.max_burst > RP1_PIO_FIFO_DEPTH)
+ 		dma_caps.max_burst = RP1_PIO_FIFO_DEPTH;
+-	if (dir == RP1_PIO_DIR_TO_SM)
++	if (tx)
+ 		config.dst_maxburst = dma_caps.max_burst;
+ 	else
+ 		config.src_maxburst = dma_caps.max_burst;
+@@ -1165,12 +1169,12 @@ static int rp1_pio_sm_config_xfer_intern
+ 		goto err_dma_free;
+ 
+ 	set_dmactrl_args.sm = sm;
+-	set_dmactrl_args.is_tx = (dir == RP1_PIO_DIR_TO_SM);
+-	if (dir == RP1_PIO_DIR_FROM_SM)
+-		set_dmactrl_args.ctrl = RP1_PIO_DMACTRL_DEFAULT | config.src_maxburst;
+-	else
++	set_dmactrl_args.is_tx = tx;
++	if (tx)
+ 		set_dmactrl_args.ctrl = RP1_PIO_DMACTRL_DEFAULT |
+ 					(RP1_PIO_FIFO_DEPTH - config.dst_maxburst);
++	else
++		set_dmactrl_args.ctrl = RP1_PIO_DMACTRL_DEFAULT | config.src_maxburst;
+ 
+ 	ret = rp1_pio_sm_set_dmactrl(client, &set_dmactrl_args);
+ 	if (ret)
+@@ -1715,7 +1719,7 @@ void rp1_pio_close(struct rp1_pio_client
+ 
+ 			claimed &= ~mask;
+ 			/* The SMs have been disabled, so this is safe */
+-			if ((i & 1) == RP1_PIO_DIR_FROM_SM)
++			if (!dma->tx)
+ 				rp1_pio_sm_dma_flush_rx(dma);
+ 			rp1_pio_sm_dma_free(dma);
+ 		}

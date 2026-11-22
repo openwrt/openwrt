@@ -1,0 +1,37 @@
+From 1e055fd3068d63412a7d7d82a20ac98de26f13c9 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Wed, 30 Sep 2026 16:47:14 +0100
+Subject: [PATCH] media: sony-starvis2: Only update bits for window mode
+
+IMX585 requires bit 4 of the WINMODE register (0x3018) to be
+set, whilst the bottom nibble selects between all-pixel and
+window mode.
+
+Switch to using cci_update_bits so that only the bottom nibble
+is updated, thereby working on all supported Starvis2 sensors.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/media/i2c/sony-starvis2.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/i2c/sony-starvis2.c
++++ b/drivers/media/i2c/sony-starvis2.c
+@@ -99,6 +99,7 @@ MODULE_PARM_DESC(hcg_mode, "Enable HCG m
+ 
+ /* Crop */
+ #define STARVIS2_REG_WINMODE		CCI_REG8(0x3018)
++#define STARVIS2_REG_WINMODE_MASK	0x0f
+ #define STARVIS2_REG_PIX_HST		CCI_REG16_LE(0x303c)
+ #define STARVIS2_REG_PIX_HWIDTH		CCI_REG16_LE(0x303e)
+ #define STARVIS2_REG_PIX_VST		CCI_REG16_LE(0x3044)
+@@ -1911,7 +1912,8 @@ static int starvis2_program_window(struc
+ 	int ret = 0;
+ 
+ 	cci_write(starvis2->cci, STARVIS2_REG_ADDMODE, 0x00, &ret);
+-	cci_write(starvis2->cci, STARVIS2_REG_WINMODE, 0x04, &ret);
++	cci_update_bits(starvis2->cci, STARVIS2_REG_WINMODE,
++			STARVIS2_REG_WINMODE_MASK, 0x04, &ret);
+ 	cci_write(starvis2->cci, STARVIS2_REG_PIX_HST,
+ 		  crop->left - starvis2->variant->active_area.left, &ret);
+ 	cci_write(starvis2->cci, STARVIS2_REG_PIX_HWIDTH, crop->width, &ret);

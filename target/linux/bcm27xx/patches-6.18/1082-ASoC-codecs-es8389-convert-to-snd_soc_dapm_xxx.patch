@@ -1,0 +1,55 @@
+From ec5abce1c22cb3ae94c242d1a425fc8db4daf12c Mon Sep 17 00:00:00 2001
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 11 Nov 2025 00:22:26 +0000
+Subject: [PATCH] ASoC: codecs: es8389: convert to snd_soc_dapm_xxx()
+
+commit 2e20e32c2e3ac17aae4f53ce6205a5d8bf34e895 upstream.
+
+This patch converts below functions.
+
+dapm->dev					-> snd_soc_dapm_to_dev()
+dapm->card					-> snd_soc_dapm_to_card()
+dapm->component					-> snd_soc_dapm_to_component()
+
+dapm_kcontrol_get_value()			-> snd_soc_dapm_kcontrol_get_value()
+
+snd_soc_component_enable_pin()			-> snd_soc_dapm_enable_pin()
+snd_soc_component_enable_pin_unlocked()		-> snd_soc_dapm_enable_pin_unlocked()
+snd_soc_component_disable_pin()			-> snd_soc_dapm_disable_pin()
+snd_soc_component_disable_pin_unlocked()	-> snd_soc_dapm_disable_pin_unlocked()
+snd_soc_component_nc_pin()			-> snd_soc_dapm_nc_pin()
+snd_soc_component_nc_pin_unlocked()		-> snd_soc_dapm_nc_pin_unlocked()
+snd_soc_component_get_pin_status()		-> snd_soc_dapm_get_pin_status()
+snd_soc_component_force_enable_pin()		-> snd_soc_dapm_force_enable_pin()
+snd_soc_component_force_enable_pin_unlocked()	-> snd_soc_dapm_force_enable_pin_unlocked()
+snd_soc_component_force_bias_level()		-> snd_soc_dapm_force_bias_level()
+snd_soc_component_get_bias_level()		-> snd_soc_dapm_get_bias_level()
+snd_soc_component_init_bias_level()		-> snd_soc_dapm_init_bias_level()
+snd_soc_component_get_dapm()			-> snd_soc_component_to_dapm()
+
+snd_soc_dapm_kcontrol_component()		-> snd_soc_dapm_kcontrol_to_component()
+snd_soc_dapm_kcontrol_widget()			-> snd_soc_dapm_kcontrol_to_widget()
+snd_soc_dapm_kcontrol_dapm()			-> snd_soc_dapm_kcontrol_to_dapm()
+snd_soc_dapm_np_pin()				-> snd_soc_dapm_disable_pin()
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Charles Keepax <ckeepax@opensource.cirrus.com>
+Link: https://patch.msgid.link/87pl9p5sfx.wl-kuninori.morimoto.gx@renesas.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/codecs/es8389.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/sound/soc/codecs/es8389.c
++++ b/sound/soc/codecs/es8389.c
+@@ -57,8 +57,8 @@ static const DECLARE_TLV_DB_SCALE(alc_ma
+ static int es8389_dmic_set(struct snd_kcontrol *kcontrol,
+ 	struct snd_ctl_elem_value *ucontrol)
+ {
+-	struct snd_soc_component *component = snd_soc_dapm_kcontrol_component(kcontrol);
+-	struct snd_soc_dapm_context *dapm = snd_soc_dapm_kcontrol_dapm(kcontrol);
++	struct snd_soc_component *component = snd_soc_dapm_kcontrol_to_component(kcontrol);
++	struct snd_soc_dapm_context *dapm = snd_soc_dapm_kcontrol_to_dapm(kcontrol);
+ 	struct es8389_private *es8389 = snd_soc_component_get_drvdata(component);
+ 	struct soc_enum *e = (struct soc_enum *)kcontrol->private_value;
+ 	unsigned int val;

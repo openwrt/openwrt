@@ -1,0 +1,40 @@
+From 76999cf7f56ea1e0006a494e993435bb05f7f400 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 16:47:52 +0000
+Subject: [PATCH] drm/vc4: hvs6: Allocate the LBM for YUV444 chroma
+
+__vc6_lbm_size() only took the chroma channel into account when it was
+horizontally subsampled, so YUV444 got an LBM for luma only: none at all
+at 1:1, where only chroma is scaled. The width is also programmed doubled
+for YUV444, and the hardware uses an LBM for that doubled width.
+
+Size both channels for all YUV formats, and double the width for
+YUV444. Without this a YUV444 plane corrupts the plane after it in the
+LBM even when unscaled.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -895,6 +895,9 @@ static unsigned int vc4_lbm_channel_size
+ 		width = state->crtc_w;
+ 	else
+ 		width = min(src_w, state->crtc_w);
++	/* vc6_plane_mode_set() programs double the width for YUV444 */
++	if (info->format == DRM_FORMAT_YUV444 || info->format == DRM_FORMAT_YVU444)
++		width *= 2;
+ 	width = round_up(DIV_ROUND_UP(width, info->hsub), 4);
+ 
+ 	wpc = vc4_lbm_words_per_component(state, channel);
+@@ -916,7 +919,7 @@ static unsigned int __vc6_lbm_size(const
+ {
+ 	const struct drm_format_info *info = state->fb->format;
+ 
+-	if (info->hsub > 1)
++	if (info->is_yuv)
+ 		return max(vc4_lbm_channel_size(state, 0),
+ 			   vc4_lbm_channel_size(state, 1));
+ 	else

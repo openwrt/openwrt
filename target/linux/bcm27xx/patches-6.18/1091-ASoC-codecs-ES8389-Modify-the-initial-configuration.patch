@@ -1,0 +1,36 @@
+From e8c2ba1a89dd90b7b3664e0ec562f6023b5f74b1 Mon Sep 17 00:00:00 2001
+From: Zhang Yi <zhangyi@everest-semi.com>
+Date: Tue, 30 Jun 2026 15:23:09 +0800
+Subject: [PATCH] ASoC: codecs: ES8389: Modify the initial configuration
+
+commit 3bea836903c2b2305c2219e897b217261be8a26a upstream.
+
+Modify the initial configuration
+
+Signed-off-by: Zhang Yi <zhangyi@everest-semi.com>
+Link: https://patch.msgid.link/20260630072311.8427-5-zhangyi@everest-semi.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/codecs/es8389.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/sound/soc/codecs/es8389.c
++++ b/sound/soc/codecs/es8389.c
+@@ -792,7 +792,7 @@ static void es8389_init(struct snd_soc_c
+ 
+ 	regmap_read(es8389->regmap, ES8389_MAX_REGISTER, &reg);
+ 	es8389->version = reg;
+-	regmap_write(es8389->regmap, ES8389_ISO_CTL, 0x00);
++	regmap_write(es8389->regmap, ES8389_ISO_CTL, 0x56);
+ 	regmap_write(es8389->regmap, ES8389_RESET, 0x7E);
+ 	regmap_write(es8389->regmap, ES8389_ISO_CTL, 0x38);
+ 	regmap_write(es8389->regmap, ES8389_ADC_HPF1, 0x64);
+@@ -844,7 +844,7 @@ static void es8389_init(struct snd_soc_c
+ 	regmap_write(es8389->regmap, ES8389_SCLK_DIV, 0x04);
+ 	regmap_write(es8389->regmap, ES8389_LRCK_DIV1, 0x01);
+ 	regmap_write(es8389->regmap, ES8389_LRCK_DIV2, 0x00);
+-	regmap_write(es8389->regmap, ES8389_OSC_CLK, 0x00);
++	regmap_write(es8389->regmap, ES8389_OSC_CLK, 0x10);
+ 	regmap_write(es8389->regmap, ES8389_ADC_OSR, 0x1F);
+ 	regmap_write(es8389->regmap, ES8389_ADC_DSP, 0x7F);
+ 	regmap_write(es8389->regmap, ES8389_ADC_MUTE, 0xC0);

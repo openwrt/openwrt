@@ -1,0 +1,32 @@
+From 68ea915c96a04fa3297264c96d3ac18acd37b45b Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Mon, 28 Sep 2026 17:10:52 +0100
+Subject: [PATCH] media: sony-starvis2: Correct the minimum exposure
+
+The software reference for imx678 lists register SHR0 setting
+the shutter sweep time with a valid range of 4 to (Number of
+lines per frame - 1), and then gives the example of all-pixel
+scan mode with VMAX=2250 and SHR0=2249 giving an integraion time
+of "1H + Toffset" (further defining Toffset as 0).
+
+The driver defining STARVIS2_EXPOSURE_MIN as 2 would therefore
+be contradictory, and increasing the minimum exposure achievable.
+
+Correct STARVIS2_EXPOSURE_MIN.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/media/i2c/sony-starvis2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/i2c/sony-starvis2.c
++++ b/drivers/media/i2c/sony-starvis2.c
+@@ -77,7 +77,7 @@ MODULE_PARM_DESC(hcg_mode, "Enable HCG m
+ #define STARVIS2_SHR_MIN                  8
+ 
+ /* Exposure control */
+-#define STARVIS2_EXPOSURE_MIN             2
++#define STARVIS2_EXPOSURE_MIN             1
+ #define STARVIS2_EXPOSURE_STEP            1
+ #define STARVIS2_EXPOSURE_DEFAULT         1000
+ 

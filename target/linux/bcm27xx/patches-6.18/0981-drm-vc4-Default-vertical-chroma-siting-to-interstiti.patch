@@ -1,0 +1,43 @@
+From bb74628f77016b40792cbe70290b359dd83941b6 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Tue, 15 Sep 2026 17:57:34 +0100
+Subject: [PATCH] drm/vc4: Default vertical chroma siting to interstitial
+
+The chroma siting properties defaulted to (0, 0), placing the chroma
+samples on the top-left luma sample. MPEG-2, H.264 and HEVC 4:2:0 are
+horizontally cosited but vertically interstitial, so the default left
+typical video content half a luma line out unless userspace knew about
+this property - which is downstream-only - and set it.
+
+Default to (0, 0x8000) instead, which is right for the common case.
+
+This is only an improvement once the PPF phase is right. Measured on a
+Pi 5 by compositing a synthetic 4:2:0 frame 1:1 and capturing it
+through the writeback connector, PSNR against an ideal reference,
+whole frame:
+
+                                  SITING_V=0   SITING_V=0.5
+  before the scale/2 fix             21.01 dB       20.67 dB
+  after                              20.21 dB       21.20 dB
+
+Before that fix the pipeline sampled chroma 0.38 luma rows early, which
+a siting of 0 partly cancelled and 0.5 made worse - so this change on
+its own would have been a regression.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -2843,7 +2843,8 @@ struct drm_plane *vc4_plane_init(struct
+ 						 BIT(DRM_SCALING_FILTER_DEFAULT) |
+ 						 BIT(DRM_SCALING_FILTER_NEAREST_NEIGHBOR));
+ 
+-	drm_plane_create_chroma_siting_properties(plane, 0, 0);
++	/* MPEG-2 / H.264 / HEVC 4:2:0 siting: H cosited, V interstitial */
++	drm_plane_create_chroma_siting_properties(plane, 0, 0x8000);
+ 
+ 	if (type == DRM_PLANE_TYPE_PRIMARY)
+ 		drm_plane_create_zpos_immutable_property(plane, 0);

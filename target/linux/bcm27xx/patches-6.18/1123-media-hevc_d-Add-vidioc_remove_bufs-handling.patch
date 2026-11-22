@@ -1,0 +1,23 @@
+From 46f9176de4568961f8e256ee62d88eefe820c762 Mon Sep 17 00:00:00 2001
+From: John Cox <jc@kynesim.co.uk>
+Date: Tue, 20 Oct 2026 13:33:32 +0100
+Subject: [PATCH] media/hevc_d: Add vidioc_remove_bufs handling
+
+vidioc_remove_bufs was invented after this code was taken from
+Cedrus. Add the missing ioctl as there is no reason not to.
+
+Signed-off-by: John Cox <jc@kynesim.co.uk>
+---
+ drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
++++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
+@@ -443,6 +443,7 @@ const struct v4l2_ioctl_ops hevc_d_ioctl
+ 	.vidioc_dqbuf			= v4l2_m2m_ioctl_dqbuf,
+ 	.vidioc_prepare_buf		= v4l2_m2m_ioctl_prepare_buf,
+ 	.vidioc_create_bufs		= v4l2_m2m_ioctl_create_bufs,
++	.vidioc_remove_bufs		= v4l2_m2m_ioctl_remove_bufs,
+ 	.vidioc_expbuf			= v4l2_m2m_ioctl_expbuf,
+ 
+ 	.vidioc_streamon		= v4l2_m2m_ioctl_streamon,

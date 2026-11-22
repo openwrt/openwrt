@@ -1,0 +1,83 @@
+From b472b76af4081042e2180748dc79e5de490c1b4d Mon Sep 17 00:00:00 2001
+From: Yu Dukai <646689853@qq.com>
+Date: Fri, 23 Oct 2026 21:00:35 +0800
+Subject: [PATCH] drm/panel: waveshare-dsi-v2: Add 5-DSI-TOUCH-A-V2 and
+ 5-DSI-TOUCH-B
+
+Add the display mode and initialization sequence for the Waveshare
+5.0-DSI-TOUCH-A-V2 and 5.0-DSI-TOUCH-B panels.
+
+The two products use the same 720x1280 display panel and differ only in
+the touch cover glass, so they share a single panel description: two
+MIPI DSI lanes, a 70 MHz pixel clock and the minimal
+sleep-out/display-on sequence.
+
+Signed-off-by: Yu Dukai <646689853@qq.com>
+---
+ .../gpu/drm/panel/panel-waveshare-dsi-v2.c    | 34 +++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+
+--- a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
++++ b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
+@@ -1565,6 +1565,14 @@ static const struct panel_init_cmd ws_pa
+ 	{},
+ };
+ 
++static const struct panel_init_cmd ws_panel_5_b_init[] = {
++	_INIT_DCS_CMD(0x11),
++	_INIT_DELAY_CMD(120),
++	_INIT_DCS_CMD(0x29),
++	_INIT_DELAY_CMD(30),
++	{},
++};
++
+ static const struct panel_init_cmd ws_panel_4_3_a_init[] = {
+ 	_INIT_DCS_CMD(0xFF, 0x77, 0x01, 0x00, 0x00, 0x13),
+ 	_INIT_DCS_CMD(0xEF, 0x08),
+@@ -2163,6 +2171,20 @@ static const struct drm_display_mode ws_
+ 	.height_mm = 110,
+ };
+ 
++static const struct drm_display_mode ws_panel_5_b_mode = {
++	.clock = 70000,
++	.hdisplay = 720,
++	.hsync_start = 720 + 80,
++	.hsync_end = 720 + 80 + 10,
++	.htotal = 720 + 80 + 10 + 30,
++	.vdisplay = 1280,
++	.vsync_start = 1280 + 6,
++	.vsync_end = 1280 + 6 + 6,
++	.vtotal = 1280 + 6 + 6 + 12,
++	.width_mm = 62,
++	.height_mm = 110,
++};
++
+ static const struct drm_display_mode ws_panel_4_3_a_mode = {
+ 	.clock = 30000,
+ 	.hdisplay = 480,
+@@ -2507,6 +2529,15 @@ static const struct ws_panel_desc ws_pan
+ 	.format = MIPI_DSI_FMT_RGB888,
+ };
+ 
++static const struct ws_panel_desc ws_panel_5_inch_b_desc = {
++	.init = ws_panel_5_b_init,
++	.mode = &ws_panel_5_b_mode,
++	.mode_flags = MIPI_DSI_MODE_VIDEO_HSE | MIPI_DSI_MODE_VIDEO |
++		      MIPI_DSI_MODE_LPM | MIPI_DSI_CLOCK_NON_CONTINUOUS,
++	.lanes = 2,
++	.format = MIPI_DSI_FMT_RGB888,
++};
++
+ static const struct ws_panel_desc ws_panel_4_3_inch_a_desc = {
+ 	.init = ws_panel_4_3_a_init,
+ 	.mode = &ws_panel_4_3_a_mode,
+@@ -2572,6 +2603,9 @@ static const struct of_device_id ws_pane
+ 	{ .compatible = "waveshare,5.5-dsi-touch-a",
+ 	  &ws_panel_5_5_inch_a_desc },
+ 	{ .compatible = "waveshare,5.0-dsi-touch-a", &ws_panel_5_inch_a_desc },
++	{ .compatible = "waveshare,5.0-dsi-touch-a-v2",
++	  &ws_panel_5_inch_b_desc },
++	{ .compatible = "waveshare,5.0-dsi-touch-b", &ws_panel_5_inch_b_desc },
+ 	{ .compatible = "waveshare,4.3-dsi-touch-a", &ws_panel_4_3_inch_a_desc },
+ 	{ .compatible = "waveshare,4.0-dsi-touch-a", &ws_panel_4_inch_a_desc },
+ 	{ .compatible = "waveshare,4.0-dsi-touch-c", &ws_panel_4_inch_c_desc },

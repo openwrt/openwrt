@@ -1,0 +1,390 @@
+From 113a659b46622e0c099885b98746b1fe5ebc68e7 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 14 Sep 2026 16:30:40 +0100
+Subject: [PATCH] drm/vc4: Don't assume 4:2:0 subsampling in the scaler phase
+ calculation
+
+vc4_write_ppf() treated anything on channel 1 as being subsampled 2x in
+the axis being programmed: it halved the source coordinate, applied a 1/4
+chroma-pixel centring offset instead of 1/2, and scaled the chroma siting
+by 17 bits rather than 16. That only holds for 4:2:0.
+
+For 4:2:2 the chroma plane is full height - src_h[1] == src_h[0], and the
+vertical PPF is force-enabled so that unity-scaled planes render at all -
+and for 4:4:4 the chroma plane is full resolution in both axes. In those
+cases the chroma phase came out at half the luma phase, displacing chroma
+by a quarter of a pixel against the luma.
+
+Take the subsampling for the axis being programmed from the format and
+derive the phase from it, rather than from the channel number. The
+calculation is now done in luma pixels throughout and converted to the
+channel's pixels at the end, which for 4:2:0 gives a bit-identical phase
+to before.
+
+Fixes: ac69c01fa825 ("drm/vc4: plane: Handle fractional coordinates using the phase field")
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c               | 73 +++++-----------
+ .../raspberrypi/hevc_dec/hevc_d_h265.c        | 83 ++++++-------------
+ .../media/platform/raspberrypi/rp1_cfe/cfe.c  | 25 ------
+ 3 files changed, 50 insertions(+), 131 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -688,36 +688,18 @@ static void vc4_write_tpz(struct vc4_pla
+ #define PHASE_BITS 6
+ 
+ static void vc4_write_ppf(struct vc4_plane_state *vc4_state, u32 src, u32 dst,
+-			  u32 xy, int channel, int chroma_offset,
+-			  bool no_interpolate)
++			  u32 xy, int channel, unsigned int subsample,
++			  int chroma_offset, bool no_interpolate)
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(vc4_state->base.plane->dev);
++	unsigned int sub_shift = subsample == 2 ? 1 : 0;
+ 	u32 scale = src / dst;
+ 	s32 offset, offset2;
+ 	s32 phase;
+ 
+ 	WARN_ON_ONCE(vc4->gen > VC4_GEN_6_D);
+ 
+-	/*
+-	 * Start the phase at 1/2 pixel from the 1st pixel at src_x.
+-	 * 1/4 pixel for YUV, plus the offset for chroma siting.
+-	 */
+-	if (channel) {
+-		/*
+-		 * The phase is relative to scale_src->x, so shift it for
+-		 * display list's x value
+-		 */
+-		offset = (xy & 0x1ffff) >> (16 - PHASE_BITS) >> 1;
+-		offset -= chroma_offset >> (17 - PHASE_BITS);
+-		offset += -(1 << PHASE_BITS >> 2);
+-	} else {
+-		/*
+-		 * The phase is relative to scale_src->x, so shift it for
+-		 * display list's x value
+-		 */
+-		offset = (xy & 0xffff) >> (16 - PHASE_BITS);
+-		offset += -(1 << PHASE_BITS >> 1);
+-
++	if (!channel) {
+ 		/*
+ 		 * This is a kludge to make sure the scaling factors are
+ 		 * consistent with YUV's luma scaling. We lose 1-bit precision
+@@ -727,6 +709,18 @@ static void vc4_write_ppf(struct vc4_pla
+ 	}
+ 
+ 	/*
++	 * Start the phase at 1/2 pixel from the 1st pixel at src_x, less the
++	 * chroma siting offset. The phase is relative to scale_src->x, so
++	 * shift it for the display list's x value. Everything is computed in
++	 * luma pixels and then converted to this channel's pixels, so that a
++	 * subsampled chroma channel lands on the same position as the luma.
++	 */
++	offset = (xy & ((0x10000 << sub_shift) - 1)) >> (16 - PHASE_BITS);
++	offset -= chroma_offset >> (16 - PHASE_BITS);
++	offset -= 1 << PHASE_BITS >> 1;
++	offset >>= sub_shift;
++
++	/*
+ 	 * There may be a also small error introduced by precision of scale.
+ 	 * Add half of that as a compromise
+ 	 */
+@@ -930,7 +924,10 @@ static void vc4_write_scaling_parameters
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(state->plane->dev);
+ 	struct vc4_plane_state *vc4_state = to_vc4_plane_state(state);
++	const struct drm_format_info *info = state->fb->format;
+ 	bool no_interpolate = state->scaling_filter == DRM_SCALING_FILTER_NEAREST_NEIGHBOR;
++	unsigned int hsub = channel ? info->hsub : 1;
++	unsigned int vsub = channel ? info->vsub : 1;
+ 
+ 	if (vc4_state->is_yuv444_unity)
+ 		no_interpolate = 1;
+@@ -941,16 +938,14 @@ static void vc4_write_scaling_parameters
+ 	if (vc4_state->x_scaling[channel] == VC4_SCALING_PPF) {
+ 		vc4_write_ppf(vc4_state, vc4_state->src_w[channel],
+ 			      vc4_state->crtc_w, vc4_state->src_x, channel,
+-			      state->chroma_siting_h,
+-			      no_interpolate);
++			      hsub, state->chroma_siting_h, no_interpolate);
+ 	}
+ 
+ 	/* Ch0 V-PPF Words 0-1: Scaling Parameters, Context */
+ 	if (vc4_state->y_scaling[channel] == VC4_SCALING_PPF) {
+ 		vc4_write_ppf(vc4_state, vc4_state->src_h[channel],
+ 			      vc4_state->crtc_h, vc4_state->src_y, channel,
+-			      state->chroma_siting_v,
+-			      no_interpolate);
++			      vsub, state->chroma_siting_v, no_interpolate);
+ 		vc4_dlist_write(vc4_state, 0xc0c0c0c0);
+ 	}
+ 
+@@ -2685,16 +2680,6 @@ static const struct drm_plane_helper_fun
+ 	.atomic_async_update = vc4_plane_atomic_async_update,
+ };
+ 
+-static const struct drm_plane_helper_funcs vc4_primary_plane_helper_funcs = {
+-	.atomic_check = vc4_plane_atomic_check,
+-	.atomic_update = vc4_plane_atomic_update,
+-	.prepare_fb = vc4_prepare_fb,
+-	.cleanup_fb = vc4_cleanup_fb,
+-	.atomic_async_check = vc4_plane_atomic_async_check,
+-	.atomic_async_update = vc4_plane_atomic_async_update,
+-	.get_scanout_buffer = drm_fb_dma_get_scanout_buffer,
+-};
+-
+ static const struct drm_plane_helper_funcs vc5_plane_helper_funcs = {
+ 	.atomic_check = vc4_plane_atomic_check,
+ 	.atomic_update = vc4_plane_atomic_update,
+@@ -2702,14 +2687,6 @@ static const struct drm_plane_helper_fun
+ 	.atomic_async_update = vc4_plane_atomic_async_update,
+ };
+ 
+-static const struct drm_plane_helper_funcs vc5_primary_plane_helper_funcs = {
+-	.atomic_check = vc4_plane_atomic_check,
+-	.atomic_update = vc4_plane_atomic_update,
+-	.atomic_async_check = vc4_plane_atomic_async_check,
+-	.atomic_async_update = vc4_plane_atomic_async_update,
+-	.get_scanout_buffer = drm_fb_dma_get_scanout_buffer,
+-};
+-
+ static bool vc4_format_mod_supported(struct drm_plane *plane,
+ 				     uint32_t format,
+ 				     uint64_t modifier)
+@@ -2828,13 +2805,9 @@ struct drm_plane *vc4_plane_init(struct
+ 	plane = &vc4_plane->base;
+ 
+ 	if (vc4->gen >= VC4_GEN_5)
+-		drm_plane_helper_add(plane, type == DRM_PLANE_TYPE_PRIMARY ?
+-				     &vc5_primary_plane_helper_funcs :
+-				     &vc5_plane_helper_funcs);
++		drm_plane_helper_add(plane, &vc5_plane_helper_funcs);
+ 	else
+-		drm_plane_helper_add(plane, type == DRM_PLANE_TYPE_PRIMARY ?
+-				     &vc4_primary_plane_helper_funcs :
+-				     &vc4_plane_helper_funcs);
++		drm_plane_helper_add(plane, &vc4_plane_helper_funcs);
+ 
+ 	drm_plane_create_alpha_property(plane);
+ 	drm_plane_create_blend_mode_property(plane,
+--- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
++++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
+@@ -259,10 +259,6 @@ struct hevc_d_dec_state {
+ 	unsigned int start_ctb_y;
+ 	unsigned int prev_ctb_x;        /* CTB X,Y of start_ts - 1 */
+ 	unsigned int prev_ctb_y;
+-
+-	/* Sanitized copies of the slice header arrays */
+-	u8 ref_idx_l0[NUM_REF_IDX_ACTIVE_MAX];
+-	u8 ref_idx_l1[NUM_REF_IDX_ACTIVE_MAX];
+ };
+ 
+ /* Phase 1 command and bit FIFOs */
+@@ -699,7 +695,7 @@ static void program_slicecmds(struct hev
+  * get NoBackwardPredictionFlag.
+  */
+ static int has_backward(const struct v4l2_hevc_dpb_entry *const dpb,
+-			const u8 *const idx, const unsigned int n,
++			const __u8 *const idx, const unsigned int n,
+ 			const s32 cur_poc)
+ {
+ 	unsigned int i;
+@@ -768,9 +764,9 @@ static void pre_slice_decode(struct hevc
+ 	if (sh->slice_type == HEVC_SLICE_P || sh->slice_type == HEVC_SLICE_B) {
+ 		/* Flag to say all reference pictures are from the past */
+ 		const int no_backward_pred_flag =
+-			has_backward(dec->dpb, s->ref_idx_l0, s->nb_refs[L0],
++			has_backward(dec->dpb, sh->ref_idx_l0, s->nb_refs[L0],
+ 				     sh->slice_pic_order_cnt) &&
+-			has_backward(dec->dpb, s->ref_idx_l1, s->nb_refs[L1],
++			has_backward(dec->dpb, sh->ref_idx_l1, s->nb_refs[L1],
+ 				     sh->slice_pic_order_cnt);
+ 		cmd_slice |= no_backward_pred_flag << 10;
+ 		msg_slice(de, cmd_slice);
+@@ -778,11 +774,11 @@ static void pre_slice_decode(struct hevc
+ 		if (s->slice_temporal_mvp)
+ 			de->dpbno_col = collocated_from_l0_flag ?
+ 				(sh->collocated_ref_idx < s->nb_refs[L0] ?
+-				 s->ref_idx_l0[sh->collocated_ref_idx] :
+-				 s->ref_idx_l0[0]) :
++				 sh->ref_idx_l0[sh->collocated_ref_idx] :
++				 sh->ref_idx_l0[0]) :
+ 				(sh->collocated_ref_idx < s->nb_refs[L1] ?
+-				 s->ref_idx_l1[sh->collocated_ref_idx] :
+-				 s->ref_idx_l1[0]);
++				 sh->ref_idx_l1[sh->collocated_ref_idx] :
++				 sh->ref_idx_l1[0]);
+ 
+ 		/* Write reference picture descriptions */
+ 		weighted_pred_flag =
+@@ -791,7 +787,7 @@ static void pre_slice_decode(struct hevc
+ 				!!(s->pps.flags & V4L2_HEVC_PPS_FLAG_WEIGHTED_BIPRED);
+ 
+ 		for (idx = 0; idx < s->nb_refs[L0]; ++idx) {
+-			unsigned int dpb_no = s->ref_idx_l0[idx];
++			unsigned int dpb_no = sh->ref_idx_l0[idx];
+ 
+ 			msg_slice(de,
+ 				  dpb_no |
+@@ -812,7 +808,7 @@ static void pre_slice_decode(struct hevc
+ 		}
+ 
+ 		for (idx = 0; idx < s->nb_refs[L1]; ++idx) {
+-			unsigned int dpb_no = s->ref_idx_l1[idx];
++			unsigned int dpb_no = sh->ref_idx_l1[idx];
+ 
+ 			msg_slice(de,
+ 				  dpb_no |
+@@ -1520,37 +1516,6 @@ static u32 mk_config2(const struct hevc_
+ 	return c;
+ }
+ 
+-static inline bool idx_valid(unsigned int idx)
+-{
+-	return idx < V4L2_HEVC_DPB_ENTRIES_NUM_MAX;
+-}
+-
+-/*
+- * Create a ref_idx array that only contains valid values.
+- * Fill bad values with the last seen good value.
+- * If nothing good then fill with zeros
+- */
+-static void sanitize_ref_idx(u8 *dst, const __u8 *src, const unsigned int n)
+-{
+-	unsigned int i;
+-	u8 v = 0;
+-
+-	/* Find the first good value or leave v = 0 if none */
+-	for (i = 0; i < n; ++i) {
+-		if (idx_valid(src[i])) {
+-			v = src[i];
+-			break;
+-		}
+-	}
+-
+-	/* Now fill bad with last seen good */
+-	for (i = 0; i < n; ++i) {
+-		if (idx_valid(src[i]))
+-			v = src[i];
+-		dst[i] = v;
+-	}
+-}
+-
+ static inline bool is_ref_unit_type(const unsigned int nal_unit_type)
+ {
+ 	/* From Table 7-1
+@@ -1811,18 +1776,10 @@ static int hevc_d_h265_setup(struct hevc
+ 					0 :
+ 					sh->num_ref_idx_l1_active_minus1 + 1;
+ 
+-		/*
+-		 * Fix up idx arrays - some userspace code such as gstreamer
+-		 * adds deliberately bad values to indicate missing frames and
+-		 * expects decode to succeed - deal with that
+-		 */
+-		sanitize_ref_idx(s->ref_idx_l0, sh->ref_idx_l0, s->nb_refs[0]);
+-		sanitize_ref_idx(s->ref_idx_l1, sh->ref_idx_l1, s->nb_refs[1]);
+-
+ 		for (j = 0; j != s->nb_refs[0]; ++j)
+-			s->idx_inuse |= 1 << s->ref_idx_l0[j];
++			s->idx_inuse |= 1 << sh->ref_idx_l0[j];
+ 		for (j = 0; j != s->nb_refs[1]; ++j)
+-			s->idx_inuse |= 1 << s->ref_idx_l1[j];
++			s->idx_inuse |= 1 << sh->ref_idx_l1[j];
+ 
+ 		if (s->sps.flags & V4L2_HEVC_SPS_FLAG_SCALING_LIST_ENABLED)
+ 			populate_scaling_factors(run, de, s);
+@@ -2519,6 +2476,20 @@ const struct v4l2_ctrl_ops hevc_d_hevc_p
+ 	.try_ctrl = try_ctrl_pps,
+ };
+ 
++/* Check the DPB indices that decode will use are all in range */
++static bool ref_idx_valid(const __u8 *const ref_idx, const unsigned int n_minus_1)
++{
++	unsigned int i;
++
++	if (n_minus_1 > NUM_REF_IDX_ACTIVE_MAX - 1)
++		return false;
++	for (i = 0; i <= n_minus_1; ++i)
++		if (ref_idx[i] >= V4L2_HEVC_DPB_ENTRIES_NUM_MAX)
++			return false;
++
++	return true;
++}
++
+ static int try_ctrl_slice_params(struct v4l2_ctrl *ctrl)
+ {
+ 	struct hevc_d_ctx *const ctx = ctrl->priv;
+@@ -2547,13 +2518,13 @@ static int try_ctrl_slice_params(struct
+ 		}
+ 
+ 		if (sh->slice_type != HEVC_SLICE_I) {
+-			if (sh->num_ref_idx_l0_active_minus1 > NUM_REF_IDX_ACTIVE_MAX - 1)
++			if (!ref_idx_valid(sh->ref_idx_l0, sh->num_ref_idx_l0_active_minus1))
+ 				return -EINVAL;
+ 			if (sh->five_minus_max_num_merge_cand > 4)
+ 				return -EINVAL;
+ 		}
+ 		if (sh->slice_type == HEVC_SLICE_B) {
+-			if (sh->num_ref_idx_l1_active_minus1 > NUM_REF_IDX_ACTIVE_MAX - 1)
++			if (!ref_idx_valid(sh->ref_idx_l1, sh->num_ref_idx_l1_active_minus1))
+ 				return -EINVAL;
+ 		}
+ 	}
+--- a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
++++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
+@@ -1915,13 +1915,6 @@ static int cfe_register_node(struct cfe_
+ 	struct cfe_node *node = &cfe->node[id];
+ 	int ret;
+ 
+-	/*
+-	 * The node may be re-registered after the source subdev has been
+-	 * unbound and rebound. The embedded video_device must be reset before
+-	 * being re-registered.
+-	 */
+-	memset(&node->video_dev, 0, sizeof(node->video_dev));
+-
+ 	node->cfe = cfe;
+ 	node->id = id;
+ 
+@@ -2045,7 +2038,6 @@ static void cfe_unregister_nodes(struct
+ 		if (check_state(cfe, NODE_REGISTERED, i)) {
+ 			clear_state(cfe, NODE_REGISTERED, i);
+ 			video_unregister_device(&node->video_dev);
+-			vb2_queue_release(&node->buffer_queue);
+ 		}
+ 	}
+ }
+@@ -2176,22 +2168,6 @@ static int cfe_async_bound(struct v4l2_a
+ 	return 0;
+ }
+ 
+-static void cfe_async_unbind(struct v4l2_async_notifier *notifier,
+-			     struct v4l2_subdev *subdev,
+-			     struct v4l2_async_connection *asd)
+-{
+-	struct cfe_device *cfe = to_cfe_device(notifier->v4l2_dev);
+-
+-	if (cfe->sensor != subdev)
+-		return;
+-
+-	cfe_unregister_nodes(cfe);
+-	media_entity_remove_links(&cfe->csi2.sd.entity);
+-	media_entity_remove_links(&cfe->fe.sd.entity);
+-
+-	cfe->sensor = NULL;
+-}
+-
+ static int cfe_async_complete(struct v4l2_async_notifier *notifier)
+ {
+ 	struct cfe_device *cfe = to_cfe_device(notifier->v4l2_dev);
+@@ -2201,7 +2177,6 @@ static int cfe_async_complete(struct v4l
+ 
+ static const struct v4l2_async_notifier_operations cfe_async_ops = {
+ 	.bound = cfe_async_bound,
+-	.unbind = cfe_async_unbind,
+ 	.complete = cfe_async_complete,
+ };
+ 

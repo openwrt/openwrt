@@ -1,0 +1,42 @@
+From 65d06a5c4a712e5fd14120daff43def930d44a0c Mon Sep 17 00:00:00 2001
+From: Yu Dukai <646689853@qq.com>
+Date: Fri, 23 Oct 2026 21:00:35 +0800
+Subject: [PATCH] ARM: dts: overlays: waveshare-panel-v2: Add 5-DSI-TOUCH-A-V2
+ and B
+
+Add overlay options for the Waveshare 5.0-DSI-TOUCH-A-V2 and
+5.0-DSI-TOUCH-B panels.
+
+The 5_0_inch_a_v2 and 5_0_inch_b options select the two-lane 720x1280
+panel. The two products use the same display panel and differ only in
+the touch cover glass, so both options point at the same panel
+description.
+
+Signed-off-by: Yu Dukai <646689853@qq.com>
+---
+ arch/arm/boot/dts/overlays/README                               | 2 ++
+ .../dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts     | 2 ++
+ 2 files changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -6290,6 +6290,8 @@ Params: 3_4_inch_c              3.4" 800
+         4_0_inch_c              4.0" 720x720 2lane
+         4_3_inch_a              4.3" 480x800 2lane
+         5_0_inch_a              5.0" 720x1280 2lane
++        5_0_inch_a_v2           5.0" A V2 720x1280 2lane
++        5_0_inch_b              5.0" B 720x1280 2lane
+         5_5_inch_a              5.5" 720x1280 2lane
+         6_25_inch_a             6.25" 720x1560 2lane
+         7_0_inch_a              7.0" A 720x1280 2lane
+--- a/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-v2-overlay.dts
+@@ -83,6 +83,8 @@
+ 		4_0_inch_c = <&dsi_panel>, "compatible=waveshare,4.0-dsi-touch-c";
+ 		4_3_inch_a = <&dsi_panel>, "compatible=waveshare,4.3-dsi-touch-a";
+ 		5_0_inch_a = <&dsi_panel>, "compatible=waveshare,5.0-dsi-touch-a";
++		5_0_inch_a_v2 = <&dsi_panel>, "compatible=waveshare,5.0-dsi-touch-a-v2";
++		5_0_inch_b = <&dsi_panel>, "compatible=waveshare,5.0-dsi-touch-b";
+ 		5_5_inch_a = <&dsi_panel>, "compatible=waveshare,5.5-dsi-touch-a";
+ 		6_25_inch_a = <&dsi_panel>, "compatible=waveshare,6.25-dsi-touch-a",
+ 			      <&touch>, "compatible=sitronix,st7123",

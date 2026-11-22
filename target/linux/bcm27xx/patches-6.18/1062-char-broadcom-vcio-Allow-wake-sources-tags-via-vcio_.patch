@@ -1,0 +1,24 @@
+From edbfe23bc88430b865499849d53a6670e245c5f7 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 12 Oct 2026 17:09:50 +0100
+Subject: [PATCH] char: broadcom: vcio: Allow wake sources tags via vcio_gencmd
+
+Add GET_WAKE_SOURCES and SET_WAKE_SOURCES to the vcio_gencmd allow
+list, so they can be used without full /dev/vcio access.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/char/broadcom/vcio.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/char/broadcom/vcio.c
++++ b/drivers/char/broadcom/vcio.c
+@@ -67,6 +67,8 @@ static const u32 vcio_ab_tags[] = {
+ /* Tags permitted via /dev/vcio_gencmd. */
+ static const u32 vcio_gencmd_tags[] = {
+ 	0x00030080, /* GET_GENCMD_RESULT */
++	0x0003009d, /* GET_WAKE_SOURCES */
++	0x0003809d, /* SET_WAKE_SOURCES */
+ };
+ 
+ /* Tags permitted via /dev/vcio_crypto. */

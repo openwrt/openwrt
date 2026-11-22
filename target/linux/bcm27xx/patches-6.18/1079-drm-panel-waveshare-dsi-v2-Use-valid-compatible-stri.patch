@@ -1,0 +1,44 @@
+From 97b5af2dde50c0acace6d406208dec3fc8dfe888 Mon Sep 17 00:00:00 2001
+From: Yu Dukai <646689853@qq.com>
+Date: Wed, 21 Oct 2026 12:11:00 +0800
+Subject: [PATCH] drm/panel: waveshare-dsi-v2: Use valid compatible strings for
+ 4-lane panels
+
+Use a single comma in the compatible strings of the 4-lane panels, as
+required by the DT specification and as already done for the 8.0" and
+10.1" a variants.
+
+The old strings are not retained as aliases, since a panel is selected
+through the overlay parameter rather than the compatible string.
+
+Signed-off-by: Yu Dukai <646689853@qq.com>
+---
+ drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
++++ b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
+@@ -2544,19 +2544,19 @@ static const struct ws_panel_desc ws_pan
+ };
+ 
+ static const struct of_device_id ws_panel_of_match[] = {
+-	{ .compatible = "waveshare,12.3-dsi-touch-a,4lane",
++	{ .compatible = "waveshare,12.3-dsi-touch-a-4lane",
+ 	  &ws_panel_12_3_inch_a_4lane_desc },
+ 	{ .compatible = "waveshare,10.1-dsi-touch-a-4lane",
+ 	  &ws_panel_10_1_inch_a_4lane_desc },
+ 	{ .compatible = "waveshare,10.1-dsi-touch-a",
+ 	  &ws_panel_10_1_inch_a_desc },
+-	{ .compatible = "waveshare,10.1-dsi-touch-b,4lane",
++	{ .compatible = "waveshare,10.1-dsi-touch-b-4lane",
+ 	  &ws_panel_10_1_inch_b_4lane_desc },
+ 	{ .compatible = "waveshare,10.1-dsi-touch-b",
+ 	  &ws_panel_10_1_inch_b_desc },
+-	{ .compatible = "waveshare,10.1-dsi-touch-e,4lane",
++	{ .compatible = "waveshare,10.1-dsi-touch-e-4lane",
+ 	  &ws_panel_10_1_inch_e_4lane_desc },
+-	{ .compatible = "waveshare,9.0-dsi-touch-b,4lane",
++	{ .compatible = "waveshare,9.0-dsi-touch-b-4lane",
+ 	  &ws_panel_9_inch_b_4lane_desc },
+ 	{ .compatible = "waveshare,9.0-dsi-touch-b", &ws_panel_9_inch_b_desc },
+ 	{ .compatible = "waveshare,8.8-dsi-touch-a",

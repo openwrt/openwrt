@@ -1,0 +1,44 @@
+From e9b9343fc0b606010254bde60d32ef2b17ee13d3 Mon Sep 17 00:00:00 2001
+From: Hugo Karlsson <huggek@klattorp.se>
+Date: Sun, 8 Nov 2026 16:42:40 +0100
+Subject: [PATCH] power: supply: max17040: clamp the reported capacity to 100 %
+
+commit 7071d4750856abbc68dfe431acc58a1d45dd42e8 upstream.
+
+The SOC register can read above 100 % when the cell is fully charged,
+and max17040_get_soc() passes the raw value through, so
+POWER_SUPPLY_PROP_CAPACITY reports values above 100. The ABI defines
+capacity as a percentage, and userspace that rejects values above 100
+then shows a full battery as empty.
+
+Clamp the value to 100.
+
+Assisted-by: Claude:claude-opus-5-5 [Claude Code]
+Signed-off-by: Hugo Karlsson <huggek@klattorp.se>
+Reviewed-by: Svyatoslav Ryhel <clamor95@gmail.com>
+Link: https://patch.msgid.link/20261108154241.198160-4-huggek@klattorp.se
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+---
+ drivers/power/supply/max17040_battery.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/power/supply/max17040_battery.c
++++ b/drivers/power/supply/max17040_battery.c
+@@ -14,6 +14,7 @@
+ #include <linux/i2c.h>
+ #include <linux/delay.h>
+ #include <linux/interrupt.h>
++#include <linux/minmax.h>
+ #include <linux/power_supply.h>
+ #include <linux/of.h>
+ #include <linux/regmap.h>
+@@ -210,7 +211,8 @@ static int max17040_get_soc(struct max17
+ 	if (ret)
+ 		return ret;
+ 
+-	return soc >> (chip->quirk_double_soc ? 9 : 8);
++	/* the register overshoots 100 % when the cell is full */
++	return min(soc >> (chip->quirk_double_soc ? 9 : 8), 100U);
+ }
+ 
+ static int max17040_get_version(struct max17040_chip *chip)

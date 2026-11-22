@@ -20,7 +20,8 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  drivers/i2c/busses/i2c-designware-common.c | 12 ++++++++++++
  drivers/i2c/busses/i2c-designware-core.h   |  7 +++++++
  drivers/i2c/busses/i2c-designware-master.c | 19 ++++++++++++++++++-
- 3 files changed, 37 insertions(+), 1 deletion(-)
+ include/linux/designware_i2c.h             |  4 ++++
+ 4 files changed, 41 insertions(+), 1 deletion(-)
 
 --- a/drivers/i2c/busses/i2c-designware-common.c
 +++ b/drivers/i2c/busses/i2c-designware-common.c
@@ -136,15 +137,15 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	ret = dev->init(dev);
 --- a/include/linux/designware_i2c.h
 +++ b/include/linux/designware_i2c.h
-@@ -49,6 +49,8 @@
+@@ -47,6 +47,8 @@
+ #define DW_IC_TX_ABRT_SOURCE			0x80
+ #define DW_IC_ENABLE_STATUS			0x9c
  #define DW_IC_CLR_RESTART_DET			0xa8
- #define DW_IC_SMBUS_INTR_STAT			0xc8
- #define DW_IC_SMBUS_INTR_MASK			0xcc
 +#define DW_IC_SCL_STUCK_AT_LOW_TIMEOUT		0xac
 +#define DW_IC_SDA_STUCK_AT_LOW_TIMEOUT		0xb0
+ #define DW_IC_SMBUS_INTR_STAT			0xc8
+ #define DW_IC_SMBUS_INTR_MASK			0xcc
  #define DW_IC_CLR_SMBUS_INTR			0xd4
- #define DW_IC_COMP_PARAM_1			0xf4
- #define DW_IC_COMP_VERSION			0xf8
 @@ -92,6 +94,7 @@
  /* DW_IC_ENABLE bits */
  #define DW_IC_ENABLE_ENABLE			BIT(0)

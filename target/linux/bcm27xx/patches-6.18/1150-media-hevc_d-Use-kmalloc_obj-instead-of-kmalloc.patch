@@ -1,0 +1,87 @@
+From c5ec4099e27bc8c9671ec78f2abe7cc55b423c34 Mon Sep 17 00:00:00 2001
+From: John Cox <jc@kynesim.co.uk>
+Date: Tue, 17 Nov 2026 15:20:23 +0000
+Subject: [PATCH] media/hevc_d: Use kmalloc_obj instead of kmalloc
+
+Current checkpatch prefers kmalloc_obj so replace all kmallocs with
+kmalloc_obj with appropriate variations for zero and array
+
+Signed-off-by: John Cox <jc@kynesim.co.uk>
+---
+ .../platform/raspberrypi/hevc_dec/hevc_d.c    |  2 +-
+ .../raspberrypi/hevc_dec/hevc_d_h265.c        | 21 +++++++------------
+ 2 files changed, 8 insertions(+), 15 deletions(-)
+
+--- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
++++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d.c
+@@ -123,7 +123,7 @@ static int hevc_d_open(struct file *file
+ 	struct hevc_d_ctx *ctx = NULL;
+ 	int ret;
+ 
+-	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
++	ctx = kzalloc_obj(*ctx);
+ 	if (!ctx)
+ 		return -ENOMEM;
+ 
+--- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
++++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_h265.c
+@@ -335,7 +335,7 @@ static struct hevc_d_q_aux *aux_q_alloc(
+ 					const unsigned int q_index)
+ {
+ 	struct hevc_d_dev *const dev = ctx->dev;
+-	struct hevc_d_q_aux *const aq = kzalloc(sizeof(*aq), GFP_KERNEL);
++	struct hevc_d_q_aux *const aq = kzalloc_obj(*aq);
+ 
+ 	if (!aq)
+ 		return NULL;
+@@ -1343,14 +1343,10 @@ static int updated_ps(struct hevc_d_dec_
+ 			s->log2_ctb_size;
+ 	s->ctb_size = s->ctb_width * s->ctb_height;
+ 
+-	s->ctb_addr_rs_to_ts = kmalloc_array(s->ctb_size,
+-					     sizeof(*s->ctb_addr_rs_to_ts),
+-					     GFP_KERNEL);
++	s->ctb_addr_rs_to_ts = kmalloc_objs(*s->ctb_addr_rs_to_ts, s->ctb_size);
+ 	if (!s->ctb_addr_rs_to_ts)
+ 		goto fail;
+-	s->ctb_addr_ts_to_rs = kmalloc_array(s->ctb_size,
+-					     sizeof(*s->ctb_addr_ts_to_rs),
+-					     GFP_KERNEL);
++	s->ctb_addr_ts_to_rs = kmalloc_objs(*s->ctb_addr_ts_to_rs, s->ctb_size);
+ 	if (!s->ctb_addr_ts_to_rs)
+ 		goto fail;
+ 
+@@ -1362,12 +1358,10 @@ static int updated_ps(struct hevc_d_dec_
+ 		s->tile_height = s->pps.num_tile_rows_minus1 + 1;
+ 	}
+ 
+-	s->col_bd = kmalloc_array((s->tile_width + 1), sizeof(*s->col_bd),
+-				  GFP_KERNEL);
++	s->col_bd = kmalloc_objs(*s->col_bd, s->tile_width + 1);
+ 	if (!s->col_bd)
+ 		goto fail;
+-	s->row_bd = kmalloc_array((s->tile_height + 1), sizeof(*s->row_bd),
+-				  GFP_KERNEL);
++	s->row_bd = kmalloc_objs(*s->row_bd, s->tile_height + 1);
+ 	if (!s->row_bd)
+ 		goto fail;
+ 
+@@ -1454,8 +1448,7 @@ static int dec_env_init(struct hevc_d_ct
+ {
+ 	unsigned int i;
+ 
+-	ctx->dec_pool = kcalloc(HEVC_D_DEC_ENV_COUNT, sizeof(*ctx->dec_pool),
+-				GFP_KERNEL);
++	ctx->dec_pool = kzalloc_objs(*ctx->dec_pool, HEVC_D_DEC_ENV_COUNT);
+ 	if (!ctx->dec_pool)
+ 		return -ENOMEM;
+ 
+@@ -2340,7 +2333,7 @@ int hevc_d_h265_start(struct hevc_d_ctx
+ 	ctx->dec0 = NULL;
+ 	memset(ctx->slots, 0, sizeof(ctx->slots));
+ 
+-	ctx->state = kzalloc(sizeof(*ctx->state), GFP_KERNEL);
++	ctx->state = kzalloc_obj(*ctx->state);
+ 	if (!ctx->state) {
+ 		v4l2_err(&dev->v4l2_dev, "Failed to allocate decode state\n");
+ 		goto fail;

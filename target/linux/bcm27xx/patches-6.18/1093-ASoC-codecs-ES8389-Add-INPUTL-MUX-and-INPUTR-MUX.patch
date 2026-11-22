@@ -1,0 +1,83 @@
+From aeb398d74eaba814c648ffad072ed694d74d17be Mon Sep 17 00:00:00 2001
+From: Zhang Yi <zhangyi@everest-semi.com>
+Date: Tue, 30 Jun 2026 15:23:11 +0800
+Subject: [PATCH] ASoC: codecs: ES8389: Add INPUTL MUX and INPUTR MUX
+
+commit 2264927316e5312208659fe0b7efd0001c8975d9 upstream.
+
+Add INPUTL MUX and INPUTR MUX in route
+
+Signed-off-by: Zhang Yi <zhangyi@everest-semi.com>
+Link: https://patch.msgid.link/20260630072311.8427-7-zhangyi@everest-semi.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/codecs/es8389.c | 35 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
+
+--- a/sound/soc/codecs/es8389.c
++++ b/sound/soc/codecs/es8389.c
+@@ -252,6 +252,16 @@ static const struct soc_enum alc_ramprat
+ static const struct soc_enum alc_winsize =
+ 	SOC_ENUM_SINGLE(ES8389_ALC_CTL, 0, 16, winsize);
+ 
++static const char *const es8389_adcl_mux_txt[] = {
++	"Normal",
++	"ADC2 channel to ADC1 channel",
++};
++
++static const char *const es8389_adcr_mux_txt[] = {
++	"Normal",
++	"ADC1 channel to ADC2 channel",
++};
++
+ static const char *const es8389_outl_mux_txt[] = {
+ 	"Normal",
+ 	"DAC2 channel to DAC1 channel",
+@@ -279,6 +289,20 @@ static const unsigned int es8389_pga_val
+ 	1, 5, 6
+ };
+ 
++static const struct soc_enum es8389_adcl_mux_enum =
++	SOC_ENUM_SINGLE(ES8389_ADC_MODE, 5,
++			ARRAY_SIZE(es8389_adcl_mux_txt), es8389_adcl_mux_txt);
++
++static const struct snd_kcontrol_new es8389_adcl_mux_controls =
++	SOC_DAPM_ENUM("INPUTL MUX", es8389_adcl_mux_enum);
++
++static const struct soc_enum es8389_adcr_mux_enum =
++	SOC_ENUM_SINGLE(ES8389_ADC_MODE, 4,
++			ARRAY_SIZE(es8389_adcr_mux_txt), es8389_adcr_mux_txt);
++
++static const struct snd_kcontrol_new es8389_adcr_mux_controls =
++	SOC_DAPM_ENUM("INPUTR MUX", es8389_adcr_mux_enum);
++
+ static const struct soc_enum es8389_outl_mux_enum =
+ 	SOC_ENUM_SINGLE(ES8389_DAC_MIX, 5,
+ 			ARRAY_SIZE(es8389_outl_mux_txt), es8389_outl_mux_txt);
+@@ -409,6 +433,8 @@ static const struct snd_soc_dapm_widget
+ 			   &es8389_adc_mixer_controls[0],
+ 			   ARRAY_SIZE(es8389_adc_mixer_controls)),
+ 	SND_SOC_DAPM_MUX("ADC MUX", SND_SOC_NOPM, 0, 0, &es8389_dmic_mux_controls),
++	SND_SOC_DAPM_MUX("INPUTL MUX", SND_SOC_NOPM, 0, 0, &es8389_adcl_mux_controls),
++	SND_SOC_DAPM_MUX("INPUTR MUX", SND_SOC_NOPM, 0, 0, &es8389_adcr_mux_controls),
+ 
+ 	SND_SOC_DAPM_MUX("OUTL MUX", SND_SOC_NOPM, 0, 0, &es8389_outl_mux_controls),
+ 	SND_SOC_DAPM_MUX("OUTR MUX", SND_SOC_NOPM, 0, 0, &es8389_outr_mux_controls),
+@@ -422,10 +448,15 @@ static const struct snd_soc_dapm_route e
+ 	{"ADCL", NULL, "PGAL"},
+ 	{"ADCR", NULL, "PGAR"},
+ 
++	{"INPUTL MUX", "Normal", "ADCL"},
++	{"INPUTL MUX", "ADC2 channel to ADC1 channel", "ADCR"},
++	{"INPUTR MUX", "Normal", "ADCR"},
++	{"INPUTR MUX", "ADC1 channel to ADC2 channel", "ADCL"},
++
+ 	{"ADC Mixer", "DACL ADCL Mixer", "DACL"},
+ 	{"ADC Mixer", "DACR ADCR Mixer", "DACR"},
+-	{"ADC Mixer", NULL, "ADCL"},
+-	{"ADC Mixer", NULL, "ADCR"},
++	{"ADC Mixer", NULL, "INPUTL MUX"},
++	{"ADC Mixer", NULL, "INPUTR MUX"},
+ 
+ 	{"ADC MUX", "AMIC", "ADC Mixer"},
+ 	{"ADC MUX", "DMIC", "DMIC"},

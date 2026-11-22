@@ -1,0 +1,34 @@
+From 746ade8bbc572b82ce1cdb31bc459ed85d0a7548 Mon Sep 17 00:00:00 2001
+From: Arthur Guilliman <auroraxq@protonmail.com>
+Date: Tue, 29 Sep 2026 18:10:55 +0800
+Subject: [PATCH] overlays: i2c-rtc: Fix README parameter alignment
+
+Start the description on column 33.
+
+Signed-off-by: Arthur Guilliman <auroraxq@protonmail.com>
+---
+ arch/arm/boot/dts/overlays/README | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -2492,7 +2492,8 @@ Params: abx80x                  Select o
+                                 and Vdd < Vddsw and Vbackup > Vddsw)
+                                 (RV3028, RV3032)
+ 
+-        quartz-load-femtofarads  Quartz load capacitance in femtofarads,
++        quartz-load-femtofarads
++                                Quartz load capacitance in femtofarads,
+                                 7000 or 12500 (PCF85063, PCF85063A)
+ 
+ 
+@@ -2577,7 +2578,8 @@ Params: abx80x                  Select o
+                                 and Vdd < Vddsw and Vbackup > Vddsw)
+                                 (RV3028, RV3032)
+ 
+-        quartz-load-femtofarads  Quartz load capacitance in femtofarads,
++        quartz-load-femtofarads
++                                Quartz load capacitance in femtofarads,
+                                 7000 or 12500 (PCF85063, PCF85063A)
+ 
+         i2c_gpio_sda            GPIO used for I2C data (default "23")

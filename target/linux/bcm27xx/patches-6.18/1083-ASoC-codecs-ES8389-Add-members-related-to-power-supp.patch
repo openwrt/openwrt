@@ -1,0 +1,111 @@
+From dd6cda45040c4d393564c1b4c4f3fd68b1d247f3 Mon Sep 17 00:00:00 2001
+From: Zhang Yi <zhangyi@everest-semi.com>
+Date: Mon, 5 Jan 2026 17:15:45 +0800
+Subject: [PATCH] ASoC: codecs: ES8389: Add members related to power supply
+
+commit 59e447ca608bf869fed23a9bba8fcb513852f02b upstream.
+
+Added the members `avdd-supply` and `dvdd-supply` to
+enable the driver to get the power supply status.
+
+Signed-off-by: Zhang Yi <zhangyi@everest-semi.com>
+Link: https://patch.msgid.link/20260105091548.4196-3-zhangyi@everest-semi.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/codecs/es8389.c | 27 ++++++++++++++++++++++++++-
+ sound/soc/codecs/es8389.h |  8 ++++++++
+ 2 files changed, 34 insertions(+), 1 deletion(-)
+
+--- a/sound/soc/codecs/es8389.c
++++ b/sound/soc/codecs/es8389.c
+@@ -17,6 +17,7 @@
+ #include <linux/delay.h>
+ #include <linux/i2c.h>
+ #include <linux/regmap.h>
++#include <linux/regulator/consumer.h>
+ #include <sound/core.h>
+ #include <sound/pcm.h>
+ #include <sound/pcm_params.h>
+@@ -31,13 +32,20 @@
+ struct	es8389_private {
+ 	struct regmap *regmap;
+ 	struct clk *mclk;
++	struct regulator_bulk_data core_supply[2];
+ 	unsigned int sysclk;
+ 	int mastermode;
+ 
+ 	u8 mclk_src;
++	u8 vddd;
+ 	enum snd_soc_bias_level bias_level;
+ };
+ 
++static const char * const es8389_core_supplies[] = {
++	"vddd",
++	"vdda",
++};
++
+ static bool es8389_volatile_register(struct device *dev,
+ 			unsigned int reg)
+ {
+@@ -818,7 +826,7 @@ static int es8389_resume(struct snd_soc_
+ 
+ static int es8389_probe(struct snd_soc_component *component)
+ {
+-	int ret;
++	int ret, i;
+ 	struct es8389_private *es8389 = snd_soc_component_get_drvdata(component);
+ 
+ 	ret = device_property_read_u8(component->dev, "everest,mclk-src", &es8389->mclk_src);
+@@ -827,6 +835,14 @@ static int es8389_probe(struct snd_soc_c
+ 		es8389->mclk_src = ES8389_MCLK_SOURCE;
+ 	}
+ 
++	for (i = 0; i < ARRAY_SIZE(es8389_core_supplies); i++)
++		es8389->core_supply[i].supply = es8389_core_supplies[i];
++	ret = devm_regulator_bulk_get(component->dev, ARRAY_SIZE(es8389_core_supplies), es8389->core_supply);
++	if (ret) {
++		dev_err(component->dev, "Failed to request core supplies %d\n", ret);
++		return ret;
++	}
++
+ 	es8389->mclk = devm_clk_get_optional(component->dev, "mclk");
+ 	if (IS_ERR(es8389->mclk))
+ 		return dev_err_probe(component->dev, PTR_ERR(es8389->mclk),
+@@ -841,6 +857,13 @@ static int es8389_probe(struct snd_soc_c
+ 		return ret;
+ 	}
+ 
++	ret = regulator_bulk_enable(ARRAY_SIZE(es8389_core_supplies), es8389->core_supply);
++	if (ret) {
++		dev_err(component->dev, "Failed to enable core supplies: %d\n", ret);
++		clk_disable_unprepare(es8389->mclk);
++		return ret;
++	}
++
+ 	es8389_init(component);
+ 	es8389_set_bias_level(component, SND_SOC_BIAS_STANDBY);
+ 
+@@ -907,6 +930,8 @@ static void es8389_i2c_shutdown(struct i
+ 	regmap_write(es8389->regmap, ES8389_ANA_CTL1, 0x08);
+ 	regmap_write(es8389->regmap, ES8389_ISO_CTL, 0xC1);
+ 	regmap_write(es8389->regmap, ES8389_PULL_DOWN, 0x00);
++
++	regulator_bulk_disable(ARRAY_SIZE(es8389_core_supplies), es8389->core_supply);
+ }
+ 
+ static int es8389_i2c_probe(struct i2c_client *i2c_client)
+--- a/sound/soc/codecs/es8389.h
++++ b/sound/soc/codecs/es8389.h
+@@ -137,4 +137,12 @@
+ #define ES8389_STATE_ON               (13 << 0)
+ #define ES8389_STATE_STANDBY          (7 << 0)
+ 
++enum ES8389_supplies {
++	ES8389_SUPPLY_VD = 0,
++	ES8389_SUPPLY_VA,
++};
++
++#define ES8389_3V3  1
++#define ES8389_1V8  0
++
+ #endif

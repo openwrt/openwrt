@@ -1,0 +1,41 @@
+From a74b7d17f9a66a028ad3a3de81b7cbf88fe79922 Mon Sep 17 00:00:00 2001
+From: Hugo Karlsson <huggek@klattorp.se>
+Date: Sun, 8 Nov 2026 16:42:38 +0100
+Subject: [PATCH] power: supply: max17040: pass the device fwnode to the power
+ supply core
+
+commit d7dc0a8b24674fc902fac8b66f1affb32cefb9cc upstream.
+
+Since commit f4b782af61ae ("power: max17040: pass status property from
+supplier") the driver forwards POWER_SUPPLY_PROP_STATUS to its supplier,
+and the DT binding documents a power-supplies property for naming that
+supplier. The driver never passes its device node to
+devm_power_supply_register(), however, so the power supply core cannot
+parse power-supplies and the battery never gets a supplier from
+firmware. The status lookup then always returns -ENODEV and userspace
+sees POWER_SUPPLY_STATUS_UNKNOWN.
+
+Set psy_cfg.fwnode the way max17042_battery and cw2015_battery already
+do.
+
+Fixes: f4b782af61ae ("power: max17040: pass status property from supplier")
+Assisted-by: Claude:claude-opus-5-5 [Claude Code]
+Signed-off-by: Hugo Karlsson <huggek@klattorp.se>
+Tested-by: Svyatoslav Ryhel <clamor95@gmail.com> # LG P895
+Reviewed-by: Svyatoslav Ryhel <clamor95@gmail.com>
+Link: https://patch.msgid.link/20261108154241.198160-2-huggek@klattorp.se
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+---
+ drivers/power/supply/max17040_battery.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/power/supply/max17040_battery.c
++++ b/drivers/power/supply/max17040_battery.c
+@@ -499,6 +499,7 @@ static int max17040_probe(struct i2c_cli
+ 
+ 	i2c_set_clientdata(client, chip);
+ 	psy_cfg.drv_data = chip;
++	psy_cfg.fwnode = dev_fwnode(&client->dev);
+ 
+ 	/* Switch to devm_iio_channel_get_optional when available  */
+ 	chip->channel_temp = devm_iio_channel_get(&client->dev, "temp");

@@ -1,0 +1,41 @@
+From 3ee04ab2cf49270c8111c342bd9a8fe62a3fcea1 Mon Sep 17 00:00:00 2001
+From: Jai Luthra <jai.luthra@ideasonboard.com>
+Date: Fri, 3 Jul 2026 14:49:16 +0530
+Subject: [PATCH] dt-bindings: media: i2c: Add Sony IMX678
+
+Commit 447ea0c26e57c1b423426e6c46d7ff89fd66eb6b upstream.
+
+Sony IMX678 is an 8.4 Megapixel (3856x2180) CMOS sensor, that can output
+pixels over MIPI CSI-2 bus. Add bindings for it.
+
+Runtime detection for mono vs color variant of this sensor is feasible
+by reading a register, but it's not always desirable given the sensor
+needs to be powered on for it, potentially flashing a privacy LED or
+wasting precious boot time.
+
+The manufacturer or vendor knows which sensor variant they are putting
+on their board, so we define the compatible property to expect the
+(color/mono) specific name of the sensor, along with a generic fallback.
+
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Jai Luthra <jai.luthra@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+---
+ MAINTAINERS | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -24138,6 +24138,12 @@ T:	git git://linuxtv.org/media_tree.git
+ F:	Documentation/devicetree/bindings/media/i2c/sony,imx708.yaml
+ F:	drivers/media/i2c/imx708.c
+ 
++SONY IMX678 SENSOR DRIVER
++M:	Jai Luthra <jai.luthra@ideasonboard.com>
++L:	linux-media@vger.kernel.org
++S:	Maintained
++F:	Documentation/devicetree/bindings/media/i2c/sony,imx678.yaml
++
+ SONY MEMORYSTICK SUBSYSTEM
+ M:	Maxim Levitsky <maximlevitsky@gmail.com>
+ M:	Alex Dubov <oakad@yahoo.com>

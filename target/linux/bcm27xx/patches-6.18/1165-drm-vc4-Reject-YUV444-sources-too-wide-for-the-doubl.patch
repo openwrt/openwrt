@@ -1,0 +1,28 @@
+From 7484579758dca1f01919fe8601080c138198e1d8 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 21 Oct 2026 17:07:53 +0000
+Subject: [PATCH] drm/vc4: Reject YUV444 sources too wide for the doubled width
+
+vc4_plane_mode_set() programs double the source width for YUV444, which
+for a 4096 pixel wide source overflows the 13 bit POS2 width field on
+BCM2711 (12 bit on BCM2835). VC4_SET_FIELD() warned and the width was
+truncated. Reject such planes in atomic check.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -1721,6 +1721,10 @@ static int vc4_plane_mode_set(struct drm
+ 	if (format->drm == DRM_FORMAT_YUV444 || format->drm == DRM_FORMAT_YVU444)
+ 		width <<= 1;
+ 
++	if (width > (vc4->gen >= VC4_GEN_5 ? FIELD_MAX(SCALER5_POS2_WIDTH_MASK) :
++					     FIELD_MAX(SCALER_POS2_WIDTH_MASK)))
++		return -EINVAL;
++
+ 	/* Don't waste cycles mixing with plane alpha if the set alpha
+ 	 * is opaque or there is no per-pixel alpha information.
+ 	 * In any case we use the alpha property value as the fixed alpha.

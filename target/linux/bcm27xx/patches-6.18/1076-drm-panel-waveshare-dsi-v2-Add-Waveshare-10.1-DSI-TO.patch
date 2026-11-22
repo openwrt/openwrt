@@ -1,0 +1,79 @@
+From 8860ffde3344f564165297b0051fc4d5eff2d329 Mon Sep 17 00:00:00 2001
+From: Yu Dukai <646689853@qq.com>
+Date: Thu, 15 Oct 2026 20:30:49 +0800
+Subject: [PATCH] drm/panel: waveshare-dsi-v2: Add Waveshare 10.1-DSI-TOUCH-E
+ panel support
+
+Add the initialization sequence and display mode for the Waveshare
+10.1-DSI-TOUCH-E panel.
+
+The 1200x1920 panel runs at 60 Hz over four MIPI DSI lanes.
+
+Signed-off-by: Yu Dukai <646689853@qq.com>
+---
+ .../gpu/drm/panel/panel-waveshare-dsi-v2.c    | 33 +++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+--- a/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
++++ b/drivers/gpu/drm/panel/panel-waveshare-dsi-v2.c
+@@ -983,6 +983,14 @@ static const struct panel_init_cmd ws_pa
+ 	{},
+ };
+ 
++static const struct panel_init_cmd ws_panel_10_1_e_4lane_init[] = {
++	_INIT_DCS_CMD(0x11),
++	_INIT_DELAY_CMD(120),
++	_INIT_DCS_CMD(0x29),
++	_INIT_DELAY_CMD(50),
++	{},
++};
++
+ static const struct panel_init_cmd ws_panel_8_8_a_init[] = {
+ 	_INIT_DCS_CMD(0x11),
+ 	_INIT_DELAY_CMD(120),
+@@ -2015,6 +2023,20 @@ static const struct drm_display_mode ws_
+ 	.height_mm = 222,
+ };
+ 
++static const struct drm_display_mode ws_panel_10_1_e_4lane_mode = {
++	.clock = 155000,
++	.hdisplay = 1200,
++	.hsync_start = 1200 + 28,
++	.hsync_end = 1200 + 28 + 10,
++	.htotal = 1200 + 28 + 10 + 30,
++	.vdisplay = 1920,
++	.vsync_start = 1920 + 80,
++	.vsync_end = 1920 + 80 + 4,
++	.vtotal = 1920 + 80 + 4 + 28,
++	.width_mm = 135,
++	.height_mm = 216,
++};
++
+ static const struct drm_display_mode ws_panel_9_b_4lane_mode = {
+ 	.clock = 66000,
+ 	.hdisplay = 720,
+@@ -2386,6 +2408,15 @@ static const struct ws_panel_desc ws_pan
+ 	.format = MIPI_DSI_FMT_RGB888,
+ };
+ 
++static const struct ws_panel_desc ws_panel_10_1_inch_e_4lane_desc = {
++	.init = ws_panel_10_1_e_4lane_init,
++	.mode = &ws_panel_10_1_e_4lane_mode,
++	.mode_flags = MIPI_DSI_MODE_VIDEO_HSE | MIPI_DSI_MODE_VIDEO |
++		      MIPI_DSI_MODE_LPM | MIPI_DSI_CLOCK_NON_CONTINUOUS,
++	.lanes = 4,
++	.format = MIPI_DSI_FMT_RGB888,
++};
++
+ static const struct ws_panel_desc ws_panel_9_inch_b_4lane_desc = {
+ 	.init = ws_panel_10_1_b_4lane_init,
+ 	.mode = &ws_panel_9_b_4lane_mode,
+@@ -2523,6 +2554,8 @@ static const struct of_device_id ws_pane
+ 	  &ws_panel_10_1_inch_b_4lane_desc },
+ 	{ .compatible = "waveshare,10.1-dsi-touch-b",
+ 	  &ws_panel_10_1_inch_b_desc },
++	{ .compatible = "waveshare,10.1-dsi-touch-e,4lane",
++	  &ws_panel_10_1_inch_e_4lane_desc },
+ 	{ .compatible = "waveshare,9.0-dsi-touch-b,4lane",
+ 	  &ws_panel_9_inch_b_4lane_desc },
+ 	{ .compatible = "waveshare,9.0-dsi-touch-b", &ws_panel_9_inch_b_desc },

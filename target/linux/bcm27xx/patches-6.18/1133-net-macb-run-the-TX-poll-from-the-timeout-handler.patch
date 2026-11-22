@@ -1,0 +1,35 @@
+From 6ea66a52858077751c2c5e49aa0c9c5e9446bf8e Mon Sep 17 00:00:00 2001
+From: Nicolai Buchwitz <nb@tipi-net.de>
+Date: Sat, 7 Nov 2026 14:59:15 +0100
+Subject: [PATCH] net: macb: run the TX poll from the timeout handler
+
+macb_tx_timeout() only restarts the DMA. When the frames went out but
+their completion was lost, TBQP already matches the head and the
+restart does nothing. Nothing reaps the frames and the queue stays
+stopped for good.
+
+Schedule the TX poll instead, it reaps what completed and restarts the
+DMA.
+
+Fixes: e438ec3e9e95 ("net: macb: add TX stall timeout callback to recover from lost TSTART write")
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -4737,8 +4737,12 @@ static int macb_setup_tc(struct net_devi
+ static void macb_tx_timeout(struct net_device *dev, unsigned int q)
+ {
+ 	struct macb *bp = netdev_priv(dev);
++	struct macb_queue *queue = &bp->queues[q];
+ 
+-	macb_tx_restart(&bp->queues[q]);
++	queue_writel(queue, IDR, MACB_BIT(TCOMP));
++	if (bp->caps & MACB_CAPS_ISR_CLEAR_ON_WRITE)
++		queue_writel(queue, ISR, MACB_BIT(TCOMP));
++	napi_schedule(&queue->napi_tx);
+ }
+ 
+ static const struct net_device_ops macb_netdev_ops = {

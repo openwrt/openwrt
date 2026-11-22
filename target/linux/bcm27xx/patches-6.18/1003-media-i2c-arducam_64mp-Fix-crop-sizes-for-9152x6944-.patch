@@ -1,0 +1,47 @@
+From 7e030b60792de1c15b9ec1d8d5d34d63f0f0f1d8 Mon Sep 17 00:00:00 2001
+From: Carlos Beltran <cbeltran@managingcomposites.com>
+Date: Fri, 25 Sep 2026 16:17:52 +0200
+Subject: [PATCH] media: i2c: arducam_64mp: Fix crop sizes for 9152x6944 and
+ 8000x6000
+
+The analog crop reported for these two modes uses the full pixel
+array size (9248x6944), but the register settings read a smaller
+area:
+
+- 8000x6000 reads x 624-8623, y 472-6471 unbinned (0x0344-0x034a),
+  so the crop is 8000x6000 at the existing offset.
+- 9152x6944 reads the full array and then keeps the first 9152
+  columns (0x0408 = 0, 0x040c = 9152), so the crop is 9152x6944
+  at offset 0.
+
+Tested on a Pi 5: each mode's image was located inside a full-array
+capture, confirming the position and 1:1 scale.
+
+Link: https://github.com/raspberrypi/linux/issues/7650
+Signed-off-by: Carlos Beltran <cbeltran@managingcomposites.com>
+---
+ drivers/media/i2c/arducam_64mp.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/media/i2c/arducam_64mp.c
++++ b/drivers/media/i2c/arducam_64mp.c
+@@ -1244,7 +1244,7 @@ static const struct arducam_64mp_mode su
+ 		.crop = {
+ 			.left = ARDUCAM_64MP_PIXEL_ARRAY_LEFT,
+ 			.top = ARDUCAM_64MP_PIXEL_ARRAY_TOP,
+-			.width = 9248,
++			.width = 9152,
+ 			.height = 6944,
+ 		},
+ 		.timeperframe_default = {
+@@ -1262,8 +1262,8 @@ static const struct arducam_64mp_mode su
+ 		.crop = {
+ 			.left = ARDUCAM_64MP_PIXEL_ARRAY_LEFT + 624,
+ 			.top = ARDUCAM_64MP_PIXEL_ARRAY_TOP + 472,
+-			.width = 9248,
+-			.height = 6944,
++			.width = 8000,
++			.height = 6000,
+ 		},
+ 		.timeperframe_default = {
+ 			.numerator = 100,

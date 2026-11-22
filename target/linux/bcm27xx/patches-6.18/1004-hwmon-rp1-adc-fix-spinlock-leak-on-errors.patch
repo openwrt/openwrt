@@ -1,0 +1,42 @@
+From 648ac9c948c43a95de21fa9b171689ba9a4e1fd1 Mon Sep 17 00:00:00 2001
+From: Nicolai Buchwitz <nb@tipi-net.de>
+Date: Mon, 28 Sep 2026 14:17:30 +0200
+Subject: [PATCH] hwmon: rp1-adc: fix spinlock leak on errors
+
+rp1_adc_read() returns with the spinlock held when the ADC is not ready
+in time or reports a conversion error. The next read then spins on the
+lock forever with preemption disabled.
+
+This also happens when RP1 stops responding on PCIe, since CS then
+reads as all ones with both READY and ERR set.
+
+Fixes: 512bbbd5fbc1 ("hwmon: Add RP1 ADC and temperature driver")
+Link: https://github.com/raspberrypi/linux/issues/7653
+Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
+---
+ drivers/hwmon/rp1-adc.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+--- a/drivers/hwmon/rp1-adc.c
++++ b/drivers/hwmon/rp1-adc.c
+@@ -98,14 +98,17 @@ static int rp1_adc_read(struct rp1_adc_d
+ 
+ 	ret = rp1_adc_ready_wait(data);
+ 	if (ret)
+-		return ret;
++		goto out;
+ 
+ 	/* Asserted if the completed conversion had a convergence error */
+-	if (readl(data->base + RP1_ADC_CS) & RP1_ADC_CS_ERR)
+-		return -EIO;
++	if (readl(data->base + RP1_ADC_CS) & RP1_ADC_CS_ERR) {
++		ret = -EIO;
++		goto out;
++	}
+ 
+ 	*val = readl(data->base + RP1_ADC_RESULT);
+ 
++out:
+ 	spin_unlock(&data->lock);
+ 
+ 	return ret;

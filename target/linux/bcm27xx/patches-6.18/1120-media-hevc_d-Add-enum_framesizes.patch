@@ -1,0 +1,50 @@
+From 5a59592a944f1b4685cef43affd536f1c2037421 Mon Sep 17 00:00:00 2001
+From: John Cox <jc@kynesim.co.uk>
+Date: Mon, 19 Oct 2026 18:18:29 +0100
+Subject: [PATCH] media/hevc_d: Add enum_framesizes
+
+Chrome tries to read the framesizes. It is handy info to have so
+supply it. Code taken from Hantro.
+
+Signed-off-by: John Cox <jc@kynesim.co.uk>
+---
+ .../raspberrypi/hevc_dec/hevc_d_video.c       | 21 +++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+--- a/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
++++ b/drivers/media/platform/raspberrypi/hevc_dec/hevc_d_video.c
+@@ -194,6 +194,26 @@ static int hevc_d_querycap(struct file *
+ 	return 0;
+ }
+ 
++static int hevc_d_enum_framesizes(struct file *file, void *priv,
++				  struct v4l2_frmsizeenum *fsize)
++{
++	if (fsize->index != 0)
++		return -EINVAL;
++
++	if (fsize->pixel_format != V4L2_PIX_FMT_HEVC_SLICE)
++		return -EINVAL;
++
++	fsize->type = V4L2_FRMSIZE_TYPE_STEPWISE;
++	fsize->stepwise.min_width = HEVC_D_MIN_WIDTH;
++	fsize->stepwise.max_width = HEVC_D_MAX_WIDTH;
++	fsize->stepwise.step_width = 4;
++	fsize->stepwise.min_height = HEVC_D_MIN_HEIGHT;
++	fsize->stepwise.max_height = HEVC_D_MAX_HEIGHT;
++	fsize->stepwise.step_height = 4;
++
++	return 0;
++}
++
+ static int hevc_d_enum_fmt_vid_out(struct file *file, void *priv,
+ 				   struct v4l2_fmtdesc *f)
+ {
+@@ -402,6 +422,7 @@ static int hevc_d_s_fmt_vid_out(struct f
+ 
+ const struct v4l2_ioctl_ops hevc_d_ioctl_ops = {
+ 	.vidioc_querycap		= hevc_d_querycap,
++	.vidioc_enum_framesizes		= hevc_d_enum_framesizes,
+ 
+ 	.vidioc_enum_fmt_vid_cap	= hevc_d_enum_fmt_vid_cap,
+ 	.vidioc_g_fmt_vid_cap_mplane	= hevc_d_g_fmt_vid_cap,

@@ -1,0 +1,80 @@
+From c1a5fac58f028b585ae79bcc2371d0f1f9441bd9 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 21 Sep 2026 15:34:29 +0100
+Subject: [PATCH] drm/vc4: Wire up the panic scanout buffer on the primary
+ plane
+
+vc4 provided no get_scanout_buffer(), so drm_panic_register() skipped
+every plane and nothing was drawn when the kernel panicked - and with
+CONFIG_DRM_PANIC_DEBUG the dri/N/drm_panic_plane_x files never appeared
+either.
+
+Framebuffers are drm_gem_dma objects, so the generic DMA helper does the
+job: it hands the panic handler the already mapped CPU address, without
+vmapping in panic context. Imported dmabufs and non-linear modifiers are
+rejected by the helper, so a compositor's buffers are still skipped, but
+the fbdev console - the case that matters when the machine dies - works.
+
+Only the primary planes get it, as every other user of
+drm_fb_dma_get_scanout_buffer() does, which costs a second copy of the
+helper funcs per generation.
+
+Tested on a Pi 500: one plane per CRTC registers, and a panic (as well
+as the debugfs trigger) paints the panic screen, including the full
+backtrace with drm.panic_screen=kmsg.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -2685,6 +2685,16 @@ static const struct drm_plane_helper_fun
+ 	.atomic_async_update = vc4_plane_atomic_async_update,
+ };
+ 
++static const struct drm_plane_helper_funcs vc4_primary_plane_helper_funcs = {
++	.atomic_check = vc4_plane_atomic_check,
++	.atomic_update = vc4_plane_atomic_update,
++	.prepare_fb = vc4_prepare_fb,
++	.cleanup_fb = vc4_cleanup_fb,
++	.atomic_async_check = vc4_plane_atomic_async_check,
++	.atomic_async_update = vc4_plane_atomic_async_update,
++	.get_scanout_buffer = drm_fb_dma_get_scanout_buffer,
++};
++
+ static const struct drm_plane_helper_funcs vc5_plane_helper_funcs = {
+ 	.atomic_check = vc4_plane_atomic_check,
+ 	.atomic_update = vc4_plane_atomic_update,
+@@ -2692,6 +2702,14 @@ static const struct drm_plane_helper_fun
+ 	.atomic_async_update = vc4_plane_atomic_async_update,
+ };
+ 
++static const struct drm_plane_helper_funcs vc5_primary_plane_helper_funcs = {
++	.atomic_check = vc4_plane_atomic_check,
++	.atomic_update = vc4_plane_atomic_update,
++	.atomic_async_check = vc4_plane_atomic_async_check,
++	.atomic_async_update = vc4_plane_atomic_async_update,
++	.get_scanout_buffer = drm_fb_dma_get_scanout_buffer,
++};
++
+ static bool vc4_format_mod_supported(struct drm_plane *plane,
+ 				     uint32_t format,
+ 				     uint64_t modifier)
+@@ -2810,9 +2828,13 @@ struct drm_plane *vc4_plane_init(struct
+ 	plane = &vc4_plane->base;
+ 
+ 	if (vc4->gen >= VC4_GEN_5)
+-		drm_plane_helper_add(plane, &vc5_plane_helper_funcs);
++		drm_plane_helper_add(plane, type == DRM_PLANE_TYPE_PRIMARY ?
++				     &vc5_primary_plane_helper_funcs :
++				     &vc5_plane_helper_funcs);
+ 	else
+-		drm_plane_helper_add(plane, &vc4_plane_helper_funcs);
++		drm_plane_helper_add(plane, type == DRM_PLANE_TYPE_PRIMARY ?
++				     &vc4_primary_plane_helper_funcs :
++				     &vc4_plane_helper_funcs);
+ 
+ 	drm_plane_create_alpha_property(plane);
+ 	drm_plane_create_blend_mode_property(plane,
