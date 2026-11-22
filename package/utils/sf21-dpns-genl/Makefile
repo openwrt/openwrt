@@ -27,6 +27,7 @@ endef
 define Package/sf21-dpns-genl/description
  sf_genl_user daemon: configures the DPNS ACL, TMU (QoS queues, schedulers,
  shapers), VLAN, NAT, router and multicast tables through ubus.
+ dpns-qos: hardware QoS (shaping, queue scheduling, classification) from UCI.
 endef
 
 define Build/Prepare
@@ -41,10 +42,16 @@ define Build/Compile
 		LDFLAGS="$(TARGET_LDFLAGS) -lubus -lubox -lnl-genl-3 -lnl-3"
 endef
 
+define Package/sf21-dpns-genl/conffiles
+/etc/config/dpns-qos
+endef
+
 define Package/sf21-dpns-genl/install
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/config
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sf_genl_user $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/sf-genl.init $(1)/etc/init.d/sf-genl
+	$(INSTALL_BIN) ./files/dpns-qos.init $(1)/etc/init.d/dpns-qos
+	$(INSTALL_CONF) ./files/dpns-qos.config $(1)/etc/config/dpns-qos
 endef
 
 $(eval $(call BuildPackage,sf21-dpns-genl))

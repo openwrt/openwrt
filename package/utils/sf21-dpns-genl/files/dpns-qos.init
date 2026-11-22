@@ -1,0 +1,142 @@
+#!/bin/sh /etc/rc.common
+# Hardware QoS on the Siflower DPNS NPU, configured from /etc/config/dpns-qos:
+#  - egress shaping of a port (TMU shaper at the port output),
+#  - scheduling of the 8 queues of a port: queues 4-7 are always strict priority
+#    above queues 0-3, which use "pq", "rr", "wrr" or "dwrr" with relative weights,
+#  - classification: ingress ACL rules set the priority N of matching packets,
+#    which then use queue N of the egress port (unclassified traffic: queue 0).
+# Works for hardware offloaded and CPU forwarded traffic alike.
+START=52
+USE_PROCD=1
+
+ACL_BASE=4000	# ACL indices owned by this script
+ACL_MAX=64
+STATE=/var/run/dpns-qos.acl
+
+port_id() {
+	case "$1" in
+	eth[0-5]) echo "${1#eth}" ;;
+	*) return 1 ;;
+	esac
+}
+
+dscp_value() {
+	case "$1" in
+	EF|ef) echo 46 ;;
+	CS[0-7]|cs[0-7]) echo $(( ${1#??} * 8 )) ;;
+	AF[1-4][1-3]|af[1-4][1-3]) local c=${1#??}; echo $(( ${c%?} * 8 + ${c#?} * 2 )) ;;
+	*[!0-9]*|'') return 1 ;;
+	*) echo "$1" ;;
+	esac
+}
+
+# "a.b.c.d/len" -> ACL address and inverted (don't care) mask
+acl_addr() {
+	local ip=${1%/*} len=32 m i out=""
+	[ "$ip" != "$1" ] && len=${1#*/}
+	m=$(( len == 0 ? 0xffffffff : (1 << (32 - len)) - 1 ))
+	for i in 24 16 8 0; do out="$out$(( (m >> i) & 255 ))."; done
+	echo "\"$2\":\"$ip\",\"$2_mask\":\"${out%.}\""
+}
+
+ubus_q() {
+	ubus call "$@" >/dev/null 2>&1 && return 0
+	logger -t dpns-qos "ubus call $* failed"
+	return 1
+}
+
+qos_port() {
+	local cfg="$1" device rate sched weights id w0 w1 w2 w3
+	config_get device "$cfg" device
+	config_get rate "$cfg" rate 0
+	config_get sched "$cfg" sched pq
+	config_get weights "$cfg" weights "1 1 1 1"
+	id=$(port_id "$device") || { logger -t dpns-qos "unsupported device '$device'"; return; }
+
+	if [ "$rate" -gt 0 ]; then
+		ubus_q dpns.tmu.port.shaper rate_limit "{\"port\":$id,\"shaper\":0,\"Mbps\":$rate,\"clk_div\":5}"
+		ubus_q dpns.tmu.port.shaper set "{\"port\":$id,\"shaper\":0,\"enabled\":true,\"location\":0}"
+	else
+		ubus_q dpns.tmu.port.shaper set "{\"port\":$id,\"shaper\":0,\"enabled\":false,\"location\":0}"
+	fi
+
+	set -- $weights
+	w0=$(( ${1:-1} * 1000 )); w1=$(( ${2:-1} * 1000 )); w2=$(( ${3:-1} * 1000 )); w3=$(( ${4:-1} * 1000 ))
+	[ "$sched" = pq ] && { w0=0; w1=0; w2=0; w3=0; }
+	ubus_q dpns.tmu.port.sched set "{\"port\":$id,\"sched\":0,\"deq_algo\":\"$sched\",\"queue_weight\":\"$w0 $w1 $w2 $w3 0 0 0 0\"}"
+}
+
+qos_class() {
+	local cfg="$1" enabled priority dscp proto sport dport src dst v json
+	config_get_bool enabled "$cfg" enabled 1
+	[ "$enabled" = 1 ] || return
+	config_get priority "$cfg" priority
+	case "$priority" in [0-7]) ;; *) logger -t dpns-qos "class $cfg: priority 0-7 required"; return ;; esac
+	[ "$ACL_IDX" -lt $((ACL_BASE + ACL_MAX)) ] || { logger -t dpns-qos "too many classes"; return; }
+
+	json="\"dir\":0,\"policy\":0,\"index\":$ACL_IDX,\"priority\":$priority,\"priority_en\":true"
+	config_get dscp "$cfg" dscp
+	if [ -n "$dscp" ]; then
+		v=$(dscp_value "$dscp") || { logger -t dpns-qos "class $cfg: bad dscp '$dscp'"; return; }
+		# the NPU matches the 3-bit IP precedence (DSCP class)
+		json="$json,\"tos\":$(( v >> 3 ))"
+	fi
+	config_get proto "$cfg" proto
+	case "$proto" in
+	tcp) json="$json,\"ip_proto\":6" ;;
+	udp) json="$json,\"ip_proto\":17" ;;
+	icmp) json="$json,\"ip_proto\":1" ;;
+	'') ;;
+	*) logger -t dpns-qos "class $cfg: unsupported proto '$proto'"; return ;;
+	esac
+	config_get sport "$cfg" sport
+	[ -n "$sport" ] && json="$json,\"sport\":$sport"
+	config_get dport "$cfg" dport
+	[ -n "$dport" ] && json="$json,\"dport\":$dport"
+	config_get src "$cfg" src
+	[ -n "$src" ] && json="$json,$(acl_addr "$src" sip)"
+	config_get dst "$cfg" dest
+	[ -n "$dst" ] && json="$json,$(acl_addr "$dst" dip)"
+
+	ubus_q dpns.acl add "{$json}" && echo "$ACL_IDX" >> "$STATE"
+	ACL_IDX=$((ACL_IDX + 1))
+}
+
+clear_classes() {
+	local i
+	[ -f "$STATE" ] || return
+	for i in $(cat "$STATE"); do
+		ubus_q dpns.acl del "{\"index\":$i,\"dir\":0}"
+	done
+	rm -f "$STATE"
+}
+
+start_service() {
+	local enabled
+	ubus -t 10 wait_for dpns.acl dpns.tmu.port.shaper || return 1
+	config_load dpns-qos
+	config_get_bool enabled globals enabled 0
+	clear_classes
+	[ "$enabled" = 1 ] || return 0
+	config_foreach qos_port port
+	ACL_IDX=$ACL_BASE
+	config_foreach qos_class class
+}
+
+stop_service() {
+	clear_classes
+	config_load dpns-qos
+	config_foreach qos_port_off port
+}
+
+qos_port_off() {
+	local device id
+	config_get device "$1" device
+	id=$(port_id "$device") || return
+	ubus_q dpns.tmu.port.shaper set "{\"port\":$id,\"shaper\":0,\"enabled\":false}"
+	ubus_q dpns.tmu.port.sched set "{\"port\":$id,\"sched\":0,\"deq_algo\":\"pq\",\"queue_weight\":\"0 0 0 0 0 0 0 0\"}"
+}
+
+service_triggers() {
+	procd_add_reload_trigger dpns-qos
+}
