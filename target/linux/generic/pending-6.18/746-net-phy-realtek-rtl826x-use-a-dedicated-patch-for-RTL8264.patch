@@ -1,0 +1,76 @@
+From 23399b3cf6f1f1ec5db961f093ea5ee3bfd3fad2 Mon Sep 17 00:00:00 2001
+From: John-Michael Mulesa <jmulesa@gmail.com>
+Date: Sun, 22 Nov 2026 17:30:00 -0500
+Subject: [PATCH] net: phy: realtek: rtl826x: use a dedicated patch for RTL8264
+
+RTL8264 PHYs (ID 0x001ccaf2) with a non-zero VERSION_ID variant are
+patched with rtl8261n.bin. On a Hasivo S1100WP-8XGT-SE (RTL9303 +
+2x RTL8264, PKG_MODEL 0x8294, VERSION_ID 0xf802) this makes 10GBASE-T
+training unreliable on every port: most attempts fail, the PHY retries
+every ~4.4 s and then downshifts to 5G or 2.5G, so links take 16-40 s
+and often come up below 10G. rtl8264b.bin does not work on these parts
+at all (the configuration lock wait times out and there is no link).
+
+The vendor bootloader applies a different, larger RTL8264 patch (patch
+key 0x6901) and with it the same ports link at 10G every time. Same
+port, far end and cable, 8 renegotiations each:
+
+  rtl8261n.bin:  10G 2/8, 4-24 s, otherwise downshift to 5G/2.5G
+  rtl8264.bin:   10G 8/8, 4.2-4.9 s, no drops
+
+Load rtl8264.bin for RTL8264 parts that currently get rtl8261n.bin.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: John-Michael Mulesa <jmulesa@gmail.com>
+---
+ drivers/net/phy/realtek/phy_patch_rtl826x.c |  6 ++++++
+ drivers/net/phy/realtek/phy_patch_rtl826x.h |  1 +
+ drivers/net/phy/realtek/realtek_main.c      | 13 ++++++++++---
+ 3 files changed, 17 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/phy/realtek/phy_patch_rtl826x.c
++++ b/drivers/net/phy/realtek/phy_patch_rtl826x.c
+@@ -283,5 +283,11 @@ int rtl8264b_phy_patch_db_init(struct ph
+ 	return rtl826x_phy_patch_db_init(phydev, "rtl8264b.bin");
+ }
+ 
++int rtl8264_phy_patch_db_init(struct phy_device *phydev)
++{
++	return rtl826x_phy_patch_db_init(phydev, "rtl8264.bin");
++}
++
+ MODULE_FIRMWARE("rtl8261n.bin");
+ MODULE_FIRMWARE("rtl8264b.bin");
++MODULE_FIRMWARE("rtl8264.bin");
+--- a/drivers/net/phy/realtek/phy_patch_rtl826x.h
++++ b/drivers/net/phy/realtek/phy_patch_rtl826x.h
+@@ -11,5 +11,6 @@ int rtl826x_phy_patch_sds_set(struct phy
+ 
+ int rtl8261n_phy_patch_db_init(struct phy_device *phydev);
+ int rtl8264b_phy_patch_db_init(struct phy_device *phydev);
++int rtl8264_phy_patch_db_init(struct phy_device *phydev);
+ 
+ #endif
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -3270,10 +3270,17 @@ static int rtl826x_patch_db_init(struct
+ 	if (ver < 0)
+ 		return ver;
+ 
+-	if (ver & RTL826X_VEND1_VERSION_ID_VARIANT)
++	if (ver & RTL826X_VEND1_VERSION_ID_VARIANT) {
++		/* The RTL8261N patch trains 10GBASE-T poorly on RTL8264
++		 * packages, which need their own patch.
++		 */
++		if (phydev->drv->phy_id == RTL_8264)
++			return rtl8264_phy_patch_db_init(phydev);
++
+ 		return rtl8261n_phy_patch_db_init(phydev);
+-	else
+-		return rtl8264b_phy_patch_db_init(phydev);
++	}
++
++	return rtl8264b_phy_patch_db_init(phydev);
+ }
+ 
+ /* The USXGMII block does not always settle by itself once the media side
