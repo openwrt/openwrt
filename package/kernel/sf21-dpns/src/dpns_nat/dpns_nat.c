@@ -22,6 +22,7 @@
 #include "sfxgmac-ext.h"
 #include "nat.h"
 #include "nat_ilkp.h"
+#include "dpns_nat_genl.h"
 
 static struct dpns_nat_priv *g_priv;
 #define NAT_PRIVATE_IPV6_INFO_WR(_n, d0, d1, d2, d3)	\
@@ -52,6 +53,57 @@ const struct rhashtable_params dpns_nat_ht_params = {
 	.automatic_shrinking = true,
 };
 static LIST_HEAD(dpns_nat_ft_cb_list);
+
+/*
+ * Flows without NAT ("LF" mode: IPv6, plain IPv4 routing). The NPU only
+ * forwards them when LF lookup is enabled in SE_NAT_CONFIG1/5, which the
+ * vendor driver never did on its own; without it the entries were installed
+ * and the packets dropped. lf_mode 7 = full 5-tuple, i.e. per-connection
+ * entries matching nf_flow_table semantics.
+ *
+ * IPv4 LF lookup cannot be combined with IPv4 NAT offload: once it is enabled
+ * the NPU stops forwarding NAT44 flows. So by default only IPv6 LF is enabled
+ * and routed (non-NAT) IPv4 flows stay on the software flowtable path.
+ * lf4_offload=1 trades NAT44 offload for routed IPv4 offload (routers that do
+ * no IPv4 NAT at all).
+ */
+static bool lf_offload = true;
+module_param(lf_offload, bool, 0644);
+MODULE_PARM_DESC(lf_offload, "Offload IPv6 flows without NAT (routing), default on");
+
+static bool lf4_offload;
+module_param(lf4_offload, bool, 0444);
+MODULE_PARM_DESC(lf4_offload, "Offload routed IPv4 (no NAT); disables NAT44 offload, default off");
+
+static void dpns_nat_lf_init(struct dpns_nat_priv *priv)
+{
+	struct nat_genl_msg msg = { .is_lf = true, .lf_mode = 7 };
+
+	msg.is_v6_mode = true;
+	dpns_nat_mode_set(priv, &msg);
+	if (lf4_offload) {
+		msg.is_v6_mode = false;
+		dpns_nat_mode_set(priv, &msg);
+		pr_warn("dpns_nat: routed IPv4 offload enabled, NAT44 flows will not be offloaded\n");
+	}
+}
+
+/*
+ * One context per nf_flowtable flow block, shared by the per-port block
+ * callbacks of that flowtable. Entries remember their block, so that when the
+ * flowtable goes away (e.g. fw4 reload replaces the nftables table) its NPU
+ * entries can be removed: the kernel unbinds the block before it tears down
+ * the offloaded flows, so the FLOW_CLS_DESTROY commands never reach us.
+ */
+struct dpns_nat_block {
+	struct list_head list;
+	struct flow_block *block;
+	struct dpns_nat_priv *priv;
+	unsigned int users;
+};
+
+static LIST_HEAD(dpns_nat_blocks);
+static DEFINE_MUTEX(dpns_nat_blocks_lock);
 
 extern struct dpns_nat_subnet_info sf_lan_subnet[8];
 extern struct dpns_nat_subnet_info sf_wan_subnet[8];
@@ -379,6 +431,10 @@ static int dpns_nat_inet6addr_event(struct notifier_block *nb,
 	char pppoe_name[IFNAMSIZ];
 
 	masklen = 128 - ifa->prefix_len;
+
+	/* link-local addresses are not routed subnets; one slot per interface */
+	if (ipv6_addr_type(&ifa->addr) & IPV6_ADDR_LINKLOCAL)
+		return NOTIFY_DONE;
 
 	NAT_DBG(DBG_LV, "IPv6 dev:%s EVENT:%ld ip:%pI6 masklen:%u\n",
 			real_dev->name, event, &ifa->addr, masklen);
@@ -1386,8 +1442,40 @@ static int dpns_nat_add(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
 	if (is_lf && dir)
 		is_lf_reply = true;
 
+	/* NAT44 and routed IPv4 offload are mutually exclusive, see dpns_nat_lf_init() */
+	if (!is_lf && lf4_offload && flow->tuplehash[0].tuple.l3proto == NFPROTO_IPV4)
+		return -EOPNOTSUPP;
+
 	if (atomic_read(&priv->flow_table.nelems) >= NPU_HNAT_SIZE)
 		return -ENOSPC;
+
+	/*
+	 * The NPU NAT entry carries a single 802.1Q tag. Stacked tags (QinQ) and
+	 * 802.1ad tags were programmed as one 0x8100 tag, which black-holed the
+	 * flow; keep such flows on the software path.
+	 */
+	{
+		const struct flow_offload_tuple *t = (void *)f->cookie;
+		struct flow_action_entry *a;
+		int i, push = 0, tags = 0;
+
+		flow_action_for_each(i, a, &rule->action) {
+			if (a->id != FLOW_ACTION_VLAN_PUSH)
+				continue;
+			/* the NPU always inserts a 0x8100 tag */
+			if (a->vlan.proto != htons(ETH_P_8021Q))
+				return -EOPNOTSUPP;
+			push++;
+		}
+		for (i = 0; i < t->encap_num; i++) {
+			if (t->encap[i].proto == htons(ETH_P_8021AD))
+				return -EOPNOTSUPP;
+			if (t->encap[i].proto == htons(ETH_P_8021Q))
+				tags++;
+		}
+		if (push > 1 || tags > 1)
+			return -EOPNOTSUPP;
+	}
 
 	entry = rhashtable_lookup_fast(&priv->flow_table, &f->cookie, dpns_nat_ht_params);
 	if (entry)
@@ -1399,8 +1487,12 @@ static int dpns_nat_add(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
 		flow_rule_match_control(rule, &match);
 		switch (match.key->addr_type) {
 		case FLOW_DISSECTOR_KEY_IPV4_ADDRS:
+			if (is_lf && !lf4_offload)
+				return -EOPNOTSUPP;
 			return dpns_nat_add_ipv4(priv, f, is_dnat, flow, is_lf, is_lf_reply);
 		case FLOW_DISSECTOR_KEY_IPV6_ADDRS:
+			if (is_lf && !lf_offload)
+				return -EOPNOTSUPP;
 			return dpns_nat_add_ipv6(priv, f, is_dnat, flow, is_lf, is_lf_reply);
 		}
 	}
@@ -1408,17 +1500,12 @@ static int dpns_nat_add(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
 	return -EOPNOTSUPP;
 }
 
-static int dpns_nat_del(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
+static int dpns_nat_del_entry(struct dpns_nat_priv *priv, struct dpns_nat_entry *entry)
 {
-	struct dpns_nat_entry *entry;
 	MAC_t *mac_priv;
 	u16 crc_16;
 
 	mac_priv = priv->cpriv->mac_priv;
-
-	entry = rhashtable_lookup_fast(&priv->flow_table, &f->cookie, dpns_nat_ht_params);
-	if (!entry)
-		return -ENOENT;
 
 	if (entry->v6_flag) {
 		if (entry->nat_id < NPU_HNAT_INAPT_MAXID) {
@@ -1458,6 +1545,17 @@ static int dpns_nat_del(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
 	kfree_rcu(entry, rcu);
 
 	return 0;
+}
+
+static int dpns_nat_del(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
+{
+	struct dpns_nat_entry *entry;
+
+	entry = rhashtable_lookup_fast(&priv->flow_table, &f->cookie, dpns_nat_ht_params);
+	if (!entry)
+		return -ENOENT;
+
+	return dpns_nat_del_entry(priv, entry);
 }
 
 static void dpns_nat_visit_work(struct work_struct *work)
@@ -1521,7 +1619,9 @@ static int dpns_nat_tc_ft_cb(enum tc_setup_type type, void *type_data,
 			     void *cb_priv)
 {
 	struct flow_cls_offload *f = type_data;
-	struct dpns_nat_priv *priv = cb_priv;
+	struct dpns_nat_block *nb = cb_priv;
+	struct dpns_nat_priv *priv = nb->priv;
+	struct dpns_nat_entry *entry;
 	int ret;
 
 	if (type != TC_SETUP_CLSFLOWER)
@@ -1530,6 +1630,12 @@ static int dpns_nat_tc_ft_cb(enum tc_setup_type type, void *type_data,
 	switch (f->command) {
 	case FLOW_CLS_REPLACE:
 		ret = dpns_nat_add(priv, f);
+		if (!ret) {
+			entry = rhashtable_lookup_fast(&priv->flow_table, &f->cookie,
+						       dpns_nat_ht_params);
+			if (entry)
+				entry->owner = nb;
+		}
 		break;
 	case FLOW_CLS_DESTROY:
 		ret = dpns_nat_del(priv, f);
@@ -1669,6 +1775,88 @@ out:
 	mutex_unlock(&priv->tbl_lock);
 }
 
+/* Remove all NPU entries offloaded from flowtable block nb. */
+static void dpns_nat_flush_block(struct dpns_nat_priv *priv, struct dpns_nat_block *nb)
+{
+	struct dpns_nat_entry *entry, *tmp;
+	struct rhashtable_iter iter;
+	LIST_HEAD(flush);
+	unsigned int n = 0;
+
+	rhashtable_walk_enter(&priv->flow_table, &iter);
+	rhashtable_walk_start(&iter);
+	while ((entry = rhashtable_walk_next(&iter))) {
+		if (IS_ERR(entry))
+			continue;
+		if (entry->owner == nb)
+			list_add_tail(&entry->flush_node, &flush);
+	}
+	rhashtable_walk_stop(&iter);
+	rhashtable_walk_exit(&iter);
+
+	list_for_each_entry_safe(entry, tmp, &flush, flush_node) {
+		list_del(&entry->flush_node);
+		dpns_nat_del_entry(priv, entry);
+		n++;
+	}
+	if (n)
+		pr_info("dpns_nat: flowtable unbound, removed %u NPU entries\n", n);
+}
+
+/*
+ * Called for each per-port block callback when the kernel frees it, i.e.
+ * after it has been taken off the flowtable callback list under the flow
+ * block write lock, so no REPLACE/DESTROY/STATS can run concurrently.
+ */
+static void dpns_nat_block_release(void *cb_priv)
+{
+	struct dpns_nat_block *nb = cb_priv;
+	struct dpns_nat_priv *priv = nb->priv;
+
+	mutex_lock(&dpns_nat_blocks_lock);
+	if (--nb->users == 0) {
+		list_del(&nb->list);
+		dpns_nat_flush_block(priv, nb);
+		kfree(nb);
+	}
+	mutex_unlock(&dpns_nat_blocks_lock);
+
+	dpns_nat_disable(priv);
+}
+
+static struct dpns_nat_block *dpns_nat_block_get(struct dpns_nat_priv *priv,
+						 struct flow_block *block)
+{
+	struct dpns_nat_block *nb;
+
+	mutex_lock(&dpns_nat_blocks_lock);
+	list_for_each_entry(nb, &dpns_nat_blocks, list) {
+		if (nb->block == block)
+			goto found;
+	}
+	nb = kzalloc(sizeof(*nb), GFP_KERNEL);
+	if (!nb)
+		goto out;
+	nb->block = block;
+	nb->priv = priv;
+	list_add_tail(&nb->list, &dpns_nat_blocks);
+found:
+	nb->users++;
+out:
+	mutex_unlock(&dpns_nat_blocks_lock);
+	return nb;
+}
+
+static void dpns_nat_block_put(struct dpns_nat_block *nb)
+{
+	mutex_lock(&dpns_nat_blocks_lock);
+	if (--nb->users == 0) {
+		list_del(&nb->list);
+		kfree(nb);
+	}
+	mutex_unlock(&dpns_nat_blocks_lock);
+}
+
 static int dpns_nat_tc_ft(struct net_device *dev, struct Qdisc *sch,
 			  void *cb_priv, enum tc_setup_type type,
 			  void *type_data, void *data,
@@ -1709,16 +1897,24 @@ static int dpns_nat_tc_ft(struct net_device *dev, struct Qdisc *sch,
 			}
 		}
 		if (!block_cb) {
-			block_cb = flow_indr_block_cb_alloc(cb, p, priv, NULL, f, dev,
-							sch, data, priv, cleanup);
-			if (IS_ERR(block_cb))
-				return PTR_ERR(block_cb);
+			struct dpns_nat_block *nb;
 
 			ret = dpns_nat_enable(priv);
-			if (ret) {
-				list_del(&block_cb->indr.list);
-				flow_block_cb_free(block_cb);
+			if (ret)
 				return ret;
+
+			nb = dpns_nat_block_get(priv, f->block);
+			if (!nb) {
+				dpns_nat_disable(priv);
+				return -ENOMEM;
+			}
+
+			block_cb = flow_indr_block_cb_alloc(cb, p, nb, dpns_nat_block_release,
+							f, dev, sch, data, priv, cleanup);
+			if (IS_ERR(block_cb)) {
+				dpns_nat_block_put(nb);
+				dpns_nat_disable(priv);
+				return PTR_ERR(block_cb);
 			}
 			flow_block_cb_incref(block_cb);
 			flow_block_cb_add(block_cb, f);
@@ -1733,9 +1929,9 @@ static int dpns_nat_tc_ft(struct net_device *dev, struct Qdisc *sch,
 		if (flow_block_cb_decref(block_cb))
 			return 0;
 
+		/* entries are flushed and the table released in dpns_nat_block_release() */
 		flow_indr_block_cb_remove(block_cb, f);
 		list_del(&block_cb->driver_list);
-		dpns_nat_disable(priv);
 		return 0;
 	default:
 		return -EOPNOTSUPP;
@@ -2046,6 +2242,9 @@ int dpns_nat_probe(struct platform_device *pdev)
 			FIELD_PREP(NAT_SPL_CMPT_LEN, 24) | FIELD_PREP(NAT_CONFIG5_MIB_MODE, 15) | FIELD_PREP(NAT_CONFIG5_SPL_CNT_MODE, SPL_BYTE) |
 			FIELD_PREP(NAT_CONFIG5_SPL_SOURCE, UNIFORM_SNAT_DNAT));
 	mutex_init(&priv->tbl_lock);
+
+	/* after the default (NAT66) mode setup above, which clears the LF bits */
+	dpns_nat_lf_init(priv);
 
 	ret = dpns_nat_ilkp_init(priv);
 	if (ret)

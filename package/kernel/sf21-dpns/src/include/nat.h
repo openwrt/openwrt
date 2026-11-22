@@ -452,6 +452,9 @@ struct dpns_nat_entry {
 	bool is_dnat : 1;
 	bool second_slot : 1;
 	bool v6_flag : 1;
+	/* flowtable block (struct dpns_nat_block) the entry was offloaded from */
+	void *owner;
+	struct list_head flush_node;
 };
 
 void dpns_nat_wait_rw(struct dpns_nat_priv *priv);

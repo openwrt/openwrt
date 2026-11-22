@@ -479,7 +479,9 @@ int dpns_nat_mode_set(struct dpns_nat_priv *priv, struct nat_genl_msg *msg)
 		} else {
 			sf_update(priv, NPU_NAT_IPV6_MASK_LEN67_HOST_MODE,
 					NPU_V4LF_MODE_SET, 0);
-			sf_update(priv, SE_NAT_CONFIG1, NAT_CONFIG1_V4LF_MODE, 0);
+			/* also clear the enable bit, not only the mode field */
+			sf_update(priv, SE_NAT_CONFIG1,
+					NAT_CONFIG1_V4LF_MODE | NAT_CONFIG1_V4LF_EN, 0);
 		}
 
 		if (msg->is_udp) {
