@@ -29,3 +29,25 @@ define KernelPackage/phy-sf21-usb/description
 endef
 
 $(eval $(call KernelPackage,phy-sf21-usb))
+
+define KernelPackage/sf21-eth
+  TITLE:=Siflower SF21 Ethernet MAC and XPCS drivers
+  KCONFIG:= \
+	CONFIG_NET_SIFLOWER_ETH_DPNS=n \
+	CONFIG_NET_SIFLOWER_ETH_XGMAC \
+	CONFIG_NET_SIFLOWER_ETH_XPCS
+  DEPENDS:=@TARGET_siflower_sf21 +PACKAGE_kmod-sf21-eth:kmod-sf21-dpns +kmod-phylink
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/ethernet/siflower/sfxpcs.ko \
+	$(LINUX_DIR)/drivers/net/ethernet/siflower/sfxgmac.ko
+  AUTOLOAD:=$(call AutoLoad,58,sfxpcs sfxgmac,1)
+endef
+
+define KernelPackage/sf21-eth/description
+  Siflower SF21 Ethernet MAC (xgmac) and PCS drivers. They are loaded after
+  the DPNS (NPU) driver from kmod-sf21-dpns, which must initialize the
+  dataplane first. The Ethernet DMA driver stays built into the kernel.
+endef
+
+$(eval $(call KernelPackage,sf21-eth))
