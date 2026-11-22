@@ -1,0 +1,152 @@
+From 4a016bbcbc3e29abe2aa917f4f530928d247f4a1 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 02:29:39 +0100
+Subject: [PATCH] wifi: ath11k: keep the Ethernet decap source address tied to the peer
+
+With Ethernet decap the hardware takes the source address from the
+frame, not from the peer, so a station can send frames with a forged
+source. Mark a DIX frame whose source differs from the peer address and
+rewrap it as a native frame, so mac80211 checks it against the station.
+
+The same rewrap takes the frames that are not DIX frames at all. The
+descriptor's decap format 2 covers an 802.3 frame with a length field and
+its LLC header as well as DIX, and format 3 is plain Ethernet, which
+ath11k's undecap left alone with no 802.11 header: mac80211's 802.3 path
+takes neither. They are converted back to 802.11 as a native frame would
+have arrived, with the LLC header of a length frame kept as the hardware
+left it, so every frame type reaches the stack as it does without
+Ethernet decap.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -134,6 +134,8 @@ struct ath11k_skb_rxcb {
+ 	bool is_continuation;
+ 	bool is_mcbc;
+ 	bool is_eapol;
++	/* the Ethernet frame was converted back to an 802.11 frame */
++	bool eth_native;
+ 	struct hal_rx_desc *rx_desc;
+ 	u8 err_rel_src;
+ 	u8 err_code;
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -2314,21 +2314,32 @@ static void ath11k_dp_rx_h_undecap_eth(s
+ 	size_t hdr_len;
+ 	u8 da[ETH_ALEN];
+ 	u8 sa[ETH_ALEN];
+-	void *rfc1042;
++	void *rfc1042 = NULL;
++	bool llc;
+ 
+-	rfc1042 = ath11k_dp_rx_h_find_rfc1042(ar, msdu, enctype);
+-	if (WARN_ON_ONCE(!rfc1042))
+-		return;
++	/* A frame with a length where the type goes, which the hardware
++	 * delivers with its LLC header after the Ethernet header, is not
++	 * a frame whose LLC/SNAP header it took off: the payload is
++	 * complete as it is and only the 802.11 header is missing.
++	 */
++	eth = (struct ethhdr *)msdu->data;
++	llc = ntohs(eth->h_proto) < ETH_P_802_3_MIN;
++
++	if (!llc) {
++		rfc1042 = ath11k_dp_rx_h_find_rfc1042(ar, msdu, enctype);
++		if (WARN_ON_ONCE(!rfc1042))
++			return;
++	}
+ 
+ 	/* pull decapped header and copy SA & DA */
+-	eth = (struct ethhdr *)msdu->data;
+ 	ether_addr_copy(da, eth->h_dest);
+ 	ether_addr_copy(sa, eth->h_source);
+ 	skb_pull(msdu, sizeof(struct ethhdr));
+ 
+ 	/* push rfc1042/llc/snap */
+-	memcpy(skb_push(msdu, sizeof(struct ath11k_dp_rfc1042_hdr)), rfc1042,
+-	       sizeof(struct ath11k_dp_rfc1042_hdr));
++	if (!llc)
++		memcpy(skb_push(msdu, sizeof(struct ath11k_dp_rfc1042_hdr)),
++		       rfc1042, sizeof(struct ath11k_dp_rfc1042_hdr));
+ 
+ 	/* push original 802.11 header */
+ 	hdr = (struct ieee80211_hdr *)first_hdr;
+@@ -2374,6 +2385,7 @@ static void ath11k_dp_rx_h_undecap(struc
+ 					   decrypted);
+ 		break;
+ 	case DP_RX_DECAP_TYPE_ETHERNET2_DIX:
++	case DP_RX_DECAP_TYPE_8023:
+ 		ehdr = (struct ethhdr *)msdu->data;
+ 
+ 		/* mac80211 allows fast path only for authorized STA */
+@@ -2387,13 +2399,11 @@ static void ath11k_dp_rx_h_undecap(struc
+ 		/* PN for mcast packets will be validated in mac80211;
+ 		 * remove eth header and add 802.11 header.
+ 		 */
+-		if (ATH11K_SKB_RXCB(msdu)->is_mcbc && decrypted)
++		if ((ATH11K_SKB_RXCB(msdu)->is_mcbc && decrypted) ||
++		    ATH11K_SKB_RXCB(msdu)->eth_native)
+ 			ath11k_dp_rx_h_undecap_eth(ar, msdu, first_hdr,
+ 						   enctype, status);
+ 		break;
+-	case DP_RX_DECAP_TYPE_8023:
+-		/* TODO: Handle undecap for these formats */
+-		break;
+ 	}
+ }
+ 
+@@ -2426,6 +2436,7 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ {
+ 	bool  fill_crypto_hdr;
+ 	enum hal_encrypt_type enctype;
++	u8 decap;
+ 	bool is_decrypted = false;
+ 	struct ath11k_skb_rxcb *rxcb;
+ 	struct ieee80211_hdr *hdr;
+@@ -2443,6 +2454,8 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 		rxcb->seq_no = ath11k_dp_rx_h_mpdu_start_seq_no(ar->ab, rx_desc);
+ 	}
+ 
++	rxcb->eth_native = false;
++
+ 	spin_lock_bh(&ar->ab->base_lock);
+ 	peer = ath11k_dp_rx_h_find_peer(ar->ab, msdu);
+ 	if (peer) {
+@@ -2453,6 +2466,29 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 	} else {
+ 		enctype = ath11k_dp_rx_h_mpdu_start_enctype(ar->ab, rx_desc);
+ 	}
++	/* The hardware takes the source address of an Ethernet frame from
++	 * the frame, not from the station that sent it: from the address 3
++	 * or 4 field of a frame the sender chose the layout of, or from the
++	 * subframe header of an A-MSDU. mac80211 checks the source of a
++	 * native frame against the station, and has to see every frame whose
++	 * source is not the peer's address, which includes the 4-address
++	 * frames of a WDS station.
++	 */
++	decap = ath11k_dp_rx_h_msdu_start_decap_type(ar->ab, rx_desc);
++	if ((decap == DP_RX_DECAP_TYPE_ETHERNET2_DIX ||
++	     decap == DP_RX_DECAP_TYPE_8023) &&
++	    (!peer || !ether_addr_equal(((struct ethhdr *)msdu->data)->h_source,
++					peer->addr)))
++		rxcb->eth_native = true;
++	/* A frame of the 802.3 decap type, and one with a length field in
++	 * place of the type, is not the DIX frame mac80211's 802.3 path
++	 * takes: convert it back to an 802.11 frame, as a native frame
++	 * would have arrived, so that it reaches the stack the same way.
++	 */
++	if (decap == DP_RX_DECAP_TYPE_8023 ||
++	    (decap == DP_RX_DECAP_TYPE_ETHERNET2_DIX &&
++	     ntohs(((struct ethhdr *)msdu->data)->h_proto) < ETH_P_802_3_MIN))
++		rxcb->eth_native = true;
+ 	spin_unlock_bh(&ar->ab->base_lock);
+ 
+ 	rx_attention = ath11k_dp_rx_get_attention(ar->ab, rx_desc);
+@@ -2687,6 +2723,7 @@ static void ath11k_dp_rx_deliver_msdu(st
+ 	 * eapol packets are sent in slow path.
+ 	 */
+ 	if (decap == DP_RX_DECAP_TYPE_ETHERNET2_DIX && !is_eapol &&
++	    !rxcb->eth_native &&
+ 	    !(is_mcbc && rx_status->flag & RX_FLAG_DECRYPTED))
+ 		rx_status->flag |= RX_FLAG_8023;
+ 
