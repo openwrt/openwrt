@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7981b-creatlentem-clt-r30b1-common.dtsi"
+
+/ {
+	model = "Dragonglass DGX21 (128M)";
+	compatible = "dragonglass,dgx21", "mediatek,mt7981";
+};
+
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+};
+
+/* Single UBI partition filling the NMBM-usable area of the 128 MiB SPI-NAND.
+ * The chip is 0x8000000 (128 MiB) but NMBM reserves the top 64 erase blocks
+ * (bmt-max-reserved-blocks = 64 => 8 MiB, starting at 0x7800000) for bad-block
+ * management. So the ubi partition runs from 0x580000 up to 0x7800000, i.e.
+ * size = 0x7800000 - 0x580000 = 0x7280000 = 116864 KiB (~114 MiB). Exceeding
+ * this overlaps the NMBM reserved region and makes UBI attach fail at boot.
+ * This yields a large writable overlay from rootfs_data (no extroot needed).
+ * Requires the matching 128 MiB u-boot mtdparts (116864k(ubi)); factory
+ * full-flash programming only, not for OTA onto 64 MiB units.
+ */
+&ubi {
+	reg = <0x0580000 0x7280000>;
+};
+
+/*
+ * Dragonglass factory MAC layout (written by eth_mac, same as MTK SDK fw):
+ *   Factory+0x24 = WAN (base), +0x2a = LAN (base+1),
+ *   +0x04 = 2.4G (base+2), +0x0a = 5G (base+3).
+ * Upstream common dtsi maps them the other way round (gmac0/LAN <- 0x24).
+ */
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_2a 0>;
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_24 0>;
+};

@@ -489,6 +489,8 @@ platform_check_image() {
 	benton,sn-r1|\
 	creatlentem,clt-r30b1|\
 	creatlentem,clt-r30b1-112m|\
+	dragonglass,dgx21|\
+	dragonglass,dgx21-256m|\
 	hiveton,h5000m|\
 	nradio,c8-668gl)
 		# tar magic `ustar`
