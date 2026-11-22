@@ -1,0 +1,27 @@
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 05:00:00 +0100
+Subject: [PATCH] riscv: dts: starfive: visionfive2-v1.2a: disable EEE on gmac1
+
+The second Ethernet port of the VisionFive 2 v1.2A (gmac1, RMII) has a
+Motorcomm YT8512 100 Mbit/s PHY, which runs with the Generic PHY driver.
+With a link partner that supports EEE, 100BASE-TX EEE is negotiated and
+the link drops every few seconds as soon as the port transmits:
+TCP upload falls to 0.1-5 Mbit/s and 50-90% of UDP packets are lost.
+With EEE disabled (ethtool --set-eee eth1 eee off) it does 94 Mbit/s in
+both directions with no link drop.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-v1.2a.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-v1.2a.dts
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-v1.2a.dts
+@@ -24,3 +24,7 @@
+ 	rx-internal-delay-ps = <1900>;
+ 	tx-internal-delay-ps = <1350>;
+ };
++
++&phy1 {
++	eee-broken-100tx;
++};
