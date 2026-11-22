@@ -1,0 +1,52 @@
+From f5a13b2402fbfc4589cf156788b902a471848fbf Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 08:14:36 +0100
+Subject: [PATCH] wifi: ath11k: wake a TXQ without an atomic when its push is pending
+
+mac80211 wakes the TXQ of every frame it queues, from whichever CPU sent
+it, and ath11k_mac_op_wake_tx_queue() then sets the AC's bit in txq_woken
+and calls queue_work() for the push work, whose test_and_set_bit() of the
+pending bit is a second read-modify-write. All transmitting CPUs share
+both lines. In a profile of routed downlink at 900 Mbit/s (IPQ8074, one
+run) the instruction after queue_work_on()'s interrupt restore takes
+1.07 % of all samples.
+
+Both operations change nothing while the AC is marked and the work has
+not started yet, which is the common case: the work runs after the poll
+that queued the frames. Read the mark and the pending bit first, after a
+full barrier that orders the frame mac80211 queued before them, and set
+or queue only what is missing. The work clears its pending bit, issues a
+full barrier and then takes the marks with xchg(), so a wake that sees
+the work pending has its mark read by that run, and a wake that sees a
+mark already set has its frame dequeued by the run that takes the mark.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10332,7 +10332,25 @@ static void ath11k_mac_op_wake_tx_queue(
+ {
+ 	struct ath11k *ar = hw->priv;
+ 
+-	set_bit(txq->ac, &ar->txq_woken);
++	/* Every frame mac80211 queues wakes its TXQ, from whichever CPU sent
++	 * it, and the bit operation and queue_work()'s test_and_set_bit()
++	 * are read-modify-writes of lines all of those CPUs share. They
++	 * change nothing while the AC is marked and the work has not started:
++	 * the work clears its pending bit and then, after a full barrier,
++	 * takes the marks with xchg(). The barrier here orders the frame
++	 * mac80211 queued before the reads, so a work that has started takes
++	 * the frame when it reads a mark we saw, and one we saw pending reads
++	 * our mark.
++	 */
++	smp_mb();
++	if (!test_bit(txq->ac, &ar->txq_woken)) {
++		set_bit(txq->ac, &ar->txq_woken);
++		/* the mark before the read of the pending bit */
++		smp_mb__after_atomic();
++	}
++	if (work_pending(&ar->txq_work))
++		return;
++
+ 	queue_work(system_bh_wq, &ar->txq_work);
+ }
+ 
