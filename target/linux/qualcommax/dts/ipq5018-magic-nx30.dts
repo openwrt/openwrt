@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ipq5018-magic-mp02.dtsi"
+
+/ {
+	model = "H3C Magic NX30";
+	compatible = "h3c,magic-nx30", "qcom,ipq5018";
+};
+
+&wifi {
+	qcom,calibration-variant = "H3C-Magic-NX30";
+};
+
+&wifi1 {
+	qcom,calibration-variant = "H3C-Magic-NX30";
+};

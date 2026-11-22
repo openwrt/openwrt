@@ -1,0 +1,242 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Feiyang Yu <2541290956@qq.com>
+Date: Mon, 2 Nov 2026 22:53:41 +0800
+Subject: [PATCH] wifi: ath11k: shrink the host rings in FW memory mode 2
+
+FW memory mode 2 (patch 903, "qcom,ath11k-fw-memory-mode" in DT) is used
+on small IPQ5018 boards, but it only shrinks the firmware side.
+The host keeps the ring sizes of 1 GiB boards: 4096 RXDMA buffers plus
+4096 monitor buffers per radio and 32768-entry TX completion rings,
+roughly 35 MiB per radio. On a 256 MiB IPQ5018 + QCN6122 board this
+runs the kernel out of memory within seconds of Wi-Fi coming up, which
+is why such boards currently ship with Wi-Fi disabled.
+
+Make the DP ring sizes per-device hw_params, keep today's values as the
+default and use smaller ones in mode 2 when the board has no more than
+256 MiB of RAM. Boards with more RAM that use mode 2 (e.g. the 512 MiB
+I-O DATA WN-DAX3000GR) keep the current ring sizes.
+
+Tested on H3C Magic RW3000 v1, RT3000 v2/v3 and NX30 (IPQ5018 + QCN6122,
+256 MiB): no OOM with both radios up, about 40 MiB MemAvailable when
+idle, 5 GHz HE80 iperf3 ~370 Mbit/s each way, 10/10 cold boots.
+
+Signed-off-by: Feiyang Yu <2541290956@qq.com>
+---
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -10,6 +10,8 @@
+ #include <linux/remoteproc.h>
+ #include <linux/firmware.h>
+ #include <linux/of.h>
++#include <linux/mm.h>
++#include <linux/sizes.h>
+ 
+ #include "core.h"
+ #include "dp_tx.h"
+@@ -2776,6 +2778,14 @@ static int ath11k_init_hw_params(struct
+ 
+ 	ab->hw_params = *hw_params;
+ 
++	ab->hw_params.dp_tx_comp_ring_size = DP_TX_COMP_RING_SIZE;
++	ab->hw_params.dp_rxdma_buf_ring_size = DP_RXDMA_BUF_RING_SIZE;
++	ab->hw_params.dp_rxdma_err_dst_ring_size = DP_RXDMA_ERR_DST_RING_SIZE;
++	ab->hw_params.dp_rxdma_mon_status_ring_size = DP_RXDMA_MON_STATUS_RING_SIZE;
++	ab->hw_params.dp_rxdma_mon_buf_ring_size = DP_RXDMA_MONITOR_BUF_RING_SIZE;
++	ab->hw_params.dp_rxdma_mon_dst_ring_size = DP_RXDMA_MONITOR_DST_RING_SIZE;
++	ab->hw_params.dp_rxdma_mon_desc_ring_size = DP_RXDMA_MONITOR_DESC_RING_SIZE;
++
+ 	ret = of_property_read_u32(ab->dev->of_node,
+ 				   "qcom,ath11k-fw-memory-mode",
+ 				   &fw_mem_mode);
+@@ -2795,6 +2805,20 @@ static int ath11k_init_hw_params(struct
+ 			ab->hw_params.num_peers = 128;
+ 			ab->hw_params.coldboot_cal_mm = false;
+ 			ab->hw_params.coldboot_cal_ftm = false;
++			/* Mode 2 is used on small boards. On a 256 MiB one the
++			 * default host rings pin ~35 MiB of RX buffers per
++			 * radio and run it out of memory as soon as Wi-Fi comes
++			 * up, so shrink them there.
++			 */
++			if (totalram_pages() <= (SZ_256M >> PAGE_SHIFT)) {
++				ab->hw_params.dp_tx_comp_ring_size = 8192;
++				ab->hw_params.dp_rxdma_buf_ring_size = 1024;
++				ab->hw_params.dp_rxdma_err_dst_ring_size = 128;
++				ab->hw_params.dp_rxdma_mon_status_ring_size = 512;
++				ab->hw_params.dp_rxdma_mon_buf_ring_size = 128;
++				ab->hw_params.dp_rxdma_mon_dst_ring_size = 128;
++				ab->hw_params.dp_rxdma_mon_desc_ring_size = 128;
++			}
+ 		} else
+ 			ath11k_info(ab, "Unsupported FW memory mode: %u\n", fw_mem_mode);
+ 	}
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -412,7 +412,7 @@ static int ath11k_dp_srng_common_setup(s
+ 
+ 		ret = ath11k_dp_srng_setup(ab, &dp->tx_ring[i].tcl_comp_ring,
+ 					   HAL_WBM2SW_RELEASE, wbm_num, 0,
+-					   DP_TX_COMP_RING_SIZE);
++					   ab->hw_params.dp_tx_comp_ring_size);
+ 		if (ret) {
+ 			ath11k_warn(ab, "failed to set up tcl_comp ring (%d) :%d\n",
+ 				    i, ret);
+@@ -1082,7 +1082,8 @@ int ath11k_dp_alloc(struct ath11k_base *
+ 	if (ret)
+ 		goto fail_link_desc_cleanup;
+ 
+-	size = sizeof(struct hal_wbm_release_ring) * DP_TX_COMP_RING_SIZE;
++	size = sizeof(struct hal_wbm_release_ring) *
++	       ab->hw_params.dp_tx_comp_ring_size;
+ 
+ 	for (i = 0; i < ab->hw_params.hal_params->num_tx_rings; i++) {
+ 		idr_init(&dp->tx_ring[i].txbuf_idr);
+@@ -1090,7 +1091,8 @@ int ath11k_dp_alloc(struct ath11k_base *
+ 		dp->tx_ring[i].tcl_data_ring_id = i;
+ 
+ 		dp->tx_ring[i].tx_status_head = 0;
+-		dp->tx_ring[i].tx_status_tail = DP_TX_COMP_RING_SIZE - 1;
++		dp->tx_ring[i].tx_status_tail =
++			ab->hw_params.dp_tx_comp_ring_size - 1;
+ 		dp->tx_ring[i].tx_status = kmalloc(size, GFP_KERNEL);
+ 		if (!dp->tx_ring[i].tx_status) {
+ 			ret = -ENOMEM;
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -78,7 +78,8 @@ struct dp_rxdma_ring {
+ 	int bufs_max;
+ };
+ 
+-#define ATH11K_TX_COMPL_NEXT(x)	(((x) + 1) % DP_TX_COMP_RING_SIZE)
++#define ATH11K_TX_COMPL_NEXT(ab, x) \
++	(((x) + 1) % (ab)->hw_params.dp_tx_comp_ring_size)
+ 
+ struct dp_tx_ring {
+ 	u8 tcl_data_ring_id;
+@@ -206,7 +207,6 @@ struct ath11k_pdev_dp {
+ #define DP_TCL_DATA_RING_SIZE		512
+ #define DP_TCL_DATA_RING_SIZE_WCN6750	2048
+ #define DP_TX_COMP_RING_SIZE		32768
+-#define DP_TX_IDR_SIZE			DP_TX_COMP_RING_SIZE
+ #define DP_TCL_CMD_RING_SIZE		32
+ #define DP_TCL_STATUS_RING_SIZE		32
+ #define DP_REO_DST_RING_MAX		4
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -578,7 +578,8 @@ static int ath11k_dp_rx_pdev_srng_alloc(
+ 	ret = ath11k_dp_srng_setup(ar->ab,
+ 				   &dp->rx_refill_buf_ring.refill_buf_ring,
+ 				   HAL_RXDMA_BUF, 0,
+-				   dp->mac_id, DP_RXDMA_BUF_RING_SIZE);
++				   dp->mac_id,
++				   ab->hw_params.dp_rxdma_buf_ring_size);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to setup rx_refill_buf_ring\n");
+ 		return ret;
+@@ -601,7 +602,7 @@ static int ath11k_dp_rx_pdev_srng_alloc(
+ 	for (i = 0; i < ab->hw_params.num_rxdma_per_pdev; i++) {
+ 		ret = ath11k_dp_srng_setup(ar->ab, &dp->rxdma_err_dst_ring[i],
+ 					   HAL_RXDMA_DST, 0, dp->mac_id + i,
+-					   DP_RXDMA_ERR_DST_RING_SIZE);
++					   ab->hw_params.dp_rxdma_err_dst_ring_size);
+ 		if (ret) {
+ 			ath11k_warn(ar->ab, "failed to setup rxdma_err_dst_ring %d\n", i);
+ 			return ret;
+@@ -613,7 +614,7 @@ static int ath11k_dp_rx_pdev_srng_alloc(
+ 		ret = ath11k_dp_srng_setup(ar->ab,
+ 					   srng,
+ 					   HAL_RXDMA_MONITOR_STATUS, 0, dp->mac_id + i,
+-					   DP_RXDMA_MON_STATUS_RING_SIZE);
++					   ab->hw_params.dp_rxdma_mon_status_ring_size);
+ 		if (ret) {
+ 			ath11k_warn(ar->ab,
+ 				    "failed to setup rx_mon_status_refill_ring %d\n", i);
+@@ -636,7 +637,7 @@ static int ath11k_dp_rx_pdev_srng_alloc(
+ 	ret = ath11k_dp_srng_setup(ar->ab,
+ 				   &dp->rxdma_mon_buf_ring.refill_buf_ring,
+ 				   HAL_RXDMA_MONITOR_BUF, 0, dp->mac_id,
+-				   DP_RXDMA_MONITOR_BUF_RING_SIZE);
++				   ab->hw_params.dp_rxdma_mon_buf_ring_size);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab,
+ 			    "failed to setup HAL_RXDMA_MONITOR_BUF\n");
+@@ -645,7 +646,7 @@ static int ath11k_dp_rx_pdev_srng_alloc(
+ 
+ 	ret = ath11k_dp_srng_setup(ar->ab, &dp->rxdma_mon_dst_ring,
+ 				   HAL_RXDMA_MONITOR_DST, 0, dp->mac_id,
+-				   DP_RXDMA_MONITOR_DST_RING_SIZE);
++				   ab->hw_params.dp_rxdma_mon_dst_ring_size);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab,
+ 			    "failed to setup HAL_RXDMA_MONITOR_DST\n");
+@@ -654,7 +655,7 @@ static int ath11k_dp_rx_pdev_srng_alloc(
+ 
+ 	ret = ath11k_dp_srng_setup(ar->ab, &dp->rxdma_mon_desc_ring,
+ 				   HAL_RXDMA_MONITOR_DESC, 0, dp->mac_id,
+-				   DP_RXDMA_MONITOR_DESC_RING_SIZE);
++				   ab->hw_params.dp_rxdma_mon_desc_ring_size);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab,
+ 			    "failed to setup HAL_RXDMA_MONITOR_DESC\n");
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -122,7 +122,7 @@ tcl_ring_sel:
+ 
+ 	spin_lock_bh(&tx_ring->tx_idr_lock);
+ 	ret = idr_alloc(&tx_ring->txbuf_idr, skb, 0,
+-			DP_TX_IDR_SIZE - 1, GFP_ATOMIC);
++			ab->hw_params.dp_tx_comp_ring_size - 1, GFP_ATOMIC);
+ 	spin_unlock_bh(&tx_ring->tx_idr_lock);
+ 
+ 	if (unlikely(ret < 0)) {
+@@ -701,17 +701,17 @@ void ath11k_dp_tx_completion_handler(str
+ 
+ 	ath11k_hal_srng_access_begin(ab, status_ring);
+ 
+-	while ((ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_head) !=
++	while ((ATH11K_TX_COMPL_NEXT(ab, tx_ring->tx_status_head) !=
+ 		tx_ring->tx_status_tail) &&
+ 	       (desc = ath11k_hal_srng_dst_get_next_entry(ab, status_ring))) {
+ 		memcpy(&tx_ring->tx_status[tx_ring->tx_status_head],
+ 		       desc, sizeof(struct hal_wbm_release_ring));
+ 		tx_ring->tx_status_head =
+-			ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_head);
++			ATH11K_TX_COMPL_NEXT(ab, tx_ring->tx_status_head);
+ 	}
+ 
+ 	if (unlikely((ath11k_hal_srng_dst_peek(ab, status_ring) != NULL) &&
+-		     (ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_head) ==
++		     (ATH11K_TX_COMPL_NEXT(ab, tx_ring->tx_status_head) ==
+ 		      tx_ring->tx_status_tail))) {
+ 		/* TODO: Process pending tx_status messages when kfifo_is_full() */
+ 		ath11k_warn(ab, "Unable to process some of the tx_status ring desc because status_fifo is full\n");
+@@ -721,12 +721,12 @@ void ath11k_dp_tx_completion_handler(str
+ 
+ 	spin_unlock_bh(&status_ring->lock);
+ 
+-	while (ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_tail) != tx_ring->tx_status_head) {
++	while (ATH11K_TX_COMPL_NEXT(ab, tx_ring->tx_status_tail) != tx_ring->tx_status_head) {
+ 		struct hal_wbm_release_ring *tx_status;
+ 		u32 desc_id;
+ 
+ 		tx_ring->tx_status_tail =
+-			ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_tail);
++			ATH11K_TX_COMPL_NEXT(ab, tx_ring->tx_status_tail);
+ 		tx_status = &tx_ring->tx_status[tx_ring->tx_status_tail];
+ 		ath11k_dp_tx_status_parse(ab, tx_status, &ts);
+ 
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -189,6 +189,13 @@ struct ath11k_hw_params {
+ 
+ 	u16 interface_modes;
+ 	bool supports_monitor;
++	u32 dp_tx_comp_ring_size;
++	u32 dp_rxdma_buf_ring_size;
++	u32 dp_rxdma_err_dst_ring_size;
++	u32 dp_rxdma_mon_status_ring_size;
++	u32 dp_rxdma_mon_buf_ring_size;
++	u32 dp_rxdma_mon_dst_ring_size;
++	u32 dp_rxdma_mon_desc_ring_size;
+ 	bool full_monitor_mode;
+ 	bool supports_shadow_regs;
+ 	bool idle_ps;
