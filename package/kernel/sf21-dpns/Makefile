@@ -27,8 +27,10 @@ define KernelPackage/sf21-dpns
 	$(PKG_BUILD_DIR)/dpns_router/dpnsRouter.ko \
 	$(PKG_BUILD_DIR)/dpns_nat/dpnsNat.ko \
 	$(PKG_BUILD_DIR)/dpns_tmu/dpnsTmu.ko \
+	$(PKG_BUILD_DIR)/dpns_acl/dpnsAcl.ko \
+	$(PKG_BUILD_DIR)/dpns_mcast/dpnsMcast.ko \
 	$(PKG_BUILD_DIR)/dpns/dpnsMain.ko
-  AUTOLOAD:=$(call AutoLoad,48,dpnsGenl dpnsCommon dpnsL2 dpnsVlan dpnsRouter dpnsNat dpnsTmu dpnsMain,1)
+  AUTOLOAD:=$(call AutoLoad,48,dpnsGenl dpnsCommon dpnsL2 dpnsVlan dpnsRouter dpnsNat dpnsTmu dpnsAcl dpnsMcast dpnsMain,1)
 endef
 
 define KernelPackage/sf21-dpns/description
@@ -37,14 +39,18 @@ define KernelPackage/sf21-dpns/description
  offload (nftables "flags offload", fw4 flow_offloading_hw).
 endef
 
-DPNS_FEATURES:=COMMON GENL L2 VLAN ROUTER NAT TMU
+DPNS_FEATURES:=COMMON GENL L2 VLAN ROUTER NAT TMU ACL MCAST
 
 EXTRA_KCONFIG:= \
 	CONFIG_SIFLOWER_DPNS=m \
+	CONFIG_SIFLOWER_DPNS_TMU_GENL=y \
+	CONFIG_SIFLOWER_DPNS_TMU_DEBUGFS=y \
+	CONFIG_SIFLOWER_DPNS_MCAST_GENL=y \
 	$(foreach f,$(DPNS_FEATURES),CONFIG_SIFLOWER_DPNS_$(f)=m)
 
 DPNS_CFLAGS:= \
 	-Wno-error -Wno-missing-prototypes \
+	-DCONFIG_SIFLOWER_DPNS_TMU_GENL -DCONFIG_SIFLOWER_DPNS_TMU_DEBUGFS -DCONFIG_SIFLOWER_DPNS_MCAST_GENL \
 	$(foreach f,$(DPNS_FEATURES),-DCONFIG_SIFLOWER_DPNS_$(f)) \
 	-I$(PKG_BUILD_DIR)/include \
 	-I$(LINUX_DIR)/drivers/net/ethernet/siflower
@@ -63,8 +69,9 @@ define Build/Compile
 endef
 
 define KernelPackage/sf21-dpns/install
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/hotplug.d/iface
 	$(INSTALL_BIN) ./files/dpns-wan.sh $(1)/usr/sbin/dpns-wan
+	$(INSTALL_DATA) ./files/dpns-wan.hotplug $(1)/etc/hotplug.d/iface/50-dpns-wan
 	$(INSTALL_BIN) ./files/dpns-wan.init $(1)/etc/init.d/dpns-wan
 endef
 

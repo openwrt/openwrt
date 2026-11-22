@@ -1,0 +1,6 @@
+#!/bin/sh
+# Re-sync the DPNS WAN table when interfaces come up or go down (covers
+# configuration changes that do not go through reload_config).
+case "$ACTION" in
+ifup|ifdown|ifupdate) /usr/sbin/dpns-wan ;;
+esac
