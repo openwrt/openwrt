@@ -2896,10 +2896,101 @@ static bool edma_tx_needs_linearize(const struct sk_buff *skb)
 	return false;
 }
 
+/* Where the TCP header of a fraglist aggregate starts, for headers at @noff
+ * in its head, or a negative errno when it is no TCP frame list the engine can
+ * cut as one TSO frame. Reads the head only.
+ */
+static int edma_tx_fraglist_thoff(const struct sk_buff *skb, unsigned int noff)
+{
+	u32 type = skb_shinfo(skb)->gso_type;
+	unsigned int len = skb_headlen(skb);
+
+	if (type & SKB_GSO_TCPV4) {
+		const struct iphdr *iph = (const struct iphdr *)(skb->data + noff);
+
+		if (len < noff + sizeof(*iph) || iph->version != 4 ||
+		    iph->ihl < 5 || iph->protocol != IPPROTO_TCP)
+			return -EOPNOTSUPP;
+		noff += iph->ihl * 4;
+	} else if (type & SKB_GSO_TCPV6) {
+		const struct ipv6hdr *ip6h = (const struct ipv6hdr *)(skb->data + noff);
+
+		if (len < noff + sizeof(*ip6h) || ip6h->version != 6 ||
+		    ip6h->nexthdr != IPPROTO_TCP)
+			return -EOPNOTSUPP;
+		noff += sizeof(*ip6h);
+	} else {
+		return -EOPNOTSUPP;
+	}
+
+	if (len < noff + sizeof(struct tcphdr))
+		return -EOPNOTSUPP;
+
+	return noff;
+}
+
+/* A fraglist aggregate is the head, which has the headers of the first
+ * segment, and one skb per further segment that holds the payload only, so it
+ * is the byte stream the engine cuts at gso_size, as a TSO frame is: GRO took
+ * each segment only with the next sequence number, the length of the first,
+ * the same options and flags and an IP ID that goes up by one or stays
+ * (tcp_gro_receive(), inet_gro_flush()). It differs in what the receive path
+ * left in it: the segments were verified whole, so it is CHECKSUM_UNNECESSARY
+ * with the first segment's checksum in the header, and the engine writes a
+ * checksum only when asked, over what the header holds as the stack seeds a
+ * TSO frame, the pseudo header of the whole length. Make it that frame. The IP
+ * header is at @noff: behind the Ethernet header, and behind the QCA tag too
+ * for a frame from a DSA port.
+ *
+ * Return: 0, or a negative errno with the frame as it was.
+ */
+static int edma_tx_fraglist(struct sk_buff *skb, unsigned int noff)
+{
+	u32 type = skb_shinfo(skb)->gso_type;
+	struct tcphdr *th;
+	int thoff, err;
+
+	if (!(type & SKB_GSO_FRAGLIST))
+		return 0;
+
+	thoff = edma_tx_fraglist_thoff(skb, noff);
+	if (thoff < 0)
+		return thoff;
+
+	/* The checksum field is written, so a head shared with a clone is
+	 * copied first, and the headers are read again after it.
+	 */
+	err = skb_ensure_writable(skb, thoff + sizeof(*th));
+	if (err)
+		return err;
+
+	th = (struct tcphdr *)(skb->data + thoff);
+	if (type & SKB_GSO_TCPV4) {
+		const struct iphdr *iph = (const struct iphdr *)(skb->data + noff);
+
+		th->check = ~csum_tcpudp_magic(iph->saddr, iph->daddr,
+					       skb->len - thoff, IPPROTO_TCP, 0);
+	} else {
+		const struct ipv6hdr *ip6h = (const struct ipv6hdr *)(skb->data + noff);
+
+		th->check = ~csum_ipv6_magic(&ip6h->saddr, &ip6h->daddr,
+					     skb->len - thoff, IPPROTO_TCP, 0);
+	}
+
+	skb->ip_summed = CHECKSUM_PARTIAL;
+	skb->csum_level = 0;
+	skb->csum_start = skb_headroom(skb) + thoff;
+	skb->csum_offset = offsetof(struct tcphdr, check);
+	skb_shinfo(skb)->gso_type = type & ~SKB_GSO_FRAGLIST;
+
+	return 0;
+}
+
 /* A GRO aggregate on its frag_list can need more descriptors than a frame
  * may take; it is segmented in software rather than made linear. So is a
  * GSO frame of segments shorter than the engine cuts, which GRO builds of
- * the size of the first segment it took.
+ * the size of the first segment it took, and a fraglist aggregate
+ * edma_tx_fraglist() cannot make a TSO frame.
  */
 static netdev_features_t edma_ndo_features_check(struct sk_buff *skb,
 						 struct net_device *netdev,
@@ -2907,7 +2998,9 @@ static netdev_features_t edma_ndo_features_check(struct sk_buff *skb,
 {
 	if (skb_is_gso(skb) &&
 	    (skb_shinfo(skb)->gso_size < EDMA_TX_MIN_MSS ||
-	     edma_tx_needs_linearize(skb)))
+	     edma_tx_needs_linearize(skb) ||
+	     ((skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) &&
+	      edma_tx_fraglist_thoff(skb, skb_network_offset(skb)) < 0)))
 		features &= ~NETIF_F_GSO_MASK;
 
 	/* The switch inserts a C-tag behind an S-tag already in the frame and
@@ -2979,6 +3072,13 @@ static netdev_tx_t edma_xmit(struct sk_buff *skb, struct net_device *netdev,
 			goto drop;
 		skb_gso_reset(skb);
 	}
+
+	/* A fraglist aggregate the stack left whole, which the features check
+	 * let through only as one the engine can cut.
+	 */
+	if (skb_is_gso(skb) &&
+	    edma_tx_fraglist(skb, skb_network_offset(skb)))
+		goto drop;
 
 	if (edma_tx_needs_linearize(skb) && skb_linearize(skb))
 		goto drop;
@@ -3091,79 +3191,6 @@ static void edma_src_drain(struct edma_queue *q)
 	__netif_tx_lock(txq, smp_processor_id());
 	edma_src_drain_locked(q, txq);
 	__netif_tx_unlock(txq);
-}
-
-/* A fraglist aggregate is the head, which has the headers of the first
- * segment, and one skb per further segment that holds the payload only, so it
- * is the byte stream the engine cuts at gso_size, as a TSO frame is. It differs
- * in what the receive path left in it: the segments were verified whole, so
- * it is CHECKSUM_UNNECESSARY with the first segment's checksum in the header,
- * and the engine writes a checksum only when asked, over what the header
- * holds as the stack seeds a TSO frame, the pseudo header of the whole
- * length. Make it that frame. Called with the headers behind the Ethernet
- * header and nothing else in front of them, as a source-port frame has.
- *
- * Return: 0, or a negative errno with the frame as it was.
- */
-static int edma_tx_fraglist(struct sk_buff *skb)
-{
-	u32 type = skb_shinfo(skb)->gso_type;
-	unsigned int thoff;
-	struct tcphdr *th;
-	int err;
-
-	if (!(type & SKB_GSO_FRAGLIST))
-		return 0;
-
-	if (type & SKB_GSO_TCPV4) {
-		const struct iphdr *iph;
-
-		if (!pskb_may_pull(skb, ETH_HLEN + sizeof(*iph)))
-			return -EOPNOTSUPP;
-		iph = (const struct iphdr *)(skb->data + ETH_HLEN);
-		if (iph->version != 4 || iph->ihl < 5 || iph->protocol != IPPROTO_TCP)
-			return -EOPNOTSUPP;
-		thoff = ETH_HLEN + iph->ihl * 4;
-	} else if (type & SKB_GSO_TCPV6) {
-		const struct ipv6hdr *ip6h;
-
-		if (!pskb_may_pull(skb, ETH_HLEN + sizeof(*ip6h)))
-			return -EOPNOTSUPP;
-		ip6h = (const struct ipv6hdr *)(skb->data + ETH_HLEN);
-		if (ip6h->version != 6 || ip6h->nexthdr != IPPROTO_TCP)
-			return -EOPNOTSUPP;
-		thoff = ETH_HLEN + sizeof(*ip6h);
-	} else {
-		return -EOPNOTSUPP;
-	}
-
-	/* The checksum field is written, so a head shared with a clone is
-	 * copied first, and the headers read above are read again after it.
-	 */
-	err = skb_ensure_writable(skb, thoff + sizeof(*th));
-	if (err)
-		return err;
-
-	th = (struct tcphdr *)(skb->data + thoff);
-	if (type & SKB_GSO_TCPV4) {
-		const struct iphdr *iph = (const struct iphdr *)(skb->data + ETH_HLEN);
-
-		th->check = ~csum_tcpudp_magic(iph->saddr, iph->daddr,
-					       skb->len - thoff, IPPROTO_TCP, 0);
-	} else {
-		const struct ipv6hdr *ip6h = (const struct ipv6hdr *)(skb->data + ETH_HLEN);
-
-		th->check = ~csum_ipv6_magic(&ip6h->saddr, &ip6h->daddr,
-					     skb->len - thoff, IPPROTO_TCP, 0);
-	}
-
-	skb->ip_summed = CHECKSUM_PARTIAL;
-	skb->csum_level = 0;
-	skb->csum_start = skb_headroom(skb) + thoff;
-	skb->csum_offset = offsetof(struct tcphdr, check);
-	skb_shinfo(skb)->gso_type = type & ~SKB_GSO_FRAGLIST;
-
-	return 0;
 }
 
 /* The backlog holds the frames that arrive while the queue is stopped. It
@@ -3347,7 +3374,7 @@ int qca_edma_src_xmit(struct sk_buff *skb, struct net_device *conduit,
 
 		if (skb_shinfo(skb)->gso_size >= EDMA_TX_MIN_MSS &&
 		    !edma_tx_needs_linearize(skb))
-			err = edma_tx_fraglist(skb);
+			err = edma_tx_fraglist(skb, ETH_HLEN);
 		if (err == -EOPNOTSUPP) {
 			netdev_features_t features = conduit->features &
 						     ~NETIF_F_GSO_MASK;
@@ -3985,6 +4012,7 @@ static int edma_probe(struct platform_device *pdev)
 	netdev->hw_features = NETIF_F_RXCSUM | NETIF_F_IP_CSUM |
 			      NETIF_F_IPV6_CSUM | NETIF_F_SG | NETIF_F_TSO |
 			      NETIF_F_TSO6 | NETIF_F_RXHASH | NETIF_F_FRAGLIST |
+			      NETIF_F_GSO_FRAGLIST |
 			      NETIF_F_HW_VLAN_CTAG_RX | NETIF_F_HW_VLAN_CTAG_TX |
 			      NETIF_F_HW_VLAN_STAG_TX;
 	netdev->features = netdev->hw_features;
