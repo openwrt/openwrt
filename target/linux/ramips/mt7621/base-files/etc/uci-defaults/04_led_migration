@@ -15,6 +15,9 @@ tplink,archer-a6-v3|\
 tplink,archer-c6-v3)
 	migrate_leds ':wifi2g$=:wlan-2' ':wifi5g$=:wlan-5'
 	;;
+tplink,archer-ax23-v1)
+	migrate_leds ':wifi2g$=:wlan-2ghz' ':wifi5g$=:wlan-5ghz'
+	;;
 esac
 
 remove_devicename_leds
