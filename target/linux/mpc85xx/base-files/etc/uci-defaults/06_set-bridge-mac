@@ -1,0 +1,21 @@
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+set_bridge_mac() {
+	local section="$1"
+	local mac="$2"
+	local name
+	config_get name "$section" name
+	[ "$name" = "br-lan" ] && uci -q set "network.$section.macaddr=$mac"
+}
+
+case "$(board_name)" in
+sophos,red-15w-rev1)
+	lan_mac=$(get_mac_label)
+	[ -n "$lan_mac" ] && {
+		config_load network
+		config_foreach set_bridge_mac device "$lan_mac"
+		uci commit network
+	}
+	;;
+esac

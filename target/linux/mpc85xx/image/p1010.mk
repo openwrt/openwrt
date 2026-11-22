@@ -114,7 +114,9 @@ define Device/sophos_red-15w-rev1
   DEVICE_VENDOR := Sophos
   DEVICE_MODEL := RED 15w
   DEVICE_VARIANT := Rev.1
-  DEVICE_PACKAGES := kmod-phy-realtek
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from single LAN interface to DSA switch.
+  DEVICE_PACKAGES := kmod-phy-realtek kmod-dsa-realtek kmod-dsa-rtl8365mb
   # Original firmware uses a dedicated DTB-partition.
   # The bootloader however supports FIT-images.
   KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
