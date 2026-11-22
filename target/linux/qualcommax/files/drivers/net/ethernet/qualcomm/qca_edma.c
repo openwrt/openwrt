@@ -227,7 +227,12 @@ static int edma_tx_ring_alloc(struct edma_priv *priv, struct edma_ring *ring,
 		return ret;
 
 	ring->skb_store = kcalloc(count, sizeof(struct sk_buff *), GFP_KERNEL);
-	if (!ring->skb_store) {
+	ring->tx_map = kcalloc(count, sizeof(*ring->tx_map), GFP_KERNEL);
+	if (!ring->skb_store || !ring->tx_map) {
+		kfree(ring->skb_store);
+		kfree(ring->tx_map);
+		ring->skb_store = NULL;
+		ring->tx_map = NULL;
 		edma_ring_free(priv, ring, desc_size);
 		return -ENOMEM;
 	}
@@ -302,6 +307,8 @@ static void edma_tx_ring_free(struct edma_queue *q, struct edma_ring *ring,
 		kfree(ring->skb_store);
 		ring->skb_store = NULL;
 	}
+	kfree(ring->tx_map);
+	ring->tx_map = NULL;
 
 	edma_ring_free(priv, ring, desc_size);
 }
@@ -440,7 +447,10 @@ static void edma_tx_kick(struct edma_queue *q)
 /* Unmaps every descriptor the frame was written from and releases the slots
  * that named them, returning the bytes the frame carried. A slot goes back
  * only once its descriptor has been read, so that a transmit taking the slot
- * cannot place a frame over what this walk has yet to reach.
+ * cannot place a frame over what this walk has yet to reach. The address and
+ * length come from the cached copy edma_ring_xmit() wrote beside each
+ * descriptor, as the descriptor ring is not cached and every read of it waits
+ * for memory.
  */
 static u32 edma_tx_release(struct edma_queue *q, u32 idx, struct sk_buff *skb,
 			   int napi_budget)
@@ -448,25 +458,22 @@ static u32 edma_tx_release(struct edma_queue *q, u32 idx, struct sk_buff *skb,
 	struct edma_ring *ring = &q->txdesc_ring;
 	struct edma_priv *priv = q->priv;
 	struct device *dev = &priv->pdev->dev;
-	struct edma_txdesc *txdesc;
-	u32 bytes, len;
+	u32 bytes, len, dma;
 
-	txdesc = EDMA_TXDESC_DESC(ring, idx);
 	len = skb_headlen(skb);
+	dma = ring->tx_map[idx].dma;
 
-	dma_unmap_single(dev, le32_to_cpu(txdesc->buffer_addr), len,
-			 DMA_TO_DEVICE);
+	dma_unmap_single(dev, dma, len, DMA_TO_DEVICE);
 	bytes = len - EDMA_TX_PREHDR_SIZE;
 	/* Orders the reads above before edma_ring_xmit() can take the slot. */
 	smp_store_release(&ring->skb_store[idx], NULL);
 
 	idx = (idx + 1) & (ring->count - 1);
 	while (READ_ONCE(ring->skb_store[idx]) == skb) {
-		txdesc = EDMA_TXDESC_DESC(ring, idx);
-		len = txdesc->word1 & EDMA_TXDESC_DATA_LENGTH_MASK;
+		dma = ring->tx_map[idx].dma;
+		len = ring->tx_map[idx].len;
 
-		dma_unmap_page(dev, le32_to_cpu(txdesc->buffer_addr), len,
-			       DMA_TO_DEVICE);
+		dma_unmap_page(dev, dma, len, DMA_TO_DEVICE);
 		bytes += len;
 		/* As for the head: the reads first, then the slot. */
 		smp_store_release(&ring->skb_store[idx], NULL);
@@ -1905,6 +1912,8 @@ static bool edma_tx_map(struct device *dev, struct edma_ring *ring,
 		return false;
 
 	WRITE_ONCE(ring->skb_store[fidx], skb);
+	ring->tx_map[fidx].dma = dma;
+	ring->tx_map[fidx].len = len & EDMA_TXDESC_DATA_LENGTH_MASK;
 	txdesc = EDMA_TXDESC_DESC(ring, fidx);
 	txdesc->buffer_addr = cpu_to_le32(dma);
 	txdesc->word1 = tso | (++*n < ndesc ? EDMA_TXDESC_MORE : 0) |
@@ -2001,6 +2010,8 @@ static netdev_tx_t edma_ring_xmit(struct edma_queue *q, struct net_device *netde
 		goto drop;
 	}
 
+	txdesc_ring->tx_map[idx].dma = head_dma;
+	txdesc_ring->tx_map[idx].len = len + EDMA_TX_PREHDR_SIZE;
 	txdesc = EDMA_TXDESC_DESC(txdesc_ring, idx);
 	txdesc->buffer_addr = cpu_to_le32(head_dma);
 	txdesc->word1 = tso | (1 << EDMA_TXDESC_PREHEADER_SHIFT) |

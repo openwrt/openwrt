@@ -431,12 +431,21 @@ struct edma_rx_buf {
 	u32 off;
 };
 
+/* The address and length a transmit descriptor was mapped with, kept in
+ * cached memory for its release: the descriptor ring itself is not cached.
+ */
+struct edma_tx_map {
+	u32 dma;
+	u32 len;
+};
+
 struct edma_ring {
 	void *desc;
 	dma_addr_t dma;
 	u16 count;
 	bool cached;
 	struct sk_buff **skb_store;
+	struct edma_tx_map *tx_map;
 	struct edma_rx_buf *rx_store;
 };
 
