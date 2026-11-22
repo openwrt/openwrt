@@ -1,0 +1,86 @@
+From 47f4564086af8af49e9b79fc1c6e7b300196abb3 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 09:35:29 +0100
+Subject: [PATCH] wifi: ath11k: spread the DP ring interrupts of an AHB device over the CPUs
+
+The hardware hashes the received flows of the peers over the four REO
+destination rings, and the host spreads its transmit over the TCL rings,
+but on AHB the interrupts of all of their groups keep the default
+affinity, so one CPU serves every ring unless a script on the device
+moves them, and a TCP upload of four streams lands on that CPU whole.
+
+Give each DP interrupt group with a REO destination ring the online CPU of
+that ring's number, and one with a TX completion ring the online CPU of
+its number (modulo the online CPUs), as the default affinity hint
+(irq_set_affinity_and_hint(); a setting written to smp_affinity still
+wins). The copy engine interrupts stay where they are: the firmware
+asserts when they leave CPU 0, as observed on IPQ8074. A hint that cannot
+be set is logged and the interrupt keeps its affinity. The hint is cleared
+before each interrupt is freed.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -454,8 +454,11 @@ static void ath11k_ahb_free_ext_irq_grp(
+ {
+ 	int j;
+ 
+-	for (j = 0; j < irq_grp->num_irq; j++)
++	for (j = 0; j < irq_grp->num_irq; j++) {
++		/* free_irq() expects the hint cleared */
++		irq_update_affinity_hint(ab->irq_num[irq_grp->irqs[j]], NULL);
+ 		free_irq(ab->irq_num[irq_grp->irqs[j]], irq_grp);
++	}
+ 
+ 	netif_napi_del(&irq_grp->napi);
+ 	free_netdev(irq_grp->napi_ndev);
+@@ -547,11 +550,32 @@ static irqreturn_t ath11k_ahb_ext_interr
+ 	return IRQ_HANDLED;
+ }
+ 
++/* The CPU the interrupts of group @i go to by default: that of the number of
++ * its REO destination ring, or else of its TX completion ring, so that the
++ * rings the hardware hashes flows over are served by as many CPUs. A group
++ * of neither keeps the default affinity, as do the copy engine interrupts,
++ * which the firmware needs on CPU 0.
++ */
++static int ath11k_ahb_ext_irq_cpu(struct ath11k_base *ab, int i)
++{
++	u8 rx = ab->hw_params.ring_mask->rx[i];
++	u8 tx = ab->hw_params.ring_mask->tx[i];
++
++	if (rx)
++		return cpumask_nth((ffs(rx) - 1) % num_online_cpus(),
++				   cpu_online_mask);
++	if (tx)
++		return cpumask_nth((ffs(tx) - 1) % num_online_cpus(),
++				   cpu_online_mask);
++
++	return -1;
++}
++
+ static int ath11k_ahb_config_ext_irq(struct ath11k_base *ab)
+ {
+ 	struct ath11k_hw_params *hw = &ab->hw_params;
+ 	struct ath11k_ext_irq_grp *irq_grp;
+-	int i, j;
++	int i, j, cpu;
+ 	int irq;
+ 	int ret;
+ 
+@@ -636,6 +660,15 @@ static int ath11k_ahb_config_ext_irq(str
+ 		}
+ 
+ 		irq_grp->num_irq = num_irq;
++
++		cpu = ath11k_ahb_ext_irq_cpu(ab, i);
++		for (j = 0; cpu >= 0 && j < num_irq; j++) {
++			ret = irq_set_affinity_and_hint(ab->irq_num[irq_grp->irqs[j]],
++							cpumask_of(cpu));
++			if (ret)
++				ath11k_warn(ab, "failed to set affinity of ext irq %d to cpu %d: %d\n",
++					    irq_grp->irqs[j], cpu, ret);
++		}
+ 	}
+ 
+ 	return 0;
