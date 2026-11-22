@@ -1,0 +1,203 @@
+From 359408a479e5ba1ddbe2dad7857938f36dad4ab2 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 08:14:35 +0100
+Subject: [PATCH] wifi: ath11k: give the refill buffers their ids a chunk at a time
+
+The refill takes the buffer table lock of the refill ring once per buffer,
+and the line of the lock moves between the CPUs of the REO rings, whose
+reaps take it for every frame: in a profile of bridged uplink at
+850 Mbit/s (IPQ8074, one run) the compare-and-swap of that spin_lock() in
+ath11k_dp_rxbufs_replenish() takes 0.84 % of all samples.
+
+Allocate the buffers of a chunk of up to 16 first, outside the lock, and
+give them their ids under one hold of it. A buffer that gets no id or no
+ring entry goes back and ends the refill with what is on the ring, as an
+allocation failure does. The reaps still hold the lock for one table
+entry at a time, so they wait at most for 16 id operations.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -498,12 +498,65 @@ static struct sk_buff *ath11k_dp_rx_pp_a
+ }
+ 
+ /* Returns number of Rx buffers replenished */
++/* The refill takes buffer ids for this many buffers under one hold of the
++ * buffer table lock, which the reaps of every REO ring take too.
++ */
++#define ATH11K_DP_RX_REFILL_CHUNK	16
++
++/* A buffer for the refill of @rx_ring and the address the device writes it
++ * at, or NULL.
++ */
++static struct sk_buff *ath11k_dp_rx_refill_alloc(struct ath11k_base *ab,
++						 struct dp_rxdma_ring *rx_ring,
++						 dma_addr_t *paddr)
++{
++	struct sk_buff *skb;
++
++	if (rx_ring->page_pool) {
++		skb = ath11k_dp_rx_pp_alloc_skb(rx_ring);
++		if (skb)
++			*paddr = ath11k_dp_rx_pp_dma_addr(skb);
++		return skb;
++	}
++
++	skb = dev_alloc_skb(DP_RX_BUFFER_SIZE + DP_RX_BUFFER_ALIGN_SIZE);
++	if (!skb)
++		return NULL;
++
++	if (!IS_ALIGNED((unsigned long)skb->data, DP_RX_BUFFER_ALIGN_SIZE))
++		skb_pull(skb, PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
++			      skb->data);
++
++	*paddr = dma_map_single(ab->dev, skb->data,
++				skb->len + skb_tailroom(skb), DMA_FROM_DEVICE);
++	if (dma_mapping_error(ab->dev, *paddr)) {
++		dev_kfree_skb_any(skb);
++		return NULL;
++	}
++
++	return skb;
++}
++
++/* Frees a buffer ath11k_dp_rx_refill_alloc() gave that is not on the ring. */
++static void ath11k_dp_rx_refill_free(struct ath11k_base *ab,
++				     struct dp_rxdma_ring *rx_ring,
++				     struct sk_buff *skb, dma_addr_t paddr)
++{
++	if (!rx_ring->page_pool)
++		dma_unmap_single(ab->dev, paddr, skb->len + skb_tailroom(skb),
++				 DMA_FROM_DEVICE);
++	dev_kfree_skb_any(skb);
++}
+ 
+ int ath11k_dp_rxbufs_replenish(struct ath11k_base *ab, int mac_id,
+ 			       struct dp_rxdma_ring *rx_ring,
+ 			       int req_entries,
+ 			       enum hal_rx_buf_return_buf_manager mgr)
+ {
++	struct sk_buff *skbs[ATH11K_DP_RX_REFILL_CHUNK];
++	dma_addr_t paddrs[ATH11K_DP_RX_REFILL_CHUNK];
++	int ids[ATH11K_DP_RX_REFILL_CHUNK];
++	int n, got, ided, i, j;
+ 	struct hal_srng *srng;
+ 	u32 *desc;
+ 	struct sk_buff *skb;
+@@ -539,77 +592,62 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 	num_remain = req_entries;
+ 
+ 	while (num_remain > 0) {
+-		if (rx_ring->page_pool) {
+-			skb = ath11k_dp_rx_pp_alloc_skb(rx_ring);
++		n = min(num_remain, ATH11K_DP_RX_REFILL_CHUNK);
++		for (got = 0; got < n; got++) {
++			skb = ath11k_dp_rx_refill_alloc(ab, rx_ring, &paddr);
+ 			if (!skb)
+ 				break;
+-
+-			paddr = ath11k_dp_rx_pp_dma_addr(skb);
+-		} else {
+-			skb = dev_alloc_skb(DP_RX_BUFFER_SIZE +
+-					    DP_RX_BUFFER_ALIGN_SIZE);
+-			if (!skb)
+-				break;
+-
+-			if (!IS_ALIGNED((unsigned long)skb->data,
+-					DP_RX_BUFFER_ALIGN_SIZE)) {
+-				skb_pull(skb,
+-					 PTR_ALIGN(skb->data,
+-						   DP_RX_BUFFER_ALIGN_SIZE) -
+-					 skb->data);
+-			}
+-
+-			paddr = dma_map_single(ab->dev, skb->data,
+-					       skb->len + skb_tailroom(skb),
+-					       DMA_FROM_DEVICE);
+-			if (dma_mapping_error(ab->dev, paddr))
+-				goto fail_free_skb;
++			skbs[got] = skb;
++			paddrs[got] = paddr;
+ 		}
+ 
+ 		/* bottom halves are off with the ring lock */
+ 		spin_lock(&rx_ring->bufs_lock);
+-		buf_id = ath11k_dp_rx_buf_get_id(rx_ring, skb);
++		for (ided = 0; ided < got; ided++) {
++			buf_id = ath11k_dp_rx_buf_get_id(rx_ring, skbs[ided]);
++			if (buf_id <= 0)
++				break;
++			ids[ided] = buf_id;
++		}
+ 		spin_unlock(&rx_ring->bufs_lock);
+-		if (buf_id <= 0)
+-			goto fail_dma_unmap;
+-
+-		desc = ath11k_hal_srng_src_get_next_entry(ab, srng);
+-		if (!desc)
+-			goto fail_idr_remove;
+-
+-		ATH11K_SKB_RXCB(skb)->paddr = paddr;
+-
+-		cookie = FIELD_PREP(DP_RXDMA_BUF_COOKIE_PDEV_ID, mac_id) |
+-			 FIELD_PREP(DP_RXDMA_BUF_COOKIE_BUF_ID, buf_id);
+ 
+-		num_remain--;
++		for (i = 0; i < ided; i++) {
++			desc = ath11k_hal_srng_src_get_next_entry(ab, srng);
++			if (!desc)
++				break;
+ 
+-		ath11k_hal_rx_buf_addr_info_set(desc, paddr, cookie, mgr);
+-	}
++			ATH11K_SKB_RXCB(skbs[i])->paddr = paddrs[i];
+ 
+-	ath11k_hal_srng_access_end(ab, srng);
++			cookie = FIELD_PREP(DP_RXDMA_BUF_COOKIE_PDEV_ID, mac_id) |
++				 FIELD_PREP(DP_RXDMA_BUF_COOKIE_BUF_ID, ids[i]);
+ 
+-	if (req_entries)
+-		rx_ring->refill_deficit = num_remain;
++			num_remain--;
+ 
+-	spin_unlock_bh(&srng->lock);
++			ath11k_hal_rx_buf_addr_info_set(desc, paddrs[i], cookie,
++							mgr);
++		}
+ 
+-	return req_entries - num_remain;
++		/* A buffer that got no id or no ring entry goes back, and the
++		 * refill ends with what is on the ring.
++		 */
++		if (i < got) {
++			spin_lock(&rx_ring->bufs_lock);
++			for (j = i; j < ided; j++)
++				ath11k_dp_rx_buf_put_id(rx_ring, ids[j]);
++			spin_unlock(&rx_ring->bufs_lock);
++			for (j = i; j < got; j++)
++				ath11k_dp_rx_refill_free(ab, rx_ring, skbs[j],
++							 paddrs[j]);
++			break;
++		}
+ 
+-fail_idr_remove:
+-	spin_lock(&rx_ring->bufs_lock);
+-	ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
+-	spin_unlock(&rx_ring->bufs_lock);
+-fail_dma_unmap:
+-	if (!rx_ring->page_pool)
+-		dma_unmap_single(ab->dev, paddr, skb->len + skb_tailroom(skb),
+-				 DMA_FROM_DEVICE);
+-fail_free_skb:
+-	dev_kfree_skb_any(skb);
++		if (got < n)
++			break;
++	}
+ 
+ 	ath11k_hal_srng_access_end(ab, srng);
+ 
+-	if (ath11k_rx_refill_early && req_entries)
++	if (req_entries)
+ 		rx_ring->refill_deficit = num_remain;
+ 
+ 	spin_unlock_bh(&srng->lock);
