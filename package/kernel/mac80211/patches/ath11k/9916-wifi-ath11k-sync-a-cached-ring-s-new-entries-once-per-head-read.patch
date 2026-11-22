@@ -1,0 +1,158 @@
+From d9abd1fba85f5267745fc59e3142aa77918c089b Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 05:16:08 +0100
+Subject: [PATCH] wifi: ath11k: sync a cached ring's new entries once per head read
+
+The REO destination and TX completion rings are cacheable on the chips
+with alloc_cacheable_memory. The CPU takes each entry from the device with
+a dma_sync_single_for_cpu() of its 32 bytes when the entry before it is
+handed out, and prefetches it then. That is a call into the DMA layer and
+a dcache_inval_poc() with its DSB for every frame received and every frame
+completed, and a prefetch issued one entry, a few dozen instructions,
+before the load: in a profile of bridged downlink at 900 Mbit/s (IPQ8074,
+one run) the instruction after the first load of a completion entry in
+ath11k_dp_tx_completion_handler() takes 0.70 % of all samples.
+
+Invalidate the entries where they become the CPU's, when a read of the
+head pointer moves cached_hp: the whole range from the old head to the new
+one, in one call or two where it wraps, in access_begin and in
+ath11k_hal_srng_dst_num_free(), the two places that move it. An entry is
+read only below cached_hp, so each is invalidated once after the device
+wrote it, and a line the CPU loaded earlier, by a prefetch or
+speculatively, is discarded before its entries are read: the same
+guarantee the per-entry sync gave. The range is clamped to the ring.
+Prefetch the entries two cache lines ahead, which may run past the head:
+such a line is discarded again when the head exposes it.
+
+ath11k_hal_srng_dst_num_free() now reads the head with READ_ONCE() and
+orders the entry reads after it with dma_rmb(), as access_begin does.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/hal.c
++++ b/drivers/net/wireless/ath/ath11k/hal.c
+@@ -627,34 +627,52 @@ u32 *ath11k_hal_srng_dst_peek(struct ath
+ 	return NULL;
+ }
+ 
+-static u32 *ath11k_hal_srng_dst_peek_with_dma(struct ath11k_base *ab,
+-					      struct hal_srng *srng, dma_addr_t *paddr)
++/* Hands the CPU the entries of a cached destination ring from word @from up
++ * to word @to, which the head pointer the caller just read shows the device
++ * has written. Every entry the ring hands out passes through here once, after
++ * the head pointer that exposed it was read, so a line of the ring that the
++ * CPU loaded before, by a prefetch or speculatively, is discarded before it is
++ * read. The range is clamped to the ring, whatever the head pointer holds.
++ */
++static void ath11k_hal_srng_dst_sync(struct ath11k_base *ab,
++				     struct hal_srng *srng, u32 from, u32 to)
+ {
+-	lockdep_assert_held(&srng->lock);
++	u32 size = srng->ring_size;
+ 
+-	if (srng->u.dst_ring.tp != srng->u.dst_ring.cached_hp) {
+-		*paddr = srng->ring_base_paddr +
+-			  sizeof(*srng->ring_base_vaddr) * srng->u.dst_ring.tp;
+-		return srng->ring_base_vaddr + srng->u.dst_ring.tp;
+-	}
++	if (!(srng->flags & HAL_SRNG_FLAGS_CACHED) || from >= size)
++		return;
+ 
+-	return NULL;
++	to = min(to, size);
++	if (to < from) {
++		dma_sync_single_for_cpu(ab->dev, srng->ring_base_paddr +
++					from * sizeof(u32),
++					(size - from) * sizeof(u32),
++					DMA_FROM_DEVICE);
++		from = 0;
++	}
++	if (to > from)
++		dma_sync_single_for_cpu(ab->dev, srng->ring_base_paddr +
++					from * sizeof(u32),
++					(to - from) * sizeof(u32),
++					DMA_FROM_DEVICE);
+ }
+ 
+-static void ath11k_hal_srng_prefetch_desc(struct ath11k_base *ab,
+-					  struct hal_srng *srng)
++/* Starts the load of the entries @lines cache lines past word @tp of a cached
++ * ring. A line past the head pointer is discarded again by
++ * ath11k_hal_srng_dst_sync() before its entries are read.
++ */
++static void ath11k_hal_srng_dst_prefetch(struct hal_srng *srng, u32 tp,
++					 u32 lines)
+ {
+-	dma_addr_t desc_paddr;
+-	u32 *desc;
++	u32 ahead = tp + lines * L1_CACHE_BYTES / sizeof(u32);
+ 
+-	/* prefetch only if desc is available */
+-	desc = ath11k_hal_srng_dst_peek_with_dma(ab, srng, &desc_paddr);
+-	if (likely(desc)) {
+-		dma_sync_single_for_cpu(ab->dev, desc_paddr,
+-					(srng->entry_size * sizeof(u32)),
+-					DMA_FROM_DEVICE);
+-		prefetch(desc);
+-	}
++	if (!(srng->flags & HAL_SRNG_FLAGS_CACHED))
++		return;
++
++	if (ahead >= srng->ring_size)
++		ahead -= srng->ring_size;
++	if (ahead < srng->ring_size)
++		prefetch(srng->ring_base_vaddr + ahead);
+ }
+ 
+ u32 *ath11k_hal_srng_dst_get_next_entry(struct ath11k_base *ab,
+@@ -675,9 +693,7 @@ u32 *ath11k_hal_srng_dst_get_next_entry(
+ 	if (srng->u.dst_ring.tp == srng->ring_size)
+ 		srng->u.dst_ring.tp = 0;
+ 
+-	/* Try to prefetch the next descriptor in the ring */
+-	if (srng->flags & HAL_SRNG_FLAGS_CACHED)
+-		ath11k_hal_srng_prefetch_desc(ab, srng);
++	ath11k_hal_srng_dst_prefetch(srng, srng->u.dst_ring.tp, 2);
+ 
+ 	return desc;
+ }
+@@ -692,8 +708,15 @@ int ath11k_hal_srng_dst_num_free(struct
+ 	tp = srng->u.dst_ring.tp;
+ 
+ 	if (sync_hw_ptr) {
+-		hp = *srng->u.dst_ring.hp_addr;
+-		srng->u.dst_ring.cached_hp = hp;
++		hp = READ_ONCE(*srng->u.dst_ring.hp_addr);
++		if (hp != srng->u.dst_ring.cached_hp) {
++			u32 old = srng->u.dst_ring.cached_hp;
++
++			srng->u.dst_ring.cached_hp = hp;
++			/* the entries are read after the head pointer */
++			dma_rmb();
++			ath11k_hal_srng_dst_sync(ab, srng, old, hp);
++		}
+ 	} else {
+ 		hp = srng->u.dst_ring.cached_hp;
+ 	}
+@@ -852,16 +875,19 @@ void ath11k_hal_srng_access_begin(struct
+ 		hp = READ_ONCE(*srng->u.dst_ring.hp_addr);
+ 
+ 		if (hp != srng->u.dst_ring.cached_hp) {
++			u32 old = srng->u.dst_ring.cached_hp;
++
+ 			srng->u.dst_ring.cached_hp = hp;
+ 			/* Make sure descriptor is read after the head
+ 			 * pointer.
+ 			 */
+ 			dma_rmb();
++			ath11k_hal_srng_dst_sync(ab, srng, old, hp);
+ 		}
+ 
+-		/* Try to prefetch the next descriptor in the ring */
+-		if (srng->flags & HAL_SRNG_FLAGS_CACHED)
+-			ath11k_hal_srng_prefetch_desc(ab, srng);
++		ath11k_hal_srng_dst_prefetch(srng, srng->u.dst_ring.tp, 0);
++		ath11k_hal_srng_dst_prefetch(srng, srng->u.dst_ring.tp, 1);
++		ath11k_hal_srng_dst_prefetch(srng, srng->u.dst_ring.tp, 2);
+ 	}
+ }
+ 
