@@ -403,7 +403,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int ctrl_sock;
  	struct dl_list ctrl_dst;
  	char *ctrl_interface; /* Directory for UNIX domain sockets */
-@@ -1004,6 +1021,12 @@ struct hostapd_data * hostapd_mld_get_li
+@@ -1005,6 +1022,12 @@ struct hostapd_data * hostapd_mld_get_li
  int hostapd_link_remove(struct hostapd_data *hapd, u32 count);
  bool hostapd_link_remove_critical_update(struct hostapd_data *hapd);
  void hostapd_crit_update_done(struct hostapd_data *hapd, int link_id, u32 id);

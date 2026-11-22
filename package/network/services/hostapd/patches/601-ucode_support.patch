@@ -380,6 +380,15 @@ as adding/removing interfaces.
  {
  	if (!hapd)
  		return;
+@@ -3198,7 +3216,7 @@ static void hostapd_mld_ref_inc(struct h
+ }
+ 
+ 
+-static void hostapd_mld_ref_dec(struct hostapd_data *hapd)
++void hostapd_mld_ref_dec(struct hostapd_data *hapd)
+ {
+ 	struct hostapd_mld *mld = hapd->mld;
+ 
 @@ -3371,7 +3389,7 @@ fail:
  }
  
@@ -437,7 +446,7 @@ as adding/removing interfaces.
  	void *owner;
  	char *config_fname;
  	struct hostapd_config *conf;
-@@ -850,11 +858,16 @@ struct hostapd_iface * hostapd_init(stru
+@@ -850,11 +858,17 @@ struct hostapd_iface * hostapd_init(stru
  struct hostapd_iface *
  hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
  			   const char *config_fname, int debug);
@@ -451,6 +460,7 @@ as adding/removing interfaces.
  			   int reassoc);
  void hostapd_interface_deinit_free(struct hostapd_iface *iface);
 +void hostapd_cleanup_unused_mlds(struct hapd_interfaces *interfaces);
++void hostapd_mld_ref_dec(struct hostapd_data *hapd);
  int hostapd_enable_iface(struct hostapd_iface *hapd_iface);
  int hostapd_reload_iface(struct hostapd_iface *hapd_iface);
  int hostapd_reload_bss_only(struct hostapd_data *bss);
