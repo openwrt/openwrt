@@ -1,0 +1,195 @@
+From 004afc747910a1d4d409e624aec6babcf5b1bb00 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 10:54:36 +0100
+Subject: [PATCH] wifi: ath11k: keep the RX refill ring from running dry
+
+The firmware does nothing but log a message when the RXDMA refill ring
+is empty, and it then drops frames with no event for the host. Two paths
+let the ring run down:
+
+ - The low-threshold interrupt that tops the ring up is served by the
+   NAPI groups that also complete TX, take REO exceptions and WBM
+   errors. Those handlers return from the poll once they have used its
+   budget, and the refill came after them, so while one of them kept
+   using the whole budget the ring was never topped up.
+ - ath11k_dp_rxbufs_replenish() is asked for the number of buffers
+   that were just received and forgets the ones it could not allocate,
+   so every allocation failure shrinks the ring for good until the next
+   top-up.
+
+Serve the refill ring first in every poll of its group, whatever the
+budget, and carry the buffers a replenish could not allocate over to the
+next one.
+
+Count the times a replenish found the ring empty (its head equal to the
+hardware tail) in the soc_dp_stats debugfs file. The first is the fill at
+start.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -923,6 +923,10 @@ struct ath11k_soc_dp_stats {
+ 	u32 hal_reo_error[DP_REO_DST_RING_MAX];
+ 	/* MSDUs received on each REO2SW ring */
+ 	u64 rx_ring_msdu[DP_REO_DST_RING_MAX];
++	/* Times a replenish found the refill ring empty: the hardware had
++	 * consumed every buffer the host had given it
++	 */
++	u32 rx_refill_empty[MAX_RADIOS];
+ 	/* TCP batches the TCL segments, their segments, and batches that
+ 	 * were segmented in software instead
+ 	 */
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -713,6 +713,13 @@ static ssize_t ath11k_debugfs_dump_soc_d
+ 			 soc_stats->rx_ring_msdu[2],
+ 			 soc_stats->rx_ring_msdu[3]);
+ 
++	/* includes the fill at start */
++	len += scnprintf(buf + len, size - len,
++			 "\nRX refill ring found empty: %u %u %u\n",
++			 soc_stats->rx_refill_empty[0],
++			 soc_stats->rx_refill_empty[1],
++			 soc_stats->rx_refill_empty[2]);
++
+ 	len += scnprintf(buf + len, size - len,
+ 			 "TCP batches segmented by the TCL: %d, their segments: %d, segmented in software: %d, frames with fragments sent as scatter-gather: %d\n",
+ 			 atomic_read(&soc_stats->tx_tso_batch),
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -770,17 +770,45 @@ fail_desc_bank_free:
+ 	return ret;
+ }
+ 
++/* The refill ring is served from the low-threshold interrupt of its group.
++ * The groups that carry it also carry the TX completion, the REO exception
++ * and the WBM error handlers, which return from the poll when they have used
++ * the budget, so under load the refill below them is never reached while the
++ * hardware drains the ring.
++ */
++static void ath11k_dp_service_rx_refill(struct ath11k_base *ab, int grp_id)
++{
++	const struct ath11k_hw_hal_params *hal_params = ab->hw_params.hal_params;
++	int i, j;
++
++	for (i = 0; i < ab->num_radios; i++) {
++		for (j = 0; j < ab->hw_params.num_rxdma_per_pdev; j++) {
++			int id = i * ab->hw_params.num_rxdma_per_pdev + j;
++			struct ath11k *ar;
++
++			if (!(ab->hw_params.ring_mask->host2rxdma[grp_id] & BIT(id)))
++				continue;
++
++			ar = ath11k_ab_to_ar(ab, id);
++			ath11k_dp_rxbufs_replenish(ab, id,
++						   &ar->dp.rx_refill_buf_ring, 0,
++						   hal_params->rx_buf_rbm);
++		}
++	}
++}
++
+ int ath11k_dp_service_srng(struct ath11k_base *ab,
+ 			   struct ath11k_ext_irq_grp *irq_grp,
+ 			   int budget)
+ {
+ 	struct napi_struct *napi = &irq_grp->napi;
+-	const struct ath11k_hw_hal_params *hal_params;
+ 	int grp_id = irq_grp->grp_id;
+ 	int work_done = 0;
+ 	int i, j;
+ 	int tot_work_done = 0;
+ 
++	ath11k_dp_service_rx_refill(ab, grp_id);
++
+ 	for (i = 0; i < ab->hw_params.hal_params->num_tx_rings; i++) {
+ 		if (BIT(ab->hw_params.hal_params->tcl2wbm_rbm_map[i].wbm_ring_num) &
+ 		    ab->hw_params.ring_mask->tx[grp_id]) {
+@@ -858,16 +886,6 @@ int ath11k_dp_service_srng(struct ath11k
+ 
+ 			if (budget <= 0)
+ 				goto done;
+-
+-			if (ab->hw_params.ring_mask->host2rxdma[grp_id] & BIT(id)) {
+-				struct ath11k *ar = ath11k_ab_to_ar(ab, id);
+-				struct ath11k_pdev_dp *dp = &ar->dp;
+-				struct dp_rxdma_ring *rx_ring = &dp->rx_refill_buf_ring;
+-
+-				hal_params = ab->hw_params.hal_params;
+-				ath11k_dp_rxbufs_replenish(ab, id, rx_ring, 0,
+-							   hal_params->rx_buf_rbm);
+-			}
+ 		}
+ 	}
+ 	/* TODO: Implement handler for other interrupts */
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -81,6 +81,10 @@ struct dp_rxdma_ring {
+ 	/* Protects bufs and free_ids */
+ 	spinlock_t bufs_lock;
+ 	int bufs_max;
++	/* Buffers that a replenish was asked for and could not allocate;
++	 * the next one adds them. Protected by the refill ring's lock.
++	 */
++	u32 refill_deficit;
+ };
+ 
+ #define ATH11K_TX_COMPL_NEXT(x)	(((x) + 1) % DP_TX_COMP_RING_SIZE)
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -453,6 +453,7 @@ static struct sk_buff *ath11k_dp_rx_pp_a
+ }
+ 
+ /* Returns number of Rx buffers replenished */
++
+ int ath11k_dp_rxbufs_replenish(struct ath11k_base *ab, int mac_id,
+ 			       struct dp_rxdma_ring *rx_ring,
+ 			       int req_entries,
+@@ -476,8 +477,18 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 	ath11k_hal_srng_access_begin(ab, srng);
+ 
+ 	num_free = ath11k_hal_srng_src_num_free(ab, srng, true);
++
++	/* The head has caught up with the hardware's tail: it has consumed
++	 * every buffer, and the firmware only logs that, then drops frames.
++	 */
++	if (num_free >= srng->ring_size / srng->entry_size - 1)
++		ab->soc_stats.rx_refill_empty[mac_id]++;
++
+ 	if (!req_entries && (num_free > (rx_ring->bufs_max * 3) / 4))
+ 		req_entries = num_free;
++	else if (req_entries)
++		req_entries = min_t(int, req_entries + rx_ring->refill_deficit,
++				    rx_ring->bufs_max);
+ 
+ 	req_entries = min(num_free, req_entries);
+ 	num_remain = req_entries;
+@@ -532,6 +543,9 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 
+ 	ath11k_hal_srng_access_end(ab, srng);
+ 
++	if (req_entries)
++		rx_ring->refill_deficit = num_remain;
++
+ 	spin_unlock_bh(&srng->lock);
+ 
+ 	return req_entries - num_remain;
+@@ -549,6 +563,9 @@ fail_free_skb:
+ 
+ 	ath11k_hal_srng_access_end(ab, srng);
+ 
++	if (ath11k_rx_refill_early && req_entries)
++		rx_ring->refill_deficit = num_remain;
++
+ 	spin_unlock_bh(&srng->lock);
+ 
+ 	return req_entries - num_remain;
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.h
+@@ -73,6 +73,7 @@ int ath11k_dp_process_rx_err(struct ath1
+ int ath11k_dp_process_rx(struct ath11k_base *ab, int mac_id,
+ 			 struct napi_struct *napi,
+ 			 int budget);
++
+ int ath11k_dp_rxbufs_replenish(struct ath11k_base *ab, int mac_id,
+ 			       struct dp_rxdma_ring *rx_ring,
+ 			       int req_entries,
