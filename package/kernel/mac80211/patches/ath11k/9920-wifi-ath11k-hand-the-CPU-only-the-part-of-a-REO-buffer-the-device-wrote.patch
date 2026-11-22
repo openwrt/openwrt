@@ -1,0 +1,173 @@
+From 0a4310d63e928ae92fc59dbc264eb499caff6873 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 05:16:11 +0100
+Subject: [PATCH] wifi: ath11k: hand the CPU only the part of a REO buffer the device wrote
+
+The REO reap takes each page pool buffer back from the device with a
+dma_sync_single_for_cpu() over the whole buffer, 2048 bytes, while the
+device wrote the descriptor, the L3 padding and the MSDU, whose length the
+REO entry carries. A TCP acknowledgment, which is what a station sends
+back on downlink, takes 453 bytes of it on IPQ8074 (384 of descriptor, at
+most 3 of padding, 66 of frame): the invalidation walks 32 cache lines
+where 8 hold what the device wrote.
+
+Take back the descriptor, the largest padding of the two bit field and the
+MSDU length of the entry. The buffers of an MSDU that spans several, the
+one with the continuation bit and the ones after it in the ring, are taken
+whole as before; whether the last entry reaped had the bit is kept per
+ring, so a chain split between two polls is still seen. The length taken
+is recorded in the frame's control block, and ath11k_dp_rx_process_msdu()
+takes back the rest, up to the length the descriptor gives, before it
+reads the frame, should that be longer than the entry's: the CPU never
+reads a byte of the buffer it has not invalidated after the device wrote
+it, whatever the two lengths say. A line past what was taken back is not
+read and may hold a stale copy; the buffer is cleaned for the device
+before the device gets it again, and the reap of its next frame
+invalidates what that frame covers.
+
+A buffer of its own, without a page pool, is unmapped whole as before.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -152,6 +152,8 @@ struct ath11k_skb_rxcb {
+ 	u8 tid;
+ 	u16 peer_id;
+ 	u16 seq_no;
++	/* the bytes of the buffer from its start that the CPU took back */
++	u16 sync_len;
+ 	struct ieee80211_sta *sta;
+ };
+ 
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -283,6 +283,8 @@ struct ath11k_pdev_dp {
+ #define DP_RX_BUFFER_SIZE	2048
+ #define	DP_RX_BUFFER_SIZE_LITE  1024
+ #define DP_RX_BUFFER_ALIGN_SIZE	128
++/* The most L3 header padding the msdu_end TLV of any chip gives */
++#define DP_RX_L3_PAD_MAX	3
+ #define DP_RX_PP_ORDER		1
+ #define DP_RX_PP_FRAG_SIZE	ALIGN(SKB_HEAD_ALIGN(DP_RX_BUFFER_SIZE), \
+ 				      DP_RX_BUFFER_ALIGN_SIZE)
+@@ -328,6 +330,8 @@ struct ath11k_dp {
+ 	struct dp_srng reo_cmd_ring;
+ 	struct dp_srng reo_status_ring;
+ 	struct dp_srng reo_dst_ring[DP_REO_DST_RING_MAX];
++	/* the last entry reaped from the ring had the continuation bit */
++	bool reo_dst_cont[DP_REO_DST_RING_MAX];
+ 	struct dp_tx_ring tx_ring[DP_TCL_NUM_RING_MAX];
+ 	struct hal_wbm_idle_scatter_list scatter_list[DP_IDLE_SCATTER_BUFS_MAX];
+ 	struct list_head reo_cmd_list;
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -409,17 +409,57 @@ static bool ath11k_dp_rx_buf_is_pp(struc
+ 	return skb->pp_recycle && skb->head_frag;
+ }
+ 
+-static void ath11k_dp_rx_unmap_buf(struct ath11k_base *ab, struct sk_buff *skb,
+-				   enum dma_data_direction dir)
++/* Hands a receive buffer back to the CPU: of a page pool buffer the first
++ * @want bytes, or all of it for a @want of 0 or past its end, and records
++ * how much in sync_len. A buffer of its own is unmapped whole.
++ */
++static void ath11k_dp_rx_unmap_buf_len(struct ath11k_base *ab,
++				       struct sk_buff *skb,
++				       enum dma_data_direction dir,
++				       unsigned int want)
+ {
+ 	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(skb);
+ 	unsigned int len = skb->len + skb_tailroom(skb);
+ 
+-	if (ath11k_dp_rx_buf_is_pp(skb))
++	BUILD_BUG_ON(FIELD_MAX(RX_MSDU_END_INFO2_L3_HDR_PADDING) >
++		     DP_RX_L3_PAD_MAX);
++	BUILD_BUG_ON(FIELD_MAX(RX_MSDU_END_INFO4_L3_HDR_PADDING) >
++		     DP_RX_L3_PAD_MAX);
++
++	if (ath11k_dp_rx_buf_is_pp(skb)) {
++		if (want && want < len)
++			len = want;
+ 		dma_sync_single_for_cpu(ab->dev, rxcb->paddr, len,
+ 					DMA_BIDIRECTIONAL);
+-	else
++	} else {
+ 		dma_unmap_single(ab->dev, rxcb->paddr, len, dir);
++	}
++	rxcb->sync_len = len;
++}
++
++static void ath11k_dp_rx_unmap_buf(struct ath11k_base *ab, struct sk_buff *skb,
++				   enum dma_data_direction dir)
++{
++	ath11k_dp_rx_unmap_buf_len(ab, skb, dir, 0);
++}
++
++/* Takes back from the device the bytes of @msdu past those it took at the
++ * reap, up to @need, for a frame whose descriptor says it is longer than
++ * its REO entry did.
++ */
++static void ath11k_dp_rx_sync_more(struct ath11k_base *ab, struct sk_buff *msdu,
++				   unsigned int need)
++{
++	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(msdu);
++	unsigned int len = msdu->len + skb_tailroom(msdu);
++
++	need = min(need, len);
++	if (likely(need <= rxcb->sync_len))
++		return;
++
++	dma_sync_single_for_cpu(ab->dev, rxcb->paddr + rxcb->sync_len,
++				need - rxcb->sync_len, DMA_BIDIRECTIONAL);
++	rxcb->sync_len = need;
+ }
+ 
+ static dma_addr_t ath11k_dp_rx_pp_dma_addr(struct sk_buff *skb)
+@@ -2891,6 +2931,8 @@ static int ath11k_dp_rx_process_msdu(str
+ 					sizeof(struct hal_rx_desc));
+ 			goto free_out;
+ 		}
++		ath11k_dp_rx_sync_more(ab, msdu, hal_rx_desc_sz + l3_pad_bytes +
++				       msdu_len);
+ 		skb_put(msdu, hal_rx_desc_sz + l3_pad_bytes + msdu_len);
+ 		skb_pull(msdu, hal_rx_desc_sz + l3_pad_bytes);
+ 	} else {
+@@ -3043,6 +3085,8 @@ static void ath11k_dp_rx_prefetch_frame(
+ int ath11k_dp_process_rx(struct ath11k_base *ab, int ring_id,
+ 			 struct napi_struct *napi, int budget)
+ {
++	unsigned int want;
++	u32 info0;
+ 	struct ath11k_dp *dp = &ab->dp;
+ 	struct dp_rxdma_ring *rx_ring;
+ 	int num_buffs_reaped[MAX_RADIOS] = {};
+@@ -3080,6 +3124,20 @@ try_again:
+ 				   cookie);
+ 		mac_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_PDEV_ID, cookie);
+ 
++		/* The device wrote the descriptor, the padding and the MSDU
++		 * of the length the entry gives. A buffer of an MSDU that
++		 * spans several, which follows one with the continuation bit
++		 * or has it, is taken whole.
++		 */
++		info0 = desc->rx_msdu_info.info0;
++		want = ab->hw_params.hal_desc_sz + DP_RX_L3_PAD_MAX +
++		       FIELD_GET(RX_MSDU_DESC_INFO0_MSDU_LENGTH, info0);
++		if (dp->reo_dst_cont[ring_id] ||
++		    (info0 & RX_MSDU_DESC_INFO0_MSDU_CONTINUATION))
++			want = 0;
++		dp->reo_dst_cont[ring_id] =
++			!!(info0 & RX_MSDU_DESC_INFO0_MSDU_CONTINUATION);
++
+ 		if (unlikely(buf_id == 0))
+ 			continue;
+ 
+@@ -3099,7 +3157,7 @@ try_again:
+ 		spin_unlock(&rx_ring->bufs_lock);
+ 
+ 		rxcb = ATH11K_SKB_RXCB(msdu);
+-		ath11k_dp_rx_unmap_buf(ab, msdu, DMA_FROM_DEVICE);
++		ath11k_dp_rx_unmap_buf_len(ab, msdu, DMA_FROM_DEVICE, want);
+ 		ath11k_dp_rx_prefetch_frame(ab, msdu);
+ 
+ 		num_buffs_reaped[mac_id]++;
