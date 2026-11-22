@@ -480,6 +480,42 @@ static u32 edma_tx_release(struct edma_queue *q, u32 idx, struct sk_buff *skb,
 
 static void edma_src_drain(struct edma_queue *q);
 
+/* Starts the loads the release of the completions after @cons takes: the
+ * next line of the completion ring below @prod (one past what the poll
+ * synced is discarded by the next poll's sync before it is read), and the
+ * sk_buff the completion two ahead names, which the release reads
+ * and frees and which is cold, the frame having been sent long before. The
+ * opaque of a completion that is not the first of its frame is whatever the
+ * field held: it is only bounded, and costs at most a wasted prefetch, as
+ * nothing is read through it.
+ */
+static void edma_tx_cmpl_prefetch(struct edma_queue *q, u16 cons, u16 prod)
+{
+	struct edma_ring *ring = &q->txcmpl_ring;
+	u16 mask = ring->count - 1, avail = (prod - cons) & mask;
+	struct sk_buff *skb;
+	u32 idx;
+
+	if (avail > EDMA_DESCS_PER_LINE)
+		prefetch(EDMA_TXCMPL_DESC(ring, (cons + EDMA_DESCS_PER_LINE) &
+					  mask));
+	if (avail <= 2)
+		return;
+
+	idx = lower_32_bits(edma_desc_read(EDMA_TXCMPL_DESC(ring,
+							    (cons + 2) & mask)));
+	if (idx >= q->txdesc_ring.count)
+		return;
+
+	skb = READ_ONCE(q->txdesc_ring.skb_store[idx]);
+	if (skb) {
+		prefetchw(skb);
+		prefetchw((u8 *)skb + L1_CACHE_BYTES);
+		prefetchw((u8 *)skb + 2 * L1_CACHE_BYTES);
+		prefetchw((u8 *)skb + 3 * L1_CACHE_BYTES);
+	}
+}
+
 /* @napi_budget is the NAPI budget the poll was given, or zero when the caller
  * is not a poll: the skb cache napi_consume_skb() recycles into is per-CPU and
  * is only safe to touch from softirq context.
@@ -491,6 +527,7 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	const struct edma_soc_data *soc = priv->soc;
 	struct platform_device *pdev = priv->pdev;
 	u32 cleaned = 0, pkts = 0, bytes = 0;
+	bool pf = txcmpl_ring->cached;
 	struct sk_buff *skb;
 	u16 prod, cons;
 
@@ -505,6 +542,9 @@ static u32 edma_clean_tx(struct edma_queue *q, int budget, int napi_budget)
 	while (cons != prod && cleaned < budget) {
 		u64 desc = edma_desc_read(EDMA_TXCMPL_DESC(txcmpl_ring, cons));
 		u32 status = upper_32_bits(desc);
+
+		if (pf)
+			edma_tx_cmpl_prefetch(q, cons, prod);
 
 		if (unlikely(status & EDMA_TXCMPL_ERROR)) {
 			dev_warn_ratelimited(&pdev->dev, "tx error %#x\n",
