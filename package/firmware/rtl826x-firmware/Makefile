@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rtl826x-firmware
 PKG_SOURCE_DATE:=2026-01-24
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE_URL:=https://github.com/balika011/realtek_phy_firmware
 PKG_SOURCE_VERSION:=0cd4abe2b0bf197f75c27088f86a74c7ddb103b4
@@ -47,6 +47,7 @@ define Package/rtl826x-firmware/install
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/rtl8261n.bin \
 		$(PKG_BUILD_DIR)/rtl8264b.bin \
+		$(PKG_BUILD_DIR)/rtl8264.bin \
 		$(1)/lib/firmware/
 endef
 
@@ -57,6 +58,7 @@ define Package/rtl826x-lp-firmware/install
 		$(1)/lib/firmware/rtl8261n.bin
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/rtl8264b.bin \
+		$(PKG_BUILD_DIR)/rtl8264.bin \
 		$(1)/lib/firmware/
 endef
 
