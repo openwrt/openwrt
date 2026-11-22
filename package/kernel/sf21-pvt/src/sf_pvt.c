@@ -6,6 +6,7 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
+#include <linux/iopoll.h>
 #include <linux/mfd/syscon.h>
 #include <linux/platform_device.h>
 #include <linux/of.h>
@@ -15,6 +16,7 @@
 #include <linux/of_platform.h>
 #include <linux/reset.h>
 #include <linux/slab.h>
+#include <linux/mutex.h>
 #include <linux/spinlock.h>
 
 #define TS0_OFF			(0)
@@ -55,6 +57,10 @@ int dur_off[4] = { 0x20, 0x24, 0x2C, 0x30 };
 		writel((val), (p)->base + (off))
 
 static DEFINE_SPINLOCK(pvt_volt_lock);
+/* serializes the whole channel select + conversion sequence of in_show() */
+static DEFINE_MUTEX(pvt_volt_mutex);
+
+#define PVT_TIMEOUT_US		100000
 
 struct sf_pvt_info {
 	struct device  *dev;
@@ -143,14 +149,16 @@ static void set_temp_cfg(struct sf_pvt_info *pvt, int mode)
 
 static int read_temp(struct sf_pvt_info *pvt)
 {
-	int ready, ts_dout;
+	u32 val;
+	int ret;
+
 	writel_pvt(pvt, TS0_OFF, readl_pvt(pvt, TS0_OFF) & ~TS_RUN);
-	do {
-		ready = readl_pvt(pvt, TS1_OFF) & TS_RDY;
-	} while (!ready);
-	ts_dout = FIELD_PREP(TS_DOUT, readl_pvt(pvt, TS1_OFF));
+	ret = readl_poll_timeout(pvt->base + TS1_OFF, val, val & TS_RDY,
+				 100, PVT_TIMEOUT_US);
 	writel_pvt(pvt, TS0_OFF, readl_pvt(pvt, TS0_OFF) | TS_RUN);
-	return ts_dout;
+	if (ret)
+		return ret;
+	return FIELD_GET(TS_DOUT, val);
 }
 
 // Temperature in 0.001 degrees Celsius
@@ -185,7 +193,9 @@ static int sf_temp_read(struct device *dev, enum hwmon_sensor_types type,
 	if (type != hwmon_temp || attr != hwmon_temp_input) {
 		return -EINVAL;
 	}
-	ts = (long)read_temp(pvt);
+	ts = read_temp(pvt);
+	if (ts < 0)
+		return ts;
 	*val = temp_cal(ts, mode);
 	return 0;
 }
@@ -246,17 +256,18 @@ static void set_volt_cfg(struct sf_pvt_info *pvt, int port)
 
 static int read_volt(struct sf_pvt_info *pvt)
 {
-	int ready, vm_dout;
+	u32 val;
+	int ret;
 
 	spin_lock(&pvt_volt_lock);
 	writel_pvt(pvt, VM0_OFF, readl_pvt(pvt, VM0_OFF) | VM_RUN);
 	writel_pvt(pvt, VM0_OFF, readl_pvt(pvt, VM0_OFF) & ~VM_RUN);
-	do {
-		ready = readl_pvt(pvt, VM1_OFF) & VM_RDY;
-	} while (!ready);
-	vm_dout = FIELD_PREP(VM_DOUT, readl_pvt(pvt, VM1_OFF));
+	ret = readl_poll_timeout_atomic(pvt->base + VM1_OFF, val, val & VM_RDY,
+					1, PVT_TIMEOUT_US);
 	spin_unlock(&pvt_volt_lock);
-	return vm_dout;
+	if (ret)
+		return ret;
+	return FIELD_GET(VM_DOUT, val);
 }
 
 // Voltage in millivolts
@@ -276,15 +287,21 @@ in_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	int index = to_sensor_dev_attr(attr)->index;
 	struct sf_pvt_info *pvt = dev_get_drvdata(dev);
-	long vm = 0;
+	long vm;
+
+	mutex_lock(&pvt_volt_mutex);
 	writel_pvt(pvt, VM0_OFF, readl_pvt(pvt, VM0_OFF) & ~VM_RUN);
 	msleep(20);
 	set_volt_cfg(pvt, index);
 	msleep(100);
-	vm = (long)read_volt(pvt);
+	vm = read_volt(pvt);
 	msleep(20);
 	writel_pvt(pvt, VM0_OFF, readl_pvt(pvt, VM0_OFF) | VM_RUN);
-	return sprintf(buf, "\n now voltage = %ld mV\n", (long)volt_cal(vm));
+	mutex_unlock(&pvt_volt_mutex);
+	if (vm < 0)
+		return vm;
+	/* hwmon ABI: inN_input is a plain number in millivolts */
+	return sysfs_emit(buf, "%ld\n", volt_cal(vm));
 }
 
 static SENSOR_DEVICE_ATTR_RO(in0_input, in, 0);
