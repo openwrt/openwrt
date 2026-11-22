@@ -1,0 +1,32 @@
+From e25bb7206a7778395b79b49d3e91dd991b49de0f Mon Sep 17 00:00:00 2001
+From: Yoshifumi Ko <iedonami@gmail.com>
+Date: Mon, 23 Nov 2026 22:08:28 +0900
+Subject: [PATCH] net: dsa: mxl862xx: ignore inner TPID on untagged egress
+
+The VLAN-aware egress rule for double-tagged frames requires both
+tags to use TPID 0x8100. A frame with an outer 802.1Q tag and an
+inner 802.1ad tag can miss the strip rule and leave with the outer
+tag still present on a port configured for untagged egress.
+
+Match the configured outer 802.1Q VID and the presence of an inner
+tag independently of its TPID. The rule removes one outer tag and
+applies to untagged VLAN membership in either tagger mode.
+
+Fixes: d587f9b6dcc9 ("net: dsa: mxl862xx: implement VLAN functionality")
+Link: https://github.com/openwrt/openwrt/pull/26882#discussion_r4664785882
+Signed-off-by: Yoshifumi Ko <iedonami@gmail.com>
+--- a/drivers/net/dsa/mxl862xx/mxl862xx.c
++++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
+@@ -145,10 +145,10 @@ static const struct mxl862xx_evlan_rule_
+ 
+ /*
+  * VID-specific accept rules (VLAN-aware, standard tag, 2 per VID).
+- * Outer tag carries the VLAN; inner may or may not be present.
++ * Match the outer VLAN and accept any TPID on an inner tag.
+  */
+ static const struct mxl862xx_evlan_rule_desc vid_accept_standard[] = {
+-	{ FT_NORMAL, FT_NORMAL, TP_8021Q, TP_8021Q, true, EVLAN_STRIP_IF_UNTAGGED },
++	{ FT_NORMAL, FT_NORMAL, TP_8021Q, TP_NONE,  true, EVLAN_STRIP_IF_UNTAGGED },
+ 	{ FT_NORMAL, FT_NO_TAG, TP_8021Q, TP_NONE,  true, EVLAN_STRIP_IF_UNTAGGED },
+ };
+ 

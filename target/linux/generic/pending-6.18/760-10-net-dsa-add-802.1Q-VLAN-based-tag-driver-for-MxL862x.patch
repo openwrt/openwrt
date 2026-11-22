@@ -381,16 +381,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	{ FT_NORMAL,    FT_NO_TAG,    TP_8021Q, TP_NONE,  true, EVLAN_REASSIGN },
 +};
 +
-+/* User port egress catchall rules for tag_8021q mode.
++/* User port egress rules for tag_8021q mode.
 + * Strip the outer management VID tag from CPU->user frames that were
 + * not matched by any per-VID egress rule. Appended to the user port
-+ * egress EVLAN block when tag_8021q is active.
++ * egress EVLAN block when a management VID is assigned.
 + */
 +static const struct mxl862xx_evlan_rule_desc tag_8021q_egress_strip[] = {
-+	/* Any outer tag + inner present: strip outer (mgmt VID) */
-+	{ FT_NO_FILTER, FT_NO_FILTER, TP_NONE,  TP_NONE,  false, EVLAN_STRIP1 },
-+	/* Any outer tag, no inner: strip it */
-+	{ FT_NO_FILTER, FT_NO_TAG,    TP_NONE,  TP_NONE,  false, EVLAN_STRIP1 },
++	/* Outer management VID with an inner tag: strip the outer tag */
++	{ FT_NORMAL,    FT_NO_FILTER, TP_8021Q, TP_NONE,  true,  EVLAN_STRIP1 },
++	/* Outer management VID without an inner tag: strip it */
++	{ FT_NORMAL,    FT_NO_TAG,    TP_8021Q, TP_NONE,  true,  EVLAN_STRIP1 },
 +};
 +
  static enum dsa_tag_protocol mxl862xx_get_tag_protocol(struct dsa_switch *ds,
@@ -567,7 +567,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	int n_user_ports = 0, n_cpu_ports = 0, max_vlans;
 +	int cpu_egress_rules, cpu_ingress_per_port;
  	int ingress_finals, vid_rules;
-+	int egress_catchalls, evlan_reserved;
++	int egress_strip_rules, evlan_reserved;
 +	int ret, i, rescue, port;
  	struct dsa_port *dp;
 -	int ret, i, rescue;
@@ -616,7 +616,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		vid_rules = ARRAY_SIZE(vid_accept_standard);
 +		cpu_egress_rules = ARRAY_SIZE(cpu_egress_tag_8021q);
 +		cpu_ingress_per_port = ARRAY_SIZE(cpu_ingress_reassign);
-+		egress_catchalls = ARRAY_SIZE(tag_8021q_egress_strip);
++		egress_strip_rules = ARRAY_SIZE(tag_8021q_egress_strip);
  
  		/* Ingress block: fixed at finals count (7 entries) */
  		priv->evlan_ingress_size = ingress_finals;
@@ -628,19 +628,19 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		/* Reserve EVLAN entries for tag_8021q:
 +		 *  - virtual bridge port egress blocks (cpu_egress_rules each)
 +		 *  - CPU port ingress EVLAN (cpu_ingress_per_port each)
-+		 *  - user port egress catchalls for mgmt VID stripping
++		 *  - user port egress rules for management VID stripping
 +		 */
 +		evlan_reserved = n_user_ports * (ingress_finals +
 +						 cpu_egress_rules +
 +						 cpu_ingress_per_port +
-+						 egress_catchalls);
++						 egress_strip_rules);
 +
  		/* Egress block: remaining budget divided equally among
  		 * user ports. Each untagged VID needs vid_rules (2)
  		 * EVLAN entries for tag stripping. Tagged-only VIDs
 -		 * need no EVLAN rules at all.
 +		 * need no EVLAN rules at all. The block also includes
-+		 * space for the tag_8021q egress catchall rules.
++		 * space for the tag_8021q management VID rules.
  		 */
 -		max_vlans = (MXL862XX_TOTAL_EVLAN_ENTRIES -
 -			     n_user_ports * ingress_finals) /
@@ -648,7 +648,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			    (n_user_ports * vid_rules);
 -		priv->evlan_egress_size = vid_rules * max_vlans;
 +		priv->evlan_egress_size = vid_rules * max_vlans +
-+					  egress_catchalls;
++					  egress_strip_rules;
  
 -		/* VLAN Filter block: one per user port. The 1024-entry
 -		 * table is divided equally among user ports. Each port
@@ -932,7 +932,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	const struct mxl862xx_evlan_rule_desc *vid_rules;
  	struct mxl862xx_vf_vid *vfv;
  	u16 old_active = blk->n_active;
-+	int n_vid, n_catch, ret;
++	int n_vid, n_strip, ret;
  	u16 idx = 0, i;
 -	int n_vid, ret;
  
@@ -945,9 +945,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		/* Skip the tag_8021q management VID -- it must NOT get
 +		 * per-VID egress rules. The management VID arrives as
 +		 * the outer tag on CPU->user frames and is stripped by
-+		 * the catchall rules appended below. A per-VID rule
++		 * the management VID rules below. A per-VID rule
 +		 * here would match first (NO_FILTER outer) and prevent
-+		 * the catchall from stripping the tag.
++		 * the management VID rule from stripping the tag.
 +		 */
 +		if (p->tag_8021q_vid && vfv->vid == p->tag_8021q_vid)
 +			continue;
@@ -974,23 +974,23 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		}
 +	}
 +
-+	/* In tag_8021q mode, append catchall rules that strip the outer
-+	 * management VID tag from CPU->user frames. The management VID
-+	 * is kept through the forwarding pipeline (CPU ingress EVLAN
-+	 * only reassigns the bridge port, without stripping) and must
-+	 * be removed here before the frame exits the user port.
++	/* The CPU ingress EVLAN keeps the outer management tag when it
++	 * reassigns the bridge port. The tag is carried through forwarding
++	 * and removed here before the frame exits the user port. A port
++	 * without a management VID has no management tag to strip.
 +	 */
-+	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q) {
-+		n_catch = ARRAY_SIZE(tag_8021q_egress_strip);
++	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q && p->tag_8021q_vid) {
++		n_strip = ARRAY_SIZE(tag_8021q_egress_strip);
 +
-+		if (idx + n_catch > blk->block_size)
++		if (idx + n_strip > blk->block_size)
 +			return -ENOSPC;
 +
-+		for (i = 0; i < n_catch; i++) {
++		for (i = 0; i < n_strip; i++) {
 +			ret = mxl862xx_evlan_write_rule(priv, blk->block_id,
 +							idx++,
 +							&tag_8021q_egress_strip[i],
-+							0, false, 0, 0);
++							p->tag_8021q_vid,
++							false, 0, 0);
  			if (ret)
  				return ret;
  		}
@@ -1375,7 +1375,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		port = dp->index;
 +
 +		/* Reprogram user port egress EVLAN to add or remove the
-+		 * tag_8021q management VID strip catchalls.
++		 * tag_8021q management VID stripping rules.
 +		 */
 +		ret = mxl862xx_evlan_program_egress(priv, port);
 +		if (ret)
