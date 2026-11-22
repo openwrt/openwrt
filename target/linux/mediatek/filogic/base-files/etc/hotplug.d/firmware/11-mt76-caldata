@@ -34,6 +34,27 @@ case "$FIRMWARE" in
 		ln -sf /tmp/tp_data/MT7986_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
 		;;
+	tplink,ex820v)
+		mtd=$(find_mtd_chardev "misc_ro")
+		[ -n "$mtd" ] || caldata_die "misc_ro partition not found"
+
+		ubidev=$(ubiattach -p "$mtd" | sed -n 's/.*number \([0-9]*\),.*/\1/p')
+		[ -n "$ubidev" ] || caldata_die "failed to attach misc_ro"
+
+		mkdir -p /tmp/misc_ro
+		if ! mount -t ubifs -o ro ubi${ubidev}:misc_ro /tmp/misc_ro; then
+			ubidetach -d "$ubidev"
+			caldata_die "failed to mount misc_ro"
+		fi
+
+		# EEPROM is the first 4096 bytes of the stock calibration blob
+		[ -f /tmp/misc_ro/0x003A0000 ] && \
+			head -c 4096 /tmp/misc_ro/0x003A0000 > /lib/firmware/$FIRMWARE
+
+		umount /tmp/misc_ro
+		ubidetach -d "$ubidev"
+		rmdir /tmp/misc_ro
+		;;
 	esac
 	;;
 "mediatek/mt7986_eeprom_mt7976_dual.bin")

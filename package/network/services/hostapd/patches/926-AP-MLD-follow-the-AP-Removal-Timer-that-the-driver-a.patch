@@ -253,7 +253,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* The first Beacon frame of this link waits for the expiry of an
  	 * offloaded removal of another link */
  	bool eht_mld_beacon_start_held;
-@@ -1061,6 +1067,9 @@ u64 hostapd_link_remove_ms(struct hostap
+@@ -1062,6 +1068,9 @@ u64 hostapd_link_remove_ms(struct hostap
  void hostapd_mld_beacons_update(struct hostapd_data *hapd);
  void hostapd_link_remove_tx_status(struct hostapd_data *hapd, const u8 *addr);
  void hostapd_link_remove_expired(struct hostapd_data *hapd, u16 links);
