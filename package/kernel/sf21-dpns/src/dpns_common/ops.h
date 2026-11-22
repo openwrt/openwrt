@@ -77,6 +77,8 @@ int dpns_tcam_access(COMMON_t *priv, int opcode, u8 req_id,
 		u8 req_addr, void *data, u32 size);
 void dpns_tcam_clean(COMMON_t *priv, u8 block_id);
 void dpns_read_npu_mib(COMMON_t *priv);
+void dpns_common_debugfs_init(COMMON_t *priv);
+void dpns_common_debugfs_exit(void);
 int dpns_mem_alloc_init(u8 module);
 void dpns_mem_alloc_deinit(u8 module);
 void dump_dpns_mem_info(void);

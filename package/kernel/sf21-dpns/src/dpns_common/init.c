@@ -208,6 +208,7 @@ int dpns_common_probe(struct platform_device *pdev)
 	}
 
 	dpns_common_genl_init(priv);
+	dpns_common_debugfs_init(priv);
 	printk("End %s\n", __func__);
 	return 0;
 
@@ -230,6 +231,7 @@ int dpns_common_remove(struct platform_device *pdev)
 	if (!priv)
 		return -ENODATA;
 
+	dpns_common_debugfs_exit();
 	dpns_destroy_portsarray(priv);
 	sf_se_fini(priv);
 

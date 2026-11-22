@@ -4,6 +4,6 @@
 #
 
 
-dpnsCommon-y := init.o ops.o dpns_common_genl.o
+dpnsCommon-y := init.o ops.o dpns_common_genl.o debugfs.o
 
 obj-$(CONFIG_SIFLOWER_DPNS_COMMON)	+= dpnsCommon.o
