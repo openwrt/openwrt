@@ -390,6 +390,7 @@ struct edma_stats {
 	u64 rx_flow_aggs;
 	u64 rx_fwd_merged;
 	u64 rx_fwd_aggs;
+	u64 rx_gro_buf;
 	u64 tx_desc_error;
 	u64 tx_unnamed_frame;
 	u64 tx_gso_frames;

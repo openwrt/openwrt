@@ -950,11 +950,10 @@ static void edma_rx_slow(struct edma_queue *q, struct sk_buff *skb,
  * plain acknowledgment, and a TCP checksum the engine found good, which the
  * merged frame is given again.
  */
-static bool edma_gro_parse(const struct net_device *netdev,
-			   struct sk_buff *skb, u32 status, struct edma_tcp *t)
+static bool edma_gro_parse(const struct net_device *netdev, u8 *d,
+			   unsigned int len, u32 status, struct edma_tcp *t)
 {
-	unsigned int len = skb_headlen(skb), thoff, thlen;
-	u8 *d = skb->data;
+	unsigned int thoff, thlen;
 	struct tcphdr *th;
 
 	if (!(netdev->features & NETIF_F_RXCSUM) || !edma_rx_l4_ok(status) ||
@@ -1162,6 +1161,28 @@ static void edma_gro_flush(struct edma_queue *q)
 		     g->bytes);
 }
 
+/* Counts a segment of @payload bytes, IP ID @id and @bytes on the wire into
+ * the aggregate it joined, and sends the aggregate when the segment ends the
+ * run: one that ends a write (@push), a short one, or the bound on its size.
+ */
+static void edma_gro_joined(struct edma_queue *q, u16 payload, u16 id,
+			    bool push, u32 bytes, bool fixed)
+{
+	struct edma_gro *g = &q->gro;
+
+	if (g->segs == 1)
+		g->fixedid = fixed;
+	g->segs++;
+	g->bytes += bytes;
+	g->next_seq += payload;
+	g->last_id = id;
+	if (push)
+		g->t.th->psh = 1;
+
+	if (push || payload < g->mss || g->segs >= g->max_segs)
+		edma_gro_flush(q);
+}
+
 /* Appends the payload of @skb, a segment that fits, to the aggregate as a
  * fragment, which takes the page it was received in and leaves the segment's
  * own skb to be freed, or chains the segment to a frame list whole. The
@@ -1201,20 +1222,48 @@ static bool edma_gro_join(struct edma_queue *q, struct sk_buff *skb,
 		kfree_skb_partial(skb, fragstolen);
 	}
 
-	if (g->segs == 1)
-		g->fixedid = fixed;
-	g->segs++;
-	g->bytes += bytes;
-	g->next_seq += payload;
-	g->last_id = id;
-	if (push)
-		g->t.th->psh = 1;
+	edma_gro_joined(q, payload, id, push, bytes, fixed);
 
-	/* A segment that ends a write ends the run, as does a short one, and
-	 * the bound on its size.
-	 */
-	if (push || payload < g->mss || g->segs >= g->max_segs)
-		edma_gro_flush(q);
+	return true;
+}
+
+/* Appends the payload of a segment that fits, still in the receive buffer of
+ * @page whose headers @t parsed, to the aggregate without building an skb for
+ * it. It leaves the aggregate as skb_try_coalesce() leaves it with the skb
+ * napi_build_skb() would have made of the buffer: the payload copied into the
+ * head's tailroom where it fits, the buffer then going back to the pool;
+ * else the page as the head's next fragment, taking the buffer's page pool
+ * reference and adding the truesize of that skb less its struct, which is
+ * rx_truesize. A frame list chains whole skbs, so it takes no buffer.
+ *
+ * Return: false, with the buffer untouched, when the aggregate cannot take it.
+ */
+static bool edma_gro_join_buf(struct edma_queue *q, struct page *page,
+			      const struct edma_tcp *t, u32 bytes, bool fixed)
+{
+	struct edma_gro *g = &q->gro;
+	struct sk_buff *head = g->head;
+	u16 payload = t->payload, id = t->v6 ? 0 : ntohs(t->ip4->id);
+	u8 *data = (u8 *)t->eth + t->hdr_len;
+	bool push = t->th->psh;
+
+	if (g->flist || skb_cloned(head) || skb_zcopy(head) ||
+	    skb_has_frag_list(head) || !head->pp_recycle)
+		return false;
+
+	if (payload <= skb_tailroom(head)) {
+		skb_put_data(head, data, payload);
+		page_pool_put_full_page(q->page_pool, page, true);
+	} else {
+		if (skb_shinfo(head)->nr_frags >= MAX_SKB_FRAGS)
+			return false;
+		skb_add_rx_frag(head, skb_shinfo(head)->nr_frags, page,
+				data - (u8 *)page_address(page), payload,
+				q->priv->rx_truesize);
+	}
+	q->stats.rx_gro_buf++;
+
+	edma_gro_joined(q, payload, id, push, bytes, fixed);
 
 	return true;
 }
@@ -1400,7 +1449,7 @@ static bool edma_gro_rx(struct edma_queue *q, struct sk_buff *skb,
 
 	ok = src_port < EDMA_PORTS &&
 	     !(rxph->rx_pre2 & cpu_to_le32(EDMA_RXPH_CTAG_FLAG)) &&
-	     edma_gro_parse(netdev, skb, status, &t) &&
+	     edma_gro_parse(netdev, skb->data, skb_headlen(skb), status, &t) &&
 	     !((flow & EDMA_GRO_FWD) && is_multicast_ether_addr(t.eth->h_dest));
 
 	if (g->head) {
@@ -1423,6 +1472,34 @@ static bool edma_gro_rx(struct edma_queue *q, struct sk_buff *skb,
 	edma_rx_netstats(netdev, 1, pkt_len);
 	q->stats.rx_flow_single++;
 	return true;
+}
+
+/* edma_gro_rx() for a frame of @flow still in its receive buffer of @page,
+ * at @frame, while an aggregate of frames with fragments is open: the frame
+ * joins it under the same checks, with no skb built for it. One that does not
+ * join ends the aggregate, as it would there, and is left to be built and
+ * handled as any frame that finds none open.
+ *
+ * Return: true when the buffer is the aggregate's.
+ */
+static bool edma_gro_rx_buf(struct edma_queue *q, struct page *page,
+			    u8 *frame, const struct edma_rx_preheader *rxph,
+			    u32 status, u32 src_port, u32 pkt_len, u32 flow)
+{
+	struct net_device *netdev = q->priv->netdev;
+	struct edma_tcp t;
+	bool fixed = false;
+
+	if (src_port < EDMA_PORTS &&
+	    !(rxph->rx_pre2 & cpu_to_le32(EDMA_RXPH_CTAG_FLAG)) &&
+	    edma_gro_parse(netdev, frame, pkt_len, status, &t) &&
+	    !((flow & EDMA_GRO_FWD) && is_multicast_ether_addr(t.eth->h_dest)) &&
+	    edma_gro_fits(&q->gro, &t, flow, &fixed) &&
+	    edma_gro_join_buf(q, page, &t, pkt_len, fixed))
+		return true;
+
+	edma_gro_flush(q);
+	return false;
 }
 
 static u32 edma_clean_rx(struct edma_queue *q, int budget)
@@ -1534,6 +1611,22 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 
 		src_port = rxph->src_info & EDMA_SRC_PORT_MASK;
 
+		if (edma_rx_is_flow(rxph))
+			flow = edma_rx_flow_id(rxph);
+		else if (edma_rx_is_fwd(netdev, rxph))
+			flow = EDMA_GRO_FWD | src_port;
+		else
+			flow = EDMA_GRO_NONE;
+
+		/* A segment of the open aggregate needs no skb of its own: its
+		 * page becomes one of the aggregate's fragments.
+		 */
+		if (q->gro.head && !q->gro.flist &&
+		    flow != EDMA_GRO_NONE &&
+		    edma_gro_rx_buf(q, page, (u8 *)rxph + EDMA_RX_PREHDR_SIZE,
+				    rxph, desc_status, src_port, pkt_len, flow))
+			goto next;
+
 		skb = napi_build_skb(data, priv->rx_truesize);
 		if (unlikely(!skb)) {
 			page_pool_put_full_page(q->page_pool, page, true);
@@ -1550,12 +1643,6 @@ static u32 edma_clean_rx(struct edma_queue *q, int budget)
 		 * the ring, so each ring's CPU feeds a queue of its own.
 		 */
 		skb_record_rx_queue(skb, q->idx);
-		if (edma_rx_is_flow(rxph))
-			flow = edma_rx_flow_id(rxph);
-		else if (edma_rx_is_fwd(netdev, rxph))
-			flow = EDMA_GRO_FWD | src_port;
-		else
-			flow = EDMA_GRO_NONE;
 		if (flow != EDMA_GRO_NONE) {
 			if (edma_gro_rx(q, skb, rxph, desc_status, src_port,
 					pkt_len, flow))
@@ -2643,6 +2730,7 @@ static const char edma_stat_names[][ETH_GSTRING_LEN] = {
 	"rx_flow_aggs",
 	"rx_fwd_merged",
 	"rx_fwd_aggs",
+	"rx_gro_buf",
 	"tx_desc_error",
 	"tx_unnamed_frame",
 	"tx_gso_frames",
