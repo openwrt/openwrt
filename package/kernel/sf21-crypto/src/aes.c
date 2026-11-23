@@ -336,13 +336,13 @@ sf_ce_aes_ctr_op(struct skcipher_request *req, bool is_decrypt)
 	}
 
 	ch->cur_rx = cur_rx;
+	reg_write_flush(priv, CE_DMA_CH_RxDESC_TAIL_LPTR(ch->ch_num), ch->dma_rx_phy + sizeof(struct sf_ce_desc) * cur_rx);
+	reg_write(priv, CE_DMA_CH_TxDESC_TAIL_LPTR(ch->ch_num), ch->dma_tx_phy + sizeof(struct sf_ce_desc) * cur_tx);
 #ifdef CONFIG_CRYPTO_SIFLOWER_HASH
 	spin_unlock_bh(&ch->ring_lock);
 #else
 	local_bh_enable();
 #endif
-	reg_write_flush(priv, CE_DMA_CH_RxDESC_TAIL_LPTR(ch->ch_num), ch->dma_rx_phy + sizeof(struct sf_ce_desc) * cur_rx);
-	reg_write(priv, CE_DMA_CH_TxDESC_TAIL_LPTR(ch->ch_num), ch->dma_tx_phy + sizeof(struct sf_ce_desc) * cur_tx);
 
 	return -EINPROGRESS;
 }
@@ -970,13 +970,13 @@ sf_ce_aes_gcm_op(struct aead_request *req, bool is_decrypt)
 	}
 
 	ch->cur_rx = cur_rx;
+	reg_write_flush(priv, CE_DMA_CH_RxDESC_TAIL_LPTR(ch->ch_num), ch->dma_rx_phy + sizeof(struct sf_ce_desc) * (cur_rx ?: DMA_RING_SIZE));
+	reg_write(priv, CE_DMA_CH_TxDESC_TAIL_LPTR(ch->ch_num), ch->dma_tx_phy + sizeof(struct sf_ce_desc) * (cur_tx ?: DMA_RING_SIZE));
 #ifdef CONFIG_CRYPTO_SIFLOWER_HASH
 	spin_unlock_bh(&ch->ring_lock);
 #else
 	local_bh_enable();
 #endif
-	reg_write_flush(priv, CE_DMA_CH_RxDESC_TAIL_LPTR(ch->ch_num), ch->dma_rx_phy + sizeof(struct sf_ce_desc) * (cur_rx ?: DMA_RING_SIZE));
-	reg_write(priv, CE_DMA_CH_TxDESC_TAIL_LPTR(ch->ch_num), ch->dma_tx_phy + sizeof(struct sf_ce_desc) * (cur_tx ?: DMA_RING_SIZE));
 
 	return -EINPROGRESS;
 }
@@ -1584,13 +1584,13 @@ sf_ce_aes_ccm_op(struct aead_request *req, bool is_decrypt)
 	}
 
 	ch->cur_rx = cur_rx;
+	reg_write_flush(priv, CE_DMA_CH_RxDESC_TAIL_LPTR(ch->ch_num), ch->dma_rx_phy + sizeof(struct sf_ce_desc) * (cur_rx ?: DMA_RING_SIZE));
+	reg_write(priv, CE_DMA_CH_TxDESC_TAIL_LPTR(ch->ch_num), ch->dma_tx_phy + sizeof(struct sf_ce_desc) * (cur_tx ?: DMA_RING_SIZE));
 #ifdef CONFIG_CRYPTO_SIFLOWER_HASH
 	spin_unlock_bh(&ch->ring_lock);
 #else
 	local_bh_enable();
 #endif
-	reg_write_flush(priv, CE_DMA_CH_RxDESC_TAIL_LPTR(ch->ch_num), ch->dma_rx_phy + sizeof(struct sf_ce_desc) * (cur_rx ?: DMA_RING_SIZE));
-	reg_write(priv, CE_DMA_CH_TxDESC_TAIL_LPTR(ch->ch_num), ch->dma_tx_phy + sizeof(struct sf_ce_desc) * (cur_tx ?: DMA_RING_SIZE));
 
 	return -EINPROGRESS;
 }

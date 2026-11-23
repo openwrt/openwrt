@@ -249,11 +249,11 @@ sf_ce_sha256_update(struct ahash_request *req)
 	ch->areqs[cur_rx] = &req->base;
 	cur_rx = (cur_rx + 1) % DMA_RING_SIZE;
 	ch->cur_rx = cur_rx;
-	spin_unlock_bh(&ch->ring_lock);
 
 	/* inform the DMA for the new data */
 	reg_write_flush(priv, CE_DMA_CH_RxDESC_TAIL_LPTR(ch->ch_num), ch->dma_rx_phy + sizeof(struct sf_ce_desc) * cur_rx);
 	reg_write(priv, CE_DMA_CH_TxDESC_TAIL_LPTR(ch->ch_num), ch->dma_tx_phy + sizeof(struct sf_ce_desc) * cur_tx);
+	spin_unlock_bh(&ch->ring_lock);
 
 	return -EINPROGRESS;
 }
@@ -324,10 +324,10 @@ sf_ce_sha256_final(struct ahash_request *req)
 	reqctx->block_len = index + pad_len;
 	reqctx->nents = 0;
 	reqctx->final = true;
-	spin_unlock_bh(&ch->ring_lock);
 	/* inform the DMA for the new data */
 	reg_write_flush(priv, CE_DMA_CH_RxDESC_TAIL_LPTR(ch->ch_num), ch->dma_rx_phy + sizeof(struct sf_ce_desc) * cur_rx);
 	reg_write(priv, CE_DMA_CH_TxDESC_TAIL_LPTR(ch->ch_num), ch->dma_tx_phy + sizeof(struct sf_ce_desc) * cur_tx);
+	spin_unlock_bh(&ch->ring_lock);
 	return -EINPROGRESS;
 }
 
@@ -466,11 +466,11 @@ sf_ce_sha256_finup(struct ahash_request *req)
 	cur_rx = (cur_rx + 1) % DMA_RING_SIZE;
 	ch->cur_rx = cur_rx;
 	reqctx->final = true;
-	spin_unlock_bh(&ch->ring_lock);
 
 	/* inform the DMA for the new data */
 	reg_write_flush(priv, CE_DMA_CH_RxDESC_TAIL_LPTR(ch->ch_num), ch->dma_rx_phy + sizeof(struct sf_ce_desc) * cur_rx);
 	reg_write(priv, CE_DMA_CH_TxDESC_TAIL_LPTR(ch->ch_num), ch->dma_tx_phy + sizeof(struct sf_ce_desc) * cur_tx);
+	spin_unlock_bh(&ch->ring_lock);
 
 	return -EINPROGRESS;
 err_map_hash:
@@ -609,11 +609,11 @@ sf_ce_sha256_digest(struct ahash_request *req)
 	cur_rx = (cur_rx + 1) % DMA_RING_SIZE;
 	ch->cur_rx = cur_rx;
 	reqctx->final = true;
-	spin_unlock_bh(&ch->ring_lock);
 
 	/* inform the DMA for the new data */
 	reg_write_flush(priv, CE_DMA_CH_RxDESC_TAIL_LPTR(ch->ch_num), ch->dma_rx_phy + sizeof(struct sf_ce_desc) * cur_rx);
 	reg_write(priv, CE_DMA_CH_TxDESC_TAIL_LPTR(ch->ch_num), ch->dma_tx_phy + sizeof(struct sf_ce_desc) * cur_tx);
+	spin_unlock_bh(&ch->ring_lock);
 
 	return -EINPROGRESS;
 err_map_hash:

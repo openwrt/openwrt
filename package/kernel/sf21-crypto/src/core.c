@@ -565,18 +565,18 @@ static void sf_ce_remove(struct platform_device *pdev)
 	if (enable_ccm)
 		crypto_unregister_aead(&sf_ce_aes_ccm);
 	crypto_unregister_aead(&sf_ce_aes_gcm);
-	sf_ce_stop(priv);
 
 	for (i = 0; i < DMA_CH_NUM; i++) {
 		tasklet_kill(&priv->chan[i].bh);
 		irq_set_affinity_hint(priv->chan[i].tx_irq, NULL);
 		irq_set_affinity_hint(priv->chan[i].rx_irq, NULL);
 	}
+	sf_ce_stop(priv);
 
-	reset_control_assert(priv->app_rstc);
 	reset_control_assert(priv->csr_rstc);
-	clk_disable_unprepare(priv->app_clk);
+	reset_control_assert(priv->app_rstc);
 	clk_disable_unprepare(priv->csr_clk);
+	clk_disable_unprepare(priv->app_clk);
 	dma_unmap_single_attrs(priv->dev, priv->zero_pad_phys, PAGE_SIZE, DMA_TO_DEVICE, DMA_ATTR_SKIP_CPU_SYNC);
 	g_dev = NULL;
 }
