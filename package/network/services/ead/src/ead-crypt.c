@@ -78,7 +78,6 @@ ead_check_rx_iv(uint32_t iv)
 	if (iv > ead_rx_iv + EAD_MAX_IV_INCR)
 		return false;
 
-	ead_rx_iv = iv;
 	return true;
 }
 
@@ -179,6 +178,9 @@ ead_decrypt_message(struct ead_msg *msg)
 		DEBUG(2, "SHA1 mismatch (0x%08x != 0x%08x), len=%d\n", hash_old[0], hash_new[0], enclen);
 		return 0;
 	}
+
+	/* only a frame that passed the hash check may advance the IV */
+	ead_rx_iv = ntohl(enc->iv);
 
 	enclen -= enc->pad + sizeof(struct ead_msg_encrypted);
 	return enclen;
