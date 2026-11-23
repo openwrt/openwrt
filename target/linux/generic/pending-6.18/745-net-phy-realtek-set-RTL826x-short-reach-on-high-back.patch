@@ -1,0 +1,706 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Patrick Domack <patrickdk@patrickdk.com>
+Date: Sun, 08 Nov 2026 09:30:04 -0500
+Subject: net: phy: realtek: set RTL826x short reach on high backoff
+
+On a 3 ft cable an RTL8261N negotiated a local TX power backoff of
+12 dB, and its switch-side link partner then requested a fast retrain
+once or twice a minute. With short reach mode, 1.131 bit 0, set and the
+link renegotiated, that unit saw no partner fast retrains and no PCS
+errors in 15 minutes, against 20 in the 15 minutes before. The backoff
+still read 12 dB local and 10 dB partner afterwards, 1.131 = 0xb801.
+Links on 70 ft cables negotiate 10 dB and must stay as they are.
+
+A board opts in per PHY with the device tree property
+realtek,short-reach-backoff-db, the local backoff in dB from which to
+switch. 1.131 encodes the backoff in 2 dB steps from 0 to 14 dB, so the
+property takes an even value from 0 to 14. 0 turns the rule off, like
+an absent property. Any other value, or a property that does not read
+as a u32, gets one warning at probe and leaves the rule off. Like
+realtek,enable-pma-low-power it has no binding document, as the RTL826x
+support it belongs to is not in mainline.
+
+On every link-up, while the property is set, the driver reads 1.129
+and 1.131. If the link runs at 10G, the link partner information is
+valid, autonegotiation is on, short reach mode is off and the local
+backoff in 1.131 bits 12:10 is at least the property, a delayed work
+sets bit 0 with a read-modify-write, reads it back and restarts
+autonegotiation. 1.131 is a Clause 55 register, so links at 5G and
+below are left alone, which also leaves the 5G-only RTL8251L and
+RTL8254B alone. The work takes phydev->lock, checks autonegotiation
+again, and does nothing unless the PHY is in NOLINK or RUNNING, so
+read_status() never writes and the phylib state machine is never
+re-entered.
+
+The rule looks at the local backoff, not the partner's or the larger of
+the two. During 10GBASE-T startup each receiver asks its link partner to
+back off by an amount that depends on the signal it receives (55.4.3.1).
+A local backoff of 12 dB means the partner's receiver asked for it, and
+that receiver is the one that kept requesting fast retrains. The partner
+backoff read 10 dB on both the 3 ft and the 70 ft links, so it does not
+tell them apart.
+
+Each flip is checked, so a bit the PHY does not keep cannot cause a
+loop. If bit 0 does not read back as set, or the renegotiated link comes
+up with it clear, the driver leaves the feature off until config_init()
+runs. The renegotiation gets a 15 s window. If the window ends without
+a link-up, or the link comes back below 10G, the driver clears the bit,
+restarts autonegotiation and latches off the same way. It does the same
+if the short reach link drops within 60 s of coming up. The driver
+times that from the drop itself, so interrupt mode gets the same 60 s
+as polling mode. A drop after 743's work had to reset the SerDes for
+that link-up is the SerDes problem 743 handles, not an unstable link,
+and goes to the outage rule below.
+
+In polling mode the driver decides a deadline at phylib's first poll at
+or after it, from the link state and speed that poll read. In interrupt
+mode the work decides at the deadline from phylib's link state. When
+that is down it reads 1.129, whose bit 0 is 0 while the PMA link fails
+and does not latch, in case a 10G link-up is still waiting for its
+interrupt. A failed read is retried a second later, and a clear that
+fails is retried every 15 s.
+
+Outside a window, a link that stays down for 15 s with the bit the
+driver set gets the bit cleared and autonegotiation restarted, without
+the latch, and the next link-up decides again from the backoff it
+negotiates. A link partner reboot thus ends with short reach back on
+after one extra renegotiation, and a swap to a long cable ends with it
+off. The third such clear within an hour latches the feature off. That
+bounds a link that trains in short reach mode but cannot hold it to a
+few extra renegotiations, after which it stays in normal mode. The
+clocks use 64-bit jiffies, so they also hold on 32-bit kernels.
+
+After phy_stop(), or a suspend whose resume does not initialize the
+PHY again, the driver has not seen how the link went down. phylib then
+calls read_status() in PHY_UP when the state machine starts again, and
+the driver takes that call as the start of a new run. It forgets the
+link state and the 60 s hold from before. If the PHY starts again with
+the driver's bit set and no link, the outage clock runs as for any
+drop, so a port that comes back on another cable does not stay down.
+
+config_init() runs whenever phylib initializes the PHY, on attach and
+on resume, and on MACs that attach the PHY in ndo_open on every
+interface up. If 1.131 bit 0 is set there and the driver set it, it
+clears the bit before autonegotiation starts, because the cable may
+have changed while the interface was down. Either way config_init()
+re-arms the feature, so the next link-up decides again from the
+backoff it negotiates.
+
+15 s is several times the 2 s that 55.4.5.2 allows the 10GBASE-T
+startup through maxwait_timer, with room for autonegotiation and
+phylib's 1 s polling, so a link that can train comes up well inside it.
+A link that fails within a minute of training is not a working short
+reach link, while a partner reboot that soon after a flip is unlikely.
+Three outage clears in an hour still allow a reboot and a cable move,
+and stop a failing link after three extra renegotiations.
+
+Seven new statistics show the state. Five are counts.
+short_reach_auto_set counts the flips, short_reach_fallback the flips
+that brought no 10G link up in the window, short_reach_not_kept the
+bits that did not stay set, short_reach_unstable the latches for an
+early drop or repeated outages, and short_reach_cleared_outage the
+clears after an outage. The other two are state the counts cannot
+show. short_reach_active is 1 while a bit the driver set is in force,
+which short_reach_mode cannot tell apart from a bit that firmware or a
+user set. short_reach_latched_off is 1 while the feature is latched off
+until config_init(), which the latch counters cannot show once a
+re-arm has cleared the latch.
+
+Like 744, this applies on top of 742 "net: phy: realtek: add 5G and
+10G PHY support" and 743 "net: phy: realtek: reset RTL8261N USXGMII
+SerDes on link up", which are not in mainline yet.
+
+Signed-off-by: Patrick Domack <patrickdk@patrickdk.com>
+---
+ drivers/net/phy/realtek/realtek.h      |   29 +
+ drivers/net/phy/realtek/realtek_main.c |  485 ++++++++++++++++++++++++++++++++-
+ 2 files changed, 513 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/realtek/realtek.h
++++ b/drivers/net/phy/realtek/realtek.h
+@@ -22,6 +22,33 @@ struct rtl826x_stats {
+ 	bool pcs_hi_present;
+ };
+ 
++struct rtl826x_sr {
++	u64 deadline;
++	u64 up_since;
++	u64 clears_since;
++	u64 polled;
++	u64 auto_set;
++	u64 fallback;
++	u64 cleared_outage;
++	u64 not_kept;
++	u64 unstable;
++	unsigned int clears;
++	u32 threshold_db;
++	int txpwr;
++	int rearm;
++	bool link;
++	bool check;
++	bool verify;
++	bool pending;
++	bool owned;
++	bool proving;
++	bool settling;
++	bool early_drop;
++	bool slow;
++	bool outage;
++	bool disarmed;
++};
++
+ struct rtl826x_priv {
+ 	struct rtlgen_phy_patch_db *patch;
+ 	bool enable_pma_low_power:1;
+@@ -30,6 +57,8 @@ struct rtl826x_priv {
+ 	bool sds_work_disabled;
+ 	unsigned int sds_retries;
+ 	struct rtl826x_stats stats;
++	struct delayed_work sr_work;
++	struct rtl826x_sr sr;
+ };
+ 
+ int rtl822x_hwmon_init(struct phy_device *phydev);
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -364,6 +364,17 @@ struct rtl8261x_fw_entry {
+ 
+ #define RTL826X_PBO_STEP_DB			2
+ 
++#define RTL826X_SR_TIMEOUT_MS			15000
++#define RTL826X_SR_HOLD_MS			60000
++#define RTL826X_SR_RETRY_MS			1000
++#define RTL826X_SR_CLEARS_MAX			3
++#define RTL826X_SR_CLEARS_PERIOD_MS		3600000
++#define RTL826X_SR_REARM			BIT(16)
++#define RTL826X_SR_REARM_UNKNOWN		BIT(17)
++#define RTL826X_SR_PROP			"realtek,short-reach-backoff-db"
++#define RTL826X_SR_MAX_DB			(RTL826X_PBO_STEP_DB * \
++	FIELD_MAX(RTL826X_PMA_10GBT_TXPWR_LD_PBO))
++
+ MODULE_DESCRIPTION("Realtek PHY driver");
+ MODULE_AUTHOR("Johnson Leung");
+ MODULE_LICENSE("GPL");
+@@ -3359,6 +3370,443 @@ static void rtl826x_cancel_sds_work(void
+ 	cancel_delayed_work_sync(&priv->sds_work);
+ }
+ 
++/* Some link partners keep fast retraining on very short cables. When a
++ * 10GBASE-T link comes up with the local TX power backoff at or above the
++ * "realtek,short-reach-backoff-db" property, set short reach mode and
++ * renegotiate. The renegotiation has RTL826X_SR_TIMEOUT_MS to bring a 10G
++ * link up. If it does not, if the bit does not stay set, or if the link
++ * keeps failing in short reach mode, clear the bit and leave the feature
++ * off until config_init(). A later outage of RTL826X_SR_TIMEOUT_MS clears
++ * the bit without that latch, so the next link-up decides again.
++ */
++enum rtl826x_sr_action {
++	RTL826X_SR_NONE,
++	RTL826X_SR_SET,
++	RTL826X_SR_CLEAR_FAILED,
++	RTL826X_SR_CLEAR_SLOW,
++	RTL826X_SR_CLEAR_UNSTABLE,
++	RTL826X_SR_CLEAR_OUTAGE,
++};
++
++static u32 rtl826x_sr_threshold(struct phy_device *phydev)
++{
++	struct device *dev = &phydev->mdio.dev;
++	u32 db;
++
++	if (!device_property_present(dev, RTL826X_SR_PROP))
++		return 0;
++
++	if (device_property_read_u32(dev, RTL826X_SR_PROP, &db) ||
++	    db > RTL826X_SR_MAX_DB || db % RTL826X_PBO_STEP_DB) {
++		phydev_warn(phydev,
++			    "%s must be 0 to %lu in steps of %u, leaving short reach mode off\n",
++			    RTL826X_SR_PROP, RTL826X_SR_MAX_DB,
++			    RTL826X_PBO_STEP_DB);
++		return 0;
++	}
++
++	return db;
++}
++
++static void rtl826x_sr_rearm(struct rtl826x_sr *sr, int txpwr)
++{
++	int rearm = RTL826X_SR_REARM;
++
++	if (txpwr < 0)
++		rearm |= RTL826X_SR_REARM_UNKNOWN;
++	else
++		rearm |= txpwr & MDIO_PMA_10GBT_TXPWR_SHORT;
++
++	WRITE_ONCE(sr->rearm, rearm);
++}
++
++static bool rtl826x_sr_due(const struct rtl826x_sr *sr, u64 now)
++{
++	return (sr->early_drop || sr->slow || sr->proving || sr->outage) &&
++	       time_after_eq64(now, sr->deadline);
++}
++
++static void rtl826x_sr_proven(struct rtl826x_sr *sr, u64 now)
++{
++	sr->proving = false;
++	sr->settling = true;
++	sr->verify = true;
++	sr->up_since = now;
++}
++
++static bool rtl826x_sr_link(struct rtl826x_sr *sr, bool link,
++			    bool serdes_reset, u64 now)
++{
++	unsigned long timeout = msecs_to_jiffies(RTL826X_SR_TIMEOUT_MS);
++	int rearm = READ_ONCE(sr->rearm);
++	bool queue = false;
++
++	sr->polled = now;
++	if (rearm) {
++		WRITE_ONCE(sr->rearm, 0);
++		sr->disarmed = false;
++		sr->outage = false;
++		sr->settling = false;
++		sr->early_drop = false;
++		sr->slow = false;
++		sr->clears = 0;
++		sr->link = false;
++		if (!(rearm & (RTL826X_SR_REARM_UNKNOWN |
++			       MDIO_PMA_10GBT_TXPWR_SHORT))) {
++			sr->owned = false;
++			sr->proving = false;
++		}
++		if (sr->proving) {
++			sr->deadline = now + timeout;
++			queue = true;
++		}
++	}
++
++	if (sr->settling &&
++	    time_after_eq64(now, sr->up_since +
++			    msecs_to_jiffies(RTL826X_SR_HOLD_MS)))
++		sr->settling = false;
++
++	if (link && !sr->link) {
++		sr->check = true;
++		if (sr->proving)
++			rtl826x_sr_proven(sr, now);
++	}
++
++	if (link) {
++		sr->outage = false;
++	} else {
++		sr->check = false;
++		if (sr->link && sr->owned && sr->settling && !serdes_reset) {
++			sr->early_drop = true;
++			sr->deadline = now;
++			queue = true;
++		}
++		sr->settling = false;
++	}
++	sr->link = link;
++
++	if (!link && sr->owned && !sr->proving && !sr->outage &&
++	    !sr->early_drop && !sr->slow) {
++		sr->outage = true;
++		sr->deadline = now + timeout;
++		queue = true;
++	}
++
++	return queue;
++}
++
++static bool rtl826x_sr_decide(struct rtl826x_sr *sr, int stat, int txpwr,
++			      bool autoneg, int speed, u64 now)
++{
++	unsigned int local_db;
++
++	if (stat < 0 || txpwr < 0)
++		return false;
++
++	sr->check = false;
++	if (txpwr & MDIO_PMA_10GBT_TXPWR_SHORT) {
++		if (sr->verify && sr->owned && speed != SPEED_10000) {
++			sr->verify = false;
++			sr->settling = false;
++			sr->slow = true;
++			sr->deadline = now;
++			return true;
++		}
++		sr->verify = false;
++		return false;
++	}
++
++	if (sr->verify && sr->owned) {
++		sr->verify = false;
++		sr->owned = false;
++		sr->settling = false;
++		sr->disarmed = true;
++		sr->not_kept++;
++		return false;
++	}
++
++	sr->verify = false;
++	sr->owned = false;
++	local_db = RTL826X_PBO_STEP_DB *
++		   FIELD_GET(RTL826X_PMA_10GBT_TXPWR_LD_PBO, txpwr);
++	if (!sr->threshold_db || local_db < sr->threshold_db || !autoneg ||
++	    speed != SPEED_10000 || sr->disarmed ||
++	    !(stat & RTL826X_PMA_10GBT_STAT_LP_INFO_VALID))
++		return false;
++
++	sr->txpwr = txpwr;
++	sr->pending = true;
++	return true;
++}
++
++static enum rtl826x_sr_action rtl826x_sr_action(struct rtl826x_sr *sr,
++						bool link, bool autoneg,
++						u64 now)
++{
++	if (sr->pending) {
++		sr->pending = false;
++		return link && autoneg ? RTL826X_SR_SET : RTL826X_SR_NONE;
++	}
++
++	if (!rtl826x_sr_due(sr, now))
++		return RTL826X_SR_NONE;
++
++	if (sr->early_drop) {
++		sr->early_drop = false;
++		return sr->owned ? RTL826X_SR_CLEAR_UNSTABLE : RTL826X_SR_NONE;
++	}
++
++	if (sr->slow) {
++		sr->slow = false;
++		return sr->owned ? RTL826X_SR_CLEAR_SLOW : RTL826X_SR_NONE;
++	}
++
++	if (link) {
++		if (sr->proving) {
++			rtl826x_sr_proven(sr, now);
++			sr->check = true;
++		}
++		sr->outage = false;
++		return RTL826X_SR_NONE;
++	}
++
++	return sr->proving ? RTL826X_SR_CLEAR_FAILED : RTL826X_SR_CLEAR_OUTAGE;
++}
++
++static void rtl826x_sr_set_done(struct rtl826x_sr *sr, u64 now)
++{
++	sr->owned = true;
++	sr->auto_set++;
++	sr->proving = true;
++	sr->settling = false;
++	sr->deadline = now + msecs_to_jiffies(RTL826X_SR_TIMEOUT_MS);
++}
++
++static void rtl826x_sr_not_kept(struct rtl826x_sr *sr)
++{
++	sr->owned = false;
++	sr->disarmed = true;
++	sr->not_kept++;
++}
++
++static void rtl826x_sr_clear_done(struct rtl826x_sr *sr,
++				  enum rtl826x_sr_action action, u64 now)
++{
++	unsigned long period = msecs_to_jiffies(RTL826X_SR_CLEARS_PERIOD_MS);
++
++	sr->owned = false;
++	sr->proving = false;
++	sr->settling = false;
++	sr->outage = false;
++
++	switch (action) {
++	case RTL826X_SR_CLEAR_FAILED:
++	case RTL826X_SR_CLEAR_SLOW:
++		sr->disarmed = true;
++		sr->fallback++;
++		break;
++	case RTL826X_SR_CLEAR_UNSTABLE:
++		sr->disarmed = true;
++		sr->unstable++;
++		break;
++	default:
++		sr->cleared_outage++;
++		if (!sr->clears || time_after64(now, sr->clears_since + period)) {
++			sr->clears = 0;
++			sr->clears_since = now;
++		}
++		if (++sr->clears >= RTL826X_SR_CLEARS_MAX) {
++			sr->disarmed = true;
++			sr->unstable++;
++		}
++		break;
++	}
++}
++
++static void rtl826x_sr_work(struct work_struct *work)
++{
++	struct rtl826x_priv *priv = container_of(to_delayed_work(work),
++						 struct rtl826x_priv, sr_work);
++	unsigned long timeout = msecs_to_jiffies(RTL826X_SR_TIMEOUT_MS);
++	unsigned long retry = msecs_to_jiffies(RTL826X_SR_RETRY_MS);
++	struct phy_device *phydev = priv->phydev;
++	struct rtl826x_sr *sr = &priv->sr;
++	enum rtl826x_sr_action action;
++	bool link;
++	int ret, val;
++	u64 now;
++
++	mutex_lock(&phydev->lock);
++
++	if (phydev->state != PHY_NOLINK && phydev->state != PHY_RUNNING) {
++		sr->pending = false;
++		goto unlock;
++	}
++
++	now = get_jiffies_64();
++	link = phydev->link;
++	if (!link && !sr->pending && (sr->proving || sr->outage) &&
++	    rtl826x_sr_due(sr, now)) {
++		if (phy_polling_mode(phydev)) {
++			if (time_before64(sr->polled, sr->deadline))
++				goto unlock;
++		} else {
++			/* 1.129.0 reads 0 while the PMA link fails and
++			 * does not latch
++			 */
++			val = phy_read_mmd(phydev, MDIO_MMD_PMAPMD,
++					   RTL826X_PMA_10GBT_STAT);
++			if (val < 0) {
++				sr->deadline = now + retry;
++				mod_delayed_work(system_percpu_wq,
++						 &priv->sr_work, retry);
++				goto unlock;
++			}
++			link = val & RTL826X_PMA_10GBT_STAT_LP_INFO_VALID;
++		}
++	}
++
++	action = rtl826x_sr_action(sr, link,
++				   phydev->autoneg == AUTONEG_ENABLE, now);
++	switch (action) {
++	case RTL826X_SR_SET:
++		ret = phy_set_bits_mmd(phydev, MDIO_MMD_PMAPMD,
++				       MDIO_PMA_10GBT_TXPWR,
++				       MDIO_PMA_10GBT_TXPWR_SHORT);
++		val = ret ? ret : phy_read_mmd(phydev, MDIO_MMD_PMAPMD,
++					       MDIO_PMA_10GBT_TXPWR);
++		if (val < 0 || !(val & MDIO_PMA_10GBT_TXPWR_SHORT)) {
++			phy_clear_bits_mmd(phydev, MDIO_MMD_PMAPMD,
++					   MDIO_PMA_10GBT_TXPWR,
++					   MDIO_PMA_10GBT_TXPWR_SHORT);
++			rtl826x_sr_not_kept(sr);
++			phydev_warn(phydev,
++				    "short reach mode did not stay set, leaving it off\n");
++			break;
++		}
++
++		rtl826x_sr_set_done(sr, get_jiffies_64());
++		phydev_info(phydev,
++			    "TX power backoff %lu dB, link partner %lu dB: enabling short reach mode\n",
++			    RTL826X_PBO_STEP_DB *
++			    FIELD_GET(RTL826X_PMA_10GBT_TXPWR_LD_PBO, sr->txpwr),
++			    RTL826X_PBO_STEP_DB *
++			    FIELD_GET(RTL826X_PMA_10GBT_TXPWR_LP_PBO, sr->txpwr));
++
++		ret = genphy_c45_restart_aneg(phydev);
++		if (ret)
++			phydev_warn(phydev, "autonegotiation restart failed: %d\n",
++				    ret);
++
++		mod_delayed_work(system_percpu_wq, &priv->sr_work, timeout);
++		break;
++
++	case RTL826X_SR_CLEAR_FAILED:
++	case RTL826X_SR_CLEAR_SLOW:
++	case RTL826X_SR_CLEAR_UNSTABLE:
++	case RTL826X_SR_CLEAR_OUTAGE:
++		ret = phy_clear_bits_mmd(phydev, MDIO_MMD_PMAPMD,
++					 MDIO_PMA_10GBT_TXPWR,
++					 MDIO_PMA_10GBT_TXPWR_SHORT);
++		if (ret) {
++			phydev_warn(phydev, "disabling short reach mode failed: %d\n",
++				    ret);
++			if (action == RTL826X_SR_CLEAR_UNSTABLE)
++				sr->early_drop = true;
++			else if (action == RTL826X_SR_CLEAR_SLOW)
++				sr->slow = true;
++			sr->deadline = now + timeout;
++			mod_delayed_work(system_percpu_wq, &priv->sr_work, timeout);
++			break;
++		}
++
++		rtl826x_sr_clear_done(sr, action, now);
++		if (action == RTL826X_SR_CLEAR_FAILED)
++			phydev_warn(phydev,
++				    "no link %u s after enabling short reach mode, disabling it\n",
++				    RTL826X_SR_TIMEOUT_MS / 1000);
++		else if (action == RTL826X_SR_CLEAR_SLOW)
++			phydev_warn(phydev,
++				    "link below 10G in short reach mode, disabling it\n");
++		else if (action == RTL826X_SR_CLEAR_UNSTABLE || sr->disarmed)
++			phydev_warn(phydev,
++				    "link unstable in short reach mode, disabling it\n");
++		else
++			phydev_info(phydev,
++				    "link down %u s, disabling short reach mode until the next link-up\n",
++				    RTL826X_SR_TIMEOUT_MS / 1000);
++
++		if (phydev->autoneg == AUTONEG_ENABLE) {
++			ret = genphy_c45_restart_aneg(phydev);
++			if (ret)
++				phydev_warn(phydev,
++					    "autonegotiation restart failed: %d\n",
++					    ret);
++		}
++		break;
++
++	case RTL826X_SR_NONE:
++		break;
++	}
++
++unlock:
++	mutex_unlock(&phydev->lock);
++}
++
++static void rtl826x_sr_poll(struct phy_device *phydev)
++{
++	struct rtl826x_priv *priv = phydev->priv;
++	struct rtl826x_sr *sr = &priv->sr;
++	u64 now = get_jiffies_64();
++	int stat, txpwr;
++
++	if (phydev->state != PHY_NOLINK && phydev->state != PHY_RUNNING) {
++		sr->link = false;
++		sr->settling = false;
++	}
++
++	if (rtl826x_sr_link(sr, phydev->link, READ_ONCE(priv->sds_retries),
++			    now))
++		mod_delayed_work(system_percpu_wq, &priv->sr_work,
++				 msecs_to_jiffies(RTL826X_SR_TIMEOUT_MS));
++
++	if (rtl826x_sr_due(sr, now))
++		mod_delayed_work(system_percpu_wq, &priv->sr_work, 0);
++
++	if (!sr->check || !sr->threshold_db)
++		return;
++
++	stat = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, RTL826X_PMA_10GBT_STAT);
++	txpwr = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_PMA_10GBT_TXPWR);
++	if (rtl826x_sr_decide(sr, stat, txpwr,
++			      phydev->autoneg == AUTONEG_ENABLE, phydev->speed,
++			      now))
++		mod_delayed_work(system_percpu_wq, &priv->sr_work, 0);
++}
++
++static void rtl826x_sr_config_init(struct phy_device *phydev)
++{
++	struct rtl826x_priv *priv = phydev->priv;
++	int txpwr;
++
++	txpwr = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_PMA_10GBT_TXPWR);
++	if (txpwr >= 0 && (txpwr & MDIO_PMA_10GBT_TXPWR_SHORT) &&
++	    READ_ONCE(priv->sr.owned) &&
++	    !phy_clear_bits_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_PMA_10GBT_TXPWR,
++				MDIO_PMA_10GBT_TXPWR_SHORT))
++		txpwr &= ~MDIO_PMA_10GBT_TXPWR_SHORT;
++
++	rtl826x_sr_rearm(&priv->sr, txpwr);
++}
++
++static void rtl826x_cancel_sr_work(void *data)
++{
++	struct rtl826x_priv *priv = data;
++
++	cancel_delayed_work_sync(&priv->sr_work);
++}
++
+ static int rtl826x_probe(struct phy_device *phydev)
+ {
+ 	struct device *dev = &phydev->mdio.dev;
+@@ -3378,6 +3826,12 @@ static int rtl826x_probe(struct phy_devi
+ 	if (ret)
+ 		return ret;
+ 
++	priv->sr.threshold_db = rtl826x_sr_threshold(phydev);
++	INIT_DELAYED_WORK(&priv->sr_work, rtl826x_sr_work);
++	ret = devm_add_action_or_reset(dev, rtl826x_cancel_sr_work, priv);
++	if (ret)
++		return ret;
++
+ 	if (!priv->enable_pma_low_power)
+ 		phydev_warn(phydev, "PMA low-power suspend disabled\n");
+ 
+@@ -3474,7 +3928,13 @@ static int rtl826x_config_init(struct ph
+ 		return ret;
+ 	}
+ 
+-	return rtl826x_config_serdes_polarity(phydev);
++	ret = rtl826x_config_serdes_polarity(phydev);
++	if (ret)
++		return ret;
++
++	rtl826x_sr_config_init(phydev);
++
++	return 0;
+ }
+ 
+ static int rtl826x_suspend(struct phy_device *phydev)
+@@ -3572,6 +4032,13 @@ enum rtl826x_stat_index {
+ 	RTL826X_STAT_LP_PBO,
+ 	RTL826X_STAT_LD_PBO,
+ 	RTL826X_STAT_SHORT_REACH,
++	RTL826X_STAT_SHORT_REACH_ACTIVE,
++	RTL826X_STAT_SHORT_REACH_AUTO_SET,
++	RTL826X_STAT_SHORT_REACH_FALLBACK,
++	RTL826X_STAT_SHORT_REACH_CLEARED_OUTAGE,
++	RTL826X_STAT_SHORT_REACH_NOT_KEPT,
++	RTL826X_STAT_SHORT_REACH_UNSTABLE,
++	RTL826X_STAT_SHORT_REACH_LATCHED_OFF,
+ 	RTL826X_STAT_COUNT,
+ };
+ 
+@@ -3586,6 +4053,13 @@ static const char * const rtl826x_stat_n
+ 	[RTL826X_STAT_LP_PBO]			= "lp_tx_power_backoff_db",
+ 	[RTL826X_STAT_LD_PBO]			= "ld_tx_power_backoff_db",
+ 	[RTL826X_STAT_SHORT_REACH]		= "short_reach_mode",
++	[RTL826X_STAT_SHORT_REACH_ACTIVE]	= "short_reach_active",
++	[RTL826X_STAT_SHORT_REACH_AUTO_SET]	= "short_reach_auto_set",
++	[RTL826X_STAT_SHORT_REACH_FALLBACK]	= "short_reach_fallback",
++	[RTL826X_STAT_SHORT_REACH_CLEARED_OUTAGE] = "short_reach_cleared_outage",
++	[RTL826X_STAT_SHORT_REACH_NOT_KEPT]	= "short_reach_not_kept",
++	[RTL826X_STAT_SHORT_REACH_UNSTABLE]	= "short_reach_unstable",
++	[RTL826X_STAT_SHORT_REACH_LATCHED_OFF]	= "short_reach_latched_off",
+ };
+ 
+ struct rtl826x_stat_regs {
+@@ -3740,6 +4214,14 @@ static void rtl826x_get_stats(struct phy
+ 				     (regs.pma_10gbt_stat &
+ 				      RTL826X_PMA_10GBT_STAT_LP_INFO_VALID));
+ 	rtl826x_stats_fill(&priv->stats, &regs, data);
++
++	data[RTL826X_STAT_SHORT_REACH_ACTIVE] = priv->sr.owned;
++	data[RTL826X_STAT_SHORT_REACH_AUTO_SET] = priv->sr.auto_set;
++	data[RTL826X_STAT_SHORT_REACH_FALLBACK] = priv->sr.fallback;
++	data[RTL826X_STAT_SHORT_REACH_CLEARED_OUTAGE] = priv->sr.cleared_outage;
++	data[RTL826X_STAT_SHORT_REACH_NOT_KEPT] = priv->sr.not_kept;
++	data[RTL826X_STAT_SHORT_REACH_UNSTABLE] = priv->sr.unstable;
++	data[RTL826X_STAT_SHORT_REACH_LATCHED_OFF] = priv->sr.disarmed;
+ }
+ 
+ static int rtl826x_read_status(struct phy_device *phydev)
+@@ -3779,6 +4261,7 @@ static int rtl826x_read_status(struct ph
+ 		return ret;
+ 
+ 	rtl826x_stats_sample(phydev, true);
++	rtl826x_sr_poll(phydev);
+ 
+ 	return 0;
+ }
