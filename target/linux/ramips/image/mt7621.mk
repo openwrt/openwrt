@@ -2333,7 +2333,7 @@ TARGET_DEVICES += mikrotik_routerboard-750gr3
 define Device/mikrotik_routerboard-760igs
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD 760iGS
-  DEVICE_PACKAGES += kmod-mmc-mtk kmod-sfp -wpad-basic-mbedtls
+  DEVICE_PACKAGES += kmod-mmc-mtk $(SFP_PACKAGES) -wpad-basic-mbedtls
 endef
 TARGET_DEVICES += mikrotik_routerboard-760igs
 
@@ -2897,7 +2897,7 @@ define Device/snr_snr-cpe-me2-sfp
   DEVICE_VENDOR := SNR
   DEVICE_MODEL := SNR-CPE-ME2-SFP
   UIMAGE_NAME := $$(DEVICE_MODEL)
-  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 kmod-sfp \
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 $(SFP_PACKAGES) \
 	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += snr_snr-cpe-me2-sfp
@@ -3332,7 +3332,7 @@ define Device/ubnt_edgerouter-x-sfp
   DEVICE_MODEL := EdgeRouter X SFP
   DEVICE_ALT0_VENDOR := Ubiquiti
   DEVICE_ALT0_MODEL := EdgePoint R6
-  DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-sfp
+  DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x $(SFP_PACKAGES)
   SUPPORTED_DEVICES += ubnt-erx-sfp ubiquiti,edgerouterx-sfp
 endef
 TARGET_DEVICES += ubnt_edgerouter-x-sfp
