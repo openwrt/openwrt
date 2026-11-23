@@ -4,7 +4,7 @@ define Device/mikrotik_routerboard-2011uias-2hnd
   $(Device/mikrotik_nand)
   SOC := ar9344
   DEVICE_MODEL := RouterBOARD 2011UiAS-2HnD
-  DEVICE_PACKAGES += kmod-usb2 kmod-i2c-gpio kmod-sfp kmod-gpio-beeper
+  DEVICE_PACKAGES += kmod-usb2 kmod-i2c-gpio $(SFP_PACKAGES) kmod-gpio-beeper
   SUPPORTED_DEVICES += rb-2011l rb-2011il rb-2011ils \
 	rb-2011uas rb-2011uas-2hnd rb-2011uias \
 	rb-2011uias-2hnd rb-2011uias-2hnd-r2
@@ -76,7 +76,7 @@ define Device/mikrotik_routerboard-921gs-5hpacd-15s
   SOC := qca9558
   DEVICE_MODEL := RouterBOARD 921GS-5HPacD-15s (mANTBox 15s)
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-i2c-gpio \
-	kmod-sfp
+	$(SFP_PACKAGES)
   SUPPORTED_DEVICES += rb-921gs-5hpacd-r2
 endef
 TARGET_DEVICES += mikrotik_routerboard-921gs-5hpacd-15s
@@ -86,7 +86,7 @@ define Device/mikrotik_routerboard-922uags-5hpacd
   SOC := qca9558
   DEVICE_MODEL := RouterBOARD 922UAGS-5HPacD
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2 \
-	kmod-i2c-gpio kmod-sfp
+	kmod-i2c-gpio $(SFP_PACKAGES)
   SUPPORTED_DEVICES += rb-922uags-5hpacd
 endef
 TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
@@ -137,7 +137,7 @@ define Device/mikrotik_routerboard-960pgs
   SOC := qca9557
   DEVICE_MODEL := RouterBOARD 960PGS (hEX PoE/PowerBox Pro)
   IMAGE_SIZE := 16256k
-  DEVICE_PACKAGES += kmod-usb2 kmod-i2c-gpio kmod-sfp kmod-dsa-qca8k -swconfig \
+  DEVICE_PACKAGES += kmod-usb2 kmod-i2c-gpio $(SFP_PACKAGES) kmod-dsa-qca8k -swconfig \
 	-kmod-switch-ar8xxx -iwinfo -kmod-ath9k -wpad-basic-mbedtls
 endef
 TARGET_DEVICES += mikrotik_routerboard-960pgs
@@ -147,7 +147,7 @@ define Device/mikrotik_routerboard-962uigs-5hact2hnt
   SOC := qca9558
   DEVICE_MODEL := RouterBOARD 962UiGS-5HacT2HnT (hAP ac)
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2 \
-	kmod-i2c-gpio kmod-sfp kmod-dsa-qca8k \
+	kmod-i2c-gpio $(SFP_PACKAGES) kmod-dsa-qca8k \
 	-swconfig -kmod-switch-ar8xxx
   IMAGE_SIZE := 16256k
   DEVICE_COMPAT_MESSAGE := \
