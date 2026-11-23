@@ -1,5 +1,46 @@
 #!/bin/sh
 
-[ "${ACTION}" = "add" ] && {
-	/sbin/wifi config
-}
+[ "${ACTION}" = "add" ] || exit 0
+
+/sbin/wifi config
+
+# netifd here gives up on a device after a few failed setups and does
+# not notice when the phy of a running device goes away. Restart a
+# device that uses the new phy if its setup failed or is still running,
+# or if it is up but none of its interfaces is on the new phy. Leave
+# every other device alone.
+. /usr/share/libubox/jshn.sh
+
+json_init
+json_load "$(ubus -S call network.wireless status 2>/dev/null)" 2>/dev/null || exit 0
+json_get_keys radios
+for radio in $radios; do
+	json_select "$radio"
+	json_get_vars up pending retry_setup_failed
+	json_select config
+	json_get_vars path
+	json_select ..
+	on_phy=0
+	if json_is_a interfaces array; then
+		json_select interfaces
+		json_get_keys vifs
+		for vif in $vifs; do
+			ifname=
+			json_select "$vif"
+			json_get_var ifname ifname
+			json_select ..
+			[ -n "$ifname" ] || continue
+			[ "$(cat "/sys/class/net/$ifname/phy80211/name" 2>/dev/null)" = "$DEVICENAME" ] && on_phy=1
+		done
+		json_select ..
+	fi
+	json_select ..
+
+	[ "$pending" = 1 ] || [ "$retry_setup_failed" = 1 ] ||
+		{ [ "$up" = 1 ] && [ "$on_phy" = 0 ]; } || continue
+	[ -n "$path" ] || continue
+	[ "$(iwinfo nl80211 phyname "path=$path" 2>/dev/null)" = "$DEVICENAME" ] || continue
+
+	ubus call network.wireless down "{\"device\": \"$radio\"}"
+	ubus call network.wireless up "{\"device\": \"$radio\"}"
+done
