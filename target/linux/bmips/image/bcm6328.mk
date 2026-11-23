@@ -82,7 +82,7 @@ define Device/inteno_xg6846
   DEVICE_PACKAGES := $(USB2_PACKAGES) \
     kmod-i2c-core kmod-i2c-gpio \
     kmod-leds-bcm6328 kmod-dsa-mv88e6xxx \
-    kmod-sfp
+    $(SFP_PACKAGES)
 endef
 TARGET_DEVICES += inteno_xg6846
 
