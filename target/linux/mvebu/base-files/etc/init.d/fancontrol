@@ -1,0 +1,18 @@
+#!/bin/sh /etc/rc.common
+
+START=19
+
+start() {
+	case "$(cat /tmp/sysinfo/board_name 2>/dev/null)" in
+	lenovo,ix4-300d)
+		D=$(ls -d /sys/bus/i2c/devices/0-002e/hwmon/hwmon* 2>/dev/null | head -n 1)
+		[ -n "$D" ] || return 0
+		echo 1 > "$D/pwm1_auto_channels_temp"
+		echo 45000 > "$D/temp1_auto_point1_temp"
+		echo 70000 > "$D/temp1_auto_point2_temp"
+		echo 0 > "$D/pwm1_auto_point1_pwm"
+		echo 255 > "$D/pwm1_auto_point2_pwm"
+		echo 2 > "$D/pwm1_enable"
+		;;
+	esac
+}

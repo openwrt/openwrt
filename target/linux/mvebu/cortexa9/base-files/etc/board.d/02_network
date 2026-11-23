@@ -45,6 +45,11 @@ mvebu_setup_interfaces()
 	iptime,nas1dual)
 		ucidef_set_interface_lan "eth0 eth1" "dhcp"
 		;;
+	lenovo,ix4-300d)
+		# Both eth0 and eth1 must be initialized at boot on the ix4-300d;
+		# otherwise poweroff triggers a reboot instead of shutting down.
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		;;
 	marvell,a385-db-ap)
 		ucidef_set_interfaces_lan_wan "eth0 eth1" "eth2"
 		;;
