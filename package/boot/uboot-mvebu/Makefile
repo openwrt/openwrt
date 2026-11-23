@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2026.10
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_HASH:=3f856da3cbbc93af51ff95fde18588a348b4a26723b01d9841e999d988481015
 
@@ -51,6 +51,14 @@ define U-Boot/omnia
   UBOOT_IMAGE:=u-boot-with-spl.kwb
 endef
 
+define U-Boot/ix4-300d
+  NAME:=Lenovo Iomega ix4-300d
+  BUILD_DEVICES:=lenovo_ix4-300d
+  BUILD_SUBTARGET:=cortexa9
+  UBOOT_CONFIG:=lenovo_ix4_300d
+  UBOOT_IMAGE:=u-boot-with-spl.kwb
+endef
+
 define U-Boot/espressobin
   NAME:=Marvell ESPRESSObin
   BUILD_SUBTARGET:=cortexa53
@@ -87,6 +95,7 @@ UBOOT_TARGETS:= \
 	clearfog \
 	helios4 \
 	omnia \
+	ix4-300d \
 	espressobin \
 	atlas \
 	uDPU \
