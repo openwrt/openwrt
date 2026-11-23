@@ -1,0 +1,58 @@
+From eab53a2e5b7a7949badfdb16d9d21c49d14b9b80 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Mon, 23 Nov 2026 23:16:42 +0100
+Subject: [PATCH] net: mtk_eth: mt753x: disable learning on user ports
+
+mt753x_port_isolation() lets every user port forward only to the CPU
+port, while the CPU port floods to all user ports. Address learning
+stays enabled on the user ports, which is of no use there and breaks
+networking when two user ports see each other's traffic, e.g. both
+are cabled to the same external switch or to each other:
+
+U-Boot's ARP request leaves through all user ports, comes back in on
+another one and the switch learns the board's own MAC address on that
+port. The server's reply then arrives on the port the server is behind,
+is looked up to the port that learned the board's MAC and dropped, as
+the port matrix only allows the CPU port. tftpboot fails with "ARP
+Retry count exceeded".
+
+Disable source address learning on the user ports, as Linux does for
+ports that are not in a bridge (SA_DIS in the port security control
+register). The CPU port keeps learning, so the board's MAC stays there.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ drivers/net/mtk_eth/mt753x.c | 9 +++++++++
+ drivers/net/mtk_eth/mt753x.h | 3 +++
+ 2 files changed, 12 insertions(+)
+
+--- a/drivers/net/mtk_eth/mt753x.c
++++ b/drivers/net/mtk_eth/mt753x.c
+@@ -254,6 +254,15 @@ void mt753x_port_isolation(struct mt753x
+ 			mt753x_reg_write(priv, PCR_REG(i),
+ 					 (0x3f << PORT_MATRIX_S));
+ 
++		/*
++		 * User ports only talk to the CPU port: learning on them is
++		 * useless and harmful, a CPU frame coming back through a loop
++		 * would move the CPU's MAC address to that user port and
++		 * replies to the CPU would be dropped
++		 */
++		if (i != 6)
++			mt753x_reg_rmw(priv, PSC_REG(i), 0, SA_DIS);
++
+ 		/* Set port mode to user port */
+ 		mt753x_reg_write(priv, PVC_REG(i),
+ 				 (0x8100 << STAG_VPID_S) |
+--- a/drivers/net/mtk_eth/mt753x.h
++++ b/drivers/net/mtk_eth/mt753x.h
+@@ -29,6 +29,9 @@ struct mtk_eth_priv;
+ #define PORT_MATRIX_S			16
+ #define PORT_MATRIX_M			0xff0000
+ 
++#define PSC_REG(p)			(0x200c + (p) * 0x100)
++#define SA_DIS				BIT(4)
++
+ #define PVC_REG(p)			(0x2010 + (p) * 0x100)
+ #define STAG_VPID_S			16
+ #define STAG_VPID_M			0xffff0000
