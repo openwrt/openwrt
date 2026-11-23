@@ -1,4 +1,6 @@
+From 62c1c6a946cc6dcab64b7310e6a55e27b2a1be41 Mon Sep 17 00:00:00 2001
 From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Thu, 19 Mar 2026 15:55:28 +0400
 Subject: phy: add EN7528 USB PHY driver
 
 Add USB PHY driver for EcoNet EN7528 SoC.
@@ -7,6 +9,7 @@ Based on GPL vendor code at https://github.com/keenetic/kernel-49
 and the Airoha AN7581 USB PHY driver by Christian Marangi.
 
 Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
+---
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
 @@ -136,6 +136,17 @@ config PHY_ECONET_PCIE
