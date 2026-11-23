@@ -244,6 +244,9 @@ function setup() {
 			iface.prepare(v.config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
 			netifd.set_vif(k, v.config.ifname);
 			break;
+		case 'monitor':
+			netifd.set_vif(k, v.config.ifname);
+			break;
 		}
 
 		switch (mode) {
