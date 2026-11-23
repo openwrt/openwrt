@@ -1,0 +1,71 @@
+From a87e5bf1827bceffdbca574cc4626335925e4362 Mon Sep 17 00:00:00 2001
+From: Christian Schmidbauer <opensource@grische.xyz>
+Date: Sat, 14 Nov 2026 14:36:38 +0100
+Subject: [PATCH 2/3] net: stmmac: dwmac1000: don't discard frames with only a
+ checksum error
+
+[ Upstream commit 596c9408682feba536d7f39de97959807eb3ba1c ]
+
+On dwmac1000 with enhanced descriptors, the hardware sets the Error
+Summary (ES) bit of the Rx descriptor not only for L2 errors but also
+for an L3/L4 checksum error. enh_desc_get_rx_status() returns
+discard_frame whenever ES is set, and since commit 1b746ce8b397 ("net:
+stmmac: don't overwrite discard_frame status") the checksum status is
+only evaluated for good frames.
+
+Return discard_frame only when ES comes with one of the L2 error bits.
+A frame with only a checksum error is then reported as csum_none and
+reaches the stack as CHECKSUM_NONE, so the stack verifies the checksum
+itself. This matches dwmac4, whose Error Summary bit does not cover
+checksum errors.
+
+RDES0 bit 7 is not in the mask, because depending on the core and on
+Rx checksum offload it reports a timestamp, an IP header checksum error
+or a giant frame, and enh_desc_get_rx_status() cannot tell which. In
+threshold Rx mode, a giant frame that fits one buffer therefore reaches
+the stack with a verified FCS.
+
+Also remove the pr_err that enh_desc_get_rx_status() prints when bit 7
+is set. Once the MAC stops dropping checksum-error frames, any host on
+the link can flood the kernel log by sending frames with a bad IPv4
+header checksum.
+
+This prepares for setting DMA_CONTROL_DT, which makes the MAC deliver
+checksum-error frames instead of dropping them in its Rx FIFO.
+
+Fixes: 1b746ce8b397 ("net: stmmac: don't overwrite discard_frame status")
+Cc: <stable@vger.kernel.org> # 6.6.x: ee0aace5f844: net: stmmac: Correctly handle Rx checksum offload errors
+Cc: <stable@vger.kernel.org> # 6.6.x
+Signed-off-by: Christian Schmidbauer <opensource@grische.xyz>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Tested-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Link: https://patch.msgid.link/20261114133640.3285413-3-opensource@grische.xyz
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/stmicro/stmmac/enh_desc.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/enh_desc.c
++++ b/drivers/net/ethernet/stmicro/stmmac/enh_desc.c
+@@ -200,9 +200,6 @@ static int enh_desc_get_rx_status(struct
+ 		if (unlikely(rdes0 & RDES0_OVERFLOW_ERROR))
+ 			x->rx_gmac_overflow++;
+ 
+-		if (unlikely(rdes0 & RDES0_IPC_CSUM_ERROR))
+-			pr_err("\tIPC Csum Error/Giant frame\n");
+-
+ 		if (unlikely(rdes0 & RDES0_COLLISION))
+ 			x->rx_collision++;
+ 		if (unlikely(rdes0 & RDES0_RECEIVE_WATCHDOG))
+@@ -214,7 +211,10 @@ static int enh_desc_get_rx_status(struct
+ 		if (unlikely(rdes0 & RDES0_CRC_ERROR)) {
+ 			x->rx_crc_errors++;
+ 		}
+-		ret = discard_frame;
++		if (rdes0 & (RDES0_DESCRIPTOR_ERROR | RDES0_OVERFLOW_ERROR |
++			     RDES0_COLLISION | RDES0_RECEIVE_WATCHDOG |
++			     RDES0_MII_ERROR | RDES0_CRC_ERROR))
++			ret = discard_frame;
+ 	}
+ 
+ 	/* After a payload csum error, the ES bit is set.
