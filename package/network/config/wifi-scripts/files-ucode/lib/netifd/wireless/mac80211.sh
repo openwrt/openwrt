@@ -241,6 +241,9 @@ function setup() {
 			iface.prepare(v.config);
 			netifd.set_vif(k, v.config.ifname);
 			break;
+		case 'monitor':
+			netifd.set_vif(k, v.config.ifname);
+			break;
 		}
 
 		switch (mode) {
