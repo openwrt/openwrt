@@ -326,7 +326,8 @@ define Device/smartrg_sdg-8614
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8614
   DEVICE_DTS := mt7986a-smartrg-sdg-8614
-  DEVICE_PACKAGES += kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  DEVICE_PACKAGES += kmod-i2c-gpio kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware \
+		     $(SFP_PACKAGES_2G5)
 endef
 TARGET_DEVICES += smartrg_sdg-8614
 
@@ -384,7 +385,7 @@ define Device/smartrg_sdg-8734
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8734
   DEVICE_DTS := mt7988a-smartrg-sdg-8734
-  DEVICE_PACKAGES += kmod-i2c-gpio kmod-mt7996-firmware kmod-phy-aquantia kmod-sfp kmod-usb3 mt7988-wo-firmware
+  DEVICE_PACKAGES += kmod-i2c-gpio kmod-mt7996-firmware kmod-phy-aquantia $(SFP_PACKAGES_10G) kmod-usb3 mt7988-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8734
 
@@ -397,7 +398,7 @@ $(call Device/adtran_smartrg)
   DEVICE_DTS_LOADADDR := 0x47f00000
   DEVICE_PACKAGES += -wpad-basic-mbedtls kmod-backlight-pwm kmod-gpio-pca953x kmod-hwmon-pwmfan \
 		     kmod-phy-aquantia kmod-dsa-mxl862xx kmod-input-touchscreen-hynitron-cst816x \
-		     kmod-pse-si3474 kmod-sfp kmod-usb3 input-support video-support \
+		     kmod-pse-si3474 $(SFP_PACKAGES_10G) kmod-usb3 input-support video-support \
 		     mipi-dbi-ph240240t004-zar
 endef
 TARGET_DEVICES += smartrg_sdg-9000
@@ -439,7 +440,7 @@ define Device/arcadyan_mozart
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x45f00000
-  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-gpio kmod-sfp e2fsprogs f2fsck mkf2fs \
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-gpio $(SFP_PACKAGES) e2fsprogs f2fsck mkf2fs \
 		     kmod-mt7996-firmware
   KERNEL_LOADADDR := 0x46000000
   KERNEL := kernel-bin | libdeflate-gzip
@@ -658,7 +659,7 @@ define Device/bananapi_bpi-r3
 		       mt7986a-bananapi-bpi-r3-respeaker-2mics
   DEVICE_DTS_DIR := $(DTS_DIR)/
   DEVICE_DTS_LOADADDR := 0x43f00000
-  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-gpio kmod-mt7915e kmod-mt7986-firmware kmod-sfp kmod-usb3 \
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-gpio kmod-mt7915e kmod-mt7986-firmware $(SFP_PACKAGES_2G5) kmod-usb3 \
 		     e2fsprogs f2fsck mkf2fs mt7986-wo-firmware
   IMAGES := sysupgrade.itb
   KERNEL_LOADADDR := 0x44000000
@@ -756,7 +757,7 @@ define Device/bananapi_bpi-r4-common
   DEVICE_DTS_OVERLAY:= mt7988a-bananapi-bpi-r4-emmc mt7988a-bananapi-bpi-r4-rtc mt7988a-bananapi-bpi-r4-sd mt7988a-bananapi-bpi-r4-wifi-be14
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-mux-pca954x kmod-eeprom-at24 kmod-mt7996-firmware kmod-mt7996-233-firmware \
-		     kmod-rtc-pcf8563 kmod-sfp kmod-phy-aquantia kmod-usb3 e2fsprogs f2fsck mkf2fs mt7988-wo-firmware
+		     kmod-rtc-pcf8563 $(SFP_PACKAGES_10G) kmod-phy-aquantia kmod-usb3 e2fsprogs f2fsck mkf2fs mt7988-wo-firmware
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := The non-switch ports were renamed to match the board/case labels
   IMAGES := sysupgrade.itb
@@ -839,7 +840,7 @@ define Device/bananapi_bpi-r4-pro-common
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_PACKAGES := kmod-dsa-mxl862xx kmod-hwmon-pwmfan kmod-i2c-mux-pca954x \
 		     kmod-eeprom-at24 kmod-mt7996-firmware kmod-mt7996-233-firmware \
-		     kmod-rtc-pcf8563 kmod-sfp kmod-usb3 e2fsprogs f2fsck mkf2fs \
+		     kmod-rtc-pcf8563 $(SFP_PACKAGES_10G) kmod-usb3 e2fsprogs f2fsck mkf2fs \
 		     mt7988-wo-firmware kmod-gpio-pca953x kmod-nvme
   IMAGES := sysupgrade.itb
   KERNEL_LOADADDR := 0x46000000
@@ -909,7 +910,7 @@ define Device/bananapi_bpi-r4-lite
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x4ff00000
   DEVICE_PACKAGES := kmod-eeprom-at24 kmod-gpio-pca953x kmod-i2c-mux-pca954x \
-		     kmod-rtc-pcf8563 kmod-sfp kmod-usb3 e2fsprogs mkf2fs mt7987-2p5g-phy-firmware
+		     kmod-rtc-pcf8563 $(SFP_PACKAGES_2G5) kmod-usb3 e2fsprogs mkf2fs mt7987-2p5g-phy-firmware
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
@@ -2038,7 +2039,7 @@ define Device/glinet_gl-be14000
 	kmod-backlight-pwm kmod-drm-panel-mipi-dbi mipi-dbi-glinet-gl-be14000 \
 	kmod-input-touchscreen-hynitron-cst3530 kmod-input-evdev input-support \
 	video-support mt7988-wo-firmware rtl8261c-firmware e2fsprogs f2fsck \
-	mkf2fs bridger kmod-sfp kmod-i2c-gpio
+	mkf2fs bridger $(SFP_PACKAGES_10G) kmod-i2c-gpio
   FEED_DEVICE_PACKAGES := glinet-panel-ui
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/factory.bin := append-kernel | pad-to 32M | append-rootfs
@@ -2580,7 +2581,7 @@ endef
 define Device/keenetic_kn-1012-common
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
-		kmod-usb3 kmod-phy-airoha-en8811h kmod-sfp
+		kmod-usb3 kmod-phy-airoha-en8811h $(SFP_PACKAGES_2G5)
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -2900,7 +2901,7 @@ define Device/mediatek_mt7987a-rfb
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x4ff00000
-  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-sfp
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware $(SFP_PACKAGES_2G5)
   KERNEL_LOADADDR := 0x40000000
   KERNEL := kernel-bin | libdeflate-gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
@@ -2951,7 +2952,7 @@ define Device/mediatek_mt7988a-rfb
   DEVICE_DTS_DIR := $(DTS_DIR)/
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x45f00000
-  DEVICE_PACKAGES := mt7988-2p5g-phy-firmware kmod-sfp kmod-phy-aquantia
+  DEVICE_PACKAGES := mt7988-2p5g-phy-firmware $(SFP_PACKAGES_10G) kmod-phy-aquantia
   KERNEL_LOADADDR := 0x46000000
   KERNEL := kernel-bin | libdeflate-gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
@@ -3916,7 +3917,7 @@ define Device/tplink_fr365-v1
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
   IMAGE/factory.ubi := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := fitblk kmod-sfp kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  DEVICE_PACKAGES := fitblk $(SFP_PACKAGES_2G5) kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
 endef
 TARGET_DEVICES += tplink_fr365-v1
 
@@ -4512,7 +4513,7 @@ define Device/zbtlink_zbt-z8803be
   DEVICE_MODEL := ZBT-Z8803BE
   DEVICE_DTS := mt7988a-zbtlink-zbt-z8803be
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-sfp kmod-hwmon-pwmfan kmod-usb3 kmod-mt7996-firmware mt7988-2p5g-phy-firmware mt7988-wo-firmware
+  DEVICE_PACKAGES := $(SFP_PACKAGES_10G) kmod-hwmon-pwmfan kmod-usb3 kmod-mt7996-firmware mt7988-2p5g-phy-firmware mt7988-wo-firmware
   DEVICE_DTC_FLAGS := --pad 4096
   SUPPORTED_DEVICES += zbtlink,zbt-z8803be,mt7988a-nand
   KERNEL := kernel-bin | libdeflate-gzip | \
