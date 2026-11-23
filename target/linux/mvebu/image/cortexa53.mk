@@ -3,8 +3,8 @@ define Device/cznic_turris-mox
   DEVICE_VENDOR := CZ.NIC
   DEVICE_MODEL := Turris MOX
   DEVICE_PACKAGES += kmod-usb2 kmod-usb3 \
-    kmod-rtc-ds1307 kmod-i2c-pxa kmod-dsa kmod-dsa-mv88e6xxx kmod-sfp \
-    kmod-phy-marvell kmod-phy-marvell-10g kmod-ath10k ath10k-board-qca988x \
+    kmod-rtc-ds1307 kmod-i2c-pxa kmod-dsa kmod-dsa-mv88e6xxx $(SFP_PACKAGES) \
+    kmod-phy-marvell-10g kmod-ath10k ath10k-board-qca988x \
     ath10k-firmware-qca988x kmod-mt7915e kmod-mt7915-firmware mwlwifi-firmware-88w8997 \
     wpad-basic-mbedtls kmod-mwifiex-sdio kmod-btmrvl kmod-usb-storage-uas
   SOC := armada-3720
@@ -144,6 +144,7 @@ define Device/methode_edpu
   $(call Device/methode_udpu)
   DEVICE_MODEL := eDPU
   DEVICE_DTS := armada-3720-eDPU
+  DEVICE_PACKAGES += $(SFP_PACKAGES_2G5)
 endef
 TARGET_DEVICES += methode_edpu
 

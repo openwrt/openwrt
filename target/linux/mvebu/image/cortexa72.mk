@@ -50,7 +50,7 @@ define Device/globalscale_mochabin
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Globalscale
   DEVICE_MODEL := MOCHAbin
-  DEVICE_PACKAGES += kmod-dsa-mv88e6xxx
+  DEVICE_PACKAGES += kmod-dsa-mv88e6xxx $(SFP_PACKAGES_10G)
   SOC := armada-7040
 endef
 TARGET_DEVICES += globalscale_mochabin
@@ -81,7 +81,7 @@ define Device/marvell_macchiatobin-doubleshot
   DEVICE_ALT0_VENDOR := SolidRun
   DEVICE_ALT0_MODEL := Armada 8040 Community Board
   DEVICE_ALT0_VARIANT := Double Shot
-  DEVICE_PACKAGES += kmod-i2c-mux-pca954x
+  DEVICE_PACKAGES += kmod-i2c-mux-pca954x $(SFP_PACKAGES_10G)
   DEVICE_DTS := armada-8040-mcbin
   SUPPORTED_DEVICES := marvell,armada8040-mcbin-doubleshot marvell,armada8040-mcbin
 endef
@@ -95,7 +95,7 @@ define Device/marvell_macchiatobin-singleshot
   DEVICE_ALT0_VENDOR := SolidRun
   DEVICE_ALT0_MODEL := Armada 8040 Community Board
   DEVICE_ALT0_VARIANT := Single Shot
-  DEVICE_PACKAGES += kmod-i2c-mux-pca954x
+  DEVICE_PACKAGES += kmod-i2c-mux-pca954x $(SFP_PACKAGES_10G)
   DEVICE_DTS := armada-8040-mcbin-singleshot
   SUPPORTED_DEVICES := marvell,armada8040-mcbin-singleshot
 endef
@@ -109,7 +109,7 @@ define Device/mikrotik_rb5009
   DEVICE_VENDOR := MikroTik
   SOC := armada-7040
   KERNEL_LOADADDR := 0x22000000
-  DEVICE_PACKAGES += kmod-i2c-gpio yafut kmod-dsa-mv88e6xxx
+  DEVICE_PACKAGES += kmod-i2c-gpio yafut kmod-dsa-mv88e6xxx $(SFP_PACKAGES_10G)
 endef
 
 define Device/mikrotik_rb5009ug
@@ -132,7 +132,7 @@ define Device/marvell_clearfog-gt-8k
   DEVICE_VENDOR := SolidRun
   DEVICE_MODEL := Clearfog
   DEVICE_VARIANT := GT-8K
-  DEVICE_PACKAGES += kmod-i2c-mux-pca954x kmod-crypto-hw-safexcel
+  DEVICE_PACKAGES += kmod-i2c-mux-pca954x kmod-crypto-hw-safexcel $(SFP_PACKAGES_10G)
   DEVICE_DTS := armada-8040-clearfog-gt-8k
   SUPPORTED_DEVICES := marvell,armada8040-clearfog-gt-8k
 endef
@@ -161,7 +161,7 @@ define Device/solidrun_clearfog-pro
   SOC := cn9130
   DEVICE_VENDOR := SolidRun
   DEVICE_MODEL := ClearFog Pro
-  DEVICE_PACKAGES += kmod-i2c-mux-pca954x kmod-dsa-mv88e6xxx
+  DEVICE_PACKAGES += kmod-i2c-mux-pca954x kmod-dsa-mv88e6xxx $(SFP_PACKAGES_10G)
   BOOT_SCRIPT := clearfog-pro
 endef
 TARGET_DEVICES += solidrun_clearfog-pro
