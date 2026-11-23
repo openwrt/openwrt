@@ -193,7 +193,7 @@ build_list_of_backup_overlay_files() {
 		local conffiles=$1.conffiles
 		local keepfiles=$1.keepfiles
 
-		list_conffiles | cut -f2 -d ' ' | sort -u > "$conffiles"
+		list_conffiles | awk '{ print $1 }' | sort -u > "$conffiles"
 
 		# backup files from /etc/sysupgrade.conf and /lib/upgrade/keep.d, but
 		# ignore those aready controlled by opkg conffiles
