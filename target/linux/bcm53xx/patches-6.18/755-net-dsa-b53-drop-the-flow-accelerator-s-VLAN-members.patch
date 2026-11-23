@@ -72,7 +72,7 @@ Signed-off-by: Semih Baskan <strst.gs@gmail.com>
  }
  
  static void b53_set_vlan_entry(struct b53_device *dev, u16 vid,
-@@ -1265,7 +1262,7 @@ int b53_configure_vlan(struct dsa_switch
+@@ -1345,7 +1342,7 @@ int b53_configure_vlan(struct dsa_switch
  		for (vid = def_vid + 1; vid < dev->num_vlans; vid++) {
  			v = &dev->vlans[vid];
  
@@ -81,7 +81,7 @@ Signed-off-by: Semih Baskan <strst.gs@gmail.com>
  				continue;
  
  			b53_set_vlan_entry(dev, vid, v);
-@@ -1278,13 +1275,6 @@ int b53_configure_vlan(struct dsa_switch
+@@ -1358,13 +1355,6 @@ int b53_configure_vlan(struct dsa_switch
  					    B53_VLAN_PORT_DEF_TAG(i),
  					    dev->ports[i].pvid);
  		}
@@ -95,7 +95,7 @@ Signed-off-by: Semih Baskan <strst.gs@gmail.com>
  	}
  
  	return 0;
-@@ -3153,43 +3143,6 @@ bool b53_fa_trap_active(struct dsa_switc
+@@ -3243,43 +3233,6 @@ bool b53_fa_trap_active(struct dsa_switc
  }
  EXPORT_SYMBOL(b53_fa_trap_active);
  

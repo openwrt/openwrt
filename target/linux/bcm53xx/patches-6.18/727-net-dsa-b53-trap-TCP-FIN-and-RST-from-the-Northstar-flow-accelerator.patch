@@ -34,7 +34,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -654,6 +654,8 @@ static int b53_cfp_redirect(struct b53_d
+@@ -693,6 +693,8 @@ static int b53_cfp_redirect(struct b53_d
  /* The CFP rules for the flow accelerator, from the first one on */
  enum {
  	B53_FA_TRAP_TTL,
@@ -43,7 +43,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  	B53_FA_TRAP_NUM,
  };
  
-@@ -680,8 +682,31 @@ static int b53_fa_trap_set(struct b53_de
+@@ -719,8 +721,31 @@ static int b53_fa_trap_set(struct b53_de
  	mask[6] |= CFP_DATA6_TTL_RANGE_HIGH;
  	err = b53_cfp_redirect(dev, B53_FA_TRAP_TTL, data, mask, map);
  	mask[6] &= ~CFP_DATA6_TTL_RANGE_HIGH;

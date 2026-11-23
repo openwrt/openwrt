@@ -35,9 +35,9 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
        - ocelot
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -582,6 +582,17 @@ void b53_imp_vlan_setup(struct dsa_switc
+@@ -621,6 +621,17 @@ static int b53_port_set_mac_address(stru
+ 	return 0;
  }
- EXPORT_SYMBOL(b53_imp_vlan_setup);
  
 +/* The BCM5301x (Northstar) switches with a flow accelerator in front of
 + * port 8: switch revision 3 or later, or any BCM47094. As on BCM58xx, the
@@ -53,7 +53,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  static int b53_port_change_conduit(struct dsa_switch *ds, int port,
  				   struct net_device *conduit,
  				   struct netlink_ext_ack *extack)
-@@ -2606,6 +2617,42 @@ out:
+@@ -2695,6 +2706,42 @@ out:
  }
  EXPORT_SYMBOL(b53_get_tag_protocol);
  
@@ -96,11 +96,11 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  int b53_mirror_add(struct dsa_switch *ds, int port,
  		   struct dsa_mall_mirror_tc_entry *mirror, bool ingress,
  		   struct netlink_ext_ack *extack)
-@@ -2772,6 +2819,7 @@ static const struct phylink_mac_ops b53_
+@@ -2861,6 +2908,7 @@ static const struct phylink_mac_ops b53_
  
  static const struct dsa_switch_ops b53_switch_ops = {
  	.get_tag_protocol	= b53_get_tag_protocol,
 +	.change_tag_protocol	= b53_change_tag_protocol,
  	.preferred_default_local_cpu_port = b53_preferred_default_local_cpu_port,
  	.port_change_conduit	= b53_port_change_conduit,
- 	.setup			= b53_setup,
+ 	.port_set_mac_address	= b53_port_set_mac_address,

@@ -122,7 +122,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  }
  
  static void b53_set_eap_mode(struct b53_device *dev, int port, int mode)
-@@ -1216,7 +1232,9 @@ int b53_configure_vlan(struct dsa_switch
+@@ -1296,7 +1312,9 @@ int b53_configure_vlan(struct dsa_switch
  		for (i = def_vid; i < dev->num_vlans; i++)
  			b53_set_vlan_entry(dev, i, &vl);
  	} else {
@@ -132,7 +132,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  	}
  
  	b53_enable_vlan(dev, -1, dev->vlan_enabled, dev->vlan_filtering);
-@@ -1247,7 +1265,7 @@ int b53_configure_vlan(struct dsa_switch
+@@ -1327,7 +1345,7 @@ int b53_configure_vlan(struct dsa_switch
  		for (vid = def_vid + 1; vid < dev->num_vlans; vid++) {
  			v = &dev->vlans[vid];
  
@@ -141,7 +141,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  				continue;
  
  			b53_set_vlan_entry(dev, vid, v);
-@@ -1260,6 +1278,13 @@ int b53_configure_vlan(struct dsa_switch
+@@ -1340,6 +1358,13 @@ int b53_configure_vlan(struct dsa_switch
  					    B53_VLAN_PORT_DEF_TAG(i),
  					    dev->ports[i].pvid);
  		}
@@ -155,7 +155,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  	}
  
  	return 0;
-@@ -3128,6 +3153,43 @@ bool b53_fa_trap_active(struct dsa_switc
+@@ -3218,6 +3243,43 @@ bool b53_fa_trap_active(struct dsa_switc
  }
  EXPORT_SYMBOL(b53_fa_trap_active);
  
@@ -199,7 +199,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  static const struct b53_arl_ops b53_arl_ops_25 = {
  	.arl_read_entry = b53_arl_read_entry_25,
  	.arl_write_entry = b53_arl_write_entry_25,
-@@ -3614,6 +3676,7 @@ struct b53_device *b53_switch_alloc(stru
+@@ -3704,6 +3766,7 @@ struct b53_device *b53_switch_alloc(stru
  	mutex_init(&dev->reg_mutex);
  	mutex_init(&dev->stats_mutex);
  	mutex_init(&dev->arl_mutex);

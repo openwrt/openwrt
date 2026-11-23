@@ -38,7 +38,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  #include <linux/export.h>
  #include <linux/gpio.h>
  #include <linux/kernel.h>
-@@ -656,6 +657,8 @@ enum {
+@@ -695,6 +696,8 @@ enum {
  	B53_FA_TRAP_TTL,
  	B53_FA_TRAP_FIN,
  	B53_FA_TRAP_RST,
@@ -47,7 +47,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  	B53_FA_TRAP_NUM,
  };
  
-@@ -665,23 +668,23 @@ static int b53_fa_trap_set(struct b53_de
+@@ -704,23 +707,23 @@ static int b53_fa_trap_set(struct b53_de
  	u32 mask[B53_CFP_NUM_KEY_REGS] = {
  		CFP_DATA0_SLICE_VALID | CFP_DATA0_SLICE_ID_MASK
  	};
@@ -82,7 +82,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  	if (err)
  		return err;
  
-@@ -691,22 +694,36 @@ static int b53_fa_trap_set(struct b53_de
+@@ -730,22 +733,36 @@ static int b53_fa_trap_set(struct b53_de
  	 */
  	b53_write8(dev, B53_CFP_PAGE, B53_CFP_UDF_0_A_0,
  		   CFP_UDF_EOL3 | B53_CFP_UDF_TCP_FLAGS);
@@ -131,7 +131,7 @@ Signed-off-by: Erik Conijn <egc112@msn.com>
  }
  
  static void b53_fa_trap_clear(struct b53_device *dev)
-@@ -3098,6 +3115,19 @@ static const struct dsa_switch_ops b53_s
+@@ -3188,6 +3205,19 @@ static const struct dsa_switch_ops b53_s
  	.port_change_mtu	= b53_change_mtu,
  };
  
