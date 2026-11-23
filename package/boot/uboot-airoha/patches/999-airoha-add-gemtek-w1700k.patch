@@ -184,7 +184,7 @@ Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
 +ubi_read_recovery=ubi check recovery && ubi read $initaddr recovery
 --- /dev/null
 +++ b/dts/upstream/src/arm64/airoha/an7581-w1700k-ubi.dts
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,141 @@
 +// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +/dts-v1/;
 +
@@ -211,6 +211,16 @@ Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
 +	memory@80000000 {
 +		device_type = "memory";
 +		reg = <0x0 0x80000000 0x2 0x00000000>;
++	};
++
++	reserved-memory {
++		ramoops@d0000000 {
++			compatible = "ramoops";
++			reg = <0x0 0xd0000000 0x0 0x100000>;
++			record-size = <0x20000>;
++			console-size = <0x40000>;
++			ecc-size = <16>;
++		};
 +	};
 +
 +	gpio-keys {
