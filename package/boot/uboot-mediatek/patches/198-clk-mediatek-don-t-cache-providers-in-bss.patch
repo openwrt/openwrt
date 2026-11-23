@@ -1,0 +1,142 @@
+From a3eb07224ffcee092c08a7bdf6e816024f69c5a8 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Mon, 23 Nov 2026 23:16:42 +0100
+Subject: [PATCH] clk: mediatek: don't cache clock providers in .bss
+
+mtk_clk_probe() stores each probed provider in the static array
+mtk_clk_providers[], which lives in .bss. The clock providers are
+probed before relocation (DM_FLAG_PRE_RELOC, e.g. for the UART), when
+.bss is not usable yet: on arm64 with OF_SEPARATE it overlays the
+appended device tree, so the store corrupts the DTB. On the MT7981
+OpenWrt One, the MT7987 BananaPi BPi-R4-Lite and the MT7988 BananaPi
+BPi-R4 the UART then can't find its clock and the board resets in a
+loop:
+
+  serial_mtk serial@11000000: baud clock not defined
+  No serial driver found
+  resetting ...
+
+Moving the array to .data would not help: it would carry
+pre-relocation device pointers over relocation.
+
+Drop the cache and look the provider up in the clock uclass each time.
+device_probe() returns early for devices that are already probed.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ drivers/clk/mediatek/clk-mtk.c | 74 +++++++++++++---------------------
+ 1 file changed, 29 insertions(+), 45 deletions(-)
+
+--- a/drivers/clk/mediatek/clk-mtk.c
++++ b/drivers/clk/mediatek/clk-mtk.c
+@@ -35,8 +35,6 @@
+ #define SCP_AXICK_DCM_DIS_EN		BIT(0)
+ #define SCP_AXICK_26M_SEL_EN		BIT(4)
+ 
+-static struct udevice *mtk_clk_providers[MTK_CLK_TREE_NUM_TYPES];
+-
+ static bool mtk_clk_tree_type_is_provider(enum mtk_clk_tree_type type)
+ {
+ 	return type != MTK_CLK_TREE_NONE && type < MTK_CLK_TREE_NUM_TYPES;
+@@ -58,44 +56,44 @@ static enum mtk_clk_tree_type mtk_clk_tr
+ 
+ static struct udevice *mtk_clk_tree_get_provider(enum mtk_clk_tree_type type)
+ {
++	struct udevice *dev;
++	struct uclass *uc;
++	int ret;
++
+ 	if (!mtk_clk_tree_type_is_provider(type))
+ 		return NULL;
+ 
+-	if (!mtk_clk_providers[type]) {
+-		struct udevice *dev;
+-		struct uclass *uc;
+-		int ret;
++	/*
++	 * No static cache: providers are probed before relocation, when .bss
++	 * overlays the device tree and is not writable yet.
++	 */
++	ret = uclass_get(UCLASS_CLK, &uc);
++	if (ret)
++		return ERR_PTR(ret);
++
++	uclass_foreach_dev(dev, uc) {
++		const struct mtk_clk_tree *tree;
++		const void *ops;
++
++		ops = dev_get_driver_ops(dev);
++		if (ops != &mtk_clk_apmixedsys_ops &&
++		    ops != &mtk_clk_fixed_pll_ops &&
++		    ops != &mtk_clk_topckgen_ops &&
++		    ops != &mtk_clk_infrasys_ops)
++			continue;
++
++		tree = (const void *)dev_get_driver_data(dev);
++		if (tree->type != type)
++			continue;
+ 
+-		/* Lazily probe and register the requested provider. */
+-		ret = uclass_get(UCLASS_CLK, &uc);
++		ret = device_probe(dev);
+ 		if (ret)
+ 			return ERR_PTR(ret);
+ 
+-		uclass_foreach_dev(dev, uc) {
+-			const struct mtk_clk_tree *tree;
+-			const void *ops;
+-
+-			ops = dev_get_driver_ops(dev);
+-			if (ops != &mtk_clk_apmixedsys_ops &&
+-			    ops != &mtk_clk_fixed_pll_ops &&
+-			    ops != &mtk_clk_topckgen_ops &&
+-			    ops != &mtk_clk_infrasys_ops)
+-				continue;
+-
+-			tree = (const void *)dev_get_driver_data(dev);
+-			if (tree->type != type)
+-				continue;
+-
+-			/* Probe will add it to mtk_clk_providers[type]. */
+-			ret = device_probe(dev);
+-			if (ret)
+-				return ERR_PTR(ret);
+-
+-			break;
+-		}
++		return dev;
+ 	}
+ 
+-	return mtk_clk_providers[type] ?: ERR_PTR(-ENOENT);
++	return ERR_PTR(-ENOENT);
+ }
+ 
+ static struct udevice *mtk_clk_parent_get_provider(u16 flags)
+@@ -103,20 +101,6 @@ static struct udevice *mtk_clk_parent_ge
+ 	return mtk_clk_tree_get_provider(mtk_clk_tree_type_from_parent_flags(flags));
+ }
+ 
+-static int mtk_clk_tree_register_provider(struct udevice *dev,
+-					  const struct mtk_clk_tree *tree)
+-{
+-	if (!mtk_clk_tree_type_is_provider(tree->type))
+-		return 0;
+-
+-	if (mtk_clk_providers[tree->type])
+-		return -EEXIST;
+-
+-	mtk_clk_providers[tree->type] = dev;
+-
+-	return 0;
+-}
+-
+ /* shared functions */
+ 
+ static const int mtk_common_clk_of_xlate(struct clk *clk,
+@@ -1128,5 +1112,5 @@ int mtk_clk_probe(struct udevice *dev)
+ 
+ 	priv->tree = tree;
+ 
+-	return mtk_clk_tree_register_provider(dev, tree);
++	return 0;
+ }
