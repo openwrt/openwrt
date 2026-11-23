@@ -41,7 +41,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		goto drop;
  
  	ph = pppoe_hdr(skb);
-@@ -1177,6 +1178,160 @@ static struct pernet_operations pppoe_ne
+@@ -1185,6 +1186,160 @@ static struct pernet_operations pppoe_ne
  	.size = sizeof(struct pppoe_net),
  };
  
@@ -202,7 +202,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int __init pppoe_init(void)
  {
  	int err;
-@@ -1193,6 +1348,8 @@ static int __init pppoe_init(void)
+@@ -1201,6 +1356,8 @@ static int __init pppoe_init(void)
  	if (err)
  		goto out_unregister_pppoe_proto;
  
@@ -211,7 +211,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	dev_add_pack(&pppoes_ptype);
  	dev_add_pack(&pppoed_ptype);
  	register_netdevice_notifier(&pppoe_notifier);
-@@ -1212,6 +1369,8 @@ static void __exit pppoe_exit(void)
+@@ -1220,6 +1377,8 @@ static void __exit pppoe_exit(void)
  	unregister_netdevice_notifier(&pppoe_notifier);
  	dev_remove_pack(&pppoed_ptype);
  	dev_remove_pack(&pppoes_ptype);

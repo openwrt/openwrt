@@ -298,16 +298,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	/* Set end-of-link to the last link descriptor of list */
  	set_desc_last(&desc->hw_desc[num - 1]);
  	/* Managed transfer list */
-@@ -1054,7 +1139,7 @@ static void axi_chan_dump_lli(struct axi
- static void axi_chan_list_dump_lli(struct axi_dma_chan *chan,
- 				   struct axi_dma_desc *desc_head)
- {
--	int count = atomic_read(&chan->descs_allocated);
-+	int count = desc_head->nr_hw_descs;
- 	int i;
- 
- 	for (i = 0; i < count; i++)
-@@ -1097,11 +1182,11 @@ out:
+@@ -1094,11 +1179,11 @@ out:
  
  static void axi_chan_block_xfer_complete(struct axi_dma_chan *chan)
  {
@@ -320,7 +311,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	u64 llp;
  	int i;
  
-@@ -1123,6 +1208,7 @@ static void axi_chan_block_xfer_complete
+@@ -1120,6 +1205,7 @@ static void axi_chan_block_xfer_complete
  	if (chan->cyclic) {
  		desc = vd_to_axi_desc(vd);
  		if (desc) {
@@ -328,7 +319,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  			llp = lo_hi_readq(chan->chan_regs + CH_LLP);
  			for (i = 0; i < count; i++) {
  				hw_desc = &desc->hw_desc[i];
-@@ -1143,6 +1229,9 @@ static void axi_chan_block_xfer_complete
+@@ -1140,6 +1226,9 @@ static void axi_chan_block_xfer_complete
  		/* Remove the completed descriptor from issued list before completing */
  		list_del(&vd->node);
  		vchan_cookie_complete(vd);
@@ -338,7 +329,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	}
  
  out:
-@@ -1400,6 +1489,10 @@ static int parse_device_properties(struc
+@@ -1392,6 +1481,10 @@ static int parse_device_properties(struc
  
  	chip->dw->hdata->nr_masters = tmp;
  

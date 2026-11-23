@@ -124,7 +124,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	return 0;
  }
-@@ -309,6 +351,8 @@ static int si3474_pi_enable(struct pse_c
+@@ -319,6 +361,8 @@ static int si3474_pi_enable(struct pse_c
  	if (ret)
  		return ret;
  
@@ -133,7 +133,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	/* DETECT_CLASS_ENABLE must be set when using AUTO mode,
  	 * otherwise PI does not power up - datasheet section 2.10.2
  	 */
-@@ -346,6 +390,8 @@ static int si3474_pi_disable(struct pse_
+@@ -361,6 +405,8 @@ static int si3474_pi_disable(struct pse_
  	if (ret)
  		return ret;
  
@@ -142,7 +142,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return 0;
  }
  
-@@ -453,6 +499,128 @@ static int si3474_pi_get_actual_pw(struc
+@@ -468,6 +514,128 @@ static int si3474_pi_get_actual_pw(struc
  	return DIV_ROUND_CLOSEST_ULL(tmp_64, 1000000000);
  }
  
@@ -271,7 +271,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const struct pse_controller_ops si3474_ops = {
  	.setup_pi_matrix = si3474_setup_pi_matrix,
  	.pi_enable = si3474_pi_enable,
-@@ -546,7 +714,10 @@ static int si3474_i2c_probe(struct i2c_c
+@@ -559,7 +727,10 @@ static int si3474_i2c_probe(struct i2c_c
  		return ret;
  	}
  

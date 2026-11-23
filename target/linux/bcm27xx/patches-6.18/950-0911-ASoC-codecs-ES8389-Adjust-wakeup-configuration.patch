@@ -16,7 +16,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
 
 --- a/sound/soc/codecs/es8389.c
 +++ b/sound/soc/codecs/es8389.c
-@@ -629,10 +629,6 @@ static int es8389_set_bias_level(struct
+@@ -648,10 +648,6 @@ static int es8389_set_bias_level(struct
  		regmap_write(es8389->regmap, ES8389_CSM_JUMP, 0xE4);
  		regmap_write(es8389->regmap, ES8389_RESET, 0x01);
  		regmap_write(es8389->regmap, ES8389_CLK_OFF1, 0xC3);
@@ -27,7 +27,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  		break;
  	case SND_SOC_BIAS_PREPARE:
  		break;
-@@ -663,6 +659,7 @@ static int es8389_mute(struct snd_soc_da
+@@ -682,6 +678,7 @@ static int es8389_mute(struct snd_soc_da
  {
  	struct snd_soc_component *component = dai->component;
  	struct es8389_private *es8389 = snd_soc_component_get_drvdata(component);
@@ -35,7 +35,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  
  	if (mute) {
  		if (direction == SNDRV_PCM_STREAM_PLAYBACK) {
-@@ -673,10 +670,22 @@ static int es8389_mute(struct snd_soc_da
+@@ -692,10 +689,22 @@ static int es8389_mute(struct snd_soc_da
  						0x03, 0x03);
  		}
  	} else {

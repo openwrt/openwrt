@@ -83,7 +83,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	unsigned int upm_handle[DRM_FORMAT_MAX_PLANES];
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -379,6 +379,27 @@ static int vc4_hvs_debugfs_dlist_allocs(
+@@ -380,6 +380,27 @@ static int vc4_hvs_debugfs_dlist_allocs(
  	return 0;
  }
  
@@ -111,7 +111,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  /* The filter kernel is composed of dwords each containing 3 9-bit
   * signed integers packed next to each other.
   */
-@@ -1511,6 +1532,8 @@ int vc4_hvs_debugfs_init(struct drm_mino
+@@ -1512,6 +1533,8 @@ int vc4_hvs_debugfs_init(struct drm_mino
  		drm_debugfs_add_file(drm, "hvs_dlists", vc4_hvs_debugfs_dlist, NULL);
  	}
  
@@ -120,7 +120,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	drm_debugfs_add_file(drm, "hvs_underrun", vc4_hvs_debugfs_underrun, NULL);
  
  	drm_debugfs_add_file(drm, "hvs_dlist_allocs", vc4_hvs_debugfs_dlist_allocs, NULL);
-@@ -1627,6 +1650,7 @@ struct vc4_hvs *__vc4_hvs_alloc(struct v
+@@ -1628,6 +1651,7 @@ struct vc4_hvs *__vc4_hvs_alloc(struct v
  	}
  
  	drm_mm_init(&hvs->lbm_mm, 0, lbm_size);

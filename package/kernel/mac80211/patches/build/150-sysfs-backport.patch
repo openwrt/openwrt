@@ -4,7 +4,7 @@
  #define WIPHY_PM_OPS NULL
  #endif
  
-+#if LINUX_VERSION_IS_GEQ(7,0,0)
++#if LINUX_VERSION_IS_GEQ(6,18,65)
  static const struct ns_common *wiphy_namespace(const struct device *d)
  {
  	struct wiphy *wiphy = container_of(d, struct wiphy, dev);

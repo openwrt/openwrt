@@ -25,7 +25,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	enum snd_soc_bias_level bias_level;
  };
  
-@@ -681,6 +682,10 @@ static int es8389_mute(struct snd_soc_da
+@@ -700,6 +701,10 @@ static int es8389_mute(struct snd_soc_da
  		}
  
  		if (direction == SNDRV_PCM_STREAM_PLAYBACK) {
@@ -36,7 +36,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  			regmap_update_bits(es8389->regmap, ES8389_DAC_FORMAT_MUTE,
  						0x03, 0x00);
  		} else {
-@@ -730,7 +735,10 @@ static struct snd_soc_dai_driver es8389_
+@@ -749,7 +754,10 @@ static struct snd_soc_dai_driver es8389_
  static void es8389_init(struct snd_soc_component *component)
  {
  	struct es8389_private *es8389 = snd_soc_component_get_drvdata(component);
