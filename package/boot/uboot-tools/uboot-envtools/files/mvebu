@@ -54,6 +54,10 @@ marvell,armada8040-mcbin-doubleshot|\
 marvell,armada8040-mcbin-singleshot)
 	ubootenv_add_uci_config "/dev/mtd0" "0x3f0000" "0x10000" "0x10000" "1"
 	;;
+lenovo,ix4-300d)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x20000" "0x20000"
+	;;
 linksys,wrt1200ac|\
 linksys,wrt1900ac-v2|\
 linksys,wrt1900acs)
