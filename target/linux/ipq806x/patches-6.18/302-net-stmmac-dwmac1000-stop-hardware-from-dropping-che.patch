@@ -1,0 +1,67 @@
+From 81b432dbd8642d1e194851375cac02a00140a7ff Mon Sep 17 00:00:00 2001
+From: Christian Schmidbauer <opensource@grische.xyz>
+Date: Sat, 14 Nov 2026 14:36:39 +0100
+Subject: [PATCH 3/3] net: stmmac: dwmac1000: stop hardware from dropping
+ checksum-error packets
+
+[ Upstream commit 2dd48c4615a67ebb1762c2b0d79801be1949fcfb ]
+
+When the checksum offload engine (CoE) is enabled, the dwmac1000 MAC
+silently drops any frame for which the engine detects a checksum error,
+before the driver sees it.
+
+This breaks VXLAN over IPv6 with zero UDP checksums, which RFC 6935 and
+RFC 6936 allow for tunnels.
+
+Set DMA_CONTROL_DT so that such frames are delivered instead of dropped,
+as commit fe4042797651 ("net: stmmac: dwmac4: stop hardware from
+dropping checksum-error packets") did for dwmac4. CoE remains enabled,
+so the driver still sees the error status and marks the skb
+CHECKSUM_NONE for the stack to verify.
+
+Set the bit only with enhanced descriptors. The normal descriptor parser
+does not report a checksum-only error to the stack, so cores that use
+it keep dropping such frames in hardware anyway.
+
+Tested on an Aruba AP-325 (ipq806x-gmac-dwmac) with Rx checksum offload
+on.
+
+Link: https://lore.kernel.org/all/20250625132117.1b3264e8@kernel.org/
+Link: https://github.com/freifunk-gluon/gluon/issues/3783
+Fixes: 47dd7a540b8a ("net: add support for STMicroelectronics Ethernet controllers.")
+Cc: <stable@vger.kernel.org> # 6.6.x: ee0aace5f844: net: stmmac: Correctly handle Rx checksum offload errors
+Cc: <stable@vger.kernel.org> # 6.6.x
+Signed-off-by: Christian Schmidbauer <opensource@grische.xyz>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Tested-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Link: https://patch.msgid.link/20261114133640.3285413-4-opensource@grische.xyz
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+[ Drop the dwmac1000.h hunk because 6.18 still defines DMA_CONTROL_DT. ]
+---
+ drivers/net/ethernet/stmicro/stmmac/dwmac1000_dma.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/dwmac1000_dma.c
++++ b/drivers/net/ethernet/stmicro/stmmac/dwmac1000_dma.c
+@@ -15,6 +15,7 @@
+ #include <linux/io.h>
+ #include "dwmac1000.h"
+ #include "dwmac_dma.h"
++#include "stmmac.h"
+ 
+ static void dwmac1000_dma_axi(void __iomem *ioaddr, struct stmmac_axi *axi)
+ {
+@@ -153,6 +154,13 @@ static void dwmac1000_dma_operation_mode
+ {
+ 	u32 csr6 = readl(ioaddr + DMA_CHAN_CONTROL(channel));
+ 
++	/* Deliver checksum-error frames only with enhanced
++	 * descriptors, because the normal descriptor parser does not
++	 * report a checksum-only error.
++	 */
++	if (priv->plat->enh_desc)
++		csr6 |= DMA_CONTROL_DT;
++
+ 	if (mode == SF_DMA_MODE) {
+ 		pr_debug("GMAC: enable RX store and forward mode\n");
+ 		csr6 |= DMA_CONTROL_RSF;
