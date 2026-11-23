@@ -72,8 +72,9 @@ define Device/arista_w-318
 	DEVICE_DTS_CONFIG := config@cp01-c3
 	SOC := ipq6010
 	KERNEL_SIZE := 8192k
-	DEVICE_PACKAGES := ipq-wifi-arista_w-318 kmod-ath11k-pci kmod-tpm-tis-spi \
-		kmod-fs-f2fs f2fs-tools bluetooth-uart
+	DEVICE_PACKAGES := ipq-wifi-arista_w-318 ath11k-firmware-qcn9074 \
+		kmod-ath11k-pci kmod-tpm-tis-spi kmod-fs-f2fs f2fs-tools \
+		bluetooth-uart
 endef
 TARGET_DEVICES += arista_w-318
 
