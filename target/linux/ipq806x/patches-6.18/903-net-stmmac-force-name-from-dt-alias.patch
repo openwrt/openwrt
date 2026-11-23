@@ -25,7 +25,7 @@ Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
 
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -7529,6 +7529,7 @@ int stmmac_dvr_probe(struct device *devi
+@@ -7531,6 +7531,7 @@ int stmmac_dvr_probe(struct device *devi
  {
  	struct net_device *ndev = NULL;
  	struct stmmac_priv *priv;
@@ -33,7 +33,7 @@ Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
  	u32 rxq;
  	int i, ret = 0;
  
-@@ -7783,7 +7784,24 @@ int stmmac_dvr_probe(struct device *devi
+@@ -7785,7 +7786,24 @@ int stmmac_dvr_probe(struct device *devi
  		goto error_phy_setup;
  	}
  
