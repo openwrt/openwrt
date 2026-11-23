@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+/dts-v1/;
+
+#include "mt7981b-zyxel-common.dtsi"
+
+/ {
+	model = "Zyxel NWA55AX Pro";
+	compatible = "zyxel,nwa55ax-pro", "mediatek,mt7981";
+
+	aliases {
+		label-mac-device = &gmac1;
+	};
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
+	status = "okay";
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&int_gbe_phy>;
+
+		nvmem-cells = <&macaddr_mrd_1fff8 0>;
+		nvmem-cell-names = "mac-address";
+	};
+};

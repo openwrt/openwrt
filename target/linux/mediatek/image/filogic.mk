@@ -4619,6 +4619,14 @@ define Device/zyxel_nwa50ax-pro
 endef
 TARGET_DEVICES += zyxel_nwa50ax-pro
 
+define Device/zyxel_nwa55ax-pro
+  $(call Device/zyxel_filogic_common)
+  DEVICE_MODEL := NWA55AX Pro
+  DEVICE_DTS := mt7981b-zyxel-nwa55ax-pro
+  ZYXEL_MODEL_IDS := a3e1
+endef
+TARGET_DEVICES += zyxel_nwa55ax-pro
+
 define Device/zyxel_nwa55ax-ptp
   $(call Device/zyxel_filogic_common)
   DEVICE_MODEL := NWA55AX PTP
