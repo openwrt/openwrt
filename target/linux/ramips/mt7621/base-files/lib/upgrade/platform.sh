@@ -161,9 +161,7 @@ platform_do_upgrade() {
 	z-router,zr-2660|\
 	z-router,zr-2662|\
 	zyxel,nwa50ax|\
-	zyxel,nwa55axe)
-		nand_do_upgrade "$1"
-		;;
+	zyxel,nwa55axe|\
 	dragonglass,dgx25-nand)
 		nand_do_upgrade "$1"
 		;;
