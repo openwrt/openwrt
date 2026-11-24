@@ -1,0 +1,70 @@
+From: Erik Conijn <egc112@msn.com>
+Subject: [PATCH] net: dsa: b53: find the flow accelerator by the chip id
+
+Every BCM47094 has the flow accelerator, whatever its switch revision
+(Broadcom's et driver: FA_CAPABLE()). b53 recognised one by the board's
+device tree, but an image for a BCM4708 board also runs on the BCM47094
+hardware revisions of that board: an ASUS RT-AC66U B1 on the RT-AC68U
+image reports chip id 53030 with switch revision 0, as a Netgear R6400
+v2 does, and b53 refused the prepended tag there.
+
+Read the chip id from ChipCommon instead, the first register of the AXI
+bus, which bcma reports at boot as "Found chip with id". It is read
+once and kept.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -26,6 +26,7 @@
+ #include <linux/minmax.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
++#include <linux/of_address.h>
+ #include <linux/platform_data/b53.h>
+ #include <linux/phy.h>
+ #include <linux/phylink.h>
+@@ -636,6 +637,34 @@ static int b53_port_set_mac_address(stru
+ 	return 0;
+ }
+ 
++static bool b53_soc_is_bcm47094(void)
++{
++	static int is_bcm47094 = -1;
++	struct device_node *np;
++	void __iomem *cc;
++
++	if (is_bcm47094 >= 0)
++		return is_bcm47094;
++
++	/* The chip id in ChipCommon, the first register of the AXI bus: the
++	 * value bcma reports as "Found chip with id". The board's device tree
++	 * does not tell: an image for a BCM4708 board also runs on the
++	 * BCM47094 revisions of that board.
++	 */
++	is_bcm47094 = 0;
++	np = of_find_compatible_node(NULL, NULL, "brcm,bus-axi");
++	if (!np)
++		return false;
++	cc = of_iomap(np, 0);
++	of_node_put(np);
++	if (!cc)
++		return false;
++	is_bcm47094 = (readl(cc) & 0xffff) == 53030;
++	iounmap(cc);
++
++	return is_bcm47094;
++}
++
+ /* The BCM5301x (Northstar) switches with a flow accelerator in front of
+  * port 8: switch revision 3 or later, or any BCM47094. As on BCM58xx, the
+  * accelerator turns the regular tag into a prepended one on its way to
+@@ -644,7 +673,7 @@ static int b53_port_set_mac_address(stru
+ static bool b53_has_flow_accelerator(struct b53_device *dev)
+ {
+ 	return is5301x(dev) &&
+-	       (dev->core_rev >= 3 || of_machine_is_compatible("brcm,bcm47094"));
++	       (dev->core_rev >= 3 || b53_soc_is_bcm47094());
+ }
+ 
+ /* Bit of a port in the CFP port maps: ports 0 to 5, 7 and 8 */
