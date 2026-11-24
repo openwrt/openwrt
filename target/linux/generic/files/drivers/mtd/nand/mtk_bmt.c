@@ -92,10 +92,26 @@ bool mapping_block_in_range(int block, int *start, int *end)
 	return false;
 }
 
+static bool vms_guarded_nmbm(struct mtd_info *mtd)
+{
+	return of_machine_is_compatible("tenbay,v-ms3000k") &&
+	       of_property_read_bool(mtd_get_of_node(mtd), "tenbay,verified-onfi-probe");
+}
+
+static bool vms_inside_slot(u64 start, u64 len)
+{
+	const u64 slot_start = 0x03580000, slot_end = 0x06580000;
+
+	return start >= slot_start && start < slot_end && len && len <= slot_end - start;
+}
+
 static bool
 mtk_bmt_remap_block(u32 block, u32 mapped_block, int copy_len)
 {
 	int start, end;
+
+	if (vms_guarded_nmbm(bmtd.mtd))
+		return false;
 
 	if (!mapping_block_in_range(block, &start, &end))
 		return false;
@@ -182,6 +198,9 @@ mtk_bmt_write(struct mtd_info *mtd, loff_t to,
 
 	ops->retlen = 0;
 	ops->oobretlen = 0;
+	if (vms_guarded_nmbm(mtd) &&
+	    (ops->ooblen || !vms_inside_slot(to, ops->len)))
+		return -EROFS;
 
 	while (ops->retlen < ops->len || ops->oobretlen < ops->ooblen) {
 		u32 offset = to & (bmtd.blk_size - 1);
@@ -198,6 +217,8 @@ mtk_bmt_write(struct mtd_info *mtd, loff_t to,
 		cur_ops.retlen = 0;
 		cur_ops.len = min_t(u32, bmtd.blk_size - offset,
 					 ops->len - ops->retlen);
+		if (vms_guarded_nmbm(mtd) && !vms_inside_slot(cur_to, cur_ops.len))
+			return -EROFS;
 		ret = bmtd._write_oob(mtd, cur_to, &cur_ops);
 		if (ret < 0) {
 			if (mtk_bmt_remap_block(block, cur_block, offset) &&
@@ -238,6 +259,8 @@ mtk_bmt_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 	int block;
 
 	start_addr = instr->addr & (~mtd->erasesize_mask);
+	if (vms_guarded_nmbm(mtd) && !vms_inside_slot(instr->addr, instr->len))
+		return -EROFS;
 	end_addr = instr->addr + instr->len;
 
 	while (start_addr < end_addr) {
@@ -246,6 +269,8 @@ mtk_bmt_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 		if (block < 0)
 			return -EIO;
 		mapped_instr.addr = (loff_t)block << bmtd.blk_shift;
+		if (vms_guarded_nmbm(mtd) && !vms_inside_slot(mapped_instr.addr, mapped_instr.len))
+			return -EROFS;
 		ret = bmtd._erase(mtd, &mapped_instr);
 		if (ret) {
 			if (mtk_bmt_remap_block(orig_block, block, 0) &&
@@ -265,11 +290,13 @@ mtk_bmt_block_isbad(struct mtd_info *mtd, loff_t ofs)
 {
 	int retry_count = 0;
 	u16 orig_block = ofs >> bmtd.blk_shift;
-	u16 block;
+	int block;
 	int ret;
 
 retry:
 	block = bmtd.ops->get_mapping_block(orig_block);
+	if (block < 0)
+		return -EIO;
 	ret = bmtd._block_isbad(mtd, (loff_t)block << bmtd.blk_shift);
 	if (ret) {
 		if (mtk_bmt_remap_block(orig_block, block, bmtd.blk_size) &&
@@ -289,6 +316,8 @@ mtk_bmt_block_markbad(struct mtd_info *mtd, loff_t ofs)
 	if (block < 0)
 		return -EIO;
 
+	if (vms_guarded_nmbm(mtd))
+		return -EROFS;
 	mtk_bmt_remap_block(orig_block, block, bmtd.blk_size);
 
 	return bmtd._block_markbad(mtd, (loff_t)block << bmtd.blk_shift);
@@ -304,9 +333,9 @@ mtk_bmt_replace_ops(struct mtd_info *mtd)
 	bmtd._block_markbad = mtd->_block_markbad;
 
 	mtd->_read_oob = mtk_bmt_read;
+	mtd->_block_isbad = mtk_bmt_block_isbad;
 	mtd->_write_oob = mtk_bmt_write;
 	mtd->_erase = mtk_bmt_mtd_erase;
-	mtd->_block_isbad = mtk_bmt_block_isbad;
 	mtd->_block_markbad = mtk_bmt_block_markbad;
 }
 
@@ -415,7 +444,11 @@ int mtk_bmt_attach(struct mtd_info *mtd)
 	if (!np)
 		return 0;
 
-	if (of_property_read_bool(np, "mediatek,bmt-v2"))
+	if (vms_guarded_nmbm(mtd)) {
+		if (!of_property_read_bool(np, "mediatek,nmbm"))
+			return -EINVAL;
+		bmtd.ops = &mtk_bmt_nmbm_ops;
+	} else if (of_property_read_bool(np, "mediatek,bmt-v2"))
 		bmtd.ops = &mtk_bmt_v2_ops;
 	else if (of_property_read_bool(np, "mediatek,nmbm"))
 		bmtd.ops = &mtk_bmt_nmbm_ops;
@@ -458,7 +491,8 @@ int mtk_bmt_attach(struct mtd_info *mtd)
 	if (ret)
 		goto error;
 
-	mtk_bmt_add_debugfs();
+	if (!vms_guarded_nmbm(mtd))
+		mtk_bmt_add_debugfs();
 	return 0;
 
 error:

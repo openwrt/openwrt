@@ -2,6 +2,12 @@
 #include <linux/slab.h>
 #include "mtk_bmt.h"
 
+static bool nmbm_protect_metadata(void)
+{
+	return of_machine_is_compatible("tenbay,v-ms3000k") &&
+	       of_property_read_bool(mtd_get_of_node(bmtd.mtd), "tenbay,verified-onfi-probe");
+}
+
 #define nlog_err(ni, ...) printk(KERN_ERR __VA_ARGS__)
 #define nlog_info(ni, ...) printk(KERN_INFO __VA_ARGS__)
 #define nlog_debug(ni, ...) printk(KERN_INFO __VA_ARGS__)
@@ -273,6 +279,9 @@ static bool nmbm_write_phys_page(struct nmbm_instance *ni, uint64_t addr,
 {
 	int tries, ret;
 
+	if (nmbm_protect_metadata())
+		return false;
+
 	for (tries = 0; tries < NMBM_TRY_COUNT; tries++) {
 		struct mtd_oob_ops ops = {
 			.mode = MTD_OPS_PLACE_OOB,
@@ -305,6 +314,9 @@ static bool nmbm_write_phys_page(struct nmbm_instance *ni, uint64_t addr,
 static bool nmbm_erase_phys_block(struct nmbm_instance *ni, uint64_t addr)
 {
 	int tries, ret;
+
+	if (nmbm_protect_metadata())
+		return false;
 
 	for (tries = 0; tries < NMBM_TRY_COUNT; tries++) {
 		struct erase_info ei = {
@@ -342,6 +354,9 @@ static bool nmbm_check_bad_phys_block(struct nmbm_instance *ni, uint32_t ba)
 static int nmbm_mark_phys_bad_block(struct nmbm_instance *ni, uint32_t ba)
 {
 	uint64_t addr = ba2addr(ni, ba);
+
+	if (nmbm_protect_metadata())
+		return -EROFS;
 
 	nlog_info(ni, "Block %u [0x%08llx] will be marked bad\n", ba, addr);
 
@@ -1681,6 +1696,12 @@ static bool nmbm_check_info_table_header(struct nmbm_instance *ni, void *data)
 {
 	struct nmbm_info_table_header *ifthdr = data;
 
+	if (nmbm_protect_metadata() &&
+	    (ifthdr->header.version != NMBM_VER ||
+	     ifthdr->state_table_off != bmtd.pg_size ||
+	     ifthdr->mapping_table_off != 2 * bmtd.pg_size))
+		return false;
+
 	if (ifthdr->header.magic != NMBM_MAGIC_INFO_TABLE)
 		return false;
 
@@ -1715,6 +1736,10 @@ static bool nmbm_check_info_table(struct nmbm_instance *ni, uint32_t start_ba,
 	uint32_t ba;
 
 	for (ba = 0; ba < ni->data_block_count; ba++) {
+		if (nmbm_protect_metadata() &&
+		    (block_mapping[ba] < 0 || block_mapping[ba] >= ni->block_count))
+			return false;
+
 		if ((block_mapping[ba] >= ni->data_block_count && block_mapping[ba] < end_ba) ||
 		    block_mapping[ba] == ni->signature_ba)
 			return false;
@@ -1932,6 +1957,25 @@ static bool nmbm_load_info_table(struct nmbm_instance *ni, uint32_t ba,
 			ni->data_block_count = i;
 			break;
 		}
+	}
+
+	if (nmbm_protect_metadata()) {
+		struct nmbm_info_table_header *hdr = (void *)ni->info_table_cache;
+
+		/* Never rescue, rewrite, reconcile or synthesize mapping metadata. */
+		if (!ni->backup_table_ba ||
+		    main_table_write_count != backup_table_write_count ||
+		    ni->data_block_count != 960 ||
+		    memcmp(ni->block_state, ni->info_table_cache + hdr->state_table_off,
+			   ni->state_table_size) ||
+		    memcmp(ni->block_mapping, ni->info_table_cache + hdr->mapping_table_off,
+			   ni->mapping_table_size)) {
+			nlog_err(ni, "V-MS3000K NMBM: consistent redundant tables required\n");
+			return false;
+		}
+		ni->protected = 1;
+		nlog_info(ni, "V-MS3000K NMBM: 960 logical blocks; repair/remapping disabled\n");
+		return true;
 	}
 
 	/* Regenerate the info table cache from the final selected info table */
@@ -2205,6 +2249,12 @@ static int nmbm_attach(struct nmbm_instance *ni)
 		return -EINVAL;
 	}
 
+	if (nmbm_protect_metadata() &&
+	    (ni->block_count != 1024 || ni->signature.mgmt_start_pb != 960 ||
+	     ni->signature.max_try_count != 3 || ni->signature_ba < 960 ||
+	     ni->signature_ba >= ni->block_count))
+		return -EINVAL;
+
 	success = nmbm_load_existing(ni);
 	if (!success)
 		return -ENODEV;
@@ -2216,6 +2266,9 @@ static bool remap_block_nmbm(u16 block, u16 mapped_block, int copy_len)
 {
 	struct nmbm_instance *ni = bmtd.ni;
 	int new_block;
+
+	if (nmbm_protect_metadata())
+		return false;
 
 	if (block >= ni->data_block_count)
 		return false;
@@ -2237,7 +2290,7 @@ static int get_mapping_block_index_nmbm(int block)
 {
 	struct nmbm_instance *ni = bmtd.ni;
 
-	if (block >= ni->data_block_count)
+	if (block < 0 || block >= ni->data_block_count)
 		return -1;
 
 	return ni->block_mapping[block];
@@ -2261,8 +2314,16 @@ static int mtk_bmt_init_nmbm(struct device_node *np)
 		ni->max_reserved_blocks = 256;
 	if (of_property_read_bool(np, "mediatek,empty-page-ecc-protected"))
 		ni->empty_page_ecc_ok = true;
-	if (of_property_read_bool(np, "mediatek,bmt-force-create"))
+	if (!nmbm_protect_metadata() &&
+	    of_property_read_bool(np, "mediatek,bmt-force-create"))
 		ni->force_create = true;
+
+	if (nmbm_protect_metadata() &&
+	    (ni->max_ratio != 1 || ni->max_reserved_blocks != 64 ||
+	     of_property_read_bool(np, "mediatek,bmt-force-create"))) {
+		ret = -EINVAL;
+		goto out;
+	}
 
 	ret = nmbm_attach(ni);
 	if (ret)
@@ -2302,6 +2363,9 @@ static void unmap_block_nmbm(u16 block)
 	struct nmbm_instance *ni = bmtd.ni;
 	int start, offset;
 	int new_block;
+
+	if (nmbm_protect_metadata())
+		return;
 
 	if (block >= ni->data_block_count)
 		return;
