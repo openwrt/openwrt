@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 3 Nov 2025 12:19:10 +0000
+Subject: [PATCH] net: dsa: lantiq_gswip: set link parameters also for
+ CPU port
+
+On standalone switch ICs the link parameters of the CPU port need to
+be setup just like user ports. The destinction in the driver to not
+carry out link parameter setup for the CPU port does make sense for
+in-SoC switches on which the CPU port is internally connected to the
+SoC's Ethernet MAC.
+Set link parameters also for the CPU port unless it is an internal
+interface. Note that the internal TP PHYs anyway cannot be used as
+CPU ports, hence it doesn't matter that they are now also covered by
+that condition.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Alexander Sverdlin <alexander.sverdlin@siemens.com>
+Tested-by: Alexander Sverdlin <alexander.sverdlin@siemens.com>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://patch.msgid.link/07c6b8d3a12296123be5e5938b454fc620f819e6.1762170107.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip_common.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip_common.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip_common.c
+@@ -1459,7 +1459,7 @@ static void gswip_phylink_mac_link_up(st
+ 	struct gswip_priv *priv = dp->ds->priv;
+ 	int port = dp->index;
+ 
+-	if (!dsa_port_is_cpu(dp)) {
++	if (!dsa_port_is_cpu(dp) || interface != PHY_INTERFACE_MODE_INTERNAL) {
+ 		gswip_port_set_link(priv, port, true);
+ 		gswip_port_set_speed(priv, port, speed, interface);
+ 		gswip_port_set_duplex(priv, port, duplex);

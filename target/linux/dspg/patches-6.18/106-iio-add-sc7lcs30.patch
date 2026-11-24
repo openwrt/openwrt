@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] iio: light: add Silan SC7LCS30 hooks
+
+Wire up the driver for the Silan SC7LCS30 ambient light and proximity
+sensor.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/iio/light/Kconfig
++++ b/drivers/iio/light/Kconfig
+@@ -523,6 +523,17 @@ config PA12203001
+ 	  This driver can also be built as a module.  If so, the module
+ 	  will be called pa12203001.
+ 
++config SC7LCS30
++	tristate "Silan SC7LCS30 ALS and proximity sensor"
++	depends on I2C
++	select REGMAP_I2C
++	help
++	  Say Y here to build a driver for the Silan SC7LCS30 ambient light
++	  and proximity sensor.
++
++	  This driver can also be built as a module.  If so, the module
++	  will be called sc7lcs30.
++
+ config SI1133
+ 	tristate "SI1133 UV Index Sensor and Ambient Light Sensor"
+ 	depends on I2C
+--- a/drivers/iio/light/Makefile
++++ b/drivers/iio/light/Makefile
+@@ -48,6 +48,7 @@ obj-$(CONFIG_OPT4060)		+= opt4060.o
+ obj-$(CONFIG_PA12203001)	+= pa12203001.o
+ obj-$(CONFIG_ROHM_BU27034)	+= rohm-bu27034.o
+ obj-$(CONFIG_RPR0521)		+= rpr0521.o
++obj-$(CONFIG_SC7LCS30)		+= sc7lcs30.o
+ obj-$(CONFIG_SI1133)		+= si1133.o
+ obj-$(CONFIG_SI1145)		+= si1145.o
+ obj-$(CONFIG_STK3310)          += stk3310.o

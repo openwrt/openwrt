@@ -1,0 +1,111 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 3 Nov 2025 12:19:00 +0000
+Subject: [PATCH] net: dsa: lantiq_gswip: support Energy Efficient
+ Ethernet
+
+Introduce support for Energy Efficient Ethernet (EEE) on hardware
+version 2.2 or later.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Link: https://patch.msgid.link/753e45acb25e185689ca1afd8a9bd0c199d1c15b.1762170107.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.h        |  7 +++
+ drivers/net/dsa/lantiq/lantiq_gswip_common.c | 47 ++++++++++++++++++++
+ 2 files changed, 54 insertions(+)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.h
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.h
+@@ -2,6 +2,7 @@
+ #ifndef __LANTIQ_GSWIP_H
+ #define __LANTIQ_GSWIP_H
+ 
++#include <linux/bitfield.h>
+ #include <linux/clk.h>
+ #include <linux/mutex.h>
+ #include <linux/phylink.h>
+@@ -193,6 +194,12 @@
+ #define GSWIP_MAC_CTRL_2p(p)		(0x905 + ((p) * 0xC))
+ #define GSWIP_MAC_CTRL_2_LCHKL		BIT(2) /* Frame Length Check Long Enable */
+ #define GSWIP_MAC_CTRL_2_MLEN		BIT(3) /* Maximum Untagged Frame Lnegth */
++#define GSWIP_MAC_CTRL_4p(p)		(0x907 + ((p) * 0xC))
++#define  GSWIP_MAC_CTRL_4_LPIEN		BIT(7) /* LPI Mode Enable */
++#define  GSWIP_MAC_CTRL_4_GWAIT_MASK	GENMASK(14, 8) /* LPI Wait Time 1G */
++#define  GSWIP_MAC_CTRL_4_GWAIT(t)	u16_encode_bits((t), GSWIP_MAC_CTRL_4_GWAIT_MASK)
++#define  GSWIP_MAC_CTRL_4_WAIT_MASK	GENMASK(6, 0) /* LPI Wait Time 100M */
++#define  GSWIP_MAC_CTRL_4_WAIT(t)	u16_encode_bits((t), GSWIP_MAC_CTRL_4_WAIT_MASK)
+ 
+ /* Ethernet Switch Fetch DMA Port Control Register */
+ #define GSWIP_FDMA_PCTRLp(p)		(0xA80 + ((p) * 0x6))
+--- a/drivers/net/dsa/lantiq/lantiq_gswip_common.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip_common.c
+@@ -1537,6 +1537,49 @@ static int gswip_get_sset_count(struct d
+ 	return ARRAY_SIZE(gswip_rmon_cnt);
+ }
+ 
++static int gswip_set_mac_eee(struct dsa_switch *ds, int port,
++			     struct ethtool_keee *e)
++{
++	if (e->tx_lpi_timer > 0x7f)
++		return -EINVAL;
++
++	return 0;
++}
++
++static void gswip_phylink_mac_disable_tx_lpi(struct phylink_config *config)
++{
++	struct dsa_port *dp = dsa_phylink_to_port(config);
++	struct gswip_priv *priv = dp->ds->priv;
++
++	regmap_clear_bits(priv->gswip, GSWIP_MAC_CTRL_4p(dp->index),
++			  GSWIP_MAC_CTRL_4_LPIEN);
++}
++
++static int gswip_phylink_mac_enable_tx_lpi(struct phylink_config *config,
++					   u32 timer, bool tx_clock_stop)
++{
++	struct dsa_port *dp = dsa_phylink_to_port(config);
++	struct gswip_priv *priv = dp->ds->priv;
++
++	return regmap_update_bits(priv->gswip, GSWIP_MAC_CTRL_4p(dp->index),
++				  GSWIP_MAC_CTRL_4_LPIEN |
++				  GSWIP_MAC_CTRL_4_GWAIT_MASK |
++				  GSWIP_MAC_CTRL_4_WAIT_MASK,
++				  GSWIP_MAC_CTRL_4_LPIEN |
++				  GSWIP_MAC_CTRL_4_GWAIT(timer) |
++				  GSWIP_MAC_CTRL_4_WAIT(timer));
++}
++
++static bool gswip_support_eee(struct dsa_switch *ds, int port)
++{
++	struct gswip_priv *priv = ds->priv;
++
++	if (GSWIP_VERSION_GE(priv, GSWIP_VERSION_2_2))
++		return true;
++
++	return false;
++}
++
+ static struct phylink_pcs *gswip_phylink_mac_select_pcs(struct phylink_config *config,
+ 							phy_interface_t interface)
+ {
+@@ -1553,6 +1596,8 @@ static const struct phylink_mac_ops gswi
+ 	.mac_config		= gswip_phylink_mac_config,
+ 	.mac_link_down		= gswip_phylink_mac_link_down,
+ 	.mac_link_up		= gswip_phylink_mac_link_up,
++	.mac_disable_tx_lpi	= gswip_phylink_mac_disable_tx_lpi,
++	.mac_enable_tx_lpi	= gswip_phylink_mac_enable_tx_lpi,
+ 	.mac_select_pcs		= gswip_phylink_mac_select_pcs,
+ };
+ 
+@@ -1580,6 +1625,8 @@ static const struct dsa_switch_ops gswip
+ 	.get_strings		= gswip_get_strings,
+ 	.get_ethtool_stats	= gswip_get_ethtool_stats,
+ 	.get_sset_count		= gswip_get_sset_count,
++	.set_mac_eee		= gswip_set_mac_eee,
++	.support_eee		= gswip_support_eee,
+ };
+ 
+ void gswip_disable_switch(struct gswip_priv *priv)

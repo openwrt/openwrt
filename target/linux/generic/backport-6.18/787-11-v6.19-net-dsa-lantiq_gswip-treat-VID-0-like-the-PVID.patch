@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Wed, 15 Oct 2025 23:34:01 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: treat VID 0 like the PVID
+
+Documentation/networking/switchdev.rst says that VLAN-aware bridges must
+treat packets tagged with VID 0 the same as untagged. It appears from
+the documentation that setting the GSWIP_PCE_VCTRL_VID0 flag (which this
+driver already had defined) might achieve this.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/b220ac149922839a261b754202c05df5bb253c98.1760566491.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -603,7 +603,7 @@ static int gswip_port_vlan_filtering(str
+ 		gswip_switch_mask(priv,
+ 				  GSWIP_PCE_VCTRL_VSR,
+ 				  GSWIP_PCE_VCTRL_UVR | GSWIP_PCE_VCTRL_VIMR |
+-				  GSWIP_PCE_VCTRL_VEMR,
++				  GSWIP_PCE_VCTRL_VEMR | GSWIP_PCE_VCTRL_VID0,
+ 				  GSWIP_PCE_VCTRL(port));
+ 		gswip_switch_mask(priv, GSWIP_PCE_PCTRL_0_TVM, 0,
+ 				  GSWIP_PCE_PCTRL_0p(port));
+@@ -611,7 +611,7 @@ static int gswip_port_vlan_filtering(str
+ 		/* Use port based VLAN */
+ 		gswip_switch_mask(priv,
+ 				  GSWIP_PCE_VCTRL_UVR | GSWIP_PCE_VCTRL_VIMR |
+-				  GSWIP_PCE_VCTRL_VEMR,
++				  GSWIP_PCE_VCTRL_VEMR | GSWIP_PCE_VCTRL_VID0,
+ 				  GSWIP_PCE_VCTRL_VSR,
+ 				  GSWIP_PCE_VCTRL(port));
+ 		gswip_switch_mask(priv, 0, GSWIP_PCE_PCTRL_0_TVM,

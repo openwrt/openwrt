@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Wed, 15 Oct 2025 23:33:50 +0100
+Subject: [PATCH] net: dsa: lantiq_gswip: drop untagged on VLAN-aware
+ bridge ports with no PVID
+
+Implement the required functionality, as written in
+Documentation/networking/switchdev.rst section "Bridge VLAN filtering",
+by using the "VLAN Ingress Tag Rule" feature of the switch.
+
+The bit field definitions for this were found while browsing the Intel
+dual BSD/GPLv2 licensed drivers for this switch IP.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/787aa807d00b726d75db2a40add215c8b8ba7466.1760566491.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 6 ++++++
+ drivers/net/dsa/lantiq/lantiq_gswip.h | 4 ++++
+ 2 files changed, 10 insertions(+)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -551,6 +551,7 @@ static void gswip_port_commit_pvid(struc
+ {
+ 	struct dsa_port *dp = dsa_to_port(priv->ds, port);
+ 	struct net_device *br = dsa_port_bridge_dev_get(dp);
++	u32 vinr;
+ 	int idx;
+ 
+ 	if (!dsa_port_is_user(dp))
+@@ -582,6 +583,11 @@ static void gswip_port_commit_pvid(struc
+ 		idx = port + 1;
+ 	}
+ 
++	vinr = idx ? GSWIP_PCE_VCTRL_VINR_ALL : GSWIP_PCE_VCTRL_VINR_TAGGED;
++	gswip_switch_mask(priv, GSWIP_PCE_VCTRL_VINR,
++			  FIELD_PREP(GSWIP_PCE_VCTRL_VINR, vinr),
++			  GSWIP_PCE_VCTRL(port));
++
+ 	/* GSWIP 2.2 (GRX300) and later program here the VID directly. */
+ 	gswip_switch_w(priv, idx, GSWIP_PCE_DEFPVID(port));
+ }
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.h
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.h
+@@ -159,6 +159,10 @@
+ #define  GSWIP_PCE_PCTRL_0_PSTATE_MASK	GENMASK(2, 0)
+ #define GSWIP_PCE_VCTRL(p)		(0x485 + ((p) * 0xA))
+ #define  GSWIP_PCE_VCTRL_UVR		BIT(0)	/* Unknown VLAN Rule */
++#define  GSWIP_PCE_VCTRL_VINR		GENMASK(2, 1) /* VLAN Ingress Tag Rule */
++#define  GSWIP_PCE_VCTRL_VINR_ALL	0 /* Admit tagged and untagged packets */
++#define  GSWIP_PCE_VCTRL_VINR_TAGGED	1 /* Admit only tagged packets */
++#define  GSWIP_PCE_VCTRL_VINR_UNTAGGED	2 /* Admit only untagged packets */
+ #define  GSWIP_PCE_VCTRL_VIMR		BIT(3)	/* VLAN Ingress Member violation rule */
+ #define  GSWIP_PCE_VCTRL_VEMR		BIT(4)	/* VLAN Egress Member violation rule */
+ #define  GSWIP_PCE_VCTRL_VSR		BIT(5)	/* VLAN Security */

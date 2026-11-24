@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] mtd: rawnand: add DSPG DVF99 NAND controller hooks
+
+Wire up the read-only driver for the DSPG DVF99 NAND flash controller.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+--- a/drivers/mtd/nand/raw/Kconfig
++++ b/drivers/mtd/nand/raw/Kconfig
+@@ -407,6 +407,14 @@ config MTD_NAND_ROCKCHIP
+ 	    NFC v800: RK3308, RV1108
+ 	    NFC v900: PX30, RK3326
+ 
++config MTD_NAND_DVF99
++	tristate "DSPG DVF99 NAND controller"
++	depends on ARCH_DSPG || COMPILE_TEST
++	depends on HAS_IOMEM
++	help
++	  Enables support for the NAND flash controller found on DSP Group
++	  DVF99 SoCs. The driver supports read access only.
++
+ config MTD_NAND_PL35X
+ 	tristate "ARM PL35X NAND controller"
+ 	depends on OF
+--- a/drivers/mtd/nand/raw/Makefile
++++ b/drivers/mtd/nand/raw/Makefile
+@@ -56,6 +56,7 @@ obj-$(CONFIG_MTD_NAND_ARASAN)		+= arasan
+ obj-$(CONFIG_MTD_NAND_INTEL_LGM)	+= intel-nand-controller.o
+ obj-$(CONFIG_MTD_NAND_ROCKCHIP)		+= rockchip-nand-controller.o
+ obj-$(CONFIG_MTD_NAND_PL35X)		+= pl35x-nand-controller.o
++obj-$(CONFIG_MTD_NAND_DVF99)		+= dvf99_nand.o
+ obj-$(CONFIG_MTD_NAND_RENESAS)		+= renesas-nand-controller.o
+ obj-$(CONFIG_MTD_NAND_NUVOTON_MA35)	+= nuvoton-ma35d1-nand-controller.o
+ obj-$(CONFIG_MTD_NAND_LOONGSON)		+= loongson-nand-controller.o
