@@ -541,6 +541,7 @@ struct rtldsa_config {
 	void (*qos_queue_drops_update)(struct otto_dsa_priv *priv, int port);
 	int (*tc_egress_shaper_set)(struct otto_dsa_priv *priv, int port, int queue,
 				    u64 rate_bytes_ps, u32 burst);
+	u32 tc_max_burst;
 	void (*qos_init)(struct otto_dsa_priv *priv);
 	int (*trk_mbr_ctr)(int group);
 	void (*lag_switch_init)(struct otto_dsa_priv *priv);

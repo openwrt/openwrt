@@ -878,11 +878,10 @@ int otto_tc_930x_egress_shaper_set(struct otto_dsa_priv *priv, int port, int que
 	if (!rate_bytes_ps)
 		return regmap_clear_bits(priv->map, addr, RTL93XX_BANDWIDTH_CTRL_ENABLE);
 
-	/* the bucket is 16 bit wide and has to hold the burst and one frame, and the burst
-	 * at least three of the tokens the bucket is refilled with
+	/* the 16 bit bucket has to hold the burst and one frame, which tc_max_burst leaves room
+	 * for, and the burst at least three of the tokens the bucket is refilled with
 	 */
 	regmap_read(priv->map, RTL930X_EGBW_LB_CTRL, &lb_ctrl);
-	burst = min_t(u32, burst, U16_MAX - priv->r->max_frame);
 	if (!rate || burst < 3 * FIELD_GET(RTL930X_EGBW_LB_CTRL_TOKEN, lb_ctrl))
 		return -EINVAL;
 
@@ -1425,6 +1424,7 @@ static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
 	struct rtldsa_port *pp = &priv->ports[port];
 	struct rtldsa_tbf *tbf;
 	bool replaced = false;
+	u32 max_size = 0;
 	int queue = -1;
 
 	if (!priv->r->tc_egress_shaper_set)
@@ -1453,7 +1453,8 @@ static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
 			tbf->rate_bytes_ps = 0;
 		else
 			tbf->rate_bytes_ps = rate->rate_bytes_ps;
-		tbf->burst = qopt->replace_params.max_size;
+		max_size = qopt->replace_params.max_size;
+		tbf->burst = min(max_size, priv->r->tc_max_burst);
 		break;
 	case TC_TBF_DESTROY:
 		if (tbf->handle != qopt->handle)
@@ -1489,6 +1490,10 @@ static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
 		if (replaced && was_offloaded && tbf->offloaded)
 			otto_tc_qdisc_stats(priv, port, queue, &tbf->stats, NULL, false);
 	}
+
+	if (tbf->offloaded && max_size > tbf->burst)
+		dev_info(priv->dev, "port %d: TBF burst limited to %u bytes (requested %u)\n",
+			 port, tbf->burst, max_size);
 
 	return (tbf->offloaded || qopt->command == TC_TBF_DESTROY) ? 0 : -EOPNOTSUPP;
 }

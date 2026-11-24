@@ -494,6 +494,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.qos_red_set = otto_qos_930x_red_set,
 	.qos_queue_drops_update = otto_qos_930x_queue_drops_update,
 	.tc_egress_shaper_set = otto_tc_930x_egress_shaper_set,
+	.tc_max_burst = U16_MAX - RTL930X_MAX_FRAME,
 	.qos_init = otto_qos_930x_init,
 	.pri_sel_port_pri = RTL930X_PRI_SEL_PORT_PRI(0),
 	.pri_sel_remap_dscp = RTL930X_REMAP_DSCP(0),
