@@ -159,6 +159,10 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	tenbay,v-ms3000k)
+		vms_do_upgrade "$1"
+		return $?
+		;;
 	abt,asr3000|\
 	acer,predator-w6x-ubootmod|\
 	asus,rt-ax59u-ubi|\
@@ -423,6 +427,10 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
+	tenbay,v-ms3000k)
+		vms_check_image "$1"
+		return $?
+		;;
 	abt,asr3000|\
 	acer,predator-w6x-ubootmod|\
 	asus,rt-ax59u-ubi|\

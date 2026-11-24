@@ -3693,6 +3693,23 @@ define Device/teltonika_rutc50
 endef
 TARGET_DEVICES += teltonika_rutc50
 
+define Build/vms3000k-tar
+	sh $(TOPDIR)/scripts/vms3000k-image.sh $(IMAGE_KERNEL) $(IMAGE_ROOTFS) $@ $(LINUX_DIR)/scripts/dtc/dtc
+endef
+
+define Device/tenbay_v-ms3000k
+  DEVICE_VENDOR := BLUESOO/TENBAY
+  DEVICE_MODEL := V-MS3000K
+  DEVICE_DTS := mt7981b-tenbay-v-ms3000k
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware ubi-utils -fitblk -uboot-envtools
+  KERNEL_LOADADDR := 0x48000000
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := vms3000k-tar | append-metadata
+endef
+TARGET_DEVICES += tenbay_v-ms3000k
+
 define Device/tenbay_wr3000k
   DEVICE_VENDOR := Tenbay
   DEVICE_MODEL := WR3000K
