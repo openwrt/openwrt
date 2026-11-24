@@ -1977,6 +1977,24 @@ pll_setup:
 	return ret;
 }
 
+static int rtpcs_93xx_sds_power_off(struct rtpcs_serdes *sds)
+{
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	struct rtpcs_serdes *nb_sds = rtpcs_sds_get_neighbor(sds);
+	int ret;
+
+	ret = sds->ops->deactivate(sds);
+	if (ret)
+		return ret;
+
+	/* Release the shared CMU if both lanes of the pair are off. */
+	if (nb_sds->hw_mode == RTPCS_SDS_MODE_OFF)
+		return rtpcs_sds_write_mask(even_sds, PAGE_ANA_MISC, ANA_MISC_REG18,
+					    RTL93XX_FRC_CMU_EN_LC | RTL93XX_FRC_CMU_EN_RING, 0);
+
+	return 0;
+}
+
 static const s16 rtpcs_93xx_sds_usxgmii_submodes[RTPCS_SDS_USXGMII_SM_MAX] = {
 	[RTPCS_SDS_USXGMII_SM_NONE]       = -1,
 	[RTPCS_SDS_USXGMII_SM_10GSXGMII]  = RTPCS_93XX_SDS_USXGMII_SUBMODE_10GSX,
@@ -2598,24 +2616,6 @@ static int rtpcs_930x_sds_activate(struct rtpcs_serdes *sds)
 
 	/* Power up the 10G PHY block. */
 	return rtpcs_sds_write_mask(sds, PAGE_TGR_STD_0, MII_BMCR, BMCR_PDOWN, 0);
-}
-
-static int rtpcs_930x_sds_power_off(struct rtpcs_serdes *sds)
-{
-	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	struct rtpcs_serdes *nb_sds = rtpcs_sds_get_neighbor(sds);
-	int ret;
-
-	ret = rtpcs_930x_sds_deactivate(sds);
-	if (ret)
-		return ret;
-
-	/* Release the shared CMU if both lanes of the pair are off. */
-	if (nb_sds->hw_mode == RTPCS_SDS_MODE_OFF)
-		return rtpcs_sds_write_mask(even_sds, PAGE_ANA_MISC, ANA_MISC_REG18,
-					    RTL93XX_FRC_CMU_EN_LC | RTL93XX_FRC_CMU_EN_RING, 0);
-
-	return 0;
 }
 
 static int rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
@@ -5501,7 +5501,7 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.set_hw_mode		= rtpcs_930x_sds_set_mode,
 	.config_attachment	= rtpcs_930x_sds_config_attachment,
 	.post_config		= rtpcs_930x_sds_post_config,
-	.power_off		= rtpcs_930x_sds_power_off,
+	.power_off		= rtpcs_93xx_sds_power_off,
 };
 
 static const struct rtpcs_config rtpcs_930x_cfg = {
@@ -5540,6 +5540,7 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.set_hw_mode		= rtpcs_931x_sds_set_mode,
 	.config_attachment	= rtpcs_931x_sds_config_attachment,
 	.post_config		= rtpcs_931x_sds_post_config,
+	.power_off		= rtpcs_93xx_sds_power_off,
 };
 
 static const struct rtpcs_config rtpcs_931x_cfg = {
