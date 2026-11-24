@@ -534,13 +534,13 @@ struct rtldsa_config {
 	void (*led_init)(struct otto_dsa_priv *priv);
 	u32 (*get_egress_rate)(struct otto_dsa_priv *priv, int port);
 	int (*set_egress_rate)(struct otto_dsa_priv *priv, int port, u32 rate);
-	void (*queue_sched_set)(struct otto_dsa_priv *priv, int port, int queue, u32 weight,
-				bool strict);
-	int (*red_set)(struct otto_dsa_priv *priv, int port,
-		       const struct tc_red_qopt_offload_params **p);
-	void (*queue_drops_update)(struct otto_dsa_priv *priv, int port);
-	int (*egress_shaper_set)(struct otto_dsa_priv *priv, int port, int queue,
-				 u64 rate_bytes_ps, u32 burst);
+	void (*qos_queue_sched_set)(struct otto_dsa_priv *priv, int port, int queue, u32 weight,
+				    bool strict);
+	int (*qos_red_set)(struct otto_dsa_priv *priv, int port,
+			   const struct tc_red_qopt_offload_params **p);
+	void (*qos_queue_drops_update)(struct otto_dsa_priv *priv, int port);
+	int (*tc_egress_shaper_set)(struct otto_dsa_priv *priv, int port, int queue,
+				    u64 rate_bytes_ps, u32 burst);
 	void (*qos_init)(struct otto_dsa_priv *priv);
 	int (*trk_mbr_ctr)(int group);
 	void (*lag_switch_init)(struct otto_dsa_priv *priv);

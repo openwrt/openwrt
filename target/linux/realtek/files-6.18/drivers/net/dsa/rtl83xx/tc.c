@@ -402,7 +402,7 @@ static void otto_tc_drops_poll(struct work_struct *work)
 
 	for (int port = 0; port < priv->r->cpu_port; port++)
 		if (priv->drops_ports & BIT_ULL(port))
-			priv->r->queue_drops_update(priv, port);
+			priv->r->qos_queue_drops_update(priv, port);
 
 	if (priv->drops_ports)
 		queue_delayed_work(priv->wq, &priv->drops_work, OTTO_TC_DROPS_POLL_INTERVAL);
@@ -948,10 +948,10 @@ static void otto_tc_qdisc_stats(struct otto_dsa_priv *priv, int port, int queue,
 	struct rtnl_link_stats64 hw, sw;
 	struct Qdisc *root;
 
-	if (!priv->r->queue_drops_update)
+	if (!priv->r->qos_queue_drops_update)
 		return;
 
-	priv->r->queue_drops_update(priv, port);
+	priv->r->qos_queue_drops_update(priv, port);
 	for (int q = 0; q < MAX_PRIOS; q++)
 		if (queue < 0 || q == queue)
 			drops += pp->queues[q].drops;
@@ -989,7 +989,7 @@ static void otto_tc_drops_track(struct otto_dsa_priv *priv, int port)
 	struct rtldsa_port *pp = &priv->ports[port];
 	bool track = pp->tbf.offloaded || pp->red.offloaded || pp->ets_offloaded;
 
-	if (!priv->r->queue_drops_update)
+	if (!priv->r->qos_queue_drops_update)
 		return;
 
 	for (int queue = 0; queue < MAX_PRIOS; queue++)
@@ -1011,10 +1011,10 @@ static void otto_tc_tbf_apply(struct otto_dsa_priv *priv, int port, int queue, b
 	bool offload = allowed && tbf->handle && tbf->rate_bytes_ps && !tbf->child;
 
 	if (offload)
-		offload = !priv->r->egress_shaper_set(priv, port, queue, tbf->rate_bytes_ps,
-						      tbf->burst);
+		offload = !priv->r->tc_egress_shaper_set(priv, port, queue, tbf->rate_bytes_ps,
+							 tbf->burst);
 	if (!offload && tbf->offloaded)
-		priv->r->egress_shaper_set(priv, port, queue, 0, 0);
+		priv->r->tc_egress_shaper_set(priv, port, queue, 0, 0);
 	if (offload && !tbf->offloaded)
 		otto_tc_qdisc_stats(priv, port, queue, &tbf->stats, NULL, false);
 
@@ -1141,7 +1141,7 @@ static void otto_tc_red_apply(struct otto_dsa_priv *priv, int port, bool queues)
 	bool root = otto_tc_red_usable(&pp->red);
 	int ret;
 
-	if (!priv->r->red_set)
+	if (!priv->r->qos_red_set)
 		return;
 
 	for (int queue = 0; queue < MAX_PRIOS; queue++) {
@@ -1151,7 +1151,7 @@ static void otto_tc_red_apply(struct otto_dsa_priv *priv, int port, bool queues)
 			params[queue] = &pp->queue_red[queue].params;
 	}
 
-	ret = priv->r->red_set(priv, port, params);
+	ret = priv->r->qos_red_set(priv, port, params);
 
 	if (root && !ret && !pp->red.offloaded)
 		otto_tc_qdisc_stats(priv, port, -1, &pp->red.stats, NULL, true);
@@ -1199,10 +1199,10 @@ static void otto_tc_ets_apply(struct otto_dsa_priv *priv, int port)
 		if (!offload)
 			otto_tc_tbf_apply(priv, port, queue, false);
 		else if (pp->queues[queue].ets_weight)
-			priv->r->queue_sched_set(priv, port, queue,
-						 pp->queues[queue].ets_weight, false);
+			priv->r->qos_queue_sched_set(priv, port, queue,
+						     pp->queues[queue].ets_weight, false);
 		else
-			priv->r->queue_sched_set(priv, port, queue, 1, true);
+			priv->r->qos_queue_sched_set(priv, port, queue, 1, true);
 
 		if (offload && (priv->red_ports & BIT_ULL(port)) && !pp->red.offloaded &&
 		    !pp->queue_red[queue].offloaded)
@@ -1274,7 +1274,7 @@ static int otto_tc_setup_qdisc_ets(struct otto_dsa_priv *priv, int port,
 	unsigned int band;
 	u32 child;
 
-	if (!priv->r->queue_sched_set || qopt->parent != TC_H_ROOT)
+	if (!priv->r->qos_queue_sched_set || qopt->parent != TC_H_ROOT)
 		return -EOPNOTSUPP;
 
 	switch (qopt->command) {
@@ -1350,7 +1350,7 @@ static int otto_tc_setup_qdisc_red(struct otto_dsa_priv *priv, int port,
 	struct rtldsa_red *red, *prev;
 	int queue = -1;
 
-	if (!priv->r->red_set)
+	if (!priv->r->qos_red_set)
 		return -EOPNOTSUPP;
 
 	if (qopt->parent == TC_H_ROOT) {
@@ -1427,7 +1427,7 @@ static int otto_tc_setup_qdisc_tbf(struct otto_dsa_priv *priv, int port,
 	bool replaced = false;
 	int queue = -1;
 
-	if (!priv->r->egress_shaper_set)
+	if (!priv->r->tc_egress_shaper_set)
 		return -EOPNOTSUPP;
 
 	if (qopt->parent == TC_H_ROOT) {

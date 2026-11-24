@@ -548,7 +548,8 @@ void otto_qos_930x_queue_sched_set(struct otto_dsa_priv *priv, int port, int que
 void otto_qos_queue_sched_reset(struct otto_dsa_priv *priv, int port)
 {
 	for (int q = 0; q < MAX_PRIOS; q++)
-		priv->r->queue_sched_set(priv, port, q, otto_qos_default_queue_weights[q], false);
+		priv->r->qos_queue_sched_set(priv, port, q, otto_qos_default_queue_weights[q],
+					     false);
 }
 
 static void otto_qos_930x_set_scheduling_queue_weights(struct otto_dsa_priv *priv)
