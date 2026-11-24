@@ -1,0 +1,35 @@
+From b2b526c2cf57d14ee269e012ed179081871f45a1 Mon Sep 17 00:00:00 2001
+From: Alok Tiwari <alok.a.tiwari@oracle.com>
+Date: Fri, 31 Oct 2025 09:15:53 -0700
+Subject: [PATCH] net: mdio: Check regmap pointer returned by
+ device_node_to_regmap()
+
+The call to device_node_to_regmap() in airoha_mdio_probe() can return
+an ERR_PTR() if regmap initialization fails. Currently, the driver
+stores the pointer without validation, which could lead to a crash
+if it is later dereferenced.
+
+Add an IS_ERR() check and return the corresponding error code to make
+the probe path more robust.
+
+Fixes: 67e3ba978361 ("net: mdio: Add MDIO bus controller for Airoha AN7583")
+Signed-off-by: Alok Tiwari <alok.a.tiwari@oracle.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20251031161607.58581-1-alok.a.tiwari@oracle.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+CVE: CVE-2025-68187
+Upstream-commit: b2b526c2cf57d14ee269e012ed179081871f45a1
+[Backport to OpenWrt 25.12 / Linux 6.12: refresh context only.]
+Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
+---
+--- a/drivers/net/mdio/mdio-airoha.c
++++ b/drivers/net/mdio/mdio-airoha.c
+@@ -219,6 +219,8 @@
+ 	priv = bus->priv;
+ 	priv->base_addr = addr;
+ 	priv->regmap = device_node_to_regmap(dev->parent->of_node);
++	if (IS_ERR(priv->regmap))
++		return PTR_ERR(priv->regmap);
+ 
+ 	priv->clk = devm_clk_get_enabled(dev, NULL);
+ 	if (IS_ERR(priv->clk))
