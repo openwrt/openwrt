@@ -879,43 +879,55 @@ static int rtl821x_config_init(struct phy_device *phydev)
 
 static int rtl8218e_config_init(struct phy_device *phydev)
 {
-	int oldpage, oldxpage;
+	int oldpage, oldxpage, val;
 	bool is_xsgmii;
 
 	rtl821x_config_init(phydev);
 
-	if (phydev->mdio.addr % 8)
-		return 0;
+	phy_lock_mdio_bus(phydev);
+	if (!phy_package_init_once(phydev))
+		goto unlock;
 
-	oldpage = phy_read(phydev, RTL821x_PAGE_SELECT);
-	oldxpage = phy_read(phydev, RTL821x_EXT_PAGE_SELECT);
+	oldpage = __phy_package_read(phydev, 0, RTL821x_PAGE_SELECT);
+	oldxpage = __phy_package_read(phydev, 0, RTL821x_EXT_PAGE_SELECT);
 
-	phy_write(phydev, RTL821x_EXT_PAGE_SELECT, 0x8);
-	is_xsgmii = (phy_read_paged(phydev, 0x260, 0x12) & 0xf0) == 0xb0;
+	__phy_package_write(phydev, 0, RTL821x_EXT_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x260);
+	is_xsgmii = (__phy_package_read(phydev, 0, 0x12) & 0xf0) == 0xb0;
 
-	/* QSGMII configuration is not currently supported. */
+	/* QSGMII configuration is currently not supported. */
 	if (!is_xsgmii)
 		goto restore;
 
 	/* Apply the minimal vendor XSGMII configuration, undocumented magic. */
-	phy_write_paged(phydev, 0x4b8, 0x10, 0x8714);
-	phy_write_paged(phydev, 0x4b8, 0x12, 0x7230);
-	phy_write_paged(phydev, 0x4be, 0x16, 0x1000);
-	phy_write_paged(phydev, 0x4bf, 0x11, 0x7000);
-	phy_write_paged(phydev, 0x4bf, 0x16, 0x0042);
-	phy_write_paged(phydev, 0x4ba, 0x14, 0x9d04);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x4b8);
+	__phy_package_write(phydev, 0, 0x10, 0x8714);
+	__phy_package_write(phydev, 0, 0x12, 0x7230);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x4be);
+	__phy_package_write(phydev, 0, 0x16, 0x1000);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x4bf);
+	__phy_package_write(phydev, 0, 0x11, 0x7000);
+	__phy_package_write(phydev, 0, 0x16, 0x0042);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x4ba);
+	__phy_package_write(phydev, 0, 0x14, 0x9d04);
 
 	/* Reset SerDes 0. */
-	phy_write_paged(phydev, 0x400, 0x10, 0x1700);
-	phy_write_paged(phydev, 0x400, 0x10, 0x1703);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x400);
+	__phy_package_write(phydev, 0, 0x10, 0x1700);
+	__phy_package_write(phydev, 0, 0x10, 0x1703);
 
 	/* Disable XSGMII autonegotiation on both MAC-side channel groups. */
-	phy_modify_paged(phydev, 0x400, 0x12, GENMASK(9, 8), BIT(8));
-	phy_modify_paged(phydev, 0x500, 0x12, GENMASK(9, 8), BIT(8));
+	val = __phy_package_read(phydev, 0, 0x12);
+	__phy_package_write(phydev, 0, 0x12, (val & ~GENMASK(9, 8)) | BIT(8));
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x500);
+	val = __phy_package_read(phydev, 0, 0x12);
+	__phy_package_write(phydev, 0, 0x12, (val & ~GENMASK(9, 8)) | BIT(8));
 
 restore:
-	phy_write(phydev, RTL821x_EXT_PAGE_SELECT, oldxpage);
-	phy_write(phydev, RTL821x_PAGE_SELECT, oldpage);
+	__phy_package_write(phydev, 0, RTL821x_EXT_PAGE_SELECT, oldxpage);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, oldpage);
+unlock:
+	phy_unlock_mdio_bus(phydev);
 
 	return 0;
 }
