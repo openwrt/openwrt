@@ -1035,6 +1035,23 @@ define Device/cetron_ct3003
 endef
 TARGET_DEVICES += cetron_ct3003
 
+define Device/clx_s20l
+  DEVICE_VENDOR := CLX
+  DEVICE_MODEL := S20L
+  DEVICE_ALT0_VENDOR := Longwu
+  DEVICE_ALT0_MODEL := S20L
+  DEVICE_DTS := mt7986a-supergateway-s20l
+  DEVICE_DTS_DIR := ../dts
+  BOARD_NAME := supergateway_s20l
+  KERNEL_SIZE := 32768k
+  SUPPORTED_DEVICES := supergateway,s20l
+  FILESYSTEMS := squashfs
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware \
+	kmod-fs-ext4 e2fsprogs f2fsck mkf2fs block-mount
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += clx_s20l
+
 define Device/cmcc_a10-stock
   DEVICE_VENDOR := CMCC
   DEVICE_MODEL := A10 (stock layout)
