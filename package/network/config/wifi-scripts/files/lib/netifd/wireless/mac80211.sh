@@ -51,6 +51,9 @@ drv_mac80211_init_device_config() {
 		he_su_beamformer \
 		he_su_beamformee \
 		he_mu_beamformer \
+		eht_su_beamformer \
+		eht_su_beamformee \
+		eht_mu_beamformer \
 		vht_txop_ps \
 		htc_vht \
 		rx_antenna_pattern \
@@ -536,11 +539,34 @@ mac80211_hostapd_setup_base() {
 	fi
 
 	if [ "$enable_be" != "0" ]; then
+		json_get_vars \
+			eht_su_beamformer:1 \
+			eht_su_beamformee:1 \
+			eht_mu_beamformer:1
+
+		eht_band=
+		case "$band" in
+			2g) eht_band="1:";;
+			5g) eht_band="2:";;
+			6g) eht_band="4:";;
+		esac
+		eht_phy_cap=$(iw phy "$phy" info | awk -v band="$eht_band" '
+			$1 == "Band" { band_match = band == $2; ap = 0 }
+			band_match && /EHT Iftypes:/ { ap = / AP(,|$)/ }
+			band_match && ap && /EHT PHY Capabilities/ { gsub(/[():]/, "", $4); print $4; exit }
+		')
+		eht_phy_cap=${eht_phy_cap:2}
+
 		append base_cfg "ieee80211be=1" "$N"
 		[ "$hwmode" = "a" ] && {
 			append base_cfg "eht_oper_chwidth=$eht_oper_chwidth" "$N"
 			append base_cfg "eht_oper_centr_freq_seg0_idx=$eht_center_seg0" "$N"
 		}
+
+		[ -n "$eht_phy_cap" ] && mac80211_add_he_capabilities \
+			eht_su_beamformer:${eht_phy_cap:0:2}:0x20:$eht_su_beamformer \
+			eht_su_beamformee:${eht_phy_cap:0:2}:0x40:$eht_su_beamformee \
+			eht_mu_beamformer:${eht_phy_cap:14:2}:0x70:$eht_mu_beamformer
 	fi
 
 	hostapd_prepare_device_config "$hostapd_conf_file" nl80211
