@@ -30,16 +30,16 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  static unsigned int sec_mux_map[] = {
  	2,
-@@ -350,7 +352,7 @@ static int krait_cc_probe(struct platfor
+@@ -349,7 +351,7 @@ MODULE_DEVICE_TABLE(of, krait_cc_match_t
+ static int krait_cc_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
- 	const struct of_device_id *id;
 -	unsigned long cur_rate, aux_rate, qsb_rate;
 +	unsigned long cur_rate, qsb_rate;
  	int cpu;
  	struct clk_hw *mux, *l2_pri_mux;
  	struct clk *clk, **clks;
-@@ -420,28 +422,29 @@ static int krait_cc_probe(struct platfor
+@@ -416,28 +418,29 @@ static int krait_cc_probe(struct platfor
  	 * two different rates to force a HFPLL reinit under all
  	 * circumstances.
  	 */

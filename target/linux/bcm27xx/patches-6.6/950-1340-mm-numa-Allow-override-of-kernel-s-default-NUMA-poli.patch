@@ -23,7 +23,7 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
 
 --- a/mm/mempolicy.c
 +++ b/mm/mempolicy.c
-@@ -2945,7 +2945,9 @@ void __init numa_policy_init(void)
+@@ -2946,7 +2946,9 @@ void __init numa_policy_init(void)
  /* Reset policy of current process to default */
  void numa_default_policy(void)
  {
@@ -34,7 +34,7 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  }
  
  /*
-@@ -2963,7 +2965,6 @@ static const char * const policy_modes[]
+@@ -2964,7 +2966,6 @@ static const char * const policy_modes[]
  };
  
  
@@ -42,7 +42,7 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  /**
   * mpol_parse_str - parse string to mempolicy, for tmpfs mpol mount option.
   * @str:  string containing mempolicy to parse
-@@ -2976,13 +2977,18 @@ static const char * const policy_modes[]
+@@ -2977,13 +2978,18 @@ static const char * const policy_modes[]
   */
  int mpol_parse_str(char *str, struct mempolicy **mpol)
  {
@@ -62,7 +62,7 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  	if (flags)
  		*flags++ = '\0';	/* terminate mode string */
  
-@@ -3061,9 +3067,16 @@ int mpol_parse_str(char *str, struct mem
+@@ -3062,9 +3068,16 @@ int mpol_parse_str(char *str, struct mem
  			goto out;
  	}
  
@@ -82,7 +82,7 @@ Signed-off-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  
  	/*
  	 * Save nodes for mpol_to_str() to show the tmpfs mount options
-@@ -3096,7 +3109,29 @@ out:
+@@ -3097,7 +3110,29 @@ out:
  		*mpol = new;
  	return err;
  }

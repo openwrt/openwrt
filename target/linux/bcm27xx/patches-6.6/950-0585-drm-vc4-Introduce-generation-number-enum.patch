@@ -405,7 +405,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return;
  
  	list_move_tail(&exec->head, &vc4->render_job_list);
-@@ -973,7 +973,7 @@ vc4_job_handle_completed(struct vc4_dev
+@@ -981,7 +981,7 @@ vc4_job_handle_completed(struct vc4_dev
  	unsigned long irqflags;
  	struct vc4_seqno_cb *cb, *cb_temp;
  
@@ -414,7 +414,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return;
  
  	spin_lock_irqsave(&vc4->job_lock, irqflags);
-@@ -1012,7 +1012,7 @@ int vc4_queue_seqno_cb(struct drm_device
+@@ -1020,7 +1020,7 @@ int vc4_queue_seqno_cb(struct drm_device
  	struct vc4_dev *vc4 = to_vc4_dev(dev);
  	unsigned long irqflags;
  
@@ -423,7 +423,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return -ENODEV;
  
  	cb->func = func;
-@@ -1068,7 +1068,7 @@ vc4_wait_seqno_ioctl(struct drm_device *
+@@ -1076,7 +1076,7 @@ vc4_wait_seqno_ioctl(struct drm_device *
  	struct vc4_dev *vc4 = to_vc4_dev(dev);
  	struct drm_vc4_wait_seqno *args = data;
  
@@ -432,7 +432,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return -ENODEV;
  
  	return vc4_wait_for_seqno_ioctl_helper(dev, args->seqno,
-@@ -1085,7 +1085,7 @@ vc4_wait_bo_ioctl(struct drm_device *dev
+@@ -1093,7 +1093,7 @@ vc4_wait_bo_ioctl(struct drm_device *dev
  	struct drm_gem_object *gem_obj;
  	struct vc4_bo *bo;
  
@@ -441,7 +441,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return -ENODEV;
  
  	if (args->pad != 0)
-@@ -1134,7 +1134,7 @@ vc4_submit_cl_ioctl(struct drm_device *d
+@@ -1142,7 +1142,7 @@ vc4_submit_cl_ioctl(struct drm_device *d
  				  args->shader_rec_size,
  				  args->bo_handle_count);
  
@@ -450,7 +450,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return -ENODEV;
  
  	if (!vc4->v3d) {
-@@ -1271,7 +1271,7 @@ int vc4_gem_init(struct drm_device *dev)
+@@ -1279,7 +1279,7 @@ int vc4_gem_init(struct drm_device *dev)
  	struct vc4_dev *vc4 = to_vc4_dev(dev);
  	int ret;
  
@@ -459,7 +459,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return -ENODEV;
  
  	vc4->dma_fence_context = dma_fence_context_alloc(1);
-@@ -1330,7 +1330,7 @@ int vc4_gem_madvise_ioctl(struct drm_dev
+@@ -1338,7 +1338,7 @@ int vc4_gem_madvise_ioctl(struct drm_dev
  	struct vc4_bo *bo;
  	int ret;
  

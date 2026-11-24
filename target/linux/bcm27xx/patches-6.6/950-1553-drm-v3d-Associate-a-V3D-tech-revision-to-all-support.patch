@@ -425,7 +425,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  		V3D_WRITE(V3D_TFU_REG(COEF1), job->args.coef[1]);
  		V3D_WRITE(V3D_TFU_REG(COEF2), job->args.coef[2]);
  		V3D_WRITE(V3D_TFU_REG(COEF3), job->args.coef[3]);
-@@ -381,8 +381,8 @@ v3d_csd_job_run(struct drm_sched_job *sc
+@@ -383,8 +383,8 @@ v3d_csd_job_run(struct drm_sched_job *sc
  	v3d_sched_stats_add_job(&v3d->gpu_queue_stats[V3D_CSD], sched_job);
  	v3d_switch_perfmon(v3d, &job->base);
  
@@ -436,7 +436,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	for (i = 1; i <= csd_cfg_reg_count; i++)
  		V3D_CORE_WRITE(0, csd_cfg0_reg + 4 * i, job->args.cfg[i]);
  	/* CFG0 write kicks off the job. */
-@@ -505,7 +505,7 @@ v3d_csd_job_timedout(struct drm_sched_jo
+@@ -507,7 +507,7 @@ v3d_csd_job_timedout(struct drm_sched_jo
  {
  	struct v3d_csd_job *job = to_csd_job(sched_job);
  	struct v3d_dev *v3d = job->base.v3d;

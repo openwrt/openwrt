@@ -44,7 +44,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 +          - mediatek,mt7988-apmixedsys
            - mediatek,mt8135-apmixedsys
            - mediatek,mt8173-apmixedsys
-           - mediatek,mt8516-apmixedsys
+       - items:
 --- a/Documentation/devicetree/bindings/clock/mediatek,ethsys.yaml
 +++ b/Documentation/devicetree/bindings/clock/mediatek,ethsys.yaml
 @@ -22,6 +22,7 @@ properties:
@@ -163,7 +163,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 +    };
 --- a/Documentation/devicetree/bindings/clock/mediatek,topckgen.yaml
 +++ b/Documentation/devicetree/bindings/clock/mediatek,topckgen.yaml
-@@ -37,6 +37,8 @@ properties:
+@@ -36,6 +36,8 @@ properties:
                - mediatek,mt7629-topckgen
                - mediatek,mt7981-topckgen
                - mediatek,mt7986-topckgen
@@ -171,7 +171,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 +              - mediatek,mt7988-topckgen
                - mediatek,mt8167-topckgen
                - mediatek,mt8183-topckgen
-           - const: syscon
+               - mediatek,mt8516-topckgen
 --- a/Documentation/devicetree/bindings/net/pcs/mediatek,sgmiisys.yaml
 +++ b/Documentation/devicetree/bindings/net/pcs/mediatek,sgmiisys.yaml
 @@ -15,15 +15,22 @@ description:

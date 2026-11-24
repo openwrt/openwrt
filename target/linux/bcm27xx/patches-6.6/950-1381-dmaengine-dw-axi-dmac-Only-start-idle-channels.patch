@@ -14,7 +14,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-@@ -536,9 +536,11 @@ static void dma_chan_issue_pending(struc
+@@ -537,9 +537,11 @@ static void dma_chan_issue_pending(struc
  {
  	struct axi_dma_chan *chan = dchan_to_axi_dma_chan(dchan);
  	unsigned long flags;

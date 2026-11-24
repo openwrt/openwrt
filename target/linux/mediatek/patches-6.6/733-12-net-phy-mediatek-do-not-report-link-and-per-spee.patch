@@ -1,0 +1,85 @@
+From bde5212360bd44506edec073ebbd6d0c72f75820 Mon Sep 17 00:00:00 2001
+From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Sat, 12 Sep 2026 17:43:06 +0400
+Subject: net: phy: mediatek: do not report link and per-speed LED rules
+ together
+
+mtk_phy_led_hw_ctrl_get() reports TRIGGER_NETDEV_LINK whenever any of the
+speed bits in on_set is on, and in addition reports every individual
+TRIGGER_NETDEV_LINK_* bit that is set. The netdev trigger refuses that
+combination: netdev_led_attr_store() rejects TRIGGER_NETDEV_LINK together
+with any per-speed rule, and it validates the whole resulting mode rather
+than just the bit being written. Once the hardware has any link bit
+programmed, every write to the trigger attributes of that LED therefore
+fails with -EINVAL and the LED can no longer be configured.
+
+The rules are also fed back into the hardware: the trigger stores what is
+read back, and a later write of device_name programs it again, expanding
+TRIGGER_NETDEV_LINK to every speed in on_set. An LED configured for a
+single speed is thereby silently widened to "on at any link speed".
+
+Both are easy to see on the EcoNet EN7528, whose four PHYs share one LED
+block. The first LED programs the block correctly, the second reads those
+rules back and rewrites them widened, and the remaining two then read the
+widened value, so an LED configured for "link_10 link_100" ends up lit on a
+1000 Mbps link.
+
+on_set holds every speed the LED can indicate and is exactly what
+mtk_phy_led_hw_ctrl_set() programs for TRIGGER_NETDEV_LINK, so report the
+speed independent rule only when all of them are on, and the individual
+speeds otherwise. The mapping is then the inverse of the one used when
+programming the LED and round trips without changing the register.
+
+Fixes: c66937b0f8db ("net: phy: mediatek-ge-soc: support PHY LEDs")
+Cc: stable@vger.kernel.org
+Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260912134306.3544329-1-naseefkm@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/mediatek/mtk-phy-lib.c | 27 +++++++++++++++++----------
+ 1 file changed, 17 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/phy/mediatek/mtk-phy-lib.c
++++ b/drivers/net/phy/mediatek/mtk-phy-lib.c
+@@ -169,20 +169,27 @@ int mtk_phy_led_hw_ctrl_get(struct phy_d
+ 	if (!rules)
+ 		return 0;
+ 
+-	if (on & on_set)
++	/* TRIGGER_NETDEV_LINK must not be reported together with any of the
++	 * per-speed rules, the netdev trigger rejects that combination.
++	 * on_set holds every speed this LED can indicate and is what
++	 * mtk_phy_led_hw_ctrl_set() programs for TRIGGER_NETDEV_LINK, so
++	 * report the speed independent rule only when they are all on.
++	 */
++	if ((on & on_set) == on_set) {
+ 		*rules |= BIT(TRIGGER_NETDEV_LINK);
+-
+-	if (on & MTK_PHY_LED_ON_LINK10)
+-		*rules |= BIT(TRIGGER_NETDEV_LINK_10);
+-
+-	if (on & MTK_PHY_LED_ON_LINK100)
+-		*rules |= BIT(TRIGGER_NETDEV_LINK_100);
+-
+-	if (on & MTK_PHY_LED_ON_LINK1000)
+-		*rules |= BIT(TRIGGER_NETDEV_LINK_1000);
+-
+-	if (on & MTK_PHY_LED_ON_LINK2500)
+-		*rules |= BIT(TRIGGER_NETDEV_LINK_2500);
++	} else {
++		if (on & MTK_PHY_LED_ON_LINK10)
++			*rules |= BIT(TRIGGER_NETDEV_LINK_10);
++
++		if (on & MTK_PHY_LED_ON_LINK100)
++			*rules |= BIT(TRIGGER_NETDEV_LINK_100);
++
++		if (on & MTK_PHY_LED_ON_LINK1000)
++			*rules |= BIT(TRIGGER_NETDEV_LINK_1000);
++
++		if (on & MTK_PHY_LED_ON_LINK2500)
++			*rules |= BIT(TRIGGER_NETDEV_LINK_2500);
++	}
+ 
+ 	if (on & MTK_PHY_LED_ON_FDX)
+ 		*rules |= BIT(TRIGGER_NETDEV_FULL_DUPLEX);

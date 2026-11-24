@@ -51,7 +51,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  
  	cell = nvmem_cell_get(&phydev->mdio.dev, "phy-cal-data");
  	if (IS_ERR(cell)) {
-@@ -1415,7 +1416,7 @@ static int mt7988_phy_probe_shared(struc
+@@ -1423,7 +1424,7 @@ static int mt7988_phy_probe_shared(struc
  	 * LED_C and LED_D respectively. At the same time those pins are used to
  	 * bootstrap configuration of the reference clock source (LED_A),
  	 * DRAM DDRx16b x2/x1 (LED_B) and boot device (LED_C, LED_D).

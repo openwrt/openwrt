@@ -644,7 +644,7 @@ v2: fix kernel panic with debug-fs interface to list registers
  
  	if (unlikely(job->base.base.s_fence->finished.error))
  		goto out_clean_job;
-@@ -377,10 +381,12 @@ v3d_csd_job_run(struct drm_sched_job *sc
+@@ -379,10 +383,12 @@ v3d_csd_job_run(struct drm_sched_job *sc
  	v3d_sched_stats_add_job(&v3d->gpu_queue_stats[V3D_CSD], sched_job);
  	v3d_switch_perfmon(v3d, &job->base);
  
@@ -660,7 +660,7 @@ v2: fix kernel panic with debug-fs interface to list registers
  
  	return fence;
  
-@@ -499,7 +505,8 @@ v3d_csd_job_timedout(struct drm_sched_jo
+@@ -501,7 +507,8 @@ v3d_csd_job_timedout(struct drm_sched_jo
  {
  	struct v3d_csd_job *job = to_csd_job(sched_job);
  	struct v3d_dev *v3d = job->base.v3d;

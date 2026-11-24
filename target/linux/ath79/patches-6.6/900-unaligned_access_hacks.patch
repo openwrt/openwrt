@@ -286,7 +286,7 @@ SVN-Revision: 35130
   */
 --- a/net/ipv6/datagram.c
 +++ b/net/ipv6/datagram.c
-@@ -499,7 +499,7 @@ int ipv6_recv_error(struct sock *sk, str
+@@ -503,7 +503,7 @@ int ipv6_recv_error(struct sock *sk, str
  				ipv6_iface_scope_id(&sin->sin6_addr,
  						    IP6CB(skb)->iif);
  		} else {
@@ -295,7 +295,7 @@ SVN-Revision: 35130
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -892,12 +892,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -896,12 +896,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -337,7 +337,7 @@ SVN-Revision: 35130
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1506,8 +1506,8 @@ struct sk_buff *inet_gro_receive(struct
+@@ -1509,8 +1509,8 @@ struct sk_buff *inet_gro_receive(struct
  		goto out;
  
  	NAPI_GRO_CB(skb)->proto = proto;
@@ -579,7 +579,7 @@ SVN-Revision: 35130
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -275,7 +275,7 @@ INDIRECT_CALLABLE_SCOPE struct sk_buff *
+@@ -279,7 +279,7 @@ INDIRECT_CALLABLE_SCOPE struct sk_buff *
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);
@@ -819,7 +819,7 @@ SVN-Revision: 35130
  		*sum = csum_fold(csum_partial(diff, sizeof(diff),
 --- a/include/linux/etherdevice.h
 +++ b/include/linux/etherdevice.h
-@@ -556,7 +556,7 @@ static inline bool is_etherdev_addr(cons
+@@ -584,7 +584,7 @@ static inline bool is_etherdev_addr(cons
   * @b: Pointer to Ethernet header
   *
   * Compare two Ethernet headers, returns 0 if equal.
@@ -828,7 +828,7 @@ SVN-Revision: 35130
   * aligned OR the platform can handle unaligned access.  This is the
   * case for all packets coming into netif_receive_skb or similar
   * entry points.
-@@ -579,11 +579,12 @@ static inline unsigned long compare_ethe
+@@ -607,11 +607,12 @@ static inline unsigned long compare_ethe
  	fold |= *(unsigned long *)(a + 6) ^ *(unsigned long *)(b + 6);
  	return fold;
  #else

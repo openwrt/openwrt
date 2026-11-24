@@ -431,7 +431,7 @@ Signed-off-by: Jose Maria Casanova Crespo <jmcasanova@igalia.com>
  	V3D_WRITE(V3D_TFU_IIA, job->args.iia);
  	V3D_WRITE(V3D_TFU_IIS, job->args.iis);
  	V3D_WRITE(V3D_TFU_ICA, job->args.ica);
-@@ -262,6 +374,7 @@ v3d_csd_job_run(struct drm_sched_job *sc
+@@ -264,6 +376,7 @@ v3d_csd_job_run(struct drm_sched_job *sc
  
  	trace_v3d_submit_csd(dev, to_v3d_fence(fence)->seqno);
  
@@ -439,7 +439,7 @@ Signed-off-by: Jose Maria Casanova Crespo <jmcasanova@igalia.com>
  	v3d_switch_perfmon(v3d, &job->base);
  
  	for (i = 1; i <= 6; i++)
-@@ -282,7 +395,10 @@ v3d_cache_clean_job_run(struct drm_sched
+@@ -284,7 +397,10 @@ v3d_cache_clean_job_run(struct drm_sched
  	struct v3d_job *job = to_v3d_job(sched_job);
  	struct v3d_dev *v3d = job->v3d;
  
@@ -450,7 +450,7 @@ Signed-off-by: Jose Maria Casanova Crespo <jmcasanova@igalia.com>
  
  	return NULL;
  }
-@@ -436,8 +552,18 @@ v3d_sched_init(struct v3d_dev *v3d)
+@@ -438,8 +554,18 @@ v3d_sched_init(struct v3d_dev *v3d)
  		.timeout = msecs_to_jiffies(500),
  		.dev = v3d->drm.dev,
  	};
@@ -469,7 +469,7 @@ Signed-off-by: Jose Maria Casanova Crespo <jmcasanova@igalia.com>
  	args.ops = &v3d_bin_sched_ops;
  	args.name = "v3d_bin";
  	ret = drm_sched_init(&v3d->queue[V3D_BIN].sched, &args);
-@@ -481,9 +607,20 @@ void
+@@ -483,9 +609,20 @@ void
  v3d_sched_fini(struct v3d_dev *v3d)
  {
  	enum v3d_queue q;
