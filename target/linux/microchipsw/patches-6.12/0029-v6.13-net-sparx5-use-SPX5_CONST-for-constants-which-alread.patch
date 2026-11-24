@@ -166,7 +166,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (!port || !port->ndev) {
  		dev_err(sparx5->dev, "Data on inactive port %d\n", fi.src_port);
  		sparx5_xtr_flush(sparx5, XTR_QUEUE);
-@@ -296,7 +298,7 @@ static void sparx5_fdma_rx_init(struct s
+@@ -288,7 +290,7 @@ static void sparx5_fdma_rx_init(struct s
  	fdma->ops.dataptr_cb = &sparx5_fdma_rx_dataptr_cb;
  	fdma->ops.nextptr_cb = &fdma_nextptr_cb;
  	/* Fetch a netdev for SKB and NAPI use, any will do */
@@ -389,8 +389,8 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  u32 sparx5_psfp_isdx_get_sf(struct sparx5 *sparx5, u32 isdx)
-@@ -319,7 +323,7 @@ void sparx5_psfp_init(struct sparx5 *spa
- 	const struct sparx5_sdlb_group *group;
+@@ -320,7 +324,7 @@ void sparx5_psfp_init(struct sparx5 *spa
+ 	u32 sg_ct_clks;
  	int i;
  
 -	for (i = 0; i < SPX5_SDLB_GROUP_CNT; i++) {

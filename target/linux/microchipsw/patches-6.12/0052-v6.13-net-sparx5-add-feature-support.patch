@@ -64,7 +64,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int sparx5_create_targets(struct sparx5 *sparx5)
  {
  	const struct sparx5_main_io_resource *iomap = sparx5->data->iomap;
-@@ -770,7 +804,8 @@ static int sparx5_start(struct sparx5 *s
+@@ -773,7 +807,8 @@ static int sparx5_start(struct sparx5 *s
  		sparx5->xtr_irq = -ENXIO;
  	}
  
@@ -74,7 +74,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		err = devm_request_threaded_irq(sparx5->dev, sparx5->ptp_irq,
  						NULL, ops->ptp_irq_handler,
  						IRQF_ONESHOT, "sparx5-ptp",
-@@ -915,6 +950,9 @@ static int mchp_sparx5_probe(struct plat
+@@ -918,6 +953,9 @@ static int mchp_sparx5_probe(struct plat
  	sparx5->target_ct = (enum spx5_target_chiptype)
  		GCB_CHIP_ID_PART_ID_GET(sparx5->chip_id);
  

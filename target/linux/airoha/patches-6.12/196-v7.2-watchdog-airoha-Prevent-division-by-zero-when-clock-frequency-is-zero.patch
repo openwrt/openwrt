@@ -25,7 +25,7 @@ Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
 ---
 --- a/drivers/watchdog/airoha_wdt.c
 +++ b/drivers/watchdog/airoha_wdt.c
-@@ -147,6 +147,9 @@
+@@ -147,6 +147,9 @@ static int airoha_wdt_probe(struct platf
  
  	/* Watchdog ticks at half the bus rate */
  	airoha_wdt->wdt_freq = clk_get_rate(bus_clk) / 2;

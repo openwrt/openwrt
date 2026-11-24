@@ -69,8 +69,8 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int rtl821x_modify_ext_page(struct phy_device *phydev, u16 ext_page,
  				   u32 regnum, u16 mask, u16 set)
  {
-@@ -608,7 +638,7 @@ static int rtl821x_resume(struct phy_dev
- 	return 0;
+@@ -620,7 +650,7 @@ static int rtl821x_resume(struct phy_dev
+ 	return rtl8211f_config_rgmii_delay(phydev);
  }
  
 -static int rtl8211f_led_hw_is_supported(struct phy_device *phydev, u8 index,
@@ -78,7 +78,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  					unsigned long rules)
  {
  	const unsigned long mask = BIT(TRIGGER_NETDEV_LINK_10) |
-@@ -627,9 +657,11 @@ static int rtl8211f_led_hw_is_supported(
+@@ -639,9 +669,11 @@ static int rtl8211f_led_hw_is_supported(
  	 *      rates and Active indication always at all three 10+100+1000
  	 *      link rates.
  	 * This code currently uses mode B only.
@@ -91,7 +91,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		return -EINVAL;
  
  	/* Filter out any other unsupported triggers. */
-@@ -648,7 +680,7 @@ static int rtl8211f_led_hw_control_get(s
+@@ -660,7 +692,7 @@ static int rtl8211f_led_hw_control_get(s
  {
  	int val;
  
@@ -100,7 +100,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		return -EINVAL;
  
  	val = phy_read_paged(phydev, 0xd04, RTL8211F_LEDCR);
-@@ -681,7 +713,7 @@ static int rtl8211f_led_hw_control_set(s
+@@ -693,7 +725,7 @@ static int rtl8211f_led_hw_control_set(s
  	const u16 mask = RTL8211F_LEDCR_MASK << (RTL8211F_LEDCR_SHIFT * index);
  	u16 reg = 0;
  
@@ -109,7 +109,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		return -EINVAL;
  
  	if (test_bit(TRIGGER_NETDEV_LINK_10, &rules))
-@@ -704,6 +736,84 @@ static int rtl8211f_led_hw_control_set(s
+@@ -716,6 +748,84 @@ static int rtl8211f_led_hw_control_set(s
  	return phy_modify_paged(phydev, 0xd04, RTL8211F_LEDCR, mask, reg);
  }
  
@@ -194,7 +194,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int rtl8211e_config_init(struct phy_device *phydev)
  {
  	u16 val;
-@@ -1479,6 +1589,9 @@ static struct phy_driver realtek_drvs[]
+@@ -1491,6 +1601,9 @@ static struct phy_driver realtek_drvs[]
  		.resume		= genphy_resume,
  		.read_page	= rtl821x_read_page,
  		.write_page	= rtl821x_write_page,
@@ -204,7 +204,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}, {
  		PHY_ID_MATCH_EXACT(0x001cc916),
  		.name		= "RTL8211F Gigabit Ethernet",
-@@ -1494,7 +1607,7 @@ static struct phy_driver realtek_drvs[]
+@@ -1506,7 +1619,7 @@ static struct phy_driver realtek_drvs[]
  		.read_page	= rtl821x_read_page,
  		.write_page	= rtl821x_write_page,
  		.flags		= PHY_ALWAYS_CALL_SUSPEND,

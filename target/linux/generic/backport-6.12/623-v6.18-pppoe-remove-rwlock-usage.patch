@@ -183,7 +183,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int pppoe_device_event(struct notifier_block *this,
-@@ -531,6 +537,11 @@ static struct proto pppoe_sk_proto __rea
+@@ -534,6 +540,11 @@ static struct proto pppoe_sk_proto __rea
  	.obj_size = sizeof(struct pppox_sock),
  };
  
@@ -195,7 +195,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  /***********************************************************************
   *
   * Initialize a new struct sock.
-@@ -545,11 +556,13 @@ static int pppoe_create(struct net *net,
+@@ -548,11 +559,13 @@ static int pppoe_create(struct net *net,
  		return -ENOMEM;
  
  	sock_init_data(sock, sk);
@@ -209,7 +209,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	sk->sk_state		= PPPOX_NONE;
  	sk->sk_type		= SOCK_STREAM;
  	sk->sk_family		= PF_PPPOX;
-@@ -601,7 +614,6 @@ static int pppoe_release(struct socket *
+@@ -604,7 +617,6 @@ static int pppoe_release(struct socket *
  	sock_orphan(sk);
  	sock->sk = NULL;
  
@@ -217,7 +217,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	release_sock(sk);
  	sock_put(sk);
  
-@@ -682,9 +694,9 @@ static int pppoe_connect(struct socket *
+@@ -685,9 +697,9 @@ static int pppoe_connect(struct socket *
  		       &sp->sa_addr.pppoe,
  		       sizeof(struct pppoe_addr));
  
@@ -229,7 +229,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (error < 0)
  			goto err_put;
  
-@@ -1053,11 +1065,11 @@ static inline struct pppox_sock *pppoe_g
+@@ -1056,11 +1068,11 @@ static inline struct pppox_sock *pppoe_g
  	int i;
  
  	for (i = 0; i < PPPOE_HASH_SIZE; i++) {
@@ -243,7 +243,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		}
  	}
  
-@@ -1066,19 +1078,19 @@ out:
+@@ -1069,19 +1081,19 @@ out:
  }
  
  static void *pppoe_seq_start(struct seq_file *seq, loff_t *pos)
@@ -266,7 +266,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	++*pos;
  	if (v == SEQ_START_TOKEN) {
-@@ -1086,14 +1098,15 @@ static void *pppoe_seq_next(struct seq_f
+@@ -1089,14 +1101,15 @@ static void *pppoe_seq_next(struct seq_f
  		goto out;
  	}
  	po = v;
@@ -285,7 +285,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			if (po)
  				break;
  		}
-@@ -1104,10 +1117,9 @@ out:
+@@ -1107,10 +1120,9 @@ out:
  }
  
  static void pppoe_seq_stop(struct seq_file *seq, void *v)
@@ -298,7 +298,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static const struct seq_operations pppoe_seq_ops = {
-@@ -1150,7 +1162,7 @@ static __net_init int pppoe_init_net(str
+@@ -1153,7 +1165,7 @@ static __net_init int pppoe_init_net(str
  	struct pppoe_net *pn = pppoe_pernet(net);
  	struct proc_dir_entry *pde;
  

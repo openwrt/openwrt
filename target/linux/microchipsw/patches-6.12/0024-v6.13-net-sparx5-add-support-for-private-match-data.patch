@@ -78,7 +78,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}
  	return 0;
  }
-@@ -758,6 +755,9 @@ static int mchp_sparx5_probe(struct plat
+@@ -761,6 +758,9 @@ static int mchp_sparx5_probe(struct plat
  	sparx5->dev = &pdev->dev;
  	spin_lock_init(&sparx5->tx_lock);
  
@@ -88,7 +88,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	/* Do switch core reset if available */
  	reset = devm_reset_control_get_optional_shared(&pdev->dev, "switch");
  	if (IS_ERR(reset))
-@@ -937,8 +937,14 @@ static void mchp_sparx5_remove(struct pl
+@@ -940,8 +940,14 @@ static void mchp_sparx5_remove(struct pl
  	destroy_workqueue(sparx5->mact_queue);
  }
  

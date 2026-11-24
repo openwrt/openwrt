@@ -57,7 +57,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		}
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
-@@ -364,7 +364,9 @@ static void sparx5_fdma_injection_mode(s
+@@ -356,7 +356,9 @@ static void sparx5_fdma_injection_mode(s
  		sparx5, QS_INJ_GRP_CFG(INJ_QUEUE));
  
  	/* CPU ports capture setup */
@@ -153,7 +153,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  #define PGID_TABLE_SIZE	       3290
  
-@@ -501,6 +499,7 @@ enum sparx5_pgid_type {
+@@ -503,6 +501,7 @@ enum sparx5_pgid_type {
  void sparx5_pgid_init(struct sparx5 *spx5);
  int sparx5_pgid_alloc_mcast(struct sparx5 *spx5, u16 *idx);
  int sparx5_pgid_free(struct sparx5 *spx5, u16 idx);
@@ -161,7 +161,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  /* sparx5_pool.c */
  struct sparx5_pool_entry {
-@@ -517,6 +516,7 @@ int sparx5_pool_get_with_idx(struct spar
+@@ -519,6 +518,7 @@ int sparx5_pool_get_with_idx(struct spar
  /* sparx5_port.c */
  int sparx5_port_mux_set(struct sparx5 *sparx5, struct sparx5_port *port,
  			struct sparx5_port_config *conf);
@@ -193,7 +193,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	eth_hw_addr_set(dev, addr->sa_data);
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
-@@ -317,7 +317,9 @@ int sparx5_manual_injection_mode(struct
+@@ -326,7 +326,9 @@ int sparx5_manual_injection_mode(struct
  		sparx5, QS_INJ_GRP_CFG(INJ_QUEUE));
  
  	/* CPU ports capture setup */

@@ -57,7 +57,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  #define QLIM_WM(fraction) \
  	((SPX5_BUFFER_MEMORY / SPX5_BUFFER_CELL_SZ - 100) * (fraction) / 100)
  #define IO_RANGES 3
-@@ -758,6 +760,9 @@ static int mchp_sparx5_probe(struct plat
+@@ -761,6 +763,9 @@ static int mchp_sparx5_probe(struct plat
  	sparx5->data = device_get_match_data(sparx5->dev);
  	if (!sparx5->data)
  		return -EINVAL;
@@ -67,7 +67,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	/* Do switch core reset if available */
  	reset = devm_reset_control_get_optional_shared(&pdev->dev, "switch");
  	if (IS_ERR(reset))
-@@ -937,10 +942,22 @@ static void mchp_sparx5_remove(struct pl
+@@ -940,10 +945,22 @@ static void mchp_sparx5_remove(struct pl
  	destroy_workqueue(sparx5->mact_queue);
  }
  

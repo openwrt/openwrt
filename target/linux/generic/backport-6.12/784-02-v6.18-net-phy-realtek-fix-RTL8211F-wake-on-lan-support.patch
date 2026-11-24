@@ -253,7 +253,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  err:
  	return phy_restore_page(dev, oldpage, 0);
  }
-@@ -627,6 +671,52 @@ static int rtl821x_suspend(struct phy_de
+@@ -640,6 +684,52 @@ static int rtl821x_suspend(struct phy_de
  	return ret;
  }
  
@@ -306,8 +306,8 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int rtl821x_resume(struct phy_device *phydev)
  {
  	struct rtl821x_priv *priv = phydev->priv;
-@@ -644,6 +734,24 @@ static int rtl821x_resume(struct phy_dev
- 	return 0;
+@@ -657,6 +747,24 @@ static int rtl821x_resume(struct phy_dev
+ 	return rtl8211f_config_rgmii_delay(phydev);
  }
  
 +static int rtl8211f_resume(struct phy_device *phydev)
@@ -331,7 +331,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int rtl8211x_led_hw_is_supported(struct phy_device *phydev, u8 index,
  					unsigned long rules)
  {
-@@ -1639,15 +1747,15 @@ static struct phy_driver realtek_drvs[]
+@@ -1652,15 +1760,15 @@ static struct phy_driver realtek_drvs[]
  	}, {
  		PHY_ID_MATCH_EXACT(0x001cc916),
  		.name		= "RTL8211F Gigabit Ethernet",

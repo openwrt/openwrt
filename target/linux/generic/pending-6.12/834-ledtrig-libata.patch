@@ -47,7 +47,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	depends on ACPI
 --- a/drivers/ata/libata-core.c
 +++ b/drivers/ata/libata-core.c
-@@ -703,6 +703,17 @@ static inline void ata_set_tf_cdl(struct
+@@ -715,6 +715,17 @@ static inline void ata_set_tf_cdl(struct
  	qc->flags |= ATA_QCFLAG_HAS_CDL | ATA_QCFLAG_RESULT_TF;
  }
  
@@ -65,7 +65,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /**
   *	ata_build_rw_tf - Build ATA taskfile for given read/write request
   *	@qc: Metadata associated with the taskfile to build
-@@ -4862,6 +4873,9 @@ void __ata_qc_complete(struct ata_queued
+@@ -4874,6 +4885,9 @@ void __ata_qc_complete(struct ata_queued
  		link->active_tag = ATA_TAG_POISON;
  		ap->nr_active_links--;
  	}
@@ -75,7 +75,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* clear exclusive status */
  	if (unlikely(qc->flags & ATA_QCFLAG_CLEAR_EXCL &&
-@@ -5591,6 +5605,9 @@ struct ata_port *ata_port_alloc(struct a
+@@ -5603,6 +5617,9 @@ struct ata_port *ata_port_alloc(struct a
  	ap->stats.unhandled_irq = 1;
  	ap->stats.idle_irq = 1;
  #endif
@@ -85,7 +85,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ata_sff_port_init(ap);
  
  	ata_force_pflags(ap);
-@@ -5607,6 +5624,12 @@ void ata_port_free(struct ata_port *ap)
+@@ -5619,6 +5636,12 @@ void ata_port_free(struct ata_port *ap)
  	kfree(ap->pmp_link);
  	kfree(ap->slave_link);
  	ida_free(&ata_ida, ap->print_id);
@@ -98,7 +98,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	kfree(ap);
  }
  EXPORT_SYMBOL_GPL(ata_port_free);
-@@ -6057,7 +6080,23 @@ int ata_host_register(struct ata_host *h
+@@ -6069,7 +6092,23 @@ int ata_host_register(struct ata_host *h
  		WARN_ON(1);
  		return -EINVAL;
  	}

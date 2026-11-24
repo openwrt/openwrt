@@ -26,7 +26,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	char queue_name[32];
  	u32 idx;
  	int err;
-@@ -728,7 +729,7 @@ static int sparx5_start(struct sparx5 *s
+@@ -731,7 +732,7 @@ static int sparx5_start(struct sparx5 *s
  
  	if (sparx5->ptp_irq >= 0) {
  		err = devm_request_threaded_irq(sparx5->dev, sparx5->ptp_irq,
@@ -35,7 +35,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  						IRQF_ONESHOT, "sparx5-ptp",
  						sparx5);
  		if (err)
-@@ -993,6 +994,7 @@ static const struct sparx5_ops sparx5_op
+@@ -996,6 +997,7 @@ static const struct sparx5_ops sparx5_op
  	.get_hsch_max_group_rate = &sparx5_get_hsch_max_group_rate,
  	.get_sdlb_group          = &sparx5_get_sdlb_group,
  	.set_port_mux            = &sparx5_port_mux_set,
