@@ -117,7 +117,7 @@ specific to the helper.
  	dev_set_drvdata(dev, NULL);
  	dev_pm_domain_detach(dev, dev->power.detach_power_off);
  	if (dev->pm_domain && dev->pm_domain->dismiss)
-@@ -1436,3 +1437,174 @@ void driver_detach(const struct device_d
+@@ -1436,3 +1437,175 @@ void driver_detach(const struct device_d
  		put_device(dev);
  	}
  }
@@ -233,7 +233,7 @@ specific to the helper.
 + * concurrent device_shutdown() overtakes may run ->remove() after
 + * ->shutdown(). None of this is specific to this helper.
 + *
-+ * Buses that take the parent lock to bind (only usb_bus_type) are refused
++ * Buses that take the parent lock to bind (only usb_if_device_type) are refused
 + * with -EINVAL: the parent would have to be recorded before either lock
 + * is held, where device_move() can replace it.
 + *
@@ -259,8 +259,9 @@ specific to the helper.
 +	 * A bus taking the parent lock would need @dev's parent pinned until
 +	 * the work runs, which device_move() can invalidate.
 +	 */
-+	if (!drv || !dev->bus || dev->bus->need_parent_lock || !dev->p ||
-+	    dev->p->dead || !device_is_registered(dev))
++	if (!drv || !dev->bus || !dev->p || dev->p->dead ||
++	    (dev->type && dev->type->need_parent_lock) ||
++	    !device_is_registered(dev))
 +		return -EINVAL;
 +
 +	rp = kzalloc_obj(*rp);
