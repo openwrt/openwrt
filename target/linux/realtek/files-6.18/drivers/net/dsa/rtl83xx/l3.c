@@ -4935,19 +4935,7 @@ packets:
 
 	return 0;
 }
-
-static int otto_l3_839x_route_open(struct inode *inode, struct file *filp)
-{
-	return single_open(filp, otto_l3_839x_route_show, inode->i_private);
-}
-
-static const struct file_operations otto_l3_839x_route_fops = {
-	.owner   = THIS_MODULE,
-	.open    = otto_l3_839x_route_open,
-	.read    = seq_read,
-	.llseek  = seq_lseek,
-	.release = single_release,
-};
+DEFINE_SHOW_ATTRIBUTE(otto_l3_839x_route);
 
 static void otto_l3_dbgfs_remove(void *data)
 {
