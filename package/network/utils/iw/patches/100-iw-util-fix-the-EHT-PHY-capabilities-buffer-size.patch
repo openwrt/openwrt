@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Tue, 24 Nov 2026 17:27:17 +0100
+Subject: [PATCH] iw: util: fix the EHT PHY capabilities buffer size
+
+print_eht_info() stores the EHT PHY capabilities in an 8-byte
+buffer, but the kernel provides 9 bytes. __print_eht_capa()
+prints all 9 bytes and accesses two bits of the ninth byte
+through phy_cap[2]. Both accesses go past the end of the
+buffer, and the ninth byte is lost when copying the attribute.
+
+Increase the buffer size to accommodate all 9 bytes.
+
+Fixes: 4c859917316b ("iw: util: update and clean up eht capa printing")
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ util.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/util.c
++++ b/util.c
+@@ -1718,7 +1718,7 @@ void print_eht_info(struct nlattr *nl_if
+ {
+ 	struct nlattr *tb[NL80211_BAND_IFTYPE_ATTR_MAX + 1];
+ 	__u8 mac_cap[2] = { 0 };
+-	__u32 phy_cap[2] = { 0 };
++	__u32 phy_cap[3] = { 0 };
+ 	__u8 mcs_set[13] = { 0 };
+ 	__u8 ppet[31] = { 0 };
+ 	__u16 he_phy_cap[6] = { 0 };
