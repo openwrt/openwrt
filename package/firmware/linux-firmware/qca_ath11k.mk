@@ -17,7 +17,7 @@ $(eval $(call BuildPackage,ath11k-firmware-ipq8074))
 Package/ath11k-firmware-qca2066 = $(call Package/firmware-default,QCA2066 ath11k firmware,,LICENCE.atheros_firmware)
 define Package/ath11k-firmware-qca2066/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/QCA2066/hw2.1
-	$(INSTALL_DATA) \
+	$(CP) \
 		$(PKG_BUILD_DIR)/ath11k/QCA2066/hw2.1/* $(1)/lib/firmware/ath11k/QCA2066/hw2.1/
 endef
 $(eval $(call BuildPackage,ath11k-firmware-qca2066))
