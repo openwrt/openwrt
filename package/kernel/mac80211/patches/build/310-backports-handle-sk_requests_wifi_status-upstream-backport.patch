@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Martin Schiller <ms@dev.tdt.de>
+Date: Tue, 24 Nov 2026 19:58:48 +0000
+Subject: [PATCH] backports: handle sk_requests_wifi_status upstream backport
+
+Linux 6.12.119 already provides sk_requests_wifi_status() with the
+backport of upstream commit 76a853f86c97 ("wifi: free SKBTX_WIFI_STATUS
+skb tx_flags flag"). Do not define it again for these kernel versions
+to fix the build.
+
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+---
+ backport-include/net/sock.h | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/backport-include/net/sock.h
++++ b/backport-include/net/sock.h
+@@ -23,12 +23,13 @@ static inline void backport_sk_error_rep
+ #define sk_error_report(sk) LINUX_BACKPORT(sk_error_report(sk))
+ #endif /* <= 5.14 */
+ 
+-#if LINUX_VERSION_IS_LESS(6,16,0)
++#if LINUX_VERSION_IS_LESS(6,16,0) && \
++    !LINUX_VERSION_IN_RANGE(6,12,119, 6,13,0)
+ static inline bool
+ sk_requests_wifi_status(struct sock *sk)
+ {
+ 	return sk && sk_fullsock(sk) && sock_flag(sk, SOCK_WIFI_STATUS);
+ }
+-#endif /* <= 6.16 */
++#endif /* <= 6.16 && !(6.12.119 <= version < 6.13) */
+ 
+ #endif /* __BACKPORT_NET_SOCK_H */
