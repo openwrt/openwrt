@@ -78,16 +78,30 @@ struct rtl8214fc_priv {
 	atomic_t link_down_latched;
 };
 
-static int rtl821x_package_join(struct phy_device *phydev, int ports)
+static int rtl821x_package_join(struct phy_device *phydev, unsigned int ports)
 {
+	struct device *dev = &phydev->mdio.dev;
+	struct device_node *parent __free(device_node) = of_get_parent(dev->of_node);
 	struct rtl821x_shared_priv *shared_priv;
-	int base_addr = phydev->mdio.addr & ~(ports - 1);
+	u32 addr = phydev->mdio.addr;
+	u32 base_addr = addr & ~(ports - 1);
 	int ret;
 
-	ret = devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr,
-				    sizeof(struct rtl821x_shared_priv));
+	if (of_node_name_eq(parent, "ethernet-phy-package")) {
+		ret = of_property_read_u32(parent, "reg", &base_addr);
+		if (ret)
+			return dev_err_probe(dev, ret, "Missing or invalid PHY package reg\n");
+
+		if (base_addr > PHY_MAX_ADDR - ports ||
+		    addr < base_addr || addr - base_addr >= ports)
+			return dev_err_probe(dev, -EINVAL,
+					     "Invalid %u-port PHY package base %u for PHY %u\n",
+					     ports, base_addr, addr);
+	}
+
+	ret = devm_phy_package_join(dev, phydev, base_addr, sizeof(*shared_priv));
 	if (ret)
-		return ret;
+		return dev_err_probe(dev, ret, "Failed to join PHY package\n");
 
 	shared_priv = phy_package_get_priv(phydev);
 	shared_priv->base_addr = base_addr;
