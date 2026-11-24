@@ -1,0 +1,37 @@
+From bcfcd7619f277842430d197556463b401b839ee9 Mon Sep 17 00:00:00 2001
+From: Wayen Yan <win847@gmail.com>
+Date: Wed, 8 Jul 2026 10:41:54 +0800
+Subject: [PATCH] watchdog: airoha: Prevent division by zero when clock
+ frequency is zero
+
+clk_get_rate() can return 0 when the clock provider is not properly
+configured or the clock is unmanaged. The driver uses wdt_freq as a
+divisor directly in airoha_wdt_probe() to compute max_timeout and in
+airoha_wdt_get_timeleft() to compute the remaining time, which results
+in a division by zero.
+
+Add a check for wdt_freq == 0 in probe and return -EINVAL with
+dev_err_probe() to prevent the division by zero and provide a
+diagnostic message.
+
+Fixes: 3cf67f3769b8 ("watchdog: Add support for Airoha EN7851 watchdog")
+Signed-off-by: Wayen Yan <win847@gmail.com>
+Link: https://lore.kernel.org/r/178347932594.81327.4834644880399144119@gmail.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+CVE: CVE-2026-68356
+Upstream-commit: bcfcd7619f277842430d197556463b401b839ee9
+[Backport to OpenWrt 25.12 / Linux 6.12: refresh context only.]
+Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
+---
+--- a/drivers/watchdog/airoha_wdt.c
++++ b/drivers/watchdog/airoha_wdt.c
+@@ -147,6 +147,9 @@
+ 
+ 	/* Watchdog ticks at half the bus rate */
+ 	airoha_wdt->wdt_freq = clk_get_rate(bus_clk) / 2;
++	if (!airoha_wdt->wdt_freq)
++		return dev_err_probe(dev, -EINVAL,
++				     "invalid clock frequency\n");
+ 
+ 	/* Initialize struct watchdog device */
+ 	wdog_dev = &airoha_wdt->wdog_dev;
