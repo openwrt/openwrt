@@ -755,6 +755,8 @@ static int dpns_nat_tuple_set(bool is_lf, bool is_dnat, bool is_ipv6,
 struct dpns_nat_mib {
 	refcount_t ref;
 	u16 index;
+	/* used by one direction only: both counters of the pair belong to it */
+	bool exclusive;
 };
 
 /* caller holds mib_lock */
@@ -766,9 +768,13 @@ static void dpns_nat_mib_read(struct dpns_nat_priv *priv, unsigned int counter,
 		 (u64)sf_readl(priv, NPU_MIB_BYTES_HI) << 32;
 }
 
-/* Take the counter pair of the other direction of @flow, or a free one. */
+/*
+ * Take the counter pair of the other direction of @flow, or a free one. Routed
+ * (LF) flows have a NAPT entry per direction, so each direction gets its own pair
+ * (@exclusive) and the counters of both halves are added up.
+ */
 static void dpns_nat_mib_get(struct dpns_nat_priv *priv, struct dpns_nat_entry *entry,
-			     struct flow_offload *flow, bool dir)
+			     struct flow_offload *flow, bool dir, bool exclusive)
 {
 	unsigned long other_cookie = (unsigned long)&flow->tuplehash[!dir].tuple;
 	struct dpns_nat_mib *mib = NULL, *new;
@@ -780,7 +786,8 @@ static void dpns_nat_mib_get(struct dpns_nat_priv *priv, struct dpns_nat_entry *
 
 	rcu_read_lock();
 	spin_lock_bh(&priv->mib_lock);
-	other = rhashtable_lookup(&priv->flow_table, &other_cookie, dpns_nat_ht_params);
+	other = exclusive ? NULL :
+		rhashtable_lookup(&priv->flow_table, &other_cookie, dpns_nat_ht_params);
 	if (other && other->mib && refcount_inc_not_zero(&other->mib->ref)) {
 		mib = other->mib;
 	} else if (new) {
@@ -792,6 +799,7 @@ static void dpns_nat_mib_get(struct dpns_nat_priv *priv, struct dpns_nat_entry *
 			dpns_nat_mib_read(priv, index * 2 + 1, &pkts, &bytes);
 			refcount_set(&new->ref, 1);
 			new->index = index;
+			new->exclusive = exclusive;
 			mib = new;
 			new = NULL;
 		}
@@ -1177,13 +1185,10 @@ static int dpns_nat_add_ipv4(struct dpns_nat_priv *priv, struct flow_cls_offload
 	if (is_dnat)
 		entry->is_dnat = true;
 
-	/* routed (LF) flows are not counted yet */
-	if (!is_lf) {
-		dpns_nat_mib_get(priv, entry, flow, ((struct flow_offload_tuple *)f->cookie)->dir);
-		if (entry->mib) {
-			tb.stat_en = 1;
-			tb.stat_index = entry->mib->index;
-		}
+	dpns_nat_mib_get(priv, entry, flow, ((struct flow_offload_tuple *)f->cookie)->dir, is_lf);
+	if (entry->mib) {
+		tb.stat_en = 1;
+		tb.stat_index = entry->mib->index;
 	}
 
 	mutex_lock(&priv->tbl_lock);
@@ -1490,13 +1495,10 @@ static int dpns_nat_add_ipv6(struct dpns_nat_priv *priv, struct flow_cls_offload
 	if (is_dnat)
 		entry->is_dnat = true;
 
-	/* routed (LF) flows are not counted yet */
-	if (!is_lf) {
-		dpns_nat_mib_get(priv, entry, flow, ((struct flow_offload_tuple *)f->cookie)->dir);
-		if (entry->mib) {
-			tb6.stat_en = 1;
-			tb6.stat_index = entry->mib->index;
-		}
+	dpns_nat_mib_get(priv, entry, flow, ((struct flow_offload_tuple *)f->cookie)->dir, is_lf);
+	if (entry->mib) {
+		tb6.stat_en = 1;
+		tb6.stat_index = entry->mib->index;
 	}
 
 	/* first, find a vacant slot in the internal lookup table, if there is
@@ -1666,10 +1668,18 @@ static u64 dpns_nat_mib_collect(struct dpns_nat_priv *priv, struct dpns_nat_entr
 {
 	u64 pkts = 0, frame_bytes = 0;
 
+	u64 p, b;
+
 	spin_lock_bh(&priv->mib_lock);
-	if (entry->mib)
+	if (entry->mib && entry->mib->exclusive) {
+		dpns_nat_mib_read(priv, entry->mib->index * 2, &pkts, &frame_bytes);
+		dpns_nat_mib_read(priv, entry->mib->index * 2 + 1, &p, &b);
+		pkts += p;
+		frame_bytes += b;
+	} else if (entry->mib) {
 		dpns_nat_mib_read(priv, entry->mib->index * 2 + !entry->is_dnat,
 				  &pkts, &frame_bytes);
+	}
 	spin_unlock_bh(&priv->mib_lock);
 
 	*bytes = frame_bytes > pkts * ETH_HLEN ? frame_bytes - pkts * ETH_HLEN : 0;
