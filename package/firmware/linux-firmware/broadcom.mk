@@ -1,4 +1,140 @@
-Package/brcmfmac-firmware-4339-sdio = $(call Package/firmware-default,Broadcom 4339 FullMAC SDIO firmware,,LICENCE.cypressb)
+define Package/brcmfmac-firmware-43340-sdio
+  $(call Package/firmware-default,Broadcom BCM43340 FullMac SDIO firmware,,LICENSES/LICENCE.cypress)
+  PROVIDES:=cypress-firmware-43340-sdio
+  CONFLICTS:=cypress-firmware-43340-sdio
+endef
+
+define Package/brcmfmac-firmware-43340-sdio/install
+	$(INSTALL_DIR) $(1)/lib/firmware/cypress
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac43340-sdio.bin \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(LN) \
+		../cypress/cyfmac43340-sdio.bin \
+		$(1)/lib/firmware/brcm/brcmfmac43340-sdio.bin
+endef
+$(eval $(call BuildPackage,brcmfmac-firmware-43340-sdio))
+
+define Package/brcmfmac-firmware-43362-sdio
+  $(call Package/firmware-default,Broadcom BCM43362 FullMac SDIO firmware,,LICENSES/LICENCE.cypress)
+  PROVIDES:=cypress-firmware-43362-sdio
+  CONFLICTS:=cypress-firmware-43362-sdio
+endef
+
+define Package/brcmfmac-firmware-43362-sdio/install
+	$(INSTALL_DIR) $(1)/lib/firmware/cypress
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac43362-sdio.bin \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(LN) \
+		../cypress/cyfmac43362-sdio.bin \
+		$(1)/lib/firmware/brcm/brcmfmac43362-sdio.bin
+endef
+$(eval $(call BuildPackage,brcmfmac-firmware-43362-sdio))
+
+define Package/brcmfmac-firmware-4354-sdio
+  $(call Package/firmware-default,Broadcom BCM4354 FullMac SDIO firmware,,LICENSES/LICENCE.cypress)
+  PROVIDES:=cypress-firmware-4354-sdio
+  CONFLICTS:=cypress-firmware-4354-sdio
+endef
+
+define Package/brcmfmac-firmware-4354-sdio/install
+	$(INSTALL_DIR) $(1)/lib/firmware/cypress
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac4354-sdio.bin \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac4354-sdio.clm_blob \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(LN) \
+		../cypress/cyfmac4354-sdio.bin \
+		$(1)/lib/firmware/brcm/brcmfmac4354-sdio.bin
+	$(LN) \
+		../cypress/cyfmac4354-sdio.clm_blob \
+		$(1)/lib/firmware/brcm/brcmfmac4354-sdio.clm_blob
+endef
+$(eval $(call BuildPackage,brcmfmac-firmware-4354-sdio))
+
+define Package/brcmfmac-firmware-4356-pcie
+  $(call Package/firmware-default,Broadcom BCM4356 FullMac PCIe firmware,,LICENSES/LICENCE.cypress)
+  PROVIDES:=cypress-firmware-4356-pcie
+  CONFLICTS:=cypress-firmware-4356-pcie
+endef
+
+define Package/brcmfmac-firmware-4356-pcie/install
+	$(INSTALL_DIR) $(1)/lib/firmware/cypress
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac4356-pcie.bin \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac4356-pcie.clm_blob \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(LN) \
+		../cypress/cyfmac4356-pcie.bin \
+		$(1)/lib/firmware/brcm/brcmfmac4356-pcie.bin
+	$(LN) \
+		../cypress/cyfmac4356-pcie.clm_blob \
+		$(1)/lib/firmware/brcm/brcmfmac4356-pcie.clm_blob
+endef
+$(eval $(call BuildPackage,brcmfmac-firmware-4356-pcie))
+
+define Package/brcmfmac-firmware-4356-sdio
+  $(call Package/firmware-default,Broadcom BCM4356 FullMac SDIO firmware,,LICENSES/LICENCE.cypress)
+  PROVIDES:=cypress-firmware-4356-sdio
+  CONFLICTS:=cypress-firmware-4356-sdio
+endef
+
+define Package/brcmfmac-firmware-4356-sdio/install
+	$(INSTALL_DIR) $(1)/lib/firmware/cypress
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac4356-sdio.bin \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac4356-sdio.clm_blob \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(LN) \
+		../cypress/cyfmac4356-sdio.bin \
+		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.bin
+	$(LN) \
+		../cypress/cyfmac4356-sdio.clm_blob \
+		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.clm_blob
+endef
+$(eval $(call BuildPackage,brcmfmac-firmware-4356-sdio))
+
+define Package/brcmfmac-firmware-43570-pcie
+  $(call Package/firmware-default,Broadcom BCM43570 FullMac PCIe firmware,,LICENSES/LICENCE.cypress)
+  PROVIDES:=cypress-firmware-43570-pcie
+  CONFLICTS:=cypress-firmware-43570-pcie
+endef
+
+define Package/brcmfmac-firmware-43570-pcie/install
+	$(INSTALL_DIR) $(1)/lib/firmware/cypress
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac43570-pcie.bin \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac43570-pcie.clm_blob \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(LN) \
+		../cypress/cyfmac43570-pcie.bin \
+		$(1)/lib/firmware/brcm/brcmfmac43570-pcie.bin
+	$(LN) \
+		../cypress/cyfmac43570-pcie.clm_blob \
+		$(1)/lib/firmware/brcm/brcmfmac43570-pcie.clm_blob
+endef
+$(eval $(call BuildPackage,brcmfmac-firmware-43570-pcie))
+
+define Package/brcmfmac-firmware-4339-sdio
+  $(call Package/firmware-default,Broadcom 4339 FullMAC SDIO firmware,,LICENSES/LICENCE.cypress)
+  PROVIDES:=cypress-firmware-4339-sdio
+  CONFLICTS:=cypress-firmware-4339-sdio
+endef
 define Package/brcmfmac-firmware-4339-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/cypress
 	$(INSTALL_DATA) \

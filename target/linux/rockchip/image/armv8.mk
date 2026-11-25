@@ -76,7 +76,7 @@ define Device/friendlyarm_nanopc-t4
   $(Device/rk3399)
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPC T4
-  DEVICE_PACKAGES := brcmfmac-nvram-4356-sdio cypress-firmware-4356-sdio kmod-brcmfmac kmod-button-hotplug kmod-input-adc-keys
+  DEVICE_PACKAGES := brcmfmac-nvram-4356-sdio brcmfmac-firmware-4356-sdio kmod-brcmfmac kmod-button-hotplug kmod-input-adc-keys
 endef
 TARGET_DEVICES += friendlyarm_nanopc-t4
 
