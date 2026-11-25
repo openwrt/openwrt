@@ -95,7 +95,23 @@ define KernelPackage/phy-ath79-usb/description
   Support for ATH79 USB transceiver
 endef
 
+define KernelPackage/phy-rtk-usb2
+  TITLE:=Support for Realtek USB 2.0 PHY
+  KCONFIG:=CONFIG_PHY_RTK_RTD_USB2PHY
+  DEPENDS:=@(TARGET_realtek_rtl930x||TARGET_realtek_rtl930x_nand||TARGET_realtek_rtl931x||TARGET_realtek_rtl931x_nand)
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/phy/realtek/phy-rtk-usb2.ko
+  AUTOLOAD:=$(call AutoLoad,21,phy-rtk-usb2,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/phy-rtk-usb2/description
+  Support for the Realtek USB 2.0 transceiver found on the RTL930x and
+  RTL931x switch SoCs.
+endef
+
 $(eval $(call KernelPackage,phy-ath79-usb))
+$(eval $(call KernelPackage,phy-rtk-usb2))
 
 
 define KernelPackage/usb-gadget
@@ -388,6 +404,10 @@ define KernelPackage/usb2
 	+TARGET_bcm53xx:kmod-usb-bcma \
 	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb2 \
 	+TARGET_ath79:kmod-phy-ath79-usb \
+	+TARGET_realtek_rtl930x:kmod-phy-rtk-usb2 \
+	+TARGET_realtek_rtl930x_nand:kmod-phy-rtk-usb2 \
+	+TARGET_realtek_rtl931x:kmod-phy-rtk-usb2 \
+	+TARGET_realtek_rtl931x_nand:kmod-phy-rtk-usb2 \
 	+kmod-usb-ehci
   KCONFIG:=\
 	CONFIG_USB_EHCI_HCD_PLATFORM \

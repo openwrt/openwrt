@@ -68,11 +68,12 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x18000000 0x20000>;
+		ranges = <0x0 0x18000000 0x22000>;
 
 		ecc0: ecc@1a600 {
 			compatible = "realtek,rtl9301-ecc";
 			reg = <0x1a600 0x54>;
+			big-endian;
 
 			status = "disabled";
 		};
@@ -90,6 +91,7 @@
 		snand: spi@1a400 {
 			compatible = "realtek,rtl9301-snand";
 			reg = <0x1a400 0x44>;
+			big-endian;
 			interrupt-parent = <&intc>;
 			interrupts = <19 2>;
 			clocks = <&lx_clk>;
@@ -152,9 +154,40 @@
 			status = "disabled";
 		};
 
+		usb_ohci: usb-ohci@20000 {
+			compatible = "generic-ohci";
+			reg = <0x20000 0x200>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <28 2>;
+
+			clocks = <&lx_clk>;
+
+			phys = <&usb_phy>;
+			phy-names = "usb";
+
+			status = "disabled";
+		};
+
+		usb_ehci: usb-ehci@21000 {
+			compatible = "generic-ehci";
+			reg = <0x21000 0x1000>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <28 2>;
+
+			clocks = <&lx_clk>;
+
+			phys = <&usb_phy>;
+			phy-names = "usb";
+
+			status = "disabled";
+		};
+
 		watchdog0: watchdog@3260 {
 			compatible = "realtek,rtl9300-wdt";
 			reg = <0x3260 0xc>;
+			big-endian;
 
 			realtek,reset-mode = "soc";
 
@@ -169,6 +202,7 @@
 		gpio0: gpio-controller@3300 {
 			compatible = "realtek,rtl9300-gpio", "realtek,otto-gpio";
 			reg = <0x3300 0x1c>, <0x3338 0x8>;
+			big-endian;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -182,9 +216,19 @@
 
 	};
 
+	usb_phy: usb-phy@18140200 {
+		compatible = "realtek,rtl9300-usb2phy";
+		reg = <0x18140200 0x14>, <0x180210a4 0x4>,
+		      <0x18000500 0x4>;
+		#phy-cells = <0>;
+
+		status = "disabled";
+	};
+
 	switch0: ethernet-switch@1b000000 {
 		compatible = "realtek,rtl9301-switch", "realtek,otto-switch", "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+		big-endian;
 		interrupt-parent = <&intc>;
 		interrupts = <23 2>;
 		#address-cells = <1>;
@@ -332,6 +376,7 @@
 	pinmux@1b000200 {
 		compatible = "pinctrl-single";
 		reg = <0x1b000200 0x4>;
+		big-endian;
 
 		pinctrl-single,bit-per-mux;
 		pinctrl-single,register-width = <32>;
@@ -370,6 +415,7 @@
 	pinmux@1b000204 {
 		compatible = "pinctrl-single";
 		reg = <0x1b000204 0x4>;
+		big-endian;
 
 		pinctrl-single,bit-per-mux;
 		pinctrl-single,register-width = <32>;
@@ -384,6 +430,7 @@
 	pinmux@1b0003a0 {
 		compatible = "pinctrl-single";
 		reg = <0x1b0003a0 0x4>;
+		big-endian;
 
 		pinctrl-single,bit-per-mux;
 		pinctrl-single,register-width = <32>;
@@ -409,6 +456,7 @@
 	pinmux@1b00c600 {
 		compatible = "pinctrl-single";
 		reg = <0x1b00c600 0x4>;
+		big-endian;
 
 		pinctrl-single,bit-per-mux;
 		pinctrl-single,register-width = <32>;
@@ -423,6 +471,7 @@
 	pinmux_led: pinmux@1b00cc00 {
 		compatible = "pinctrl-single";
 		reg = <0x1b00cc00 0x4>;
+		big-endian;
 
 		pinctrl-single,bit-per-mux;
 		pinctrl-single,register-width = <32>;
