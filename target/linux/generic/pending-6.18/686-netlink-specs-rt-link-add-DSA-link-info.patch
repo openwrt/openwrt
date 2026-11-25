@@ -1,0 +1,43 @@
+From 21946f2bb895153e08dca530d4e1d903050b12fb Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 07:00:00 +0100
+Subject: [PATCH] netlink: specs: rt-link: add the DSA link info
+
+DSA user ports report IFLA_INFO_KIND "dsa" with IFLA_DSA_CONDUIT in
+IFLA_INFO_DATA, but linkinfo-data-msg has no format for it. YNL fails
+to decode any RTM_GETLINK reply of a DSA user port ("No message format
+for 'dsa' in sub-message spec 'linkinfo-data-msg'"), which breaks e.g.
+the drivers/net selftests (stats.py procfs_hammer) on every DSA switch
+port.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ Documentation/netlink/specs/rt-link.yaml | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/Documentation/netlink/specs/rt-link.yaml
++++ b/Documentation/netlink/specs/rt-link.yaml
+@@ -2101,6 +2101,13 @@ attribute-sets:
+         name: table
+         type: u32
+   -
++    name: linkinfo-dsa-attrs
++    name-prefix: ifla-dsa-
++    attributes:
++      -
++        name: conduit
++        type: u32
++  -
+     name: xdp-attrs
+     name-prefix: ifla-xdp-
+     attributes:
+@@ -2293,6 +2300,9 @@ sub-messages:
+         value: bridge
+         attribute-set: linkinfo-bridge-attrs
+       -
++        value: dsa
++        attribute-set: linkinfo-dsa-attrs
++      -
+         value: erspan
+         attribute-set: linkinfo-gre-attrs
+       -
