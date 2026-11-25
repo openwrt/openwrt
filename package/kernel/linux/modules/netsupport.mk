@@ -806,6 +806,38 @@ endef
 $(eval $(call KernelPackage,sched-act-sample))
 
 
+define KernelPackage/sched-act-ct
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic conntrack action
+  DEPENDS:=+kmod-sched-core +kmod-nf-conntrack +kmod-nf-nat +kmod-nf-flow
+  KCONFIG:=CONFIG_NET_ACT_CT
+  FILES:=$(LINUX_DIR)/net/sched/act_ct.ko
+  AUTOLOAD:=$(call AutoProbe,act_ct)
+endef
+
+define KernelPackage/sched-act-ct/description
+ Connection tracking (and NAT) tc action.
+endef
+
+$(eval $(call KernelPackage,sched-act-ct))
+
+
+define KernelPackage/sched-act-tunnel-key
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic tunnel metadata manipulation
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_ACT_TUNNEL_KEY
+  FILES:=$(LINUX_DIR)/net/sched/act_tunnel_key.ko
+  AUTOLOAD:=$(call AutoProbe,act_tunnel_key)
+endef
+
+define KernelPackage/sched-act-tunnel-key/description
+ Sets and releases IP tunnel metadata, for collect_md tunnel devices.
+endef
+
+$(eval $(call KernelPackage,sched-act-tunnel-key))
+
+
 define KernelPackage/sched-act-vlan
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic VLAN manipulation
