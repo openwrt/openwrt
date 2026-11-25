@@ -1,0 +1,108 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Simon Polack <spolack+git@mailbox.org>
+Subject: [PATCH] net: gso: copy the forwarded IP header fields to fraglist segments
+
+Forwarding decrements the TTL/hop limit and may change the TOS/traffic
+class of the head of a fraglist GRO skb only; skb_segment_list() leaves
+the other segments with the values they arrived with. Copy them from
+the head for IPv4 and IPv6, TCP and UDP.
+
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+
+--- a/net/ipv4/tcp_offload.c
++++ b/net/ipv4/tcp_offload.c
+@@ -67,7 +67,8 @@ static struct sk_buff *__tcpv4_gso_segme
+ 	iph2 = ip_hdr(seg->next);
+ 
+ 	if (!(*(const u32 *)&th->source ^ *(const u32 *)&th2->source) &&
+-	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr)
++	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr &&
++	    iph->ttl == iph2->ttl && iph->tos == iph2->tos)
+ 		return segs;
+ 
+ 	while ((seg = seg->next)) {
+@@ -80,6 +81,11 @@ static struct sk_buff *__tcpv4_gso_segme
+ 		__tcpv4_gso_segment_csum(seg,
+ 					 &iph2->daddr, iph->daddr,
+ 					 &th2->dest, th->dest);
++		/* Forwarding and mangling only touched the first segment's
++		 * header; inet_gso_segment() recomputes the IP checksum.
++		 */
++		iph2->ttl = iph->ttl;
++		iph2->tos = iph->tos;
+ 	}
+ 
+ 	return segs;
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -387,7 +387,9 @@ static struct sk_buff *__udpv4_gso_segme
+ 	if ((udp_hdr(seg)->dest == udp_hdr(seg->next)->dest) &&
+ 	    (udp_hdr(seg)->source == udp_hdr(seg->next)->source) &&
+ 	    (ip_hdr(seg)->daddr == ip_hdr(seg->next)->daddr) &&
+-	    (ip_hdr(seg)->saddr == ip_hdr(seg->next)->saddr))
++	    (ip_hdr(seg)->saddr == ip_hdr(seg->next)->saddr) &&
++	    (ip_hdr(seg)->ttl == ip_hdr(seg->next)->ttl) &&
++	    (ip_hdr(seg)->tos == ip_hdr(seg->next)->tos))
+ 		return segs;
+ 
+ 	while ((seg = seg->next)) {
+@@ -400,6 +402,11 @@ static struct sk_buff *__udpv4_gso_segme
+ 		__udpv4_gso_segment_csum(seg,
+ 					 &iph2->daddr, &iph->daddr,
+ 					 &uh2->dest, &uh->dest);
++		/* Forwarding and mangling only touched the first segment's
++		 * header; inet_gso_segment() recomputes the IP checksum.
++		 */
++		iph2->ttl = iph->ttl;
++		iph2->tos = iph->tos;
+ 	}
+ 
+ 	return segs;
+@@ -445,7 +452,9 @@ static struct sk_buff *__udpv6_gso_segme
+ 
+ 	if (!(*(const u32 *)&uh->source ^ *(const u32 *)&uh2->source) &&
+ 	    ipv6_addr_equal(&iph->saddr, &iph2->saddr) &&
+-	    ipv6_addr_equal(&iph->daddr, &iph2->daddr))
++	    ipv6_addr_equal(&iph->daddr, &iph2->daddr) &&
++	    iph->hop_limit == iph2->hop_limit &&
++	    *(const __be32 *)iph == *(const __be32 *)iph2)
+ 		return segs;
+ 
+ 	while ((seg = seg->next)) {
+@@ -456,6 +465,11 @@ static struct sk_buff *__udpv6_gso_segme
+ 					 &uh2->source, uh->source);
+ 		__udpv6_gso_segment_csum(seg, &iph2->daddr, &iph->daddr,
+ 					 &uh2->dest, uh->dest);
++		/* Forwarding and mangling only touched the first segment's
++		 * hop limit and traffic class.
++		 */
++		iph2->hop_limit = iph->hop_limit;
++		*(__be32 *)iph2 = *(const __be32 *)iph;
+ 	}
+ 
+ 	return segs;
+--- a/net/ipv6/tcpv6_offload.c
++++ b/net/ipv6/tcpv6_offload.c
+@@ -141,7 +141,9 @@ static struct sk_buff *__tcpv6_gso_segme
+ 
+ 	if (!(*(const u32 *)&th->source ^ *(const u32 *)&th2->source) &&
+ 	    ipv6_addr_equal(&iph->saddr, &iph2->saddr) &&
+-	    ipv6_addr_equal(&iph->daddr, &iph2->daddr))
++	    ipv6_addr_equal(&iph->daddr, &iph2->daddr) &&
++	    iph->hop_limit == iph2->hop_limit &&
++	    *(const __be32 *)iph == *(const __be32 *)iph2)
+ 		return segs;
+ 
+ 	while ((seg = seg->next)) {
+@@ -152,6 +154,11 @@ static struct sk_buff *__tcpv6_gso_segme
+ 					 &th2->source, th->source);
+ 		__tcpv6_gso_segment_csum(seg, &iph2->daddr, &iph->daddr,
+ 					 &th2->dest, th->dest);
++		/* Forwarding and mangling only touched the first segment's
++		 * hop limit and traffic class.
++		 */
++		iph2->hop_limit = iph->hop_limit;
++		*(__be32 *)iph2 = *(const __be32 *)iph;
+ 	}
+ 
+ 	return segs;

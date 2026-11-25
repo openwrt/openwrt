@@ -45,7 +45,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	dir = tuplehash->tuple.dir;
  	flow = container_of(tuplehash, struct flow_offload, tuplehash[dir]);
-@@ -414,6 +415,12 @@ static int nf_flow_offload_forward(struc
+@@ -415,6 +416,12 @@ static int nf_flow_offload_forward(struc
  	iph = ip_hdr(skb);
  	nf_flow_nat_ip(flow, skb, thoff, dir, iph);
  
@@ -58,7 +58,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	ip_decrease_ttl(iph);
  	skb_clear_tstamp(skb);
  
-@@ -680,6 +687,7 @@ static int nf_flow_offload_ipv6_forward(
+@@ -681,6 +688,7 @@ static int nf_flow_offload_ipv6_forward(
  	struct flow_offload *flow;
  	unsigned int thoff, mtu;
  	struct ipv6hdr *ip6h;
@@ -66,7 +66,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	dir = tuplehash->tuple.dir;
  	flow = container_of(tuplehash, struct flow_offload, tuplehash[dir]);
-@@ -708,6 +716,12 @@ static int nf_flow_offload_ipv6_forward(
+@@ -710,6 +718,12 @@ static int nf_flow_offload_ipv6_forward(
  	ip6h = ipv6_hdr(skb);
  	nf_flow_nat_ipv6(flow, skb, dir, ip6h);
  
