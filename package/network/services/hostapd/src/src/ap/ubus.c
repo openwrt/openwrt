@@ -12,6 +12,7 @@
 #include "utils/wpabuf.h"
 #include "common/ieee802_11_defs.h"
 #include "common/hw_features_common.h"
+#include "common/wpa_common.h"
 #include "hostapd.h"
 #include "neighbor_db.h"
 #include "wps_hostapd.h"
@@ -22,6 +23,7 @@
 #include "beacon.h"
 #include "rrm.h"
 #include "wnm_ap.h"
+#include "wpa_auth.h"
 #include "taxonomy.h"
 #include "airtime_policy.h"
 #include "hw_features.h"
@@ -398,6 +400,28 @@ hostapd_ubus_sta_mld_add(struct hostapd_data *hapd, struct sta_info *sta)
 #endif /* CONFIG_IEEE80211BE */
 }
 
+static void
+hostapd_ubus_sta_security_add(struct sta_info *sta)
+{
+	struct wpa_state_machine *sm = sta->wpa_sm;
+	int akm, pairwise, proto;
+	void *security;
+
+	if (!(sta->flags & WLAN_STA_AUTHORIZED) || !sm)
+		return;
+
+	akm = wpa_auth_sta_key_mgmt(sm);
+	pairwise = wpa_auth_get_pairwise(sm);
+	proto = wpa_auth_sta_wpa_version(sm);
+	if (akm <= 0 || pairwise <= 0 || !proto)
+		return;
+
+	security = blobmsg_open_table(&b, "security");
+	blobmsg_add_string(&b, "akm", wpa_key_mgmt_txt(akm, proto));
+	blobmsg_add_string(&b, "pairwise_cipher", wpa_cipher_txt(pairwise));
+	blobmsg_close_table(&b, security);
+}
+
 /* A non-AP MLD is listed once, with the station of its association link. */
 static void
 hostapd_bss_clients_add(struct hostapd_data *hapd)
@@ -483,6 +507,7 @@ hostapd_bss_clients_add(struct hostapd_data *hapd)
 			blobmsg_add_u32(&b, "signal", sta_driver_data.signal);
 		}
 
+		hostapd_ubus_sta_security_add(sta);
 		hostapd_parse_capab_blobmsg(sta);
 		hostapd_ubus_sta_mld_add(hapd, sta);
 
