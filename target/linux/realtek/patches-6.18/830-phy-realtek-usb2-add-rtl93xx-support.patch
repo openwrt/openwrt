@@ -1,0 +1,312 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Carlo Szelinsky <github@szelinsky.de>
+Date: Tue, 7 Jul 2026 22:00:00 +0200
+Subject: [PATCH] phy: realtek: usb2: add RTL9300/RTL9310 support
+
+The USB wrapper of the RTL9300 and RTL9310 switch SoCs is close to the
+RTL9607C one: the force-disconnect bit sits at wrapper offset 0x10 bit 5,
+and the indirect address port is the EHCI INSNREG05 with busy in bit 17
+and the port select in bit 13. Two things differ, both taken from the
+vendor rtk_gen1-res.c:
+
+- the write data byte goes to bits 7:0 of the USB PHY control register
+  (0x18000500 on both SoCs), with bits 31:8 preserved. The wrapper
+  register at offset 0xc is not looked at by the PHY.
+- the address nibble is only latched when VCLM (bit 12) is clocked high,
+  low, high.
+
+With the RTL9607C access the PHY is fed wrong values and the EHCI port
+fails to enumerate with -71.
+
+Add an optional vclm field to phy_reg_desc that makes the VControl writes
+strobe it, and a vstatus_in flag that sends the write data to a third reg
+entry with a read-modify-write. The RTL93xx reg_desc is the RTL9607C one
+plus both, and the binding requires the third reg entry for the two new
+compatibles. Each SoC then only needs a phy_cfg with that reg_desc,
+force_host_disconnect and the vendor parameter tables.
+
+The PHY gives no read-back through this interface, so the driving level
+read-modify-write is skipped when a phy_cfg has no dc_driving_mask; all
+existing configurations set one.
+
+The RTL9310 table is the vendor one in full. For RTL9300 only the 0xe5
+write is taken, which is what the stock firmware and the vendor U-Boot
+apply.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- a/Documentation/devicetree/bindings/phy/realtek,usb2phy.yaml
++++ b/Documentation/devicetree/bindings/phy/realtek,usb2phy.yaml
+@@ -11,8 +11,8 @@ maintainers:
+   - Stanley Chang <stanley_chang@realtek.com>
+ 
+ description: |
+-  Realtek USB 2.0 PHY support the digital home center (DHC) RTD and
+-  RTL9607C series SoCs.
++  Realtek USB 2.0 PHY support the digital home center (DHC) RTD,
++  RTL9607C, RTL9300 and RTL9310 series SoCs.
+   The USB 2.0 PHY driver is designed to support the XHCI controller. The SoCs
+   support multiple XHCI controllers. One PHY device node maps to one XHCI
+   controller.
+@@ -58,7 +58,7 @@ description: |
+   XHCI controller#1 -- usb2phy -- phy#0
+   XHCI controller#2 -- usb2phy -- phy#0
+ 
+-  RTL9607C SoCs USB
++  RTL9607C, RTL9300 and RTL9310 SoCs USB
+   The USB architecture includes OHCI and EHCI controllers.
+   Both of them map to one USB2.0 PHY.
+   OHCI controller#0 -- usb2phy -- phy#0
+@@ -77,11 +77,15 @@ properties:
+       - realtek,rtd1619-usb2phy
+       - realtek,rtd1619b-usb2phy
+       - realtek,rtl9607-usb2phy
++      - realtek,rtl9300-usb2phy
++      - realtek,rtl9310-usb2phy
+ 
+   reg:
++    minItems: 2
+     items:
+       - description: PHY data registers
+       - description: PHY control registers
++      - description: PHY write data register
+ 
+   "#phy-cells":
+     const: 0
+@@ -180,6 +184,21 @@ allOf:
+     else:
+       properties:
+         resets: false
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - realtek,rtl9300-usb2phy
++              - realtek,rtl9310-usb2phy
++    then:
++      properties:
++        reg:
++          minItems: 3
++    else:
++      properties:
++        reg:
++          maxItems: 2
+ 
+ additionalProperties: false
+ 
+--- a/drivers/phy/realtek/Kconfig
++++ b/drivers/phy/realtek/Kconfig
+@@ -3,7 +3,7 @@
+ # Phy drivers for Realtek platforms
+ #
+ 
+-if ARCH_REALTEK || (MACH_REALTEK_RTL && RTL960X) || COMPILE_TEST
++if ARCH_REALTEK || (MACH_REALTEK_RTL && (RTL930X || RTL931X || RTL960X)) || COMPILE_TEST
+ 
+ config PHY_RTK_RTD_USB2PHY
+ 	tristate "Realtek RTD USB2 PHY Transceiver Driver"
+--- a/drivers/phy/realtek/phy-rtk-usb2.c
++++ b/drivers/phy/realtek/phy-rtk-usb2.c
+@@ -28,6 +28,7 @@
+ 
+ #define PHY_9607_VSTS_BUSY BIT(17)
+ #define PHY_9607_NEW_REG_REQ BIT(13)
++#define PHY_93XX_VCLM BIT(12)
+ 
+ #define PHY_9607_FORCE_DISCONNECT_REG 0x10
+ #define PHY_9607_FORCE_DISCONNECT_BIT BIT(5)
+@@ -71,12 +72,15 @@ struct phy_reg_desc {
+ 	int vstatus_offset;
+ 	u32 vstatus_busy;
+ 	u32 new_reg_req;
++	u32 vclm;
++	bool vstatus_in;
+ 	u32 (*read)(void __iomem *reg);
+ 	void (*write)(u32 val, void __iomem *reg);
+ };
+ 
+ struct phy_reg {
+ 	void __iomem *reg_wrap_vstatus;
++	void __iomem *reg_vstatus_in;
+ 	void __iomem *reg_gusb2phyacc0;
+ 	int vstatus_index;
+ 	const struct phy_reg_desc *desc;
+@@ -192,6 +196,26 @@ static inline int utmi_wait_register(voi
+ 	return 0;
+ }
+ 
++/*
++ * Load one address nibble into VControl. Wrappers with a VCLM bit need it
++ * clocked high, low, high to latch the nibble.
++ */
++static void rtk_phy_set_vctrl(const struct phy_reg_desc *reg_desc,
++			      void __iomem *reg, u32 val)
++{
++	if (!reg_desc->vclm) {
++		writel(val, reg);
++		return;
++	}
++
++	writel(val | reg_desc->vclm, reg);
++	udelay(1);
++	writel(val, reg);
++	udelay(1);
++	writel(val | reg_desc->vclm, reg);
++	udelay(1);
++}
++
+ static char rtk_phy_read(struct phy_reg *phy_reg, char addr)
+ {
+ 	void __iomem *reg_gusb2phyacc0 = phy_reg->reg_gusb2phyacc0;
+@@ -208,14 +232,14 @@ static char rtk_phy_read(struct phy_reg
+ 
+ 	/* VCtrl = low nibble of addr, and set reg_desc->new_reg_req */
+ 	val = reg_desc->new_reg_req | (GET_LOW_NIBBLE(addr) << PHY_VCTRL_SHIFT);
+-	writel(val, reg_gusb2phyacc0);
++	rtk_phy_set_vctrl(reg_desc, reg_gusb2phyacc0, val);
+ 	ret = utmi_wait_register(reg_gusb2phyacc0, reg_desc->vstatus_busy, 0);
+ 	if (ret)
+ 		return (char)ret;
+ 
+ 	/* VCtrl = high nibble of addr, and set reg_desc->new_reg_req */
+ 	val = reg_desc->new_reg_req | (GET_HIGH_NIBBLE(addr) << PHY_VCTRL_SHIFT);
+-	writel(val, reg_gusb2phyacc0);
++	rtk_phy_set_vctrl(reg_desc, reg_gusb2phyacc0, val);
+ 	ret = utmi_wait_register(reg_gusb2phyacc0, reg_desc->vstatus_busy, 0);
+ 	if (ret)
+ 		return (char)ret;
+@@ -235,8 +259,14 @@ static int rtk_phy_write(struct phy_reg
+ 	int ret = 0;
+ 
+ 	/* write data to VStatusOut2 (data output to phy) */
+-	reg_desc->write((u32)data << shift_bits,
+-		       reg_wrap_vstatus + reg_desc->vstatus_offset);
++	if (phy_reg->reg_vstatus_in) {
++		val = reg_desc->read(phy_reg->reg_vstatus_in);
++		val = (val & ~PHY_REG_DATA_MASK) | (u8)data;
++		reg_desc->write(val, phy_reg->reg_vstatus_in);
++	} else {
++		reg_desc->write((u32)data << shift_bits,
++			       reg_wrap_vstatus + reg_desc->vstatus_offset);
++	}
+ 
+ 	ret = utmi_wait_register(reg_gusb2phyacc0, reg_desc->vstatus_busy, 0);
+ 	if (ret)
+@@ -245,7 +275,7 @@ static int rtk_phy_write(struct phy_reg
+ 	/* VCtrl = low nibble of addr, set reg_desc->new_reg_req */
+ 	val = reg_desc->new_reg_req | (GET_LOW_NIBBLE(addr) << PHY_VCTRL_SHIFT);
+ 
+-	writel(val, reg_gusb2phyacc0);
++	rtk_phy_set_vctrl(reg_desc, reg_gusb2phyacc0, val);
+ 	ret = utmi_wait_register(reg_gusb2phyacc0, reg_desc->vstatus_busy, 0);
+ 	if (ret)
+ 		return ret;
+@@ -253,7 +283,7 @@ static int rtk_phy_write(struct phy_reg
+ 	/* VCtrl = high nibble of addr, set reg_desc->new_reg_req */
+ 	val = reg_desc->new_reg_req | (GET_HIGH_NIBBLE(addr) << PHY_VCTRL_SHIFT);
+ 
+-	writel(val, reg_gusb2phyacc0);
++	rtk_phy_set_vctrl(reg_desc, reg_gusb2phyacc0, val);
+ 	ret = utmi_wait_register(reg_gusb2phyacc0, reg_desc->vstatus_busy, 0);
+ 	if (ret)
+ 		return ret;
+@@ -462,6 +492,9 @@ static void update_dc_driving_level(stru
+ 
+ 	phy_reg = &phy_parameter->phy_reg;
+ 	phy_cfg = rtk_phy->phy_cfg;
++	if (!phy_cfg->dc_driving_mask)
++		return;
++
+ 	if (!phy_cfg->page0[4].addr) {
+ 		rtk_phy_set_page(phy_reg, 0);
+ 		phy_cfg->page0[4].addr = PAGE0_0XE4;
+@@ -1042,6 +1075,12 @@ static int parse_phy_data(struct rtk_phy
+ 
+ 		phy_parameter->phy_reg.reg_wrap_vstatus = of_iomap(np, 0);
+ 		phy_parameter->phy_reg.reg_gusb2phyacc0 = of_iomap(np, 1) + index;
++		if (phy_cfg->reg_desc->vstatus_in) {
++			phy_parameter->phy_reg.reg_vstatus_in = of_iomap(np, 2);
++			if (!phy_parameter->phy_reg.reg_vstatus_in)
++				return dev_err_probe(dev, -EINVAL,
++						     "missing data register\n");
++		}
+ 		phy_parameter->phy_reg.vstatus_index = index;
+ 		phy_parameter->phy_reg.desc = phy_cfg->reg_desc;
+ 
+@@ -1151,6 +1190,15 @@ static const struct phy_reg_desc rtl9607
+ 	.write = rtk_usb2phy_write_be,
+ };
+ 
++static const struct phy_reg_desc rtl93xx_phy_reg_desc = {
++	.vstatus_busy = PHY_9607_VSTS_BUSY,
++	.new_reg_req = PHY_9607_NEW_REG_REQ,
++	.vclm = PHY_93XX_VCLM,
++	.vstatus_in = true,
++	.read = rtk_usb2phy_read_be,
++	.write = rtk_usb2phy_write_be,
++};
++
+ static const struct phy_cfg rtd1295_phy_cfg = {
+ 	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
+ 	.page0 = { [0] = {0xe0, 0x90},
+@@ -1407,6 +1455,50 @@ static const struct phy_cfg rtl9607_phy_
+ 	.force_host_disconnect = true,
+ };
+ 
++/*
++ * RTL9300/RTL9310 switch SoCs: RTL9607C wrapper layout plus VCLM, the write
++ * data goes to bits 7:0 of the USB PHY control register (third reg entry).
++ */
++static const struct phy_cfg rtl9300_phy_cfg = {
++	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
++	.page0 = { [5] = {0xe5, 0xf2}, },
++	.page1_size = MAX_USB_PHY_PAGE1_DATA_SIZE,
++	.num_phy = 1,
++	.reg_desc = &rtl93xx_phy_reg_desc,
++	.force_host_disconnect = true,
++};
++
++static const struct phy_cfg rtl9310_phy_cfg = {
++	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
++	.page0 = { [0] = {0xe0, 0x92},
++		   [1] = {0xe1, 0x30},
++		   [2] = {0xe2, 0xda},
++		   [3] = {0xe3, 0x4d},
++		   [4] = {0xe4, 0x84},
++		   [5] = {0xe5, 0x65},
++		   [6] = {0xe6, 0x01},
++		   [7] = {0xe7, 0xa1},
++		   [8] = {0xf0, 0xfc},
++		   [9] = {0xf1, 0x8c},
++		  [10] = {0xf2, 0x00},
++		  [11] = {0xf3, 0x11},
++		  [13] = {0xf5, 0x95},
++		  [14] = {0xf6, 0x00},
++		  [15] = {0xf7, 0x0a}, },
++	.page1_size = MAX_USB_PHY_PAGE1_DATA_SIZE,
++	.page1 = { [0] = {0xe0, 0x25},
++		   [1] = {0xe1, 0xef},
++		   [2] = {0xe2, 0x60},
++		   [3] = {0xe3, 0x00},
++		   [4] = {0xe4, 0x00},
++		   [5] = {0xe5, 0x11},
++		   [6] = {0xe6, 0x06},
++		   [7] = {0xe7, 0x66}, },
++	.num_phy = 1,
++	.reg_desc = &rtl93xx_phy_reg_desc,
++	.force_host_disconnect = true,
++};
++
+ static const struct of_device_id usbphy_rtk_dt_match[] = {
+ 	{ .compatible = "realtek,rtd1295-usb2phy", .data = &rtd1295_phy_cfg },
+ 	{ .compatible = "realtek,rtd1312c-usb2phy", .data = &rtd1312c_phy_cfg },
+@@ -1418,6 +1510,8 @@ static const struct of_device_id usbphy_
+ 	{ .compatible = "realtek,rtd1619-usb2phy", .data = &rtd1619_phy_cfg },
+ 	{ .compatible = "realtek,rtd1619b-usb2phy", .data = &rtd1619b_phy_cfg },
+ 	{ .compatible = "realtek,rtl9607-usb2phy", .data = &rtl9607_phy_cfg },
++	{ .compatible = "realtek,rtl9300-usb2phy", .data = &rtl9300_phy_cfg },
++	{ .compatible = "realtek,rtl9310-usb2phy", .data = &rtl9310_phy_cfg },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, usbphy_rtk_dt_match);
