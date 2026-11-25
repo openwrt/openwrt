@@ -1,0 +1,212 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Author: Sam Chu <cqs6688@gmail.com>
+ */
+
+/dts-v1/;
+#include "mt7987a.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "WodeSys WD-R5100BE";
+	compatible = "wodesys,wd-r5100be", "mediatek,mt7987a", "mediatek,mt7987";
+
+	aliases {
+		label-mac-device = &gmac1;
+		led-boot = &led_status_sys;
+		led-failsafe = &led_status_sys;
+		led-running = &led_status_sys;
+		led-upgrade = &led_status_sys;
+	};
+
+	chosen {
+		bootargs-override = "console=ttyS0,115200n1 earlycon=uart8250,mmio32,0x11000000 pci=pcie_bus_perf";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			debounce-interval = <10>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <10>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_status_sys: led-system {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led-internet {
+			function = LED_FUNCTION_WAN_ONLINE;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+			function-enumerator = <1>;
+			linux,default-trigger = "phy0radio";
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "BL2";
+				reg = <0x000000 0x0100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x100000 0x0080000>;
+			};
+
+			partition@180000 {
+				label = "Factory";
+				reg = <0x180000 0x0400000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1e00>;
+					};
+
+					macaddr_factory_ffff4: macaddr@ffff4 {
+						reg = <0xffff4 0x6>;
+					};
+
+					macaddr_factory_ffffa: macaddr@ffffa {
+						reg = <0xffffa 0x6>;
+					};
+				};
+			};
+
+			partition@580000 {
+				label = "FIP";
+				reg = <0x580000 0x0200000>;
+				read-only;
+			};
+
+			partition@780000 {
+				label = "ubi";
+				reg = <0x780000 0x7080000>;
+			};
+		};
+	};
+};
+
+&gmac0 {
+	phy-mode = "2500base-x";
+	phy-handle = <&phy_gpy211>;
+	status = "okay";
+
+	nvmem-cells = <&macaddr_factory_ffffa>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	phy-mode = "internal";
+	phy-handle = <&phy15>;
+	status = "okay";
+
+	nvmem-cells = <&macaddr_factory_ffff4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac2 {
+	status = "disabled";
+};
+
+&mdio {
+	reset-gpios = <&pio 42 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <600>;
+	reset-post-delay-us = <20000>;
+
+	phy_gpy211: phy@5 {
+		compatible = "ethernet-phy-id67c9.de0a";
+		reg = <5>;
+	};
+
+	phy15: phy@15 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <15>;
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		device_type = "pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7992@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+
+			ieee80211-freq-limit = <2400000 2500000>,
+					       <5170000 5835000>;
+		};
+	};
+};
+
+&ssusb {
+	status = "okay";
+};
+
+&tphyu3port0 {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
