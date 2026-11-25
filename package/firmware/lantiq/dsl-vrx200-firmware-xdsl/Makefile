@@ -82,8 +82,8 @@ endef
 define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(PKG_SOURCE)
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(PKG_B_SOURCE)
+	$(TAR) --no-same-owner -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(PKG_SOURCE)
+	$(TAR) --no-same-owner -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(PKG_B_SOURCE)
 endef
 
 define Build/Compile
