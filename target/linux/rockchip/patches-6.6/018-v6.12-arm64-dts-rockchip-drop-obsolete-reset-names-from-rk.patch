@@ -16,9 +16,9 @@ Link: https://lore.kernel.org/r/20240815162519.751193-1-heiko@sntech.de
  arch/arm64/boot/dts/rockchip/rk356x.dtsi | 1 -
  1 file changed, 1 deletion(-)
 
---- a/arch/arm64/boot/dts/rockchip/rk356x.dtsi
-+++ b/arch/arm64/boot/dts/rockchip/rk356x.dtsi
-@@ -1112,7 +1112,6 @@
+--- a/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
+@@ -1030,7 +1030,6 @@
  		clocks = <&cru CLK_TRNG_NS>, <&cru HCLK_TRNG_NS>;
  		clock-names = "core", "ahb";
  		resets = <&cru SRST_TRNG_NS>;

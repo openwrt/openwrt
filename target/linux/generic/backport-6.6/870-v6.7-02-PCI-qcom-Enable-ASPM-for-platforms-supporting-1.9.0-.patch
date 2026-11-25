@@ -72,7 +72,7 @@ Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
  static void qcom_pcie_deinit_2_7_0(struct qcom_pcie *pcie)
  {
  	struct qcom_pcie_resources_2_7_0 *res = &pcie->res.v2_7_0;
-@@ -1224,9 +1241,19 @@ static void qcom_pcie_host_deinit(struct
+@@ -1262,9 +1279,19 @@ static void qcom_pcie_host_deinit(struct
  	pcie->cfg->ops->deinit(pcie);
  }
  
@@ -92,7 +92,7 @@ Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
  };
  
  /* Qcom IP rev.: 2.1.0	Synopsys IP rev.: 4.01a */
-@@ -1288,6 +1315,7 @@ static const struct qcom_pcie_ops ops_1_
+@@ -1326,6 +1353,7 @@ static const struct qcom_pcie_ops ops_1_
  	.get_resources = qcom_pcie_get_resources_2_7_0,
  	.init = qcom_pcie_init_2_7_0,
  	.post_init = qcom_pcie_post_init_2_7_0,

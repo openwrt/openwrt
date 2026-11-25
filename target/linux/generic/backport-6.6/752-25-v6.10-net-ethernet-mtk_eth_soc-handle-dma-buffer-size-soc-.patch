@@ -181,7 +181,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static bool mtk_hw_reset_check(struct mtk_eth *eth)
-@@ -5122,11 +5132,14 @@ static const struct mtk_soc_data mt2701_
+@@ -5136,11 +5146,14 @@ static const struct mtk_soc_data mt2701_
  		.desc_size = sizeof(struct mtk_tx_dma),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -196,7 +196,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5146,11 +5159,14 @@ static const struct mtk_soc_data mt7621_
+@@ -5160,11 +5173,14 @@ static const struct mtk_soc_data mt7621_
  		.desc_size = sizeof(struct mtk_tx_dma),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -211,7 +211,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5172,11 +5188,14 @@ static const struct mtk_soc_data mt7622_
+@@ -5186,11 +5202,14 @@ static const struct mtk_soc_data mt7622_
  		.desc_size = sizeof(struct mtk_tx_dma),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -226,7 +226,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5197,11 +5216,14 @@ static const struct mtk_soc_data mt7623_
+@@ -5211,11 +5230,14 @@ static const struct mtk_soc_data mt7623_
  		.desc_size = sizeof(struct mtk_tx_dma),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -241,7 +241,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5220,11 +5242,14 @@ static const struct mtk_soc_data mt7629_
+@@ -5234,11 +5256,14 @@ static const struct mtk_soc_data mt7629_
  		.desc_size = sizeof(struct mtk_tx_dma),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -256,7 +256,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5246,6 +5271,8 @@ static const struct mtk_soc_data mt7981_
+@@ -5260,6 +5285,8 @@ static const struct mtk_soc_data mt7981_
  		.desc_size = sizeof(struct mtk_tx_dma_v2),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
@@ -265,7 +265,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  	.rx = {
  		.desc_size = sizeof(struct mtk_rx_dma),
-@@ -5253,6 +5280,7 @@ static const struct mtk_soc_data mt7981_
+@@ -5267,6 +5294,7 @@ static const struct mtk_soc_data mt7981_
  		.dma_l4_valid = RX_DMA_L4_VALID_V2,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -273,7 +273,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -5272,6 +5300,8 @@ static const struct mtk_soc_data mt7986_
+@@ -5286,6 +5314,8 @@ static const struct mtk_soc_data mt7986_
  		.desc_size = sizeof(struct mtk_tx_dma_v2),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
@@ -282,7 +282,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  	.rx = {
  		.desc_size = sizeof(struct mtk_rx_dma),
-@@ -5279,6 +5309,7 @@ static const struct mtk_soc_data mt7986_
+@@ -5293,6 +5323,7 @@ static const struct mtk_soc_data mt7986_
  		.dma_l4_valid = RX_DMA_L4_VALID_V2,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -290,7 +290,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -5298,6 +5329,8 @@ static const struct mtk_soc_data mt7988_
+@@ -5312,6 +5343,8 @@ static const struct mtk_soc_data mt7988_
  		.desc_size = sizeof(struct mtk_tx_dma_v2),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
@@ -299,7 +299,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  	.rx = {
  		.desc_size = sizeof(struct mtk_rx_dma_v2),
-@@ -5305,6 +5338,7 @@ static const struct mtk_soc_data mt7988_
+@@ -5319,6 +5352,7 @@ static const struct mtk_soc_data mt7988_
  		.dma_l4_valid = RX_DMA_L4_VALID_V2,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
@@ -307,7 +307,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -5319,6 +5353,7 @@ static const struct mtk_soc_data rt5350_
+@@ -5333,6 +5367,7 @@ static const struct mtk_soc_data rt5350_
  		.desc_size = sizeof(struct mtk_tx_dma),
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -315,7 +315,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  	.rx = {
  		.desc_size = sizeof(struct mtk_rx_dma),
-@@ -5326,6 +5361,7 @@ static const struct mtk_soc_data rt5350_
+@@ -5340,6 +5375,7 @@ static const struct mtk_soc_data rt5350_
  		.dma_l4_valid = RX_DMA_L4_VALID_PDMA,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,

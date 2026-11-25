@@ -14,18 +14,16 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -348,7 +348,7 @@ static int krait_cc_probe(struct platfor
+@@ -347,17 +347,25 @@ MODULE_DEVICE_TABLE(of, krait_cc_match_t
+ static int krait_cc_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
- 	const struct of_device_id *id;
 -	unsigned long cur_rate, aux_rate;
 +	unsigned long cur_rate, aux_rate, qsb_rate;
  	int cpu;
  	struct clk_hw *mux, *l2_pri_mux;
  	struct clk *clk, **clks;
-@@ -357,11 +357,19 @@ static int krait_cc_probe(struct platfor
- 	if (!id)
- 		return -ENODEV;
+ 	bool unique_aux = !!device_get_match_data(dev);
  
 -	/* Rate is 1 because 0 causes problems for __clk_mux_determine_rate */
 -	clk = clk_register_fixed_rate(dev, "qsb", NULL, 0, 1);
@@ -42,6 +40,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
 +	qsb_rate = clk_get_rate(clk);
 +
- 	if (!id->data) {
+ 	if (!unique_aux) {
  		clk = clk_register_fixed_factor(dev, "acpu_aux",
  						"gpll0_vote", 0, 1, 2);

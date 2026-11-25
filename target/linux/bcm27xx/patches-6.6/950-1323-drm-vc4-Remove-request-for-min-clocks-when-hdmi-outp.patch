@@ -30,9 +30,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -1224,6 +1224,8 @@ static void vc4_hdmi_encoder_post_crtc_p
- 	if (vc4_hdmi->variant->phy_disable)
- 		vc4_hdmi->variant->phy_disable(vc4_hdmi);
+@@ -1223,6 +1223,8 @@ static void vc4_hdmi_encoder_post_crtc_p
+ 
+ 	vc4_hdmi_disable_scrambling(encoder);
  
 +	/* we no longer require a minimum clock rate */
 +	clk_set_min_rate(vc4_hdmi->pixel_bvb_clock, 0);
@@ -63,7 +63,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  	vc4->hvs = NULL;
 --- a/drivers/gpu/drm/vc4/vc4_v3d.c
 +++ b/drivers/gpu/drm/vc4/vc4_v3d.c
-@@ -376,6 +376,8 @@ static int vc4_v3d_runtime_suspend(struc
+@@ -377,6 +377,8 @@ static int vc4_v3d_runtime_suspend(struc
  
  	vc4_irq_disable(&vc4->base);
  

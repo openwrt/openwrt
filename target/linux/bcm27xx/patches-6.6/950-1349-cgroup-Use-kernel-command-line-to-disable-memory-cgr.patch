@@ -148,7 +148,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  
 --- a/kernel/cgroup/cgroup.c
 +++ b/kernel/cgroup/cgroup.c
-@@ -6083,9 +6083,6 @@ int __init cgroup_init_early(void)
+@@ -6091,9 +6091,6 @@ int __init cgroup_init_early(void)
  	return 0;
  }
  
@@ -158,7 +158,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  /**
   * cgroup_init - cgroup initialization
   *
-@@ -6119,12 +6116,6 @@ int __init cgroup_init(void)
+@@ -6127,12 +6124,6 @@ int __init cgroup_init(void)
  
  	cgroup_unlock();
  
@@ -171,7 +171,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	for_each_subsys(ss, ssid) {
  		if (ss->early_init) {
  			struct cgroup_subsys_state *css =
-@@ -6795,10 +6786,6 @@ static int __init cgroup_disable(char *s
+@@ -6801,10 +6792,6 @@ static int __init cgroup_disable(char *s
  			    strcmp(token, ss->legacy_name))
  				continue;
  
@@ -182,7 +182,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  			static_branch_disable(cgroup_subsys_enabled_key[i]);
  			pr_info("Disabling %s control group subsystem\n",
  				ss->name);
-@@ -6832,7 +6819,7 @@ static int __init cgroup_enable(char *st
+@@ -6838,7 +6825,7 @@ static int __init cgroup_enable(char *st
  			    strcmp(token, ss->legacy_name))
  				continue;
  

@@ -55,7 +55,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		while (buf_len > 0 && tx_limit > 0 && rx_limit > 0) {
  			u32 cmd = 0;
  
-@@ -789,7 +801,7 @@ static const struct i2c_algorithm i2c_dw
+@@ -797,7 +809,7 @@ static const struct i2c_algorithm i2c_dw
  };
  
  static const struct i2c_adapter_quirks i2c_dw_quirks = {
@@ -64,7 +64,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  };
  
  static u32 i2c_dw_read_clear_intrbits(struct dw_i2c_dev *dev)
-@@ -922,7 +934,8 @@ void i2c_dw_configure_master(struct dw_i
+@@ -930,7 +942,8 @@ void i2c_dw_configure_master(struct dw_i
  {
  	struct i2c_timings *t = &dev->timings;
  

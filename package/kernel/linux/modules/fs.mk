@@ -561,23 +561,6 @@ endef
 $(eval $(call KernelPackage,fs-nfsd))
 
 
-define KernelPackage/fs-ntfs
-  SUBMENU:=$(FS_MENU)
-  TITLE:=NTFS filesystem read-only (old driver) support
-  KCONFIG:=CONFIG_NTFS_FS
-  FILES:=$(LINUX_DIR)/fs/ntfs/ntfs.ko
-  AUTOLOAD:=$(call AutoLoad,30,ntfs)
-  $(call AddDepends/nls)
-endef
-
-define KernelPackage/fs-ntfs/description
- Kernel module for limited NTFS filesystem support. Support for writing
- is extremely limited and disabled as a result.
-endef
-
-$(eval $(call KernelPackage,fs-ntfs))
-
-
 define KernelPackage/fs-ntfs3
   SUBMENU:=$(FS_MENU)
   TITLE:=NTFS filesystem read & write (new driver) support
