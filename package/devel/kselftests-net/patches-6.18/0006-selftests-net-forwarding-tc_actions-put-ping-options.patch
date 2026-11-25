@@ -1,0 +1,28 @@
+From 120e20299612387a88d2c3932f98436004b7b93b Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 07:19:33 +0100
+Subject: [PATCH] selftests: net: forwarding: tc_actions: put ping
+ options before the host
+
+mirred_egress_to_ingress_test runs "ping 192.0.2.2 -I$h1 -c1 -w1 -q".
+Only glibc's getopt() permutes options behind operands; with musl (and
+any POSIX getopt) iputils ping takes "-w1" as a second host and fails
+("ping: -w1: Name does not resolve"), so no second packet is sent and
+the test reports "didn't mirror second packet". Put the options first.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ net/forwarding/tc_actions.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/forwarding/tc_actions.sh
++++ b/net/forwarding/tc_actions.sh
+@@ -186,7 +186,7 @@ mirred_egress_to_ingress_test()
+ 	tc_check_packets "dev $swp1 ingress" 112 1
+ 	check_err $? "didn't receive reply to first packet"
+ 
+-	ping 192.0.2.2 -I$h1 -c1 -w1 -q 1>/dev/null 2>&1
++	ping -I$h1 -c1 -w1 -q 192.0.2.2 1>/dev/null 2>&1
+ 
+ 	tc_check_packets "dev $h1 egress" 100 2
+ 	check_err $? "didn't mirror second packet"

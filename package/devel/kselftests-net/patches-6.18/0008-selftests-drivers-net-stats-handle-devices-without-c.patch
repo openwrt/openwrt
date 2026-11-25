@@ -1,0 +1,27 @@
+From b8e2de84e293a3fe715466a8f80a9266ac4a96ba Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 10:41:01 +0100
+Subject: [PATCH] selftests: drivers: net: stats: handle devices without
+ combined channels
+
+ethtool netlink leaves out counts that are zero, so on a device with
+only separate rx/tx channels (stmmac) the reply has no combined-count
+and procfs_downup_hammer fails with KeyError. Treat a missing count as
+zero, as the test means to.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ drivers/net/stats.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/stats.py
++++ b/drivers/net/stats.py
+@@ -270,7 +270,7 @@ def procfs_downup_hammer(cfg) -> None:
+         if e.error == errno.EOPNOTSUPP:
+             raise KsftSkipEx("channels not supported by the device") from e
+         raise
+-    if channels['combined-count'] == 0:
++    if channels.get('combined-count', 0) == 0:
+         rx_type = 'rx'
+     else:
+         rx_type = 'combined'

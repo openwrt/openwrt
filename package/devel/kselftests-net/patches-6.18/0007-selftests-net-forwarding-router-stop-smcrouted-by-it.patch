@@ -1,0 +1,26 @@
+From 21a7aa219d5e97970e89f6ffc34efc9323025671 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 07:20:37 +0100
+Subject: [PATCH] selftests: net: forwarding: router: stop smcrouted by
+ its PID file
+
+kill_mcd() uses pkill, which busybox only has with CONFIG_PKILL (not in
+OpenWrt's default build). There the daemon outlives the test. smcrouted
+is started with a PID file in $SMCROUTEDIR already; kill that PID.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ net/forwarding/router.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/forwarding/router.sh
++++ b/net/forwarding/router.sh
+@@ -137,7 +137,7 @@ start_mcd()
+ 
+ kill_mcd()
+ {
+-	pkill $MCD
++	kill $(cat $SMCROUTEDIR/$table_name.pid)
+ 	rm -rf $SMCROUTEDIR
+ }
+ 

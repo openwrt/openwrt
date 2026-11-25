@@ -1,0 +1,28 @@
+From 15480f5e7506e0347f50e96b71e7064361a3bbe9 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 05:31:55 +0100
+Subject: [PATCH] selftests: drivers: net: irq: skip devices without NAPI
+ instances
+
+check_irqs_reported fails on devices whose netdev has no NAPI instance
+at all, such as the MediaTek SoC Ethernet, whose NAPIs belong to a dummy
+netdev shared by its MACs. There is nothing to check there; skip, as
+the other cases of the test already do ("Device has no NAPI with IRQ
+attribute").
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ drivers/net/hw/irq.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/hw/irq.py
++++ b/drivers/net/hw/irq.py
+@@ -24,6 +24,8 @@ def write_affinity(irq, what) -> str:
+ def check_irqs_reported(cfg) -> None:
+     """ Check that device reports IRQs for NAPI instances """
+     napis = cfg.netnl.napi_get({"ifindex": cfg.ifindex}, dump=True)
++    if not napis:
++        raise KsftSkipEx("Device reports no NAPI instances")
+     irqs = sum(['irq' in x for x in napis])
+ 
+     ksft_ge(irqs, 1)
