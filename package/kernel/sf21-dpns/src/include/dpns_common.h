@@ -605,6 +605,9 @@ struct dpns_nat_priv {
 	DECLARE_BITMAP(natid_bitmap, NPU_HNAT_VISIT_SIZE - NPU_HNAT_INAPT_MAXID);
 	DECLARE_BITMAP(natid_odd_entries, NPU_HNAT_VISIT_SIZE - NPU_HNAT_INAPT_MAXID);
 	DECLARE_BITMAP(stats_cache, NPU_HNAT_SIZE);
+	/* hardware flow counters, see dpns_nat_mib_get() */
+	DECLARE_BITMAP(mib_bitmap, DPNS_NAT_MIB_NUM);
+	spinlock_t mib_lock;
 	struct delayed_work visit_dwork;
 	u32 elkp_size;
 	int refcnt;

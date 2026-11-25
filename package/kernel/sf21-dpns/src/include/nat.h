@@ -15,6 +15,8 @@
 
 #define NPU_HNAT_VISIT_SIZE 32768
 #define NPU_HNAT_INAPT_MAXID 8192
+/* flow counter pairs in the NPU MIB RAM (stat_index is 9 bits wide) */
+#define DPNS_NAT_MIB_NUM	512
 
 #define NPU_NAT_MPP_CFG			0x0
 #define NAT_MPP_CFG_BYPASS		BIT(24)
@@ -270,6 +272,9 @@ struct nat_ipv4_data {
 		u16 l4_type:1;
 		u16 soport_id:5;
 		u16 doport_id:5;
+		/* hardware flow counter pair (see dpns_nat_mib_get()) */
+		u16 stat_en:1;
+		u16 stat_index:9;
 } __packed;
 
 typedef union {
@@ -349,6 +354,9 @@ struct nat_ipv6_data {
 		u16 pubmac_index:11;
 		u16 soport_id:5;
 		u16 doport_id:5;
+		/* hardware flow counter pair (see dpns_nat_mib_get()) */
+		u16 stat_en:1;
+		u16 stat_index:9;
 } __packed;
 
 typedef union {
@@ -454,6 +462,8 @@ struct dpns_nat_entry {
 	bool v6_flag : 1;
 	/* flowtable block (struct dpns_nat_block) the entry was offloaded from */
 	void *owner;
+	/* hardware flow counter pair, shared with the other direction */
+	struct dpns_nat_mib *mib;
 	struct list_head flush_node;
 };
 

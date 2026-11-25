@@ -190,6 +190,8 @@ int dpns_nat_new_ilkp4_entry(struct dpns_nat_priv *priv, struct nat_ipv4_data *d
 	tb.pubmac_index = data->pubmac_index;
 	tb.soport_id = data->soport_id;
 	tb.doport_id = data->doport_id;
+	tb.stat_en = data->stat_en;
+	tb.stat_index = data->stat_index;
 
 	sf_writeq(priv, SE_NAT_TB_WRDATA0, tb.data[0]);
 	sf_writeq(priv, SE_NAT_TB_WRDATA0 + 8, tb.data[1]);
@@ -249,6 +251,10 @@ void dpns_nat_update_ilkp4_entry(struct dpns_nat_priv *priv, int nat_id, struct 
 		tb.soport_id = data->soport_id;
 		tb.pubmac_index = data->pubmac_index;
 		tb.srtmac_index = data->srtmac_index;
+	}
+	if (data->stat_en) {
+		tb.stat_en = 1;
+		tb.stat_index = data->stat_index;
 	}
 
 	sf_writeq(priv, SE_NAT_TB_WRDATA0, tb.data[0]);
@@ -547,7 +553,8 @@ static int dpns_nat_add_ipv4_ext(struct dpns_nat_priv *priv, struct dpns_nat_ent
 	tb.l4_type = data->l4_type;
 	tb.primac_index = data->primac_index;
 	tb.pubmac_index = data->pubmac_index;
-	tb.stat_en = 1;
+	tb.stat_en = data->stat_en;
+	tb.stat_index = data->stat_index;
 
 	if (!is_dnat) {
 		tb.rtmac_index = data->srtmac_index;
@@ -1018,6 +1025,8 @@ int dpns_nat_new_ilkp6_entry(struct dpns_nat_priv *priv, struct nat_ipv6_data *d
 	tb6.pubmac_index = data->pubmac_index;
 	tb6.soport_id = data->soport_id;
 	tb6.doport_id = data->doport_id;
+	tb6.stat_en = data->stat_en;
+	tb6.stat_index = data->stat_index;
 
 	for (j = 0 ; j < ARRAY_SIZE(tb6.data) ; j++)
 		sf_writeq(priv, SE_NAT_TB_WRDATA(2*j), tb6.data[j]);
@@ -1064,6 +1073,10 @@ void dpns_nat_update_ilkp6_entry(struct dpns_nat_priv *priv, int nat_id, struct 
 		tb.soport_id = data->soport_id;
 		tb.pubmac_index = data->pubmac_index;
 		tb.srtmac_index = data->srtmac_index;
+	}
+	if (data->stat_en) {
+		tb.stat_en = 1;
+		tb.stat_index = data->stat_index;
 	}
 
 	for (j = 0 ; j < ARRAY_SIZE(tb.data) ; j++)
@@ -1247,6 +1260,8 @@ static int dpns_nat_add_ipv6_ext(struct dpns_nat_priv *priv, struct dpns_nat_ent
 	tb6.l4_type = data->l4_type;
 	tb6.primac_index = data->primac_index;
 	tb6.pubmac_index = data->pubmac_index;
+	tb6.stat_en = data->stat_en;
+	tb6.stat_index = data->stat_index;
 
 	entry->index = index;
 	memcpy(&t[index].v6, &tb6, sizeof(tb6));

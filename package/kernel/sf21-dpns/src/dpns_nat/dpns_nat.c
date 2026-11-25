@@ -2,6 +2,8 @@
 #include <linux/inetdevice.h>
 #include <linux/platform_device.h>
 #include <linux/rhashtable.h>
+#include <linux/refcount.h>
+#include <linux/slab.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
 #include <net/addrconf.h>
@@ -10,6 +12,7 @@
 #include <linux/inet.h>
 #include <linux/module.h>
 #include <net/netfilter/nf_conntrack.h>
+#include <net/netfilter/nf_conntrack_acct.h>
 #include <linux/netfilter_bridge.h>
 
 #include <net/genetlink.h>
@@ -741,6 +744,79 @@ static int dpns_nat_tuple_set(bool is_lf, bool is_dnat, bool is_ipv6,
 	return 0;
 }
 
+/*
+ * Hardware flow counters. A NAPT entry can be tied to one of the counter pairs in
+ * the NPU MIB RAM (stat_en/stat_index). With NAT_CONFIG5 MIB mode 1, counter
+ * index * 2 counts the packets of the DNAT direction and index * 2 + 1 those of the
+ * SNAT direction. Reading a packet counter clears it and latches the byte count
+ * of the same counter (Ethernet frame without FCS). Both directions of a flow
+ * share one NAPT entry, so they share one counter pair.
+ */
+struct dpns_nat_mib {
+	refcount_t ref;
+	u16 index;
+};
+
+/* caller holds mib_lock */
+static void dpns_nat_mib_read(struct dpns_nat_priv *priv, unsigned int counter,
+			      u64 *pkts, u64 *bytes)
+{
+	*pkts = sf_readl(priv, NPU_MIB_ADDR + counter * 4);
+	*bytes = sf_readl(priv, NPU_MIB_BYTES_LO) |
+		 (u64)sf_readl(priv, NPU_MIB_BYTES_HI) << 32;
+}
+
+/* Take the counter pair of the other direction of @flow, or a free one. */
+static void dpns_nat_mib_get(struct dpns_nat_priv *priv, struct dpns_nat_entry *entry,
+			     struct flow_offload *flow, bool dir)
+{
+	unsigned long other_cookie = (unsigned long)&flow->tuplehash[!dir].tuple;
+	struct dpns_nat_mib *mib = NULL, *new;
+	struct dpns_nat_entry *other;
+	unsigned int index;
+	u64 pkts, bytes;
+
+	new = kzalloc(sizeof(*new), GFP_KERNEL);
+
+	rcu_read_lock();
+	spin_lock_bh(&priv->mib_lock);
+	other = rhashtable_lookup(&priv->flow_table, &other_cookie, dpns_nat_ht_params);
+	if (other && other->mib && refcount_inc_not_zero(&other->mib->ref)) {
+		mib = other->mib;
+	} else if (new) {
+		index = find_first_zero_bit(priv->mib_bitmap, DPNS_NAT_MIB_NUM);
+		if (index < DPNS_NAT_MIB_NUM) {
+			set_bit(index, priv->mib_bitmap);
+			/* drop what the previous user of the pair left */
+			dpns_nat_mib_read(priv, index * 2, &pkts, &bytes);
+			dpns_nat_mib_read(priv, index * 2 + 1, &pkts, &bytes);
+			refcount_set(&new->ref, 1);
+			new->index = index;
+			mib = new;
+			new = NULL;
+		}
+	}
+	entry->mib = mib;
+	spin_unlock_bh(&priv->mib_lock);
+	rcu_read_unlock();
+	kfree(new);
+}
+
+static void dpns_nat_mib_put(struct dpns_nat_priv *priv, struct dpns_nat_entry *entry)
+{
+	struct dpns_nat_mib *mib;
+
+	spin_lock_bh(&priv->mib_lock);
+	mib = entry->mib;
+	entry->mib = NULL;
+	if (mib && refcount_dec_and_test(&mib->ref))
+		clear_bit(mib->index, priv->mib_bitmap);
+	else
+		mib = NULL;
+	spin_unlock_bh(&priv->mib_lock);
+	kfree(mib);
+}
+
 static int dpns_nat_add_ipv4(struct dpns_nat_priv *priv, struct flow_cls_offload *f,
 			     bool is_dnat, struct flow_offload *flow,
 			     bool is_lf, bool is_lf_reply)
@@ -1079,8 +1155,10 @@ static int dpns_nat_add_ipv4(struct dpns_nat_priv *priv, struct flow_cls_offload
 		tb.crc16_poly[i] = crc16_custom((u8 *)&tuple, sizeof(tuple), i);
 
 	entry = kmem_cache_zalloc(priv->swnapt_cache, GFP_KERNEL);
-	if (!entry)
-		return -ENOMEM;
+	if (!entry) {
+		ret = -ENOMEM;
+		goto err_free;
+	}
 
 	entry->cookie = f->cookie;
 	if (!is_dnat)
@@ -1099,6 +1177,15 @@ static int dpns_nat_add_ipv4(struct dpns_nat_priv *priv, struct flow_cls_offload
 	if (is_dnat)
 		entry->is_dnat = true;
 
+	/* routed (LF) flows are not counted yet */
+	if (!is_lf) {
+		dpns_nat_mib_get(priv, entry, flow, ((struct flow_offload_tuple *)f->cookie)->dir);
+		if (entry->mib) {
+			tb.stat_en = 1;
+			tb.stat_index = entry->mib->index;
+		}
+	}
+
 	mutex_lock(&priv->tbl_lock);
 	ret = dpns_nat_add_napt4(priv, entry, is_lf, is_dnat, &tb);
 	mutex_unlock(&priv->tbl_lock);
@@ -1107,6 +1194,7 @@ static int dpns_nat_add_ipv4(struct dpns_nat_priv *priv, struct flow_cls_offload
 
 	return 0;
 err_rm_hash:
+	dpns_nat_mib_put(priv, entry);
 	rhashtable_remove_fast(&priv->flow_table, &entry->node,
 				dpns_nat_ht_params);
 err_kfree:
@@ -1379,8 +1467,10 @@ static int dpns_nat_add_ipv6(struct dpns_nat_priv *priv, struct flow_cls_offload
 		tb6.crc16_poly[i] = crc16_custom((u8 *)&tuple, sizeof(tuple), i);
 
 	entry = kmem_cache_zalloc(priv->swnapt_cache, GFP_KERNEL);
-	if (!entry)
-		return -ENOMEM;
+	if (!entry) {
+		ret = -ENOMEM;
+		goto err_free;
+	}
 
 	entry->v6_flag = true;
 	entry->cookie = f->cookie;
@@ -1400,6 +1490,15 @@ static int dpns_nat_add_ipv6(struct dpns_nat_priv *priv, struct flow_cls_offload
 	if (is_dnat)
 		entry->is_dnat = true;
 
+	/* routed (LF) flows are not counted yet */
+	if (!is_lf) {
+		dpns_nat_mib_get(priv, entry, flow, ((struct flow_offload_tuple *)f->cookie)->dir);
+		if (entry->mib) {
+			tb6.stat_en = 1;
+			tb6.stat_index = entry->mib->index;
+		}
+	}
+
 	/* first, find a vacant slot in the internal lookup table, if there is
 	 * no more space, go to the external one.
 	 */
@@ -1411,6 +1510,7 @@ static int dpns_nat_add_ipv6(struct dpns_nat_priv *priv, struct flow_cls_offload
 
 	return 0;
 err_rm_hash:
+	dpns_nat_mib_put(priv, entry);
 	rhashtable_remove_fast(&priv->flow_table, &entry->node,
 			       dpns_nat_ht_params);
 err_kfree:
@@ -1549,6 +1649,7 @@ static int dpns_nat_del_entry(struct dpns_nat_priv *priv, struct dpns_nat_entry 
 			}
 		}
 	}
+	dpns_nat_mib_put(priv, entry);
 	rhashtable_remove_fast(&priv->flow_table, &entry->node,
 			dpns_nat_ht_params);
 	kfree_rcu(entry, rcu);
@@ -1556,13 +1657,44 @@ static int dpns_nat_del_entry(struct dpns_nat_priv *priv, struct dpns_nat_entry 
 	return 0;
 }
 
+/*
+ * Read and clear the hardware counter of one direction of an entry. Returns the
+ * packets, @bytes gets the IP bytes as conntrack counts them.
+ */
+static u64 dpns_nat_mib_collect(struct dpns_nat_priv *priv, struct dpns_nat_entry *entry,
+				u64 *bytes)
+{
+	u64 pkts = 0, frame_bytes = 0;
+
+	spin_lock_bh(&priv->mib_lock);
+	if (entry->mib)
+		dpns_nat_mib_read(priv, entry->mib->index * 2 + !entry->is_dnat,
+				  &pkts, &frame_bytes);
+	spin_unlock_bh(&priv->mib_lock);
+
+	*bytes = frame_bytes > pkts * ETH_HLEN ? frame_bytes - pkts * ETH_HLEN : 0;
+	return pkts;
+}
+
 static int dpns_nat_del(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
 {
+	const struct flow_offload_tuple *tuple = (void *)f->cookie;
 	struct dpns_nat_entry *entry;
+	struct flow_offload *flow;
+	u64 pkts, bytes;
 
 	entry = rhashtable_lookup_fast(&priv->flow_table, &f->cookie, dpns_nat_ht_params);
 	if (!entry)
 		return -ENOENT;
+
+	/*
+	 * The flowtable reads the counters only every few seconds and not when a
+	 * flow is removed, so account what the NPU counted since the last read.
+	 */
+	pkts = dpns_nat_mib_collect(priv, entry, &bytes);
+	flow = dpns_nat_cookie_to_flow(f->cookie);
+	if (pkts && flow->ct)
+		nf_ct_acct_add(flow->ct, tuple->dir, pkts, bytes);
 
 	return dpns_nat_del_entry(priv, entry);
 }
@@ -1603,6 +1735,7 @@ static void dpns_nat_visit_work(struct work_struct *work)
 static int dpns_nat_stats(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
 {
 	struct dpns_nat_entry *entry;
+	u64 pkts, bytes;
 
 	rcu_read_lock();
 	entry = rhashtable_lookup(&priv->flow_table, &f->cookie,
@@ -1618,7 +1751,13 @@ static int dpns_nat_stats(struct dpns_nat_priv *priv, struct flow_cls_offload *f
 		schedule_delayed_work(&priv->visit_dwork, 1 * HZ);
 	}
 
+	pkts = dpns_nat_mib_collect(priv, entry, &bytes);
+
 	rcu_read_unlock();
+
+	if (pkts)
+		flow_stats_update(&f->stats, bytes, pkts, 0, get_jiffies_64(),
+				  FLOW_ACTION_HW_STATS_DELAYED);
 
 	return 0;
 }
@@ -2248,9 +2387,10 @@ int dpns_nat_probe(struct platform_device *pdev)
 			FIELD_PREP(NAT_HASH_POLY_SEL1,1) | FIELD_PREP(NAT_HASH_POLY_SEL0,0));
 
 	sf_update(priv, SE_NAT_CONFIG5, NAT_SPL_CMPT_LEN | NAT_CONFIG5_MIB_MODE | NAT_CONFIG5_SPL_CNT_MODE | NAT_CONFIG5_SPL_SOURCE,
-			FIELD_PREP(NAT_SPL_CMPT_LEN, 24) | FIELD_PREP(NAT_CONFIG5_MIB_MODE, 15) | FIELD_PREP(NAT_CONFIG5_SPL_CNT_MODE, SPL_BYTE) |
+			FIELD_PREP(NAT_SPL_CMPT_LEN, 24) | FIELD_PREP(NAT_CONFIG5_MIB_MODE, 1) | FIELD_PREP(NAT_CONFIG5_SPL_CNT_MODE, SPL_BYTE) |
 			FIELD_PREP(NAT_CONFIG5_SPL_SOURCE, UNIFORM_SNAT_DNAT));
 	mutex_init(&priv->tbl_lock);
+	spin_lock_init(&priv->mib_lock);
 
 	/* after the default (NAT66) mode setup above, which clears the LF bits */
 	dpns_nat_lf_init(priv);
