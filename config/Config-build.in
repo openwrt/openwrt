@@ -103,9 +103,6 @@ menu "Global build settings"
 		  you can use this config option to enable it
 
 
-	config DISPLAY_SUPPORT
-		bool "Show packages that require graphics support (local or remote)"
-
 	config BUILD_PATENTED
 		bool "Compile with support for patented functionality"
 		help
@@ -467,7 +464,7 @@ menu "Global build settings"
 	config USE_SECCOMP
 		bool "Enable SECCOMP"
 		select KERNEL_SECCOMP
-		depends on (aarch64 || arm || armeb || mips || mipsel || mips64 || mips64el || i386 || loongarch64 || powerpc || x86_64)
+		depends on (aarch64 || arm || armeb || mips || mipsel || mips64 || mips64el || i386 || loongarch64 || powerpc || powerpc64 || riscv64 || x86_64)
 		depends on !TARGET_uml
 		default y
 		help

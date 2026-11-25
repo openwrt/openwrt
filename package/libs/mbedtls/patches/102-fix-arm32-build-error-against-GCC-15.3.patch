@@ -1,6 +1,6 @@
 From: Shiji Yang <yangshiji66@outlook.com>
 Date: Sat, 13 Jun 2026 22:10:28 +0800
-Subject: [PATCH] fix arm32 build errors against GCC 15.3
+Subject: [PATCH] fix arm32 and x86 build errors against GCC 15.3
 
 In file included from /home/db/owrt/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/mbedtls-3.6.6/library/aes.c:14:
 In function 'mbedtls_xor_no_simd',
@@ -26,7 +26,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
      }
 -#if defined(__IAR_SYSTEMS_ICC__)
 +#if defined(__IAR_SYSTEMS_ICC__) || \
-+    (defined(MBEDTLS_ARCH_IS_ARM32) && defined(MBEDTLS_COMPILER_IS_GCC) && MBEDTLS_GCC_VERSION >= 150300)
++    ((defined(MBEDTLS_ARCH_IS_ARM32) || defined(MBEDTLS_ARCH_IS_X86)) && defined(MBEDTLS_COMPILER_IS_GCC) && MBEDTLS_GCC_VERSION >= 150300)
      if (n % 4 == 0) {
          return;
      }

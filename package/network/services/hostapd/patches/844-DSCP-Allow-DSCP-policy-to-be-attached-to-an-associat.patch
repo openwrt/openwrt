@@ -1,0 +1,204 @@
+From: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+Date: Tue, 12 May 2026 10:54:52 +0530
+Subject: [PATCH] DSCP: Allow DSCP policy to be attached to an associated STA
+
+Introduce functionality to add a DSCP policy to an associated STA
+via the hosyapd control interface. This includes:
+
+Add a helper function add_dscp_policy_to_sta() that adds or updates a
+DSCP policy in the STA's policy list.
+
+Memory management for dynamically allocated policy entries.
+
+Integrate the DSCP_POLICY control command to apply the parsed policy to
+the target STA.
+
+Backport of hostap commit 1d69431a51c7.
+
+Signed-off-by: Aishwarya R <aishwarya.r@oss.qualcomm.com>
+---
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -816,6 +816,16 @@ static int hostapd_ctrl_iface_set_dscp_p
+ 		return -1;
+ 	}
+ 
++	if (add_dscp_policy_to_sta(sta, &policy) < 0) {
++		wpa_printf(MSG_INFO, "DSCP: Failed to add policy for STA "
++			   MACSTR, MAC2STR(sta->addr));
++		free_dscp_policy(&policy);
++		return -1;
++	}
++
++	wpa_printf(MSG_DEBUG, "DSCP: Added policy ID %u to STA " MACSTR,
++		   policy.policy_id, MAC2STR(addr));
++
+ 	free_dscp_policy(&policy);
+ 	return 0;
+ }
+--- a/src/ap/robust_av.c
++++ b/src/ap/robust_av.c
+@@ -382,3 +382,104 @@ int build_frame_classifier(struct hostap
+ 		return 0;
+ 	}
+ }
++
++
++int add_dscp_policy_to_sta(struct sta_info *sta,
++			   const struct hostapd_dscp_policy *new_policy)
++{
++	struct hostapd_dscp_policy **updated_policy_list;
++	struct hostapd_dscp_policy *copy;
++	unsigned int i;
++
++	/* Check for existing policy_id and update */
++	for (i = 0; i < sta->num_dscp_policies; i++) {
++		struct hostapd_dscp_policy *existing = sta->policies[i];
++		char *new_domain = NULL;
++		u8 *new_fc = NULL;
++
++		if (!existing || existing->policy_id != new_policy->policy_id)
++			continue;
++
++		wpa_printf(MSG_DEBUG, "DSCP: Updating policy ID %u for STA "
++			   MACSTR, new_policy->policy_id, MAC2STR(sta->addr));
++		if (new_policy->domain_name) {
++			new_domain = os_strdup(new_policy->domain_name);
++			if (!new_domain)
++				return -ENOMEM;
++		}
++
++		if (new_policy->frame_classifier &&
++		    new_policy->frame_classifier_len > 0) {
++			new_fc = os_memdup(new_policy->frame_classifier,
++					   new_policy->frame_classifier_len);
++			if (!new_fc) {
++				os_free(new_domain);
++				return -ENOMEM;
++			}
++		}
++		free_dscp_policy(existing);
++		os_memcpy(existing, new_policy, sizeof(*existing));
++		existing->domain_name = new_domain;
++		existing->frame_classifier = new_fc;
++		return 0;
++	}
++
++	copy = os_memdup(new_policy, sizeof(*copy));
++	if (!copy)
++		return -ENOMEM;
++
++	copy->domain_name = NULL;
++	copy->frame_classifier = NULL;
++
++	if (new_policy->domain_name) {
++		copy->domain_name = os_strdup(new_policy->domain_name);
++		if (!copy->domain_name) {
++			os_free(copy);
++			return -ENOMEM;
++		}
++	}
++
++	if (new_policy->frame_classifier &&
++	    new_policy->frame_classifier_len > 0) {
++		copy->frame_classifier =
++			os_memdup(new_policy->frame_classifier,
++				  new_policy->frame_classifier_len);
++		if (!copy->frame_classifier) {
++			free_dscp_policy(copy);
++			os_free(copy);
++			return -ENOMEM;
++		}
++	}
++
++	updated_policy_list = os_realloc_array(sta->policies,
++					       sta->num_dscp_policies + 1,
++					       sizeof(*sta->policies));
++	if (!updated_policy_list) {
++		free_dscp_policy(copy);
++		os_free(copy);
++		return -1;
++	}
++
++	sta->policies = updated_policy_list;
++	sta->policies[sta->num_dscp_policies++] = copy;
++
++	return 0;
++}
++
++
++void free_dscp_policies(struct sta_info *sta)
++{
++	unsigned int i;
++
++	if (!sta || !sta->policies)
++		return;
++
++	for (i = 0; i < sta->num_dscp_policies; i++) {
++		free_dscp_policy(sta->policies[i]);
++		os_free(sta->policies[i]);
++	}
++
++	os_free(sta->policies);
++	sta->policies = NULL;
++	sta->num_dscp_policies = 0;
++}
+--- a/src/ap/robust_av.h
++++ b/src/ap/robust_av.h
+@@ -89,6 +89,7 @@ struct hostapd_dscp_policy {
+ void hostapd_update_dscp_policy_capability(struct hostapd_data *hapd,
+ 					   struct sta_info *sta,
+ 					   const u8 *pos, size_t len);
++void free_dscp_policies(struct sta_info *sta);
+ 
+ #else /* CONFIG_ROBUST_AV */
+ 
+@@ -99,6 +100,10 @@ hostapd_update_dscp_policy_capability(st
+ {
+ }
+ 
++static inline void free_dscp_policies(struct sta_info *sta)
++{
++}
++
+ #endif /* CONFIG_ROBUST_AV */
+ 
+ int validate_dscp_policy(struct hostapd_dscp_policy *policy);
+@@ -107,5 +112,7 @@ int parse_dscp_policy_string(struct sta_
+ 			     struct hostapd_dscp_policy *policy,
+ 			     const char *params);
+ int build_frame_classifier(struct hostapd_dscp_policy *policy);
++int add_dscp_policy_to_sta(struct sta_info *sta,
++			   const struct hostapd_dscp_policy *new_policy);
+ 
+ #endif /* ROBUST_AV_H */
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -39,6 +39,7 @@
+ #include "sta_info.h"
+ #include "vlan.h"
+ #include "wps_hostapd.h"
++#include "robust_av.h"
+ 
+ static void ap_sta_remove_in_other_bss(struct hostapd_data *hapd,
+ 				       struct sta_info *sta);
+@@ -672,6 +673,8 @@ void ap_free_sta(struct hostapd_data *ha
+ 	ml_deinit_link_reconf_req(&sta->reconf_req);
+ #endif /* CONFIG_IEEE80211BE */
+ 
++	free_dscp_policies(sta);
++
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	os_free(sta->sae_postponed_commit);
+ 	forced_memzero(sta->last_tk, WPA_TK_MAX_LEN);
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -377,6 +377,8 @@ struct sta_info {
+ 	u8 bss_color_in_use;
+ #endif /* CONFIG_IEEE80211AX */
+ #ifdef CONFIG_ROBUST_AV
++	struct hostapd_dscp_policy **policies;
++	unsigned int num_dscp_policies;
+ 	bool dscp_reset;
+ #endif /* CONFIG_ROBUST_AV */
+ };

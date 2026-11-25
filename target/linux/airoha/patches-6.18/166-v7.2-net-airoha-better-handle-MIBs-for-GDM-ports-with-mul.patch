@@ -366,7 +366,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int airoha_qdma_set_chan_tx_sched(struct net_device *netdev,
-@@ -3208,6 +3233,7 @@ static int airoha_alloc_gdm_device(struc
+@@ -3207,6 +3232,7 @@ static int airoha_alloc_gdm_device(struc
  
  	netdev->dev.of_node = of_node_get(np);
  	dev = netdev_priv(netdev);
@@ -374,7 +374,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	dev->port = port;
  	dev->eth = eth;
  	dev->nbq = nbq;
-@@ -3247,9 +3273,8 @@ static int airoha_alloc_gdm_port(struct
+@@ -3246,9 +3272,8 @@ static int airoha_alloc_gdm_port(struct
  	if (!port)
  		return -ENOMEM;
  

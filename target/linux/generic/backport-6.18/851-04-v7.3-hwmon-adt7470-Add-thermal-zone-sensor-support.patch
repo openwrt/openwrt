@@ -1,0 +1,25 @@
+From f18a46518561205cd6ff775a488a0c9d9d5edbfb Mon Sep 17 00:00:00 2001
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Wed, 5 Aug 2026 10:15:20 -0300
+Subject: [PATCH 4/4] hwmon: (adt7470) Add thermal zone sensor support
+
+Register the ADT7470 temperature channels as thermal zone sensors.
+
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Link: https://lore.kernel.org/r/20260805-adt7470_thermalzone-v6-4-5605a5f95467@gmail.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/hwmon/adt7470.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/hwmon/adt7470.c
++++ b/drivers/hwmon/adt7470.c
+@@ -1396,6 +1396,8 @@ static const struct hwmon_ops adt7470_hw
+ };
+ 
+ static const struct hwmon_channel_info * const adt7470_info[] = {
++	HWMON_CHANNEL_INFO(chip,
++			   HWMON_C_REGISTER_TZ),
+ 	HWMON_CHANNEL_INFO(temp,
+ 			   HWMON_T_INPUT | HWMON_T_MIN | HWMON_T_MAX | HWMON_T_ALARM,
+ 			   HWMON_T_INPUT | HWMON_T_MIN | HWMON_T_MAX | HWMON_T_ALARM,

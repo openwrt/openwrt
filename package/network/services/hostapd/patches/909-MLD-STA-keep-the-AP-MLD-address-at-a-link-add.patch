@@ -1,0 +1,35 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 1 Nov 2026 20:53:22 +0100
+Subject: [PATCH] MLD STA: keep the AP MLD address at a link add
+
+With the SME in user space, drv->bssid holds the AP MLD address of an
+association. nl80211_get_assoc_bssid(), which reads the BSSIDs of the
+links after a Link Reconfiguration adds a link, replaced it with the
+BSSID of the association link. The next scan result that marks another
+link as associated then fails the check in nl80211_check_bss_status(),
+and clear_state_mismatch() deauthenticates from the AP MLD.
+
+Update only the BSSIDs of the links where the station is an MLO
+association.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -1998,14 +1998,14 @@ try_again:
+ 		}
+ 	}
+ 	if (ret == 0) {
+-		os_memcpy(drv->bssid, arg.assoc_bssid, ETH_ALEN);
+-
+ 		if (drv->sta_mlo_info.valid_links) {
+ 			int i;
+ 
+ 			for (i = 0; i < MAX_NUM_MLD_LINKS; i++)
+ 				os_memcpy(drv->sta_mlo_info.links[i].bssid,
+ 					  arg.bssid[i], ETH_ALEN);
++		} else {
++			os_memcpy(drv->bssid, arg.assoc_bssid, ETH_ALEN);
+ 		}
+ 
+ 		return drv->bssid;

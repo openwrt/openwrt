@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xdp-tools
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_VERSION:=1.6.3
 PKG_HASH:=78da363ff7dcf1a586f47800f16d644022bd33f3844864061a44616fce854fd8
 
@@ -150,6 +150,7 @@ CONFIGURE_VARS += \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	CLANG="$(CLANG)" \
+	ARCH_INCLUDES="$(patsubst %,-idirafter%,$(TOOLCHAIN_INC_DIRS))" \
 	BPFTOOL="$(STAGING_DIR_HOST)/usr/sbin/bpftool"
 
 ifneq ($(findstring s,$(OPENWRT_VERBOSE)),)

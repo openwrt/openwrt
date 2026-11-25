@@ -345,7 +345,7 @@
 
 &wifi {
 	status = "okay";
-	qcom,ath11k-calibration-variant = "8devices-Mango";
+	qcom,calibration-variant = "8devices-Mango";
 };
 
 &qusb_phy_1 {
@@ -353,6 +353,8 @@
 };
 
 &usb2 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 
@@ -365,5 +367,7 @@
 };
 
 &usb3 {
+	dr_mode = "host";
+
 	status = "okay";
 };

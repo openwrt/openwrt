@@ -58,7 +58,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +obj-$(CONFIG_NET_DSA_QCA8K_IPQ4019)	+= qca8k-ipq4019.o qca8k-common.o
 --- a/drivers/net/dsa/qca/qca8k-common.c
 +++ b/drivers/net/dsa/qca/qca8k-common.c
-@@ -412,7 +412,7 @@ static int qca8k_vlan_del(struct qca8k_p
+@@ -442,7 +442,7 @@ static int qca8k_vlan_del(struct qca8k_p
  
  	/* Check if we're the last member to be removed */
  	del = true;
@@ -67,7 +67,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		mask = QCA8K_VTU_FUNC0_EG_MODE_PORT_NOT(i);
  
  		if ((reg & mask) != mask) {
-@@ -616,7 +616,7 @@ static int qca8k_update_port_member(stru
+@@ -646,7 +646,7 @@ static int qca8k_update_port_member(stru
  	u32 port_mask = BIT(dp->cpu_dp->index);
  	int i, ret;
  

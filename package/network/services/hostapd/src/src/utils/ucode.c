@@ -79,7 +79,7 @@ uc_value_t *uc_wpa_printf(uc_vm_t *vm, size_t nargs)
 	int i, start = 0;
 
 	_sprintf = uc_stdlib_function("sprintf");
-	if (!sprintf)
+	if (!_sprintf)
 		return NULL;
 
 	if (ucv_type(level) == UC_INTEGER) {
@@ -172,9 +172,17 @@ uc_value_t *uc_wpa_freq_info(uc_vm_t *vm, size_t nargs)
 	ucv_object_add(ret, "hw_mode_str", ucv_string_new(modestr));
 	ucv_object_add(ret, "sec_channel", ucv_int64_new(sec_channel));
 	ucv_object_add(ret, "frequency", ucv_int64_new(freq_val));
+	ucv_object_add(ret, "oper_chwidth", ucv_int64_new(chanwidth));
 
 	if (!sec_channel)
 		return ret;
+
+	if (freq_val < 3000) {
+		ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(0));
+		ucv_object_add(ret, "center_freq1",
+			       ucv_int64_new(freq_val + sec_channel * 10));
+		return ret;
+	}
 
 	if (freq_val >= 5900)
 		center_ofs = 0;
@@ -186,10 +194,7 @@ uc_value_t *uc_wpa_freq_info(uc_vm_t *vm, size_t nargs)
 	tmp_channel &= ~((8 << width) - 1);
 	center_idx = tmp_channel + center_ofs + (4 << width) - 1;
 
-	if (freq_val < 3000)
-		ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(0));
-	else
-		ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(center_idx));
+	ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(center_idx));
 	center_idx = (center_idx - channel) * 5 + freq_val;
 	ucv_object_add(ret, "center_freq1", ucv_int64_new(center_idx));
 

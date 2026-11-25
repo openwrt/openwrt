@@ -37,9 +37,9 @@ Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
  		select COMMON_CLK
 +		select CPU_BIG_ENDIAN
  		select ECONET_EN751221_INTC
+ 		select HAVE_PCI
  		select IRQ_MIPS_CPU
- 		select SMP
-@@ -22,6 +23,23 @@ choice
+@@ -24,6 +25,25 @@ choice
  		  They are based on single core MIPS 34Kc processors. To boot
  		  this kernel, you will need a device tree such as
  		  MIPS_RAW_APPENDED_DTB=y, and a root filesystem.
@@ -48,9 +48,11 @@ Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
 +		bool "EN7528 family"
 +		select COMMON_CLK
 +		select CPU_LITTLE_ENDIAN
++		select HAVE_PCI
 +		select IRQ_MIPS_CPU
 +		select MIPS_CPU_SCACHE
 +		select MIPS_GIC
++		select PCI_DRIVERS_GENERIC
 +		select SMP
 +		select SMP_UP
 +		select SYS_SUPPORTS_HIGHMEM

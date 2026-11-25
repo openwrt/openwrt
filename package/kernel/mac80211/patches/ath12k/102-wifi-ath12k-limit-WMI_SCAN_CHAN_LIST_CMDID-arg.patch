@@ -130,19 +130,19 @@ Best regards,
 
 --- a/drivers/net/wireless/ath/ath12k/wmi.c
 +++ b/drivers/net/wireless/ath/ath12k/wmi.c
-@@ -2900,6 +2900,9 @@ int ath12k_wmi_send_scan_chan_list_cmd(s
+@@ -2872,6 +2872,9 @@ int ath12k_wmi_send_scan_chan_list_cmd(s
  		max_chan_limit = (wmi->wmi_ab->max_msg_len[ar->pdev_idx] - len) /
  			sizeof(*chan_info);
  
 +		if (max_chan_limit > WMI_MAX_NUM_CHAN_PER_WMI_CMD)
 +			max_chan_limit = WMI_MAX_NUM_CHAN_PER_WMI_CMD;
 +
- 		num_send_chans = min(arg->nallchans, max_chan_limit);
+ 		num_send_chans = min3(arg->nallchans, max_chan_limit,
+ 				      ATH12K_WMI_MAX_NUM_CHAN_PER_CMD);
  
- 		arg->nallchans -= num_send_chans;
 --- a/drivers/net/wireless/ath/ath12k/wmi.h
 +++ b/drivers/net/wireless/ath/ath12k/wmi.h
-@@ -4004,6 +4004,8 @@ struct wmi_stop_scan_cmd {
+@@ -4035,6 +4035,8 @@ struct wmi_stop_scan_cmd {
  	__le32 pdev_id;
  } __packed;
  

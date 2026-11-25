@@ -287,6 +287,27 @@ static void bcm6328_pcie_setup(struct bcm6328_pcie *priv)
 	__raw_writel(val, priv->base + PCIE_BRIDGE_BAR0_REBASE_ADDR_REG);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,14,0)
+/* Kernel 6.14 no longer has this exported in drivers/pci/of.c. Hack it back in. */
+static int bcm6328_of_pci_parse_bus_range(struct device_node *node, struct resource *res)
+{
+	u32 bus_range[2];
+	int error;
+
+	error = of_property_read_u32_array(node, "bus-range", bus_range,
+					   ARRAY_SIZE(bus_range));
+	if (error)
+		return error;
+
+	res->name = node->name;
+	res->start = bus_range[0];
+	res->end = bus_range[1];
+	res->flags = IORESOURCE_BUS;
+
+	return 0;
+}
+#endif
+
 static int bcm6328_pcie_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -381,7 +402,11 @@ static int bcm6328_pcie_probe(struct platform_device *pdev)
 	if (!bcm6328_pcie_mem_resource.start)
 		return -EINVAL;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,14,0)
 	of_pci_parse_bus_range(np, &bcm6328_pcie_busn_resource);
+#else
+	bcm6328_of_pci_parse_bus_range(np, &bcm6328_pcie_busn_resource);
+#endif
 	pci_add_resource(&resources, &bcm6328_pcie_busn_resource);
 
 	bcm6328_pcie_reset(priv);

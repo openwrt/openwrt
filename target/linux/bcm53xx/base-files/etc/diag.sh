@@ -5,8 +5,10 @@
 get_status_led() {
 	local status_led_file
 
-	# There may be more than one color of power LED, try to avoid amber/red
-	status_led_file=$(find /sys/class/leds/ -name "*:power" -a ! -name "*:amber:*" -a ! -name "*:red:*" | head -n1)
+	# There may be more than one color of power LED, try to avoid amber/red.
+	# LEDs named from color/function have no device prefix ("amber:power").
+	status_led_file=$(find /sys/class/leds/ -name "*:power" -a ! -name "*:amber:*" -a ! -name "*:red:*" \
+		-a ! -name "amber:*" -a ! -name "red:*" | head -n1)
 	if [ -d "$status_led_file" ]; then
 		status_led=$(basename $status_led_file)
 		return

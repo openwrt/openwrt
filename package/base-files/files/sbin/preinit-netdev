@@ -1,0 +1,15 @@
+#!/bin/sh
+# Copyright (C) 2026 OpenWrt.org
+
+export PATH="%PATH%"
+
+. /lib/functions.sh
+. /lib/functions/preinit.sh
+. /lib/functions/system.sh
+
+for pi_source_file in /lib/preinit/*; do
+	. $pi_source_file
+done
+
+boot_run_hook preinit_netdev
+preinit_ip_event

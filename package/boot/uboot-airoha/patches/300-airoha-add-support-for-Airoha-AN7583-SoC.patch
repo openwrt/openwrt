@@ -1,7 +1,7 @@
-From 8f8f6a330755301d247768af13cb53c5c325579c Mon Sep 17 00:00:00 2001
+From 05ecfc09cfcc4b3562ea7ed1d21a654d27f21610 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Tue, 29 Apr 2025 13:06:59 +0200
-Subject: [PATCH 12/29] airoha: add support for Airoha AN7583 SoC
+Date: Fri, 31 Jul 2026 08:54:15 +0200
+Subject: [PATCH 01/16] airoha: add support for Airoha AN7583 SoC
 
 Add support for Airoha AN7583 SoC. This adds the Kconfig and Makefile
 entry for the SoC, DTSI and initial config for it. Also add the code for
@@ -15,13 +15,13 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  arch/arm/mach-airoha/Kconfig         |  14 +
  arch/arm/mach-airoha/Makefile        |   1 +
  arch/arm/mach-airoha/an7583/Makefile |   3 +
- arch/arm/mach-airoha/an7583/init.c   |  47 ++++
+ arch/arm/mach-airoha/an7583/init.c   |  66 +++++
  board/airoha/an7583/MAINTAINERS      |   5 +
  board/airoha/an7583/Makefile         |   3 +
  board/airoha/an7583/an7583_rfb.c     |  16 ++
  configs/an7583_evb_defconfig         |  79 ++++++
  include/configs/an7583.h             |  19 ++
- 11 files changed, 641 insertions(+)
+ 11 files changed, 660 insertions(+)
  create mode 100644 arch/arm/dts/an7583-evb.dts
  create mode 100644 arch/arm/dts/an7583.dtsi
  create mode 100644 arch/arm/mach-airoha/an7583/Makefile
@@ -107,7 +107,7 @@ index 00000000000..d02cd194e8a
 +};
 diff --git a/arch/arm/dts/an7583.dtsi b/arch/arm/dts/an7583.dtsi
 new file mode 100644
-index 00000000000..e1fda15ba37
+index 00000000000..9362d2fbedf
 --- /dev/null
 +++ b/arch/arm/dts/an7583.dtsi
 @@ -0,0 +1,387 @@
@@ -556,16 +556,21 @@ index 00000000000..886ab7e4eb9
 +obj-y += init.o
 diff --git a/arch/arm/mach-airoha/an7583/init.c b/arch/arm/mach-airoha/an7583/init.c
 new file mode 100644
-index 00000000000..77c29290331
+index 00000000000..4cf7f8caf85
 --- /dev/null
 +++ b/arch/arm/mach-airoha/an7583/init.c
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,66 @@
 +// SPDX-License-Identifier: GPL-2.0
 +
 +#include <fdtdec.h>
 +#include <init.h>
++#include <linux/sizes.h>
++#include <sysreset.h>
 +#include <asm/armv8/mmu.h>
++#include <asm/global_data.h>
 +#include <asm/system.h>
++
++DECLARE_GLOBAL_DATA_PTR;
 +
 +int print_cpuinfo(void)
 +{
@@ -580,30 +585,44 @@ index 00000000000..77c29290331
 +
 +int dram_init_banksize(void)
 +{
-+	return fdtdec_setup_memory_banksize();
++	gd->bd->bi_dram[0].start = gd->ram_base;
++	gd->bd->bi_dram[0].size = get_effective_memsize();
++
++	if (gd->ram_size > SZ_2G) {
++		gd->bd->bi_dram[1].start = gd->ram_base + SZ_2G;
++		gd->bd->bi_dram[1].size = gd->ram_size - SZ_2G;
++	}
++
++	return 0;
 +}
 +
-+void reset_cpu(ulong addr)
++void reset_cpu(void)
 +{
 +	psci_system_reset();
 +}
 +
 +static struct mm_region an7583_mem_map[] = {
 +	{
-+		/* DDR */
++		/* DDR, 32-bit area */
 +		.virt = 0x80000000UL,
 +		.phys = 0x80000000UL,
-+		.size = 0x80000000UL,
++		.size = SZ_2G,
++		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) | PTE_BLOCK_OUTER_SHARE,
++	}, {
++		/* DDR, 64-bit area */
++		.virt = 0x100000000UL,
++		.phys = 0x100000000UL,
++		.size = SZ_4G + SZ_2G,
 +		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) | PTE_BLOCK_OUTER_SHARE,
 +	}, {
 +		.virt = 0x00000000UL,
 +		.phys = 0x00000000UL,
-+		.size = 0x20000000UL,
++		.size = 0x40000000UL,
 +		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
 +			 PTE_BLOCK_NON_SHARE |
 +			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
 +	}, {
-+		0,
++		/* List terminator */
 +	}
 +};
 +struct mm_region *mem_map = an7583_mem_map;

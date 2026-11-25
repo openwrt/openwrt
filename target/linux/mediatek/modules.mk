@@ -4,7 +4,7 @@ define KernelPackage/ata-ahci-mtk
   FILES:= \
 	$(LINUX_DIR)/drivers/ata/ahci_mtk.ko \
 	$(LINUX_DIR)/drivers/ata/libahci_platform.ko
-  AUTOLOAD:=$(call AutoLoad,40,libahci libahci_platform ahci_mtk,1)
+  AUTOLOAD:=$(call AutoLoad,40,libahci_platform ahci_mtk,1)
   $(call AddDepends/ata)
   DEPENDS+=@(TARGET_mediatek_mt7622||TARGET_mediatek_mt7623)
 endef
@@ -19,7 +19,7 @@ define KernelPackage/btmtkuart
   SUBMENU:=Other modules
   TITLE:=MediaTek HCI UART driver
   DEPENDS:=@TARGET_mediatek_mt7622 +kmod-bluetooth +kmod-btmtk +mt7622bt-firmware \
-	   +!LINUX_6_12:kmod-hci-uart
+	   +kmod-hci-uart
   KCONFIG:=CONFIG_BT_MTKUART
   FILES:= \
 	$(LINUX_DIR)/drivers/bluetooth/btmtkuart.ko
@@ -39,11 +39,30 @@ define KernelPackage/iio-mt6577-auxadc
 endef
 $(eval $(call KernelPackage,iio-mt6577-auxadc))
 
+define KernelPackage/input-touchscreen-hynitron-cst3530
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=Hynitron CST3530 touchscreen
+  DEPENDS:=@TARGET_mediatek_filogic +kmod-i2c-core +kmod-input-core
+  KCONFIG:= \
+	CONFIG_INPUT_TOUCHSCREEN=y \
+	CONFIG_TOUCHSCREEN_HYNITRON_CST3530
+  FILES:= \
+	$(LINUX_DIR)/drivers/input/touchscreen/hynitron-cst3530.ko
+  AUTOLOAD:=$(call AutoProbe,hynitron-cst3530)
+endef
+
+define KernelPackage/input-touchscreen-hynitron-cst3530/description
+  Kernel module for the Hynitron CST3530 touchscreen controller, as
+  fitted to the GL.iNet GL-BE10000 and GL-BE14000.
+endef
+
+$(eval $(call KernelPackage,input-touchscreen-hynitron-cst3530))
+
 
 define KernelPackage/phy-mediatek-2p5g
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=MediaTek 2.5G Ethernet PHY
-  DEPENDS:=@TARGET_mediatek_filogic @!LINUX_6_12 +kmod-libphy
+  DEPENDS:=@TARGET_mediatek_filogic +kmod-libphy
   KCONFIG:=CONFIG_MEDIATEK_2P5GE_PHY
   FILES:= \
    $(LINUX_DIR)/drivers/net/phy/mediatek/mtk-2p5ge.ko
@@ -56,18 +75,3 @@ define KernelPackage/phy-mediatek-2p5g/description
 endef
 
 $(eval $(call KernelPackage,phy-mediatek-2p5g))
-
-
-define KernelPackage/switch-rtl8367s
-  SUBMENU:=Network Devices
-  TITLE:=Realtek RTL8367S switch support
-  KCONFIG:= \
-	CONFIG_RTL8367S_GSW \
-	CONFIG_SWCONFIG=y
-  DEPENDS:=@TARGET_mediatek +kmod-swconfig
-  FILES:= \
-	$(LINUX_DIR)/drivers/net/phy/rtk/rtl8367s_gsw.ko
-  AUTOLOAD:=$(call AutoProbe,rtl8367s_gsw,1)
-endef
-
-$(eval $(call KernelPackage,switch-rtl8367s))

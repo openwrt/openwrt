@@ -1257,7 +1257,7 @@ static int w_init(struct en75_bmt_m *ctx, struct device_node *np)
 			const __be32 *reg;
 			int ret;
 
-			if (!of_property_read_bool(np, name_enable_remap))
+			if (!of_property_read_bool(part_np, name_enable_remap))
 				continue;
 
 			reg = of_get_property(part_np, "reg", NULL);

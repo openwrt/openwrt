@@ -16,7 +16,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 
 --- a/drivers/net/pcs/airoha/pcs-airoha-common.c
 +++ b/drivers/net/pcs/airoha/pcs-airoha-common.c
-@@ -1170,6 +1170,10 @@ static struct phylink_pcs *airoha_pcs_ge
+@@ -1169,6 +1169,10 @@ static struct phylink_pcs *airoha_pcs_ge
  	if (pcsspec->nargs)
  		index = pcsspec->args[0];
  
@@ -27,7 +27,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  	return &priv->ports[index].pcs;
  }
  
-@@ -1418,6 +1422,7 @@ static const struct airoha_pcs_match_dat
+@@ -1403,6 +1407,7 @@ static const struct airoha_pcs_match_dat
  };
  
  static const struct airoha_pcs_match_data an7583_pcs_eth = {
@@ -35,7 +35,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  	.port_type = AIROHA_PCS_ETH,
  	.usxgmii_rx_gb_out_vld_tweak = true,
  	.usxgmii_xfi_mode_sel = true,
-@@ -1426,6 +1431,7 @@ static const struct airoha_pcs_match_dat
+@@ -1411,6 +1416,7 @@ static const struct airoha_pcs_match_dat
  };
  
  static const struct airoha_pcs_match_data an7583_pcs_pon = {
@@ -43,7 +43,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  	.port_type = AIROHA_PCS_PON,
  	.usxgmii_rx_gb_out_vld_tweak = true,
  	.usxgmii_xfi_mode_sel = true,
-@@ -1434,6 +1440,7 @@ static const struct airoha_pcs_match_dat
+@@ -1419,6 +1425,7 @@ static const struct airoha_pcs_match_dat
  };
  
  static const struct airoha_pcs_match_data an7583_pcs_pcie = {
@@ -51,7 +51,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  	.port_type = AIROHA_PCS_PCIE,
  	.usxgmii_rx_gb_out_vld_tweak = true,
  	.usxgmii_xfi_mode_sel = true,
-@@ -1442,6 +1449,7 @@ static const struct airoha_pcs_match_dat
+@@ -1427,6 +1434,7 @@ static const struct airoha_pcs_match_dat
  };
  
  static const struct airoha_pcs_match_data an7583_pcs_usb = {

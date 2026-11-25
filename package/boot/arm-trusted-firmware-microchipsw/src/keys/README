@@ -1,0 +1,15 @@
+These are public development signing keys for Microchip LAN969x TF-A builds.
+They provide stable inputs for reproducible builds; they do not provide
+authenticity against an attacker. Never provision their root-key hash into
+production OTP.
+
+The default package build uses the same published P-256 example key from
+RFC 6979, Appendix A.2.5, for all seven roles with CREATE_KEYS=0.
+The separate filenames let a private key directory provide distinct keys.
+For a device provisioned with a private root key, supply a private directory
+containing the same filenames via TFA_KEY_DIR. The root key's public X and Y
+coordinates must have no leading zero byte because of ERR-LAN969X-001.
+
+The package passes SOURCE_DATE_EPOCH to cert_create for stable certificate
+validity, serials, and deterministic ECDSA signatures. Other inputs to the
+FIP must also remain stable for reproducible builds.

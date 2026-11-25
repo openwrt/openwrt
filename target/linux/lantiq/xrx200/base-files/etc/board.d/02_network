@@ -74,6 +74,10 @@ lantiq_setup_dsl()
 	avm,fritz7490-micron)
 		annex="b"
 		;;
+	avm,fritz5490|\
+	avm,fritz5490-micron)
+		return
+		;;
 	esac
 
 	lantiq_setup_dsl_helper "$annex"

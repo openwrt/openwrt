@@ -17,12 +17,13 @@ endef
 define Device/aerohive_br200-wp
   DEVICE_VENDOR := Aerohive
   DEVICE_MODEL := BR200-WP
+  DEVICE_PACKAGES := kmod-dsa-qca8k
   BLOCKSIZE := 128k
   KERNEL_NAME := simpleImage.br200-wp
   KERNEL := kernel-bin | uImage none
   KERNEL_INITRAMFS := kernel-bin | uImage none
-  KERNEL_ENTRY := 0x1500000
-  KERNEL_LOADADDR := 0x1500000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   KERNEL_SIZE := 8m
   IMAGES := fdt.bin sysupgrade.bin
   IMAGE/fdt.bin := append-dtb
@@ -37,10 +38,11 @@ TARGET_DEVICES += aerohive_br200-wp
 define Device/enterasys_ws-ap3715i
   DEVICE_VENDOR := Enterasys
   DEVICE_MODEL := WS-AP3715i
+  DEVICE_PACKAGES := kmod-phy-at803x
   BLOCKSIZE := 64k
   KERNEL_NAME := simpleImage.ws-ap3715i
-  KERNEL_ENTRY := 0x1500000
-  KERNEL_LOADADDR := 0x1500000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   KERNEL = kernel-bin | libdeflate-gzip | uImage gzip
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
@@ -53,7 +55,7 @@ define Device/tplink_tl-wdr4900-v1
   DEVICE_VARIANT := v1
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
-  DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-ledtrig-usbport kmod-dsa-qca8k
   TPLINK_HEADER_VERSION := 1
   TPLINK_HWID := 0x49000001
   TPLINK_HWREV := 1
@@ -61,8 +63,8 @@ define Device/tplink_tl-wdr4900-v1
   KERNEL_NAME := simpleImage.tl-wdr4900-v1
   KERNEL_INITRAMFS :=
   KERNEL := kernel-bin | uImage none -M 0x4f4b4c49 | spi-loader-okli $(1)
-  KERNEL_ENTRY := 0x1500000
-  KERNEL_LOADADDR := 0x1500000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   SUPPORTED_DEVICES += tl-wdr4900-v1
   COMPILE := loader-$(1)
   COMPILE/loader-$(1) := spi-loader-okli-compile
@@ -79,7 +81,7 @@ define Device/watchguard_firebox-t10
   DEVICE_MODEL := Firebox T10
   DEVICE_ALT0_VENDOR := Watchguard
   DEVICE_ALT0_MODEL := Firebox T10-W
-  DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24
+  DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24 kmod-phy-at803x
   # This boot loader doesn't reliably boot an uncompressed image,
   # therefore resort to gzipping the already compressed zImage
   KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
@@ -96,7 +98,7 @@ define Device/watchguard_firebox-t15
   DEVICE_MODEL := Firebox T15
   DEVICE_ALT0_VENDOR := Watchguard
   DEVICE_ALT0_MODEL := Firebox T15-W
-  DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24
+  DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24 kmod-phy-at803x
   # This boot loader doesn't reliably boot an uncompressed image,
   # therefore resort to gzipping the already compressed zImage
   KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
@@ -112,6 +114,7 @@ define Device/sophos_red-15w-rev1
   DEVICE_VENDOR := Sophos
   DEVICE_MODEL := RED 15w
   DEVICE_VARIANT := Rev.1
+  DEVICE_PACKAGES := kmod-phy-realtek
   # Original firmware uses a dedicated DTB-partition.
   # The bootloader however supports FIT-images.
   KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb

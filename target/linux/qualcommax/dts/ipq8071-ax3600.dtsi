@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /* Copyright (c) 2021, Robert Marko <robimarko@gmail.com> */
 
+#include "ipq8074.dtsi"
 #include "ipq8074-512m.dtsi"
 #include "ipq8074-ac-cpu.dtsi"
 #include "ipq8074-ess.dtsi"
@@ -162,6 +163,10 @@
 
 					macaddr_dp5: macaddr@18 {
 						reg = <0x18 0x6>;
+					};
+
+					caldata_art_1000: calibration@1000 {
+						reg = <0x1000 0x20000>;
 					};
 
 					caldata_qca9889: caldata@4d000 {

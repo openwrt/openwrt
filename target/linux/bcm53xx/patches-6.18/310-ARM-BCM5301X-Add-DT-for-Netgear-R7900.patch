@@ -19,7 +19,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	bcm47094-asus-rt-ac3100.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7900.dts
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,52 @@
 +/*
 + * Broadcom BCM470X / BCM5301X ARM platform code.
 + * DTS for Netgear R7900
@@ -54,8 +54,18 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +			#address-cells = <1>;
 +			#size-cells = <1>;
 +
-+			vcc-gpio = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++			vbus-supply = <&usb_power>;
 +		};
++	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
 +	};
 +};
 +

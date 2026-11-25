@@ -2,7 +2,7 @@
 
 [ "$DSL_NOTIFICATION_TYPE" = "DSL_STATUS" ] && \
 [ "$DSL_TC_LAYER_STATUS" = "EFM" ] && \
-! grep -q "ltq_ptm_ar9\|ltq_ptm_ase\|ltq_ptm_danube" /proc/modules || exit 0
+! grep -q "ltq_ptm_ar9\|ltq_ptm_danube" /proc/modules || exit 0
 
 logger -p daemon.notice -t "dsl-notify" "Switching to TC-Layer EFM/PTM"
 

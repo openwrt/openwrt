@@ -113,6 +113,26 @@ endef
 
 $(eval $(call KernelPackage,dma-ralink))
 
+define KernelPackage/dsa-mt7620
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MediaTek MT7620 integrated switch DSA support
+  DEPENDS:=@TARGET_ramips_mt7620 +kmod-dsa
+  CONFLICTS:=swconfig
+  KCONFIG:= \
+	CONFIG_NET_DSA_MT7620 \
+	CONFIG_NET_DSA_TAG_RALINK
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/ethernet/ralink/gsw_mt7620_dsa.ko \
+	$(LINUX_DIR)/net/dsa/tag_ralink.ko
+  AUTOLOAD:=$(call AutoProbe,tag_ralink gsw_mt7620_dsa)
+endef
+
+define KernelPackage/dsa-mt7620/description
+ DSA support for the switch integrated in the MediaTek MT7620 SoC.
+endef
+
+$(eval $(call KernelPackage,dsa-mt7620))
+
 define KernelPackage/hsdma-mtk
   SUBMENU:=Other modules
   TITLE:=MediaTek HSDMA Engine

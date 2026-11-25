@@ -13,7 +13,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -5704,6 +5704,9 @@ static void rt2800_config_ps(struct rt2x
+@@ -5706,6 +5706,9 @@ static void rt2800_config_ps(struct rt2x
  	}
  }
  
@@ -23,7 +23,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  void rt2800_config(struct rt2x00_dev *rt2x00dev,
  		   struct rt2x00lib_conf *libconf,
  		   const unsigned int flags)
-@@ -5718,10 +5721,18 @@ void rt2800_config(struct rt2x00_dev *rt
+@@ -5720,10 +5723,18 @@ void rt2800_config(struct rt2x00_dev *rt
  		 */
  		rt2800_update_survey(rt2x00dev);
  
@@ -42,7 +42,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	}
  	if (flags & IEEE80211_CONF_CHANGE_POWER)
  		rt2800_config_txpower(rt2x00dev, libconf->conf->chandef.chan,
-@@ -10421,15 +10432,19 @@ static void rt2800_restore_rf_bbp_rt6352
+@@ -10423,15 +10434,19 @@ static void rt2800_restore_rf_bbp_rt6352
  	}
  }
  
@@ -65,7 +65,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	rt2800_rf_self_txdc_cal(rt2x00dev);
  	rt2800_rxdcoc_calibration(rt2x00dev);
  	rt2800_bw_filter_calibration(rt2x00dev, true);
-@@ -10760,9 +10775,6 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10762,9 +10777,6 @@ static void rt2800_init_rfcsr_6352(struc
  
  	rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);

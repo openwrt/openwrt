@@ -1,0 +1,31 @@
+From 2059acb5723db9f5760c052ca3a22e6818d62cb6 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:37:12 +0100
+Subject: [PATCH] phy: rockchip: inno-usb2: skip chg detect without regs
+
+The OTG state machine starts the charger detection work once VBUS is
+attached, and that work programs and polls the charger detection
+registers of the port configuration. A configuration that lacks them,
+such as the ones of RK3036 and RK3366, makes it access offset 0 of the
+GRF. Treat the attached VBUS as a standard downstream port in this
+case.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -710,6 +710,11 @@ static void rockchip_usb2phy_otg_sm_work
+ 			return;
+ 		} else if (vbus_attach) {
+ 			dev_dbg(&rport->phy->dev, "vbus_attach\n");
++			if (!rphy->phy_cfg->chg_det.dp_det.offset &&
++			    rphy->chg_state == USB_CHG_STATE_UNDEFINED) {
++				rphy->chg_type = POWER_SUPPLY_TYPE_USB;
++				rphy->chg_state = USB_CHG_STATE_DETECTED;
++			}
+ 			switch (rphy->chg_state) {
+ 			case USB_CHG_STATE_UNDEFINED:
+ 				schedule_delayed_work(&rport->chg_work, 0);

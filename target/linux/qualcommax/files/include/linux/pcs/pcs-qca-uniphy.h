@@ -5,6 +5,7 @@
 #include <linux/bitfield.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
+#include <linux/mutex.h>
 #include <linux/phylink.h>
 #include <linux/reset.h>
 
@@ -43,6 +44,10 @@
 
 #define UNIPHY_CH_CTRL(ch)		(UNIPHY_CH_BASE(ch) + 0x0)
 #define   UNIPHY_CH_SPEED_MODE		GENMASK(2, 1)
+/* Encoding shared with UNIPHY_CH_STS_SPEED_MODE */
+#define     UNIPHY_CH_SPEED_10		0
+#define     UNIPHY_CH_SPEED_100		1
+#define     UNIPHY_CH_SPEED_1000	2
 #define   UNIPHY_CH_FORCE_MODE		BIT(3)
 #define   UNIPHY_CH_AN_ENABLE		BIT(6)
 #define   UNIPHY_CH_AN_RESTART		BIT(7)
@@ -118,6 +123,10 @@ struct qca_uniphy_pcs {
 	struct phylink_pcs pcs;
 	struct qca_uniphy *uniphy;
 	int channel;
+	/* Clock pair the mode sequence left enabled on this channel */
+	bool clks_enabled;
+	/* Clock pair phylink's .pcs_enable left enabled on this channel */
+	bool phylink_clks_enabled;
 };
 
 struct qca_uniphy_match_data {
@@ -125,26 +134,31 @@ struct qca_uniphy_match_data {
 	bool ref_clk_enable;
 };
 
-#define to_qca_uniphy_pcs(n) container_of(pcs, struct qca_uniphy_pcs, pcs);
+#define to_qca_uniphy_pcs(n) container_of(n, struct qca_uniphy_pcs, pcs)
 
 struct qca_uniphy {
 	struct device *dev;
 	void __iomem *base;
 	struct regmap *regmap;
-	struct reset_control *rst_ahb;
 	struct reset_control *rst_soft;
 	struct reset_control *rst_xpcs;
 	struct clk_bulk_data *clks;
 	int num_clks;
 	struct qca_uniphy_pcs port_pcs[QCA_UNIPHY_CHANNELS];
+	/* USXGMII rate the code word carried at the last read */
+	int usxgmii_speed;
 	struct qca_uniphy_clk rx_clk;
 	struct qca_uniphy_clk tx_clk;
 	struct qca_uniphy_clk ref_clk;
 	const struct qca_uniphy_match_data *data;
+	/* Serializes the instance-wide configuration against the channels */
+	struct mutex lock;
 	phy_interface_t interface;
 };
 
-#define port_rx_clk_idx(upcs)	((upcs)->channel * 2) + 2
-#define port_tx_clk_idx(upcs)	(((upcs)->channel * 2) + 1) + 2
+#define port_rx_clk_idx(upcs)	((upcs)->channel * 2 + 2)
+#define port_tx_clk_idx(upcs)	((upcs)->channel * 2 + 3)
+/* The pair is adjacent, so the bulk ops can take it from the rx index */
+#define QCA_UNIPHY_PORT_CLKS	2
 
 #endif

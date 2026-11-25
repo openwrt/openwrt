@@ -16,7 +16,7 @@ Signed-off-by: Mathias Kresin <dev@kresin.me>
 
 --- a/drivers/net/wireless/ath/ath10k/core.h
 +++ b/drivers/net/wireless/ath/ath10k/core.h
-@@ -1320,6 +1320,10 @@ struct ath10k {
+@@ -1323,6 +1323,10 @@ struct ath10k {
  	s32 tx_power_2g_limit;
  	s32 tx_power_5g_limit;
  
@@ -29,18 +29,17 @@ Signed-off-by: Mathias Kresin <dev@kresin.me>
  };
 --- a/drivers/net/wireless/ath/ath10k/leds.c
 +++ b/drivers/net/wireless/ath/ath10k/leds.c
-@@ -69,7 +69,7 @@ int ath10k_leds_register(struct ath10k *
+@@ -64,6 +64,7 @@ int ath10k_leds_register(struct ath10k *
  
  	ar->leds.cdev.name = ar->leds.label;
  	ar->leds.cdev.brightness_set_blocking = ath10k_leds_set_brightness_blocking;
--	ar->leds.cdev.default_trigger = ar->leds.wifi_led.default_trigger;
 +	ar->leds.cdev.default_trigger = ar->led_default_trigger;
  
  	ret = led_classdev_register(wiphy_dev(ar->hw->wiphy), &ar->leds.cdev);
  	if (ret)
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -10348,7 +10348,7 @@ int ath10k_mac_register(struct ath10k *a
+@@ -10346,7 +10346,7 @@ int ath10k_mac_register(struct ath10k *a
  	ar->hw->weight_multiplier = ATH10K_AIRTIME_WEIGHT_MULTIPLIER;
  
  #ifdef CPTCFG_MAC80211_LEDS

@@ -38,7 +38,9 @@ do_sysinfo_loongarch64() {
 		esac
 	done
 
-	[ -d "/sys/firmware/devicetree/base" ] && return
+	# LoongArch always unflattens a device tree, an empty root on ACPI
+	# systems, so only defer to 02_sysinfo if it has a compatible
+	[ -e "/sys/firmware/devicetree/base/compatible" ] && return
 
 	[ -n "$vendor" -a -n "$product" ] || return
 

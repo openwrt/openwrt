@@ -1,0 +1,50 @@
+From 2f0b4f8769a7efe33314fd62a72a6fb5ac2ef2a9 Mon Sep 17 00:00:00 2001
+From: Mikhail Zhilkin <csharper2005@gmail.com>
+Date: Sat, 7 Nov 2026 12:10:18 +0100
+Subject: [PATCH v2 1/3] net: mtk_eth: an8855: fix bit collision in RX_CTRL_8
+ register
+
+In an8855_port_sgmii_init(), the bitwise operations for the
+AN8855_RX_CTRL_8 register contain a shifting error. The code attempts
+to set a value at shift 16 (0x200 << 16), but subsequently applies a
+mask and value shifted by 14 (0xfff << 14). This creates a bitwise
+collision where the second operation overlaps and overwrites the bits
+configured by the first operation, resulting in unintended register
+values.
+
+Fix the shift offset for the lower bits from 14 to 0 to prevent overlap
+and correctly apply the exact values used in the proposed Linux driver
+[1].
+
+[1] https://lore.kernel.org/all/20261009161102.38961-11-ansuelsmth@gmail.com/
+
+Fixes: cedafee9ff39 ("net: mediatek: add support for Airoha AN8855 ethernet switch")
+Signed-off-by: Mikhail Zhilkin <csharper2005@gmail.com>
+---
+Changes in v2:
+- Dropped the unnecessary `<< 0` and parentheses based on review feedback.
+- Changed "upstream" to "proposed" and added lore link.
+- Added Fixes tag.
+Link: https://patchwork.ozlabs.org/project/uboot/patch/20261114091049.2418574-2-csharper2005@gmail.com/
+---
+ drivers/net/mtk_eth/an8855.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/mtk_eth/an8855.c b/drivers/net/mtk_eth/an8855.c
+index a2589a2ad31..663cc5d935e 100644
+--- a/drivers/net/mtk_eth/an8855.c
++++ b/drivers/net/mtk_eth/an8855.c
+@@ -627,8 +627,8 @@ static int an8855_port_sgmii_init(struct an8855_switch_priv *priv, u32 port)
+ 	an8855_reg_read(priv, AN8855_RX_CTRL_8, &val);
+ 	val &= ~(0xfff << 16);
+ 	val |= (0x200 << 16);
+-	val &= ~(0x7fff << 14);
+-	val |= (0xfff << 14);
++	val &= ~0x7fff;
++	val |= 0xfff;
+ 	an8855_reg_write(priv, AN8855_RX_CTRL_8, val);
+ 
+ 	/* Frequency memter */
+-- 
+2.53.0
+

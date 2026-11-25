@@ -89,6 +89,11 @@ chmod +x $imgdir/iss_nand_imageupgrade.sh
 
 cp $1 $imgdir/series_vmlinux.bix
 
-tar cf $2 -C $tmpdir image/
+mtime=""
+if [ -n "$SOURCE_DATE_EPOCH" ]; then
+	mtime="--mtime=@${SOURCE_DATE_EPOCH}"
+fi
+
+tar cf $2 -C $tmpdir --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w $mtime image/
 
 rm -rf $tmpdir

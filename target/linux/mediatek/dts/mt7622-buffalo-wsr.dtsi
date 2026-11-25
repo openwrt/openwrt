@@ -130,7 +130,7 @@
 	eth_pins: eth-pins {
 		mux {
 			function = "eth";
-			groups = "mdc_mdio", "rgmii_via_gmac2";
+			groups = "mdc_mdio";
 		};
 	};
 
@@ -174,7 +174,7 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 
-		phy-connection-type = "2500base-x";
+		phy-mode = "2500base-x";
 
 		fixed-link {
 			speed = <2500>;

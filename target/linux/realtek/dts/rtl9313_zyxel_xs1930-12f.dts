@@ -133,6 +133,8 @@
 
 	i2c11: i2c@b {
 		reg = <0xb>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		gpio2: pca9555@20 {
 			compatible = "nxp,pca9555";

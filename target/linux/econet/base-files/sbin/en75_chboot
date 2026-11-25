@@ -164,6 +164,15 @@ main() {
         code_openwrt=0000
         code_factory=0101
         ;;
+    jiofiber,jcow407|\
+    jiofiber,jcow414)
+        part=$(part_named '"reservearea"')
+        offset_blocks=16
+        block_size=$((1024 * 128))
+        code_offset=0
+        code_openwrt=30
+        code_factory=31
+        ;;
     chinamobile,gs3101)
         part=$(part_named '"reservearea"')
         offset_blocks=12

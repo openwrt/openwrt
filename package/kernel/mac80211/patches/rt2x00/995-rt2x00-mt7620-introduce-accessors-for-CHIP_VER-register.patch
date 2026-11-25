@@ -1,3 +1,16 @@
+From e0d482fdcfe92046f9d32e00624014c31576be6d Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 5 Feb 2017 17:55:53 +0100
+Subject: [PATCH] rt2x00: mt7620: introduce accessors for CHIP_VER register
+
+The vendor driver behaves differently depending on the package, version
+and ECO revision the MT7620 CHIP_VER register reports. Add
+hw_get_chippkg, hw_get_chipver and hw_get_chipeco to struct rt2800_ops
+so that rt2800lib can query those values. Only rt2800soc implements
+them, and only when built for MT7620; every other bus driver returns 0.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
 @@ -76,6 +76,9 @@ struct rt2800_ops {
@@ -40,7 +53,7 @@
  			const u8 arg0, const u8 arg1);
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
-@@ -289,6 +289,10 @@ static int rt2800pci_read_eeprom(struct
+@@ -292,6 +292,10 @@ static int rt2800pci_read_eeprom(struct
  	return retval;
  }
  
@@ -51,7 +64,7 @@
  static const struct ieee80211_ops rt2800pci_mac80211_ops = {
  	.add_chanctx = ieee80211_emulate_add_chanctx,
  	.remove_chanctx = ieee80211_emulate_remove_chanctx,
-@@ -336,6 +340,9 @@ static const struct rt2800_ops rt2800pci
+@@ -339,6 +343,9 @@ static const struct rt2800_ops rt2800pci
  	.drv_init_registers	= rt2800mmio_init_registers,
  	.drv_get_txwi		= rt2800mmio_get_txwi,
  	.drv_get_dma_done	= rt2800mmio_get_dma_done,
@@ -76,7 +89,7 @@
  /* Allow hardware encryption to be disabled. */
  static bool modparam_nohwcrypt;
  module_param_named(nohwcrypt, modparam_nohwcrypt, bool, 0444);
-@@ -136,6 +142,27 @@ static int rt2800soc_resume(struct platf
+@@ -159,6 +165,27 @@ static int rt2800soc_resume(struct platf
  }
  #endif /* CONFIG_PM */
  
@@ -104,7 +117,7 @@
  static const struct ieee80211_ops rt2800soc_mac80211_ops = {
  	.add_chanctx = ieee80211_emulate_add_chanctx,
  	.remove_chanctx = ieee80211_emulate_remove_chanctx,
-@@ -183,6 +210,9 @@ static const struct rt2800_ops rt2800soc
+@@ -206,6 +233,9 @@ static const struct rt2800_ops rt2800soc
  	.drv_init_registers	= rt2800mmio_init_registers,
  	.drv_get_txwi		= rt2800mmio_get_txwi,
  	.drv_get_dma_done	= rt2800mmio_get_dma_done,

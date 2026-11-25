@@ -21,7 +21,10 @@ PKG_LICENSE:=GPL-2.0
 
 # Extend depends from version.mk
 PKG_CONFIG_DEPENDS += \
-	CONFIG_SIGNED_PACKAGES CONFIG_TARGET_INIT_PATH CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE \
+	CONFIG_SIGNED_PACKAGES \
+	CONFIG_TARGET_INIT_PATH \
+	CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE \
+	CONFIG_TARGET_SERIAL \
 	CONFIG_NAND_SUPPORT \
 	CONFIG_LEGACY_SDCARD_SUPPORT \
 	CONFIG_EMMC_SUPPORT \
@@ -194,6 +197,7 @@ define Package/base-files/install
 
 	$(SED) "s#%PATH%#$(TARGET_INIT_PATH)#g" \
 		$(1)/sbin/hotplug-call \
+		$(1)/sbin/preinit-netdev \
 		$(1)/etc/preinit \
 		$(1)/etc/profile
 
@@ -225,8 +229,11 @@ ifneq ($(CONFIG_TARGET_ROOTFS_PERSIST_VAR),y)
 else
 	mkdir -p $(1)/var
 	$(LN) /tmp/run $(1)/var/run
+	$(LN) ../tmp/lock $(1)/var/lock
+	mkdir -p $(1)/tmp/lock
 endif
 	$(LN) /tmp/resolv.conf /tmp/TZ /tmp/localtime $(1)/etc/
+	$(LN) /tmp/sysinfo/board.json $(1)/etc/board.json
 
 	chmod 0600 $(1)/etc/shadow
 	chmod 1777 $(1)/tmp
@@ -265,16 +272,16 @@ else
 	$(if $(CONFIG_IPK_FILES_CHECKSUMS),, \
 		rm -f $(1)/sbin/pkg_check)
 endif
-$(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_FAILSAFE_DISABLED), \
-	rm -f $(1)/etc/rc.button/failsafe)
-$(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_POWER_DISABLED), \
-	rm -f $(1)/etc/rc.button/power)
-$(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_REBOOT_DISABLED), \
-	rm -f $(1)/etc/rc.button/reboot)
-$(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_RESET_DISABLED), \
-	rm -f $(1)/etc/rc.button/reset)
-$(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_RF_KILL_DISABLED), \
-	rm -f $(1)/etc/rc.button/rfkill)
+	$(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_FAILSAFE_DISABLED), \
+		rm -f $(1)/etc/rc.button/failsafe)
+	$(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_POWER_DISABLED), \
+		rm -f $(1)/etc/rc.button/power)
+	$(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_REBOOT_DISABLED), \
+		rm -f $(1)/etc/rc.button/reboot)
+	$(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_RESET_DISABLED), \
+		rm -f $(1)/etc/rc.button/reset)
+	$(if $(CONFIG_TARGET_BUTTON_CUSTOMIZATION_RF_KILL_DISABLED), \
+		rm -f $(1)/etc/rc.button/rfkill)
 endef
 
 ifneq ($(DUMP),1)

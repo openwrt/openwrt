@@ -182,6 +182,14 @@ export function flush_config() {
 	config_data = '';
 };
 
+export function config_mark() {
+	return length(config_data);
+};
+
+export function config_rewind(mark) {
+	config_data = substr(config_data, 0, mark);
+};
+
 export function flush_network() {
 	config_data = '';
 	network_data = '';

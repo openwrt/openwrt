@@ -1,0 +1,32 @@
+From 284975d609d09565e7a381f83ed1e9851dc91322 Mon Sep 17 00:00:00 2001
+From: Minda Chen <minda.chen@starfivetech.com>
+Date: Fri, 5 Jun 2026 14:02:11 +0800
+Subject: [PATCH] net: motorcomm: phy: set drive strength in YT8531s RGMII
+
+Set RXD and RX CLK pin drive strength while in YT8531s connect
+with RGMII. Need to check 8531s PHY ID because 8521 and 8531s
+pin drive strength is different, 8521 can not call
+yt8531_set_ds().
+
+Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260605060212.41895-3-minda.chen@starfivetech.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/motorcomm.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/net/phy/motorcomm.c
++++ b/drivers/net/phy/motorcomm.c
+@@ -1697,6 +1697,11 @@ static int yt8521_config_init(struct phy
+ 		if (ret < 0)
+ 			goto err_restore_page;
+ 	}
++
++	if (phy_interface_is_rgmii(phydev) &&
++	    phydev_id_compare(phydev, PHY_ID_YT8531S))
++		ret = yt8531_set_ds(phydev);
++
+ err_restore_page:
+ 	return phy_restore_page(phydev, old_page, ret);
+ }

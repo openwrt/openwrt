@@ -1,0 +1,57 @@
+From 116a5cfeaa3e8ab9820afbb65a55d1379f807a9a Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 26 Aug 2026 17:44:39 +0100
+Subject: [PATCH] staging: vc04_services: vchiq-mmal: Bound-check the parameter
+ payload size
+
+struct mmal_msg is a 512-byte stack buffer: a 24-byte header plus a
+488-byte union. Within that union, mmal_msg_port_parameter_set places its
+384-byte value[] at offset 16, so the field ends 88 bytes short of the
+end of the union.
+
+port_parameter_set() copies value_size bytes into that field without
+checking it against the field size. A value_size of 385..472 corrupts the
+rest of the union, and anything above 472 runs off the end of the
+on-stack struct mmal_msg. send_synchronous_mmal_msg() does reject a
+payload longer than the union can hold, which covers exactly the second
+case, but it is only reached after the memcpy has already happened.
+
+port_parameter_get() has the mirror-image problem: *value_size is both
+advertised to the firmware as the space available and used to bound the
+copy out of the reply, so a caller asking for more than 384 bytes reads
+past value[] in the received message and into whatever follows it in the
+VCHIQ slot.
+
+No in-tree caller can trigger either: every call site passes a sizeof()
+of a fixed structure, the largest being the 280-byte encoding list read
+by bcm2835_isp_get_supported_fmts(). Both functions are reachable through
+exported symbols though, so reject an oversized size rather than relying
+on callers to get it right.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
++++ b/drivers/staging/vc04_services/vchiq-mmal/mmal-vchiq.c
+@@ -1349,6 +1349,9 @@ static int port_parameter_set(struct vch
+ 	struct mmal_msg *rmsg;
+ 	struct vchiq_header *rmsg_handle;
+ 
++	if (value_size > sizeof(m.u.port_parameter_set.value))
++		return -EINVAL;
++
+ 	m.h.type = MMAL_MSG_TYPE_PORT_PARAMETER_SET;
+ 
+ 	m.u.port_parameter_set.component_handle = port->component->handle;
+@@ -1390,6 +1393,9 @@ static int port_parameter_get(struct vch
+ 	struct mmal_msg *rmsg;
+ 	struct vchiq_header *rmsg_handle;
+ 
++	if (*value_size > sizeof(rmsg->u.port_parameter_get_reply.value))
++		return -EINVAL;
++
+ 	m.h.type = MMAL_MSG_TYPE_PORT_PARAMETER_GET;
+ 
+ 	m.u.port_parameter_get.component_handle = port->component->handle;

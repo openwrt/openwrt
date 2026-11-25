@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zhengping Zhang <zhengping.zhang@airoha.com>
+Date: Thu, 12 Nov 2026 15:13:33 +0800
+Subject: [PATCH] phy: airoha: fix AN7583 USB SerDes mode setup
+
+Select USB on the underlying SerDes before U3 calibration rather than
+relying on the bootloader mux state. The USB core sets the host mode
+after PHY initialization, which is too late to select the calibration
+path.
+
+Accept USB_HOST, USB_DEVICE and USB_OTG in the U3 PHY and SCU SerDes
+callbacks and map them to the USB mux selection. This permits the USB
+core host-mode fallback and keeps the two mode handlers consistent.
+
+Keep these downstream fixes separate from the upstream PHY and SCU
+backports so they remain visible when those patches are refreshed.
+
+Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
+---
+ drivers/clk/clk-en7523.c            |    6 ++++++
+ drivers/phy/airoha/phy-an7583-usb.c |   10 +++++++++-
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -1214,6 +1214,9 @@ static int en7581_serdes_phy_set_mode(st
+ 		mask = REG_SSUSB_HSGMII_SEL_MASK;
+ 
+ 		if (mode != PHY_MODE_ETHERNET &&
++		    mode != PHY_MODE_USB_HOST &&
++		    mode != PHY_MODE_USB_DEVICE &&
++		    mode != PHY_MODE_USB_OTG &&
+ 		    mode != PHY_MODE_USB_DEVICE_SS)
+ 			return -EINVAL;
+ 
+@@ -1228,6 +1231,9 @@ static int en7581_serdes_phy_set_mode(st
+ 		mask = REG_USB_PCIE_SEL_MASK;
+ 
+ 		if (mode != PHY_MODE_PCIE &&
++		    mode != PHY_MODE_USB_HOST &&
++		    mode != PHY_MODE_USB_DEVICE &&
++		    mode != PHY_MODE_USB_OTG &&
+ 		    mode != PHY_MODE_USB_DEVICE_SS)
+ 			return -EINVAL;
+ 
+--- a/drivers/phy/airoha/phy-an7583-usb.c
++++ b/drivers/phy/airoha/phy-an7583-usb.c
+@@ -867,8 +867,14 @@ static void an7583_usb_phy_kband_calibra
+ 
+ static int an7583_usb_phy_u3_init(struct phy *phy)
+ {
++	struct an7583_usb_phy_instance *instance = phy_get_drvdata(phy);
+ 	struct an7583_usb_phy_priv *priv;
+ 	struct device *dev;
++	int ret;
++
++	ret = phy_set_mode_ext(instance->serdes_phy, PHY_MODE_USB_DEVICE_SS, 0);
++	if (ret)
++		return ret;
+ 
+ 	dev = phy->dev.parent;
+ 	priv = dev_get_drvdata(dev);
+@@ -1708,8 +1714,10 @@ static int an7583_usb_phy_u3_set_mode(st
+ 		    submode != PHY_INTERFACE_MODE_1000BASEX &&
+ 		    submode != PHY_INTERFACE_MODE_2500BASEX)
+ 			return -EOPNOTSUPP;
+-
+ 		break;
++	case PHY_MODE_USB_HOST:
++	case PHY_MODE_USB_DEVICE:
++	case PHY_MODE_USB_OTG:
+ 	case PHY_MODE_USB_DEVICE_SS:
+ 		break;
+ 	default:

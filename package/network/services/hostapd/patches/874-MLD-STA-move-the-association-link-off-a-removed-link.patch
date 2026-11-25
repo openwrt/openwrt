@@ -1,0 +1,102 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 25 Oct 2026 16:53:50 +0100
+Subject: [PATCH] MLD STA: move the association link off a removed link
+
+When the AP MLD removes the link that a non-AP MLD used for its
+association, or the station deletes it by link reconfiguration, the
+nl80211 link removal event leaves sta_mlo_info.assoc_link_id on the
+removed link, and wpa_s->assoc_freq keeps its frequency. Action frames
+that are sent on assoc_freq, such as the BSS Transition Management
+Response, then go off-channel to a channel on which the AP MLD no
+longer operates, and the AP does not receive them.
+
+IEEE Std 802.11be-2024, 35.3.6.3 requires the non-AP MLD to consider the
+removed link nonexistent, but names no successor of the association
+link. Take the lowest remaining link, as the QCA link reconfiguration
+event already does, and follow its frequency in assoc_freq.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -364,6 +364,28 @@ static void mlme_event_assoc(struct wpa_
+ }
+ 
+ 
++/*
++ * IEEE Std 802.11be-2024, 35.3.6.3 names no successor of a removed association
++ * link; take the lowest remaining one.
++ */
++static void nl80211_mlo_assoc_link_move(struct wpa_driver_nl80211_data *drv)
++{
++	struct driver_sta_mlo_info *mlo = &drv->sta_mlo_info;
++	int i;
++
++	for_each_link(mlo->valid_links, i) {
++		wpa_printf(MSG_DEBUG,
++			   "nl80211: MLO: association link %u removed, use link %d",
++			   mlo->assoc_link_id, i);
++		if (ether_addr_equal(drv->bssid,
++				     mlo->links[mlo->assoc_link_id].bssid))
++			os_memcpy(drv->bssid, mlo->links[i].bssid, ETH_ALEN);
++		mlo->assoc_link_id = i;
++		return;
++	}
++}
++
++
+ #ifdef CONFIG_DRIVER_NL80211_QCA
+ 
+ static int qca_drv_connect_fail_reason_code_handler(struct nl_msg *msg,
+@@ -456,7 +478,6 @@ static void qca_nl80211_link_reconfig_ev
+ 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_LINK_RECONFIG_MAX + 1];
+ 	u16 removed_links;
+ 	u8 *ap_mld;
+-	int i;
+ 
+ 	if (!data)
+ 		return;
+@@ -499,18 +520,8 @@ static void qca_nl80211_link_reconfig_ev
+ 
+ 	drv->sta_mlo_info.valid_links &= ~removed_links;
+ 
+-	/*
+-	 * Set default BSSID to the BSSID of the lowest link ID of remaining
+-	 * links when the link used for (re)association is removed.
+-	 */
+-	if (removed_links & BIT(drv->sta_mlo_info.assoc_link_id)) {
+-		for_each_link(drv->sta_mlo_info.valid_links, i) {
+-			os_memcpy(drv->bssid, drv->sta_mlo_info.links[i].bssid,
+-				  ETH_ALEN);
+-			drv->sta_mlo_info.assoc_link_id = i;
+-			break;
+-		}
+-	}
++	if (removed_links & BIT(drv->sta_mlo_info.assoc_link_id))
++		nl80211_mlo_assoc_link_move(drv);
+ 
+ 	wpa_printf(MSG_DEBUG, "nl80211: Removed MLO links bitmap: 0x%x",
+ 		   removed_links);
+@@ -984,6 +995,9 @@ static void mlme_event_link_removal(stru
+ 	drv->sta_mlo_info.valid_links &= ~removed_links;
+ 	drv->sta_mlo_info.req_links &= ~removed_links;
+ 
++	if (removed_links & BIT(drv->sta_mlo_info.assoc_link_id))
++		nl80211_mlo_assoc_link_move(drv);
++
+ 	for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
+ 		if (!(removed_links & BIT(i)))
+ 			continue;
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -6764,6 +6764,10 @@ static void wpas_link_reconfig(struct wp
+ 		return;
+ 	}
+ 
++	if (wpa_s->valid_links & BIT(wpa_s->mlo_assoc_link_id) &&
++	    wpa_s->links[wpa_s->mlo_assoc_link_id].freq)
++		wpa_s->assoc_freq = wpa_s->links[wpa_s->mlo_assoc_link_id].freq;
++
+ 	wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_LINK_RECONFIG "valid_links=0x%x",
+ 		wpa_s->valid_links);
+ }

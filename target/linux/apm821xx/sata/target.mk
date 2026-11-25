@@ -1,8 +1,8 @@
 BOARDNAME := Devices which boot from SATA (NAS)
 DEVICE_TYPE := nas
-FEATURES += boot-part ext4 rootfs-part
+FEATURES += boot-part ext4 legacy-sdcard rootfs-part
 DEFAULT_PACKAGES += badblocks block-mount e2fsprogs kmod-hwmon-drivetemp \
-		    kmod-dm kmod-md-mod partx-utils mkf2fs f2fsck
+		    kmod-dm kmod-md-mod mkf2fs f2fsck
 
 define Target/Description
 	Build firmware images for APM82181 boards that boot from SATA.

@@ -429,7 +429,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  %token  ISO ESIS CLNP ISIS L1 L2 IIH LSP SNP CSNP PSNP
  %token  STP
  %token  IPX
-@@ -685,11 +686,40 @@ other:	  pqual TK_BROADCAST	{ CHECK_PTR_
+@@ -686,11 +687,40 @@ other:	  pqual TK_BROADCAST	{ CHECK_PTR_
  	| PPPOES		{ CHECK_PTR_VAL(($$ = gen_pppoes(cstate, 0, 0))); }
  	| GENEVE pnum		{ CHECK_PTR_VAL(($$ = gen_geneve(cstate, $2, 1))); }
  	| GENEVE		{ CHECK_PTR_VAL(($$ = gen_geneve(cstate, 0, 0))); }
@@ -564,7 +564,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  .BR sctp ,
  .B tcp
  and
-@@ -400,7 +401,7 @@ True if the packet is an IPv6 multicast
+@@ -399,7 +400,7 @@ True if the packet is an IPv6 multicast
  .IP  "\fBether proto \fIprotocol\fR"
  True if the packet is of ether type \fIprotocol\fR.
  \fIProtocol\fP can be a number or one of the names
@@ -573,7 +573,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  \fBipx\fP, \fBiso\fP, \fBlat\fP, \fBloopback\fP, \fBmopdl\fP, \fBmoprc\fP, \fBnetbeui\fP,
  \fBrarp\fP, \fBsca\fP or \fBstp\fP.
  Note these identifiers (except \fBloopback\fP) are also keywords
-@@ -454,7 +455,7 @@ the filter checks for the IPX etype in a
+@@ -453,7 +454,7 @@ the filter checks for the IPX etype in a
  DSAP in the LLC header, the 802.3-with-no-LLC-header encapsulation of
  IPX, and the IPX etype in a SNAP frame.
  .RE
@@ -582,7 +582,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  Abbreviations for:
  .in +.5i
  .nf
-@@ -795,6 +796,36 @@ For example:
+@@ -794,6 +795,36 @@ For example:
  filters IPv4 protocol encapsulated in Geneve with VNI 0xb. This will
  match both IPv4 directly encapsulated in Geneve as well as IPv4 contained
  inside an Ethernet frame.

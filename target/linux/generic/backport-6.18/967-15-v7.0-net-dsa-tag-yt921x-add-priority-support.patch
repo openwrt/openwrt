@@ -1,0 +1,38 @@
+From 8cdb2cc9a11b589b564bd0fc72e524e1be69e967 Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Sat, 31 Jan 2026 10:18:48 +0800
+Subject: [PATCH] net: dsa: tag_yt921x: add priority support
+
+Required by DCB/QoS support of the switch driver, since the rx packets
+will have non-zero priorities.
+
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+Link: https://patch.msgid.link/20260131021854.3405036-3-mmyangfl@gmail.com
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ net/dsa/tag_yt921x.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/net/dsa/tag_yt921x.c
++++ b/net/dsa/tag_yt921x.c
+@@ -69,7 +69,9 @@ yt921x_tag_xmit(struct sk_buff *skb, str
+ 	tag[0] = htons(ETH_P_YT921X);
+ 	/* VLAN tag unrelated when TX */
+ 	tag[1] = 0;
+-	tag[2] = 0;
++	ctrl = YT921X_TAG_CODE(YT921X_TAG_CODE_FORWARD) | YT921X_TAG_CODE_EN |
++	       YT921X_TAG_PRIO(skb->priority);
++	tag[2] = htons(ctrl);
+ 	ctrl = YT921X_TAG_TX_PORTS(dsa_xmit_port_mask(skb, netdev)) |
+ 	       YT921X_TAG_PORT_EN;
+ 	tag[3] = htons(ctrl);
+@@ -112,6 +114,8 @@ yt921x_tag_rcv(struct sk_buff *skb, stru
+ 		return NULL;
+ 	}
+ 
++	skb->priority = FIELD_GET(YT921X_TAG_PRIO_M, rx);
++
+ 	if (!(rx & YT921X_TAG_CODE_EN)) {
+ 		dev_warn_ratelimited(&netdev->dev,
+ 				     "Tag code not enabled in rx packet\n");

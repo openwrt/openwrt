@@ -136,6 +136,25 @@ mtd_get_mac_encrypted_deco() {
 	echo $macaddr
 }
 
+get_mac_uci_config() {
+	local file="$1"
+
+	sed -n 's/^\s*option macaddr\s*'"'"'\?\([0-9A-F:]\+\)'"'"'\?/\1/Ip' "$file" | head -n1
+}
+
+mtd_get_mac_uci_config() {
+	local mtdname="$1"
+	local part
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "mtd_get_mac_uci_config: partition $mtdname not found!" >&2
+		return
+	fi
+
+	get_mac_uci_config "$part"
+}
+
 mtd_get_mac_uci_config_ubi() {
 	local volumename="$1"
 
@@ -144,7 +163,7 @@ mtd_get_mac_uci_config_ubi() {
 	local ubidev=$(nand_attach_ubi $CI_UBIPART)
 	local part=$(nand_find_volume $ubidev $volumename)
 
-	cat "/dev/$part" | sed -n 's/^\s*option macaddr\s*'"'"'\?\([0-9A-F:]\+\)'"'"'\?/\1/Ip'
+	get_mac_uci_config "/dev/$part"
 }
 
 mtd_get_mac_text() {
@@ -185,6 +204,18 @@ mtd_get_mac_binary_ubi() {
 	get_mac_binary "/dev/$part" "$offset"
 }
 
+mtd_get_mac_nvmem() {
+	local basepath="/sys/bus/nvmem/devices"
+	local mtdname="$1"
+	local cell="$2"
+	local index
+
+	index=$(find_mtd_index "$mtdname")
+	[ -n "$index" ] && [ -n "$cell" ] || return
+
+	macaddr_canonicalize "$(hexdump -n 6 -e '6/1 "%02x"' $basepath/mtd$index/cells/$cell@* 2>/dev/null)"
+}
+
 mtd_get_part_size() {
 	local part_name=$1
 	local first dev size erasesize name
@@ -192,6 +223,18 @@ mtd_get_part_size() {
 		name=${name#'"'}; name=${name%'"'}
 		if [ "$name" = "$part_name" ]; then
 			echo $((0x$size))
+			break
+		fi
+	done < /proc/mtd
+}
+
+mtd_get_part_erasesize() {
+	local part_name=$1
+	local first dev size erasesize name
+	while read dev size erasesize name; do
+		name=${name#'"'}; name=${name%'"'}
+		if [ "$name" = "$part_name" ]; then
+			echo $((0x$erasesize))
 			break
 		fi
 	done < /proc/mtd

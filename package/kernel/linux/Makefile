@@ -14,7 +14,7 @@ PKG_FLAGS:=hold
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
 SUBTARGETS = $(sort $(filter-out feeds,$(notdir $(wildcard $(TOPDIR)/target/linux/* $(TOPDIR)/target/linux/feeds/*))))
 SUBTARGET_MODULES = $(foreach t,$(SUBTARGETS),$(firstword $(wildcard $(TOPDIR)/target/linux/feeds/$(t)/modules.mk $(TOPDIR)/target/linux/$(t)/modules.mk)))
-SCAN_DEPS=modules/*.mk $(SUBTARGET_MODULES) $(TOPDIR)/include/netfilter.mk
+SCAN_DEPS=modules/*.mk $(TOPDIR)/target/linux/*/modules.mk $(TOPDIR)/target/linux/feeds/*/modules.mk $(TOPDIR)/include/netfilter.mk
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING

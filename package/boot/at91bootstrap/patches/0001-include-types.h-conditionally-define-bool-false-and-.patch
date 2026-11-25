@@ -1,0 +1,38 @@
+From 32bbb4f73a9f3e94326f709413c1b58baefdfbfa Mon Sep 17 00:00:00 2001
+From: Edgar Bonet <bonet@grenoble.cnrs.fr>
+Date: Wed, 25 Jun 2025 11:13:43 +0200
+Subject: [PATCH] include/types.h: conditionally define bool, false and true
+
+include/types.h typedefs 'bool' and macro-defines 'false' and 'true'.
+However, since C23, these are predefine keywords. As C23 is the default
+C dialect for GCC 15, building with this compiler fails with:
+
+    include/types.h:23:23: error: 'bool' cannot be defined via 'typedef'
+       23 | typedef unsigned char bool;
+          |                       ^~~~
+    include/types.h:23:23: note: 'bool' is a keyword with '-std=c23' onwards
+
+Fix this build failure by only defining 'bool', 'false' and 'true' on C
+dialects older than C23.
+
+Signed-off-by: Edgar Bonet <bonet@grenoble.cnrs.fr>
+Signed-off-by: Li Bin <bin.li@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ include/types.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/include/types.h
++++ b/include/types.h
+@@ -20,8 +20,11 @@ typedef signed long long s64;
+ typedef unsigned long size_t;
+ typedef signed long ssize_t;
+ 
++/* bool, false and true are predefined since C23. */
++#if __STDC_VERSION__ < 202311L
+ typedef unsigned char bool;
+ #define false	0U
+ #define true	1U
++#endif
+ 
+ #endif /* TYPES_H_ */

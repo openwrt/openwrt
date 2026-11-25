@@ -159,21 +159,17 @@
 				phy-handle = <&phy_port5>;
 			};
 
-			/*
 			port@6 {
-				reg = <0>;
-				label = "cpu";
+				reg = <6>;
 				ethernet = <&gmac2>;
-				phy-mode = "rgmii";
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
 
 				fixed-link {
 					speed = <1000>;
 					full-duplex;
-					pause;
-					asym-pause;
 				};
 			};
-			*/
 		};
 
 		mdio {
@@ -215,7 +211,6 @@
 
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
-	mdiobus = <&mdio0>;
 
 	fixed-link {
 		speed = <1000>;
@@ -227,7 +222,6 @@
 	status = "okay";
 	phy-mode = "rgmii";
 	qcom,id = <1>;
-	mdiobus = <&mdio0>;
 
 	fixed-link {
 		speed = <1000>;
@@ -239,7 +233,6 @@
 	status = "okay";
 	phy-mode = "sgmii";
 	qcom,id = <2>;
-	mdiobus = <&mdio0>;
 
 	fixed-link {
 		speed = <1000>;

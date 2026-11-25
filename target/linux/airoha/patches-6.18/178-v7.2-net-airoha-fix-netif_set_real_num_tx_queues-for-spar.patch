@@ -30,7 +30,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2789,7 +2789,7 @@ static int airoha_tc_htb_alloc_leaf_queu
+@@ -2788,7 +2788,7 @@ static int airoha_tc_htb_alloc_leaf_queu
  					  struct tc_htb_qopt_offload *opt)
  {
  	u32 channel = TC_H_MIN(opt->classid) % AIROHA_NUM_QOS_CHANNELS;
@@ -39,7 +39,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	struct airoha_qdma *qdma = dev->qdma;
  
-@@ -2806,13 +2806,15 @@ static int airoha_tc_htb_alloc_leaf_queu
+@@ -2805,13 +2805,15 @@ static int airoha_tc_htb_alloc_leaf_queu
  	if (err)
  		goto error;
  
@@ -62,7 +62,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	set_bit(channel, dev->qos_sq_bmap);
-@@ -3003,13 +3005,18 @@ static int airoha_dev_setup_tc_block(str
+@@ -3002,13 +3004,18 @@ static int airoha_dev_setup_tc_block(str
  static void airoha_tc_remove_htb_queue(struct net_device *netdev, int queue)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);

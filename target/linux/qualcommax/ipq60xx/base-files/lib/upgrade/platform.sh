@@ -181,8 +181,50 @@ EOF
 	fw_setenv --script /tmp/env_tmp
 }
 
+
+# On RouterBOOT NAND devices the kernel is an ELF file inside a yaffs
+# partition rather than a raw image, so it has to be written with yafut. The
+# root filesystem is handled by UBI as usual. Extend the subtarget-wide list
+# instead of replacing it, so head/seq stay available for the other boards.
+RAMFS_COPY_BIN="$RAMFS_COPY_BIN yafut"
+
+platform_do_upgrade_mikrotik_nand() {
+	local fw_mtd board_dir
+
+	CI_KERNPART=none
+
+	fw_mtd=$(find_mtd_part kernel)
+	fw_mtd="${fw_mtd/block/}"
+	[ -n "$fw_mtd" ] || return 1
+
+	board_dir=$(tar tf "$1" | grep -m 1 '^sysupgrade-.*/$')
+	board_dir=${board_dir%/}
+	[ -n "$board_dir" ] || return 1
+
+	# Erase the yaffs partition first. Stock firmware already fills 4.38 MiB
+	# of the 8 MiB partition, leaving less free space than the loader ELF
+	# needs. yaffs only frees the old blocks after the write, so without
+	# erasing first the write would run out of space halfway through.
+	#
+	# A fully erased partition is a valid empty yaffs: the filesystem is log
+	# structured and keeps its metadata in the OOB area, there is no
+	# superblock to prepare.
+	#
+	# Recovery stays available either way, as RouterBOOT lives in a separate
+	# SPI-NOR flash that is not touched here.
+	mtd erase kernel || return 1
+
+	tar xf "$1" "${board_dir}/kernel" -O | \
+		yafut -d "$fw_mtd" -w -i - -o kernel -m 0755 || return 1
+
+	nand_do_upgrade "$1"
+}
+
 platform_do_upgrade() {
 	case "$(board_name)" in
+	mikrotik,chateau-5g-r17-ax)
+		platform_do_upgrade_mikrotik_nand "$1"
+		;;
 	alfa-network,ap120c-ax)
 		CI_UBIPART="rootfs_1"
 		alfa_bootconfig_rootfs_rotate "0:BOOTCONFIG" "148"
@@ -235,10 +277,18 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	tplink,eap610-outdoor|\
+	tplink,eap620-hd-v2|\
 	tplink,eap620-hd-v3|\
 	tplink,eap623-outdoor-hd-v1|\
 	tplink,eap625-outdoor-hd-v1)
 		tplink_do_upgrade "$1"
+		;;
+	wallys,dr6018s)
+		CI_UBIPART="rootfs"
+		remove_oem_ubi_volume debug
+		remove_oem_ubi_volume wifi_fw
+		remove_oem_ubi_volume ubi_rootfs
+		nand_do_upgrade "$1"
 		;;
 	yuncore,fap650)
 		[ "$(fw_printenv -n owrt_env_ver 2>/dev/null)" != "7" ] && yuncore_fap650_env_setup
@@ -254,6 +304,18 @@ platform_do_upgrade() {
 		;;
 	*)
 		default_do_upgrade "$1"
+		;;
+	esac
+}
+
+platform_copy_config() {
+	case "$(board_name)" in
+	jdcloud,re-cs-02|\
+	jdcloud,re-cs-07|\
+	jdcloud,re-ss-01|\
+	link,nn6000-v1|\
+	link,nn6000-v2)
+		emmc_copy_config
 		;;
 	esac
 }

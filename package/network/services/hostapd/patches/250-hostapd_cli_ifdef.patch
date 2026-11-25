@@ -37,7 +37,7 @@ Subject: [PATCH] hostapd: support wps in hostapd_cli even when built from the
  
  
  static int hostapd_cli_cmd_disassoc_imminent(struct wpa_ctrl *ctrl, int argc,
-@@ -1717,13 +1713,10 @@ static const struct hostapd_cli_cmd host
+@@ -1751,13 +1747,10 @@ static const struct hostapd_cli_cmd host
  	{ "disassociate", hostapd_cli_cmd_disassociate,
  	  hostapd_complete_stations,
  	  "<addr> = disassociate a station" },
@@ -51,7 +51,7 @@ Subject: [PATCH] hostapd: support wps in hostapd_cli even when built from the
  	{ "wps_pin", hostapd_cli_cmd_wps_pin, NULL,
  	  "<uuid> <pin> [timeout] [addr] = add WPS Enrollee PIN" },
  	{ "wps_check_pin", hostapd_cli_cmd_wps_check_pin, NULL,
-@@ -1748,7 +1741,6 @@ static const struct hostapd_cli_cmd host
+@@ -1782,7 +1775,6 @@ static const struct hostapd_cli_cmd host
  	  "<SSID> <auth> <encr> <key> = configure AP" },
  	{ "wps_get_status", hostapd_cli_cmd_wps_get_status, NULL,
  	  "= show current WPS status" },

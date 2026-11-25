@@ -1,7 +1,9 @@
 #ifndef __HOSTAPD_AP_UCODE_H
 #define __HOSTAPD_AP_UCODE_H
 
+#ifdef UCODE_SUPPORT
 #include "utils/ucode.h"
+#endif
 
 struct hostapd_data;
 
@@ -24,7 +26,9 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces);
 void hostapd_ucode_free(void);
 void hostapd_ucode_free_iface(struct hostapd_iface *iface);
 void hostapd_ucode_free_bss(struct hostapd_data *hapd);
+void hostapd_ucode_forget_bss(struct hostapd_data *hapd);
 void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type);
+void hostapd_ucode_cac_start(struct hostapd_iface *iface);
 int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta);
 void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta);
 
@@ -42,7 +46,8 @@ int hostapd_ucode_dpp_rx_action(struct hostapd_data *hapd, const u8 *src,
 				const u8 *data, size_t data_len);
 struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd,
 					 const u8 *sa, u8 dialog_token,
-					 const u8 *query, size_t query_len);
+					 const u8 *query, size_t query_len,
+					 unsigned int freq);
 #endif /* CONFIG_DPP */
 
 #else
@@ -60,6 +65,9 @@ static inline void hostapd_ucode_free_iface(struct hostapd_iface *iface)
 static inline void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type)
 {
 }
+static inline void hostapd_ucode_cac_start(struct hostapd_iface *iface)
+{
+}
 static inline int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta)
 {
 	return 0;
@@ -68,6 +76,9 @@ static inline void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct
 {
 }
 static inline void hostapd_ucode_free_bss(struct hostapd_data *hapd)
+{
+}
+static inline void hostapd_ucode_forget_bss(struct hostapd_data *hapd)
 {
 }
 static inline void hostapd_ucode_wps_m7_rx(struct hostapd_data *hapd,
@@ -90,7 +101,8 @@ static inline struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd
 						       const u8 *sa,
 						       u8 dialog_token,
 						       const u8 *query,
-						       size_t query_len)
+						       size_t query_len,
+						       unsigned int freq)
 {
 	return NULL;
 }

@@ -166,8 +166,7 @@ define KernelPackage/mlxreg
 	CONFIG_SENSORS_MLXREG_FAN \
 	CONFIG_LEDS_MLXREG
   FILES:= \
-	$(LINUX_DIR)/drivers/platform/x86/mlx-platform.ko@lt6.18 \
-	$(LINUX_DIR)/drivers/platform/mellanox/mlx-platform.ko@ge6.18 \
+	$(LINUX_DIR)/drivers/platform/mellanox/mlx-platform.ko \
 	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-hotplug.ko \
 	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-io.ko \
 	$(LINUX_DIR)/drivers/hwmon/mlxreg-fan.ko \
@@ -298,7 +297,6 @@ define KernelPackage/parport-pc
 	CONFIG_PARPORT_PC_PCMCIA=n \
 	CONFIG_PARPORT_PC_SUPERIO=y \
 	CONFIG_PARPORT_SERIAL=n \
-	CONFIG_PARIDE=n \
 	CONFIG_SCSI_IMM=n \
 	CONFIG_SCSI_PPA=n
   FILES:= \
@@ -312,7 +310,7 @@ $(eval $(call KernelPackage,parport-pc))
 define KernelPackage/lp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port line printer device support
-  DEPENDS:=+kmod-ppdev
+  DEPENDS:=printer-support +kmod-ppdev
   KCONFIG:= \
 	CONFIG_PRINTER
   FILES:= \
@@ -331,7 +329,6 @@ define KernelPackage/mmc
 	CONFIG_MMC \
 	CONFIG_MMC_BLOCK \
 	CONFIG_MMC_DEBUG=n \
-	CONFIG_MMC_UNSAFE_RESUME=n \
 	CONFIG_MMC_TIFM_SD=n \
 	CONFIG_MMC_WBSD=n \
 	CONFIG_SDIO_UART=n
@@ -410,7 +407,7 @@ $(eval $(call KernelPackage,softdog))
 define KernelPackage/ssb
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Silicon Sonics Backplane glue code
-  DEPENDS:=@PCI_SUPPORT @!TARGET_bcm47xx @!TARGET_bcm63xx
+  DEPENDS:=@PCI_SUPPORT @!TARGET_bcm47xx
   KCONFIG:=\
 	CONFIG_SSB \
 	CONFIG_SSB_B43_PCI_BRIDGE=y \
@@ -421,8 +418,7 @@ define KernelPackage/ssb
 	CONFIG_SSB_PCIHOST=y \
 	CONFIG_SSB_PCIHOST_POSSIBLE=y \
 	CONFIG_SSB_POSSIBLE=y \
-	CONFIG_SSB_SPROM=y \
-	CONFIG_SSB_SILENT=y
+	CONFIG_SSB_SPROM=y
   FILES:=$(LINUX_DIR)/drivers/ssb/ssb.ko
   AUTOLOAD:=$(call AutoLoad,18,ssb,1)
 endef
@@ -527,6 +523,22 @@ endef
 $(eval $(call KernelPackage,mtdram))
 
 
+define KernelPackage/phram
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=MTD device backed by physical RAM
+  KCONFIG:=CONFIG_MTD_PHRAM
+  FILES:=$(LINUX_DIR)/drivers/mtd/devices/phram.ko
+  AUTOLOAD:=$(call AutoProbe,phram)
+endef
+
+define KernelPackage/phram/description
+  Exposes a physical memory range as an MTD device. Memory regions can be
+  specified via module parameters or device tree nodes with compatible="phram".
+endef
+
+$(eval $(call KernelPackage,phram))
+
+
 define KernelPackage/ramoops
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Ramoops (pstore-ram)
@@ -619,8 +631,8 @@ define KernelPackage/serial-8250-exar
   TITLE:=Exar 8250 UARTs
   KCONFIG:= CONFIG_SERIAL_8250_EXAR
   FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/8250_exar.ko
-  AUTOLOAD:=$(call AutoProbe,8250 8250_base 8250_exar)
-  DEPENDS:=@PCI_SUPPORT +kmod-serial-8250 +!LINUX_6_12:kmod-eeprom-93cx6
+  AUTOLOAD:=$(call AutoProbe,8250_exar)
+  DEPENDS:=@PCI_SUPPORT +kmod-serial-8250 +kmod-eeprom-93cx6
 endef
 
 define KernelPackage/serial-8250-exar/description
@@ -628,6 +640,24 @@ define KernelPackage/serial-8250-exar/description
 endef
 
 $(eval $(call KernelPackage,serial-8250-exar))
+
+
+define KernelPackage/serial-sc16is7xx
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=NXP SC16IS7xx SPI UARTs
+  KCONFIG:=CONFIG_SERIAL_SC16IS7XX
+  FILES:= \
+	$(LINUX_DIR)/drivers/tty/serial/sc16is7xx.ko \
+	$(LINUX_DIR)/drivers/tty/serial/sc16is7xx_spi.ko
+  AUTOLOAD:=$(call AutoProbe,sc16is7xx sc16is7xx_spi)
+  DEPENDS:=+kmod-regmap-spi
+endef
+
+define KernelPackage/serial-sc16is7xx/description
+ Kernel module for the NXP SC16IS7xx single and dual UART bridges on SPI.
+endef
+
+$(eval $(call KernelPackage,serial-sc16is7xx))
 
 
 define KernelPackage/regmap-core
@@ -723,7 +753,6 @@ define KernelPackage/zram
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
-	CONFIG_ZRAM_DEBUG=n \
 	CONFIG_ZRAM_WRITEBACK=n \
 	CONFIG_ZSMALLOC_STAT=n
   FILES:= \
@@ -862,8 +891,7 @@ define KernelPackage/ptp-qoriq
   TITLE:=Freescale QorIQ PTP support
   DEPENDS:=@(TARGET_mpc85xx||TARGET_qoriq) +kmod-ptp
   KCONFIG:=CONFIG_PTP_1588_CLOCK_QORIQ
-  FILES:=$(LINUX_DIR)/drivers/ptp/ptp-qoriq.ko@lt6.18 \
-	$(LINUX_DIR)/drivers/ptp/ptp_qoriq.ko@ge6.18
+  FILES:=$(LINUX_DIR)/drivers/ptp/ptp_qoriq.ko
   AUTOLOAD:=$(call AutoProbe,ptp-qoriq)
 endef
 
@@ -887,6 +915,27 @@ define KernelPackage/random-core/description
 endef
 
 $(eval $(call KernelPackage,random-core))
+
+
+define KernelPackage/seg-led-gpio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=GPIO seven-segment display support
+  DEPENDS:=@GPIO_SUPPORT
+  KCONFIG:= \
+	CONFIG_AUXDISPLAY=y \
+	CONFIG_LINEDISP \
+	CONFIG_SEG_LED_GPIO
+  FILES:= \
+	$(LINUX_DIR)/drivers/auxdisplay/line-display.ko \
+	$(LINUX_DIR)/drivers/auxdisplay/seg-led-gpio.ko
+  AUTOLOAD:=$(call AutoProbe,seg-led-gpio)
+endef
+
+define KernelPackage/seg-led-gpio/description
+  Support for seven-segment displays connected to GPIO pins.
+endef
+
+$(eval $(call KernelPackage,seg-led-gpio))
 
 
 define KernelPackage/thermal
@@ -916,23 +965,6 @@ define KernelPackage/thermal/description
 endef
 
 $(eval $(call KernelPackage,thermal))
-
-
-define KernelPackage/echo
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Line Echo Canceller
-  DEPENDS:=@LINUX_6_12
-  KCONFIG:=CONFIG_ECHO
-  FILES:=$(LINUX_DIR)/drivers/misc/echo/echo.ko
-  AUTOLOAD:=$(call AutoLoad,50,echo)
-endef
-
-define KernelPackage/echo/description
- This driver provides line echo cancelling support for mISDN and
- DAHDI drivers
-endef
-
-$(eval $(call KernelPackage,echo))
 
 
 define KernelPackage/tee
@@ -1049,7 +1081,7 @@ define KernelPackage/keys-trusted
   DEPENDS:=@KERNEL_KEYS +kmod-crypto-hash +kmod-crypto-hmac +kmod-crypto-sha1 +kmod-tpm
   KCONFIG:=CONFIG_TRUSTED_KEYS
   FILES:= $(LINUX_DIR)/security/keys/trusted-keys/trusted.ko
-  AUTOLOAD:=$(call AutoLoad,01,trusted-keys,1)
+  AUTOLOAD:=$(call AutoLoad,01,trusted,1)
 endef
 
 define KernelPackage/keys-trusted/description
@@ -1078,6 +1110,22 @@ endef
 
 $(eval $(call KernelPackage,tpm))
 
+define KernelPackage/tpm-crb
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=TCG CRB 2.0 TPM Interface
+  DEPENDS:=@(TARGET_x86||TARGET_armsr) +kmod-tpm
+  KCONFIG:=CONFIG_TCG_CRB
+  FILES:=$(LINUX_DIR)/drivers/char/tpm/tpm_crb.ko
+  AUTOLOAD:=$(call AutoLoad,15,tpm_crb,1)
+endef
+
+define KernelPackage/tpm-crb/description
+  This device driver implements the TPM interface as defined in
+  the TCG CRB 2.0 TPM specification.
+endef
+
+$(eval $(call KernelPackage,tpm-crb))
+
 define KernelPackage/tpm-ftpm-tee
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TEE based firmware TPM (fTPM)
@@ -1098,7 +1146,7 @@ $(eval $(call KernelPackage,tpm-ftpm-tee))
 define KernelPackage/tpm-tis
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TPM TIS 1.2 Interface / TPM 2.0 FIFO Interface
-	DEPENDS:= @(TARGET_x86||TARGET_armsr||TARGET_imx) +kmod-tpm
+	DEPENDS:= @(TARGET_x86||TARGET_armsr||TARGET_imx||TARGET_qualcommax) +kmod-tpm
   KCONFIG:= CONFIG_TCG_TIS
   FILES:= \
 	$(LINUX_DIR)/drivers/char/tpm/tpm_tis.ko \

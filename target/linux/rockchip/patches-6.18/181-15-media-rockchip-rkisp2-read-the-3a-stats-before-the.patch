@@ -1,0 +1,35 @@
+From 9677cc6e4390cb6a390ac7d466562261331a3b44 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 5 Nov 2026 21:37:04 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Read the 3A stats before the params
+
+At the ISP frame end the driver applies the next parameters buffer,
+with its immediate CFG_UPD, before it reads the 3A statistics and
+writes their done bits back. A CFG_UPD issued before the done bits are
+cleared keeps the RV1126 big histogram from restarting, so its bins
+add up over all frames, and the read-modify-write of the histogram
+control register reverts a measurement configuration written just
+before.
+
+Read the statistics first and apply the parameters after them, the
+order rkisp1_isp_isr() uses.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-isp.c
+@@ -845,8 +845,9 @@ irqreturn_t rkisp2_isp_isr(int irq, void
+ 
+ 	if (status & RKISP2_CIF_ISP_FRAME) {
+ 		rkisp2->debug.complete_frames++;
+-		rkisp2_params_isr(&rkisp2->params);
++		/* a CFG_UPD before the 3A done bits are cleared corrupts the stats */
+ 		rkisp2_stats_isr_eof(&rkisp2->stats);
++		rkisp2_params_isr(&rkisp2->params);
+ 	}
+ 
+ 	rkisp2_write(rkisp2, RKISP2_CIF_ISP_ICR, status);

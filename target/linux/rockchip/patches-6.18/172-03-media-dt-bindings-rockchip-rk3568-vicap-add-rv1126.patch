@@ -1,0 +1,171 @@
+From 50989b4cc86e87edb5212be591af027b9aadf37c Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:17:47 +0100
+Subject: [PATCH] media: dt-bindings: rockchip,rk3568-vicap: add rv1126
+
+The RV1126 has a VICAP with a DVP and a MIPI CSI-2 port, and a VICAP
+Lite with a MIPI CSI-2 port only. Both are clocked by aclk, hclk and
+dclk. The VICAP takes six resets and the VICAP Lite four, each set
+including a reset for the receive path.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../bindings/media/rockchip,rk3568-vicap.yaml | 100 +++++++++++++++++-
+ 1 file changed, 96 insertions(+), 4 deletions(-)
+
+--- a/Documentation/devicetree/bindings/media/rockchip,rk3568-vicap.yaml
++++ b/Documentation/devicetree/bindings/media/rockchip,rk3568-vicap.yaml
+@@ -19,11 +19,16 @@ description:
+   counterpart, but features six MIPI CSI-2 ports and additional connections
+   to the image signal processor (ISP) blocks.
+ 
++  The Rockchip RV1126 provides a VICAP with a DVP and a MIPI CSI-2 port, and a
++  VICAP Lite that has a MIPI CSI-2 port only.
++
+ properties:
+   compatible:
+     enum:
+       - rockchip,rk3568-vicap
+       - rockchip,rk3588-vicap
++      - rockchip,rv1126-vicap
++      - rockchip,rv1126-vicap-lite
+ 
+   reg:
+     maxItems: 1
+@@ -32,7 +37,7 @@ properties:
+     maxItems: 1
+ 
+   clocks:
+-    minItems: 4
++    minItems: 3
+     maxItems: 5
+ 
+   clock-names:
+@@ -42,17 +47,17 @@ properties:
+       - const: dclk
+       - const: iclk
+       - const: iclk1
+-    minItems: 4
++    minItems: 3
+ 
+   iommus:
+     maxItems: 1
+ 
+   resets:
+-    minItems: 5
++    minItems: 4
+     maxItems: 9
+ 
+   reset-names:
+-    minItems: 5
++    minItems: 4
+     maxItems: 9
+ 
+   rockchip,grf:
+@@ -189,12 +194,15 @@ allOf:
+     then:
+       properties:
+         clocks:
++          minItems: 4
+           maxItems: 4
+ 
+         clock-names:
++          minItems: 4
+           maxItems: 4
+ 
+         resets:
++          minItems: 5
+           maxItems: 5
+ 
+         reset-names:
+@@ -249,6 +257,90 @@ allOf:
+             - const: irst4
+             - const: irst5
+ 
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: rockchip,rv1126-vicap
++    then:
++      properties:
++        clocks:
++          maxItems: 3
++
++        clock-names:
++          maxItems: 3
++
++        resets:
++          minItems: 6
++          maxItems: 6
++
++        reset-names:
++          items:
++            - const: arst
++            - const: hrst
++            - const: drst
++            - const: prst
++            - const: irst
++            - const: rxprst
++
++        ports:
++          properties:
++            port@2: false
++
++            port@3: false
++
++            port@4: false
++
++            port@5: false
++
++            port@6: false
++
++            port@10: false
++
++            port@11: false
++
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: rockchip,rv1126-vicap-lite
++    then:
++      properties:
++        clocks:
++          maxItems: 3
++
++        clock-names:
++          maxItems: 3
++
++        resets:
++          minItems: 4
++          maxItems: 4
++
++        reset-names:
++          items:
++            - const: arst
++            - const: hrst
++            - const: drst
++            - const: rxprst
++
++        ports:
++          properties:
++            port@0: false
++
++            port@2: false
++
++            port@3: false
++
++            port@4: false
++
++            port@5: false
++
++            port@6: false
++
++            port@10: false
++
++            port@11: false
++
+ additionalProperties: false
+ 
+ examples:

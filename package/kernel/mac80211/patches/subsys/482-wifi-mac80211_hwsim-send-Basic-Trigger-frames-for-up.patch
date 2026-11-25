@@ -1,0 +1,413 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 06:00:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: send Basic Trigger frames for uplink
+ SCS streams
+
+mac80211_hwsim_sta_set_scs() accepts a descriptor with an uplink traffic
+description, but nothing on the air shows that the AP serves the stream.
+A device schedules such a stream in firmware (mt7996 passes the QoS
+Characteristics element to its MURU scheduler), and 802.11be 35.17 asks
+the AP to facilitate the uplink frames within the service interval,
+using Basic Trigger frames.
+
+For each accepted uplink stream, send a Basic Trigger frame at its
+Minimum Service Interval on each link of the peer that the TX of other
+frames to the peer can use: an active link that is not in power save
+and that no advertised or negotiated TID-to-link mapping disables (IEEE
+802.11be-2024 35.3.7.2.1). The single User Info field allocates a
+242-tone RU to the peer's AID and gives the AC of the stream's TID as
+Preferred AC. TID values 8 to 15 are reserved, so the frame gives no
+recommendation (Preferred AC 0, 802.11-2024 26.5.2.2.4). A removal, a
+replacement of the SCSID, the removal of the station and a stop end the
+stream. The service interval has a floor of 1 ms, since the medium of a
+virtual bed relays each frame through user space. hwsim sends no HE TB
+PPDU, so the PHY subfields are nominal.
+
+The frames are built by the driver, so their TX status from wmediumd is
+not reported to mac80211.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_i.h
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_i.h
+@@ -182,6 +182,9 @@ struct mac80211_hwsim_data {
+ 	/* Status code for a traffic description, 0 accepts */
+ 	u16 scs_status;
+ 
++	/* accepted uplink SCS streams, changed under the wiphy mutex */
++	struct list_head ul_streams;
++
+ 	/* only used when pmsr capability is supplied */
+ 	struct cfg80211_pmsr_capabilities pmsr_capa;
+ 	struct cfg80211_pmsr_request *pmsr_request;
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -1726,6 +1726,8 @@ static void mac80211_hwsim_write_tsf(str
+ struct hwsim_tx_cb {
+ 	int cookie;
+ 	u8 orig_addrs[sizeof_field(struct ieee80211_hdr, addrs)];
++	/* the driver built the frame, so mac80211 expects no status for it */
++	bool no_status;
+ };
+ 
+ static struct hwsim_tx_cb *hwsim_tx_cb(struct sk_buff *skb)
+@@ -1917,7 +1919,7 @@ static void mac80211_hwsim_tx_frame_nl(s
+ 				       struct sk_buff *my_skb,
+ 				       int dst_portid,
+ 				       struct ieee80211_channel *channel,
+-				       const u8 *orig_addrs)
++				       const u8 *orig_addrs, bool no_status)
+ {
+ 	struct sk_buff *skb;
+ 	struct mac80211_hwsim_data *data = hw->priv;
+@@ -2005,6 +2007,7 @@ static void mac80211_hwsim_tx_frame_nl(s
+ 	cookie = atomic_inc_return(&data->pending_cookie);
+ 	cb = hwsim_tx_cb(my_skb);
+ 	cb->cookie = cookie;
++	cb->no_status = no_status;
+ 	if (orig_addrs)
+ 		memcpy(cb->orig_addrs, orig_addrs, sizeof(cb->orig_addrs));
+ 	else
+@@ -2768,7 +2771,7 @@ static void mac80211_hwsim_tx(struct iee
+ 
+ 	if (_portid || hwsim_virtio_enabled)
+ 		return mac80211_hwsim_tx_frame_nl(hw, skb, _portid, channel,
+-						  orig_addrs);
++						  orig_addrs, false);
+ 
+ 	/* NO wmediumd detected, perfect medium simulation */
+ 	data->tx_pkts++;
+@@ -2807,6 +2810,41 @@ void ieee80211_hwsim_wake_tx_queue(struc
+ 		mac80211_hwsim_tx(hw, &control, skb);
+ }
+ 
++/*
++ * An AP serves each accepted uplink SCS stream with Basic Trigger frames at
++ * its service interval (802.11be 35.17). hwsim sends no HE TB PPDU, so the
++ * frames only put that schedule on the air.
++ */
++struct hwsim_ul_stream {
++	struct list_head list;
++	struct hrtimer timer;
++	struct ieee80211_hw *hw;
++	struct ieee80211_vif *vif;
++	struct ieee80211_sta *sta;
++	u32 interval_us;
++	u8 id;
++	u8 aci;
++};
++
++static void hwsim_ul_streams_del(struct mac80211_hwsim_data *data,
++				 struct ieee80211_sta *sta, int id)
++{
++	struct hwsim_ul_stream *s, *tmp;
++
++	lockdep_assert_wiphy(data->hw->wiphy);
++
++	list_for_each_entry_safe(s, tmp, &data->ul_streams, list) {
++		if (sta && s->sta != sta)
++			continue;
++		if (id >= 0 && s->id != id)
++			continue;
++
++		list_del(&s->list);
++		hrtimer_cancel(&s->timer);
++		kfree(s);
++	}
++}
++
+ static int mac80211_hwsim_start(struct ieee80211_hw *hw)
+ {
+ 	struct mac80211_hwsim_data *data = hw->priv;
+@@ -2826,6 +2864,8 @@ static void mac80211_hwsim_stop(struct i
+ 	for (i = 0; i < ARRAY_SIZE(data->link_data); i++)
+ 		hrtimer_cancel(&data->link_data[i].beacon_timer);
+ 
++	hwsim_ul_streams_del(data, NULL, -1);
++
+ 	while (!skb_queue_empty(&data->pending))
+ 		ieee80211_free_txskb(hw, skb_dequeue(&data->pending));
+ 
+@@ -2905,9 +2945,8 @@ static void mac80211_hwsim_remove_interf
+ 		mac80211_hwsim_config_mac_nl(hw, vif->addr, false);
+ }
+ 
+-void mac80211_hwsim_tx_frame(struct ieee80211_hw *hw,
+-			     struct sk_buff *skb,
+-			     struct ieee80211_channel *chan)
++static void hwsim_tx_frame(struct ieee80211_hw *hw, struct sk_buff *skb,
++			   struct ieee80211_channel *chan, bool no_status)
+ {
+ 	struct mac80211_hwsim_data *data = hw->priv;
+ 	u32 _portid = READ_ONCE(data->wmediumd);
+@@ -2920,7 +2959,8 @@ void mac80211_hwsim_tx_frame(struct ieee
+ 	}
+ 
+ 	if (_portid || hwsim_virtio_enabled)
+-		return mac80211_hwsim_tx_frame_nl(hw, skb, _portid, chan, NULL);
++		return mac80211_hwsim_tx_frame_nl(hw, skb, _portid, chan, NULL,
++						  no_status);
+ 
+ 	data->tx_pkts++;
+ 	data->tx_bytes += skb->len;
+@@ -2928,6 +2968,182 @@ void mac80211_hwsim_tx_frame(struct ieee
+ 	dev_kfree_skb(skb);
+ }
+ 
++void mac80211_hwsim_tx_frame(struct ieee80211_hw *hw,
++			     struct sk_buff *skb,
++			     struct ieee80211_channel *chan)
++{
++	hwsim_tx_frame(hw, skb, chan, false);
++}
++
++#define HWSIM_QOS_CHAR_CTRL_TID		GENMASK(5, 2)
++/* the medium of a virtual bed relays each frame through user space */
++#define HWSIM_UL_TRIGGER_MIN_US		1000
++/* Common Info: UL Spatial Reuse prohibits SR, UL HE-SIG-A2 Reserved all 1 */
++#define HWSIM_TRIGGER_COMMON_HE		(GENMASK_ULL(52, 37) | \
++					 GENMASK_ULL(62, 54))
++#define HWSIM_TRIGGER_CS_REQUIRED	BIT_ULL(17)
++#define HWSIM_TRIGGER_USER_AID12	GENMASK_ULL(11, 0)
++#define HWSIM_TRIGGER_USER_RU		GENMASK_ULL(19, 12)
++#define HWSIM_TRIGGER_USER_TARGET_RSSI	GENMASK_ULL(38, 32)
++#define HWSIM_TRIGGER_USER_TID_AGG	GENMASK_ULL(44, 42)
++#define HWSIM_TRIGGER_USER_PREF_AC	GENMASK_ULL(47, 46)
++/* B7 to B1 index 61, the first 242-tone RU (802.11-2024 Table 9-53) */
++#define HWSIM_TRIGGER_RU_242		(61 << 1)
++#define HWSIM_TRIGGER_USER_LEN		6
++
++/* ACI (802.11-2024 Table 9-193) of each user priority */
++static const u8 hwsim_up_aci[] = { 0, 1, 1, 0, 2, 2, 3, 3 };
++
++static u64 hwsim_trigger_ul_bw(enum nl80211_chan_width width)
++{
++	switch (width) {
++	case NL80211_CHAN_WIDTH_40:
++		return IEEE80211_TRIGGER_ULBW_40MHZ;
++	case NL80211_CHAN_WIDTH_80:
++		return IEEE80211_TRIGGER_ULBW_80MHZ;
++	case NL80211_CHAN_WIDTH_80P80:
++	case NL80211_CHAN_WIDTH_160:
++	case NL80211_CHAN_WIDTH_320:
++		return IEEE80211_TRIGGER_ULBW_160_80P80MHZ;
++	default:
++		return IEEE80211_TRIGGER_ULBW_20MHZ;
++	}
++}
++
++static void hwsim_ul_trigger_tx(struct hwsim_ul_stream *s,
++				struct ieee80211_link_sta *link_sta,
++				struct ieee80211_bss_conf *link_conf,
++				struct ieee80211_chanctx_conf *chanctx)
++{
++	struct ieee80211_hw *hw = s->hw;
++	struct ieee80211_tx_info *info;
++	struct ieee80211_trigger *trig;
++	struct sk_buff *skb;
++	u64 user;
++	u8 *pos;
++	int i;
++
++	skb = dev_alloc_skb(hw->extra_tx_headroom + sizeof(*trig) +
++			    HWSIM_TRIGGER_USER_LEN);
++	if (!skb)
++		return;
++
++	skb_reserve(skb, hw->extra_tx_headroom);
++	trig = skb_put_zero(skb, sizeof(*trig));
++	trig->frame_control = cpu_to_le16(IEEE80211_FTYPE_CTL |
++					  IEEE80211_STYPE_TRIGGER);
++	memcpy(trig->ra, link_sta->addr, ETH_ALEN);
++	memcpy(trig->ta, link_conf->addr, ETH_ALEN);
++	trig->common_info =
++		cpu_to_le64(u64_encode_bits(IEEE80211_TRIGGER_TYPE_BASIC,
++					    IEEE80211_TRIGGER_TYPE_MASK) |
++			    u64_encode_bits(hwsim_trigger_ul_bw(chanctx->def.width),
++					    IEEE80211_TRIGGER_ULBW_MASK) |
++			    HWSIM_TRIGGER_CS_REQUIRED |
++			    HWSIM_TRIGGER_COMMON_HE);
++
++	user = u64_encode_bits(s->sta->aid, HWSIM_TRIGGER_USER_AID12) |
++	       u64_encode_bits(HWSIM_TRIGGER_RU_242, HWSIM_TRIGGER_USER_RU) |
++	       u64_encode_bits(127, HWSIM_TRIGGER_USER_TARGET_RSSI) |
++	       u64_encode_bits(1, HWSIM_TRIGGER_USER_TID_AGG) |
++	       u64_encode_bits(s->aci, HWSIM_TRIGGER_USER_PREF_AC);
++	pos = skb_put(skb, HWSIM_TRIGGER_USER_LEN);
++	put_unaligned_le32(lower_32_bits(user), pos);
++	put_unaligned_le16(upper_32_bits(user), pos + 4);
++
++	info = IEEE80211_SKB_CB(skb);
++	info->flags = IEEE80211_TX_CTL_NO_ACK;
++	info->band = chanctx->def.chan->band;
++	info->control.vif = s->vif;
++	info->control.rates[0].idx = 0;
++	info->control.rates[0].count = 1;
++	for (i = 1; i < IEEE80211_TX_MAX_RATES; i++)
++		info->control.rates[i].idx = -1;
++
++	hwsim_tx_frame(hw, skb, chanctx->def.chan, true);
++}
++
++static void hwsim_ul_stream_link_tx(struct hwsim_ul_stream *s,
++				    unsigned int link_id)
++{
++	struct ieee80211_chanctx_conf *chanctx;
++	struct ieee80211_link_sta *link_sta;
++	struct ieee80211_bss_conf *link_conf;
++
++	if (ieee80211_vif_is_mld(s->vif) &&
++	    !(s->vif->active_links & hwsim_sta_tx_links(s->vif, s->sta, -1) &
++	      BIT(link_id)))
++		return;
++
++	link_sta = rcu_dereference(s->sta->link[link_id]);
++	link_conf = rcu_dereference(s->vif->link_conf[link_id]);
++	if (!link_sta || !link_conf)
++		return;
++
++	chanctx = rcu_dereference(link_conf->chanctx_conf);
++	if (!chanctx)
++		return;
++
++	hwsim_ul_trigger_tx(s, link_sta, link_conf, chanctx);
++}
++
++static enum hrtimer_restart hwsim_ul_stream_timer(struct hrtimer *timer)
++{
++	struct hwsim_ul_stream *s =
++		container_of(timer, struct hwsim_ul_stream, timer);
++	struct mac80211_hwsim_data *data = s->hw->priv;
++	unsigned int link_id;
++
++	if (!data->started)
++		return HRTIMER_NORESTART;
++
++	rcu_read_lock();
++	for (link_id = 0; link_id < IEEE80211_MLD_MAX_NUM_LINKS; link_id++)
++		hwsim_ul_stream_link_tx(s, link_id);
++	rcu_read_unlock();
++
++	hrtimer_forward_now(timer, us_to_ktime(s->interval_us));
++
++	return HRTIMER_RESTART;
++}
++
++static struct hwsim_ul_stream *
++hwsim_ul_stream_alloc(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++		      struct ieee80211_sta *sta,
++		      const struct cfg80211_scs_desc *desc)
++{
++	const struct ieee80211_qos_char_elem *qc = desc->qos_char;
++	struct hwsim_ul_stream *s;
++	u8 tid;
++
++	s = kzalloc(sizeof(*s), GFP_KERNEL);
++	if (!s)
++		return NULL;
++
++	tid = u32_get_bits(le32_to_cpu(qc->control), HWSIM_QOS_CHAR_CTRL_TID);
++	/* TID values 8 to 15 are reserved: no recommendation, Preferred AC 0 */
++	if (tid < ARRAY_SIZE(hwsim_up_aci))
++		s->aci = hwsim_up_aci[tid];
++
++	s->hw = hw;
++	s->vif = vif;
++	s->sta = sta;
++	s->id = desc->id;
++	s->interval_us = max(le32_to_cpu(qc->min_service_interval),
++			     HWSIM_UL_TRIGGER_MIN_US);
++	hrtimer_setup(&s->timer, hwsim_ul_stream_timer, CLOCK_MONOTONIC,
++		      HRTIMER_MODE_REL_SOFT);
++
++	return s;
++}
++
++static bool hwsim_scs_desc_uplink(const struct cfg80211_scs_desc *desc)
++{
++	return desc->qos_char &&
++	       ieee80211_qos_char_direction(desc->qos_char) ==
++	       IEEE80211_QOS_CHAR_DIR_UPLINK;
++}
++
+ static u64 hwsim_tbtt_at_or_after(u64 tsf, u64 bcn_int)
+ {
+ 	u64 rem;
+@@ -3536,6 +3752,7 @@ static int mac80211_hwsim_sta_remove(str
+ {
+ 	hwsim_check_magic(vif);
+ 	hwsim_clear_sta_magic(sta);
++	hwsim_ul_streams_del(hw->priv, sta, -1);
+ 
+ 	return 0;
+ }
+@@ -5240,13 +5457,49 @@ static int mac80211_hwsim_sta_set_scs(st
+ 				      u8 n_desc)
+ {
+ 	struct mac80211_hwsim_data *data = hw->priv;
++	struct hwsim_ul_stream **streams;
+ 	u8 i;
+ 
+ 	for (i = 0; i < n_desc; i++)
+ 		if (desc[i]->qos_char)
+ 			res[i].status = data->scs_status;
+ 
++	streams = kcalloc(n_desc, sizeof(*streams), GFP_KERNEL);
++	if (!streams)
++		return -ENOMEM;
++
++	/* allocate first, so that a failure leaves every stream as it was */
++	for (i = 0; i < n_desc; i++) {
++		if (res[i].status || !hwsim_scs_desc_uplink(desc[i]))
++			continue;
++
++		streams[i] = hwsim_ul_stream_alloc(hw, vif, sta, desc[i]);
++		if (!streams[i])
++			goto nomem;
++	}
++
++	for (i = 0; i < n_desc; i++) {
++		if (res[i].status)
++			continue;
++
++		hwsim_ul_streams_del(data, sta, desc[i]->id);
++		if (!streams[i])
++			continue;
++
++		list_add_tail(&streams[i]->list, &data->ul_streams);
++		hrtimer_start(&streams[i]->timer,
++			      us_to_ktime(streams[i]->interval_us),
++			      HRTIMER_MODE_REL_SOFT);
++	}
++
++	kfree(streams);
+ 	return 0;
++
++nomem:
++	for (i = 0; i < n_desc; i++)
++		kfree(streams[i]);
++	kfree(streams);
++	return -ENOMEM;
+ }
+ 
+ #ifdef CPTCFG_MAC80211_DEBUGFS
+@@ -6942,6 +7195,7 @@ static int mac80211_hwsim_new_radio(stru
+ 	}
+ 
+ 	skb_queue_head_init(&data->pending);
++	INIT_LIST_HEAD(&data->ul_streams);
+ 
+ 	SET_IEEE80211_DEV(hw, data->dev);
+ 	if (!param->perm_addr) {
+@@ -7647,6 +7901,11 @@ static int hwsim_tx_info_frame_received_
+ 
+ 	mac80211_hwsim_monitor_rx(data2->hw, skb, data2->channel);
+ 
++	if (hwsim_tx_cb(skb)->no_status) {
++		dev_kfree_skb(skb);
++		return 0;
++	}
++
+ 	/* Tx info received because the frame was broadcasted on user space,
+ 	 so we get all the necessary info: tx attempts and skb control buff */
+ 

@@ -33,14 +33,19 @@
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii";
-	phy-handle = <&phy0>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 		qca,ar8327-initvals = <
 			/* GPL code drop (bsp.h & athrs17_phy.c) */
 			0x10 0xc1000000 /* PWS_REG_VALUE */

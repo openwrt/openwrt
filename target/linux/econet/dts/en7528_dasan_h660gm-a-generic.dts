@@ -7,10 +7,10 @@
 	model = "DASAN H660GM-A (Generic)";
 	compatible = "dasan,h660gm-a-generic", "econet,en7528";
 
-	keys {
+	keys-polled {
 		key-wlan {
 			label = "wlan";
-			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 22 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 		};
 	};
@@ -19,71 +19,44 @@
 		led_usb: usb {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_USB;
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 8 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "usbport";
 			trigger-sources = <&usb>;
-		};
-
-		led-lan1-green {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <1>;
-			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
 		};
 
 		led-lan1-amber {
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <1>;
-			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan2-green {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <2>;
-			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 23 GPIO_ACTIVE_LOW>;
 		};
 
 		led-lan2-amber {
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <2>;
-			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan3-green {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <3>;
-			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
 		};
 
 		led-lan3-amber {
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <3>;
-			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan4-green {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <4>;
-			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
 		};
 
 		led-lan4-amber {
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <4>;
-			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
 
 &partitions {
-	partition@60c0000 {
+	/* Concatenated with tclinux_rootfs to form the UBI volume */
+	root1: partition@60c0000 {
 		label = "unknown";
 		reg = <0x60c0000 0xd00000>;
 	};
@@ -105,4 +78,53 @@
 			};
 		};
 	};
+};
+
+/* Sockets are numbered in reverse switch port order: LAN1 is port 4. */
+&gsw_port1 {
+	label = "lan4";
+};
+
+&gsw_port2 {
+	label = "lan3";
+};
+
+&gsw_port3 {
+	label = "lan2";
+};
+
+&gsw_port4 {
+	label = "lan1";
+};
+
+&gsw_phy4_led1 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <1>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy3_led1 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <2>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy2_led1 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <3>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy1_led1 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <4>;
+	active-low;
+	status = "okay";
 };

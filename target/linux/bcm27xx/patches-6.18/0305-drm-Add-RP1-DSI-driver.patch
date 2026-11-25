@@ -136,7 +136,7 @@ Fixup rp1-dsi driver
 
 --- a/drivers/gpu/drm/Kconfig
 +++ b/drivers/gpu/drm/Kconfig
-@@ -346,6 +346,8 @@ source "drivers/gpu/drm/v3d/Kconfig"
+@@ -347,6 +347,8 @@ source "drivers/gpu/drm/v3d/Kconfig"
  
  source "drivers/gpu/drm/vc4/Kconfig"
  
@@ -147,7 +147,7 @@ Fixup rp1-dsi driver
  source "drivers/gpu/drm/etnaviv/Kconfig"
 --- a/drivers/gpu/drm/Makefile
 +++ b/drivers/gpu/drm/Makefile
-@@ -253,3 +253,5 @@ quiet_cmd_hdrtest = HDRTEST $(patsubst %
+@@ -252,3 +252,5 @@ quiet_cmd_hdrtest = HDRTEST $(patsubst %
  
  $(obj)/%.hdrtest: $(src)/%.h FORCE
  	$(call if_changed_dep,hdrtest)

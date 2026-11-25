@@ -105,7 +105,7 @@ define KernelPackage/i2c-designware-core
   $(call i2c_defaults,$(I2C_DWCORE_MODULES),58)
   TITLE:=Synopsys DesignWare I2C core
   DEPENDS:= \
-    @!(LINUX_6_18&&(TARGET_bcm27xx_bcm2708||TARGET_bcm27xx_bcm2709||TARGET_bcm27xx_bcm2710)) \
+    @!(TARGET_bcm27xx_bcm2708||TARGET_bcm27xx_bcm2709||TARGET_bcm27xx_bcm2710) \
     +kmod-i2c-core +kmod-regmap-core
   HIDDEN:=y
 endef
@@ -341,7 +341,7 @@ I2C_MUX_PCA954x_MODULES:= \
   CONFIG_I2C_MUX_PCA954x:drivers/i2c/muxes/i2c-mux-pca954x
 
 define KernelPackage/i2c-mux-pca954x
-  $(call i2c_defaults,$(I2C_MUX_PCA954x_MODULES),51)
+  $(call i2c_defaults,$(I2C_MUX_PCA954x_MODULES),51,1)
   TITLE:=Philips PCA954x I2C mux/switches
   DEPENDS:=+kmod-i2c-mux
 endef

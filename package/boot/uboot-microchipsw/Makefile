@@ -1,12 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_RELEASE:=1
-
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/microchip-ung/u-boot.git
-PKG_SOURCE_DATE:=2025-09-22
-PKG_SOURCE_VERSION:=c1abab62a00a6b8f43f663a0a30dd0a7fd6a4e95
-PKG_MIRROR_HASH:=6405c426afd8bacbb4cc985da4ca1bd04b54a0d2aa3bb3ba8f7571dbe5913055
+PKG_VERSION:=2026.10
+PKG_HASH:=3f856da3cbbc93af51ff95fde18588a348b4a26723b01d9841e999d988481015
 
 PKG_MAINTAINER:=Robert Marko <robert.marko@sartura.hr>
 
@@ -24,14 +20,14 @@ define U-Boot/ev23x71a
   NAME:=Microchip EV23X71A
   BUILD_DEVICES:=microchip_ev23x71a
   BUILD_SUBTARGET:=lan969x
-  UBOOT_CONFIG:=mchp_lan969x
+  UBOOT_CONFIG:=microchip_ev23x71a
 endef
 
 define U-Boot/tactical-1000
   NAME:=Novarq Tactical 1000
   BUILD_DEVICES:=novarq_tactical-1000
   BUILD_SUBTARGET:=lan969x
-  UBOOT_CONFIG:=mchp_lan969x
+  UBOOT_CONFIG:=novarq_tactical_1000
 endef
 
 UBOOT_TARGETS:= \

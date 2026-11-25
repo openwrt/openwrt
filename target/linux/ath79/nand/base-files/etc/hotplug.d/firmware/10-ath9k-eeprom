@@ -59,7 +59,8 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
-"ath9k-eeprom-pci-0000:01:00.0.bin")
+"ath9k-eeprom-pci-0000:01:00.0.bin"|\
+"ath9k-eeprom-pci-0001:00:00.0.bin")
 	case $board in
 	meraki,mr18)
 		. /lib/upgrade/nand.sh

@@ -1,7 +1,7 @@
+From 0dff8f3196ef0deb347a21f26829a27f7263fe23 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
 Date: Thu, 23 Mar 2023 11:05:22 +0100
-Subject: [PATCH] net: ethernet: mediatek: fix ppe flow accounting for L2
- flows
+Subject: [PATCH] net: ethernet: mediatek: fix ppe flow accounting for L2 flows
 
 For L2 flows, the packet/byte counters should report the sum of the
 counters of their subflows, both current and expired.
@@ -11,6 +11,11 @@ store the last counter value in struct mtk_flow_entry.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
+ drivers/net/ethernet/mediatek/mtk_ppe.c       | 140 ++++++++++--------
+ drivers/net/ethernet/mediatek/mtk_ppe.h       |   8 +-
+ .../net/ethernet/mediatek/mtk_ppe_debugfs.c   |   2 +-
+ .../net/ethernet/mediatek/mtk_ppe_offload.c   |  17 +--
+ 4 files changed, 89 insertions(+), 78 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
@@ -309,7 +314,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		seq_printf(m, "%05x %s %7s", i,
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -541,24 +541,21 @@ static int
+@@ -547,24 +547,21 @@ static int
  mtk_flow_offload_stats(struct mtk_eth *eth, struct flow_cls_offload *f)
  {
  	struct mtk_flow_entry *entry;

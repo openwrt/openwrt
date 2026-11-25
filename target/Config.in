@@ -16,14 +16,10 @@ config HAS_FPU
 config HAS_DT_OVERLAY_SUPPORT
 	bool
 
-config AUDIO_SUPPORT
-	bool
-
 config GPIO_SUPPORT
 	bool
 
 config PCI_SUPPORT
-	select AUDIO_SUPPORT
 	bool
 
 config PCIE_SUPPORT
@@ -39,7 +35,6 @@ config PWM_SUPPORT
 	bool
 
 config USB_SUPPORT
-	select AUDIO_SUPPORT
 	bool
 
 config USB_GADGET_SUPPORT
@@ -73,6 +68,15 @@ config USES_JFFS2_NAND
 	bool
 
 config USES_EXT4
+	bool
+
+config USES_VDI
+	bool
+
+config USES_VMDK
+	bool
+
+config USES_VHDX
 	bool
 
 config USES_EROFS
@@ -115,8 +119,13 @@ config NAND_SUPPORT
 
 config LEGACY_SDCARD_SUPPORT
 	bool
+	select PACKAGE_partx-utils
+
+config HAS_ATOMIC64
+	bool
 
 config ARCH_64BIT
+	select HAS_ATOMIC64
 	bool
 
 config VIRTIO_SUPPORT
@@ -152,14 +161,21 @@ config armeb
 config arm_v6
 	bool
 
+config arm_v6k
+	select HAS_ATOMIC64
+	bool
+
 config arm_v7
+	select HAS_ATOMIC64
 	bool
 
 config i386
+	select HAS_ATOMIC64
 	bool
 
 config i686
-	bool 
+	select HAS_ATOMIC64
+	bool
 
 config loongarch64
 	select ARCH_64BIT

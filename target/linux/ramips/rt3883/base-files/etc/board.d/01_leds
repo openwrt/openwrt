@@ -7,6 +7,12 @@ board=$(board_name)
 board_config_update
 
 case $board in
+asus,rt-n65u)
+	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0.1" "tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth0.2" "tx rx"
+	ucidef_set_led_usbport "usb" "USB" "blue:usb" \
+		"usb1-port1" "usb1-port2" "usb2-port1" "usb2-port2"
+	;;
 belkin,f9k1109v1)
 	ucidef_set_led_netdev "lan" "lan" "blue:wps" "eth0"
 	;;

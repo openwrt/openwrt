@@ -185,14 +185,6 @@ define Image/BuildKernel/MkuImage
 		-n '$(call toupper,$(ARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)' -d $(4) $(5)
 endef
 
-ifdef CONFIG_TARGET_IMAGES_GZIP
-  define Image/Gzip
-	rm -f $(1).gz
-	gzip -9n $(1)
-  endef
-endif
-
-
 # Disable noisy checks by default as in upstream
 DTC_WARN_FLAGS := \
   -Wno-interrupt_provider \
@@ -220,10 +212,6 @@ endef
 ifeq ($(DUMP),)
 ROOTFS_PARTSIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024)))
 endif
-
-define Image/pad-root-squashfs
-	$(call Image/pad-to,$(KDIR)/root.squashfs,$(if $(1),$(1),$(ROOTFS_PARTSIZE)))
-endef
 
 # $(1) source dts file
 # $(2) target dtb file
@@ -314,6 +302,7 @@ define Image/mkfs/ubifs
 		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_LZO),--compr=lzo) \
 		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB),--compr=zlib) \
 		$(if $(shell echo $(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)),--jrn-size=$(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)) \
+		$(if $(IMG_PART_DISKGUID),--uuid-node=$(subst -,,$(IMG_PART_DISKGUID))) \
 		--squash-uids \
 		-o $@ -d $(call mkfs_target_dir,$(1))
 endef
@@ -354,23 +343,6 @@ ifneq ($(CONFIG_JSON_CYCLONEDX_SBOM),)
 		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest > \
 		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).bom.cdx.json
 endif
-endef
-
-define Image/gzip-ext4-padded-squashfs
-
-  define Image/Build/squashfs
-    $(call Image/pad-root-squashfs)
-  endef
-
-  ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
-    define Image/Build/gzip/ext4
-      $(call Image/Build/gzip,ext4)
-    endef
-    define Image/Build/gzip/squashfs
-      $(call Image/Build/gzip,squashfs)
-    endef
-  endif
-
 endef
 
 ifeq ($(filter-out targz,$(ROOTFS_FILESYSTEM)),)
@@ -464,6 +436,7 @@ define Device/InitProfile
   DEVICE_ALT5_MODEL :=
   DEVICE_ALT5_VARIANT :=
   DEVICE_PACKAGES :=
+  FEED_DEVICE_PACKAGES :=
   DEVICE_DESCRIPTION = Build firmware images for $$(DEVICE_TITLE)
 endef
 
@@ -551,6 +524,9 @@ define Device/Init
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGE_METADATA :=
 
+  ##@ Filesystems to build images for.
+  # Set FILESYSTEMS/<image> to build an image for only some of them.
+  ##
   FILESYSTEMS := $(TARGET_FILESYSTEMS)
 
   UBOOT_PATH :=  $(STAGING_DIR_IMAGE)/uboot-$(1)
@@ -569,7 +545,7 @@ DEFAULT_DEVICE_VARS := \
   UIMAGE_TIME SUPPORTED_DEVICES IMAGE_METADATA KERNEL_ENTRY KERNEL_LOADADDR \
   UBOOT_PATH IMAGE_SIZE NAND_SIZE \
   FACTORY_IMG_NAME FACTORY_SIZE \
-  DEVICE_PACKAGES DEVICE_COMPAT_VERSION DEVICE_COMPAT_MESSAGE \
+  DEVICE_PACKAGES FEED_DEVICE_PACKAGES DEVICE_COMPAT_VERSION DEVICE_COMPAT_MESSAGE \
   DEVICE_VENDOR DEVICE_MODEL DEVICE_VARIANT \
   DEVICE_ALT0_VENDOR DEVICE_ALT0_MODEL DEVICE_ALT0_VARIANT \
   DEVICE_ALT1_VENDOR DEVICE_ALT1_MODEL DEVICE_ALT1_VARIANT \
@@ -614,7 +590,10 @@ define Device/Check/Common
     endif
   endif
   ifdef TARGET_PER_DEVICE_ROOTFS
-    $$(eval $$(call merge_packages,_PACKAGES,$$(DEVICE_PACKAGES) $$(call DEVICE_EXTRA_PACKAGES,$(1))))
+    _FEED_PACKAGES := $$(foreach pkg,$$(FEED_DEVICE_PACKAGES), \
+      $$(if $$(CONFIG_PACKAGE_$$(pkg)),$$(pkg), \
+        $$(if $$(_PROFILE_SET),$$(info WARNING: $(1): feed package '$$(pkg)' is not available, skipping it))))
+    $$(eval $$(call merge_packages,_PACKAGES,$$(DEVICE_PACKAGES) $$(_FEED_PACKAGES) $$(call DEVICE_EXTRA_PACKAGES,$(1))))
     ROOTFS_ID/$(1) := $$(if $$(_PROFILE_SET),$$(call mkfs_packages_id,$$(_PACKAGES)))
     PACKAGES_$$(ROOTFS_ID/$(1)) := $$(_PACKAGES)
   endif
@@ -686,7 +665,7 @@ define Device/Build/initramfs
 	DEVICE_ALT5_MODEL="$$(DEVICE_ALT5_MODEL)" \
 	DEVICE_ALT5_VARIANT="$$(DEVICE_ALT5_VARIANT)" \
 	DEVICE_TITLE="$$(DEVICE_TITLE)" \
-	DEVICE_PACKAGES="$$(DEVICE_PACKAGES)" \
+	DEVICE_PACKAGES="$$(DEVICE_PACKAGES) $$(FEED_DEVICE_PACKAGES)" \
 	TARGET="$(BOARD)" \
 	SUBTARGET="$(SUBTARGET)" \
 	VERSION_NUMBER="$(VERSION_NUMBER)" \
@@ -715,6 +694,7 @@ define Device/Build/dtb
 	$(call Image/BuildDTB,$(strip $(2))/$(strip $(3)).dts,$$@)
 
   compile-dtb: $(KDIR)/image-$(1).dtb
+  DTBS_TO_CHECK += $(KDIR)/image-$(1).dtb
   endif
 
 endef
@@ -762,12 +742,11 @@ define Device/Build/kernel
 endef
 
 define Device/Build/image
-  GZ_SUFFIX := $(if $(filter %dtb %gz,$(2)),,$(if $(and $(findstring ext4,$(1)),$(CONFIG_TARGET_IMAGES_GZIP)),.gz))
   $$(_TARGET): $(if $(CONFIG_JSON_OVERVIEW_IMAGE_INFO), \
 	  $(BUILD_DIR)/json_info_files/$(call DEVICE_IMG_NAME,$(1),$(2)).json, \
-	  $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))$$(GZ_SUFFIX))
+	  $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2)),$(1)))
-  $(3)-images: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))$$(GZ_SUFFIX)
+  $(3)-images: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))
 
   ROOTFS/$(1)/$(3) := \
 	$(KDIR)/root.$(1)$$(strip \
@@ -785,13 +764,10 @@ define Device/Build/image
 
   .IGNORE: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))
 
-  $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)).gz: $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
-	gzip -c -9n $$^ > $$@
-
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)): $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
 	cp $$^ $$@
 
-  $(BUILD_DIR)/json_info_files/$(call DEVICE_IMG_NAME,$(1),$(2)).json: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))$$(GZ_SUFFIX)
+  $(BUILD_DIR)/json_info_files/$(call DEVICE_IMG_NAME,$(1),$(2)).json: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))
 	@mkdir -p $$(shell dirname $$@)
 	DEVICE_ID="$(DEVICE_NAME)" \
 	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
@@ -822,7 +798,7 @@ define Device/Build/image
 	DEVICE_ALT5_MODEL="$(DEVICE_ALT5_MODEL)" \
 	DEVICE_ALT5_VARIANT="$(DEVICE_ALT5_VARIANT)" \
 	DEVICE_TITLE="$(DEVICE_TITLE)" \
-	DEVICE_PACKAGES="$(DEVICE_PACKAGES)" \
+	DEVICE_PACKAGES="$(DEVICE_PACKAGES) $(FEED_DEVICE_PACKAGES)" \
 	TARGET="$(BOARD)" \
 	SUBTARGET="$(SUBTARGET)" \
 	VERSION_NUMBER="$(VERSION_NUMBER)" \
@@ -878,7 +854,7 @@ define Device/Build/artifact
 	DEVICE_ALT5_MODEL="$(DEVICE_ALT5_MODEL)" \
 	DEVICE_ALT5_VARIANT="$(DEVICE_ALT5_VARIANT)" \
 	DEVICE_TITLE="$(DEVICE_TITLE)" \
-	DEVICE_PACKAGES="$(DEVICE_PACKAGES)" \
+	DEVICE_PACKAGES="$(DEVICE_PACKAGES) $(FEED_DEVICE_PACKAGES)" \
 	TARGET="$(BOARD)" \
 	SUBTARGET="$(SUBTARGET)" \
 	VERSION_NUMBER="$(VERSION_NUMBER)" \
@@ -898,7 +874,8 @@ define Device/Build
     $$(call Device/Build/compile,$$(compile),$(1))))
 
   $$(eval $$(foreach image,$$(IMAGES), \
-    $$(foreach fs,$$(filter $$(filter-out targz,$(TARGET_FILESYSTEMS)),$$(FILESYSTEMS)), \
+    $$(foreach fs,$$(filter $$(filter-out targz,$(TARGET_FILESYSTEMS)), \
+        $$(filter $$(or $$(FILESYSTEMS/$$(image)),$$(FILESYSTEMS)),$$(FILESYSTEMS))), \
       $$(call Device/Build/image,$$(fs),$$(image),$(1)))))
 
   $(if $(CONFIG_TARGET_ROOTFS_TARGZ), \
@@ -913,7 +890,7 @@ endef
 define Device/DumpInfo
 Target-Profile: DEVICE_$(1)
 Target-Profile-Name: $(DEVICE_DISPLAY)
-Target-Profile-Packages: $(DEVICE_PACKAGES)
+Target-Profile-Packages: $(DEVICE_PACKAGES) $(FEED_DEVICE_PACKAGES)
 Target-Profile-hasImageMetadata: $(if $(foreach image,$(IMAGES),$(findstring append-metadata,$(IMAGE/$(image)))),1,0)
 Target-Profile-SupportedDevices: $(SUPPORTED_DEVICES)
 $(if $(BROKEN),Target-Profile-Broken: $(BROKEN))
@@ -966,8 +943,17 @@ define Device
   $(call Device/Default,$(1))
   $(call Device/$(1),$(1))
   $(call Device/Check,$(1))
-  $(call Device/$(if $(DUMP),Dump,Build),$(1))
+  $(if $(DUMP),$(call Device/Dump,$(1)),$(call Device/BuildSelected,$(1)))
 
+endef
+
+# The rules of a device that is not selected can not be reached, and a
+# target defines more than 100 devices, so do not define them. The whole
+# image Makefile is parsed twice per build.
+define Device/BuildSelected
+  ifneq ($(CONFIG_IB)$$(_PROFILE_SET),)
+$(call Device/Build,$(1))
+  endif
 endef
 
 define BuildImage
@@ -982,11 +968,12 @@ define BuildImage
   prepare:
   compile:
   compile-dtb:
+  check-dtb:
   clean:
   image_prepare:
 
   ifeq ($(IB),)
-    .PHONY: download prepare compile compile-dtb clean image_prepare kernel_prepare install install-images
+    .PHONY: download prepare compile compile-dtb check-dtb clean image_prepare kernel_prepare install install-images
     compile:
 		$(call Build/Compile)
 
@@ -994,6 +981,11 @@ define BuildImage
 		$(call Build/Clean)
 
     compile-dtb:
+    check-dtb: compile-dtb
+	@for dtb in $$(sort $$(DTBS_TO_CHECK)); do \
+		dt-validate -s $(LINUX_DIR)/Documentation/devicetree/bindings/processed-schema.json \
+			$(if $(DT_SCHEMA_FILES),-l "$(DT_SCHEMA_FILES)",-m) "$$$$dtb" || exit 1; \
+	done
     image_prepare: compile compile-dtb
 		mkdir -p $(BIN_DIR) $(KDIR)/tmp
 		rm -rf $(BUILD_DIR)/json_info_files

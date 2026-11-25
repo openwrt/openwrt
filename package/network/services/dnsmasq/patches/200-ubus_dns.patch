@@ -1,6 +1,6 @@
 --- a/src/dnsmasq.c
 +++ b/src/dnsmasq.c
-@@ -2184,6 +2184,10 @@ static void do_tcp_connection(struct lis
+@@ -2197,6 +2197,10 @@ static void do_tcp_connection(struct lis
        daemon->pipe_to_parent = pipefd[1];
      }
  
@@ -13,7 +13,7 @@
       Reset that here. */
 --- a/src/dnsmasq.h
 +++ b/src/dnsmasq.h
-@@ -1747,14 +1747,26 @@ void emit_dbus_signal(int action, struct
+@@ -1748,14 +1748,26 @@ void emit_dbus_signal(int action, struct
  
  /* ubus.c */
  #ifdef HAVE_UBUS
@@ -182,21 +182,35 @@
  static void ubus_subscribe_cb(struct ubus_context *ctx, struct ubus_object *obj)
  {
    (void)ctx;
-@@ -105,13 +112,21 @@ static void ubus_disconnect_cb(struct ub
+@@ -87,6 +94,8 @@ static void ubus_destroy(struct ubus_con
+   /* Forces re-initialization when we're reusing the same definitions later on. */
+   ubus_object.id = 0;
+   ubus_object_type.id = 0;
++  ubus_dns_object.id = 0;
++  ubus_dns_object_type.id = 0;
+ }
+ 
+ static void ubus_disconnect_cb(struct ubus_context *ubus)
+@@ -105,13 +114,26 @@ static void ubus_disconnect_cb(struct ub
  char *ubus_init()
  {
    struct ubus_context *ubus = NULL;
 +  char *dns_name;
    int ret = 0;
  
++  if (!ubus_dns_object.name)
++    {
++      if (!(dns_name = whine_malloc(strlen(daemon->ubus_name) + 5)))
++	return NULL;
++
++      sprintf(dns_name, "%s.dns", daemon->ubus_name);
++      ubus_dns_object.name = dns_name;
++    }
++
    if (!(ubus = ubus_connect(NULL)))
      return NULL;
    
-+  dns_name = whine_malloc(strlen(daemon->ubus_name) + 5);
-+  sprintf(dns_name, "%s.dns", daemon->ubus_name);
-+
    ubus_object.name = daemon->ubus_name;
-+  ubus_dns_object.name = dns_name;
 +
    ret = ubus_add_object(ubus, &ubus_object);
 +  if (!ret)
@@ -204,7 +218,7 @@
    if (ret)
      {
        ubus_destroy(ubus);
-@@ -181,6 +196,17 @@ void check_ubus_listeners()
+@@ -181,6 +203,17 @@ void check_ubus_listeners()
        } \
    } while (0)
  
@@ -222,7 +236,7 @@
  static int ubus_handle_metrics(struct ubus_context *ctx, struct ubus_object *obj,
  			       struct ubus_request_data *req, const char *method,
  			       struct blob_attr *msg)
-@@ -333,6 +359,53 @@ fail:
+@@ -333,6 +366,53 @@ fail:
        } \
    } while (0)
  

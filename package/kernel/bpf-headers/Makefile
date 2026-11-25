@@ -13,7 +13,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 
 PKG_NAME:=linux
-PKG_PATCHVER:=6.12
+PKG_PATCHVER:=6.18
 
 # Manually include kernel version and hash from kernel details file
 GENERIC_PLATFORM_DIR := $(CURDIR)/../../../target/linux/generic
@@ -82,12 +82,16 @@ define Build/Configure
 	grep -vE 'CONFIG_(CPU_.*ENDIAN|HZ)' $(PKG_BUILD_DIR)/arch/mips/configs/generic_defconfig > $(PKG_BUILD_DIR)/.config
 	echo 'CONFIG_CPU_$(if $(CONFIG_BIG_ENDIAN),BIG,LITTLE)_ENDIAN=y' >> $(PKG_BUILD_DIR)/.config
 	$(if $(CONFIG_ARCH_64BIT),$(Build/Configure/64))
-	grep CONFIG_HZ $(REAL_LINUX_DIR)/.config >> $(PKG_BUILD_DIR)/.config
+	# Fixed-HZ targets set CONFIG_HZ without a CONFIG_HZ_<value> choice.
+	sed -n 's/^CONFIG_HZ=\(.*\)/CONFIG_HZ_\1=y/p' $(REAL_LINUX_DIR)/.config >> $(PKG_BUILD_DIR)/.config
 	yes '' | $(KERNEL_MAKE) oldconfig
 	grep 'CONFIG_HZ=' $(REAL_LINUX_DIR)/.config | \
 		cut -d= -f2 | \
 		bc -q $(LINUX_DIR)/kernel/time/timeconst.bc \
 		> $(LINUX_DIR)/include/generated/timeconst.h
+	printf '%s\n' '#ifndef __RQ_OFFSETS_H__' '#define __RQ_OFFSETS_H__' \
+		'#define RQ_nr_pinned 0' '#endif' \
+		> $(LINUX_DIR)/include/generated/rq-offsets.h
 	$(BPF_DOC) --header \
 		--file $(LINUX_DIR)/tools/include/uapi/linux/bpf.h \
 		> $(PKG_BUILD_DIR)/tools/lib/bpf/bpf_helper_defs.h

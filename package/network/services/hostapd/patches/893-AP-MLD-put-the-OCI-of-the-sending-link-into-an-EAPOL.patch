@@ -1,0 +1,613 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 22:57:58 +0100
+Subject: [PATCH] AP MLD: put the OCI of the sending link into an EAPOL-Key
+ frame
+
+The authenticator of a non-AP MLD runs on the association link. It puts
+the OCI of that link into EAPOL-Key message 3/4, and validates message
+2/4 and group message 2/2 against that link. hostapd sends these frames
+on the link that an established advertised TID-to-link mapping enables,
+and to an authorized non-AP MLD on a link that the driver picks. The
+station can answer on any link. Group message 1/2 to a non-AP MLD
+carries no OCI KDE at all, so a station with OCV refuses it with "did
+not receive mandatory OCI".
+
+IEEE Std 802.11-2024 12.7.6.1: "OCI KDE contains the current operating
+channel information for the operating channel in which the EAPOL-Key PDU
+is sent"; 12.7.7.1: "The OCI represents the current operating channel
+information using which the EAPOL-Key PDU is sent". IEEE Std
+802.11be-2024 12.2.10 names "the link used for the establishment of a
+security association". That a group message validates on its receive
+link follows from the 12.7.7.1 wording, not from 12.2.10.
+
+Put the OCI of the link that sends the frame into EAPOL-Key message 3/4
+and into group message 1/2, also for a non-AP MLD. Validate a received
+OCI against the channel of the link that received the frame and the
+capabilities of the station on that link. With OCV, send the EAPOL-Key
+frames of an authorized non-AP MLD on that link as well, since their OCI
+names it. A frame with no receive link falls back to the association
+link.
+
+While here, validate the OCI of an SA Query frame with the capabilities
+of the station on the link that received it, as the channel already is.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -1975,7 +1975,7 @@ static int hostapd_ctrl_iface_eapol_rx(s
+ 		return -1;
+ 	}
+ 
+-	ieee802_1x_receive(hapd, src, buf, len, FRAME_ENCRYPTION_UNKNOWN);
++	ieee802_1x_receive(hapd, src, buf, len, FRAME_ENCRYPTION_UNKNOWN, -1);
+ 	os_free(buf);
+ 
+ 	return 0;
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -2159,7 +2159,7 @@ static void hostapd_event_eapol_rx(struc
+ 		hapd = orig_hapd;
+ 	}
+ 
+-	ieee802_1x_receive(hapd, src, data, data_len, encrypted);
++	ieee802_1x_receive(hapd, src, data, data_len, encrypted, link_id);
+ }
+ 
+ #endif /* HOSTAPD */
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -2884,7 +2884,7 @@ static void handle_auth_802_1x(struct ho
+ 
+ 	/* Forward the extracted EAP PDU to AS */
+ 	ieee802_1x_receive(hapd, sta->addr, (const u8 *) eapol_pdu,
+-			   encap_len, FRAME_NOT_ENCRYPTED);
++			   encap_len, FRAME_NOT_ENCRYPTED, -1);
+ 	return;
+ 
+ fail:
+@@ -6228,7 +6228,7 @@ skip_wpa_ies:
+ 			goto out;
+ 		}
+ 
+-		if (get_sta_tx_parameters(sta->wpa_sm,
++		if (get_sta_tx_parameters(sta->wpa_sm, -1,
+ 					  channel_width_to_int(ci.chanwidth),
+ 					  ci.seg1_idx, &tx_chanwidth,
+ 					  &tx_seg1_idx) < 0) {
+@@ -9286,7 +9286,8 @@ skip_update:
+ 				hapd, mgmt->da,
+ 				wpabuf_head(sta->pending_eapol_rx->buf),
+ 				wpabuf_len(sta->pending_eapol_rx->buf),
+-				sta->pending_eapol_rx->encrypted);
++				sta->pending_eapol_rx->encrypted,
++				sta->pending_eapol_rx->link_id);
+ 		}
+ 		wpabuf_free(sta->pending_eapol_rx->buf);
+ 		os_free(sta->pending_eapol_rx);
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -87,9 +87,19 @@ void ieee802_11_send_sa_query_req(struct
+ 
+ #ifdef CONFIG_OCV
+ 	if (sta && wpa_auth_uses_ocv(sta->wpa_sm)) {
++		struct hostapd_data *tx_hapd = hapd;
+ 		struct wpa_channel_info ci;
+ 
+-		if (hostapd_drv_channel_info(hapd, &ci) != 0) {
++#ifdef CONFIG_IEEE80211BE
++		if (hapd->conf->mld_ap) {
++			tx_hapd = hostapd_mld_get_link_bss(
++				hapd, hostapd_mld_sta_tx_link_id(hapd, sta));
++			if (!tx_hapd)
++				tx_hapd = hapd;
++		}
++#endif /* CONFIG_IEEE80211BE */
++
++		if (hostapd_drv_channel_info(tx_hapd, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in SA Query Request");
+ 			return;
+@@ -307,6 +317,7 @@ void ieee802_11_sa_query_action(struct h
+ 		}
+ 
+ 		if (get_sta_tx_parameters(sta->wpa_sm,
++					  hostapd_mld_link_id(hapd),
+ 					  channel_width_to_int(ci.chanwidth),
+ 					  ci.seg1_idx, &tx_chanwidth,
+ 					  &tx_seg1_idx) < 0)
+@@ -345,6 +356,25 @@ void ieee802_11_sa_query_action(struct h
+ 
+ 	/* MLME-SAQuery.confirm */
+ 
++#ifdef CONFIG_IEEE80211BE
++	/* The request can go out on another link than the one of the BSS that
++	 * started the procedure */
++	if (sta && !sta->sa_query_trans_id && ap_sta_is_mld(hapd, sta)) {
++		struct hostapd_data *link_bss;
++
++		for_each_mld_link(link_bss, hapd) {
++			struct sta_info *link_sta = ap_get_sta(link_bss, sa);
++
++			if (!link_sta || !link_sta->sa_query_trans_id)
++				continue;
++
++			hapd = link_bss;
++			sta = link_sta;
++			break;
++		}
++	}
++#endif /* CONFIG_IEEE80211BE */
++
+ 	if (sta == NULL || sta->sa_query_trans_id == NULL) {
+ 		wpa_printf(MSG_DEBUG, "IEEE 802.11: No matching STA with "
+ 			   "pending SA Query request found");
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
+@@ -1087,7 +1087,8 @@ ieee802_1x_alloc_eapol_sm(struct hostapd
+ 
+ 
+ static void ieee802_1x_save_eapol(struct sta_info *sta, const u8 *buf,
+-				  size_t len, enum frame_encryption encrypted)
++				  size_t len, enum frame_encryption encrypted,
++				  int link_id)
+ {
+ 	if (sta->pending_eapol_rx) {
+ 		wpabuf_free(sta->pending_eapol_rx->buf);
+@@ -1106,6 +1107,7 @@ static void ieee802_1x_save_eapol(struct
+ 	}
+ 
+ 	sta->pending_eapol_rx->encrypted = encrypted;
++	sta->pending_eapol_rx->link_id = link_id;
+ 	os_get_reltime(&sta->pending_eapol_rx->rx_time);
+ }
+ 
+@@ -1133,11 +1135,13 @@ static bool ieee802_1x_check_encryption(
+  * @buf: EAPOL frame
+  * @len: Length of buf in octets
+  * @encrypted: Whether the frame was encrypted
++ * @link_id: Link ID of an MLD link that received the frame, or -1
+  *
+  * This function is called for each incoming EAPOL frame from the interface
+  */
+ void ieee802_1x_receive(struct hostapd_data *hapd, const u8 *sa, const u8 *buf,
+-			size_t len, enum frame_encryption encrypted)
++			size_t len, enum frame_encryption encrypted,
++			int link_id)
+ {
+ 	struct sta_info *sta;
+ 	struct ieee802_1x_hdr *hdr;
+@@ -1167,7 +1171,8 @@ void ieee802_1x_receive(struct hostapd_d
+ 		if (sta && (sta->flags & WLAN_STA_AUTH)) {
+ 			wpa_printf(MSG_DEBUG, "Saving EAPOL frame from " MACSTR
+ 				   " for later use", MAC2STR(sta->addr));
+-			ieee802_1x_save_eapol(sta, buf, len, encrypted);
++			ieee802_1x_save_eapol(sta, buf, len, encrypted,
++					      link_id);
+ 		}
+ 
+ 		return;
+@@ -1207,7 +1212,7 @@ void ieee802_1x_receive(struct hostapd_d
+ 	    (key->type == EAPOL_KEY_TYPE_WPA ||
+ 	     key->type == EAPOL_KEY_TYPE_RSN)) {
+ 		wpa_receive(hapd->wpa_auth, sta->wpa_sm, (u8 *) hdr,
+-			    sizeof(*hdr) + datalen);
++			    sizeof(*hdr) + datalen, link_id);
+ 		return;
+ 	}
+ 
+--- a/src/ap/ieee802_1x.h
++++ b/src/ap/ieee802_1x.h
+@@ -19,7 +19,8 @@ struct radius_msg;
+ 
+ 
+ void ieee802_1x_receive(struct hostapd_data *hapd, const u8 *sa, const u8 *buf,
+-			size_t len, enum frame_encryption encrypted);
++			size_t len, enum frame_encryption encrypted,
++			int link_id);
+ void ieee802_1x_new_station(struct hostapd_data *hapd, struct sta_info *sta);
+ void ieee802_1x_free_station(struct hostapd_data *hapd, struct sta_info *sta);
+ void ieee802_1x_move_station(struct hostapd_data *new_hapd,
+--- a/src/ap/preauth_auth.c
++++ b/src/ap/preauth_auth.c
+@@ -90,7 +90,7 @@ static void rsn_preauth_receive(void *ct
+ 		return;
+ 	sta->preauth_iface = piface;
+ 	ieee802_1x_receive(hapd, ethhdr->h_source, (u8 *) (ethhdr + 1),
+-			   len - sizeof(*ethhdr), FRAME_ENCRYPTION_UNKNOWN);
++			   len - sizeof(*ethhdr), FRAME_ENCRYPTION_UNKNOWN, -1);
+ }
+ 
+ 
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -66,6 +66,7 @@ struct pending_eapol_rx {
+ 	struct wpabuf *buf;
+ 	struct os_reltime rx_time;
+ 	enum frame_encryption encrypted;
++	int link_id;
+ };
+ 
+ struct eap_over_auth_data {
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -492,12 +492,22 @@ static void wpa_sta_disconnect(struct wp
+ 
+ 
+ #ifdef CONFIG_OCV
+-static int wpa_channel_info(struct wpa_authenticator *wpa_auth,
++static int wpa_channel_info(struct wpa_authenticator *wpa_auth, int link_id,
+ 			    struct wpa_channel_info *ci)
+ {
+ 	if (!wpa_auth->cb->channel_info)
+ 		return -1;
+-	return wpa_auth->cb->channel_info(wpa_auth->cb_ctx, ci);
++	return wpa_auth->cb->channel_info(wpa_auth->cb_ctx, link_id, ci);
++}
++
++
++static int wpa_eapol_link_id(struct wpa_state_machine *sm)
++{
++	struct wpa_authenticator *wpa_auth = sm->wpa_auth;
++
++	if (!wpa_auth->cb->eapol_link_id)
++		return -1;
++	return wpa_auth->cb->eapol_link_id(wpa_auth->cb_ctx, sm->addr);
+ }
+ #endif /* CONFIG_OCV */
+ 
+@@ -1066,6 +1076,7 @@ wpa_auth_sta_init(struct wpa_authenticat
+ 	sm->wpa_auth = wpa_auth;
+ 	sm->group = wpa_auth->group;
+ 	wpa_group_get(sm->wpa_auth, sm->group);
++	sm->last_rx_eapol_key_link_id = -1;
+ #ifdef CONFIG_IEEE80211BE
+ 	sm->mld_assoc_link_id = -1;
+ #endif /* CONFIG_IEEE80211BE */
+@@ -1698,7 +1709,7 @@ static bool wpa_auth_valid_counter(struc
+ 
+ void wpa_receive(struct wpa_authenticator *wpa_auth,
+ 		 struct wpa_state_machine *sm,
+-		 u8 *data, size_t data_len)
++		 u8 *data, size_t data_len, int link_id)
+ {
+ 	struct ieee802_1x_hdr *hdr;
+ 	struct wpa_eapol_key *key;
+@@ -2046,6 +2057,7 @@ void wpa_receive(struct wpa_authenticato
+ 	if (!sm->last_rx_eapol_key)
+ 		goto out;
+ 	sm->last_rx_eapol_key_len = data_len;
++	sm->last_rx_eapol_key_link_id = link_id;
+ 
+ 	sm->rx_eapol_key_secure = !!(key_info & WPA_KEY_INFO_SECURE);
+ 	sm->EAPOLKeyReceived = true;
+@@ -3669,7 +3681,7 @@ static struct wpabuf * fils_prepare_plai
+ 		struct wpa_channel_info ci;
+ 		u8 *pos;
+ 
+-		if (wpa_channel_info(sm->wpa_auth, &ci) != 0) {
++		if (wpa_channel_info(sm->wpa_auth, -1, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "FILS: Failed to get channel info for OCI element");
+ 			wpabuf_clear_free(plain);
+@@ -3776,16 +3788,18 @@ u8 * hostapd_eid_assoc_fils_session(stru
+ 
+ 
+ #ifdef CONFIG_OCV
+-int get_sta_tx_parameters(struct wpa_state_machine *sm, int ap_max_chanwidth,
+-			  int ap_seg1_idx, int *bandwidth, int *seg1_idx)
++int get_sta_tx_parameters(struct wpa_state_machine *sm, int link_id,
++			  int ap_max_chanwidth, int ap_seg1_idx,
++			  int *bandwidth, int *seg1_idx)
+ {
+ 	struct wpa_authenticator *wpa_auth = sm->wpa_auth;
+ 
+ 	if (!wpa_auth->cb->get_sta_tx_params)
+ 		return -1;
+ 	return wpa_auth->cb->get_sta_tx_params(wpa_auth->cb_ctx, sm->addr,
+-					       ap_max_chanwidth, ap_seg1_idx,
+-					       bandwidth, seg1_idx);
++					       link_id, ap_max_chanwidth,
++					       ap_seg1_idx, bandwidth,
++					       seg1_idx);
+ }
+ #endif /* CONFIG_OCV */
+ 
+@@ -4111,14 +4125,15 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
+ 		int tx_seg1_idx;
+ 		enum oci_verify_result res;
+ 
+-		if (wpa_channel_info(wpa_auth, &ci) != 0) {
++		if (wpa_channel_info(wpa_auth, sm->last_rx_eapol_key_link_id,
++				     &ci) != 0) {
+ 			wpa_auth_logger(wpa_auth, wpa_auth_get_spa(sm),
+ 					LOGGER_INFO,
+ 					"Failed to get channel info to validate received OCI in EAPOL-Key 2/4");
+ 			goto out;
+ 		}
+ 
+-		if (get_sta_tx_parameters(sm,
++		if (get_sta_tx_parameters(sm, sm->last_rx_eapol_key_link_id,
+ 					  channel_width_to_int(ci.chanwidth),
+ 					  ci.seg1_idx, &tx_chanwidth,
+ 					  &tx_seg1_idx) < 0)
+@@ -4385,7 +4400,7 @@ static int ocv_oci_add(struct wpa_state_
+ 	if (!wpa_auth_uses_ocv(sm))
+ 		return 0;
+ 
+-	if (wpa_channel_info(sm->wpa_auth, &ci) != 0) {
++	if (wpa_channel_info(sm->wpa_auth, wpa_eapol_link_id(sm), &ci) != 0) {
+ 		wpa_printf(MSG_WARNING,
+ 			   "Failed to get channel info for OCI element");
+ 		return -1;
+@@ -5775,12 +5790,18 @@ SM_STATE(WPA_PTK_GROUP, REKEYNEGOTIATING
+ 	} else if (sm->wpa == WPA_VERSION_WPA2 && is_mld) {
+ 		kde_len = wpa_auth_ml_group_kdes_len(sm, KDE_ALL_LINKS);
+ 		if (kde_len) {
++			kde_len += ocv_oci_len(sm);
+ 			kde_buf = os_malloc(kde_len);
+ 			if (!kde_buf)
+ 				return;
+ 
+ 			kde = pos = kde_buf;
+ 			pos = wpa_auth_ml_group_kdes(sm, pos, KDE_ALL_LINKS);
++			if (ocv_oci_add(sm, &pos,
++					conf->oci_freq_override_eapol_g1) < 0) {
++				os_free(kde_buf);
++				return;
++			}
+ 			kde_len = pos - kde_buf;
+ 		}
+ #endif /* CONFIG_IEEE80211BE */
+@@ -5843,14 +5864,15 @@ SM_STATE(WPA_PTK_GROUP, REKEYESTABLISHED
+ 		int tx_chanwidth;
+ 		int tx_seg1_idx;
+ 
+-		if (wpa_channel_info(wpa_auth, &ci) != 0) {
++		if (wpa_channel_info(wpa_auth, sm->last_rx_eapol_key_link_id,
++				     &ci) != 0) {
+ 			wpa_auth_logger(wpa_auth, wpa_auth_get_spa(sm),
+ 					LOGGER_INFO,
+ 					"Failed to get channel info to validate received OCI in EAPOL-Key group 2/2");
+ 			return;
+ 		}
+ 
+-		if (get_sta_tx_parameters(sm,
++		if (get_sta_tx_parameters(sm, sm->last_rx_eapol_key_link_id,
+ 					  channel_width_to_int(ci.chanwidth),
+ 					  ci.seg1_idx, &tx_chanwidth,
+ 					  &tx_seg1_idx) < 0)
+--- a/src/ap/wpa_auth.h
++++ b/src/ap/wpa_auth.h
+@@ -406,9 +406,10 @@ struct wpa_auth_callbacks {
+ 			  size_t data_len);
+ 	int (*send_oui)(void *ctx, const u8 *dst, u8 oui_suffix, const u8 *data,
+ 			size_t data_len);
+-	int (*channel_info)(void *ctx, struct wpa_channel_info *ci);
++	int (*channel_info)(void *ctx, int link_id, struct wpa_channel_info *ci);
++	int (*eapol_link_id)(void *ctx, const u8 *addr);
+ 	int (*update_vlan)(void *ctx, const u8 *addr, int vlan_id);
+-	int (*get_sta_tx_params)(void *ctx, const u8 *addr,
++	int (*get_sta_tx_params)(void *ctx, const u8 *addr, int link_id,
+ 				 int ap_max_chanwidth, int ap_seg1_idx,
+ 				 int *bandwidth, int *seg1_idx);
+ 	void (*store_ptksa)(void *ctx, const u8 *addr, int cipher,
+@@ -496,7 +497,7 @@ void wpa_auth_sta_no_wpa(struct wpa_stat
+ void wpa_auth_sta_deinit(struct wpa_state_machine *sm);
+ void wpa_receive(struct wpa_authenticator *wpa_auth,
+ 		 struct wpa_state_machine *sm,
+-		 u8 *data, size_t data_len);
++		 u8 *data, size_t data_len, int link_id);
+ enum wpa_event {
+ 	WPA_AUTH, WPA_ASSOC, WPA_DISASSOC, WPA_DEAUTH, WPA_REAUTH,
+ 	WPA_REAUTH_EAPOL, WPA_ASSOC_FT, WPA_ASSOC_FILS, WPA_DRV_STA_REMOVED
+@@ -644,8 +645,9 @@ const u8 *  wpa_fils_validate_fils_sessi
+ int wpa_fils_validate_key_confirm(struct wpa_state_machine *sm, const u8 *ies,
+ 				  size_t ies_len);
+ 
+-int get_sta_tx_parameters(struct wpa_state_machine *sm, int ap_max_chanwidth,
+-			  int ap_seg1_idx, int *bandwidth, int *seg1_idx);
++int get_sta_tx_parameters(struct wpa_state_machine *sm, int link_id,
++			  int ap_max_chanwidth, int ap_seg1_idx,
++			  int *bandwidth, int *seg1_idx);
+ 
+ int wpa_auth_write_fte(struct wpa_authenticator *wpa_auth,
+ 		       struct wpa_state_machine *sm,
+--- a/src/ap/wpa_auth_ft.c
++++ b/src/ap/wpa_auth_ft.c
+@@ -771,7 +771,7 @@ static int wpa_channel_info(struct wpa_a
+ {
+ 	if (!wpa_auth->cb->channel_info)
+ 		return -1;
+-	return wpa_auth->cb->channel_info(wpa_auth->cb_ctx, ci);
++	return wpa_auth->cb->channel_info(wpa_auth->cb_ctx, -1, ci);
+ }
+ #endif /* CONFIG_OCV */
+ 
+@@ -3683,7 +3683,7 @@ int wpa_ft_validate_reassoc(struct wpa_s
+ 			goto out;
+ 		}
+ 
+-		if (get_sta_tx_parameters(sm,
++		if (get_sta_tx_parameters(sm, -1,
+ 					  channel_width_to_int(ci.chanwidth),
+ 					  ci.seg1_idx, &tx_chanwidth,
+ 					  &tx_seg1_idx) < 0)
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
+@@ -695,6 +695,39 @@ static int hostapd_wpa_auth_get_seqnum(v
+ }
+ 
+ 
++static int hostapd_sta_eapol_link_id(struct hostapd_data *hapd,
++				     struct sta_info *sta)
++{
++#ifdef CONFIG_IEEE80211BE
++	bool ocv = false;
++
++	if (!hapd->conf->mld_ap)
++		return -1;
++	if (!sta)
++		return hapd->mld_link_id;
++#ifdef CONFIG_OCV
++	ocv = wpa_auth_uses_ocv(sta->wpa_sm);
++#endif /* CONFIG_OCV */
++	/* The OCI of an EAPOL-Key frame names the channel of the link that
++	 * carries it */
++	if (ap_sta_is_mld(hapd, sta) && (sta->flags & WLAN_STA_AUTHORIZED) &&
++	    !ocv)
++		return -1;
++	return hostapd_mld_sta_tx_link_id(hapd, sta);
++#else /* CONFIG_IEEE80211BE */
++	return -1;
++#endif /* CONFIG_IEEE80211BE */
++}
++
++
++static int hostapd_wpa_auth_eapol_link_id(void *ctx, const u8 *addr)
++{
++	struct hostapd_data *hapd = ctx;
++
++	return hostapd_sta_eapol_link_id(hapd, ap_get_sta(hapd, addr));
++}
++
++
+ int hostapd_wpa_auth_send_eapol(void *ctx, const u8 *addr,
+ 				const u8 *data, size_t data_len,
+ 				int encrypt)
+@@ -702,11 +735,6 @@ int hostapd_wpa_auth_send_eapol(void *ct
+ 	struct hostapd_data *hapd = ctx;
+ 	struct sta_info *sta;
+ 	u32 flags = 0;
+-	int link_id = -1;
+-
+-#ifdef CONFIG_IEEE80211BE
+-	link_id = hapd->conf->mld_ap ? hapd->mld_link_id : -1;
+-#endif /* CONFIG_IEEE80211BE */
+ 
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	if (hapd->ext_eapol_frame_io) {
+@@ -724,19 +752,12 @@ int hostapd_wpa_auth_send_eapol(void *ct
+ #endif /* CONFIG_TESTING_OPTIONS */
+ 
+ 	sta = ap_get_sta(hapd, addr);
+-	if (sta) {
++	if (sta)
+ 		flags = hostapd_sta_flags_to_drv(sta->flags);
+-#ifdef CONFIG_IEEE80211BE
+-		if (ap_sta_is_mld(hapd, sta) &&
+-		    (sta->flags & WLAN_STA_AUTHORIZED))
+-			link_id = -1;
+-		else if (hapd->conf->mld_ap)
+-			link_id = hostapd_mld_sta_tx_link_id(hapd, sta);
+-#endif /* CONFIG_IEEE80211BE */
+-	}
+ 
+ 	return hostapd_drv_hapd_send_eapol(hapd, addr, data, data_len,
+-					   encrypt, flags, link_id);
++					   encrypt, flags,
++					   hostapd_sta_eapol_link_id(hapd, sta));
+ }
+ 
+ 
+@@ -1144,10 +1165,24 @@ static int hostapd_wpa_auth_send_oui(voi
+ }
+ 
+ 
+-static int hostapd_channel_info(void *ctx, struct wpa_channel_info *ci)
++static struct hostapd_data * hostapd_wpa_auth_link_bss(struct hostapd_data *hapd,
++						       int link_id)
+ {
+-	struct hostapd_data *hapd = ctx;
++#ifdef CONFIG_IEEE80211BE
++	if (hapd->conf->mld_ap && link_id >= 0)
++		return hostapd_mld_get_link_bss(hapd, link_id);
++#endif /* CONFIG_IEEE80211BE */
++	return hapd;
++}
++
++
++static int hostapd_channel_info(void *ctx, int link_id,
++				struct wpa_channel_info *ci)
++{
++	struct hostapd_data *hapd = hostapd_wpa_auth_link_bss(ctx, link_id);
+ 
++	if (!hapd)
++		return -1;
+ 	return hostapd_drv_channel_info(hapd, ci);
+ }
+ 
+@@ -1220,16 +1255,17 @@ static int hostapd_wpa_auth_update_vlan(
+ 
+ 
+ #ifdef CONFIG_OCV
+-static int hostapd_get_sta_tx_params(void *ctx, const u8 *addr,
++static int hostapd_get_sta_tx_params(void *ctx, const u8 *addr, int link_id,
+ 				     int ap_max_chanwidth, int ap_seg1_idx,
+ 				     int *bandwidth, int *seg1_idx)
+ {
+-	struct hostapd_data *hapd = ctx;
+-	struct sta_info *sta;
++	struct hostapd_data *hapd = hostapd_wpa_auth_link_bss(ctx, link_id);
++	struct sta_info *sta = NULL;
+ 
+-	sta = ap_get_sta(hapd, addr);
++	if (hapd)
++		sta = ap_get_sta(hapd, addr);
+ 	if (!sta) {
+-		hostapd_wpa_auth_logger(hapd, addr, LOGGER_INFO,
++		hostapd_wpa_auth_logger(ctx, addr, LOGGER_INFO,
+ 					"Failed to get STA info to validate received OCI");
+ 		return -1;
+ 	}
+@@ -1854,6 +1890,7 @@ int hostapd_setup_wpa(struct hostapd_dat
+ 		.send_ether = hostapd_wpa_auth_send_ether,
+ 		.send_oui = hostapd_wpa_auth_send_oui,
+ 		.channel_info = hostapd_channel_info,
++		.eapol_link_id = hostapd_wpa_auth_eapol_link_id,
+ 		.update_vlan = hostapd_wpa_auth_update_vlan,
+ #ifdef CONFIG_PASN
+ 		.store_ptksa = hostapd_store_ptksa,
+--- a/src/ap/wpa_auth_i.h
++++ b/src/ap/wpa_auth_i.h
+@@ -81,6 +81,7 @@ struct wpa_state_machine {
+ 
+ 	u8 *last_rx_eapol_key; /* starting from IEEE 802.1X header */
+ 	size_t last_rx_eapol_key_len;
++	int last_rx_eapol_key_link_id;
+ 
+ 	unsigned int changed:1;
+ 	unsigned int in_step_loop:1;
+--- a/tests/fuzzing/eapol-key-auth/eapol-key-auth.c
++++ b/tests/fuzzing/eapol-key-auth/eapol-key-auth.c
+@@ -87,7 +87,7 @@ static void auth_eapol_rx(void *eloop_da
+ 	wpa_printf(MSG_DEBUG, "AUTH: RX EAPOL frame");
+ 	wpa->auth_sent = 0;
+ 	wpa_receive(wpa->auth_group, wpa->auth, wpa->supp_eapol,
+-		    wpa->supp_eapol_len);
++		    wpa->supp_eapol_len, -1);
+ 	if (!wpa->auth_sent) {
+ 		/* Speed up process by not going through retransmit timeout */
+ 		wpa_printf(MSG_DEBUG,
+--- a/wpa_supplicant/ap.c
++++ b/wpa_supplicant/ap.c
+@@ -1299,7 +1299,7 @@ void wpa_supplicant_ap_rx_eapol(struct w
+ 				enum frame_encryption encrypted)
+ {
+ 	ieee802_1x_receive(wpa_s->ap_iface->bss[0], src_addr, buf, len,
+-			   encrypted);
++			   encrypted, -1);
+ }
+ 
+ 
+--- a/wpa_supplicant/ibss_rsn.c
++++ b/wpa_supplicant/ibss_rsn.c
+@@ -814,7 +814,7 @@ static int ibss_rsn_process_rx_eapol(str
+ 
+ 		wpa_printf(MSG_DEBUG, "RSN: IBSS RX EAPOL for Authenticator "
+ 			   "from "MACSTR, MAC2STR(peer->addr));
+-		wpa_receive(ibss_rsn->auth_group, peer->auth, tmp, len);
++		wpa_receive(ibss_rsn->auth_group, peer->auth, tmp, len, -1);
+ 	}
+ 	os_free(tmp);
+ 

@@ -153,7 +153,7 @@ define Device/tplink_archer-c60-v3
   DEVICE_MODEL := Archer C60
   DEVICE_VARIANT := v3
   TPLINK_BOARD_ID := ARCHER-C60-V3
-  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct ipq-wifi-tplink_archer-c60-v3
 endef
 TARGET_DEVICES += tplink_archer-c60-v3
 
@@ -501,6 +501,17 @@ define Device/tplink_eap245-v3
   TPLINK_BOARD_ID := EAP245-V3
 endef
 TARGET_DEVICES += tplink_eap245-v3
+
+define Device/tplink_f52-outdoor-v1
+  $(Device/tplink-eap2x5)
+  SOC := qca9563
+  IMAGE_SIZE := 13824k
+  DEVICE_MODEL := F52-Outdoor
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  TPLINK_BOARD_ID := F52-V1
+endef
+TARGET_DEVICES += tplink_f52-outdoor-v1
 
 define Device/tplink_deco-m4r-v1
   $(Device/tplink-safeloader-uimage)

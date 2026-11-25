@@ -98,7 +98,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  };
  
  struct sparx5_main_io_resource {
-@@ -712,6 +716,10 @@ void sparx5_mirror_del(struct sparx5_mal
+@@ -714,6 +718,10 @@ void sparx5_mirror_del(struct sparx5_mal
  void sparx5_mirror_stats(struct sparx5_mall_entry *entry,
  			 struct flow_stats *fstats);
  
@@ -111,7 +111,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  {
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_main_regs.h
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main_regs.h
-@@ -8204,6 +8204,17 @@ extern const struct sparx5_regs *regs;
+@@ -8216,6 +8216,17 @@ extern const struct sparx5_regs *regs;
  	FIELD_GET(DEVRGMII_MAC_ENA_CFG_TX_ENA, x)
  
  /* LAN969X ONLY */

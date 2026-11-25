@@ -30,11 +30,12 @@ endef
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_REJECT,CONFIG_NF_REJECT_IPV4, $(P_V4)nf_reject_ipv4),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT,CONFIG_IP_NF_IPTABLES, $(P_V4)ip_tables),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT,CONFIG_NETFILTER_XTABLES, $(P_XT)x_tables),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT,CONFIG_IP_NF_IPTABLES_LEGACY, $(P_V4)ip_tables),))
 
-$(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_NETFILTER_XTABLES, $(P_XT)xt_tcpudp),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_IP_NF_FILTER, $(P_V4)iptable_filter),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_IP_NF_MANGLE, $(P_V4)iptable_mangle),))
+
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_XTABLES,CONFIG_NETFILTER_XTABLES, $(P_XT)x_tables $(P_XT)xt_tcpudp),))
 
 # userland only
 $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CORE,CONFIG_IP_NF_IPTABLES, xt_standard ipt_icmp xt_tcp xt_udp xt_comment xt_set xt_SET)))
@@ -91,8 +92,6 @@ $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_PKTTYPE, $(P_XT)xt_pktt
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_QUOTA, $(P_XT)xt_quota))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_CGROUP, $(P_XT)xt_cgroup))
 
-#$(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_TARGET_ROUTE, $(P_V4)ipt_ROUTE))
-
 # physdev
 
 $(eval $(call nf_add,IPT_PHYSDEV,CONFIG_NETFILTER_XT_MATCH_PHYSDEV, $(P_XT)xt_physdev))
@@ -145,6 +144,7 @@ $(eval $(call nf_add,IPT_FLOW,CONFIG_NETFILTER_XT_TARGET_FLOWOFFLOAD, $(P_XT)xt_
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_REJECT6,CONFIG_NF_REJECT_IPV6, $(P_V6)nf_reject_ipv6),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT6,CONFIG_IP6_NF_IPTABLES, $(P_V6)ip6_tables),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT6,CONFIG_IP6_NF_IPTABLES_LEGACY, $(P_V6)ip6_tables),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_DEFRAG_IPV6, $(P_V6)nf_defrag_ipv6),))
 
@@ -167,10 +167,7 @@ $(eval $(call nf_add,IPT_IPV6_EXTRA,CONFIG_IP6_NF_MATCH_RT, $(P_V6)ip6t_rt))
 
 # log
 
-$(eval $(call nf_add,NF_LOG,CONFIG_NF_LOG_COMMON, $(P_XT)nf_log_common, lt 5.13))
-$(eval $(call nf_add,NF_LOG,CONFIG_NF_LOG_IPV4, $(P_V4)nf_log_ipv4, lt 5.13))
-$(eval $(call nf_add,NF_LOG,CONFIG_NF_LOG_SYSLOG, $(P_XT)nf_log_syslog, ge 5.13))
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_LOG6,CONFIG_NF_LOG_IPV6, $(P_V6)nf_log_ipv6,lt 5.13),))
+$(eval $(call nf_add,NF_LOG,CONFIG_NF_LOG_SYSLOG, $(P_XT)nf_log_syslog))
 
 # nat
 
@@ -262,6 +259,7 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNCOUNT,CONFIG_NETFILTER_CONNCOUNT, $(
 #
 
 $(eval $(if $(NF_KMOD),$(call nf_add,EBTABLES,CONFIG_BRIDGE_NF_EBTABLES, $(P_EBT)ebtables),))
+$(eval $(if $(NF_KMOD),$(call nf_add,EBTABLES,CONFIG_BRIDGE_NF_EBTABLES_LEGACY, $(P_EBT)ebtables),))
 
 # ebtables: tables
 $(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_BROUTE, $(P_EBT)ebtable_broute))
@@ -290,19 +288,14 @@ $(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_SNAT, $(P_EBT)ebt_snat))
 # watchers
 $(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_LOG, $(P_EBT)ebt_log))
 $(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_NFLOG, $(P_EBT)ebt_nflog))
-$(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_NFQUEUE, $(P_EBT)ebt_nfqueue))
 
 # nftables
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NF_TABLES, $(P_XT)nf_tables),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NF_TABLES_SET, $(P_XT)nf_tables_set),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_COUNTER, $(P_XT)nft_counter),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_CT, $(P_XT)nft_ct),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_HASH, $(P_XT)nft_hash),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_LIMIT, $(P_XT)nft_limit),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_LOG, $(P_XT)nft_log),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_META, $(P_XT)nft_meta),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_NUMGEN, $(P_XT)nft_numgen),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_OBJREF, $(P_XT)nft_objref),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_QUOTA, $(P_XT)nft_quota),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_REDIR, $(P_XT)nft_redir),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_CORE,CONFIG_NFT_REJECT, $(P_XT)nft_reject $(P_V4)nft_reject_ipv4 $(P_V6)nft_reject_ipv6),))

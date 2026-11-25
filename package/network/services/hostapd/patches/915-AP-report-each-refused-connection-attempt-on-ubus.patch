@@ -1,0 +1,249 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] AP: report each refused connection attempt on ubus
+
+The only ubus notification of a failed connection is key-mismatch, which
+names neither the status the station got nor, for a wrong PSK, the frame
+of the failure. A refusal for any other reason goes unreported.
+
+Notify connect-refused at the reply of each refused Authentication and
+(Re)Association Request, with the status, and with the frame body where
+the handler has the frame: the FT and FILS completion callbacks get
+none. Status codes that only continue a procedure stay out:
+anti-clogging, the SAE group, and the temporary rejection of the SA
+Query. key-mismatch names the status of its reply, and for a wrong PSK
+the EAPOL-Key message 2 that failed.
+
+A driver with its own AP SME accepted the association before hostapd
+checks it in hostapd_notif_assoc(), so the refusal reaches the station
+as a Disassociation frame. Notify connect-refused there too, with the
+Reason Code of that frame and no status.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -357,6 +357,25 @@ static u16 auth_shared_key(struct hostap
+ #endif /* CONFIG_WEP */
+ 
+ 
++/* A station gets these codes in the course of a procedure that goes on. */
++static void connect_refused_notify(struct hostapd_data *hapd, const u8 *addr,
++				   u16 status,
++				   enum hostapd_ubus_rsn_error rsn_error,
++				   const u8 *frame, size_t len)
++{
++	switch (status) {
++	case WLAN_STATUS_SUCCESS:
++	case WLAN_STATUS_ANTI_CLOGGING_TOKEN_REQ:
++	case WLAN_STATUS_FINITE_CYCLIC_GROUP_NOT_SUPPORTED:
++	case WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY:
++		return;
++	}
++
++	hostapd_ubus_notify_connect_refused(hapd, addr, status, 0, rsn_error,
++					    frame, len);
++}
++
++
+ static int send_auth_reply(struct hostapd_data *hapd, struct sta_info *sta,
+ 			   const u8 *dst,
+ 			   u16 auth_alg, u16 auth_transaction, u16 resp,
+@@ -555,6 +574,8 @@ static void handle_auth_ft_finish(void *
+ 	struct sta_info *sta;
+ 	int reply_res;
+ 
++	connect_refused_notify(hapd, dst, status, HOSTAPD_UBUS_RSN_ERROR_AUTH,
++			       NULL, 0);
+ 	reply_res = send_auth_reply(hapd, NULL, dst, WLAN_AUTH_FT,
+ 				    auth_transaction, status, ies, ies_len,
+ 				    "auth-ft-finish");
+@@ -1768,6 +1789,7 @@ static void handle_auth_sae(struct hosta
+ 	const u8 *pos, *end;
+ 	int sta_removed = 0;
+ 	bool success_status;
++	bool key_mismatch = false;
+ 
+ 	if (!groups) {
+ 		groups = default_groups;
+@@ -2047,11 +2069,8 @@ static void handle_auth_sae(struct hosta
+ 
+ 			if (sae_check_confirm(sta->sae, var, var_len,
+ 					      NULL) < 0) {
+-				hostapd_ubus_notify_key_mismatch(
+-					hapd, sta->addr,
+-					HOSTAPD_UBUS_RSN_ERROR_AUTH,
+-					(const u8 *) &mgmt->u.auth,
+-					len - IEEE80211_HDRLEN);
++				key_mismatch = true;
++				resp = WLAN_STATUS_CHALLENGE_FAIL;
+ 				if (sae_password_track_fail(hapd, sta)) {
+ 					wpa_printf(MSG_DEBUG,
+ 						   "SAE: Reject mismatching Confirm so that another password can be attempted by "
+@@ -2061,9 +2080,12 @@ static void handle_auth_sae(struct hosta
+ 						sta->sae->tmp->
+ 							try_other_password = 1;
+ 					resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+-					goto reply;
+ 				}
+-				resp = WLAN_STATUS_CHALLENGE_FAIL;
++				hostapd_ubus_notify_key_mismatch(
++					hapd, sta->addr, resp,
++					HOSTAPD_UBUS_RSN_ERROR_AUTH,
++					(const u8 *) &mgmt->u.auth,
++					len - IEEE80211_HDRLEN);
+ 				goto reply;
+ 			}
+ 			sae_password_track_success(hapd, sta);
+@@ -2093,6 +2115,11 @@ reply:
+ 		    !data && end - pos >= 2)
+ 			data = wpabuf_alloc_copy(pos, 2);
+ 
++		if (!key_mismatch)
++			connect_refused_notify(hapd, sta->addr, resp,
++					       HOSTAPD_UBUS_RSN_ERROR_AUTH,
++					       (const u8 *) &mgmt->u.auth,
++					       len - IEEE80211_HDRLEN);
+ 		send_auth_reply(hapd, sta, ap_sta_link_addr(hapd, sta),
+ 				WLAN_AUTH_SAE,
+ 				auth_transaction, resp,
+@@ -3367,6 +3394,8 @@ static void handle_auth_fils_finish(stru
+ 	auth_alg = (pub ||
+ 		    resp == WLAN_STATUS_FINITE_CYCLIC_GROUP_NOT_SUPPORTED) ?
+ 		WLAN_AUTH_FILS_SK_PFS : WLAN_AUTH_FILS_SK;
++	connect_refused_notify(hapd, sta->addr, resp,
++			       HOSTAPD_UBUS_RSN_ERROR_FILS, NULL, 0);
+ 	send_auth_reply(hapd, sta, sta->addr, auth_alg, 2, resp,
+ 			data ? wpabuf_head(data) : (u8 *) "",
+ 			data ? wpabuf_len(data) : 0, "auth-fils-finish");
+@@ -4897,6 +4926,10 @@ static void handle_auth(struct hostapd_d
+  fail:
+ 	dst = mgmt->sa;
+ 
++	connect_refused_notify(hapd, sa, resp,
++			       HOSTAPD_UBUS_RSN_ERROR_AUTH,
++			       (const u8 *) &mgmt->u.auth,
++			       len - IEEE80211_HDRLEN);
+ 	reply_res = send_auth_reply(hapd, sta, dst, auth_alg,
+ 				    auth_alg == WLAN_AUTH_SAE ?
+ 				    auth_transaction : auth_transaction + 1,
+@@ -8087,6 +8120,10 @@ static void handle_assoc(struct hostapd_
+ 	}
+ #endif /* CONFIG_TESTING_OPTIONS */
+ 
++	if (resp > 0)
++		connect_refused_notify(hapd, sta ? sta->addr : mgmt->sa, resp,
++				       HOSTAPD_UBUS_RSN_ERROR_ASSOC,
++				       (const u8 *) &mgmt->u, len - IEEE80211_HDRLEN);
+ 	if (resp >= 0)
+ 		reply_res = send_assoc_resp(hapd,
+ 					    mld_addrs_not_translated ?
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -243,10 +243,12 @@ static inline int wpa_auth_mic_failure_r
+ 
+ 
+ static inline void wpa_auth_psk_failure_report(
+-	struct wpa_authenticator *wpa_auth, const u8 *addr)
++	struct wpa_authenticator *wpa_auth, const u8 *addr,
++	const u8 *eapol, size_t eapol_len)
+ {
+ 	if (wpa_auth->cb->psk_failure_report)
+-		wpa_auth->cb->psk_failure_report(wpa_auth->cb_ctx, addr);
++		wpa_auth->cb->psk_failure_report(wpa_auth->cb_ctx, addr,
++						 eapol, eapol_len);
+ }
+ 
+ 
+@@ -4023,7 +4025,9 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
+ 				LOGGER_DEBUG,
+ 				"invalid MIC in msg 2/4 of 4-Way Handshake");
+ 		if (psk_found)
+-			wpa_auth_psk_failure_report(sm->wpa_auth, sm->addr);
++			wpa_auth_psk_failure_report(sm->wpa_auth, sm->addr,
++						    sm->last_rx_eapol_key,
++						    sm->last_rx_eapol_key_len);
+ 		goto out;
+ 	}
+ 
+--- a/src/ap/wpa_auth.h
++++ b/src/ap/wpa_auth.h
+@@ -377,7 +377,8 @@ struct wpa_auth_callbacks {
+ 		       const char *txt);
+ 	void (*disconnect)(void *ctx, const u8 *addr, u16 reason);
+ 	int (*mic_failure_report)(void *ctx, const u8 *addr);
+-	void (*psk_failure_report)(void *ctx, const u8 *addr);
++	void (*psk_failure_report)(void *ctx, const u8 *addr,
++				   const u8 *eapol, size_t eapol_len);
+ 	void (*set_eapol)(void *ctx, const u8 *addr, wpa_eapol_variable var,
+ 			  int value);
+ 	int (*get_eapol)(void *ctx, const u8 *addr, wpa_eapol_variable var);
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
+@@ -411,13 +411,16 @@ static int hostapd_wpa_auth_mic_failure_
+ }
+ 
+ 
+-static void hostapd_wpa_auth_psk_failure_report(void *ctx, const u8 *addr)
++static void hostapd_wpa_auth_psk_failure_report(void *ctx, const u8 *addr,
++						const u8 *eapol,
++						size_t eapol_len)
+ {
+ 	struct hostapd_data *hapd = ctx;
+ 	wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_POSSIBLE_PSK_MISMATCH MACSTR,
+ 		MAC2STR(addr));
+-	hostapd_ubus_notify_key_mismatch(hapd, addr,
+-					 HOSTAPD_UBUS_RSN_ERROR_NONE, NULL, 0);
++	hostapd_ubus_notify_key_mismatch(hapd, addr, 0,
++					 HOSTAPD_UBUS_RSN_ERROR_EAPOL_M2,
++					 eapol, eapol_len);
+ }
+ 
+ 
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -314,6 +314,18 @@ static struct hostapd_data * hostapd_fin
+ #endif /* HOSTAPD || CONFIG_IEEE80211BE */
+ 
+ 
++/* The driver accepted the association, so the refusal reaches the station as
++ * a Disassociation frame. */
++static void hostapd_notif_assoc_refused(struct hostapd_data *hapd,
++					const u8 *addr, u16 reason)
++{
++	hostapd_ubus_notify_connect_refused(hapd, addr, 0, reason,
++					    HOSTAPD_UBUS_RSN_ERROR_ASSOC,
++					    NULL, 0);
++	hostapd_drv_sta_disassoc(hapd, addr, reason);
++}
++
++
+ int hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
+ 			const u8 *req_ies, size_t req_ies_len,
+ 			const u8 *resp_ies, size_t resp_ies_len,
+@@ -416,13 +428,14 @@ int hostapd_notif_assoc(struct hostapd_d
+ 	} else if (!hostapd_acceptable_sta_addr(hapd, addr, addr, false)) {
+ 		wpa_printf(MSG_INFO, "STA " MACSTR " not allowed to connect",
+ 			   MAC2STR(addr));
+-		hostapd_drv_sta_disassoc(hapd, addr, WLAN_REASON_UNSPECIFIED);
++		hostapd_notif_assoc_refused(hapd, addr,
++					    WLAN_REASON_UNSPECIFIED);
+ 			return -1;
+ 	} else {
+ 		sta = ap_sta_add(hapd, addr);
+ 		if (sta == NULL) {
+-			hostapd_drv_sta_disassoc(hapd, addr,
+-						 WLAN_REASON_DISASSOC_AP_BUSY);
++			hostapd_notif_assoc_refused(
++				hapd, addr, WLAN_REASON_DISASSOC_AP_BUSY);
+ 			return -1;
+ 		}
+ 	}
+@@ -1039,7 +1052,7 @@ fail:
+ 	if (status >= 0)
+ 		hostapd_sta_assoc(hapd, addr, reassoc, status, buf, p - buf);
+ #endif /* CONFIG_IEEE80211R_AP */
+-	hostapd_drv_sta_disassoc(hapd, sta->addr, reason);
++	hostapd_notif_assoc_refused(hapd, sta->addr, reason);
+ 	ap_free_sta(hapd, sta);
+ 	return -1;
+ }

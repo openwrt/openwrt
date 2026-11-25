@@ -1,0 +1,127 @@
+From fee9c17671b6fc008398ad389434eeb134e028fe Mon Sep 17 00:00:00 2001
+From: James Hilliard <james.hilliard1@gmail.com>
+Date: Sun, 27 Sep 2026 12:52:19 -0600
+Subject: [PATCH] net: stmmac: sun8i: reset the MAC after PHY
+ initialization
+
+The MAC software reset needs a running receive clock from the PHY.
+Resetting the MAC at the end of probe therefore fails when the PHY driver
+has not been loaded or its probe has deferred on a missing supplier. The
+failure removes the MAC and its MDIO bus, so loading the missing driver
+later cannot recover the interface without reprobing the MAC.
+
+Perform the software reset in the DMA reset callback instead. The stmmac
+core calls it during hardware setup after attaching and initializing the
+PHY, and resumes a suspended PHY before reopening or resuming the MAC.
+Mask interrupts before requesting the reset and retain the existing
+DMA and interrupt-register clearing even if the reset times out. Return
+reset errors through the normal hardware-setup error path.
+
+Remove the unconditional reset from probe. Keep the separate H3 MDIO-mux
+reset after switching the mux and powering the selected PHY, since it is
+needed to latch the selected interface before MDIO accesses.
+
+Tested-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Signed-off-by: James Hilliard <james.hilliard1@gmail.com>
+Link: https://patch.msgid.link/20260927-submit-h616-emac1-v1-v6-1-e64971f4e414@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ .../net/ethernet/stmicro/stmmac/dwmac-sun8i.c | 53 +++++++++----------
+ 1 file changed, 26 insertions(+), 27 deletions(-)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c
++++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c
+@@ -269,11 +269,33 @@ static const struct emac_variant emac_va
+ #define SYSCON_ETCS_EXT_GMII	0x1
+ #define SYSCON_ETCS_INT_GMII	0x2
+ 
++static int sun8i_dwmac_reset(void __iomem *ioaddr)
++{
++	u32 v;
++
++	v = readl(ioaddr + EMAC_BASIC_CTL1);
++	writel(v | 0x01, ioaddr + EMAC_BASIC_CTL1);
++
++	/* The timeout was previously set to 10ms, but some board (OrangePI0)
++	 * need more if no cable plugged. 100ms seems OK
++	 */
++	return readl_poll_timeout(ioaddr + EMAC_BASIC_CTL1, v,
++				  !(v & 0x01), 100, 100000);
++}
++
+ /* sun8i_dwmac_dma_reset() - reset the EMAC
+  * Called from stmmac via stmmac_dma_ops->reset
+  */
+ static int sun8i_dwmac_dma_reset(void __iomem *ioaddr)
+ {
++	int ret;
++
++	writel(0, ioaddr + EMAC_INT_EN);
++
++	/* The PHY receive clock must be running for the reset to complete. */
++	ret = sun8i_dwmac_reset(ioaddr);
++
++	/* Leave DMA and interrupts disabled even if the reset timed out. */
+ 	writel(0, ioaddr + EMAC_RX_CTL1);
+ 	writel(0, ioaddr + EMAC_TX_CTL1);
+ 	writel(0, ioaddr + EMAC_RX_FRM_FLT);
+@@ -281,7 +303,7 @@ static int sun8i_dwmac_dma_reset(void __
+ 	writel(0, ioaddr + EMAC_TX_DESC_LIST);
+ 	writel(0, ioaddr + EMAC_INT_EN);
+ 	writel(0x1FFFFFF, ioaddr + EMAC_INT_STA);
+-	return 0;
++	return ret;
+ }
+ 
+ /* sun8i_dwmac_dma_init() - initialize the EMAC
+@@ -738,27 +760,6 @@ static void sun8i_dwmac_flow_ctrl(struct
+ 	writel(v, ioaddr + EMAC_TX_FLOW_CTL);
+ }
+ 
+-static int sun8i_dwmac_reset(struct stmmac_priv *priv)
+-{
+-	u32 v;
+-	int err;
+-
+-	v = readl(priv->ioaddr + EMAC_BASIC_CTL1);
+-	writel(v | 0x01, priv->ioaddr + EMAC_BASIC_CTL1);
+-
+-	/* The timeout was previoulsy set to 10ms, but some board (OrangePI0)
+-	 * need more if no cable plugged. 100ms seems OK
+-	 */
+-	err = readl_poll_timeout(priv->ioaddr + EMAC_BASIC_CTL1, v,
+-				 !(v & 0x01), 100, 100000);
+-
+-	if (err) {
+-		dev_err(priv->device, "EMAC reset timeout\n");
+-		return err;
+-	}
+-	return 0;
+-}
+-
+ /* Search in mdio-mux node for internal PHY node and get its clk/reset */
+ static int get_ephy_nodes(struct stmmac_priv *priv)
+ {
+@@ -895,7 +896,9 @@ static int mdio_mux_syscon_switch_fn(int
+ 		/* After changing syscon value, the MAC need reset or it will
+ 		 * use the last value (and so the last PHY set).
+ 		 */
+-		ret = sun8i_dwmac_reset(priv);
++		ret = sun8i_dwmac_reset(priv->ioaddr);
++		if (ret)
++			dev_err(priv->device, "EMAC reset timeout\n");
+ 	}
+ 	return ret;
+ }
+@@ -1225,10 +1228,6 @@ static int sun8i_dwmac_probe(struct plat
+ 			dev_err(&pdev->dev, "Failed to register mux\n");
+ 			goto dwmac_mux;
+ 		}
+-	} else {
+-		ret = sun8i_dwmac_reset(priv);
+-		if (ret)
+-			goto dwmac_remove;
+ 	}
+ 
+ 	pm_runtime_put(&pdev->dev);

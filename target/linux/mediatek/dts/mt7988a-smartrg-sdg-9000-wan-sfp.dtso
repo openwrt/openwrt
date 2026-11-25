@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "smartrg,sdg-9000", "mediatek,mt7988a";
+};
+
+&gmac2 {
+	phy-mode = "usxgmii";
+	managed = "in-band-status";
+	sfp = <&sfp1>;
+
+	status = "okay";
+};
+
+&leds {
+	sfp_white {
+		color = <LED_COLOR_ID_WHITE>;
+		function = "sfp";
+		gpios = <&pio 67 GPIO_ACTIVE_LOW>;
+	};
+
+	sfp_red {
+		color = <LED_COLOR_ID_RED>;
+		function = "sfp";
+		gpios = <&pio 66 GPIO_ACTIVE_HIGH>;
+		linux,default-trigger = "sfp-sfp1:fault";
+	};
+};
+
+&pio {
+	wan-mux-sel-hog {
+		gpio-hog;
+		gpios = <53 GPIO_ACTIVE_HIGH>;
+		line-name = "wan-mux-sel";
+		output-high; /* select SFP */
+	};
+};

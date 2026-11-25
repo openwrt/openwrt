@@ -1,0 +1,62 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] AP: put the Multi-AP element into a rejecting Association
+ Response
+
+send_assoc_resp() adds the Multi-AP element only where the STA holds
+WLAN_STA_MULTI_AP, and check_multi_ap() sets that flag only when it
+accepts the STA. A backhaul STA that multi_ap_client_disallow refuses,
+or that an earlier check refuses, thus gets a response without the
+element.
+
+Such a STA then does not see the bSTA Disallowed bits that tell it
+why. Also add the element where the request holds a valid Multi-AP
+element with the backhaul STA bit set.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -129,6 +129,21 @@ static u8 * hostapd_eid_multi_ap(struct
+ }
+ 
+ 
++static bool multi_ap_bsta_requested(const u8 *ies, size_t ies_len)
++{
++	struct multi_ap_params multi_ap;
++	const u8 *ie;
++
++	ie = get_vendor_ie(ies, ies_len, MULTI_AP_IE_VENDOR_TYPE);
++	if (!ie ||
++	    check_multi_ap_ie(ie + 6, ie[1] - 4, &multi_ap) !=
++	    WLAN_STATUS_SUCCESS)
++		return false;
++
++	return multi_ap.capability & MULTI_AP_BACKHAUL_STA;
++}
++
++
+ static size_t hostapd_supp_rates(struct hostapd_data *hapd, u8 *buf)
+ {
+ 	u8 *pos = buf;
+@@ -7356,7 +7371,10 @@ rsnxe_done:
+ 	}
+ #endif /* CONFIG_WPS */
+ 
+-	if (sta && (sta->flags & WLAN_STA_MULTI_AP))
++	/* Every response to a STA that identifies itself as a backhaul STA
++	 * carries the element, a rejection too. */
++	if ((sta && (sta->flags & WLAN_STA_MULTI_AP)) ||
++	    (hapd->conf->multi_ap && multi_ap_bsta_requested(ies, ies_len)))
+ 		p = hostapd_eid_multi_ap(hapd, p, buf + buflen - p);
+ 
+ #ifdef CONFIG_P2P
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -1512,6 +1512,7 @@ struct ieee80211_ampe_ie {
+ #define MBO_OUI_TYPE 22
+ #define OWE_IE_VENDOR_TYPE 0x506f9a1c
+ #define OWE_OUI_TYPE 28
++#define MULTI_AP_IE_VENDOR_TYPE 0x506f9a1b
+ #define MULTI_AP_OUI_TYPE 0x1B
+ #define DPP_CC_IE_VENDOR_TYPE 0x506f9a1e
+ #define DPP_CC_OUI_TYPE 0x1e

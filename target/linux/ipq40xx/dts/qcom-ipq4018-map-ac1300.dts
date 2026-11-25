@@ -174,7 +174,9 @@
 		};
 
 		macaddr_factory_1006: macaddr@1006 {
+			compatible = "mac-base";
 			reg = <0x1006 0x6>;
+			#nvmem-cell-cells = <1>;
 		};
 
 		precal_factory_5000: precal@5000 {
@@ -236,7 +238,7 @@
 
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_factory_1000>;
-	qcom,ath10k-calibration-variant = "ASUS-MAP-AC1300";
+	qcom,calibration-variant = "ASUS-MAP-AC1300";
 };
 
 &wifi1 {
@@ -244,7 +246,7 @@
 
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_factory_5000>;
-	qcom,ath10k-calibration-variant = "ASUS-MAP-AC1300";
+	qcom,calibration-variant = "ASUS-MAP-AC1300";
 };
 
 &usb2_hs_phy {

@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2026 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ *
+ * MT7995 tri-band radio: main function and radio node on pcie0 with
+ * the matching mt7995 factory precal. Consumers set the pcie0
+ * pinctrl and wire up the second PCIe function and module reset;
+ * board routing differs (pcie3 on SDG-8733A, pcie1 on SDG-8733B).
+ */
+
+#include "mt798x-smartrg-factory.dtsi"
+
+&pcie0 {
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		radio0: wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+			ieee80211-freq-limit = <2400000 2500000>, <5170000 5835000>, <5945000 7125000>;
+
+			band@0 {
+				/* 2.4 GHz */
+				reg = <0>;
+				nvmem-cells = <&macaddr 0x4>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				/* 5 GHz */
+				reg = <1>;
+				nvmem-cells = <&macaddr 0xa>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@2 {
+				/* 6 GHz */
+				reg = <2>;
+				nvmem-cells = <&macaddr 0x6>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};

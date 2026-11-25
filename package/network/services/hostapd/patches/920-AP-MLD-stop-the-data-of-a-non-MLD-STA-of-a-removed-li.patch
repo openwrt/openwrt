@@ -1,0 +1,113 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: [PATCH] AP MLD: stop the data of a non-MLD STA of a removed link at
+ the expiry
+
+hostapd_link_remove_notify_stas() clears the authorized flag of a STA
+with hostapd_set_sta_flags() before it sends the Disassociation frame at
+the removal TBTT. On mt7996 that call took 12 to 62 ms, so the frame
+reached the driver that much after the TBTT, and a STA that went into
+power save or left the channel in that time did not get it before the
+BSS ended.
+
+With a driver that counts the AP Removal Timer, the expiry comes 15 to
+20 ms before the TBTT. Clear the authorized flag of each non-MLD STA of
+the link there, as is done for a non-AP MLD whose only setup link is the
+removed one, and skip the call at the TBTT for a STA that is no longer
+authorized. A non-MLD STA then gets no data from the expiry on. IEEE
+Std 802.11be-2024, 35.3.6.3 puts the Disassociation frame after the TBTT
+and sets no rule for the data before it.
+
+The TBTT timeout was registered after the Beacon update of the other
+links and after that call, relative to the time of the registration, so
+both moved the TBTT handler later by the time they took. Register it at
+the expiry, right after the time to the TBTT is computed, and cancel it
+where the link is kept.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -930,8 +930,10 @@ static void hostapd_link_remove_notify_stas(struct hostapd_data *hapd)
+ 
+ 		/* Stop new data before the frame ends State 3 or 4 (IEEE Std
+ 		 * 802.11-2024, 11.3.3) */
+-		ap_sta_set_authorized(hapd, sta, 0);
+-		hostapd_set_sta_flags(hapd, sta);
++		if (sta->flags & WLAN_STA_AUTHORIZED) {
++			ap_sta_set_authorized(hapd, sta, 0);
++			hostapd_set_sta_flags(hapd, sta);
++		}
+ 
+ 		if (ap_sta_is_mld(hapd, sta)) {
+ 			tx_hapd = hostapd_link_remove_partner(hapd, sta);
+@@ -1029,19 +1031,25 @@ static bool hostapd_link_remove_sta_single_link(struct hostapd_data *hapd,
+ 
+ 
+ /* A non-AP MLD whose only setup link is the removed one counts itself
+- * disassociated at the removal TBTT (IEEE Std 802.11be-2024, 35.3.6.3) */
+-static void
+-hostapd_link_remove_unauth_single_link_stas(struct hostapd_data *hapd)
++ * disassociated at the removal TBTT (IEEE Std 802.11be-2024, 35.3.6.3). A
++ * non-MLD STA gets no data from the expiry on: the driver call that stops its
++ * data can block for tens of ms, and at the TBTT it would hold back the
++ * Disassociation frame. */
++static void hostapd_link_remove_unauth_stas(struct hostapd_data *hapd)
+ {
+ 	struct sta_info *sta;
+ 
+ 	for (sta = hapd->sta_list; sta; sta = sta->next) {
+-		if (!(sta->flags & WLAN_STA_ASSOC) || !ap_sta_is_mld(hapd, sta) ||
++		if (!(sta->flags & WLAN_STA_ASSOC) ||
++		    !(sta->flags & WLAN_STA_AUTHORIZED))
++			continue;
++
++		if (ap_sta_is_mld(hapd, sta) &&
+ 		    !hostapd_link_remove_sta_single_link(hapd, sta))
+ 			continue;
+ 
+ 		wpa_printf(MSG_DEBUG,
+-			   "MLD: " MACSTR " loses its only link_id=%u at the removal TBTT",
++			   "MLD: " MACSTR " gets no data on link_id=%u from the expiry",
+ 			   MAC2STR(sta->addr), hapd->mld_link_id);
+ 		ap_sta_set_authorized(hapd, sta, 0);
+ 		hostapd_set_sta_flags(hapd, sta);
+@@ -1107,7 +1115,8 @@ static void hostapd_link_remove_start_held(struct hostapd_data *hapd)
+ /* The expiry comes before the removal TBTT, after the driver stopped the TX of
+  * the link. The other links drop the element before that TBTT, and the
+  * stations get their frames and the link stops after it (IEEE Std
+- * 802.11be-2024, 35.3.6.3). */
++ * 802.11be-2024, 35.3.6.3). The TBTT timeout is registered first: the Beacon
++ * update and the driver calls below can block for tens of ms. */
+ static void hostapd_link_remove_offload_expire(struct hostapd_data *hapd)
+ {
+ 	u64 us;
+@@ -1115,20 +1124,21 @@ static void hostapd_link_remove_offload_expire(struct hostapd_data *hapd)
+ 	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
+ 	eloop_cancel_timeout(hostapd_link_remove_offload_missing, hapd, NULL);
+ 	us = hostapd_link_remove_tbtt_after_us(hapd);
++	eloop_register_timeout(us / 1000000, us % 1000000,
++			       hostapd_link_remove_offload_tbtt, hapd, NULL);
++	wpa_printf(MSG_DEBUG, "MLD: The removal TBTT of link_id=%u is in %llu us",
++		   hapd->mld_link_id, (unsigned long long) us);
+ 	hapd->eht_mld_link_removal_offload = false;
+ 	hapd->eht_mld_link_removal_count = 0;
+ 	hostapd_link_remove_start_held(hapd);
+ 
+-	if (!hostapd_link_remove_expire_beacons(hapd))
++	if (!hostapd_link_remove_expire_beacons(hapd)) {
++		eloop_cancel_timeout(hostapd_link_remove_offload_tbtt, hapd,
++				     NULL);
+ 		return;
++	}
+ 
+-	hostapd_link_remove_unauth_single_link_stas(hapd);
+-
+-	wpa_printf(MSG_DEBUG,
+-		   "MLD: link_id=%u stops after the removal TBTT, in %llu us",
+-		   hapd->mld_link_id, (unsigned long long) us);
+-	eloop_register_timeout(us / 1000000, us % 1000000,
+-			       hostapd_link_remove_offload_tbtt, hapd, NULL);
++	hostapd_link_remove_unauth_stas(hapd);
+ }
+ 
+ 

@@ -49,14 +49,10 @@
 &mdio0 {
 	status = "okay";
 
-	phy17: ethernet-phy@11 {
-		reg = <0x11>;
-		phy-mode = "rgmii-id";
-	};
-
-	switch0@1f {
+	ethernet-switch@10 {
 		compatible = "qca,ar8327";
-		reg = <0x1f>;
+		reg = <0x10>;
+
 		qca,ar8327-initvals = <
 			0x04 0x87600000 /* PORT0 PAD MODE CTRL */
 			0x0c 0x00080080 /* PORT6 PAD MODE CTRL */
@@ -71,21 +67,10 @@
 	};
 };
 
-&mdio1 {
-	status = "okay";
-
-	phy1: ethernet-phy@1 {
-		reg = <1>;
-		phy-mode = "sgmii";
-	};
-};
-
-
 &eth0 {
 	status = "okay";
 
 	pll-data = <0xa6000000 0x00000101 0x00001616>;
-	phy-handle = <&phy17>;
 
 	nvmem-cells = <&macaddr_uboot_ethaddr 2>;
 	nvmem-cell-names = "mac-address";
@@ -100,7 +85,6 @@
 	status = "okay";
 
 	pll-data = <0x03000101 0x00000101 0x00001616>;
-	phy-handle = <&phy1>;
 
 	nvmem-cells = <&macaddr_uboot_ethaddr 3>;
 	nvmem-cell-names = "mac-address";

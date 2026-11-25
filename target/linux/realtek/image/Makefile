@@ -5,6 +5,27 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR = 0x80100000
 
+define Build/hasivo-stock-patch
+	python3 $(TOPDIR)/target/linux/realtek/image/hasivo-stock-patch.py \
+		--board $(DEVICE_NAME) --image $@ --output $@.new \
+		--topdir $(TOPDIR) --build-dir $(BUILD_DIR) \
+		--busybox-variant $(if $(CONFIG_PACKAGE_busybox-selinux),selinux,default) \
+		--cross-compile "$(TARGET_CROSS)" --staging-dir $(STAGING_DIR) \
+		--cc "$(TARGET_CC)"
+	mv $@.new $@
+endef
+
+define Build/hasivo-web-factory
+	[ ! -f "$@" ] || { \
+		python3 $(TOPDIR)/target/linux/realtek/image/hasivo-web-factory.py \
+			--model $(HASIVO_MODEL) \
+			--uimage-magic $(UIMAGE_MAGIC) \
+			--image $@ \
+			--output $@.new && \
+		mv $@.new $@; \
+	}
+endef
+
 DEVICE_VARS += \
 	BELKIN_HEADER \
 	BELKIN_MODEL \
@@ -14,9 +35,11 @@ DEVICE_VARS += \
         CAMEO_KERNEL_PART \
         CAMEO_KERNEL_PART_SIZE \
         CAMEO_ROOTFS_PART \
+	ECS_BOARD_ID \
         FLASH_ADDR \
         H3C_DEVICE_ID \
         H3C_PRODUCT_ID \
+	HASIVO_MODEL \
 	LINKSYS_HEADER \
 	ZYNFW_BOARD \
 	ZYNFW_ALIGN \
@@ -79,6 +102,7 @@ define Build/cameo-headers
 endef
 
 define Build/7z
+	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $@)
 	$(STAGING_DIR_HOST)/bin/7zr a $(@).new -t7z -m0=lzma $(@)
 	mv $@.new $@
 endef
@@ -103,6 +127,13 @@ endef
 
 define Build/belkin-header
 	$(SCRIPT_DIR)/belkin-header.py $(@) $(@).new $(BELKIN_HEADER) ${BELKIN_MODEL}
+	mv $@.new $@
+endef
+
+# Edgecore images use a 100-byte uImage header. The last two bytes contain
+# the board ID stored in the hwinfo partition.
+define Build/edgecore-header
+	$(STAGING_DIR_HOST)/bin/uimage_padhdr -i $@ -o $@.new -l 36 -s 0:1.0.0.0 -x 34:$(ECS_BOARD_ID)
 	mv $@.new $@
 endef
 

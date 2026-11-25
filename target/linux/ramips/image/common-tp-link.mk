@@ -2,16 +2,16 @@ DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD
 DEVICE_VARS += TPLINK_HVERSION TPLINK_BOARD_ID TPLINK_HEADER_VERSION
 
 define Build/tplink-v1-okli-image
-	cp $(IMAGE_KERNEL) $(IMAGE_ROOTFS).$(word 2,$(1))
-	cat $(IMAGE_ROOTFS) >> $(IMAGE_ROOTFS).$(word 2,$(1))
+	cp $(IMAGE_KERNEL) $@.rootfs
+	cat $(IMAGE_ROOTFS) >> $@.rootfs
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) \
 		-N "$(VERSION_DIST)" -V $(REVISION) -m $(TPLINK_HEADER_VERSION) \
 		-k "$(KDIR)/loader-$(word 1,$(1)).$(LOADER_TYPE)" -E $(KERNEL_LOADADDR) \
-		-r $(IMAGE_ROOTFS).$(word 2,$(1)) -o $@.new -j -X 0x40000 \
+		-r $@.rootfs -o $@.new -j -X 0x40000 \
 		-a $(call rootfs_align,$(FILESYSTEM)) $(wordlist 3,$(words $(1)),$(1)) \
 		$(if $(findstring sysupgrade,$(word 2,$(1))),-s) && mv $@.new $@ || rm -f $@
-	rm -f $(IMAGE_ROOTFS).$(word 2,$(1))
+	rm -f $@.rootfs
 endef
 
 define Build/uImage-tplink-c9

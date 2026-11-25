@@ -124,7 +124,7 @@ static inline void rc_init_code(struct rc *rc)
 
 
 /* Called twice, but one callsite is in inline'd rc_is_bit_0_helper() */
-static void rc_do_normalize(struct rc *rc)
+static __attribute__((noinline)) void rc_do_normalize(struct rc *rc)
 {
 	if (rc->ptr >= rc->buffer_end)
 		rc_read(rc);
@@ -167,7 +167,7 @@ static inline void rc_update_bit_1(struct rc *rc, uint16_t *p)
 }
 
 /* Called 4 times in unlzma loop */
-static int rc_get_bit(struct rc *rc, uint16_t *p, int *symbol)
+static inline int rc_get_bit(struct rc *rc, uint16_t *p, int *symbol)
 {
 	if (rc_is_bit_0(rc, p)) {
 		rc_update_bit_0(rc, p);

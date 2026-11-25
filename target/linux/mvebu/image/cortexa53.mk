@@ -6,7 +6,7 @@ define Device/cznic_turris-mox
     kmod-rtc-ds1307 kmod-i2c-pxa kmod-dsa kmod-dsa-mv88e6xxx kmod-sfp \
     kmod-phy-marvell kmod-phy-marvell-10g kmod-ath10k ath10k-board-qca988x \
     ath10k-firmware-qca988x kmod-mt7915e kmod-mt7915-firmware mwlwifi-firmware-88w8997 \
-    wpad-basic-mbedtls kmod-mwifiex-sdio kmod-btmrvl
+    wpad-basic-mbedtls kmod-mwifiex-sdio kmod-btmrvl kmod-usb-storage-uas
   SOC := armada-3720
   BOOT_SCRIPT := turris-mox
 endef
@@ -153,5 +153,8 @@ define Device/ripe_atlas-v5
   DEVICE_MODEL := Atlas v5
   SOC := armada-3720
   BOOT_SCRIPT := ripe-atlas
+  KERNEL_LOADADDR := 0x00800000
+  KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | \
+    fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 endef
 TARGET_DEVICES += ripe_atlas-v5

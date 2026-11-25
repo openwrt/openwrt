@@ -1,0 +1,34 @@
+From 0293be2212d319d59589082461abf2a9b626cd1c Mon Sep 17 00:00:00 2001
+From: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+Date: Mon, 27 Jul 2026 16:39:41 -0700
+Subject: [PATCH] wifi: ath11k: fix leak in ath11k_service_ready_ext_event()
+
+Currently, during ath11k_service_ready_ext_event() processing,
+svc_rdy_ext.mac_phy_caps can be allocated during TLV parsing. This is a
+temporary allocation that is freed on the success path, but not on the
+error path. If parsing succeeds far enough to allocate mac_phy_caps and
+then fails on a later TLV, the allocation leaks. So free the allocation
+on the error path.
+
+Compile tested only.
+
+Fixes: 5b90fc760db5 ("ath11k: fix wmi service ready ext tlv parsing")
+Assisted-by: Claude:claude-sonnet-4-6
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260727-ath11k_service_ready_ext_event-memleak-v1-1-e8373d27bdd1@oss.qualcomm.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -5135,6 +5135,7 @@ static int ath11k_service_ready_ext_even
+ 	return 0;
+ 
+ err:
++	kfree(svc_rdy_ext.mac_phy_caps);
+ 	ath11k_wmi_free_dbring_caps(ab);
+ 	return ret;
+ }

@@ -6,7 +6,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ltq-dsl-base
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_FLAGS:=nonshared
 

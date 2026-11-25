@@ -11,7 +11,8 @@ arcadyan,aw1000)
 	ucidef_set_led_netdev "wan" "WAN" "green:internet" "wan"
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:1c:green:wan" "wan" "tx rx link_10 link_100 link_1000 link_2500"
 	;;
-asus,rt-ax89x)
+asus,rt-ax89x-b1|\
+asus,rt-ax89x-b2)
 	ucidef_set_led_netdev "aqr" "AQR" "white:aqr10g" "10g-copper"
 	ucidef_set_led_netdev "sfp" "SFP" "white:sfp" "10g-sfp"
 	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan"
@@ -23,6 +24,11 @@ spectrum,sax1v1k)
 	;;
 edgecore,eap102)
 	ucidef_set_led_netdev "wan" "WAN" "green:wanpoe" "wan"
+	;;
+linksys,mx4200v2)
+	ucidef_set_led_brightness "blue" "blue" "blue:status" "1" "51"
+	ucidef_set_led_brightness "green" "green" "green:status" "0"
+	ucidef_set_led_brightness "red" "red" "red:status" "0"
 	;;
 netgear,rax120v2)
 	ucidef_set_led_netdev "aqr" "AQR" "white:aqr" "lan5"
@@ -73,6 +79,10 @@ yuncore,ax880)
 	;;
 zbtlink,zbt-z800ax)
 	ucidef_set_led_netdev "internet" "Internet" "green:wan-online" "wan"
+	;;
+zyxel,nbg7815)
+	ucidef_set_led_default "led7" "LED7" "nbg7815:led7" "1"
+	ucidef_set_led_colors "led7" red 255 green 255 blue 255
 	;;
 esac
 

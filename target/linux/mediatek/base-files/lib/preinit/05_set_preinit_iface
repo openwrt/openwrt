@@ -18,7 +18,8 @@ set_preinit_iface() {
 	cudy,ap3000outdoor-v1|\
 	cudy,re3000-v1|\
 	ubnt,unifi-6-lr|\
-	zyxel,nwa50ax-pro)
+	zyxel,nwa50ax-pro|\
+	zyxel,nwa55ax-ptp)
 		ip link set eth0 up
 		ifname=eth0
 		;;
@@ -29,6 +30,10 @@ set_preinit_iface() {
 		ip link set lan up
 		ifname=lan
 		;;
+	smartrg,sdg-9000)
+		ip link set dsa0 up
+		ifname=aux
+		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,mi-router-wr30u-stock|\
@@ -38,8 +43,19 @@ set_preinit_iface() {
 		ip link set eth0 up
 		ifname=lan4
 		;;
+	glinet,gl-be14000)
+		ifname=lan9
+		;;
+	zyxel,wax300h)
+		ip link set eth0 up
+		ifname=uplink
+		;;
 	zyxel,wx5600-t0-ubootmod)
 		ifname=lan1
+		;;
+	cudy,p2-v1)
+		ip link set eth0 up
+		ifname=lan
 		;;
 	*)
 		ip link set eth0 up

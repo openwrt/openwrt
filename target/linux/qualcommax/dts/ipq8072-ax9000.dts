@@ -305,6 +305,10 @@
 						reg = <0x18 0x6>;
 					};
 
+					caldata_art_1000: calibration@1000 {
+						reg = <0x1000 0x20000>;
+					};
+
 					caldata_qca9889: caldata@4d000 {
 						reg = <0x4d000 0x844>;
 					};
@@ -345,6 +349,8 @@
 };
 
 &usb_0 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 
@@ -551,7 +557,7 @@
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
 
-			qcom,ath11k-calibration-variant = "Xiaomi-AX9000";
+			qcom,calibration-variant = "Xiaomi-AX9000";
 		};
 	};
 };
@@ -582,7 +588,9 @@
 &wifi {
 	status = "okay";
 
-	qcom,ath11k-calibration-variant = "Xiaomi-AX9000";
+	qcom,calibration-variant = "Xiaomi-AX9000";
+	nvmem-cells = <&caldata_art_1000>;
+	nvmem-cell-names = "calibration";
 };
 
 &cpu0_thermal {

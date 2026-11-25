@@ -1,0 +1,44 @@
+From fdb234aeace3ad0b19a892cb8adb8f0067b1a08e Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 23 Oct 2026 18:15:42 +0300
+Subject: [PATCH] net: phy: ax88796b: build the Rust driver next to the C one
+
+AX88796B_RUST_PHY replaces the C driver for the Asix PHYs with the Rust
+reference driver. OpenWrt packages both drivers and lets the package
+manager install one of them, so build them as two independent modules.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/phy/Kconfig  | 4 ++--
+ drivers/net/phy/Makefile | 7 ++-----
+ 2 files changed, 4 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -220,8 +220,8 @@ config AX88796B_PHY
+ 	  AX88796B package.
+ 
+ config AX88796B_RUST_PHY
+-	bool "Rust reference driver for Asix PHYs"
+-	depends on RUST_PHYLIB_ABSTRACTIONS && AX88796B_PHY
++	tristate "Rust reference driver for Asix PHYs"
++	depends on RUST_PHYLIB_ABSTRACTIONS
+ 	help
+ 	  Uses the Rust reference driver for Asix PHYs (ax88796b_rust.ko).
+ 	  The features are equivalent. It supports the Asix Electronics PHY
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -49,11 +49,8 @@ obj-$(CONFIG_AMD_PHY)		+= amd.o
+ obj-$(CONFIG_AMCC_QT2025_PHY)	+= qt2025.o
+ obj-$(CONFIG_AQUANTIA_PHY)	+= aquantia/
+ obj-$(CONFIG_AS21XXX_PHY)	+= as21xxx.o
+-ifdef CONFIG_AX88796B_RUST_PHY
+-  obj-$(CONFIG_AX88796B_PHY)	+= ax88796b_rust.o
+-else
+-  obj-$(CONFIG_AX88796B_PHY)	+= ax88796b.o
+-endif
++obj-$(CONFIG_AX88796B_PHY)	+= ax88796b.o
++obj-$(CONFIG_AX88796B_RUST_PHY)	+= ax88796b_rust.o
+ obj-$(CONFIG_BCM54140_PHY)	+= bcm54140.o
+ obj-$(CONFIG_BCM63XX_PHY)	+= bcm63xx.o
+ obj-$(CONFIG_BCM7XXX_PHY)	+= bcm7xxx.o

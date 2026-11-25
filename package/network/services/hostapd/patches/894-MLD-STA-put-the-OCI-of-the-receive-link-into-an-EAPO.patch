@@ -1,0 +1,627 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 29 Oct 2026 23:01:33 +0100
+Subject: [PATCH] MLD STA: put the OCI of the receive link into an EAPOL-Key
+ reply
+
+The supplicant puts the OCI of the association link into EAPOL-Key
+message 2/4 and group message 2/2, and validates message 3/4 and group
+message 1/2 against that link. An AP MLD sends them on another link
+where an established advertised TID-to-link mapping disables the
+association link. wpa_supplicant_rx_eapol() drops the receive link that
+the driver reports.
+
+Validate the OCI of a received EAPOL-Key frame against the link that
+received it, and send the reply with the OCI of that link on that link
+(IEEE Std 802.11-2024 12.7.6.1 and 12.7.7.1; IEEE Std 802.11be-2024
+12.2.10 names "the link used for the establishment of a security
+association", and the receive link of a group message follows from
+12.7.7.1). A frame with no receive link falls back to the association
+link.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/rsn_supp/wpa.c
++++ b/src/rsn_supp/wpa.c
+@@ -78,6 +78,18 @@ static void wpa_hexdump_link_key(int lev
+ }
+ 
+ 
++/* The link of the EAPOL-Key frame that the station answers; the OCI of the
++ * answer names the channel of that link */
++static int wpa_sm_eapol_link_id(struct wpa_sm *sm)
++{
++	if (!sm->mlo.valid_links)
++		return -1;
++	if (sm->eapol_rx_link_id >= 0)
++		return sm->eapol_rx_link_id;
++	return sm->mlo.assoc_link_id;
++}
++
++
+ /**
+  * wpa_eapol_key_send - Send WPA/RSN EAPOL-Key message
+  * @sm: Pointer to WPA state machine data from wpa_sm_init()
+@@ -88,11 +100,12 @@ static void wpa_hexdump_link_key(int lev
+  * @msg: EAPOL-Key message
+  * @msg_len: Length of message
+  * @key_mic: Pointer to the buffer to which the EAPOL-Key MIC is written
++ * @link_id: Link ID of an MLD link to send on, or -1
+  * Returns: >= 0 on success, < 0 on failure
+  */
+ int wpa_eapol_key_send(struct wpa_sm *sm, struct wpa_ptk *ptk,
+ 		       int ver, const u8 *dest, u16 proto,
+-		       u8 *msg, size_t msg_len, u8 *key_mic)
++		       u8 *msg, size_t msg_len, u8 *key_mic, int link_id)
+ {
+ 	int ret = -1;
+ 	size_t mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len, sm->hash_alg);
+@@ -202,7 +215,7 @@ int wpa_eapol_key_send(struct wpa_sm *sm
+ 	}
+ 
+ 	wpa_hexdump(MSG_MSGDUMP, "WPA: TX EAPOL-Key", msg, msg_len);
+-	ret = wpa_sm_ether_send(sm, dest, proto, msg, msg_len);
++	ret = wpa_sm_ether_send(sm, dest, proto, msg, msg_len, link_id);
+ 	eapol_sm_notify_tx_eapol_key(sm->eapol);
+ out:
+ 	os_free(msg);
+@@ -288,7 +301,7 @@ void wpa_sm_key_request(struct wpa_sm *s
+ 		"pairwise=%d ptk_set=%d len=%lu)",
+ 		error, pairwise, sm->ptk_set, (unsigned long) rlen);
+ 	wpa_eapol_key_send(sm, &sm->ptk, ver, wpa_sm_get_auth_addr(sm),
+-			   ETH_P_EAPOL, rbuf, rlen, key_mic);
++			   ETH_P_EAPOL, rbuf, rlen, key_mic, -1);
+ }
+ 
+ 
+@@ -514,7 +527,7 @@ static int wpa_supplicant_get_pmk(struct
+ 			eapol_sm_notify_eap_fail(sm->eapol, true);
+ 			eapol_sm_notify_eap_fail(sm->eapol, false);
+ 			wpa_sm_ether_send(sm, sm->bssid, ETH_P_EAPOL,
+-					  buf, buflen);
++					  buf, buflen, -1);
+ 			os_free(buf);
+ 			return -2;
+ 		}
+@@ -726,7 +739,8 @@ int wpa_supplicant_send_2_of_4(struct wp
+ 
+ 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: Sending EAPOL-Key 2/4");
+ 	return wpa_eapol_key_send(sm, ptk, ver, dst, ETH_P_EAPOL, rbuf, rlen,
+-				  key_mic);
++				  key_mic, wpa_sm_ocv_enabled(sm) ?
++				  wpa_sm_eapol_link_id(sm) : -1);
+ }
+ 
+ 
+@@ -1084,7 +1098,7 @@ static void wpa_supplicant_process_1_of_
+ 		u8 *pos;
+ 
+ 		pos = kde + kde_len;
+-		if (wpa_sm_channel_info(sm, &ci) != 0) {
++		if (wpa_sm_channel_info(sm, wpa_sm_eapol_link_id(sm), &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in EAPOL-Key 2/4");
+ 			goto failed;
+@@ -2484,7 +2498,7 @@ int wpa_supplicant_send_4_of_4(struct wp
+ 
+ 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: Sending EAPOL-Key 4/4");
+ 	return wpa_eapol_key_send(sm, ptk, ver, dst, ETH_P_EAPOL, rbuf, rlen,
+-				  key_mic);
++				  key_mic, -1);
+ }
+ 
+ 
+@@ -2978,7 +2992,7 @@ static void wpa_supplicant_process_3_of_
+ 	if (wpa_sm_ocv_enabled(sm)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_sm_channel_info(sm, &ci) != 0) {
++		if (wpa_sm_channel_info(sm, wpa_sm_eapol_link_id(sm), &ci) != 0) {
+ 			wpa_msg(sm->ctx->msg_ctx, MSG_WARNING,
+ 				"Failed to get channel info to validate received OCI in EAPOL-Key 3/4");
+ 			return;
+@@ -3169,7 +3183,7 @@ static int wpa_supplicant_send_2_of_2(st
+ 		struct wpa_channel_info ci;
+ 		u8 *pos;
+ 
+-		if (wpa_sm_channel_info(sm, &ci) != 0) {
++		if (wpa_sm_channel_info(sm, wpa_sm_eapol_link_id(sm), &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in EAPOL-Key 2/2");
+ 			os_free(rbuf);
+@@ -3195,7 +3209,9 @@ static int wpa_supplicant_send_2_of_2(st
+ 
+ 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: Sending EAPOL-Key 2/2");
+ 	return wpa_eapol_key_send(sm, &sm->ptk, ver, wpa_sm_get_auth_addr(sm),
+-				  ETH_P_EAPOL, rbuf, rlen, key_mic);
++				  ETH_P_EAPOL, rbuf, rlen, key_mic,
++				  wpa_sm_ocv_enabled(sm) ?
++				  wpa_sm_eapol_link_id(sm) : -1);
+ }
+ 
+ 
+@@ -3246,7 +3262,7 @@ static void wpa_supplicant_process_mlo_1
+ 	if (wpa_sm_ocv_enabled(sm)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_sm_channel_info(sm, &ci) != 0) {
++		if (wpa_sm_channel_info(sm, wpa_sm_eapol_link_id(sm), &ci) != 0) {
+ 			wpa_msg(sm->ctx->msg_ctx, MSG_WARNING,
+ 				"Failed to get channel info to validate received OCI in EAPOL-Key group msg 1/2");
+ 			goto failed;
+@@ -3494,7 +3510,7 @@ static void wpa_supplicant_process_1_of_
+ 	if (wpa_sm_ocv_enabled(sm)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_sm_channel_info(sm, &ci) != 0) {
++		if (wpa_sm_channel_info(sm, wpa_sm_eapol_link_id(sm), &ci) != 0) {
+ 			wpa_msg(sm->ctx->msg_ctx, MSG_WARNING,
+ 				"Failed to get channel info to validate received OCI in EAPOL-Key group msg 1/2");
+ 			goto failed;
+@@ -3958,6 +3974,7 @@ static int wpa_sm_rx_eapol_wpa(struct wp
+  * @buf: Pointer to the beginning of the EAPOL data (EAPOL header)
+  * @len: Length of the EAPOL frame
+  * @encrypted: Whether the frame was encrypted
++ * @link_id: Link ID of an MLD link that received the frame, or -1
+  * Returns: 1 = WPA EAPOL-Key processed, 0 = not a WPA EAPOL-Key, -1 failure,
+  *	    -2 = reply counter did not increase.
+  *
+@@ -3970,7 +3987,8 @@ static int wpa_sm_rx_eapol_wpa(struct wp
+  * successful key handshake.
+  */
+ int wpa_sm_rx_eapol(struct wpa_sm *sm, const u8 *src_addr,
+-		    const u8 *buf, size_t len, enum frame_encryption encrypted)
++		    const u8 *buf, size_t len, enum frame_encryption encrypted,
++		    int link_id)
+ {
+ 	size_t plen, data_len, key_data_len;
+ 	const struct ieee802_1x_hdr *hdr;
+@@ -3981,6 +3999,8 @@ int wpa_sm_rx_eapol(struct wpa_sm *sm, c
+ 	u8 *mic, *key_data;
+ 	size_t mic_len, keyhdrlen, pmk_len;
+ 
++	sm->eapol_rx_link_id = link_id;
++
+ #ifdef CONFIG_IEEE80211R
+ 	sm->ft_completed = 0;
+ #endif /* CONFIG_IEEE80211R */
+@@ -4465,6 +4485,7 @@ struct wpa_sm * wpa_sm_init(struct wpa_s
+ 	dl_list_init(&sm->pmksa_candidates);
+ 	sm->renew_snonce = 1;
+ 	sm->ctx = ctx;
++	sm->eapol_rx_link_id = -1;
+ 
+ 	sm->dot11RSNAConfigPMKLifetime = 43200;
+ 	sm->dot11RSNAConfigPMKReauthThreshold = 70;
+@@ -6805,7 +6826,7 @@ struct wpabuf * fils_build_assoc_req(str
+ 		struct wpa_channel_info ci;
+ 		u8 *pos;
+ 
+-		if (wpa_sm_channel_info(sm, &ci) != 0) {
++		if (wpa_sm_channel_info(sm, -1, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "FILS: Failed to get channel info for OCI element");
+ 			wpabuf_free(buf);
+@@ -7037,7 +7058,7 @@ int fils_process_assoc_resp(struct wpa_s
+ 	if (wpa_sm_ocv_enabled(sm)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_sm_channel_info(sm, &ci) != 0) {
++		if (wpa_sm_channel_info(sm, -1, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info to validate received OCI in FILS (Re)Association Response frame");
+ 			goto fail;
+--- a/src/rsn_supp/wpa.h
++++ b/src/rsn_supp/wpa.h
+@@ -37,7 +37,7 @@ struct wpa_sm_ctx {
+ 	void * (*get_network_ctx)(void *ctx);
+ 	int (*get_bssid)(void *ctx, u8 *bssid);
+ 	int (*ether_send)(void *ctx, const u8 *dest, u16 proto, const u8 *buf,
+-			  size_t len);
++			  size_t len, int link_id);
+ 	int (*get_beacon_ie)(void *ctx);
+ 	void (*cancel_auth_timeout)(void *ctx);
+ 	u8 * (*alloc_eapol)(void *ctx, u8 type, const void *data, u16 data_len,
+@@ -93,7 +93,7 @@ struct wpa_sm_ctx {
+ 	int (*key_mgmt_set_pmk)(void *ctx, const u8 *pmk, size_t pmk_len);
+ 	void (*fils_hlp_rx)(void *ctx, const u8 *dst, const u8 *src,
+ 			    const u8 *pkt, size_t pkt_len);
+-	int (*channel_info)(void *ctx, struct wpa_channel_info *ci);
++	int (*channel_info)(void *ctx, int link_id, struct wpa_channel_info *ci);
+ 	void (*transition_disable)(void *ctx, u8 bitmap);
+ 	void (*store_ptk)(void *ctx, const u8 *addr, int cipher,
+ 			  u32 life_time, const struct wpa_ptk *ptk);
+@@ -245,7 +245,8 @@ int wpa_parse_wpa_ie(const u8 *wpa_ie, s
+ void wpa_sm_aborted_cached(struct wpa_sm *sm);
+ void wpa_sm_aborted_external_cached(struct wpa_sm *sm);
+ int wpa_sm_rx_eapol(struct wpa_sm *sm, const u8 *src_addr,
+-		    const u8 *buf, size_t len, enum frame_encryption encrypted);
++		    const u8 *buf, size_t len, enum frame_encryption encrypted,
++		    int link_id);
+ int wpa_sm_parse_own_wpa_ie(struct wpa_sm *sm, struct wpa_ie_data *data);
+ int wpa_sm_pmksa_cache_list(struct wpa_sm *sm, char *buf, size_t len);
+ struct rsn_pmksa_cache_entry * wpa_sm_pmksa_cache_head(struct wpa_sm *sm);
+@@ -462,7 +463,8 @@ static inline void wpa_sm_aborted_extern
+ 
+ static inline int wpa_sm_rx_eapol(struct wpa_sm *sm, const u8 *src_addr,
+ 				  const u8 *buf, size_t len,
+-				  enum frame_encryption encrypted)
++				  enum frame_encryption encrypted,
++				  int link_id)
+ {
+ 	return -1;
+ }
+--- a/src/rsn_supp/wpa_ft.c
++++ b/src/rsn_supp/wpa_ft.c
+@@ -410,7 +410,7 @@ static u8 * wpa_ft_gen_req_ies(struct wp
+ 		/* OCI sub-element in the third FT message */
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_sm_channel_info(sm, &ci) != 0) {
++		if (wpa_sm_channel_info(sm, -1, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info for OCI element in FTE");
+ 			os_free(buf);
+@@ -1235,7 +1235,7 @@ int wpa_ft_validate_reassoc_resp(struct
+ 	if (wpa_sm_ocv_enabled(sm)) {
+ 		struct wpa_channel_info ci;
+ 
+-		if (wpa_sm_channel_info(sm, &ci) != 0) {
++		if (wpa_sm_channel_info(sm, -1, &ci) != 0) {
+ 			wpa_printf(MSG_WARNING,
+ 				   "Failed to get channel info to validate received OCI in (Re)Assoc Response");
+ 			goto fail;
+--- a/src/rsn_supp/wpa_i.h
++++ b/src/rsn_supp/wpa_i.h
+@@ -107,6 +107,7 @@ struct wpa_sm {
+ 	int rsn_enabled; /* Whether RSN is enabled in configuration */
+ 	int mfp; /* 0 = disabled, 1 = optional, 2 = mandatory */
+ 	int ocv; /* Operating Channel Validation */
++	int eapol_rx_link_id;
+ 	enum sae_pwe sae_pwe; /* SAE PWE generation options */
+ 
+ 	unsigned int sae_pk:1; /* whether SAE-PK is used */
+@@ -308,10 +309,12 @@ static inline int wpa_sm_get_bssid(struc
+ }
+ 
+ static inline int wpa_sm_ether_send(struct wpa_sm *sm, const u8 *dest,
+-				    u16 proto, const u8 *buf, size_t len)
++				    u16 proto, const u8 *buf, size_t len,
++				    int link_id)
+ {
+ 	WPA_ASSERT(sm->ctx->ether_send);
+-	return sm->ctx->ether_send(sm->ctx->ctx, dest, proto, buf, len);
++	return sm->ctx->ether_send(sm->ctx->ctx, dest, proto, buf, len,
++				   link_id);
+ }
+ 
+ static inline int wpa_sm_get_beacon_ie(struct wpa_sm *sm)
+@@ -503,12 +506,12 @@ static inline void wpa_sm_fils_hlp_rx(st
+ 		sm->ctx->fils_hlp_rx(sm->ctx->ctx, dst, src, pkt, pkt_len);
+ }
+ 
+-static inline int wpa_sm_channel_info(struct wpa_sm *sm,
++static inline int wpa_sm_channel_info(struct wpa_sm *sm, int link_id,
+ 				      struct wpa_channel_info *ci)
+ {
+ 	if (!sm->ctx->channel_info)
+ 		return -1;
+-	return sm->ctx->channel_info(sm->ctx->ctx, ci);
++	return sm->ctx->channel_info(sm->ctx->ctx, link_id, ci);
+ }
+ 
+ static inline void wpa_sm_transition_disable(struct wpa_sm *sm, u8 bitmap)
+@@ -554,7 +557,7 @@ static inline void wpa_sm_ssid_verified(
+ 
+ int wpa_eapol_key_send(struct wpa_sm *sm, struct wpa_ptk *ptk,
+ 		       int ver, const u8 *dest, u16 proto,
+-		       u8 *msg, size_t msg_len, u8 *key_mic);
++		       u8 *msg, size_t msg_len, u8 *key_mic, int link_id);
+ int wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
+ 			       const struct wpa_eapol_key *key,
+ 			       int ver, const u8 *nonce,
+--- a/tests/fuzzing/eapol-key-supp/eapol-key-supp.c
++++ b/tests/fuzzing/eapol-key-supp/eapol-key-supp.c
+@@ -91,7 +91,7 @@ static void supp_eapol_rx(void *eloop_da
+ 
+ 	wpa_printf(MSG_DEBUG, "SUPP: RX EAPOL frame");
+ 	wpa_sm_rx_eapol(wpa->supp, wpa->auth_addr, wpa->auth_eapol,
+-			wpa->auth_eapol_len, FRAME_ENCRYPTION_UNKNOWN);
++			wpa->auth_eapol_len, FRAME_ENCRYPTION_UNKNOWN, -1);
+ }
+ 
+ 
+@@ -107,7 +107,7 @@ static int supp_read_msg(struct wpa *wpa
+ 
+ 
+ static int supp_ether_send(void *ctx, const u8 *dest, u16 proto, const u8 *buf,
+-			   size_t len)
++			   size_t len, int link_id)
+ {
+ 	struct wpa *wpa = ctx;
+ 
+--- a/tests/fuzzing/eapol-supp/eapol-supp.c
++++ b/tests/fuzzing/eapol-supp/eapol-supp.c
+@@ -47,7 +47,7 @@ static void test_send_eapol(void *eloop_
+ 	if (eapol_sm_rx_eapol(ctx->eapol, src, ctx->data, ctx->data_len,
+ 			      FRAME_ENCRYPTION_UNKNOWN) <= 0)
+ 		wpa_sm_rx_eapol(ctx->wpa, src, ctx->data, ctx->data_len,
+-				FRAME_ENCRYPTION_UNKNOWN);
++				FRAME_ENCRYPTION_UNKNOWN, -1);
+ 
+ 	eloop_terminate();
+ }
+@@ -97,7 +97,7 @@ static u8 * alloc_eapol(void *arg, u8 ty
+ 
+ 
+ static int ether_send(void *arg, const u8 *dest, u16 proto,
+-		      const u8 *buf, size_t len)
++		      const u8 *buf, size_t len, int link_id)
+ {
+ 	return 0;
+ }
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
+@@ -10155,7 +10155,8 @@ static int wpas_ctrl_iface_eapol_rx(stru
+ 		return -1;
+ 	}
+ 
+-	wpa_supplicant_rx_eapol(wpa_s, src, buf, len, FRAME_ENCRYPTION_UNKNOWN);
++	wpa_supplicant_rx_eapol(wpa_s, src, buf, len, FRAME_ENCRYPTION_UNKNOWN,
++				-1);
+ 	os_free(buf);
+ 
+ 	return 0;
+@@ -10193,7 +10194,7 @@ static int wpas_ctrl_iface_eapol_tx(stru
+ 
+ 	prev = wpa_s->ext_eapol_frame_io;
+ 	wpa_s->ext_eapol_frame_io = 0;
+-	ret = wpa_ether_send(wpa_s, dst, ETH_P_EAPOL, buf, len);
++	ret = wpa_ether_send(wpa_s, dst, ETH_P_EAPOL, buf, len, -1);
+ 	wpa_s->ext_eapol_frame_io = prev;
+ 	os_free(buf);
+ 
+--- a/wpa_supplicant/driver_i.h
++++ b/wpa_supplicant/driver_i.h
+@@ -378,12 +378,12 @@ static inline int wpa_drv_sta_remove(str
+ static inline int wpa_drv_tx_control_port(struct wpa_supplicant *wpa_s,
+ 					  const u8 *dest, u16 proto,
+ 					  const u8 *buf, size_t len,
+-					  int no_encrypt)
++					  int no_encrypt, int link_id)
+ {
+ 	if (!wpa_s->driver->tx_control_port)
+ 		return -1;
+ 	return wpa_s->driver->tx_control_port(wpa_s->drv_priv, dest, proto,
+-					      buf, len, no_encrypt, -1);
++					      buf, len, no_encrypt, link_id);
+ }
+ 
+ static inline int wpa_drv_hapd_send_eapol(struct wpa_supplicant *wpa_s,
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -5027,7 +5027,8 @@ static int wpa_supplicant_event_assoc(st
+ 				wpa_s, wpa_s->pending_eapol_rx_src,
+ 				wpabuf_head(wpa_s->pending_eapol_rx),
+ 				wpabuf_len(wpa_s->pending_eapol_rx),
+-				wpa_s->pending_eapol_encrypted);
++				wpa_s->pending_eapol_encrypted,
++				wpa_s->pending_eapol_link_id);
+ 		}
+ 		wpabuf_free(wpa_s->pending_eapol_rx);
+ 		wpa_s->pending_eapol_rx = NULL;
+@@ -7483,7 +7484,8 @@ void supplicant_event(void *ctx, enum wp
+ 		wpa_supplicant_rx_eapol(wpa_s, data->eapol_rx.src,
+ 					data->eapol_rx.data,
+ 					data->eapol_rx.data_len,
+-					data->eapol_rx.encrypted);
++					data->eapol_rx.encrypted,
++					data->eapol_rx.link_id);
+ 		break;
+ 	case EVENT_SIGNAL_CHANGE:
+ 		wpa_msg_ctrl(wpa_s, MSG_INFO, WPA_EVENT_SIGNAL_CHANGE
+--- a/wpa_supplicant/ibss_rsn.c
++++ b/wpa_supplicant/ibss_rsn.c
+@@ -60,7 +60,7 @@ static enum wpa_states supp_get_state(vo
+ 
+ 
+ static int supp_ether_send(void *ctx, const u8 *dest, u16 proto, const u8 *buf,
+-			   size_t len)
++			   size_t len, int link_id)
+ {
+ 	struct ibss_rsn_peer *peer = ctx;
+ 	struct wpa_supplicant *wpa_s = peer->ibss_rsn->wpa_s;
+@@ -73,7 +73,7 @@ static int supp_ether_send(void *ctx, co
+ 
+ 	if (wpa_s->drv_flags & WPA_DRIVER_FLAGS_CONTROL_PORT)
+ 		return wpa_drv_tx_control_port(wpa_s, dest, proto, buf, len,
+-					       !encrypt);
++					       !encrypt, link_id);
+ 
+ 	if (wpa_s->l2)
+ 		return l2_packet_send(wpa_s->l2, dest, proto, buf, len);
+@@ -309,7 +309,7 @@ static int auth_send_eapol(void *ctx, co
+ 
+ 	if (wpa_s->drv_flags & WPA_DRIVER_FLAGS_CONTROL_PORT)
+ 		return wpa_drv_tx_control_port(wpa_s, addr, ETH_P_EAPOL,
+-					       data, data_len, !encrypt);
++					       data, data_len, !encrypt, -1);
+ 
+ 	if (wpa_s->l2)
+ 		return l2_packet_send(wpa_s->l2, addr, ETH_P_EAPOL, data,
+@@ -802,7 +802,8 @@ static int ibss_rsn_process_rx_eapol(str
+ 		peer->authentication_status |= IBSS_RSN_AUTH_EAPOL_BY_PEER;
+ 		wpa_printf(MSG_DEBUG, "RSN: IBSS RX EAPOL for Supplicant from "
+ 			   MACSTR, MAC2STR(peer->addr));
+-		wpa_sm_rx_eapol(peer->supp, peer->addr, tmp, len, encrypted);
++		wpa_sm_rx_eapol(peer->supp, peer->addr, tmp, len, encrypted,
++				-1);
+ 	} else {
+ 		if (ibss_rsn_is_auth_started(peer) == 0) {
+ 			wpa_printf(MSG_DEBUG, "RSN: IBSS EAPOL for "
+--- a/wpa_supplicant/preauth_test.c
++++ b/wpa_supplicant/preauth_test.c
+@@ -98,7 +98,7 @@ static enum wpa_states _wpa_supplicant_g
+ 
+ 
+ static int wpa_ether_send(void *wpa_s, const u8 *dest, u16 proto,
+-			  const u8 *buf, size_t len)
++			  const u8 *buf, size_t len, int link_id)
+ {
+ 	printf("%s - not implemented\n", __func__);
+ 	return -1;
+--- a/wpa_supplicant/wpa_priv.c
++++ b/wpa_supplicant/wpa_priv.c
+@@ -1139,7 +1139,7 @@ void supplicant_event_global(void *ctx,
+ 
+ void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr,
+ 			     const u8 *buf, size_t len,
+-			     enum frame_encryption encrypted)
++			     enum frame_encryption encrypted, int link_id)
+ {
+ 	struct wpa_priv_interface *iface = ctx;
+ 	struct msghdr msg;
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -6249,6 +6249,7 @@ static int wpa_supplicant_set_driver(str
+  * @buf: EAPOL data starting from the EAPOL header (i.e., no Ethernet header)
+  * @len: Length of the EAPOL data
+  * @encrypted: Whether the frame was encrypted
++ * @link_id: Link ID of an MLD link that received the frame, or -1
+  *
+  * This function is called for each received EAPOL frame. Most driver
+  * interfaces rely on more generic OS mechanism for receiving frames through
+@@ -6258,7 +6259,7 @@ static int wpa_supplicant_set_driver(str
+  */
+ void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr,
+ 			     const u8 *buf, size_t len,
+-			     enum frame_encryption encrypted)
++			     enum frame_encryption encrypted, int link_id)
+ {
+ 	struct wpa_supplicant *wpa_s = ctx;
+ 	const u8 *connected_addr = wpa_s->valid_links ?
+@@ -6315,6 +6316,7 @@ void wpa_supplicant_rx_eapol(void *ctx,
+ 			os_memcpy(wpa_s->pending_eapol_rx_src, src_addr,
+ 				  ETH_ALEN);
+ 			wpa_s->pending_eapol_encrypted = encrypted;
++			wpa_s->pending_eapol_link_id = link_id;
+ 		}
+ 		return;
+ 	}
+@@ -6407,7 +6409,7 @@ void wpa_supplicant_rx_eapol(void *ctx,
+ 	wpa_drv_poll(wpa_s);
+ 	if (!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE_PSK)) {
+ 		if (wpa_sm_rx_eapol(wpa_s->wpa, src_addr, buf, len,
+-				    encrypted) == -2 &&
++				    encrypted, link_id) == -2 &&
+ #ifdef CONFIG_AP
+ 		    !wpa_s->ap_iface &&
+ #endif /* CONFIG_AP */
+@@ -6437,7 +6439,7 @@ static void wpa_supplicant_rx_eapol_cb(v
+ 				       const u8 *buf, size_t len)
+ {
+ 	wpa_supplicant_rx_eapol(ctx, src_addr, buf, len,
+-				FRAME_ENCRYPTION_UNKNOWN);
++				FRAME_ENCRYPTION_UNKNOWN, -1);
+ }
+ 
+ 
+@@ -6525,7 +6527,8 @@ static void wpa_supplicant_rx_eapol_brid
+ 	wpa_dbg(wpa_s, MSG_DEBUG, "RX EAPOL from " MACSTR " to " MACSTR
+ 		" (bridge)", MAC2STR(src_addr), MAC2STR(eth->h_dest));
+ 	wpa_supplicant_rx_eapol(wpa_s, src_addr, buf + sizeof(*eth),
+-				len - sizeof(*eth), FRAME_ENCRYPTION_UNKNOWN);
++				len - sizeof(*eth), FRAME_ENCRYPTION_UNKNOWN,
++				-1);
+ }
+ 
+ 
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -1049,6 +1049,7 @@ struct wpa_supplicant {
+ 	struct os_reltime pending_eapol_rx_time;
+ 	u8 pending_eapol_rx_src[ETH_ALEN];
+ 	enum frame_encryption pending_eapol_encrypted;
++	int pending_eapol_link_id;
+ 	unsigned int last_eapol_matches_bssid:1;
+ 	unsigned int eapol_failed:1;
+ 	unsigned int eap_expected_failure:1;
+@@ -1902,7 +1903,7 @@ int wpa_supplicant_scard_init(struct wpa
+ void wpa_supplicant_terminate_proc(struct wpa_global *global);
+ void wpa_supplicant_rx_eapol(void *ctx, const u8 *own_addr,
+ 			     const u8 *buf, size_t len,
+-			     enum frame_encryption encrypted);
++			     enum frame_encryption encrypted, int link_id);
+ void wpa_supplicant_update_config(struct wpa_supplicant *wpa_s);
+ void wpa_supplicant_clear_status(struct wpa_supplicant *wpa_s);
+ void wpas_connection_failed(struct wpa_supplicant *wpa_s, const u8 *bssid,
+--- a/wpa_supplicant/wpas_glue.c
++++ b/wpa_supplicant/wpas_glue.c
+@@ -93,10 +93,11 @@ static u8 * wpa_alloc_eapol(const struct
+  * @proto: Ethertype in host byte order
+  * @buf: Frame payload starting from IEEE 802.1X header
+  * @len: Frame payload length
++ * @link_id: Link ID of an MLD link to send on, or -1
+  * Returns: >=0 on success, <0 on failure
+  */
+ int wpa_ether_send(struct wpa_supplicant *wpa_s, const u8 *dest,
+-		   u16 proto, const u8 *buf, size_t len)
++		   u16 proto, const u8 *buf, size_t len, int link_id)
+ {
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	if (wpa_s->ext_eapol_frame_io && proto == ETH_P_EAPOL) {
+@@ -118,7 +119,7 @@ int wpa_ether_send(struct wpa_supplicant
+ 			wpa_sm_has_ptk_installed(wpa_s->wpa);
+ 
+ 		return wpa_drv_tx_control_port(wpa_s, dest, proto, buf, len,
+-					       !encrypt);
++					       !encrypt, link_id);
+ 	}
+ 
+ 	if (wpa_s->l2) {
+@@ -229,7 +230,7 @@ static int wpa_supplicant_eapol_send(voi
+ 
+ 	wpa_printf(MSG_DEBUG, "TX EAPOL: dst=" MACSTR, MAC2STR(dst));
+ 	wpa_hexdump(MSG_MSGDUMP, "TX EAPOL", msg, msglen);
+-	res = wpa_ether_send(wpa_s, dst, ETH_P_EAPOL, msg, msglen);
++	res = wpa_ether_send(wpa_s, dst, ETH_P_EAPOL, msg, msglen, -1);
+ 	os_free(msg);
+ 	return res;
+ }
+@@ -491,9 +492,9 @@ static u8 * _wpa_alloc_eapol(void *wpa_s
+ 
+ 
+ static int _wpa_ether_send(void *wpa_s, const u8 *dest, u16 proto,
+-			   const u8 *buf, size_t len)
++			   const u8 *buf, size_t len, int link_id)
+ {
+-	return wpa_ether_send(wpa_s, dest, proto, buf, len);
++	return wpa_ether_send(wpa_s, dest, proto, buf, len, link_id);
+ }
+ 
+ 
+@@ -1306,12 +1307,12 @@ static void wpa_supplicant_fils_hlp_rx(v
+ }
+ 
+ 
+-static int wpa_supplicant_channel_info(void *_wpa_s,
++static int wpa_supplicant_channel_info(void *_wpa_s, int link_id,
+ 				       struct wpa_channel_info *ci)
+ {
+ 	struct wpa_supplicant *wpa_s = _wpa_s;
+ 
+-	return wpa_drv_channel_info(wpa_s, -1, ci);
++	return wpa_drv_channel_info(wpa_s, link_id, ci);
+ }
+ 
+ 
+--- a/wpa_supplicant/wpas_glue.h
++++ b/wpa_supplicant/wpas_glue.h
+@@ -16,7 +16,7 @@ int wpa_supplicant_init_wpa(struct wpa_s
+ void wpa_supplicant_rsn_supp_set_config(struct wpa_supplicant *wpa_s,
+ 					struct wpa_ssid *ssid);
+ int wpa_ether_send(struct wpa_supplicant *wpa_s, const u8 *dest,
+-		   u16 proto, const u8 *buf, size_t len);
++		   u16 proto, const u8 *buf, size_t len, int link_id);
+ 
+ const char * wpa_supplicant_ctrl_req_to_string(enum wpa_ctrl_req_type field,
+ 					       const char *default_txt,

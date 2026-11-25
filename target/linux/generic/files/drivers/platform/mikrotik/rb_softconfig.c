@@ -49,6 +49,7 @@
 #include <linux/capability.h>
 #include <linux/spinlock.h>
 #include <linux/crc32.h>
+#include <linux/inet.h>
 
 #ifdef CONFIG_ATH79
  #include <asm/mach-ath79/ath79.h>
@@ -56,7 +57,7 @@
 
 #include "routerboot.h"
 
-#define RB_SOFTCONFIG_VER		"0.05"
+#define RB_SOFTCONFIG_VER		"0.06"
 #define RB_SC_PR_PFX			"[rb_softconfig] "
 
 #define RB_SC_HAS_WRITE_SUPPORT	true
@@ -74,6 +75,8 @@
 #define RB_SCID_CPU_FREQ_IDX		0x0C	// u32*1
 #define RB_SCID_BOOTER			0x0D	// u32*1
 #define RB_SCID_SILENT_BOOT		0x0F	// u32*1
+#define RB_SCID_PREBOOT_ETHERBOOT	0x24	// u32*1
+#define RB_SCID_PREBOOT_ETHERBOOT_SERVER	0x25	// __be32*1
 /*
  * protected_routerboot seems to use tag 0x1F. It only works in combination with
  * RouterOS, resulting in a wiped board otherwise, so it's not implemented here.
@@ -100,6 +103,13 @@
 /* valid boot delay: 1 - 9s in 1s increment */
 #define RB_BOOT_DELAY_MIN		1
 #define RB_BOOT_DELAY_MAX		9
+
+/*
+ * RouterBOOT waits this many seconds for a netboot server before falling
+ * through to the configured boot device. Zero disables the wait.
+ */
+#define RB_PREBOOT_ETHERBOOT_MIN	0
+#define RB_PREBOOT_ETHERBOOT_MAX	30
 
 #define RB_BOOT_DEVICE_ETHER		0	// "boot over Ethernet"
 #define RB_BOOT_DEVICE_NANDETH		1	// "boot from NAND, if fail then Ethernet"
@@ -140,6 +150,17 @@
 #define RB_CPU_FREQ_IDX_ATH79_7X_MIN		0	// all devices support lowest setting
 #define RB_CPU_FREQ_IDX_ATH79_7X_AR724X_MAX	3	// stops at D
 #define RB_CPU_FREQ_IDX_ATH79_7X_AR7161_MAX	7	// stops at H - check if applies to all AR71xx devices
+
+/*
+ * Size of the soft_config data itself, as RouterBoot lays it out and as the
+ * partition parser reports it. This is deliberately NOT the MTD partition
+ * size: routerbootpart.c may grow the partition to a full erase block so that
+ * MTD permits writes at all. Reads, the CRC32 and the write back all have to
+ * stay within the original size, otherwise RouterBoot sees a checksum over a
+ * region it does not know about, treats the segment as invalid and restores
+ * factory defaults.
+ */
+#define RB_SC_CFG_SIZE			0x1000
 
 #define RB_SC_CRC32_OFFSET		4	// located right after magic
 
@@ -389,6 +410,89 @@ static ssize_t sc_tag_store_bootdelays(const u8 *pld, u16 pld_len, const char *b
 	return count;
 }
 
+/*
+ * Restricts preboot etherboot to a single Netinstall server, 0.0.0.0 accepting
+ * any. Unlike the other tags in this record, which are accessed in CPU byte
+ * order, this one holds the IPv4 address in network byte order.
+ */
+static ssize_t sc_tag_show_preboot_etherboot_server(const u8 *pld, u16 pld_len, char *buf)
+{
+	__be32 data;
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	read_lock(&sc_bufrwl);
+	memcpy(&data, pld, sizeof(data));	// pld aliases sc_buf
+	read_unlock(&sc_bufrwl);
+
+	return sprintf(buf, "%pI4\n", &data);
+}
+
+static ssize_t sc_tag_store_preboot_etherboot_server(const u8 *pld, u16 pld_len, const char *buf, size_t count)
+{
+	__be32 data;
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	if (!in4_pton(buf, count, (u8 *)&data, -1, NULL))
+		return -EINVAL;
+
+	write_lock(&sc_bufrwl);
+	memcpy((u8 *)pld, &data, sizeof(data));	// pld aliases sc_buf
+	RB_SC_CLRCRC();
+	write_unlock(&sc_bufrwl);
+
+	return count;
+}
+
+static ssize_t sc_tag_show_preboot_etherboot(const u8 *pld, u16 pld_len, char *buf)
+{
+	const char *fmt;
+	char *out = buf;
+	u32 data;	// cpu-endian
+	int i;
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	read_lock(&sc_bufrwl);
+	data = *(u32 *)pld;		// pld aliases sc_buf
+	read_unlock(&sc_bufrwl);
+
+	for (i = RB_PREBOOT_ETHERBOOT_MIN; i <= RB_PREBOOT_ETHERBOOT_MAX; i++) {
+		fmt = (i == data) ? "[%d] " : "%d ";
+		out += sprintf(out, fmt, i);
+	}
+
+	out += sprintf(out, "\n");
+	return out - buf;
+}
+
+static ssize_t sc_tag_store_preboot_etherboot(const u8 *pld, u16 pld_len, const char *buf, size_t count)
+{
+	u32 data;	// cpu-endian
+	int ret;
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	ret = kstrtou32(buf, 10, &data);
+	if (ret)
+		return ret;
+
+	if (RB_PREBOOT_ETHERBOOT_MAX < data)
+		return -EINVAL;
+
+	write_lock(&sc_bufrwl);
+	*(u32 *)pld = data;		// pld aliases sc_buf
+	RB_SC_CLRCRC();
+	write_unlock(&sc_bufrwl);
+
+	return count;
+}
+
 /* Support CPU frequency accessors only when the tag format has been asserted */
 #if defined(CONFIG_ATH79)
 /* Use the same letter-based nomenclature as RouterBOOT */
@@ -529,6 +633,16 @@ static struct sc_attr {
 		.tshow = sc_tag_show_silent_boot,
 		.tstore = sc_tag_store_silent_boot,
 		.kattr = __ATTR(silent_boot, RB_SC_RMODE|RB_SC_WMODE, sc_attr_show, sc_attr_store),
+	}, {
+		.tag_id = RB_SCID_PREBOOT_ETHERBOOT,
+		.tshow = sc_tag_show_preboot_etherboot,
+		.tstore = sc_tag_store_preboot_etherboot,
+		.kattr = __ATTR(preboot_etherboot, RB_SC_RMODE|RB_SC_WMODE, sc_attr_show, sc_attr_store),
+	}, {
+		.tag_id = RB_SCID_PREBOOT_ETHERBOOT_SERVER,
+		.tshow = sc_tag_show_preboot_etherboot_server,
+		.tstore = sc_tag_store_preboot_etherboot_server,
+		.kattr = __ATTR(preboot_etherboot_server, RB_SC_RMODE|RB_SC_WMODE, sc_attr_show, sc_attr_store),
 	},
 };
 
@@ -636,7 +750,7 @@ static ssize_t sc_commit_store(struct kobject *kobj, struct kobj_attribute *attr
 
 	write_lock(&sc_bufrwl);
 	if (!flush)	// reread
-		ret = mtd_read(mtd, 0, mtd->size, &bytes_rw, sc_buf);
+		ret = mtd_read(mtd, 0, sc_buflen, &bytes_rw, sc_buf);
 	else {	// crc32 + commit
 		/*
 		 * CRC32 is computed on the entire buffer, excluding the CRC
@@ -651,14 +765,16 @@ static ssize_t sc_commit_store(struct kobject *kobj, struct kobj_attribute *attr
 
 		/*
 		 * The soft_config partition is assumed to be entirely contained
-		 * in a single eraseblock.
+		 * in a single eraseblock, so the whole partition is erased. Only
+		 * the config itself is written back; anything beyond it stays
+		 * erased, which is how RouterBoot leaves it too.
 		 */
 
 		ei.addr = 0;
 		ei.len = mtd->size;
 		ret = mtd_erase(mtd, &ei);
 		if (!ret)
-			ret = mtd_write(mtd, 0, mtd->size, &bytes_rw, sc_buf);
+			ret = mtd_write(mtd, 0, sc_buflen, &bytes_rw, sc_buf);
 
 		/*
 		 * Handling mtd_write() failure here is a tricky situation. The
@@ -708,7 +824,7 @@ int rb_softconfig_init(struct kobject *rb_kobj, struct mtd_info *mtd)
 	if (ret)
 		return -ENODEV;
 
-	sc_buflen = mtd->size;
+	sc_buflen = min_t(size_t, mtd->size, RB_SC_CFG_SIZE);
 	sc_buf = kmalloc(sc_buflen, GFP_KERNEL);
 	if (!sc_buf) {
 		__put_mtd_device(mtd);

@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Tue, 20 Oct 2026 13:17:00 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq6018: add CMN PLL clocks to GCC
+
+Commit 5df1a6ab80ab ("qualcommax: ipq60xx: pass UNIPHY clocks directly
+to GCC") removed the global clock-name fallback from the IPQ6018 GCC
+driver and added explicit DT references for the UNIPHY clocks. It did
+not add references for the CMN PLL bias clocks, leaving the GCC RCGs
+that use them without their clock parents.
+
+Pass both CMN PLL bias outputs to GCC by phandle and name so the clock
+driver can resolve these parents through its firmware clock lookups.
+
+Fixes: 5df1a6ab80ab ("qualcommax: ipq60xx: pass UNIPHY clocks directly to GCC")
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -11,6 +11,7 @@
+ #include <dt-bindings/clock/qcom,apss-ipq.h>
+ #include <dt-bindings/thermal/thermal.h>
+ #include <dt-bindings/net/qca-uniphy.h>
++#include <dt-bindings/clock/qcom,ipq6018-cmn-pll.h>
+ 
+ / {
+ 	#address-cells = <2>;
+@@ -407,13 +408,17 @@
+ 				 <&uniphy0 UNIPHY_CLK_RX>,
+ 				 <&uniphy0 UNIPHY_CLK_TX>,
+ 				 <&uniphy1 UNIPHY_CLK_RX>,
+-				 <&uniphy1 UNIPHY_CLK_TX>;
++				 <&uniphy1 UNIPHY_CLK_TX>,
++				 <&cmn_pll IPQ6018_BIAS_PLL_CC_CLK>,
++				 <&cmn_pll IPQ6018_BIAS_PLL_NSS_NOC_CLK>;
+ 			clock-names = "xo",
+ 				      "sleep_clk",
+ 				      "uniphy0_gcc_rx_clk",
+ 				      "uniphy0_gcc_tx_clk",
+ 				      "uniphy1_gcc_rx_clk",
+-				      "uniphy1_gcc_tx_clk";
++				      "uniphy1_gcc_tx_clk",
++				      "bias_pll_cc_clk",
++				      "bias_pll_nss_noc_clk";
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+ 		};

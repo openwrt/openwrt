@@ -972,7 +972,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +};
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -10002,6 +10002,14 @@ F:	drivers/net/ethernet/freescale/enetc/
+@@ -10020,6 +10020,14 @@ F:	drivers/net/ethernet/freescale/enetc/
  F:	drivers/ptp/ptp_qoriq.c
  F:	include/linux/fsl/ptp_qoriq.h
  
@@ -4541,7 +4541,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +	struct mii_bus *bus = mdio_priv->mii_bus;
 +	u16 value = 0;
 +
-+	if (eth_priv->einfo->mii_config == PHY_INTERFACE_MODE_2500SGMII)
++	if (eth_priv->einfo->mii_config == PHY_INTERFACE_MODE_2500BASEX)
 +		sgmii_2500 = 1;
 +
 +	netif_info(eth_priv, drv, ndev, "%s\n", __func__);
@@ -4600,7 +4600,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +	netif_info(priv, drv, ndev, "%s: %s\n", __func__, phy_id);
 +	interface = priv->einfo->mii_config;
 +	if ((interface == PHY_INTERFACE_MODE_SGMII) ||
-+	    (interface == PHY_INTERFACE_MODE_2500SGMII)) {
++	    (interface == PHY_INTERFACE_MODE_2500BASEX)) {
 +		/*Configure SGMII PCS */
 +		if (pfe->scfg) {
 +			/* Config MDIO from serdes */

@@ -4,9 +4,9 @@ PKG_NAME:=gnulib
 PKG_CPE_ID:=cpe:/a:gnu:$(PKG_NAME)
 
 PKG_SOURCE_URL=git://git.git.savannah.gnu.org/$(PKG_NAME).git
-PKG_SOURCE_DATE:=2025-07-01
-PKG_SOURCE_VERSION:=a3151d456d6919c9066b54dc6f680452168165cf# # stable-202501
-PKG_MIRROR_HASH:=b695d96e915ecd6c4551436f417cb2c0879aef4ef6318721c8d5cc86cb44ba9d
+PKG_SOURCE_DATE:=2026-07-04
+PKG_SOURCE_VERSION:=b22f5a3037712a3c957a03071ce0b219cef4d65b# # stable-202507
+PKG_MIRROR_HASH:=d1423a784794e3e08bd03b397544821ece257aa748566386bd97219d1edf98d5
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -23,6 +23,7 @@ endef
 
 define Host/Uninstall
 	rm -rf $(STAGING_DIR_HOST)/bin/gnulib-tool $(STAGING_DIR_HOST)/share/gnulib
+	rm -f $(STAGING_DIR_HOST)/share/aclocal/gl_*.m4
 endef
 
 $(eval $(call HostBuild))

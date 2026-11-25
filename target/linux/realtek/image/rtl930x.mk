@@ -12,6 +12,33 @@ define Device/d-link_dgs-1250-28x
 endef
 TARGET_DEVICES += d-link_dgs-1250-28x
 
+define Device/draytek_g2282x
+  SOC := rtl9301
+  DEVICE_VENDOR := DrayTek
+  DEVICE_MODEL := VigorSwitch G2282x
+  IMAGE_SIZE := 31232k
+  DEVICE_PACKAGES += kmod-hwmon-adt7475
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += draytek_g2282x
+
+define Device/goodtop_gt-swtxg8fm
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := GoodTop
+  DEVICE_MODEL := GT-SWTXG8FM
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += goodtop_gt-swtxg8fm
+
 define Device/sirivision_sr-st3408f
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93000000
@@ -23,19 +50,41 @@ define Device/sirivision_sr-st3408f
 endef
 TARGET_DEVICES += sirivision_sr-st3408f
 
+define Device/sirivision_sr-st3808f
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Sirivision
+  DEVICE_MODEL := SR-ST3808F
+  IMAGE_SIZE := 13312k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += sirivision_sr-st3808f
+
+define Device/hasivo-stock-patch-installer
+  # Stock download patch requires a filename starting with patch, ending in .tar.gz, and no longer than 64 bytes.
+  DEVICE_IMG_NAME = $$(if $$(filter factory.patch.tar.gz,$$(2)),patch-openwrt-$$(DEVICE_NAME).tar.gz,$$(DEVICE_IMG_PREFIX)-$$(1)-$$(2))
+  # ImageBuilder and AUTOREMOVE lack prepared BusyBox sources and U-Boot objects.
+  $(if $(or $(IB),$(CONFIG_AUTOREMOVE)),,IMAGES += factory.patch.tar.gz)
+  IMAGE/factory.patch.tar.gz := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size | \
+	hasivo-stock-patch
+endef
+
 define Device/hasivo_f1100w-4sx-4xgt-common
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
   DEVICE_MODEL := F1100W-4SX-4XGT
   DEVICE_ALT0_VENDOR := Hasivo
   DEVICE_ALT0_MODEL := F1100W-4SX-4XGT-SE
-  DEVICE_ALT1_VENDOR := Hasivo
-  DEVICE_ALT1_MODEL := F1100WP-4SX-4XGT
-  DEVICE_ALT2_VENDOR := Hasivo
-  DEVICE_ALT2_MODEL := F1100WP-4SX-4XGT-SE
-  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
+  DEVICE_PACKAGES := \
+    kmod-phy-realtek rtl826x-firmware uboot-envtools
   IMAGE_SIZE := 29696k
   $(Device/kernel-lzma)
+  $(Device/hasivo-stock-patch-installer)
 endef
 
 define Device/hasivo_f1100w-4sx-4xgt
@@ -47,10 +96,33 @@ define Device/hasivo_f1100w-4sx-4xgt-512mb
   $(Device/hasivo_f1100w-4sx-4xgt-common)
   DEVICE_VARIANT := 512MB
   DEVICE_ALT0_VARIANT := 512MB
-  DEVICE_ALT1_VARIANT := 512MB
-  DEVICE_ALT2_VARIANT := 512MB
 endef
 TARGET_DEVICES += hasivo_f1100w-4sx-4xgt-512mb
+
+define Device/hasivo_f1100wp-4sx-4xgt-common
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := F1100WP-4SX-4XGT
+  DEVICE_ALT0_VENDOR := Hasivo
+  DEVICE_ALT0_MODEL := F1100WP-4SX-4XGT-SE
+  DEVICE_PACKAGES := \
+    kmod-hasivo-mcu-sensor kmod-hasivo-mcu-wdt kmod-mfd-hasivo-stc8 \
+    kmod-phy-realtek kmod-pse-hasivo-hs104 rtl826x-firmware
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+endef
+
+define Device/hasivo_f1100wp-4sx-4xgt
+  $(Device/hasivo_f1100wp-4sx-4xgt-common)
+endef
+TARGET_DEVICES += hasivo_f1100wp-4sx-4xgt
+
+define Device/hasivo_f1100wp-4sx-4xgt-512mb
+  $(Device/hasivo_f1100wp-4sx-4xgt-common)
+  DEVICE_VARIANT := 512MB
+  DEVICE_ALT0_VARIANT := 512MB
+endef
+TARGET_DEVICES += hasivo_f1100wp-4sx-4xgt-512mb
 
 define Device/hasivo_s1100w-8xgt-se
   SOC := rtl9303
@@ -62,6 +134,18 @@ define Device/hasivo_s1100w-8xgt-se
 endef
 TARGET_DEVICES += hasivo_s1100w-8xgt-se
 
+define Device/hasivo_s1100wp-8gt-2s-plus
+  SOC := rtl9302
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S1100WP-8GT-2S+
+  DEVICE_PACKAGES := kmod-pse-hasivo-hs104 kmod-mfd-hasivo-stc8 \
+    kmod-hasivo-mcu-wdt kmod-rtc-pcf8563 uboot-envtools
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+  $(Device/hasivo-stock-patch-installer)
+endef
+TARGET_DEVICES += hasivo_s1100wp-8gt-2s-plus
+
 define Device/hasivo_s1100wp-8gt-se
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
@@ -72,6 +156,26 @@ define Device/hasivo_s1100wp-8gt-se
 endef
 TARGET_DEVICES += hasivo_s1100wp-8gt-se
 
+define Device/hasivo_s1100wp-8xgt-se
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S1100WP-8XGT-SE
+  IMAGE_SIZE := 12288k
+  DEVICE_PACKAGES := rtl826x-firmware kmod-pse-hasivo-hs104 kmod-mfd-hasivo-stc8
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += hasivo_s1100wp-8xgt-se
+
+define Device/hasivo_s600wp-5gt-2s-plus
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S600WP-5GT-2S+
+  DEVICE_PACKAGES := kmod-pse-hasivo-hs104 kmod-mfd-hasivo-stc8
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += hasivo_s600wp-5gt-2s-plus
+
 define Device/hasivo_s600wp-5gt-2sx-se
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
@@ -81,6 +185,29 @@ define Device/hasivo_s600wp-5gt-2sx-se
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += hasivo_s600wp-5gt-2sx-se
+
+define Device/horaco_zx-sw82ts-l2p
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93000000
+  HASIVO_MODEL := 9312
+  DEVICE_VENDOR := Horaco
+  DEVICE_MODEL := ZX-SW82TS-L2P
+  DEVICE_ALT0_VENDOR := Hasivo
+  DEVICE_ALT0_MODEL := S1300WP-8GT-2S+
+  DEVICE_PACKAGES := kmod-block2mtd kmod-hasivo-mcu-sensor kmod-hasivo-mcu-wdt \
+	kmod-loop kmod-mfd-hasivo-stc8 kmod-pse-hasivo-hs104 kmod-rtc-pcf8563 losetup
+  IMAGE_SIZE := 29696k
+  $(Device/kernel-lzma)
+  IMAGES += factory.tar.gz
+  IMAGE/factory.tar.gz := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size 7168k | \
+	hasivo-web-factory
+endef
+TARGET_DEVICES += horaco_zx-sw82ts-l2p
 
 define Device/horaco_zx-swtgw2c8f
   SOC := rtl9303
@@ -99,13 +226,86 @@ define Device/horaco_zx-swtgw2c8f
 endef
 TARGET_DEVICES += horaco_zx-swtgw2c8f
 
+define Device/keeplink_kp-9000-8xm
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := KeepLiNK
+  DEVICE_MODEL := KP-9000-8XM
+  # The bootloader and the OEM web interface write into a 14 MiB RUNTIME1
+  IMAGE_SIZE := 14336k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += keeplink_kp-9000-8xm
+
+define Device/lianguo_lg-swtgw3c8f
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := Lianguo
+  DEVICE_MODEL := LG-SWTGW3C8F
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += lianguo_lg-swtgw3c8f
+
+define Device/lianguo_lg510s-4t2xs
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := Lianguo
+  DEVICE_MODEL := LG510S-4T2XS
+  DEVICE_ALT0_VENDOR := GoodTop
+  DEVICE_ALT0_MODEL := LG510S-4T2XS
+  DEVICE_ALT1_VENDOR := Horaco
+  DEVICE_ALT1_MODEL := ZX510S-4T2XS
+  DEVICE_ALT2_VENDOR := HRUI
+  DEVICE_ALT2_MODEL := HR510S-4T2XS
+  DEVICE_ALT3_VENDOR := MokerLink
+  DEVICE_ALT3_MODEL := 10G04210GSM
+  DEVICE_ALT4_VENDOR := Sodola
+  DEVICE_ALT4_MODEL := SL510S-4T2XS
+  DEVICE_PACKAGES := rtl826x-firmware
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += lianguo_lg510s-4t2xs
+
+define Device/mokerlink_2g080gm
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := MokerLink
+  DEVICE_MODEL := 2G080GM
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += mokerlink_2g080gm
+
 define Device/nicgiga_s100-0800s-m
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93030000
   DEVICE_VENDOR := NicGiga
   DEVICE_MODEL := S100-0800S-M
   DEVICE_PACKAGES := kmod-gpio-pca953x
-  IMAGE_SIZE := 29696k
+  IMAGE_SIZE := 13312k
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += nicgiga_s100-0800s-m
@@ -114,7 +314,7 @@ define Device/plasmacloud-common
   SOC := rtl9302
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := Plasma Cloud
-  DEVICE_PACKAGES := poemgr
+  FEED_DEVICE_PACKAGES := poemgr
   IMAGE_SIZE := 15872k
   BLOCKSIZE := 64k
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
@@ -150,10 +350,21 @@ define Device/tplink_tl-st1008f-v2
   DEVICE_VARIANT := v2.0
   DEVICE_PACKAGES := kmod-gpio-pca953x
   SUPPORTED_DEVICES += tplink,tl-st1008f,v2
-  IMAGE_SIZE := 31808k
+  IMAGE_SIZE := 29696k
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += tplink_tl-st1008f-v2
+
+define Device/tplink_tl-st5008f-v2
+  SOC := rtl9303
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := TL-ST5008F
+  DEVICE_VARIANT := v2.0
+  KERNEL_SIZE := 12032k
+  IMAGE_SIZE := 30464k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += tplink_tl-st5008f-v2
 
 define Device/ubnt_usw-aggregation
   SOC := rtl9303
@@ -163,6 +374,16 @@ define Device/ubnt_usw-aggregation
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += ubnt_usw-aggregation
+
+define Device/ubnt_usw-pro-max-24-poe
+  SOC := rtl9302
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi USW Pro Max 24 PoE
+  IMAGE_SIZE := 30912k
+  DEVICE_PACKAGES := kmod-hwmon-adt7475 kmod-pse-realtek-mcu-i2c
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += ubnt_usw-pro-max-24-poe
 
 define Device/vimin_vm-s100-0800ms
   SOC := rtl9303

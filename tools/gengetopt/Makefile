@@ -16,6 +16,7 @@ PKG_HASH:=b941aec9011864978dd7fdeb052b1943535824169d2aa2b0e7eae9ab807584ac
 PKG_SUBDIRS:=$$$$(foreach dir,gl src skels,$$$$(wildcard $$$$(dir)) )
 
 HOST_BUILD_PARALLEL:=1
+HOST_CONFIGURE_CACHE:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 

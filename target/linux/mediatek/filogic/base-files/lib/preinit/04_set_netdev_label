@@ -1,23 +1,22 @@
+. /lib/functions/netdev-name.sh
+
 set_netdev_labels() {
 	local dir
-	local label
-	local netdev
+	local phase
 
-	for dir in /sys/class/net/*; do
-		[ -r "$dir/of_node/label" ] || continue
-		read -r label < "$dir/of_node/label"
-		netdev="${dir##*/}"
-		[ "$netdev" = "$label" ] && continue
-		ip link set "$netdev" name "$label"
-	done
-
-	for dir in /sys/class/net/*; do
-		[ -r "$dir/of_node/openwrt,netdev-name" ] || continue
-		read -r label < "$dir/of_node/openwrt,netdev-name"
-		netdev="${dir##*/}"
-		[ "$netdev" = "$label" ] && continue
-		ip link set "$netdev" name "$label"
+	# park: move every mislabelled interface to a temporary name first,
+	# so that swaps (e.g. eth0 <-> eth1) cannot collide
+	# rename: give every interface its final name
+	for phase in park rename; do
+		for dir in /sys/class/net/*; do
+			netdev_name_set "$dir" "$phase"
+		done
 	done
 }
 
+set_netdev_label_event() {
+	netdev_name_set "/sys$DEVPATH"
+}
+
 boot_hook_add preinit_main set_netdev_labels
+boot_hook_add preinit_netdev set_netdev_label_event

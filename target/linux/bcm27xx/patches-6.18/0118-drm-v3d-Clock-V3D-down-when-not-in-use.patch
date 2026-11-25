@@ -157,7 +157,7 @@ Reviewed-by: Maíra Canal <mcanal@igalia.com>
  	struct reset_control *reset;
  
  	/* Virtual and DMA addresses of the single shared page table. */
-@@ -638,3 +644,4 @@ int v3d_perfmon_set_global_ioctl(struct
+@@ -644,3 +650,4 @@ int v3d_perfmon_set_global_ioctl(struct
  /* v3d_sysfs.c */
  int v3d_sysfs_init(struct device *dev);
  void v3d_sysfs_destroy(struct device *dev);
@@ -172,7 +172,7 @@ Reviewed-by: Maíra Canal <mcanal@igalia.com>
  #include <linux/module.h>
  #include <linux/platform_device.h>
  #include <linux/reset.h>
-@@ -298,6 +299,8 @@ v3d_gem_init(struct drm_device *dev)
+@@ -309,6 +310,8 @@ v3d_gem_init(struct drm_device *dev)
  	if (ret)
  		return ret;
  
@@ -291,7 +291,7 @@ Reviewed-by: Maíra Canal <mcanal@igalia.com>
  
  	kref_init(&job->refcount);
  
-@@ -1425,3 +1488,14 @@ fail:
+@@ -1427,3 +1490,14 @@ fail:
  
  	return ret;
  }

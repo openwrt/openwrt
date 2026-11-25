@@ -1,0 +1,76 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Oct 2026 10:50:16 +0100
+Subject: [PATCH] hostapd: advertise the QoS Management SCS Traffic Description
+
+An AP that enables QoS Management SCS Traffic Description sets bit 2 of
+the Capabilities field of the Wi-Fi Alliance Capabilities element, and
+an EHT AP also sets the SCS Traffic Description Support subfield of its
+EHT Capabilities element (Wi-Fi QoS Management Specification v4.0, 3.3).
+The EHT subfield alone does not enable it (NOTE of 3.3).
+
+hostapd set the EHT subfield and never bit 2, so wpa_supplicant refuses
+to send an SCS Request with a QoS Characteristics element to the AP on
+a connection that is not EHT.
+
+Set bit 2 where hostapd sets the EHT subfield: the driver installs SCS
+descriptors, robust_av_scs_disabled is clear, and the driver's AP EHT
+MAC Capabilities hold SCS Traffic Description Support. The bit does not
+depend on the operating mode of the BSS or on the station.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -144,8 +144,7 @@ u8 * hostapd_eid_eht_capab(struct hostap
+ 	os_memset(cap, 0, sizeof(*cap));
+ 	cap->mac_cap = host_to_le16(eht_cap->mac_cap);
+ #ifdef CONFIG_ROBUST_AV
+-	if (hostapd_is_robust_av_scs_disabled(hapd) ||
+-	    !(hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_SCS))
++	if (!hostapd_scs_traffic_desc_supported(hapd, eht_cap->mac_cap))
+ 		cap->mac_cap &= ~host_to_le16(EHT_MACCAP_SCS_TRAFFIC_DESC);
+ #endif /* CONFIG_ROBUST_AV */
+ 	os_memcpy(cap->phy_cap, eht_cap->phy_cap, EHT_PHY_CAPAB_LEN);
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -1380,6 +1380,11 @@ u8 * hostapd_eid_wfa_capab(struct hostap
+ 	    ap_pmf_enabled(hapd->conf) &&
+ 	    (!sta || (sta->flags & WLAN_STA_DSCP_POLICY)))
+ 		capab |= WFA_CAPA_QM_DSCP_POLICY | WFA_CAPA_QM_UNSOLIC_DSCP;
++	if (hapd->iface->current_mode &&
++	    hostapd_scs_traffic_desc_supported(
++		    hapd,
++		    hapd->iface->current_mode->eht_capab[IEEE80211_MODE_AP].mac_cap))
++		capab |= WFA_CAPA_QM_NON_EHT_SCS_TRAFFIC_DESC;
+ #endif /* CONFIG_ROBUST_AV */
+ 
+ 	if (!capab)
+--- a/src/ap/scs.c
++++ b/src/ap/scs.c
+@@ -31,6 +31,15 @@ bool hostapd_is_robust_av_scs_disabled(s
+ }
+ 
+ 
++bool hostapd_scs_traffic_desc_supported(struct hostapd_data *hapd,
++					u16 eht_mac_cap)
++{
++	return !hostapd_is_robust_av_scs_disabled(hapd) &&
++		(hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_SCS) &&
++		(eht_mac_cap & EHT_MACCAP_SCS_TRAFFIC_DESC);
++}
++
++
+ /*
+  * EasyMesh 6.1, 20.2.4: a Multi-AP Agent reports each request that it
+  * accepted with Request Type Add or Change, and each request with Request
+--- a/src/ap/scs.h
++++ b/src/ap/scs.h
+@@ -17,6 +17,8 @@ u8 * hostapd_eid_mscs_assoc(struct hosta
+ 			    const u8 *ies, size_t ies_len, u8 *eid);
+ int hostapd_del_mscs(struct hostapd_data *hapd, const u8 *addr);
+ bool hostapd_is_robust_av_scs_disabled(struct hostapd_data *hapd);
++bool hostapd_scs_traffic_desc_supported(struct hostapd_data *hapd,
++					u16 eht_mac_cap);
+ void hostapd_robust_av_sta_removed(struct hostapd_data *hapd, const u8 *addr);
+ int hostapd_robust_av_configure(struct hostapd_data *hapd, const u8 *addr,
+ 				const u8 *client,

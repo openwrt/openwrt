@@ -11,10 +11,8 @@ import * as nl80211 from 'nl80211';
 import * as ap from 'wifi.ap';
 import * as fs from 'fs';
 
-const NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER = 33;
-const NL80211_EXT_FEATURE_RADAR_BACKGROUND = 61;
-
-const WLAN_CIPHER_SUITE_GCMP_256 = 0x000fac09;
+const NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER = 32;
+const NL80211_EXT_FEATURE_RADAR_BACKGROUND = 60;
 
 let phy_features = {};
 let phy_capabilities = {};
@@ -32,8 +30,10 @@ function set_device_defaults(config) {
 	/* validate band */
 	if (config.band == '2g')
 		config.hw_mode = 'g';
-	else if (config.band in [ '5g', '6g', '60g' ])
+	else if (config.band in [ '5g', '6g' ])
 		config.hw_mode = 'a';
+	else if (config.band == '60g')
+		config.hw_mode = 'ad';
 	else
 		switch (config.hw_mode) {
 		case 'a':
@@ -106,7 +106,7 @@ function device_cell_density_append(config) {
 				config.supported_rates ??= [ 5500, 6000, 9000, 11000, 12000, 18000, 24000, 36000, 48000, 54000 ];
 				config.basic_rates ??= [ 5500, 11000 ];
 			}
-		} else if (config.cell_density == 2 || (config.cell_density > 3 && config.legacy_rates)) {
+		} else if (config.cell_density == 2 || (config.cell_density > 2 && config.legacy_rates)) {
 			if (!config.legacy_rates) {
 				config.supported_rates ??= [ 12000, 18000, 24000, 36000, 48000, 54000 ];
 				config.basic_rates ??= [ 12000, 24000 ];
@@ -137,13 +137,6 @@ function device_cell_density_append(config) {
 			break;
 		}
 	}
-}
-
-function device_rates(config) {
-	for (let key in [ 'supported_rates', 'basic_rates' ])
-		config[key] = map(config[key], x => x / 100);
-
-	append_vars(config, [ 'beacon_rate', 'supported_rates', 'basic_rates' ]);
 }
 
 function device_htmode_append(config) {
@@ -284,14 +277,14 @@ function device_htmode_append(config) {
 					break;
 				}
 			config.op_class = 137;
-			config.eht_oper_chwidth = 7;
+			config.eht_oper_chwidth = 9;
 
 			/*
 			 * Set HE operation values for 160MHz backward compatibility
 			 * with WiFi 6E clients. Pick the 160MHz half that contains
 			 * the primary channel.
 			 */
-			config.he_oper_chwidth = 3;
+			config.he_oper_chwidth = 2;
 			if (config.channel < config.eht_oper_centr_freq_seg0_idx)
 				config.he_oper_centr_freq_seg0_idx = config.eht_oper_centr_freq_seg0_idx - 16;
 			else
@@ -321,7 +314,7 @@ function device_htmode_append(config) {
 		set_default(config, 'tx_queue_data2_burst', '2.0');
 
 		let vht_capab = phy_capabilities.vht_capa;
-		
+
 		config.vht_capab = '';
 		if (vht_capab & 0x10 && config.rxldpc)
 			config.vht_capab += '[RXLDPC]';
@@ -412,12 +405,25 @@ function device_htmode_append(config) {
 			append_vars(config, [ 'he_6ghz_reg_pwr_type', ]);
 		}
 
+		/* Before the SR Control bits, which take PSR Disallowed from it. */
+		if (!(he_phy_cap[7] & 0x1))
+			config.he_spr_psr_enabled = false;
+
 		if (config.he_bss_color_enabled) {
-			if (config.he_spr_non_srg_obss_pd_max_offset)
+			/* An offset of 0 is a valid offset, so the presence of the
+			 * option sets the Present bit, and not its value. */
+			if (config.he_spr_non_srg_obss_pd_max_offset != null)
 				config.he_spr_sr_control |= 1 << 2;
+			if (config.he_spr_srg_obss_pd_min_offset != null ||
+			    config.he_spr_srg_obss_pd_max_offset != null)
+				config.he_spr_sr_control |= 1 << 3;
 			if (!config.he_spr_psr_enabled)
 				config.he_spr_sr_control |= 1;
-			append_vars(config, [ 'he_bss_color', 'he_spr_non_srg_obss_pd_max_offset', 'he_spr_sr_control' ]);
+			append_vars(config, [
+				'he_bss_color', 'he_spr_non_srg_obss_pd_max_offset', 'he_spr_sr_control',
+				'he_spr_srg_obss_pd_min_offset', 'he_spr_srg_obss_pd_max_offset',
+				'he_spr_srg_bss_colors', 'he_spr_srg_partial_bssid'
+			]);
 		}
 
 		if (!(he_phy_cap[3] & 0x80))
@@ -426,8 +432,6 @@ function device_htmode_append(config) {
 			config.he_su_beamformee = false;
 		if (!(he_phy_cap[4] & 0x2))
 			config.he_mu_beamformer = false;
-		if (!(he_phy_cap[7] & 0x1))
-			config.he_spr_psr_enabled = false;
 		if (!(he_mac_cap[0] & 0x4))
 			config.he_twt_responder = false;
 		if (!config.he_twt_responder)
@@ -463,7 +467,7 @@ function device_htmode_append(config) {
 
 		append_vars(config, [
 			'ieee80211be', 'eht_su_beamformer', 'eht_su_beamformee',
-			'eht_mu_beamformer',
+			'eht_mu_beamformer', 'punct_bitmap',
 		]);
 
 		if (config.hw_mode == 'a')
@@ -498,7 +502,7 @@ function device_capabilities(config) {
 
 	phy_features.ftm_responder = device_extended_features(phy.extended_features, NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER);
 	phy_features.radar_background = device_extended_features(phy.extended_features, NL80211_EXT_FEATURE_RADAR_BACKGROUND);
-	phy_features.cipher_gcmp256 = WLAN_CIPHER_SUITE_GCMP_256 in (phy.cipher_suites ?? []);
+	phy_features.cipher_gcmp256 = iface.phy_cipher_gcmp256(phy);
 }
 
 function generate(config) {
@@ -514,10 +518,6 @@ function generate(config) {
 	device_log_append(config);
 
 	device_country_code(config);
-
-	device_cell_density_append(config);
-
-	device_rates(config);
 
 	/* beacon */
 	append_vars(config, [ 'beacon_int', 'beacon_rate', 'rnr_beacon' ]);
@@ -551,6 +551,7 @@ function generate(config) {
 		config.legacy_rates = false;
 		append(require_mode[config.require_mode], 1);
 	}
+	device_cell_density_append(config);
 	device_htmode_append(config);
 
 	if (config.ieee80211ax || config.ieee80211be)
@@ -569,8 +570,13 @@ let iface_idx = 0;
 function setup_interface(interface, data, config, vlans, stas, phy_features, fixup) {
 	config = { ...config, fixup };
 
-	config.idx = iface_idx++;
-	ap.generate(interface, data, config, vlans, stas, phy_features);
+	/* idx 0 writes the `interface=` line, so a BSS left out keeps its idx */
+	config.idx = iface_idx;
+	if (!ap.bss_add(interface, data, config, vlans, stas, phy_features))
+		return false;
+
+	iface_idx++;
+	return true;
 }
 
 export function setup(data) {
@@ -602,9 +608,10 @@ export function setup(data) {
 		interface.config.network_bridge = interface.bridge;
 		interface.config.network_ifname = interface['bridge-ifname'];
 
-		let owe = interface.config.encryption == 'owe' && interface.config.owe_transition;
+		let owe = ap.owe_transition(interface.config, data.config.band);
 
-		setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, owe ? 'owe' : null );
+		if (!setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, owe ? 'owe' : null))
+			continue;
 		if (owe)
 			setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, 'owe-transition');
 		has_ap = true;

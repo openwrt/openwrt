@@ -1,0 +1,131 @@
+From b6e2649fff15a17689851b30e5415a3aae2b516e Mon Sep 17 00:00:00 2001
+From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Tue, 4 Aug 2026 14:33:21 +0400
+Subject: [PATCH] net: phy: mediatek: add EcoNet EN7528 PHY support
+
+The EcoNet EN7528 MIPS SoC embeds four Gigabit Ethernet PHYs (PHY ID
+0x03a29491) behind its built-in MT7530 switch. They use the same LED
+register layout as the other SoC PHYs handled by this driver, but their
+LED controller powers up with its external control disabled, so the LED
+pins stay dark regardless of what is programmed into the LED control
+registers.
+
+Add a phy_driver entry for it, modelled on the Airoha AN7583 one. Its
+config_init callback enables the LED controller through the LED basic
+control register, which this driver does not program for its other
+PHYs, but which the air_en8811h driver already handles as
+AIR_PHY_LED_BCR. LED behaviour is then controlled through the phylib
+LED operations shared with the other PHYs of this driver.
+
+The LED block is shared by the four PHYs of the EN7528: the LED
+configuration programmed through any one of them applies to all four,
+while each PHY still drives its own LED pin from its own link state.
+
+The EN7528 PHYs need no efuse calibration data, so relax the
+MEDIATEK_GE_SOC_PHY dependencies to allow building the driver on the
+ECONET platform.
+
+Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260804103321.3331802-1-naseefkm@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/mediatek/Kconfig      |  8 ++++--
+ drivers/net/phy/mediatek/mtk-ge-soc.c | 35 +++++++++++++++++++++++++++
+ 2 files changed, 41 insertions(+), 2 deletions(-)
+--- a/drivers/net/phy/mediatek/Kconfig
++++ b/drivers/net/phy/mediatek/Kconfig
+@@ -23,9 +23,9 @@ config MEDIATEK_GE_PHY
+ 
+ config MEDIATEK_GE_SOC_PHY
+ 	tristate "MediaTek SoC Ethernet PHYs"
+-	depends on ARM64 || COMPILE_TEST
++	depends on ARM64 || ECONET || COMPILE_TEST
+ 	depends on ARCH_AIROHA || (ARCH_MEDIATEK && NVMEM_MTK_EFUSE) || \
+-		   COMPILE_TEST
++		   ECONET || COMPILE_TEST
+ 	select MTK_NET_PHYLIB
+ 	select PHY_PACKAGE
+ 	help
+@@ -36,5 +36,9 @@ config MEDIATEK_GE_SOC_PHY
+ 	  present in the SoCs efuse and will dynamically calibrate VCM
+ 	  (common-mode voltage) during startup.
+ 
++	  Also include support for the built-in Gigabit Ethernet PHYs of
++	  the Airoha AN7581 and AN7583 SoCs and of the EcoNet EN7528 SoC,
++	  which need no efuse calibration data.
++
+ config MTK_NET_PHYLIB
+ 	tristate
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.c
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
+@@ -16,6 +16,7 @@
+ 
+ #define MTK_GPHY_ID_MT7981			0x03a29461
+ #define MTK_GPHY_ID_MT7988			0x03a29481
++#define MTK_GPHY_ID_EN7528			0x03a29491
+ #define MTK_GPHY_ID_AN7581			0x03a294c1
+ #define MTK_GPHY_ID_AN7583			0xc0ff0420
+ 
+@@ -320,6 +321,14 @@
+ /* Registers on MDIO_MMD_VEND2 */
+ #define MTK_PHY_LED1_DEFAULT_POLARITIES		BIT(1)
+ 
++/* LED basic control register, part of the same LED block as the LED0/LED1
++ * control registers above. The air_en8811h driver describes the same
++ * register as AIR_PHY_LED_BCR.
++ */
++#define MTK_PHY_LED_BCR				0x21
++#define   MTK_PHY_LED_BCR_CLK_EN		BIT(3)
++#define   MTK_PHY_LED_BCR_EXT_CTRL		BIT(15)
++
+ #define MTK_PHY_RG_BG_RASEL			0x115
+ #define   MTK_PHY_RG_BG_RASEL_MASK		GENMASK(2, 0)
+ 
+@@ -1470,6 +1479,19 @@ static int an7583_phy_config_init(struct
+ 	return phy_clear_bits(phydev, MII_BMCR, BMCR_PDOWN);
+ }
+ 
++static int en7528_phy_config_init(struct phy_device *phydev)
++{
++	/* The LED controller of the EN7528 powers up with its external
++	 * control disabled, leaving the LED pins dark regardless of what is
++	 * programmed into the LED control registers. Hand the pins over to
++	 * the LED control registers the same way the air_en8811h driver
++	 * does; the mode field of this register is already set out of reset.
++	 */
++	return phy_set_bits_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED_BCR,
++				MTK_PHY_LED_BCR_CLK_EN |
++				MTK_PHY_LED_BCR_EXT_CTRL);
++}
++
+ static struct phy_driver mtk_socphy_driver[] = {
+ 	{
+ 		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7981),
+@@ -1506,6 +1528,18 @@ static struct phy_driver mtk_socphy_driv
+ 		.led_hw_control_get = mt798x_phy_led_hw_control_get,
+ 	},
+ 	{
++		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_EN7528),
++		.name		= "EcoNet EN7528 PHY",
++		.config_init	= en7528_phy_config_init,
++		.probe		= an7581_phy_probe,
++		.led_blink_set	= mt798x_phy_led_blink_set,
++		.led_brightness_set = mt798x_phy_led_brightness_set,
++		.led_hw_is_supported = mt798x_phy_led_hw_is_supported,
++		.led_hw_control_set = mt798x_phy_led_hw_control_set,
++		.led_hw_control_get = mt798x_phy_led_hw_control_get,
++		.led_polarity_set = an7581_phy_led_polarity_set,
++	},
++	{
+ 		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_AN7581),
+ 		.name		= "Airoha AN7581 PHY",
+ 		.probe		= an7581_phy_probe,
+@@ -1535,6 +1569,7 @@ module_phy_driver(mtk_socphy_driver);
+ static const struct mdio_device_id __maybe_unused mtk_socphy_tbl[] = {
+ 	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7981) },
+ 	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7988) },
++	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_EN7528) },
+ 	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_AN7581) },
+ 	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_AN7583) },
+ 	{ }

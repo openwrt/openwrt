@@ -163,7 +163,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  static struct platform_driver v3d_platform_driver = {
 --- a/drivers/gpu/drm/v3d/v3d_drv.h
 +++ b/drivers/gpu/drm/v3d/v3d_drv.h
-@@ -570,6 +570,7 @@ extern const struct dma_fence_ops v3d_fe
+@@ -576,6 +576,7 @@ extern const struct dma_fence_ops v3d_fe
  struct dma_fence *v3d_fence_create(struct v3d_dev *v3d, enum v3d_queue q);
  
  /* v3d_gem.c */
@@ -187,7 +187,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  static void
  v3d_idle_axi(struct v3d_dev *v3d, int core)
  {
-@@ -267,6 +260,13 @@ v3d_invalidate_caches(struct v3d_dev *v3
+@@ -278,6 +271,13 @@ v3d_invalidate_caches(struct v3d_dev *v3
  	v3d_invalidate_slices(v3d, 0);
  }
  
@@ -201,7 +201,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  int
  v3d_gem_init(struct drm_device *dev)
  {
-@@ -315,9 +315,6 @@ v3d_gem_init(struct drm_device *dev)
+@@ -326,9 +326,6 @@ v3d_gem_init(struct drm_device *dev)
  		return -ENOMEM;
  	}
  

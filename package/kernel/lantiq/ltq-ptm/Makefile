@@ -27,15 +27,11 @@ ifeq ($(1),vr9)
 else
   DEPENDS+= +PACKAGE_kmod-ltq-ptm-$(1):kmod-ltq-adsl-$(1)-mei
 endif
-ifeq ($(1),ase)
-  DEPENDS+=@BROKEN
-endif
   FILES:=$(PKG_BUILD_DIR)/ltq_ptm_$(1).ko 
 endef
 
 KernelPackage/ltq-ptm-danube=$(call KernelPackage/ltq-ptm-template,danube,TARGET_lantiq_xway)
 KernelPackage/ltq-ptm-ar9=$(call KernelPackage/ltq-ptm-template,ar9,TARGET_lantiq_xway)
-KernelPackage/ltq-ptm-ase=$(call KernelPackage/ltq-ptm-template,ase,TARGET_lantiq_ase)
 KernelPackage/ltq-ptm-vr9=$(call KernelPackage/ltq-ptm-template,vr9,(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy))
 
 define Build/Configure
@@ -48,6 +44,5 @@ define Build/Compile
 endef
 
 $(eval $(call KernelPackage,ltq-ptm-danube))
-$(eval $(call KernelPackage,ltq-ptm-ase))
 $(eval $(call KernelPackage,ltq-ptm-ar9))
 $(eval $(call KernelPackage,ltq-ptm-vr9))

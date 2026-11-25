@@ -4,7 +4,7 @@ ARCH:=arm
 BOARD:=airoha
 BOARDNAME:=Airoha ARM
 SUBTARGETS:=en7523 an7581 an7583
-FEATURES:=dt squashfs nand ramdisk gpio
+FEATURES:=dt dt-overlay squashfs nand ramdisk gpio
 
 KERNEL_PATCHVER:=6.18
 

@@ -95,7 +95,7 @@ function setup_phy(phy, config, data) {
 		rxantenna: config.rxantenna
 	});
 
-	if (config.txpower)
+	if (config.txpower != null)
 		config.txpower = 'fixed ' + config.txpower + '00';
 	else
 		config.txpower = 'auto';
@@ -103,9 +103,9 @@ function setup_phy(phy, config, data) {
 	log(`Configuring '${phy}' distance: ${config.distance}`);
 	if (antenna_changed) {
 		log(`Setting antenna for '${phy}' txantenna: ${config.txantenna}, rxantenna: ${config.rxantenna}`);
-		system(`iw phy ${phy} set antenna ${config.txantenna} ${config.rxantenna}`);
+		system(`iw phy ${phy} set antenna ${config.txantenna} ${config.rxantenna} >/dev/null 2>&1`);
 	}
-	system(`iw phy ${phy} set distance ${config.distance}`);
+	system(`iw phy ${phy} set distance ${config.distance} >/dev/null 2>&1`);
 	system(`iw phy ${phy} set txpower ${config.txpower}`);
 
 	if (config.frag)
@@ -125,6 +125,20 @@ function iw_htmode(config) {
 	case "HE20":
 	case "EHT20":
 		return "HT20";
+	case "HT40":
+	case "VHT40":
+	case "HE40":
+	case "EHT40":
+		switch (config.band) {
+		case "2g":
+			return (+config.channel < 7) ? "HT40+" : "HT40-";
+		case "6g":
+			let ch = +config.channel;
+			let c_base = int((ch - 1) / 8) * 8 + 1;
+			return "40 " + (5950 + (c_base + 2) * 5);
+		default:
+			return ((+config.channel / 4) % 2) ? "HT40+" : "HT40-";
+		}
 	case "VHT80":
 	case "HE80":
 	case "EHT80":
@@ -135,18 +149,6 @@ function iw_htmode(config) {
 	case "NONE":
 	case "NOHT":
 		return "NOHT";
-	}
-
-	if (substr(config.htmode, 2) == "40") {
-		switch (config.band) {
-		case "2g":
-			if (+config.channel < 7)
-				return "HT40+";
-			else
-				return "HT40-";
-		default:
-			return ((+config.channel / 4) % 2) ? "HT40+" : "HT40-";
-		}
 	}
 
 	return null;
@@ -176,7 +178,6 @@ function setup() {
 	data.ifname_prefix = data.config.ifname_prefix;
 	if (!data.ifname_prefix)
 		data.ifname_prefix = data.phy + data.vif_phy_suffix + "-";
-	let active_ifnames = [];
 
 	log('Starting');
 
@@ -219,12 +220,10 @@ function setup() {
 
 		if (!v.config.ifname)
 			v.config.ifname = data.ifname_prefix + mode + mode_idx;
-		push(active_ifnames, v.config.ifname);
 
 		if (v.config.encryption == 'owe' && v.config.owe_transition) {
 			mode_idx = idx[mode]++;
 			v.config.owe_transition_ifname = data.ifname_prefix + mode + mode_idx;
-			push(active_ifnames, v.config.ifname);
 		}
 
 		switch (mode) {
@@ -239,7 +238,7 @@ function setup() {
 			if (mode != "ap")
 				data.config.noscan = true;
 			validate('iface', v.config);
-			iface.prepare(v.config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
+			iface.prepare(v.config);
 			netifd.set_vif(k, v.config.ifname);
 			break;
 		}
@@ -294,15 +293,12 @@ function setup() {
 		wdev_data[v.config.ifname] = config;
 	}
 
-	for (let ifname in active_ifnames) {
-		if (!wdev_data[ifname])
-			continue;
-
-		let if_config = {
-			[ifname]: wdev_data[ifname]
-		};
-		system(`ucode /usr/share/hostap/wdev.uc ${data.phy}${data.phy_suffix} set_config '${if_config}'`);
-	}
+	system([
+		"ucode", "/usr/share/hostap/wdev.uc", data.phy + data.phy_suffix, "set_config",
+		sprintf("%J", wdev_data),
+		`num_global=${data.config.num_global_macaddr ?? ""}`,
+		`macaddr_base=${data.config.macaddr_base ?? ""}`,
+	]);
 
 	if (fs.access('/usr/sbin/wpa_supplicant', 'x'))
 		supplicant.setup(supplicant_data, data);

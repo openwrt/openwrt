@@ -1,0 +1,34 @@
+From d0344e02fd7d08eb525a8a31a6657790380b2095 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 24 Aug 2026 12:51:53 +0200
+Subject: [PATCH 104/105] arm64: dts: microchip: ev23x71a: enable QSPI
+
+Enable the QSPI controller and describe the onboard SPI NOR flash.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ arch/arm64/boot/dts/microchip/lan9696-ev23x71a.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/arch/arm64/boot/dts/microchip/lan9696-ev23x71a.dts
++++ b/arch/arm64/boot/dts/microchip/lan9696-ev23x71a.dts
+@@ -463,6 +463,19 @@
+ 	};
+ };
+ 
++&qspi0 {
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <100000000>;
++		spi-tx-bus-width = <1>;
++		spi-rx-bus-width = <4>;
++		m25p,fast-read;
++	};
++};
++
+ &serdes {
+ 	status = "okay";
+ };

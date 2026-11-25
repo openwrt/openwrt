@@ -396,7 +396,7 @@
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_1000>, <&macaddr_mac_0 2>;
-	qcom,ath10k-calibration-variant = "zte,mf289f";
+	qcom,calibration-variant = "zte,mf289f";
 };
 
 /* This node is used only on AT2 version for 5Ghz on IPQ4019 with board-id=21 */
@@ -404,7 +404,7 @@
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_5000>, <&macaddr_mac_0 3>;
-	qcom,ath10k-calibration-variant = "zte,mf289f";
+	qcom,calibration-variant = "zte,mf289f";
 };
 
 /* This node is used only on AT1 version for 5Ghz on QCA9984 */
@@ -421,6 +421,6 @@
 		reg = <0x00010000 0 0 0 0>;
 		nvmem-cell-names = "mac-address";
 		nvmem-cells = <&macaddr_mac_0 4>;
-		qcom,ath10k-calibration-variant = "zte,mf289f";
+		qcom,calibration-variant = "zte,mf289f";
 	};
 };

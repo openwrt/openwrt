@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tfa-layerscape
 PKG_VERSION:=6.18.2.1.0.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/nxp-qoriq/atf
@@ -21,6 +21,12 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/trusted-firmware-a.mk
 include $(INCLUDE_DIR)/package.mk
 
+ifeq ($(shell uname -s),Linux)
+	HOST_MUSL_FLAG:=$(shell [ "$$(2>&1 ldd --version | head -n 1 | cut -d ' ' -f1)" = "musl" ] && echo " -D__MUSL__")
+else
+	HOST_MUSL_FLAG:=
+endif
+
 HOST_CFLAGS += -Wall -Werror -pedantic -std=c99
 define Host/Compile
 	$(MAKE) -C \
@@ -28,7 +34,7 @@ define Host/Compile
 		PLAT_FIPTOOL_HELPER_MK="$(HOST_BUILD_DIR)/tools/fiptool/plat_fiptool/nxp/plat_fiptool.mk" \
 		CFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)" \
-		HOSTCCFLAGS="$(HOST_CFLAGS)"
+		HOSTCCFLAGS="$(HOST_CFLAGS)$(HOST_MUSL_FLAG)"
 	$(MAKE) -C \
 		$(HOST_BUILD_DIR)/tools/nxp/create_pbl \
 		CFLAGS="$(HOST_CFLAGS)"

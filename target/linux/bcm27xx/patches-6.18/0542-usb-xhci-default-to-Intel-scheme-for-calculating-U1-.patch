@@ -37,10 +37,10 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 +module_param(sandbag_lpm, int, S_IRUGO | S_IWUSR);
 +MODULE_PARM_DESC(sandbag_lpm, "Use relaxed U1/U2 port LPM timeouts");
 +
- static bool td_on_ring(struct xhci_td *td, struct xhci_ring *ring)
+ void xhci_portsc_writel(struct xhci_port *port, u32 val)
  {
- 	struct xhci_segment *seg;
-@@ -5000,7 +5004,7 @@ static u16 xhci_calculate_u1_timeout(str
+ 	trace_xhci_portsc_writel(port, val);
+@@ -5016,7 +5020,7 @@ static u16 xhci_calculate_u1_timeout(str
  		}
  	}
  
@@ -49,7 +49,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		timeout_ns = xhci_calculate_intel_u1_timeout(udev, desc);
  	else
  		timeout_ns = udev->u1_params.sel;
-@@ -5064,7 +5068,7 @@ static u16 xhci_calculate_u2_timeout(str
+@@ -5080,7 +5084,7 @@ static u16 xhci_calculate_u2_timeout(str
  		}
  	}
  

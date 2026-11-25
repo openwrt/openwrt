@@ -271,6 +271,7 @@
 			label = "lan5";
 			phy-handle = <&aqr111b0>;
 			phy-mode = "usxgmii";
+			managed = "in-band-status";
 			pcs-handle = <&uniphy2 0>;
 			nvmem-cells = <&macaddr_lan>;
 			nvmem-cell-names = "mac-address";
@@ -513,17 +514,21 @@
 };
 
 &usb_0 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 
 &usb_1 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 
 &wifi{
 	status = "okay";
 
-	qcom,ath11k-calibration-variant = "Netgear-RAX120v2";
+	qcom,calibration-variant = "Netgear-RAX120v2";
 };
 
 &prng {

@@ -1,0 +1,47 @@
+From 1c586ede0f88ae5bb419ac3be61f9e517d8c1f92 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Oct 2026 23:53:51 +0100
+Subject: [PATCH] clk: rockchip: rv1126: add ISPP clock tree
+
+Add the clock branches of the RV1126 ISPP: the PD_ISPP power domain
+clocks (aclk, hclk, the ISPP clock and the domain NIUs), following the
+clock architecture diagram 11 of the TRM. The clock tree of the PD_VI
+domain, which holds the ISP and the VICAP, is provided by an earlier
+patch of the series.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+
+--- a/drivers/clk/rockchip/clk-rv1126.c
++++ b/drivers/clk/rockchip/clk-rv1126.c
+@@ -892,6 +892,29 @@ static struct rockchip_clk_branch rv1126
+ 		  RV1126_CLKGATE_CON(16), 12, GFLAGS),
+ 
+ 	/*
++	 * Clock-Architecture Diagram 11
++	 */
++	/* PD_ISPP (image pre-processor power domain) */
++	COMPOSITE(ACLK_PDISPP, "aclk_pdispp", mux_cpll_gpll_hpll_p, 0,
++		  RV1126_CLKSEL_CON(68), 6, 2, MFLAGS, 0, 5, DFLAGS,
++		  RV1126_CLKGATE_CON(16), 0, GFLAGS),
++	COMPOSITE_NOMUX(HCLK_PDISPP, "hclk_pdispp", "aclk_pdispp", 0,
++		  RV1126_CLKSEL_CON(69), 8, 5, DFLAGS,
++		  RV1126_CLKGATE_CON(16), 1, GFLAGS),
++	GATE(ACLK_ISPP, "aclk_ispp", "aclk_pdispp", 0,
++	     RV1126_CLKGATE_CON(16), 4, GFLAGS),
++	GATE(HCLK_ISPP, "hclk_ispp", "hclk_pdispp", 0,
++	     RV1126_CLKGATE_CON(16), 5, GFLAGS),
++	COMPOSITE(CLK_ISPP, "clk_ispp", mux_cpll_gpll_hpll_p, 0,
++		  RV1126_CLKSEL_CON(69), 6, 2, MFLAGS, 0, 5, DFLAGS,
++		  RV1126_CLKGATE_CON(16), 6, GFLAGS),
++	/* PD_ISPP NIUs (kept enabled) */
++	GATE(0, "aclk_pdispp_niu", "aclk_pdispp", CLK_IGNORE_UNUSED,
++	     RV1126_CLKGATE_CON(16), 2, GFLAGS),
++	GATE(0, "hclk_pdispp_niu", "hclk_pdispp", CLK_IGNORE_UNUSED,
++	     RV1126_CLKGATE_CON(16), 3, GFLAGS),
++
++	/*
+ 	 * Clock-Architecture Diagram 12
+ 	 */
+ 	/* PD_PHP */

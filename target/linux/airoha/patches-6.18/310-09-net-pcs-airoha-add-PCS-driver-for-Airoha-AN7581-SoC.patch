@@ -28,7 +28,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/pcs/Kconfig
 +++ b/drivers/net/pcs/Kconfig
-@@ -55,4 +55,6 @@ config PCS_RZN1_MIIC
+@@ -54,4 +54,6 @@ config PCS_RZN1_MIIC
  	  Renesas RZ/N1, RZ/N2H, and RZ/T2H SoCs. This PCS converts MII to
  	  RMII/RGMII, or can be set in pass-through mode for MII.
  
@@ -69,7 +69,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +endif
 --- /dev/null
 +++ b/drivers/net/pcs/airoha/pcs-airoha-common.c
-@@ -0,0 +1,1313 @@
+@@ -0,0 +1,1297 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2024 AIROHA Inc
@@ -86,7 +86,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#include <linux/platform_device.h>
 +#include <linux/regmap.h>
 +#include <linux/reset.h>
-+#include <linux/rtnetlink.h>
 +
 +#include "pcs-airoha.h"
 +
@@ -1192,6 +1191,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +static int airoha_pcs_probe(struct platform_device *pdev)
 +{
 +	const struct airoha_pcs_match_data *data;
++	struct fwnode_pcs_provider *provider;
 +	struct device *dev = &pdev->dev;
 +	struct airoha_pcs_priv *priv;
 +	int index, ret;
@@ -1307,27 +1307,12 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	platform_set_drvdata(pdev, priv);
 +
-+	return fwnode_pcs_add_provider(dev_fwnode(dev), airoha_pcs_get,
-+				       priv);
-+}
++	provider = devm_fwnode_pcs_add_provider(dev, dev_fwnode(dev),
++						airoha_pcs_get, priv);
++	if (IS_ERR(provider))
++		return dev_err_probe(dev, PTR_ERR(provider), "Failed to add PCS provider\n");
 +
-+static void airoha_pcs_remove(struct platform_device *pdev)
-+{
-+	struct airoha_pcs_priv *priv = platform_get_drvdata(pdev);
-+	const struct airoha_pcs_match_data *data = priv->data;
-+	int i;
-+
-+	fwnode_pcs_del_provider(dev_fwnode(&pdev->dev));
-+
-+	rtnl_lock();
-+
-+	for (i = 0; i < data->num_port; i++) {
-+		struct airoha_pcs_port *port = &priv->ports[i];
-+
-+		phylink_release_pcs(&port->pcs);
-+	}
-+
-+	rtnl_unlock();
++	return 0;
 +}
 +
 +static const struct airoha_pcs_match_data an7581_pcs_eth = {
@@ -1376,7 +1361,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		.of_match_table = airoha_pcs_of_table,
 +	},
 +	.probe = airoha_pcs_probe,
-+	.remove = airoha_pcs_remove,
 +};
 +module_platform_driver(airoha_pcs_driver);
 +

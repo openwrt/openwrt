@@ -7,13 +7,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
-PKG_VERSION:=0.195
-PKG_RELEASE:=2
+PKG_VERSION:=0.196
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION) \
                 https://mirrors.kernel.org/sourceware/$(PKG_NAME)/$(PKG_VERSION)
-PKG_HASH:=37629fdf7f1f3dc2818e138fca2b8094177d6c2d0f701d3bb650a561218dc026
+PKG_HASH:=fd5cc6b77ad6773cac93cb3f415f9318ac3b3455eecf801f6b4a742c4f6c7209
 
 PKG_MAINTAINER:=Luiz Angelo Daros de Luca <luizluca@gmail.com>
 PKG_LICENSE:=GPL-2.0-or-later LGPL-3.0-or-later

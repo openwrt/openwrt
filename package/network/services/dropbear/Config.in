@@ -900,6 +900,7 @@ menu "Encryption options"
 
 	config DROPBEAR_ECDSA
 		bool "ECDSA"
+		default y if !SMALL_FLASH
 		help
 			This enables the following public key algorithm:
 			 * ecdsa-sha2-nistp256 - 256-bit elliptic curve
@@ -911,7 +912,7 @@ menu "Encryption options"
 
 			ECDSA significantly faster than RSA or DSS, but slower than Ed25519.
 
-			Default: disabled.
+			Default: enabled, except devices with very small flash.
 
 	config DROPBEAR_ED25519
 		bool "Ed25519"

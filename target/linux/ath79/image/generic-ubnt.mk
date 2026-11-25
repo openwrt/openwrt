@@ -58,7 +58,7 @@ TARGET_DEVICES += ubnt_edgeswitch-5xp
 define Device/ubnt_edgeswitch-8xp
   $(Device/ubnt-sw)
   DEVICE_MODEL := EdgeSwitch 8XP
-  DEVICE_PACKAGES += kmod-dsa-b53-mdio
+  DEVICE_PACKAGES += kmod-dsa-b53-mdio -swconfig
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
@@ -329,6 +329,7 @@ define Device/ubnt_unifi-ap-outdoor-plus
   $(Device/ubnt-unifi-jffs2)
   DEVICE_MODEL := UniFi AP Outdoor+
   SUPPORTED_DEVICES += unifi-outdoor-plus
+  DEFAULT := n
 endef
 TARGET_DEVICES += ubnt_unifi-ap-outdoor-plus
 
@@ -338,5 +339,6 @@ define Device/ubnt_unifi-ap-pro
   DEVICE_MODEL := UniFi AP Pro
   UBNT_CHIP := ar934x
   SUPPORTED_DEVICES += uap-pro
+  DEFAULT := n
 endef
 TARGET_DEVICES += ubnt_unifi-ap-pro

@@ -1,0 +1,41 @@
+From caa434a4c54fed80d552df20706e3a61ff2ab46e Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 21 Nov 2026 01:50:09 +0100
+Subject: mips: export the signal return trampoline
+
+The C code references my_sigreturn through an extern declaration, but the
+MIPS assembly definitions leave the symbol local. With LTO the reference
+can end up in a different object, causing an undefined reference when
+linking the tools on MIPS64. Export the symbol as on other architectures.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ coregrind/m_signals.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/coregrind/m_signals.c
++++ b/coregrind/m_signals.c
+@@ -1063,6 +1063,7 @@ extern void my_sigreturn(void);
+ #elif defined(VGP_mips32_linux)
+ #  define _MY_SIGRETURN(name) \
+    ".text\n" \
++   ".globl my_sigreturn\n" \
+    "my_sigreturn:\n" \
+    "	li	$2, " #name "\n" /* apparently $2 is v0 */ \
+    "	syscall\n" \
+@@ -1071,6 +1072,7 @@ extern void my_sigreturn(void);
+ #elif defined(VGP_mips64_linux)
+ #  define _MY_SIGRETURN(name) \
+    ".text\n" \
++   ".globl my_sigreturn\n" \
+    "my_sigreturn:\n" \
+    "   li $2, " #name "\n" \
+    "   syscall\n" \
+@@ -1079,6 +1081,7 @@ extern void my_sigreturn(void);
+ #elif defined(VGP_nanomips_linux)
+ #  define _MY_SIGRETURN(name) \
+     ".text\n" \
++   ".globl my_sigreturn\n" \
+    "my_sigreturn:\n" \
+    "   li $t4, " #name "\n" \
+    "   syscall[32]\n" \

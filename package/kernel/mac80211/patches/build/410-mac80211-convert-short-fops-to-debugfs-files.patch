@@ -58,7 +58,7 @@
  	.llseek = default_llseek,
  };
  
-@@ -344,9 +349,10 @@ static ssize_t aql_enable_write(struct f
+@@ -335,9 +340,10 @@ static ssize_t aql_enable_write(struct f
  	return count;
  }
  
@@ -70,7 +70,7 @@
  	.llseek = default_llseek,
  };
  
-@@ -394,9 +400,10 @@ static ssize_t force_tx_status_write(str
+@@ -373,9 +379,10 @@ static ssize_t force_tx_status_write(str
  	return count;
  }
  
@@ -82,7 +82,7 @@
  	.llseek = default_llseek,
  };
  
-@@ -421,8 +428,9 @@ static ssize_t reset_write(struct file *
+@@ -400,8 +407,9 @@ static ssize_t reset_write(struct file *
  	return count;
  }
  
@@ -93,7 +93,7 @@
  	.llseek = noop_llseek,
  };
  #endif
-@@ -649,8 +657,9 @@ static ssize_t stats_ ##name## _read(str
+@@ -629,8 +637,9 @@ static ssize_t stats_ ##name## _read(str
  				      print_devstats_##name);		\
  }									\
  									\
@@ -139,7 +139,7 @@
  
 --- a/net/mac80211/debugfs_netdev.c
 +++ b/net/mac80211/debugfs_netdev.c
-@@ -221,9 +221,10 @@ static ssize_t ieee80211_if_fmt_##name(
+@@ -222,9 +222,10 @@ static ssize_t ieee80211_if_fmt_##name(
  }
  
  #define _IEEE80211_IF_FILE_OPS(name, _read, _write)			\
@@ -186,7 +186,7 @@
  
 --- a/net/mac80211/rate.c
 +++ b/net/mac80211/rate.c
-@@ -252,8 +252,9 @@ static ssize_t rcname_read(struct file *
+@@ -250,8 +250,9 @@ static ssize_t rcname_read(struct file *
  				       ref->ops->name, len);
  }
  

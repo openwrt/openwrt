@@ -157,6 +157,12 @@
 				};
 			};
 
+			partition@1e0000 {
+				label = "reserved2";
+				reg = <0x1e0000 0xa0000>;
+				read-only;
+			};
+
 			/* BootBase has dual-image support. Second partition starts at
 			 * 0x1280000 and has same layout as first partition but smaller size
 			 */

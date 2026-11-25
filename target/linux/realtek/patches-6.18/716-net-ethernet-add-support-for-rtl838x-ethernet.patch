@@ -16,33 +16,36 @@ Submitted-by: Sander Vanheule <sander@svanheule.net>
 Submitted-by: Bjørn Mork <bjorn@mork.no>
 Submitted-by: John Crispin <john@phrozen.org>
 ---
- drivers/net/ethernet/Kconfig                  | 7 +-
- drivers/net/ethernet/Makefile                 | 1 +
- 2 files changed, 8 insertions(+)
+ drivers/net/ethernet/realtek/Kconfig  | 8 +++++++-
+ drivers/net/ethernet/realtek/Makefile | 1 +
+ 2 files changed, 8 insertions(+), 1 deletion(-)
 
---- a/drivers/net/ethernet/Kconfig
-+++ b/drivers/net/ethernet/Kconfig
-@@ -180,6 +180,13 @@ source "drivers/net/ethernet/rdc/Kconfig
- source "drivers/net/ethernet/realtek/Kconfig"
- source "drivers/net/ethernet/renesas/Kconfig"
- source "drivers/net/ethernet/rocker/Kconfig"
-+
+--- a/drivers/net/ethernet/realtek/Kconfig
++++ b/drivers/net/ethernet/realtek/Kconfig
+@@ -6,7 +6,7 @@
+ config NET_VENDOR_REALTEK
+ 	bool "Realtek devices"
+ 	default y
+-	depends on PCI || (PARPORT && X86)
++	depends on PCI || (PARPORT && X86) || MACH_REALTEK_RTL
+ 	help
+ 	  If you have a network (Ethernet) card belonging to this class, say Y.
+ 
+@@ -140,4 +140,10 @@ config RTASE
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called rtase. This is recommended.
+ 
 +config NET_RTL838X
 +	tristate "Realtek rtl838x Ethernet MAC support"
 +	depends on MACH_REALTEK_RTL
 +	help
 +	  Say Y here if you want to use the Realtek rtl838x Gbps Ethernet MAC.
 +
- source "drivers/net/ethernet/samsung/Kconfig"
- source "drivers/net/ethernet/seeq/Kconfig"
- source "drivers/net/ethernet/sgi/Kconfig"
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -83,6 +83,7 @@ obj-$(CONFIG_NET_VENDOR_REALTEK) += real
- obj-$(CONFIG_NET_VENDOR_RENESAS) += renesas/
- obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
- obj-$(CONFIG_NET_VENDOR_ROCKER) += rocker/
+ endif # NET_VENDOR_REALTEK
+--- a/drivers/net/ethernet/realtek/Makefile
++++ b/drivers/net/ethernet/realtek/Makefile
+@@ -10,3 +10,4 @@ r8169-y += r8169_main.o r8169_firmware.o
+ r8169-$(CONFIG_R8169_LEDS) += r8169_leds.o
+ obj-$(CONFIG_R8169) += r8169.o
+ obj-$(CONFIG_RTASE) += rtase/
 +obj-$(CONFIG_NET_RTL838X) += rtl838x_eth.o
- obj-$(CONFIG_NET_VENDOR_SAMSUNG) += samsung/
- obj-$(CONFIG_NET_VENDOR_SEEQ) += seeq/
- obj-$(CONFIG_NET_VENDOR_SILAN) += silan/

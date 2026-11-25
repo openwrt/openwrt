@@ -20,17 +20,14 @@
 					],
 					[ "if",
 						[ "eq", "DEVNAME",
-							[ "full", "ptmx", "zero", "tty", "net", "random", "urandom" ]
+							[ "full", "ptmx", "zero", "tty", "net", "net/tun", "random", "urandom" ]
 						],
 						[
 							[ "makedev", "/dev/%DEVNAME%", "0666" ],
 							[ "return" ]
 						]
 					],
-					[ "if",
-						[ "regex", "DEVNAME", "^snd" ],
-						[ "makedev", "/dev/%DEVNAME%", "0660", "audio" ]
-					],
+					[ "include", "/etc/hotplug.json.d/*.json" ],
 					[ "if",
 						[ "regex", "DEVNAME", "^tty" ],
 						[ "makedev", "/dev/%DEVNAME%", "0660", "dialout" ]

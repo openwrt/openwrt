@@ -1,5 +1,5 @@
 DTS_DIR := $(DTS_DIR)/qcom
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID TPLINK_SUPPORT_STRING ZYXEL_MODEL_ID
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_FLASH_SCRIPT NETGEAR_HW_ID TPLINK_SUPPORT_STRING ZYXEL_MODEL_ID
 
 define Build/asus-fake-ramdisk
 	rm -rf $(KDIR)/tmp/fakerd
@@ -24,13 +24,11 @@ define Build/asus-trx
 	mv $@.new $@
 endef
 
-define Build/netgear-rbx750-qsdk-ipq-factory
-	$(CP) $(FLASH_SCRIPT) $(KDIR_TMP)/
-
+define Build/netgear-rbx750_850-qsdk-ipq-factory
 	echo "VERSION : V8.0.0.0_$(LINUX_VERSION)" > $@.metadata
 	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
 
-	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(FLASH_SCRIPT) txt $@.metadata ubi $@
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(CURDIR)/$(NETGEAR_FLASH_SCRIPT) txt $@.metadata ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -41,13 +39,14 @@ define Build/wax6xx-netgear-tar
 	md5sum $@.tmp/nand-ipq807x-apps.img | cut -c 1-32 > $@.tmp/nand-ipq807x-apps.md5sum
 	echo $(DEVICE_MODEL) > $@.tmp/metadata.txt
 	echo $(DEVICE_MODEL)"_V99.9.9.9" > $@.tmp/version
-	tar -C $@.tmp/ -cf $@ .
+	$(TAR) -C $@.tmp/ -cf $@ --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") .
 	rm -rf $@.tmp
 endef
 
 define Build/zyxel-nwax10ax-fit
 	$(TOPDIR)/scripts/mkits-zyxel-fit-filogic.sh \
-		$@.its $@ "$(ZYXEL_MODEL_ID) ff ff ff ff ff ff ff ff"
+		$@.its $@ "$(ZYXEL_MODEL_ID)"
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -79,7 +78,7 @@ define Device/arcadyan_aw1000
 endef
 TARGET_DEVICES += arcadyan_aw1000
 
-define Device/asus_rt-ax89x
+define Device/asus_rt-ax89x-common
 	DEVICE_VENDOR := Asus
 	DEVICE_MODEL := RT-AX89X
 	BLOCKSIZE := 128k
@@ -107,7 +106,19 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endif
 endef
-TARGET_DEVICES += asus_rt-ax89x
+
+define Device/asus_rt-ax89x-b1
+	$(call Device/asus_rt-ax89x-common)
+	DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += asus_rt-ax89x-b1
+
+define Device/asus_rt-ax89x-b2
+	$(call Device/asus_rt-ax89x-common)
+	DEVICE_VARIANT := B2
+	SUPPORTED_DEVICES += asus,rt-ax89x
+endef
+TARGET_DEVICES += asus_rt-ax89x-b2
 
 define Device/buffalo_wxr-5950ax12
 	$(call Device/FitImage)
@@ -216,7 +227,6 @@ define Device/linksys_mx
 	SOC := ipq8072
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
-	DEVICE_PACKAGES := kmod-leds-pca963x
 endef
 
 define Device/linksys_mx4x00
@@ -229,13 +239,15 @@ define Device/linksys_mx4200v1
 	$(call Device/linksys_mx4x00)
 	DEVICE_MODEL := MX4200
 	DEVICE_VARIANT := v1
-	DEVICE_PACKAGES += kmod-hci-uart
+	DEVICE_PACKAGES += kmod-hci-uart kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx4200v1
 
 define Device/linksys_mx4200v2
-	$(call Device/linksys_mx4200v1)
+	$(call Device/linksys_mx4x00)
+	DEVICE_MODEL := MX4200
 	DEVICE_VARIANT := v2
+	DEVICE_PACKAGES += kmod-hci-uart kmod-leds-st1202
 endef
 TARGET_DEVICES += linksys_mx4200v2
 
@@ -247,6 +259,7 @@ define Device/linksys_mx4300
 	KERNEL_SIZE := 8192k
 	IMAGE_SIZE := 171264k
 	NAND_SIZE := 1024m
+	DEVICE_PACKAGES += kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx4300
 
@@ -254,7 +267,7 @@ define Device/linksys_mx5300
 	$(call Device/linksys_mx)
 	DEVICE_MODEL := MX5300
 	DEVICE_PACKAGES += kmod-rtc-ds1307 ipq-wifi-linksys_mx5300 \
-		kmod-ath10k-ct ath10k-firmware-qca9984-ct
+		kmod-ath10k-ct ath10k-firmware-qca9984-ct kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx5300
 
@@ -262,7 +275,7 @@ define Device/linksys_mx8500
 	$(call Device/linksys_mx)
 	DEVICE_MODEL := MX8500
 	DEVICE_PACKAGES += ipq-wifi-linksys_mx8500 kmod-ath11k-pci \
-		ath11k-firmware-qcn9074 kmod-hci-uart
+		ath11k-firmware-qcn9074 kmod-hci-uart kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx8500
 
@@ -294,19 +307,24 @@ endif
 endef
 TARGET_DEVICES += netgear_rax120v2
 
-define Device/netgear_rbx750
+define Device/netgear_rbx750_850
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	SOC := ipq8074
 	DEVICE_VENDOR := Netgear
+	DEVICE_PACKAGES := kmod-leds-lp5562
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES := ipq-wifi-netgear_rbk750 kmod-leds-lp5562
-	DEVICE_DTS_CONFIG := config@oak03
-	FLASH_SCRIPT := netgear_rbx750.bootscript
+	NETGEAR_FLASH_SCRIPT := netgear_rbx750_850.bootscript
 	IMAGES += factory.chk
-	IMAGE/factory.chk := append-ubi | netgear-rbx750-qsdk-ipq-factory | \
+	IMAGE/factory.chk := append-ubi | netgear-rbx750_850-qsdk-ipq-factory | \
 		netgear-chk
+endef
+
+define Device/netgear_rbx750
+	$(call Device/netgear_rbx750_850)
+	DEVICE_PACKAGES += ipq-wifi-netgear_rbk750
+	DEVICE_DTS_CONFIG := config@oak03
 endef
 
 define Device/netgear_rbr750
@@ -322,6 +340,26 @@ define Device/netgear_rbs750
 	NETGEAR_BOARD_ID := U12H416T00_NETGEAR
 endef
 TARGET_DEVICES += netgear_rbs750
+
+define Device/netgear_rbx850
+	$(call Device/netgear_rbx750_850)
+	DEVICE_PACKAGES += ipq-wifi-netgear_rbk850
+	DEVICE_DTS_CONFIG := config@hk01
+endef
+
+define Device/netgear_rbr850
+	$(call Device/netgear_rbx850)
+	DEVICE_MODEL := RBR850
+	NETGEAR_BOARD_ID := U12H404T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbr850
+
+define Device/netgear_rbs850
+	$(call Device/netgear_rbx850)
+	DEVICE_MODEL := RBS850
+	NETGEAR_BOARD_ID := U12H403T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbs850
 
 define Device/netgear_sxk80
 	$(call Device/FitImage)
@@ -601,8 +639,10 @@ define Device/zyxel_nbg7815
 	DEVICE_MODEL := NBG7815
 	DEVICE_DTS_CONFIG := config@nbg7815
 	SOC := ipq8074
+	KERNEL_SIZE := 6144k
 	DEVICE_PACKAGES := kmod-fs-f2fs f2fs-tools ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci \
-		kmod-hci-uart kmod-hwmon-tmp103
+		kmod-hci-uart kmod-hwmon-tmp103 kmod-hwmon-gpiofan \
+		kmod-leds-lp5569
 endef
 TARGET_DEVICES += zyxel_nbg7815
 
@@ -623,7 +663,7 @@ define Device/zyxel_nwa110ax
 	DEVICE_DTS_CONFIG := config@ac01
 	SOC := ipq8070
 	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa110ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
-	ZYXEL_MODEL_ID := 59 e1
+	ZYXEL_MODEL_ID := 59e1
 endef
 TARGET_DEVICES += zyxel_nwa110ax
 
@@ -633,6 +673,6 @@ define Device/zyxel_nwa210ax
 	DEVICE_DTS_CONFIG := config@ac02
 	SOC := ipq8071
 	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa210ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
-	ZYXEL_MODEL_ID := 5c e1
+	ZYXEL_MODEL_ID := 5ce1
 endef
 TARGET_DEVICES += zyxel_nwa210ax

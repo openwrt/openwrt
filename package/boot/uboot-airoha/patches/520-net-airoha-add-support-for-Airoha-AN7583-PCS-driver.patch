@@ -1,7 +1,7 @@
-From 900bbfbb0abbe89abf156dc4b48dc19b929c8a13 Mon Sep 17 00:00:00 2001
+From e6fc9fe766c716511afefbb14f1ae13f6ad702de Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Tue, 30 Sep 2025 22:56:29 +0200
-Subject: [PATCH 27/38] net: airoha: add support for Airoha AN7583 PCS driver
+Date: Fri, 31 Jul 2026 09:10:40 +0200
+Subject: [PATCH 11/16] net: airoha: add support for Airoha AN7583 PCS driver
 
 Add support for the PCS interface on Airoha AN7583 SoC. This is based on
 the AN7581 SoC with difference in the calibration and Analog PHY
@@ -13,8 +13,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/net/airoha/Makefile            |    1 +
  drivers/net/airoha/pcs-airoha-common.c |   27 +
  drivers/net/airoha/pcs-airoha.h        |   17 +
- drivers/net/airoha/pcs-an7583.c        | 2200 ++++++++++++++++++++++++
- 5 files changed, 2253 insertions(+)
+ drivers/net/airoha/pcs-an7583.c        | 2202 ++++++++++++++++++++++++
+ 5 files changed, 2255 insertions(+)
  create mode 100644 drivers/net/airoha/pcs-an7583.c
 
 diff --git a/drivers/net/airoha/Kconfig b/drivers/net/airoha/Kconfig
@@ -126,10 +126,10 @@ index 714d2ebe520..fddeda5ca36 100644
 +#endif
 diff --git a/drivers/net/airoha/pcs-an7583.c b/drivers/net/airoha/pcs-an7583.c
 new file mode 100644
-index 00000000000..0a5b936cd93
+index 00000000000..4bdda3066ed
 --- /dev/null
 +++ b/drivers/net/airoha/pcs-an7583.c
-@@ -0,0 +1,2200 @@
+@@ -0,0 +1,2202 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2024 AIROHA Inc
@@ -361,21 +361,23 @@ index 00000000000..0a5b936cd93
 +			   FIELD_PREP(AIROHA_PCS_PMA_TX_BEN_EXTEN_FTUNE, tx_ben_exten_ftune));
 +
 +	if (data->port_type == AIROHA_PCS_PON) {
-+		if (interface == PHY_INTERFACE_MODE_SGMII || interface == PHY_INTERFACE_MODE_1000BASEX ||
-+	     	    interface == PHY_INTERFACE_MODE_USXGMII || interface == PHY_INTERFACE_MODE_10GBASER)
++		if (interface == PHY_INTERFACE_MODE_SGMII ||
++		    interface == PHY_INTERFACE_MODE_1000BASEX ||
++		    interface == PHY_INTERFACE_MODE_USXGMII ||
++		    interface == PHY_INTERFACE_MODE_10GBASER)
 +			regmap_update_bits(priv->xfi_pma, AIROHA_PCS_PMA_TX_DLY_CTRL,
-+					AIROHA_PCS_PMA_TX_DLY_BEN_FTUNE |
-+					AIROHA_PCS_PMA_TX_DLY_DATA_FTUNE,
-+					FIELD_PREP(AIROHA_PCS_PMA_TX_DLY_BEN_FTUNE, tx_dly_ben_ftune) |
-+					FIELD_PREP(AIROHA_PCS_PMA_TX_DLY_DATA_FTUNE, tx_dly_data_ftune));
++					   AIROHA_PCS_PMA_TX_DLY_BEN_FTUNE |
++					   AIROHA_PCS_PMA_TX_DLY_DATA_FTUNE,
++					   FIELD_PREP(AIROHA_PCS_PMA_TX_DLY_BEN_FTUNE, tx_dly_ben_ftune) |
++					   FIELD_PREP(AIROHA_PCS_PMA_TX_DLY_DATA_FTUNE, tx_dly_data_ftune));
 +
 +		regmap_update_bits(priv->xfi_pma, AIROHA_PCS_PMA_MD32_MEM_CLK_CTRL,
-+			   AIROHA_PCS_PMA_MD32PM_CK_SEL,
-+			   FIELD_PREP(AIROHA_PCS_PMA_MD32PM_CK_SEL, 0x3));
++				   AIROHA_PCS_PMA_MD32PM_CK_SEL,
++				   FIELD_PREP(AIROHA_PCS_PMA_MD32PM_CK_SEL, 0x3));
 +
 +		regmap_update_bits(priv->xfi_pma, AIROHA_PCS_PMA_TX_DLY_CTRL,
-+			   AIROHA_PCS_PMA_OUTBEN_DATA_MODE,
-+			   FIELD_PREP(AIROHA_PCS_PMA_OUTBEN_DATA_MODE, 0x1));
++				   AIROHA_PCS_PMA_OUTBEN_DATA_MODE,
++				   FIELD_PREP(AIROHA_PCS_PMA_OUTBEN_DATA_MODE, 0x1));
 +	}
 +}
 +
@@ -1979,7 +1981,7 @@ index 00000000000..0a5b936cd93
 +	feos = eo_buf[FEOS];
 +
 +	for (i = 0; i < ARRAY_SIZE(eo_buf); i++) {
-+		if ((eo_buf[i] == feos) && (eo_buf[i] >= 32))
++		if (eo_buf[i] == feos && eo_buf[i] >= 32)
 +			eo_buf[i] = eo_buf[i] - 64;
 +		else if (eo_buf[i] >= 64)
 +			eo_buf[i] = eo_buf[i] - 128;
@@ -1997,7 +1999,7 @@ index 00000000000..0a5b936cd93
 +		udelay(500);
 +
 +		regmap_set_bits(priv->xfi_pma, AIROHA_PCS_PMA_RX_FORCE_MODE_0,
-+				  AIROHA_PCS_PMA_FORCE_DA_XPON_CDR_LPF_RSTB);
++				AIROHA_PCS_PMA_FORCE_DA_XPON_CDR_LPF_RSTB);
 +
 +		udelay(500);
 +	}
@@ -2077,7 +2079,6 @@ index 00000000000..0a5b936cd93
 +static void an7583_pcs_common_phya_eo_scan(struct airoha_pcs_priv *priv,
 +					   phy_interface_t interface)
 +{
-+
 +	u32 best_heo = 0, best_veo = 0;
 +	u32 leq_gain, best_leq_gain;
 +	u32 best_leq_peacking = 0;
@@ -2124,9 +2125,11 @@ index 00000000000..0a5b936cd93
 +				   AIROHA_PCS_PMA_FORCE_SEL_DA_RX_FE_GAIN_CTRL |
 +				   FIELD_PREP(AIROHA_PCS_PMA_FORCE_DA_RX_FE_GAIN_CTRL, leq_gain));
 +
-+		for (leq_peaking = 0; leq_peaking <= FIELD_MAX(AIROHA_PCS_PMA_FORCE_DA_RX_FE_PEAKING_CTRL); leq_peaking++) {
++		for (leq_peaking = 0;
++		     leq_peaking <= FIELD_MAX(AIROHA_PCS_PMA_FORCE_DA_RX_FE_PEAKING_CTRL);
++		     leq_peaking++) {
 +			regmap_update_bits(priv->xfi_pma, AIROHA_PCS_PMA_PXP_JCPLL_SDM_SCAN,
-+			   		   AIROHA_PCS_PMA_FORCE_SEL_DA_RX_FE_PEAKING_CTRL |
++					   AIROHA_PCS_PMA_FORCE_SEL_DA_RX_FE_PEAKING_CTRL |
 +					   AIROHA_PCS_PMA_FORCE_DA_RX_FE_PEAKING_CTRL,
 +					   AIROHA_PCS_PMA_FORCE_SEL_DA_RX_FE_PEAKING_CTRL |
 +					   FIELD_PREP(AIROHA_PCS_PMA_FORCE_DA_RX_FE_PEAKING_CTRL, leq_peaking));
@@ -2171,7 +2174,6 @@ index 00000000000..0a5b936cd93
 +static void an7583_pcs_common_phya_rxrdy(struct airoha_pcs_priv *priv)
 +{
 +	u32 xfi_rx_term_sel = 0x1;
-+	// int efuse_valid;
 +
 +	regmap_set_bits(priv->xfi_pma, AIROHA_PCS_PMA_RX_CTRL_SEQUENCE_FORCE_CTRL_1,
 +			AIROHA_PCS_PMA_FORCE_RX_RDY);
@@ -2328,7 +2330,7 @@ index 00000000000..0a5b936cd93
 +			AIROHA_PCS_PMA_DISB_RX_RDY);
 +
 +	regmap_clear_bits(priv->xfi_pma, AIROHA_PCS_PMA_RX_CTRL_SEQUENCE_FORCE_CTRL_1,
-+			AIROHA_PCS_PMA_DISB_RX_RDY);
++			  AIROHA_PCS_PMA_DISB_RX_RDY);
 +}
 -- 
 2.53.0

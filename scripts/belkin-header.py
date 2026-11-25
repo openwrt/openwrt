@@ -62,7 +62,7 @@ def create_header(buf, belkin_header, belkin_model):
     head = bytearray(32)
 
     head[0:4] = int(belkin_header, 0).to_bytes(4, 'big')
-    head[8:12] = int(time.time()).to_bytes(4, 'big')
+    head[8:12] = int(os.environ.get('SOURCE_DATE_EPOCH') or time.time()).to_bytes(4, 'big')
     head[12:16] = len(buf).to_bytes(4, byteorder='big')
     head[24:28] = xcrc32(buf)
     head[28:29] = VERSION1.to_bytes(1, byteorder='big')

@@ -68,7 +68,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  static DEFINE_MUTEX(pse_list_mutex);
  static LIST_HEAD(pse_controller_list);
  static DEFINE_XARRAY_ALLOC(pse_pw_d_map);
-@@ -1148,6 +1155,15 @@ int pse_controller_register(struct pse_c
+@@ -1194,6 +1201,15 @@ int pse_controller_register(struct pse_c
  	blocking_notifier_call_chain(&pse_controller_notifier,
  				     PSE_REGISTERED, pcdev);
  
@@ -84,7 +84,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  	return 0;
  }
  EXPORT_SYMBOL_GPL(pse_controller_register);
-@@ -1164,6 +1180,8 @@ void pse_controller_unregister(struct ps
+@@ -1210,6 +1226,8 @@ void pse_controller_unregister(struct ps
  	pse_flush_pw_ds(pcdev);
  	if (pcdev->irq)
  		disable_irq(pcdev->irq);
@@ -93,7 +93,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  	pse_release_pis(pcdev);
  	cancel_work_sync(&pcdev->ntf_work);
  	kfifo_free(&pcdev->ntf_fifo);
-@@ -1286,66 +1304,104 @@ static int pse_set_config_isr(struct pse
+@@ -1332,66 +1350,104 @@ static int pse_set_config_isr(struct pse
  }
  
  /**
@@ -229,7 +229,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  /**
   * devm_pse_irq_helper - Register IRQ based PSE event notifier
   * @pcdev: a pointer to the PSE
-@@ -1403,6 +1459,61 @@ int devm_pse_irq_helper(struct pse_contr
+@@ -1449,6 +1505,61 @@ int devm_pse_irq_helper(struct pse_contr
  }
  EXPORT_SYMBOL_GPL(devm_pse_irq_helper);
  

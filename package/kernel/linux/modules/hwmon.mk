@@ -447,6 +447,21 @@ endef
 $(eval $(call KernelPackage,hwmon-ltc4151))
 
 
+define KernelPackage/hwmon-max6650
+  TITLE:=MAX6650/6651 fan controller
+  KCONFIG:=CONFIG_SENSORS_MAX6650
+  FILES:=$(LINUX_DIR)/drivers/hwmon/max6650.ko
+  AUTOLOAD:=$(call AutoProbe,max6650)
+  $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal)
+endef
+
+define KernelPackage/hwmon-max6650/description
+ Kernel module for Maxim MAX6650/6651 fan controller
+endef
+
+$(eval $(call KernelPackage,hwmon-max6650))
+
+
 define KernelPackage/hwmon-max6697
   TITLE:=MAX6697 monitoring support
   KCONFIG:=CONFIG_SENSORS_MAX6697

@@ -1,0 +1,57 @@
+From 50a770feef6931232c62ce19ec0551b694807f49 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 5 Nov 2026 20:42:23 +0000
+Subject: [PATCH] media: rockchip: rkisp2: Acknowledge the AE-lite measurement
+
+The AE-lite block sets the done bit in its control register when the
+measurement of a frame completes and measures no further frame until
+the bit is written back, as the vendor driver does after reading the
+means. The driver never writes it back and reports every AE-lite block
+as done, so the means stay those of the first measured frame whenever
+the ISP configuration is not updated in between.
+
+Report the done bit as read and write it back after reading the means.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../media/platform/rockchip/rkisp2/rkisp2-stats.c  | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkisp2/rkisp2-stats.c
++++ b/drivers/media/platform/rockchip/rkisp2/rkisp2-stats.c
+@@ -216,7 +216,7 @@ static void rkisp2_stats_get_rawae_lite(
+ 	union rkisp2_stats_block *block;
+ 	struct rkisp2_stats_ae_lite *ae_lite;
+ 	unsigned int i;
+-	u32 val;
++	u32 ctrl, val;
+ 
+ 	block = rkisp2_init_stats_block(rkisp2, pbuf,
+ 					RKISP2_STATS_BLOCK_AE_LITE);
+@@ -230,6 +230,11 @@ static void rkisp2_stats_get_rawae_lite(
+ 		return;
+ 	stats->icr |= ISP2X_3A_RAWAE_CH0;
+ 
++	ctrl = rkisp2_read(rkisp2, ISP_RAWAE_LITE_CTRL);
++	ae_lite->done = !!(ctrl & ISP3X_RAWAE_LITE_DONE);
++	if (!ae_lite->done)
++		return;
++
+ 	for (i = 0; i < RKISP2_ISP_AE_MEAN_MAX_LITE; i++) {
+ 		val = rkisp2_read(rkisp2, ISP_RAWAE_LITE_RO_MEAN(i));
+ 		ae_lite->exp_mean_r[i] = ISP3X_RAWAE_LITE_RO_MEAN_R(val);
+@@ -237,11 +242,8 @@ static void rkisp2_stats_get_rawae_lite(
+ 		ae_lite->exp_mean_b[i] = ISP3X_RAWAE_LITE_RO_MEAN_B(val);
+ 	}
+ 
+-	/*
+-	 * The done bit is never set in the register; set it here to signal
+-	 * done to userspace
+-	 */
+-	ae_lite->done = 1;
++	/* the measurement stops until the done bit is written back */
++	rkisp2_write(rkisp2, ISP_RAWAE_LITE_CTRL, ctrl);
+ }
+ 
+ static void rkisp2_stats_hist_read(struct rkisp2_stats *stats, u32 reg_base,

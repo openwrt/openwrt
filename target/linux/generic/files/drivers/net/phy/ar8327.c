@@ -378,7 +378,7 @@ ar8327_leds_init(struct ar8xxx_priv *priv, struct fwnode_handle *leds)
 
 		ret = fwnode_property_read_u32(child, "reg", &reg);
 		if (ret) {
-			pr_err("ar8327: LED %s is missing reg node\n", fwnode_get_name(child));
+			pr_err("ar8327: LED %pfwP is missing reg node\n", child);
 			continue;
 		}
 

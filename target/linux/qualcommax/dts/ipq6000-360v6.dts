@@ -2,9 +2,10 @@
 
 /dts-v1/;
 
-#include "ipq6018-512m.dtsi"
+#include "ipq6018.dtsi"
 #include "ipq6018-ess.dtsi"
 #include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-512m.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -118,6 +119,8 @@
 };
 
 &usb3 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 
@@ -220,5 +223,5 @@
 	status = "okay";
 
 	qcom,ath11k-fw-memory-mode = <1>;
-	qcom,ath11k-calibration-variant = "Qihoo-360V6";
+	qcom,calibration-variant = "Qihoo-360V6";
 };
