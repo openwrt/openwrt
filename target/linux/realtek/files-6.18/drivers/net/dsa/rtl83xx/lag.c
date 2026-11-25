@@ -10,6 +10,7 @@
 
 #include "lag.h"
 #include "otto_dsa.h"
+#include "stp.h"
 
 /* Link aggregation (Trunking) */
 #define TRUNK_DISTRIBUTION_ALGO_SPA_BIT         BIT(0)
@@ -201,6 +202,12 @@ int otto_lag_port_change(struct dsa_switch *ds, int port)
 	if (lag_group < 0)
 		return lag_group;
 
+	/* Block a port before it leaves the hardware trunk, see
+	 * otto_stp_port_state_set()
+	 */
+	if (!dp->lag_tx_enabled)
+		otto_stp_port_state_set(ds, port, dp->stp_state);
+
 	if (priv->r->lag_set_port_members) {
 		/* Set same port members again, the function should check against
 		 * lag_tx_enabled and set egress ports accordingly.
@@ -211,6 +218,10 @@ int otto_lag_port_change(struct dsa_switch *ds, int port)
 		if (ret)
 			return ret;
 	}
+
+	/* ... and let it forward again only once it is back in the trunk */
+	if (dp->lag_tx_enabled)
+		otto_stp_port_state_set(ds, port, dp->stp_state);
 
 	return 0;
 }
@@ -328,6 +339,7 @@ out:
 int otto_lag_port_leave(struct dsa_switch *ds, int port, struct dsa_lag lag)
 {
 	int group, err;
+	struct dsa_port *dp = dsa_to_port(ds, port);
 	struct otto_dsa_priv *priv = ds->priv;
 
 	mutex_lock(&priv->reg_mutex);
@@ -362,6 +374,16 @@ int otto_lag_port_leave(struct dsa_switch *ds, int port, struct dsa_lag lag)
 
 out:
 	mutex_unlock(&priv->reg_mutex);
+
+	/* DSA puts a bridged port back to BR_STATE_FORWARDING before it clears
+	 * dp->lag, so otto_stp_port_state_set() turned that into BLOCKING again
+	 * for a member without lag_tx_enabled. Nothing sets the state later for
+	 * a port that was not in a bridge either. Apply the bridge port state
+	 * again now that the port is no longer a LAG member.
+	 */
+	if (!err && dp)
+		otto_stp_port_state_set(ds, port, dp->stp_state);
+
 	return err;
 }
 
@@ -637,14 +659,25 @@ int otto_lag_83xx_set_port_members(struct otto_dsa_priv *priv, int group,
 				 u64 members, struct netdev_lag_upper_info *info)
 {
 	int reg = priv->r->trk_mbr_ctr(group);
+	u64 tx_members = 0;
 
 	priv->lags_port_members[group] = members;
 
+	/* Only ports allowed to transmit may be trunk members in hardware, else
+	 * the ASIC hashes forwarded frames onto them and they are lost. Such a
+	 * port must also be blocked, see otto_stp_port_state_set().
+	 */
+	for (int i = 0; i < ARRAY_SIZE(priv->ports); i++)
+		if ((members & BIT_ULL(i)) &&
+		    (!priv->r->lag_tx_uses_member_mask ||
+		     (priv->ports[i].dp && priv->ports[i].dp->lag_tx_enabled)))
+			tx_members |= BIT_ULL(i);
+
 	if (priv->r->cpu_port >= 32) {
-		regmap_write(priv->map, reg, upper_32_bits(members));
+		regmap_write(priv->map, reg, upper_32_bits(tx_members));
 		reg += 4;
 	}
-	regmap_write(priv->map, reg, lower_32_bits(members));
+	regmap_write(priv->map, reg, lower_32_bits(tx_members));
 
 	return 0;
 }

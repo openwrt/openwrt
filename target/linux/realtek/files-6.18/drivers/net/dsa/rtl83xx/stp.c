@@ -419,6 +419,17 @@ void otto_stp_port_state_set(struct dsa_switch *ds, int port, u8 state)
 	struct otto_dsa_priv *priv = ds->priv;
 	struct dsa_port *dp = dsa_to_port(ds, port);
 
+	/* With lag_tx_uses_member_mask, a LAG member that may not transmit is
+	 * taken out of the hardware trunk. With link up it then floods and
+	 * learns as a port of its own, next to the trunk the bridge sees as
+	 * one port: a loop STP cannot break. Keep such a port blocking until
+	 * it may transmit; dp->stp_state still holds the bridge port state to
+	 * return to.
+	 */
+	if (priv->r->lag_tx_uses_member_mask && dp->lag &&
+	    !dp->lag_tx_enabled && state != BR_STATE_DISABLED)
+		state = BR_STATE_BLOCKING;
+
 	mutex_lock(&priv->reg_mutex);
 	otto_stp_port_slot_state_set(priv, port, state, 0);
 

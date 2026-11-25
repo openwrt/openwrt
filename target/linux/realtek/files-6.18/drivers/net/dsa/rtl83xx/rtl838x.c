@@ -212,5 +212,6 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.qos_init = otto_qos_838x_init,
 	.lag_set_distribution_algorithm = otto_lag_838x_set_distribution_algorithm,
 	.lag_set_port_members = otto_lag_83xx_set_port_members,
+	.lag_tx_uses_member_mask = true,
 	.lag_setup_algomask = otto_lag_83xx_setup_algomask,
 };
