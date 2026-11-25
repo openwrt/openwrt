@@ -68,7 +68,7 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x18000000 0x20000>;
+		ranges = <0x0 0x18000000 0x22000>;
 
 		ecc0: ecc@1a600 {
 			compatible = "realtek,rtl9301-ecc";
@@ -154,6 +154,36 @@
 			status = "disabled";
 		};
 
+		usb_ohci: usb-ohci@20000 {
+			compatible = "generic-ohci";
+			reg = <0x20000 0x200>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <28 2>;
+
+			clocks = <&lx_clk>;
+
+			phys = <&usb_phy>;
+			phy-names = "usb";
+
+			status = "disabled";
+		};
+
+		usb_ehci: usb-ehci@21000 {
+			compatible = "generic-ehci";
+			reg = <0x21000 0x1000>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <28 2>;
+
+			clocks = <&lx_clk>;
+
+			phys = <&usb_phy>;
+			phy-names = "usb";
+
+			status = "disabled";
+		};
+
 		watchdog0: watchdog@3260 {
 			compatible = "realtek,rtl9300-wdt";
 			reg = <0x3260 0xc>;
@@ -184,6 +214,15 @@
 			interrupts = <13 1>;
 		};
 
+	};
+
+	usb_phy: usb-phy@18140200 {
+		compatible = "realtek,rtl9300-usb2phy";
+		reg = <0x18140200 0x14>, <0x180210a4 0x4>,
+		      <0x18000500 0x4>;
+		#phy-cells = <0>;
+
+		status = "disabled";
 	};
 
 	switch0: ethernet-switch@1b000000 {
