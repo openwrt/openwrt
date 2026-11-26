@@ -15,7 +15,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -833,6 +833,37 @@
+@@ -833,6 +833,37 @@ u32 mtk_hqos_effective_config(u32 baseli
  	       FIELD_PREP(MTK_QTX_SCH_MAX_RATE_EXP, exp);
  }
  
@@ -53,7 +53,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  static void mtk_hqos_write_queue(struct mtk_eth *eth, unsigned int idx, u32 val)
  {
  	u32 ofs = MTK_QTX_OFFSET * (idx % MTK_QTX_PER_PAGE);
-@@ -844,7 +875,8 @@
+@@ -844,7 +875,8 @@ static void mtk_hqos_write_queue(struct
  
  	spin_lock_bh(&eth->hqos.lock);
  	eth->hqos.baseline[idx] = val;
@@ -63,7 +63,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	mtk_w32(eth, val, eth->soc->reg_map->qdma.qtx_sch + ofs);
  	spin_unlock_bh(&eth->hqos.lock);
  }
-@@ -864,7 +896,38 @@
+@@ -864,7 +896,38 @@ int mtk_hqos_set_rate(struct mtk_eth *et
  	ASSERT_RTNL();
  	spin_lock_bh(&eth->hqos.lock);
  	eth->hqos.rate[queue] = rate;
@@ -105,7 +105,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	spin_unlock_bh(&eth->hqos.lock);
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1382,6 +1382,8 @@
+@@ -1382,6 +1382,8 @@ struct mtk_hqos {
  	/* Protects cached limits, baseline values and QDMA writes. */
  	spinlock_t lock;
  	u32 rate[MTK_HQOS_QUEUES];
@@ -114,7 +114,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	u32 baseline[MTK_HQOS_QUEUES];
  };
  
-@@ -1631,6 +1633,9 @@
+@@ -1631,6 +1633,9 @@ bool mtk_hqos_supported(struct mtk_eth *
  int mtk_hqos_priority_queue(struct mtk_eth *eth, u32 priority);
  int mtk_hqos_set_rate(struct mtk_eth *eth, unsigned int queue, u32 rate);
  u32 mtk_hqos_effective_config(u32 baseline, u32 rate);
@@ -126,7 +126,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  int mtk_eth_setup_tc(struct net_device *dev, enum tc_setup_type type,
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
-@@ -255,6 +255,95 @@
+@@ -255,6 +255,95 @@ static const struct file_operations mtk_
  	.release = single_release,
  };
  
@@ -222,7 +222,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index)
  {
  	struct dentry *root;
-@@ -262,8 +351,10 @@
+@@ -262,8 +351,10 @@ int mtk_ppe_debugfs_init(struct mtk_ppe
  	snprintf(ppe->dirname, sizeof(ppe->dirname), "ppe%d", index);
  
  	root = debugfs_create_dir(ppe->dirname, NULL);

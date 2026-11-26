@@ -15,7 +15,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -797,6 +797,28 @@
+@@ -797,6 +797,28 @@ int mtk_hqos_priority_queue(struct mtk_e
  	return priority & 0xf;
  }
  
@@ -44,7 +44,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  static u32 mtk_hqos_decode_rate(u32 val)
  {
  	u32 rate = FIELD_GET(MTK_QTX_SCH_MAX_RATE_MAN, val);
-@@ -877,6 +899,7 @@
+@@ -877,6 +899,7 @@ static void mtk_hqos_write_queue(struct
  	eth->hqos.baseline[idx] = val;
  	val = mtk_hqos_queue_config(val, eth->hqos.rate[idx],
  				    eth->hqos.minimum[idx], eth->hqos.weight[idx]);
@@ -52,7 +52,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	mtk_w32(eth, val, eth->soc->reg_map->qdma.qtx_sch + ofs);
  	spin_unlock_bh(&eth->hqos.lock);
  }
-@@ -898,6 +921,7 @@
+@@ -898,6 +921,7 @@ int mtk_hqos_set_rate(struct mtk_eth *et
  	eth->hqos.rate[queue] = rate;
  	val = mtk_hqos_queue_config(eth->hqos.baseline[queue], rate,
  				    eth->hqos.minimum[queue], eth->hqos.weight[queue]);
@@ -60,7 +60,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	mtk_w32(eth, val, eth->soc->reg_map->qdma.qtx_sch +
  		MTK_QTX_OFFSET * queue);
  	spin_unlock_bh(&eth->hqos.lock);
-@@ -928,12 +952,48 @@
+@@ -928,12 +952,48 @@ int mtk_hqos_set_queue(struct mtk_eth *e
  	eth->hqos.rate[queue] = rate;
  	eth->hqos.minimum[queue] = minimum;
  	eth->hqos.weight[queue] = weight;
@@ -109,7 +109,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  static void mtk_set_queue_speed(struct mtk_eth *eth, unsigned int idx,
  				int speed)
  {
-@@ -5302,7 +5362,7 @@
+@@ -5302,7 +5362,7 @@ static u16 mtk_select_queue(struct net_d
  	struct mtk_mac *mac = netdev_priv(dev);
  	unsigned int dp_idx;
  	unsigned int queue = 0;
@@ -120,7 +120,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  		return hqos_queue;
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1384,6 +1384,9 @@
+@@ -1384,6 +1384,9 @@ struct mtk_hqos {
  	u32 rate[MTK_HQOS_QUEUES];
  	u32 minimum[MTK_HQOS_QUEUES];
  	u32 weight[MTK_HQOS_QUEUES];
@@ -130,7 +130,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	u32 baseline[MTK_HQOS_QUEUES];
  };
  
-@@ -1630,6 +1633,8 @@
+@@ -1630,6 +1633,8 @@ int mtk_gmac_rgmii_path_setup(struct mtk
  int mtk_gmac_usxgmii_path_setup(struct mtk_eth *eth, int mac_id);
  
  bool mtk_hqos_supported(struct mtk_eth *eth);
@@ -141,7 +141,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  u32 mtk_hqos_effective_config(u32 baseline, u32 rate);
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
-@@ -344,6 +344,100 @@
+@@ -344,6 +344,100 @@ static const struct file_operations mtk_
  	.release = single_release,
  };
  
@@ -242,7 +242,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index)
  {
  	struct dentry *root;
-@@ -354,6 +448,7 @@
+@@ -354,6 +448,7 @@ int mtk_ppe_debugfs_init(struct mtk_ppe
  	if (!index && mtk_hqos_supported(ppe->eth)) {
  		debugfs_create_file("hqos_rate", 0600, root, ppe, &mtk_hqos_fops);
  		debugfs_create_file("hqos_queue", 0600, root, ppe, &mtk_hqos_queue_fops);
@@ -252,7 +252,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	debugfs_create_file("bind", S_IRUGO, root, ppe, &mtk_ppe_debugfs_foe_bind_fops);
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -303,7 +303,8 @@
+@@ -303,7 +303,8 @@ mtk_flow_set_output_device(struct mtk_et
  		queue = pse_port - 1;
  	}
  	/* WED/Wi-Fi output bypasses this block; keep its mapping intact. */

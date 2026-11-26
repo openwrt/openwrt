@@ -14,7 +14,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -782,11 +782,92 @@
+@@ -782,11 +782,92 @@ static void mtk_mac_link_down(struct phy
  	}
  }
  
@@ -108,7 +108,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  
  	if (!MTK_HAS_CAPS(soc->caps, MTK_QDMA))
  		return;
-@@ -878,8 +959,7 @@
+@@ -878,8 +959,7 @@ static void mtk_set_queue_speed(struct m
  	}
  
  	mtk_w32(eth, idx / MTK_QTX_PER_PAGE, soc->reg_map->qdma.page);
@@ -118,7 +118,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  }
  
  static void mtk_gdm_mac_link_up(struct mtk_mac *mac,
-@@ -3006,7 +3086,7 @@
+@@ -3006,7 +3086,7 @@ static int mtk_tx_alloc(struct mtk_eth *
  			}
  			if (mtk_is_netsys_v1(eth))
  				val |= MTK_QTX_SCH_LEAKY_BUCKET_EN;
@@ -127,7 +127,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  		}
  		val = MTK_QDMA_TX_SCH_MAX_WFQ | (MTK_QDMA_TX_SCH_MAX_WFQ << 16);
  		mtk_w32(eth, val, soc->reg_map->qdma.tx_sch_rate);
-@@ -5651,6 +5731,7 @@
+@@ -5651,6 +5731,7 @@ static int mtk_probe(struct platform_dev
  		}
  	}
  
@@ -137,7 +137,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	spin_lock_init(&eth->rx_irq_lock);
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1376,7 +1376,17 @@
+@@ -1376,7 +1376,17 @@ struct mtk_soc_data {
   * @soc:		Holding specific data among various SoCs
   */
  
@@ -155,7 +155,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	struct device			*dev;
  	struct device			*dma_dev;
  	void __iomem			*base;
-@@ -1617,6 +1627,10 @@
+@@ -1617,6 +1627,10 @@ int mtk_gmac_gephy_path_setup(struct mtk
  int mtk_gmac_rgmii_path_setup(struct mtk_eth *eth, int mac_id);
  int mtk_gmac_usxgmii_path_setup(struct mtk_eth *eth, int mac_id);
  
@@ -177,7 +177,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  
  #include <net/ipv6.h>
  
-@@ -181,6 +183,78 @@
+@@ -181,6 +183,78 @@ mtk_ppe_debugfs_foe_bind_show(struct seq
  }
  DEFINE_SHOW_ATTRIBUTE(mtk_ppe_debugfs_foe_bind);
  
@@ -256,7 +256,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index)
  {
  	struct dentry *root;
-@@ -188,6 +262,8 @@
+@@ -188,6 +262,8 @@ int mtk_ppe_debugfs_init(struct mtk_ppe
  	snprintf(ppe->dirname, sizeof(ppe->dirname), "ppe%d", index);
  
  	root = debugfs_create_dir(ppe->dirname, NULL);
