@@ -765,8 +765,12 @@ static void rteth_838x_hw_stop(struct rteth_ctrl *ctrl)
 	/* Disable FAST_AGE_OUT otherwise flush will hang */
 	regmap_clear_bits(ctrl->map, RTETH_838X_L2_CTRL_1, BIT(23));
 
-	/* Flush L2 address cache */
-	for (int i = 0; i <= ctrl->cfg->cpu_port; i++) {
+	/* Flush learned rows on the user ports. The CPU port holds the
+	 * static host FDB rows from assisted learning, and learning is off
+	 * there, so it has no dynamic rows to age out. Flushing it deletes
+	 * those rows. ENTRY_TYPE stays 0, as this path has always written.
+	 */
+	for (int i = 0; i < ctrl->cfg->cpu_port; i++) {
 		regmap_write(ctrl->map, ctrl->cfg->l2_tbl_flush_ctrl, BIT(26) | BIT(23) | i << 5);
 		regmap_read_poll_timeout(ctrl->map, ctrl->cfg->l2_tbl_flush_ctrl,
 					 val, !(val & BIT(26)), 100, 100000);
