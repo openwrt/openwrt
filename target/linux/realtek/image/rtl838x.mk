@@ -546,7 +546,7 @@ define Device/zyxel_gs1900-24ep-a1
   DEVICE_VARIANT := A1
   ZYXEL_VERS := ABTO
   SUPPORTED_DEVICES += zyxel,gs1900-24ep
-  FEED_DEVICE_PACKAGES += realtek-poe
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
 endef
 TARGET_DEVICES += zyxel_gs1900-24ep-a1
 
