@@ -358,6 +358,7 @@ proto_pptp_init_config() {
 	ppp_generic_init_config
 	proto_config_add_string "server"
 	proto_config_add_string "interface"
+	proto_config_add_boolean "nohostroute"
 	available=1
 	no_device=1
 	lasterror=1
@@ -367,11 +368,13 @@ proto_pptp_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local ip serv_addr server interface
-	json_get_vars interface server
+	local ip serv_addr server interface nohostroute
+	json_get_vars interface server nohostroute
 	[ -n "$server" ] && {
 		for ip in $(resolveip -t 5 "$server"); do
-			( proto_add_host_dependency "$config" "$ip" $interface )
+			if [ "${nohostroute}" != "1" ]; then
+				( proto_add_host_dependency "$config" "$ip" $interface )
+			fi
 			serv_addr=1
 		done
 	}
