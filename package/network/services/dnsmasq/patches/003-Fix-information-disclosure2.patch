@@ -1,0 +1,135 @@
+From ea4645d52cfac5399848a4f705da28f2f9736956 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Thu, 11 Jun 2026 12:27:24 +0100
+Subject: [PATCH] Extend ea9bd30cd4a42dfe773bb7419b36be3ace66a5ba
+
+On further analysis, the problem is deeper: Other
+error paths (which are not accessible to an attack) can also
+return an incorrect header->id value, and most error paths
+return incorrect query case if --do-0x20-encode is in use.
+---
+ src/forward.c | 54 +++++++++++++++++++++++++++++++++------------------
+ 1 file changed, 35 insertions(+), 19 deletions(-)
+
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -177,7 +177,10 @@ static void forward_query(int udpfd, uni
+   int forwarded = 0;
+   int ede = EDE_UNSET;
+   unsigned short rrtype, rrclass;
+-
++  unsigned short id = ntohs(header->id); /* Retrieve the id from the new query before we overwrite it. */
++  unsigned int casediff = 0;
++  unsigned int *bitvector = NULL;
++  
+   gotname = extract_request(header, plen, daemon->namebuff, &rrtype, &rrclass);
+   
+   /* Check for retry on existing query.
+@@ -197,10 +200,7 @@ static void forward_query(int udpfd, uni
+ 					     FREC_HAS_PHEADER | FREC_DNSKEY_QUERY | FREC_DS_QUERY | FREC_NO_CACHE)))
+     {
+       struct frec_src *src;
+-      unsigned int casediff = 0;
+-      unsigned int *bitvector = NULL;
+-      unsigned short id = ntohs(header->id); /* Retrieve the id from the new query before we overwrite it. */
+-      
++          
+       for (src = &forward->frec_src; src; src = src->next)
+ 	if (src->orig_id == id && 
+ 	    sockaddr_isequal(&src->source, udpaddr))
+@@ -241,9 +241,11 @@ static void forward_query(int udpfd, uni
+ 		 and never resetting until the frec gets deleted by
+ 		 aging followed by the receipt of a different query. This
+ 		 is a bit of a DoS vuln. Avoid by explicitly deleting the
+-		 frec once it expires. */
+-	      if (difftime(now, forward->time) >= TIMEOUT)
+-		free_frec(forward);
++		 frec once it expires. The deletion is done at the end of
++		 this function, unless we set forward to NULL here. */
++	      if (difftime(now, forward->time) < TIMEOUT)
++		forward = NULL;
++
+ 	      goto reply;
+ 	    }
+ 
+@@ -314,7 +316,6 @@ static void forward_query(int udpfd, uni
+ 	  src->fd = udpfd;
+ 	  src->encode_bitmap = casediff;
+ 	  src->encode_bigmap = bitvector;
+-	  
+ 	  src->udp_pkt_size = (unsigned short)replylimit;
+ 
+ 	  /* closely spaced identical queries cannot be a try and a retry, so
+@@ -390,18 +391,15 @@ static void forward_query(int udpfd, uni
+       forward->frec_src.orig_id = ntohs(header->id);
+       forward->new_id = get_id();
+       header->id = ntohs(forward->new_id);
+-      forward->frec_src.encode_bitmap = (!option_bool(OPT_NO_0x20) && option_bool(OPT_DO_0x20)) ? rand32() : 0;
++      forward->frec_src.encode_bitmap = casediff = (!option_bool(OPT_NO_0x20) && option_bool(OPT_DO_0x20)) ? rand32() : 0;
+       forward->frec_src.encode_bigmap = NULL;
+-
+-      if (!extract_name(header, plen, NULL, (char *)&forward->frec_src.encode_bitmap, EXTR_NAME_FLIP, 1))
++      
++      if (casediff != 0 && !extract_name(header, plen, NULL, (char *)&casediff, EXTR_NAME_FLIP, 1))
+ 	goto reply;
+       
+       /* Keep copy of query for retries and move to TCP */
+       if (!(forward->stash = blockdata_alloc((char *)header, plen)))
+-	{
+-	  free_frec(forward);
+-	  goto reply; /* no mem. return REFUSED */
+-	}
++	goto reply; /* no mem. return REFUSED */
+       
+       forward->stash_len = plen;
+       forward->frec_src.log_id = daemon->log_id;
+@@ -584,13 +582,25 @@ static void forward_query(int udpfd, uni
+     }
+   
+   /* could not send on, prepare to return */ 
+-  header->id = htons(forward->frec_src.orig_id);
+-  free_frec(forward); /* cancel */
+   ede = EDE_NETERR;
+   
+  reply:
+   if (udpfd != -1)
+     {
++      /* The query now in the buffer can have changed from what arrived during
++	 the preparation for forwarding in two respects.
++	 1) The header->id field may have changed.
++	 2) The case of letters in the query may have been changed.
++	 
++	 Restore both of these changes before using it to build an error return for the client.
++	 The original id is held in local variable id, and the difference in case
++	 is encoded in casediff and also bitvector if the difference spreads beyond the first
++	 32 characters.
++      */
++      header->id = htons(id);
++      if (casediff != 0)
++	extract_name(header, plen, NULL, (char *)(bitvector ? bitvector : &casediff), EXTR_NAME_FLIP, bitvector ? casediff : 1);
++	      
+       if (!(plen = make_local_answer(flags, gotname, plen, header, daemon->namebuff, replylimit, first, last, ede)))
+ 	return;
+       
+@@ -621,6 +631,11 @@ static void forward_query(int udpfd, uni
+     }
+   
+   daemon->metrics[METRIC_DNS_LOCAL_ANSWERED]++;
++
++  /* This has to be after last use of bitvector. */
++  if (forward)
++    free_frec(forward);
++  
+   return;
+ }
+ 
+@@ -1291,7 +1306,8 @@ void reply_query(int fd, time_t now)
+   server->query_latency = server->mma_latency/128;
+   
+   /* Flip the bits back in the query name. */
+-    if (!extract_name(header, n, NULL, (char *)&forward->frec_src.encode_bitmap, EXTR_NAME_FLIP, 1))
++    if (forward->frec_src.encode_bitmap != 0 &&
++	!extract_name(header, n, NULL, (char *)&forward->frec_src.encode_bitmap, EXTR_NAME_FLIP, 1))
+     return;
+       
+ #ifdef HAVE_DNSSEC

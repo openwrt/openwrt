@@ -1,0 +1,98 @@
+From c310853907a09050fd9aaa71d459dda190d113e1 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Tue, 9 Jun 2026 22:11:21 +0100
+Subject: [PATCH] Fix double-free in blockdata_expand().
+
+If blockdata_expand() fails, it frees the existing block chain
+and returns zero. Each call to blockdata_expand() checks for the zero return,
+and calls blockdata_free() as part of its clean-up, resulting in
+a double-free and crash.
+
+Thanks to fallrig for finding this.
+---
+ src/blockdata.c |  2 +-
+ src/rfc1035.c   | 34 ++++++++++------------------------
+ 2 files changed, 11 insertions(+), 25 deletions(-)
+
+--- a/src/blockdata.c
++++ b/src/blockdata.c
+@@ -132,7 +132,7 @@ int blockdata_expand(struct blockdata *b
+   /* find size of current final block */
+   for (b = block; oldlen > KEYBLOCK_LEN && b;  b = b->next, oldlen -= KEYBLOCK_LEN);
+ 
+-  /* chain to short for length, something is broken */
++  /* chain too short for length, something is broken */
+   if (oldlen > KEYBLOCK_LEN)
+     {
+       blockdata_free(block);
+--- a/src/rfc1035.c
++++ b/src/rfc1035.c
+@@ -585,11 +585,8 @@ static int find_soa(struct dns_header *h
+ 		    {
+ 		      len = to_wire(daemon->workspacename);
+ 		      if (!blockdata_expand(addr.rrblock.rrdata, addr.rrblock.datalen, daemon->workspacename, len))
+-			{
+-			  blockdata_free(addr.rrblock.rrdata);
+-			  return 0;
+-			}
+-
++			return 0;
++		      
+ 		      addr.rrblock.datalen += len;
+ 		    }
+ 		}
+@@ -607,11 +604,8 @@ static int find_soa(struct dns_header *h
+ 		  int secflag = 0;
+ 
+ 		  if (!blockdata_expand(addr.rrblock.rrdata, addr.rrblock.datalen, (char *)p, 20))
+-		    {
+-		      blockdata_free(addr.rrblock.rrdata);
+-		      return 0;
+-		    }
+-		  
++		    return 0;
++		    		  
+ 		  addr.rrblock.datalen += 20;
+ 		  
+ #ifdef HAVE_DNSSEC
+@@ -942,10 +936,8 @@ int extract_addresses(struct dns_header
+ 			    {
+ 			      /* Copy the rest of the RR and end. */
+ 			      if (!blockdata_expand(addr.rrblock.rrdata, addr.rrblock.datalen, (char *)p1, endrr - p1))
+-				{
+-				  blockdata_free(addr.rrblock.rrdata);
+-				  return 0;
+-				}
++				return 0;
++				
+ 			      addr.rrblock.datalen += endrr - p1;
+ 			    }
+ 			  else if (desc == 0)
+@@ -962,11 +954,8 @@ int extract_addresses(struct dns_header
+ 			      
+ 			      len = to_wire(name);
+ 			      if (!blockdata_expand(addr.rrblock.rrdata, addr.rrblock.datalen, name, len))
+-				{
+-				  blockdata_free(addr.rrblock.rrdata);
+-				  return 0;
+-				}
+-			      
++				return 0;
++							      
+ 			      addr.rrblock.datalen += len;
+ 			    }
+ 			  else
+@@ -976,11 +965,8 @@ int extract_addresses(struct dns_header
+ 				desc = endrr - p1;
+ 
+ 			      if (!blockdata_expand(addr.rrblock.rrdata, addr.rrblock.datalen, (char *)p1, desc))
+-				{
+-				  blockdata_free(addr.rrblock.rrdata);
+-				  return 0;
+-				}
+-
++				return 0;
++				
+ 			      addr.rrblock.datalen += desc;
+ 			      p1 += desc;
+ 			    }
