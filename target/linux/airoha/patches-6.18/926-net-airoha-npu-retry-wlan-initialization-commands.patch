@@ -1,0 +1,98 @@
+From c9648a01e2fe0a0e90015a3ba57379731d1b6212 Mon Sep 17 00:00:00 2001
+From: Faliang Wang <faliang.wang@airoha.com>
+Date: Wed, 25 Nov 2026 15:16:05 +0000
+Subject: [PATCH net 2/2] net: airoha: retry WLAN initialization commands
+
+Allow up to three total attempts for WLAN initialization commands,
+including the optional BA memory-region command. Sleep for 10-11 ms
+between failed attempts, only when another attempt remains. Return
+the final error if all attempts fail.
+
+Signed-off-by: Faliang Wang <faliang.wang@airoha.com>
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -4,6 +4,7 @@
+  * Author: Lorenzo Bianconi <lorenzo@kernel.org>
+  */
+ 
++#include <linux/delay.h>
+ #include <linux/devcoredump.h>
+ #include <linux/devm-helpers.h>
+ #include <linux/firmware.h>
+@@ -552,43 +553,67 @@ airoha_npu_wlan_set_reserved_memory(stru
+ 					sizeof(val), GFP_KERNEL);
+ }
+ 
++static int airoha_npu_wlan_cmd_with_retry(struct airoha_npu *npu,
++					  int ifindex,
++					  enum airoha_npu_wlan_set_cmd cmd,
++					  const char *name, bool is_msg_send,
++					  u32 *val)
++{
++	int retry, err;
++
++	for (retry = 0; retry < 3; retry++) {
++		if (is_msg_send)
++			err = airoha_npu_wlan_msg_send(npu, ifindex, cmd, val,
++						       sizeof(*val),
++						       GFP_KERNEL);
++		else
++			err = airoha_npu_wlan_set_reserved_memory(npu, ifindex,
++								  name, cmd);
++		if (!err)
++			return 0;
++
++		if (retry < 2)
++			usleep_range(10000, 11000);
++	}
++
++	return err;
++}
++
+ static int airoha_npu_wlan_init_memory(struct airoha_npu *npu)
+ {
+ 	enum airoha_npu_wlan_set_cmd cmd = WLAN_FUNC_SET_WAIT_NPU_BAND0_ONCPU;
+ 	u32 val = 0;
+-	int err;
++	int err = 0;
+ 
+-	err = airoha_npu_wlan_msg_send(npu, 1, cmd, &val, sizeof(val),
+-				       GFP_KERNEL);
++	err = airoha_npu_wlan_cmd_with_retry(npu, 1, cmd, NULL, true, &val);
+ 	if (err)
+ 		return err;
+ 
+ 	cmd = WLAN_FUNC_SET_WAIT_TX_BUF_CHECK_ADDR;
+-	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-bufid", cmd);
++	err = airoha_npu_wlan_cmd_with_retry(npu, 0, cmd, "tx-bufid", false, NULL);
+ 	if (err)
+ 		return err;
+ 
+ 	cmd = WLAN_FUNC_SET_WAIT_PKT_BUF_ADDR;
+-	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "pkt", cmd);
++	err = airoha_npu_wlan_cmd_with_retry(npu, 0, cmd, "pkt", false, NULL);
+ 	if (err)
+ 		return err;
+ 
+ 	cmd = WLAN_FUNC_SET_WAIT_TX_PKT_BUF_ADDR;
+-	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-pkt", cmd);
++	err = airoha_npu_wlan_cmd_with_retry(npu, 0, cmd, "tx-pkt", false, NULL);
+ 	if (err)
+ 		return err;
+ 
+ 	if (of_property_match_string(npu->dev->of_node, "memory-region-names",
+ 				     "ba") >= 0) {
+ 		cmd = WLAN_FUNC_SET_WAIT_DRAM_BA_NODE_ADDR;
+-		err = airoha_npu_wlan_set_reserved_memory(npu, 0, "ba", cmd);
++		err = airoha_npu_wlan_cmd_with_retry(npu, 0, cmd, "ba", false, NULL);
+ 		if (err)
+ 			return err;
+ 	}
+ 
+ 	cmd = WLAN_FUNC_SET_WAIT_IS_FORCE_TO_CPU;
+-	return airoha_npu_wlan_msg_send(npu, 0, cmd, &val, sizeof(val),
+-					GFP_KERNEL);
++	return airoha_npu_wlan_cmd_with_retry(npu, 0, cmd, NULL, true, &val);
+ }
+ 
+ static u32 airoha_npu_wlan_queue_addr_get(struct airoha_npu *npu, int qid,
