@@ -1,0 +1,325 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later or MIT)
+/dts-v1/;
+
+#include <dt-bindings/phy/phy.h>
+
+#include "rtl931x.dtsi"
+
+/*
+ * D-Link DGS-1250-52XMP (A1 and A2), RTL9311.
+ *
+ * Port map from RTL9311_6x8218D_6XGE: SMI 0 is MAC 0-23, SMI 2 is
+ * MAC 24-47, SFP+ is MAC 48/50/52/53 on SerDes 8-11. SerDes 12
+ * and 13 are not fitted. The profile names RTL8218D. That part
+ * is not confirmed on this PCB. Cage I2C and the PSE were not in
+ * the profile. GPIO pins probed on the RTL9301 28X are not copied.
+ * The NOR map is the 28X layout and has not been read back here.
+ * There is no EEPROM cell, so ethernet0 has no mac-address yet.
+ */
+/ {
+	compatible = "d-link,dgs-1250-52xmp", "realtek,rtl9311-soc";
+	model = "D-Link DGS-1250-52XMP";
+
+	aliases {
+		/*
+		 * No nvmem cell. The driver keeps U-Boot's MAC
+		 * registers when they hold a valid address.
+		 */
+		label-mac-device = &ethernet0;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		/* Series datasheet: 256 MB DDR3 on every model. */
+		reg = <0x00000000 0x10000000>;
+	};
+
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+
+		/*
+		 * RJ45 LED0 green: 1G link/activity.
+		 * RJ45 LED1 amber: 10/100 link/activity.
+		 * Same encoding as the DGS-1250-28X.
+		 */
+		led_set0 = <(RTL93XX_LED_SET_1G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_10M | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+
+		/*
+		 * SFP+ LED0 green: 10G link/activity.
+		 * SFP+ LED1 amber: 1G link/activity.
+		 * The series manual lists only those two rates.
+		 */
+		led_set1 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_1G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x100000 0x80000>;
+			};
+
+			partition@180000 {
+				label = "u-boot-env2";
+				reg = <0x180000 0x80000>;
+			};
+
+			partition@200000 {
+				label = "firmware";
+				compatible = "openwrt,uimage";
+				reg = <0x200000 0x3e00000>;
+			};
+		};
+	};
+};
+
+&mdio_ctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinmux_enable_mdc_mdio_0>,
+		    <&pinmux_enable_mdc_mdio_2>;
+};
+
+&mdio_bus0 {
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C22(0, 0)
+		PHY_C22(1, 1)
+		PHY_C22(2, 2)
+		PHY_C22(3, 3)
+		PHY_C22(4, 4)
+		PHY_C22(5, 5)
+		PHY_C22(6, 6)
+		PHY_C22(7, 7)
+	};
+
+	ethernet-phy-package@8 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <8>;
+
+		PHY_C22(8, 8)
+		PHY_C22(9, 9)
+		PHY_C22(10, 10)
+		PHY_C22(11, 11)
+		PHY_C22(12, 12)
+		PHY_C22(13, 13)
+		PHY_C22(14, 14)
+		PHY_C22(15, 15)
+	};
+
+	ethernet-phy-package@16 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <16>;
+
+		PHY_C22(16, 16)
+		PHY_C22(17, 17)
+		PHY_C22(18, 18)
+		PHY_C22(19, 19)
+		PHY_C22(20, 20)
+		PHY_C22(21, 21)
+		PHY_C22(22, 22)
+		PHY_C22(23, 23)
+	};
+};
+
+&mdio_bus2 {
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C22(24, 0)
+		PHY_C22(25, 1)
+		PHY_C22(26, 2)
+		PHY_C22(27, 3)
+		PHY_C22(28, 4)
+		PHY_C22(29, 5)
+		PHY_C22(30, 6)
+		PHY_C22(31, 7)
+	};
+
+	ethernet-phy-package@8 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <8>;
+
+		PHY_C22(32, 8)
+		PHY_C22(33, 9)
+		PHY_C22(34, 10)
+		PHY_C22(35, 11)
+		PHY_C22(36, 12)
+		PHY_C22(37, 13)
+		PHY_C22(38, 14)
+		PHY_C22(39, 15)
+	};
+
+	ethernet-phy-package@16 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <16>;
+
+		PHY_C22(40, 16)
+		PHY_C22(41, 17)
+		PHY_C22(42, 18)
+		PHY_C22(43, 19)
+		PHY_C22(44, 20)
+		PHY_C22(45, 21)
+		PHY_C22(46, 22)
+		PHY_C22(47, 23)
+	};
+};
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT_LED(0, 1, 2, 0, 0, usxgmii)
+		SWITCH_PORT_LED(1, 2, 2, 1, 0, usxgmii)
+		SWITCH_PORT_LED(2, 3, 2, 2, 0, usxgmii)
+		SWITCH_PORT_LED(3, 4, 2, 3, 0, usxgmii)
+		SWITCH_PORT_LED(4, 5, 2, 4, 0, usxgmii)
+		SWITCH_PORT_LED(5, 6, 2, 5, 0, usxgmii)
+		SWITCH_PORT_LED(6, 7, 2, 6, 0, usxgmii)
+		SWITCH_PORT_LED(7, 8, 2, 7, 0, usxgmii)
+
+		SWITCH_PORT_LED(8, 9, 3, 0, 0, usxgmii)
+		SWITCH_PORT_LED(9, 10, 3, 1, 0, usxgmii)
+		SWITCH_PORT_LED(10, 11, 3, 2, 0, usxgmii)
+		SWITCH_PORT_LED(11, 12, 3, 3, 0, usxgmii)
+		SWITCH_PORT_LED(12, 13, 3, 4, 0, usxgmii)
+		SWITCH_PORT_LED(13, 14, 3, 5, 0, usxgmii)
+		SWITCH_PORT_LED(14, 15, 3, 6, 0, usxgmii)
+		SWITCH_PORT_LED(15, 16, 3, 7, 0, usxgmii)
+
+		SWITCH_PORT_LED(16, 17, 4, 0, 0, usxgmii)
+		SWITCH_PORT_LED(17, 18, 4, 1, 0, usxgmii)
+		SWITCH_PORT_LED(18, 19, 4, 2, 0, usxgmii)
+		SWITCH_PORT_LED(19, 20, 4, 3, 0, usxgmii)
+		SWITCH_PORT_LED(20, 21, 4, 4, 0, usxgmii)
+		SWITCH_PORT_LED(21, 22, 4, 5, 0, usxgmii)
+		SWITCH_PORT_LED(22, 23, 4, 6, 0, usxgmii)
+		SWITCH_PORT_LED(23, 24, 4, 7, 0, usxgmii)
+
+		SWITCH_PORT_LED(24, 25, 5, 0, 0, usxgmii)
+		SWITCH_PORT_LED(25, 26, 5, 1, 0, usxgmii)
+		SWITCH_PORT_LED(26, 27, 5, 2, 0, usxgmii)
+		SWITCH_PORT_LED(27, 28, 5, 3, 0, usxgmii)
+		SWITCH_PORT_LED(28, 29, 5, 4, 0, usxgmii)
+		SWITCH_PORT_LED(29, 30, 5, 5, 0, usxgmii)
+		SWITCH_PORT_LED(30, 31, 5, 6, 0, usxgmii)
+		SWITCH_PORT_LED(31, 32, 5, 7, 0, usxgmii)
+
+		SWITCH_PORT_LED(32, 33, 6, 0, 0, usxgmii)
+		SWITCH_PORT_LED(33, 34, 6, 1, 0, usxgmii)
+		SWITCH_PORT_LED(34, 35, 6, 2, 0, usxgmii)
+		SWITCH_PORT_LED(35, 36, 6, 3, 0, usxgmii)
+		SWITCH_PORT_LED(36, 37, 6, 4, 0, usxgmii)
+		SWITCH_PORT_LED(37, 38, 6, 5, 0, usxgmii)
+		SWITCH_PORT_LED(38, 39, 6, 6, 0, usxgmii)
+		SWITCH_PORT_LED(39, 40, 6, 7, 0, usxgmii)
+
+		SWITCH_PORT_LED(40, 41, 7, 0, 0, usxgmii)
+		SWITCH_PORT_LED(41, 42, 7, 1, 0, usxgmii)
+		SWITCH_PORT_LED(42, 43, 7, 2, 0, usxgmii)
+		SWITCH_PORT_LED(43, 44, 7, 3, 0, usxgmii)
+		SWITCH_PORT_LED(44, 45, 7, 4, 0, usxgmii)
+		SWITCH_PORT_LED(45, 46, 7, 5, 0, usxgmii)
+		SWITCH_PORT_LED(46, 47, 7, 6, 0, usxgmii)
+		SWITCH_PORT_LED(47, 48, 7, 7, 0, usxgmii)
+
+		/*
+		 * Cage detect, LOS and TX disable are not in the
+		 * profile, so these ports have no sfp node yet.
+		 * phy-mode matches the other RTL931x SFP+ ports;
+		 * the profile programs the SerDes as 10GBASE-R.
+		 */
+		port@48 {
+			reg = <48>;
+			label = "lan49";
+			led-set = <1>;
+			pcs-handle = <&serdes8 0>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+		};
+
+		port@50 {
+			reg = <50>;
+			label = "lan50";
+			led-set = <1>;
+			pcs-handle = <&serdes9 0>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+		};
+
+		port@52 {
+			reg = <52>;
+			label = "lan51";
+			led-set = <1>;
+			pcs-handle = <&serdes10 0>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+		};
+
+		port@53 {
+			reg = <53>;
+			label = "lan52";
+			led-set = <1>;
+			pcs-handle = <&serdes11 0>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+		};
+
+		port@56 {
+			reg = <56>;
+			ethernet = <&ethernet0>;
+			phy-mode = "internal";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&serdes8 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes9 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes10 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes11 {
+	tx-polarity = <PHY_POL_INVERT>;
+};

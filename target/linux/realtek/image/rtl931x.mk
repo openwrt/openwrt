@@ -2,6 +2,17 @@
 
 include ./common.mk
 
+define Device/d-link_dgs-1250-52xmp
+  SOC := rtl9311
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DGS-1250-52XMP
+  # Same cap as the 28X. The 0x3e00000 node is that board's map
+  # and has not been read back here.
+  IMAGE_SIZE := 24576k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += d-link_dgs-1250-52xmp
+
 define Device/hasivo_f5800w-12s-plus
   SOC := rtl9313
   DEVICE_VENDOR := Hasivo
