@@ -9,16 +9,6 @@
 #include "l2.h"
 #include "otto_dsa.h"
 
-/* Hardware encodings for L2 action fields. */
-enum otto_l2_action {
-	OTTO_L2_ACTION_FORWARD = 0,
-	OTTO_L2_ACTION_DROP = 1,
-	OTTO_L2_ACTION_TRAP2CPU = 2,
-	OTTO_L2_ACTION_COPY2CPU = 3,
-	OTTO_L2_ACTION_TRAP2MASTER = 4,
-	OTTO_L2_ACTION_COPY2MASTER = 5,
-};
-
 #define RTL838X_L2_CTRL_0			(0x3200)
 #define RTL839X_L2_CTRL_0			(0x3800)
 #define RTL930X_L2_CTRL				(0x8FD8)

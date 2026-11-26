@@ -8,6 +8,18 @@
 struct otto_dsa_priv;
 struct otto_l2_entry;
 
+/* Hardware encodings for L2 action fields. 83xx fields are 2 bits, so only
+ * the values 0-3 are valid there. 93xx fields are 3 bits.
+ */
+enum otto_l2_action {
+	OTTO_L2_ACTION_FORWARD = 0,
+	OTTO_L2_ACTION_DROP = 1,
+	OTTO_L2_ACTION_TRAP2CPU = 2,
+	OTTO_L2_ACTION_COPY2CPU = 3,
+	OTTO_L2_ACTION_TRAP2MASTER = 4,
+	OTTO_L2_ACTION_COPY2MASTER = 5,
+};
+
 #define RTL838X_PORT_ISO_CTRL(port)		(0x4100 + ((port) << 2))
 
 #define RTL838X_L2_CTRL_1			(0x3204)
