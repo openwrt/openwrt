@@ -1,0 +1,44 @@
+From 2463798e0322e1586d16970e7d5f60fd7a864f29 Mon Sep 17 00:00:00 2001
+From: Mario Madersbacher <mario.madersbacher.2008@gmail.com>
+Date: Mon, 26 Oct 2026 21:46:00 +0000
+Subject: [PATCH] Fix checks on TFTP filenames to avoid directory escape.
+
+Commit d152e81 which fixed escape via pathname of the form "file/.."
+introduced a new bug in which pathnames of the form "file/..dir/.."
+are not caught.
+
+Note that to be a practical attack, a directory with name
+"..somename" has to exist the correct place in the tree.
+This seems unlikely on most systems, and a it's difficult to see
+how an attacker could create such a directory and not already have
+the read access that it gives them.
+
+Thanks to Mario Madersbacher for spotting this, and supplying a very
+complete report and patch.
+---
+ src/tftp.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+--- a/src/tftp.c
++++ b/src/tftp.c
+@@ -547,10 +547,17 @@ static struct tftp_file *check_tftp_file
+   /* trick to ban moving out of the subtree */
+   if (prefix)
+     {
+-      char *suspect = strstr(namebuff, "/..");
++      char *suspect = namebuff;
+ 
+-      if (suspect && (suspect[3] == '/' || suspect[3] == 0))
+-        goto perm;
++      /* Every occurrence has to be checked: a harmless leading match
++         such as "/..data" otherwise hides a later "/../" from here. */
++      while ((suspect = strstr(suspect, "/..")))
++        {
++          if (suspect[3] == '/' || suspect[3] == 0)
++            goto perm;
++
++          suspect += 3;
++        }
+     }
+   
+   if ((fd = open(namebuff, O_RDONLY)) == -1)

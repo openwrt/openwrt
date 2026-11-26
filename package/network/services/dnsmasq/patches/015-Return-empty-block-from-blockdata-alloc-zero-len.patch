@@ -1,0 +1,48 @@
+From 10fbc39cf57220eb93f61ce282d7561750f8d29d Mon Sep 17 00:00:00 2001
+From: DL6ER <dl6er@dl6er.de>
+Date: Mon, 26 Oct 2026 19:52:32 +0100
+Subject: [PATCH] Return an empty block from blockdata_alloc() for zero length.
+
+738c049 turned the allocation loop in blockdata_alloc_real() from
+do/while into for, so a zero length now returns NULL. find_soa() and
+extract_addresses() start the chain for an RR with
+blockdata_alloc(NULL, 0) and fill it with blockdata_expand(), so they
+now fail on every SOA and every RR that is not an address, e.g., MX,
+SRV, or SVCB, and those answers are no longer cached. A zero-length
+RR also no longer survives cache_recv_insert().
+
+Allocate one empty block for zero length, as before.
+
+Signed-off-by: DL6ER <dl6er@dl6er.de>
+---
+ src/blockdata.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+--- a/src/blockdata.c
++++ b/src/blockdata.c
+@@ -91,6 +91,11 @@ static struct blockdata *blockdata_alloc
+   struct blockdata **prev = &ret;
+   size_t blen;
+   int fail;
++
++  /* Zero length still gives one empty block, blockdata_alloc(NULL, 0)
++     is how callers start a chain to add to with blockdata_expand(). */
++  if (len == 0)
++    return new_block();
+   
+   for (fail = 0; len != 0; len -= blen)
+     {
+@@ -252,10 +257,9 @@ void blockdata_write(struct blockdata *b
+     }
+ }
+ 
+-/* NOTE: this can fail (NULL return) for three possible reasons.
+-   1) len == 0 - trivial
+-   2) end of stream. 
+-   3) malloc failure when allocating blocks.
++/* NOTE: this can fail (NULL return) for two possible reasons.
++   1) end of stream. 
++   2) malloc failure when allocating blocks.
+ 
+    Unless EOF is encountered, len octets will always be read from the stream,
+    even in memory allocation fails.

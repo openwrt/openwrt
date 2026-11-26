@@ -1,0 +1,32 @@
+From 7a663fd46b9f63b3cc49b77b2dc50a1ed94c3428 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sun, 9 Aug 2026 16:14:23 +0100
+Subject: [PATCH] Don't pass arbitrary characters to DNSMASQ_SUPPLIED_HOSTNAME.
+
+If the hostname supplied by a DHCPv4 client doesn't pass the
+test if being an allowed hostname (ie without metacharacters) it
+is ignored, but still passed to the environment variable
+DNSMASQ_SUPPLIED_HOSTNAME in the dhcp-script.
+
+Change this so that only valid hostnames appear in thos variable,
+to avoid security problems with scripts that son't sanitise.
+
+This brings DHCPv4 behaviour in line with DHCPv6.
+
+Thanks to Daniel Birtwhistle for spotting the problem.
+---
+ src/rfc2131.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/src/rfc2131.c
++++ b/src/rfc2131.c
+@@ -1611,7 +1611,8 @@ size_t dhcp_reply(struct dhcp_context *c
+ 		  lease->extradata_size = lease->extradata_len = 0;
+ 		  
+ 		  add_extradata_opt(lease, option_find(mess, sz, OPTION_VENDOR_ID, 1));
+-		  add_extradata_opt(lease, option_find(mess, sz, OPTION_HOSTNAME, 1));
++		  lease_add_extradata(lease, (unsigned char *)client_hostname, 
++			      client_hostname ? strlen(client_hostname) : 0, 0);
+ 		  add_extradata_opt(lease, oui);
+ 		  add_extradata_opt(lease, serial);
+ 		  add_extradata_opt(lease, class);
