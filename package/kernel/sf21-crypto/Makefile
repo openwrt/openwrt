@@ -21,8 +21,9 @@ define KernelPackage/crypto-hw-sf21
 endef
 
 define KernelPackage/crypto-hw-sf21/description
- Hardware offload of AES (CTR, GCM; CCM with enable_ccm=1) and MD5, SHA-1, SHA-224/256/384/512
- on the crypto engine of the Siflower SF21A6826/SF21H8898.
+ Hardware offload of MD5, SHA-1 and SHA-224/256/384/512 on the crypto engine of the
+ Siflower SF21A6826/SF21H8898. AES (CTR, GCM) is off by default because long requests
+ can stall in the hardware; enable_aes=1 registers it (and enable_ccm=1 also AES-CCM).
 endef
 
 define Build/Prepare

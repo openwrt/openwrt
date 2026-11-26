@@ -2,10 +2,20 @@
 #include "aes.h"
 #include "hash.h"
 
+/*
+ * AES requests longer than 1 KiB can stall in the hardware (confirmed by
+ * Siflower, who no longer develop the engine); a stalled request blocks its
+ * DMA channel. AES is therefore off by default and only the hashes are
+ * registered.
+ */
+static bool enable_aes;
+module_param(enable_aes, bool, 0444);
+MODULE_PARM_DESC(enable_aes, "Register the AES-CTR/GCM implementations (default off, can stall)");
+
 /* AES-CCM gives correct results but stalls under sustained load */
 static bool enable_ccm;
 module_param(enable_ccm, bool, 0444);
-MODULE_PARM_DESC(enable_ccm, "Register the AES-CCM implementation (default off, unstable under load)");
+MODULE_PARM_DESC(enable_ccm, "Also register AES-CCM, requires enable_aes (default off, unstable under load)");
 
 struct sf_ce_dev *g_dev;
 
@@ -470,19 +480,25 @@ static int sf_ce_probe(struct platform_device *pdev)
 	sf_ce_start(priv);
 
 	g_dev = priv;
-	ret = crypto_register_aead(&sf_ce_aes_gcm);
-	if (ret)
-		goto err_aes_gcm;
+	if (enable_ccm && !enable_aes)
+		dev_warn(priv->dev, "enable_ccm requires enable_aes, AES-CCM not registered\n");
+	enable_ccm = enable_ccm && enable_aes;
 
-	if (enable_ccm) {
-		ret = crypto_register_aead(&sf_ce_aes_ccm);
+	if (enable_aes) {
+		ret = crypto_register_aead(&sf_ce_aes_gcm);
 		if (ret)
-			goto err_aes_ccm;
-	}
+			goto err_aes_gcm;
 
-	ret = crypto_register_skcipher(&sf_ce_aes_ctr);
-	if (ret)
-		goto err_aes_ctr;
+		if (enable_ccm) {
+			ret = crypto_register_aead(&sf_ce_aes_ccm);
+			if (ret)
+				goto err_aes_ccm;
+		}
+
+		ret = crypto_register_skcipher(&sf_ce_aes_ctr);
+		if (ret)
+			goto err_aes_ctr;
+	}
 
 #ifdef CONFIG_CRYPTO_SIFLOWER_HASH
 	ret = crypto_register_ahash(&sf_ce_sha1);
@@ -522,13 +538,15 @@ err_sha224:
 err_sha256:
 	crypto_unregister_ahash(&sf_ce_sha1);
 err_sha1:
-	crypto_unregister_skcipher(&sf_ce_aes_ctr);
+	if (enable_aes)
+		crypto_unregister_skcipher(&sf_ce_aes_ctr);
 #endif
 err_aes_ctr:
 	if (enable_ccm)
 		crypto_unregister_aead(&sf_ce_aes_ccm);
 err_aes_ccm:
-	crypto_unregister_aead(&sf_ce_aes_gcm);
+	if (enable_aes)
+		crypto_unregister_aead(&sf_ce_aes_gcm);
 err_aes_gcm:
 	g_dev = NULL;
 	sf_ce_stop(priv);
@@ -561,10 +579,12 @@ static void sf_ce_remove(struct platform_device *pdev)
 	crypto_unregister_ahash(&sf_ce_sha256);
 	crypto_unregister_ahash(&sf_ce_sha1);
 #endif
-	crypto_unregister_skcipher(&sf_ce_aes_ctr);
-	if (enable_ccm)
-		crypto_unregister_aead(&sf_ce_aes_ccm);
-	crypto_unregister_aead(&sf_ce_aes_gcm);
+	if (enable_aes) {
+		crypto_unregister_skcipher(&sf_ce_aes_ctr);
+		if (enable_ccm)
+			crypto_unregister_aead(&sf_ce_aes_ccm);
+		crypto_unregister_aead(&sf_ce_aes_gcm);
+	}
 
 	for (i = 0; i < DMA_CH_NUM; i++) {
 		tasklet_kill(&priv->chan[i].bh);
