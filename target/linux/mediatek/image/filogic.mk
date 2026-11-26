@@ -4199,6 +4199,26 @@ define Device/widelantech_wap430x
 endef
 TARGET_DEVICES += widelantech_wap430x
 
+define Device/wodesys_wd-r3600be
+  DEVICE_VENDOR := WodeSys
+  DEVICE_MODEL := WD-R3600BE
+  DEVICE_DTS := mt7987a-wodesys-wd-r3600be
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-phy-maxlinear kmod-mt7990-firmware kmod-usb3
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_LOADADDR := 0x40000000
+  KERNEL_IN_UBI := 1
+  IMAGE_SIZE := 115200k
+  KERNEL = kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += wodesys_wd-r3600be
+
 define Device/wodesys_wd-r5100be
   DEVICE_VENDOR := WodeSys
   DEVICE_MODEL := WD-R5100BE
