@@ -1,0 +1,236 @@
+From 1126851b5306d1dc9326070a0c72837eeafc9e1c Mon Sep 17 00:00:00 2001
+From: Alexander A <st7105@gmail.com>
+Date: Thu, 26 Nov 2026 07:36:39 +0300
+Subject: net: ethernet: mtk_eth_soc: configure MT7986 queue minimum rates and
+ weights
+
+Expose queue minimum rates and weights alongside hardware readback.
+
+Signed-off-by: Alexander A <st7105@gmail.com>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c   | 67 ++++++++++++-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h   |  5 +
+ .../net/ethernet/mediatek/mtk_ppe_debugfs.c   | 93 ++++++++++++++++++-
+ 3 files changed, 162 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -833,6 +833,37 @@
+ 	       FIELD_PREP(MTK_QTX_SCH_MAX_RATE_EXP, exp);
+ }
+ 
++/* A zero minimum keeps the native minimum when changing only the weight.
++ * The native link-derived maximum is always respected.
++ */
++u32 mtk_hqos_queue_config(u32 baseline, u32 rate, u32 minimum, u32 weight)
++{
++	u32 val = mtk_hqos_effective_config(baseline, rate);
++	u32 mantissa, exp = 0;
++
++	if (!weight)
++		return val;
++	/* NETSYS v2 encodes weight 16 as zero. */
++	val &= ~(GENMASK(31, 30) | MTK_QTX_SCH_MAX_RATE_WEIGHT);
++	val |= FIELD_PREP(MTK_QTX_SCH_MAX_RATE_WEIGHT, weight & 15);
++	if (!minimum)
++		return val;
++	if (val & MTK_QTX_SCH_MAX_RATE_EN)
++		minimum = min(minimum, mtk_hqos_decode_rate(val));
++	mantissa = minimum;
++	while (mantissa > FIELD_MAX(MTK_QTX_SCH_MIN_RATE_MAN)) {
++		mantissa /= 10;
++		exp++;
++	}
++	val &= ~(MTK_QTX_SCH_MIN_RATE_EN |
++		 MTK_QTX_SCH_MIN_RATE_MAN | MTK_QTX_SCH_MIN_RATE_EXP);
++	if (minimum)
++		val |= MTK_QTX_SCH_MIN_RATE_EN |
++		       FIELD_PREP(MTK_QTX_SCH_MIN_RATE_MAN, mantissa) |
++		       FIELD_PREP(MTK_QTX_SCH_MIN_RATE_EXP, exp);
++	return val;
++}
++
+ static void mtk_hqos_write_queue(struct mtk_eth *eth, unsigned int idx, u32 val)
+ {
+ 	u32 ofs = MTK_QTX_OFFSET * (idx % MTK_QTX_PER_PAGE);
+@@ -844,7 +875,8 @@
+ 
+ 	spin_lock_bh(&eth->hqos.lock);
+ 	eth->hqos.baseline[idx] = val;
+-	val = mtk_hqos_effective_config(val, eth->hqos.rate[idx]);
++	val = mtk_hqos_queue_config(val, eth->hqos.rate[idx],
++				    eth->hqos.minimum[idx], eth->hqos.weight[idx]);
+ 	mtk_w32(eth, val, eth->soc->reg_map->qdma.qtx_sch + ofs);
+ 	spin_unlock_bh(&eth->hqos.lock);
+ }
+@@ -864,7 +896,38 @@
+ 	ASSERT_RTNL();
+ 	spin_lock_bh(&eth->hqos.lock);
+ 	eth->hqos.rate[queue] = rate;
+-	val = mtk_hqos_effective_config(eth->hqos.baseline[queue], rate);
++	val = mtk_hqos_queue_config(eth->hqos.baseline[queue], rate,
++				    eth->hqos.minimum[queue], eth->hqos.weight[queue]);
++	mtk_w32(eth, val, eth->soc->reg_map->qdma.qtx_sch +
++		MTK_QTX_OFFSET * queue);
++	spin_unlock_bh(&eth->hqos.lock);
++	return 0;
++}
++
++int mtk_hqos_set_queue(struct mtk_eth *eth, unsigned int queue,
++		       u32 rate, u32 minimum, u32 weight)
++{
++	u32 val;
++
++	ASSERT_RTNL();
++	if (!mtk_hqos_supported(eth))
++		return -EOPNOTSUPP;
++	if (queue >= MTK_HQOS_QUEUES || weight > 16 ||
++	    (!weight && minimum) || minimum > 2500000 ||
++	    (minimum && minimum < 10000) ||
++	    (rate && (rate < 10000 || rate > 2500000)))
++		return -EINVAL;
++	spin_lock_bh(&eth->hqos.lock);
++	val = mtk_hqos_queue_config(eth->hqos.baseline[queue], rate,
++				    minimum, weight);
++	if ((val & MTK_QTX_SCH_MAX_RATE_EN) &&
++	    minimum > mtk_hqos_decode_rate(val)) {
++		spin_unlock_bh(&eth->hqos.lock);
++		return -EINVAL;
++	}
++	eth->hqos.rate[queue] = rate;
++	eth->hqos.minimum[queue] = minimum;
++	eth->hqos.weight[queue] = weight;
+ 	mtk_w32(eth, val, eth->soc->reg_map->qdma.qtx_sch +
+ 		MTK_QTX_OFFSET * queue);
+ 	spin_unlock_bh(&eth->hqos.lock);
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -1382,6 +1382,8 @@
+ 	/* Protects cached limits, baseline values and QDMA writes. */
+ 	spinlock_t lock;
+ 	u32 rate[MTK_HQOS_QUEUES];
++	u32 minimum[MTK_HQOS_QUEUES];
++	u32 weight[MTK_HQOS_QUEUES];
+ 	u32 baseline[MTK_HQOS_QUEUES];
+ };
+ 
+@@ -1631,6 +1633,9 @@
+ int mtk_hqos_priority_queue(struct mtk_eth *eth, u32 priority);
+ int mtk_hqos_set_rate(struct mtk_eth *eth, unsigned int queue, u32 rate);
+ u32 mtk_hqos_effective_config(u32 baseline, u32 rate);
++u32 mtk_hqos_queue_config(u32 baseline, u32 rate, u32 minimum, u32 weight);
++int mtk_hqos_set_queue(struct mtk_eth *eth, unsigned int queue,
++		       u32 rate, u32 minimum, u32 weight);
+ 
+ int mtk_eth_offload_init(struct mtk_eth *eth, u8 id);
+ int mtk_eth_setup_tc(struct net_device *dev, enum tc_setup_type type,
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
+@@ -255,6 +255,95 @@
+ 	.release = single_release,
+ };
+ 
++/* ABI: queue requested_max requested_min requested_weight baseline actual.
++ * Unlike hqos_rate, actual is read from the live QDMA register under RTNL.
++ */
++static int mtk_hqos_queue_show(struct seq_file *m, void *unused)
++{
++	struct mtk_eth *eth = ((struct mtk_ppe *)m->private)->eth;
++	bool running = false;
++	unsigned int i;
++
++	rtnl_lock();
++	for (i = 0; i < MTK_MAX_DEVS; i++)
++		if (eth->netdev[i] && netif_running(eth->netdev[i]))
++			running = true;
++	if (!running || test_bit(MTK_RESETTING, &eth->state)) {
++		rtnl_unlock();
++		return -EBUSY;
++	}
++	seq_puts(m, "queue max_kbps min_kbps weight baseline actual\n");
++	for (i = 0; i < MTK_HQOS_QUEUES; i++) {
++		u32 rate, minimum, weight, baseline, actual;
++
++		spin_lock_bh(&eth->hqos.lock);
++		rate = eth->hqos.rate[i];
++		minimum = eth->hqos.minimum[i];
++		weight = eth->hqos.weight[i];
++		baseline = eth->hqos.baseline[i];
++		actual = mtk_r32(eth, eth->soc->reg_map->qdma.qtx_sch +
++				MTK_QTX_OFFSET * i);
++		spin_unlock_bh(&eth->hqos.lock);
++		seq_printf(m, "%u %u %u %u 0x%08x 0x%08x\n", i,
++			   rate, minimum, weight, baseline, actual);
++	}
++	rtnl_unlock();
++	return 0;
++}
++
++static int mtk_hqos_queue_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, mtk_hqos_queue_show, inode->i_private);
++}
++
++static ssize_t mtk_hqos_queue_write(struct file *file, const char __user *user,
++				    size_t count, loff_t *pos)
++{
++	struct seq_file *m = file->private_data;
++	struct mtk_ppe *ppe = m->private;
++	struct mtk_eth *eth = ppe->eth;
++	u32 queue, rate, minimum, weight;
++	char buf[80], queue_buf[16], rate_buf[16], min_buf[16], weight_buf[16], extra;
++	bool running = false;
++	int ret, i;
++
++	if (!capable(CAP_NET_ADMIN))
++		return -EPERM;
++	if (!count || count >= sizeof(buf))
++		return -EINVAL;
++	if (copy_from_user(buf, user, count))
++		return -EFAULT;
++	buf[count] = '\0';
++	if (memchr(buf, '\0', count) ||
++	    sscanf(buf, "%15s %15s %15s %15s %c", queue_buf, rate_buf,
++		   min_buf, weight_buf, &extra) != 4 ||
++	    kstrtou32(queue_buf, 10, &queue) ||
++	    kstrtou32(rate_buf, 10, &rate) ||
++	    kstrtou32(min_buf, 10, &minimum) ||
++	    kstrtou32(weight_buf, 10, &weight))
++		return -EINVAL;
++
++	rtnl_lock();
++	for (i = 0; i < MTK_MAX_DEVS; i++)
++		if (eth->netdev[i] && netif_running(eth->netdev[i]))
++			running = true;
++	if (!running || test_bit(MTK_RESETTING, &eth->state))
++		ret = -EBUSY;
++	else
++		ret = mtk_hqos_set_queue(eth, queue, rate, minimum, weight);
++	rtnl_unlock();
++	return ret ? ret : count;
++}
++
++static const struct file_operations mtk_hqos_queue_fops = {
++	.owner = THIS_MODULE,
++	.open = mtk_hqos_queue_open,
++	.read = seq_read,
++	.write = mtk_hqos_queue_write,
++	.llseek = seq_lseek,
++	.release = single_release,
++};
++
+ int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index)
+ {
+ 	struct dentry *root;
+@@ -262,8 +351,10 @@
+ 	snprintf(ppe->dirname, sizeof(ppe->dirname), "ppe%d", index);
+ 
+ 	root = debugfs_create_dir(ppe->dirname, NULL);
+-	if (!index && mtk_hqos_supported(ppe->eth))
++	if (!index && mtk_hqos_supported(ppe->eth)) {
+ 		debugfs_create_file("hqos_rate", 0600, root, ppe, &mtk_hqos_fops);
++		debugfs_create_file("hqos_queue", 0600, root, ppe, &mtk_hqos_queue_fops);
++	}
+ 	debugfs_create_file("entries", S_IRUGO, root, ppe, &mtk_ppe_debugfs_foe_all_fops);
+ 	debugfs_create_file("bind", S_IRUGO, root, ppe, &mtk_ppe_debugfs_foe_bind_fops);
+ 
