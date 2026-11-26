@@ -1,0 +1,72 @@
+From: Andreas Ziegler <dev@andreas-ziegler.de>
+Date: Thu, 26 Nov 2026 02:54:00 +0100
+Subject: [PATCH] wifi: mac80211: mesh: allow matching 2.4 GHz default basic rates
+
+On 2.4 GHz, unconfigured 802.11s mesh implementations do not agree on a
+single default basic-rate bitmask: Linux cfg80211's __cfg80211_join_mesh()
+defaults to 1 Mbps only (for historical kernel compatibility), hostapd's
+11g default uses IEEE80211_RATE_MANDATORY_B (1, 2, 5.5, 11 Mbps), and
+wpa_supplicant defaults to IEEE80211_RATE_MANDATORY_G (1, 2, 5.5, 6, 11,
+12, 24 Mbps). Strict bitmask equality in mesh_matches_local() causes peers
+using these standard defaults (such as unpatched wpad-mesh nodes during
+rolling upgrades) to reject each other's beacons and peering frames.
+
+Treat the standard 2.4 GHz default basic-rate sets (cfg80211 1 Mbps,
+IEEE80211_RATE_MANDATORY_B, and IEEE80211_RATE_MANDATORY_G) as equivalent
+in mesh_matches_local() while continuing to enforce exact equality for any
+custom basic-rate configuration and on non-2.4 GHz bands.
+
+Ref: https://github.com/openwrt/openwrt/issues/15826
+Signed-off-by: Andreas Ziegler <dev@andreas-ziegler.de>
+---
+ net/mac80211/mesh.c | 32 +++++++++++++++++++++++++++++++-
+ 1 file changed, 31 insertions(+), 1 deletion(-)
+
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -48,6 +48,35 @@ static void ieee80211_mesh_housekeeping_
+ 	wiphy_work_queue(local->hw.wiphy, &sdata->work);
+ }
+ 
++static bool mesh_basic_rates_match(struct ieee80211_supported_band *sband,
++				   u32 local_rates, u32 peer_rates)
++{
++	u32 cfg_def = 0, mand_b = 0, mand_g = 0;
++	int i;
++
++	if (local_rates == peer_rates)
++		return true;
++
++	if (sband->band != NL80211_BAND_2GHZ || !local_rates || !peer_rates)
++		return false;
++
++	for (i = 0; i < sband->n_bitrates; i++) {
++		if (sband->bitrates[i].bitrate == 10)
++			cfg_def |= BIT(i);
++		if (sband->bitrates[i].flags & IEEE80211_RATE_MANDATORY_B)
++			mand_b |= BIT(i);
++		if (sband->bitrates[i].flags & IEEE80211_RATE_MANDATORY_G)
++			mand_g |= BIT(i);
++	}
++
++	return ((cfg_def && local_rates == cfg_def) ||
++		(mand_b && local_rates == mand_b) ||
++		(mand_g && local_rates == mand_g)) &&
++	       ((cfg_def && peer_rates == cfg_def) ||
++		(mand_b && peer_rates == mand_b) ||
++		(mand_g && peer_rates == mand_g));
++}
++
+ /**
+  * mesh_matches_local - check if the config of a mesh point matches ours
+  *
+@@ -97,7 +126,8 @@ bool mesh_matches_local(struct ieee80211
+ 	ieee80211_sta_get_rates(sdata, ie, sband->band,
+ 				&basic_rates);
+ 
+-	if (sdata->vif.bss_conf.basic_rates != basic_rates)
++	if (!mesh_basic_rates_match(sband, sdata->vif.bss_conf.basic_rates,
++				    basic_rates))
+ 		return false;
+ 
+ 	cfg80211_chandef_create(&sta_chan_def, sdata->vif.bss_conf.chanreq.oper.chan,
