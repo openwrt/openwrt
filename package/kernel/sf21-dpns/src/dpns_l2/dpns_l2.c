@@ -1225,6 +1225,28 @@ int se_l2_set_term_mac(MAC_t *priv, const u8 *mac, u16 vlan_id, bool is_add, boo
 	return err;
 }
 
+/*
+ * The MAC table is keyed by the MAC address only, so all NPU devices with the
+ * same address (the ports of a bridge, a port and its VLAN devices) share one
+ * router MAC entry. Keep it while another of them is still up; removing it made
+ * the NPU copy every packet for the router to the CPU.
+ */
+static bool dpns_term_mac_in_use(MAC_t *priv, struct net_device *dev)
+{
+	struct net_device *other;
+
+	ASSERT_RTNL();
+	for_each_netdev(dev_net(dev), other) {
+		if (other == dev || !netif_running(other) ||
+		    !ether_addr_equal(other->dev_addr, dev->dev_addr))
+			continue;
+		if (priv->cpriv->port_dev_check(priv->cpriv, other))
+			return true;
+	}
+
+	return false;
+}
+
 static int dpns_mac_netdevice_event(struct notifier_block *unused,
 				  unsigned long event, void *ptr)
 {
@@ -1278,6 +1300,8 @@ static int dpns_mac_netdevice_event(struct notifier_block *unused,
 		if (!vlan_id)
 			clear_bit(dp_port->port_id, priv->dev_port_bitmap);
 
+		if (dpns_term_mac_in_use(priv, dev))
+			break;
 		err = se_l2_set_term_mac(priv, dev->dev_addr, vlan_id,
 				false, true);
 		break;
@@ -1288,6 +1312,8 @@ static int dpns_mac_netdevice_event(struct notifier_block *unused,
 				break;
 		}
 
+		if (dpns_term_mac_in_use(priv, dev))
+			break;
 		err = se_l2_set_term_mac(priv, dev->dev_addr, vlan_id,
 				false, false);
 		break;
