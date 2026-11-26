@@ -27,14 +27,15 @@ function set_fixed_freq(data, config) {
 	else
 		set_default(config, 'disable_vht', true);
 
-	if (data.htmode in [ 'NOHT' ])
+	if (!data.htmode || data.htmode in [ 'NONE', 'NOHT' ])
 		set_default(config, 'disable_ht', true);
 	else if (data.htmode in [ 'HT20', 'VHT20', 'HE20', 'EHT20' ])
 		set_default(config, 'disable_ht40', true);
-	else if (data.htmode in [ 'VHT40', 'VHT80', 'VHT160', 'HE40', 'HE80', 'HE160', 'EHT40', 'EHT80', 'EHT160', 'EHT320' ])
+	else if (data.htmode in [ 'HT40', 'HT40+', 'HT40-', 'VHT40', 'VHT80', 'VHT160', 'HE40', 'HE80', 'HE160', 'EHT40', 'EHT80', 'EHT160', 'EHT320' ])
 		set_default(config, 'ht40', true);
 
-	if (wildcard(data.htmode, 'VHT*'))
+	if (wildcard(data.htmode, 'VHT*') ||
+	    (data.band == '5g' && data.htmode && (wildcard(data.htmode, 'HE*') || wildcard(data.htmode, 'EHT*'))))
 		set_default(config, 'vht', 1);
 
 	if (config.mode in [ 'sta', 'adhoc', 'mesh' ])

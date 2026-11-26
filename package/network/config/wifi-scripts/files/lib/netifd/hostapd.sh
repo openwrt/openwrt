@@ -1335,16 +1335,18 @@ wpa_supplicant_set_fixed_freq() {
 	append network_data "frequency=$freq" "$N$T"
 	case "$htmode" in
 		NOHT) append network_data "disable_ht=1" "$N$T";;
-		HE20|HT20|VHT20) append network_data "disable_ht40=1" "$N$T";;
-		HT40*|VHT40|VHT80|VHT160|HE40|HE80|HE160) append network_data "ht40=1" "$N$T";;
+		EHT20|HE20|HT20|VHT20) append network_data "disable_ht40=1" "$N$T";;
+		HT40*|VHT40|VHT80|VHT160|HE40|HE80|HE160|EHT40|EHT80|EHT160|EHT320) append network_data "ht40=1" "$N$T";;
 	esac
 	case "$htmode" in
 		VHT*) append network_data "vht=1" "$N$T";;
+		HE*|EHT*) [ "$band" = "5g" ] && append network_data "vht=1" "$N$T";;
 	esac
 	case "$htmode" in
-		HE80|VHT80) append network_data "max_oper_chwidth=1" "$N$T";;
-		HE160|VHT160) append network_data "max_oper_chwidth=2" "$N$T";;
-		HE20|HE40|VHT20|VHT40) append network_data "max_oper_chwidth=0" "$N$T";;
+		EHT80|HE80|VHT80) append network_data "max_oper_chwidth=1" "$N$T";;
+		EHT160|HE160|VHT160) append network_data "max_oper_chwidth=2" "$N$T";;
+		EHT320) append network_data "max_oper_chwidth=9" "$N$T";;
+		EHT20|EHT40|HE20|HE40|VHT20|VHT40) append network_data "max_oper_chwidth=0" "$N$T";;
 		*) append network_data "disable_vht=1" "$N$T";;
 	esac
 }
