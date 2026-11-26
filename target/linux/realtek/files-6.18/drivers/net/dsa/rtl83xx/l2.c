@@ -53,6 +53,15 @@
 #define RTL930X_L2_PORT_NEW_SA_FWD(p)		(0x8FF4 + (((p / 10) << 2)))
 #define RTL931X_L2_PORT_NEW_SA_FWD(p)		(0xC830 + (((p / 10) << 2)))
 
+/* Per ingress port action for unicast with an unknown destination (lookup miss) */
+#define RTL838X_L2_PORT_LM_ACT(p)		(0x3208 + ((p) << 2))
+#define RTL839X_L2_PORT_LM_ACT(p)		(0x3808 + ((p) << 2))
+#define RTL83XX_L2_UC_LM_ACT_MASK		GENMASK(1, 0)
+#define RTL930X_L2_PORT_UC_LM_ACT(p)		(0x906c + (((p) / 10) << 2))
+#define RTL931X_L2_PORT_UC_LM_ACT(p)		(0xc904 + (((p) / 10) << 2))
+#define RTL93XX_L2_UC_LM_ACT_SHIFT(p)		(((p) % 10) * 3)
+#define RTL93XX_L2_UC_LM_ACT_MASK		GENMASK(2, 0)
+
 #define RTL838X_L2_PORT_STATIC_MV_ACT(p)	(0x327c + (((p >> 4) << 2)))
 #define RTL839X_L2_PORT_STATIC_MV_ACT(p)	(0x38dc + (((p >> 4) << 2)))
 
@@ -408,13 +417,13 @@ void otto_l2_838x_write_mcast_pmask(int idx, u64 portmask)
 
 void otto_l2_838x_learning_setup(struct otto_dsa_priv *priv)
 {
-	/* Set portmask for broadcast traffic and unknown unicast address flooding
-	 * to the reserved entry in the portmask table used also for
-	 * multicast flooding
+	/* Broadcast keeps ALL_PORTS (CPU included) so the local stack still
+	 * receives flooded BC. Unknown unicast uses FRONT_PORTS so FDB misses
+	 * are not DMA'd to the CPU.
 	 */
 	regmap_write(priv->map, RTL838X_L2_FLD_PMSK,
 		     RTL838X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
-		     RTL838X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX));
+		     RTL838X_L2_UNKN_UC_FLD(MC_PMASK_FRONT_PORTS_IDX));
 
 	/* Enable learning constraint system-wide (bit 0), per-port (bit 1)
 	 * and per vlan (bit 2)
@@ -445,6 +454,13 @@ void otto_l2_838x_set_port_new_sa_trap(struct otto_dsa_priv *priv, int port, boo
 
 	regmap_write_bits(priv->map, otto_l2_838x_port_new_sa_fwd(port),
 			  GENMASK(new_sa_fwd_shift + 1, new_sa_fwd_shift), val);
+}
+
+void otto_l2_838x_set_uc_lm_act(struct otto_dsa_priv *priv, int port, u32 action)
+{
+	regmap_write_bits(priv->map, RTL838X_L2_PORT_LM_ACT(port),
+			  RTL83XX_L2_UC_LM_ACT_MASK,
+			  action & RTL83XX_L2_UC_LM_ACT_MASK);
 }
 
 void otto_l2_838x_enable_flood(struct otto_dsa_priv *priv, int port, bool enable)
@@ -755,13 +771,12 @@ void otto_l2_839x_write_mcast_pmask(int idx, u64 portmask)
 
 void otto_l2_839x_learning_setup(struct otto_dsa_priv *priv)
 {
-	/* Set portmask for broadcast (offset bit 12) and unknown unicast (offset 0)
-	 * address flooding to the reserved entry in the portmask table used
-	 * also for multicast flooding
+	/* Broadcast keeps ALL_PORTS (CPU included). Unknown unicast uses
+	 * FRONT_PORTS so FDB misses are not DMA'd to the CPU.
 	 */
 	regmap_write(priv->map, RTL839X_L2_FLD_PMSK,
 		     RTL839X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
-		     RTL839X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX));
+		     RTL839X_L2_UNKN_UC_FLD(MC_PMASK_FRONT_PORTS_IDX));
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	regmap_write(priv->map, RTL839X_L2_LRN_CONSTRT, (0x7fff << 2) | 0);
@@ -786,6 +801,14 @@ void otto_l2_839x_set_port_new_sa_trap(struct otto_dsa_priv *priv, int port, boo
 
 	regmap_write_bits(priv->map, otto_l2_839x_port_new_sa_fwd(port),
 			  GENMASK(new_sa_fwd_shift + 1, new_sa_fwd_shift), val);
+}
+
+void otto_l2_839x_set_uc_lm_act(struct otto_dsa_priv *priv, int port, u32 action)
+{
+	/* Bits 8 and 9 of this register are DA_BLK_EN and SA_BLK_EN. */
+	regmap_write_bits(priv->map, RTL839X_L2_PORT_LM_ACT(port),
+			  RTL83XX_L2_UC_LM_ACT_MASK,
+			  action & RTL83XX_L2_UC_LM_ACT_MASK);
 }
 
 void otto_l2_839x_enable_flood(struct otto_dsa_priv *priv, int port, bool enable)
@@ -869,11 +892,12 @@ static int otto_l2_930x_port_new_sa_fwd(int p)
 
 void otto_l2_930x_learning_setup(struct otto_dsa_priv *priv)
 {
-	/* Portmask for flooding broadcast traffic */
+	/* Portmask for flooding broadcast traffic (CPU included) */
 	regmap_write(priv->map, RTL930X_L2_BC_FLD_PMSK, RTL930X_MC_PMASK_ALL_PORTS);
 
-	/* Portmask for flooding unicast traffic with unknown destination */
-	regmap_write(priv->map, RTL930X_L2_UNKN_UC_FLD_PMSK, RTL930X_MC_PMASK_ALL_PORTS);
+	/* Unknown unicast: front-panel ports only, no CPU soft-trap */
+	regmap_write(priv->map, RTL930X_L2_UNKN_UC_FLD_PMSK,
+		     RTL930X_MC_PMASK_FRONT_PORTS);
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	regmap_write(priv->map, RTL930X_L2_LRN_CONSTRT_CTRL, (0x7fff << 2) | 0);
@@ -898,6 +922,15 @@ void otto_l2_930x_set_port_new_sa_trap(struct otto_dsa_priv *priv, int port, boo
 
 	regmap_write_bits(priv->map, otto_l2_930x_port_new_sa_fwd(port),
 			  GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift), val);
+}
+
+void otto_l2_930x_set_uc_lm_act(struct otto_dsa_priv *priv, int port, u32 action)
+{
+	u32 shift = RTL93XX_L2_UC_LM_ACT_SHIFT(port);
+
+	action &= RTL93XX_L2_UC_LM_ACT_MASK;
+	regmap_write_bits(priv->map, RTL930X_L2_PORT_UC_LM_ACT(port),
+			  RTL93XX_L2_UC_LM_ACT_MASK << shift, action << shift);
 }
 
 void otto_l2_930x_enable_flood(struct otto_dsa_priv *priv, int port, bool enable)
@@ -1583,17 +1616,17 @@ void otto_l2_931x_write_entry_using_hash(struct otto_dsa_priv *priv,
 
 void otto_l2_931x_learning_setup(struct otto_dsa_priv *priv)
 {
-	/* Portmask for flooding broadcast traffic */
+	/* Portmask for flooding broadcast traffic (CPU included) */
 	regmap_write(priv->map, RTL931X_L2_BC_FLD_PMSK,
 		     upper_32_bits(RTL931X_MC_PMASK_ALL_PORTS));
 	regmap_write(priv->map, RTL931X_L2_BC_FLD_PMSK + 4,
 		     lower_32_bits(RTL931X_MC_PMASK_ALL_PORTS));
 
-	/* Portmask for flooding unicast traffic with unknown destination */
+	/* Unknown unicast: front-panel ports only, no CPU soft-trap */
 	regmap_write(priv->map, RTL931X_L2_UNKN_UC_FLD_PMSK,
-		     upper_32_bits(RTL931X_MC_PMASK_ALL_PORTS));
+		     upper_32_bits(RTL931X_MC_PMASK_FRONT_PORTS));
 	regmap_write(priv->map, RTL931X_L2_UNKN_UC_FLD_PMSK + 4,
-		     lower_32_bits(RTL931X_MC_PMASK_ALL_PORTS));
+		     lower_32_bits(RTL931X_MC_PMASK_FRONT_PORTS));
 
 	/* Limit learning to maximum: 64k entries, after that just flood (bits 0-2) */
 	regmap_write(priv->map, RTL931X_L2_LRN_CONSTRT_CTRL, (0xffff << 3) | FORWARD);
@@ -1614,6 +1647,15 @@ void otto_l2_931x_set_port_new_sa_trap(struct otto_dsa_priv *priv, int port, boo
 
 	regmap_write_bits(priv->map, otto_l2_931x_port_new_sa_fwd(port),
 			  GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift), val);
+}
+
+void otto_l2_931x_set_uc_lm_act(struct otto_dsa_priv *priv, int port, u32 action)
+{
+	u32 shift = RTL93XX_L2_UC_LM_ACT_SHIFT(port);
+
+	action &= RTL93XX_L2_UC_LM_ACT_MASK;
+	regmap_write_bits(priv->map, RTL931X_L2_PORT_UC_LM_ACT(port),
+			  RTL93XX_L2_UC_LM_ACT_MASK << shift, action << shift);
 }
 
 void otto_l2_931x_enable_flood(struct otto_dsa_priv *priv, int port, bool enable)

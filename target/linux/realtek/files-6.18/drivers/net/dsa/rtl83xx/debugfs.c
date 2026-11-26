@@ -191,7 +191,7 @@ static int rtldsa_pmsks_table_show(struct seq_file *m, void *v)
 
 	mutex_lock(&priv->reg_mutex);
 
-	for (int i = 0; i < MC_PMASK_ALL_PORTS_IDX; i++) {
+	for (int i = 0; i < MC_PMASK_FRONT_PORTS_IDX; i++) {
 		if (!test_bit(i, priv->mc_group_bm))
 			continue;
 

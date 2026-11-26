@@ -457,6 +457,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.led_init = rtldsa_931x_led_init,
 	.enable_learning = otto_l2_931x_enable_learning,
 	.set_l2_new_sa_trap = otto_l2_931x_set_port_new_sa_trap,
+	.l2_set_uc_lm_act = otto_l2_931x_set_uc_lm_act,
 	.enable_flood = otto_l2_931x_enable_flood,
 	.enable_bcast_flood = otto_l2_931x_enable_bcast_flood,
 	.set_receive_management_action = rtldsa_931x_set_receive_management_action,

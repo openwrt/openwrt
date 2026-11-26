@@ -447,6 +447,7 @@ struct rtldsa_config {
 	void (*vlan_set_egr_filter)(struct otto_dsa_priv *priv, int port, enum egr_filter state);
 	void (*enable_learning)(struct otto_dsa_priv *priv, int port, bool enable);
 	void (*set_l2_new_sa_trap)(struct otto_dsa_priv *priv, int port, bool trap);
+	void (*l2_set_uc_lm_act)(struct otto_dsa_priv *priv, int port, u32 action);
 	void (*enable_flood)(struct otto_dsa_priv *priv, int port, bool enable);
 	void (*enable_mcast_flood)(struct otto_dsa_priv *priv, int port, bool enable);
 	void (*enable_bcast_flood)(struct otto_dsa_priv *priv, int port, bool enable);

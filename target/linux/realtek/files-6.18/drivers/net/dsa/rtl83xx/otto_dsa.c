@@ -88,11 +88,15 @@ static enum dsa_tag_protocol otto_dsa_get_tag_protocol(struct dsa_switch *ds,
 static void otto_dsa_83xx_mc_pmasks_setup(struct otto_dsa_priv *priv)
 {
 	/* RTL8380 and RTL8390 use an index into the portmask table to set the
-	 * unknown multicast portmask, setup a default at a safe location
-	 * On RTL93XX, the portmask is directly set in the profile,
-	 * see e.g. rtl9300_vlan_profile_setup
+	 * unknown multicast, broadcast and unknown unicast portmasks. ALL_PORTS
+	 * includes the CPU port. FRONT_PORTS does not, so that unknown unicast
+	 * is not sent to the CPU.
+	 * On RTL93XX, the portmasks are directly set in the profile and in
+	 * L2_UNKN_UC_FLD_PMSK, see e.g. rtl9300_vlan_profile_setup
 	 */
 	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, ~0);
+	priv->r->write_mcast_pmask(MC_PMASK_FRONT_PORTS_IDX,
+				   GENMASK_ULL(priv->r->cpu_port - 1, 0));
 }
 
 static void otto_dsa_setup_bpdu_traps(struct otto_dsa_priv *priv)
@@ -123,6 +127,30 @@ static void otto_dsa_port_set_salrn(struct otto_dsa_priv *priv,
 			  SALRN_MODE_MASK << shift, val << shift);
 }
 
+/* Unknown unicast is flooded to front ports only. See
+ * otto_dsa_83xx_mc_pmasks_setup() and the 93xx L2_UNKN_UC_FLD_PMSK setup.
+ *
+ * A standalone port has no CPU-port FDB row for its own address. Trap its
+ * lookup misses so the frame reaches the CPU and is not flooded to other
+ * front ports. A bridged port forwards the miss. The bridge MAC is a static
+ * CPU-port FDB row from assisted learning.
+ */
+static void otto_l2_port_sync_uc_lm(struct otto_dsa_priv *priv, int port)
+{
+	u32 action;
+
+	if (!priv->r->l2_set_uc_lm_act)
+		return;
+	if (port < 0 || port >= priv->r->cpu_port)
+		return;
+	if (!priv->ports[port].phy && !priv->ports[port].has_pcs)
+		return;
+
+	action = priv->ports[port].bridged ? OTTO_L2_ACTION_FORWARD
+					   : OTTO_L2_ACTION_TRAP2CPU;
+	priv->r->l2_set_uc_lm_act(priv, port, action);
+}
+
 static int otto_dsa_83xx_setup(struct dsa_switch *ds)
 {
 	struct otto_dsa_priv *priv = ds->priv;
@@ -141,6 +169,7 @@ static int otto_dsa_83xx_setup(struct dsa_switch *ds)
 		if (priv->ports[i].phy || priv->ports[i].has_pcs) {
 			priv->ports[i].pm = BIT_ULL(priv->r->cpu_port);
 			priv->r->traffic_set(priv, i, BIT_ULL(i));
+			otto_l2_port_sync_uc_lm(priv, i);
 		}
 	}
 	priv->r->traffic_set(priv, priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
@@ -205,6 +234,7 @@ static int otto_dsa_93xx_setup(struct dsa_switch *ds)
 		if (priv->ports[i].phy || priv->ports[i].has_pcs) {
 			priv->ports[i].pm = BIT_ULL(priv->r->cpu_port);
 			priv->r->traffic_set(priv, i, BIT_ULL(i));
+			otto_l2_port_sync_uc_lm(priv, i);
 		}
 	}
 	priv->r->traffic_set(priv, priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
@@ -364,6 +394,8 @@ static int otto_dsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(priv, port, false);
 
+	otto_l2_port_sync_uc_lm(priv, port);
+
 	/* Set to disabled in all MSTs, common code will take care of CIST */
 	otto_stp_port_non_cist_states_set(priv, port, BR_STATE_DISABLED);
 
@@ -392,6 +424,8 @@ static void otto_dsa_port_bridge_leave(struct dsa_switch *ds, int port, struct d
 
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(priv, port, true);
+
+	otto_l2_port_sync_uc_lm(priv, port);
 
 	/* Set to forwarding in all MSTs, common code will take care of CIST */
 	otto_stp_port_non_cist_states_set(priv, port, BR_STATE_FORWARDING);
@@ -425,10 +459,12 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 
 static int otto_dsa_83xx_mc_group_alloc(struct otto_dsa_priv *priv, int port)
 {
-	int mc_group = find_first_zero_bit(priv->mc_group_bm, MAX_MC_GROUPS - 1);
+	/* Reserve the two highest indices for ALL_PORTS / FRONT_PORTS floods. */
+	int mc_group = find_first_zero_bit(priv->mc_group_bm,
+					   MC_PMASK_FRONT_PORTS_IDX);
 	u64 portmask;
 
-	if (mc_group >= MAX_MC_GROUPS - 1)
+	if (mc_group >= MC_PMASK_FRONT_PORTS_IDX)
 		return -1;
 
 	set_bit(mc_group, priv->mc_group_bm);

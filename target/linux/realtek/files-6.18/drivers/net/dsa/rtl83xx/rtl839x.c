@@ -170,6 +170,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.vlan_set_egr_filter = otto_vlan_839x_set_egr_filter,
 	.enable_learning = otto_l2_839x_enable_learning,
 	.set_l2_new_sa_trap = otto_l2_839x_set_port_new_sa_trap,
+	.l2_set_uc_lm_act = otto_l2_839x_set_uc_lm_act,
 	.enable_flood = otto_l2_839x_enable_flood,
 	.enable_mcast_flood = otto_l2_839x_enable_mcast_flood,
 	.enable_bcast_flood = otto_l2_839x_enable_bcast_flood,

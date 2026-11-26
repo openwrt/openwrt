@@ -471,11 +471,9 @@ static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	regmap_update_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl, 0x3 | BIT(3), 0x3 | BIT(3));
 
-	/* CPU port joins Lookup Miss Flooding Portmask */
-	/* TODO: The code below should also work for the RTL838x */
-	regmap_write(ctrl->map, RTETH_839X_TBL_ACCESS_L2_CTRL, 0x28000);
-	regmap_update_bits(ctrl->map, RTETH_839X_TBL_ACCESS_L2_DATA(0), BIT(31), BIT(31));
-	regmap_write(ctrl->map, RTETH_839X_TBL_ACCESS_L2_CTRL, 0x38000);
+	/* Do not write multicast portmask entry 0 here. That entry is an
+	 * MDB group, not the unknown-unicast flood mask, and DSA owns it.
+	 */
 
 	/* Force CPU port link up */
 	regmap_update_bits(ctrl->map, ctrl->cfg->mac_force_mode_ctrl, 0x3, 0x3);
@@ -489,7 +487,10 @@ static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	regmap_set_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl, 0x3 | BIT(4));
 
-	regmap_set_bits(ctrl->map, RTETH_930X_L2_UNKN_UC_FLD_PMSK, BIT(ctrl->cfg->cpu_port));
+	/* Do not join the CPU to L2_UNKN_UC_FLD_PMSK. DSA programs that
+	 * mask to front-panel ports only so FDB-miss unicast is not DMA'd
+	 * to the MIPS core; broadcast flood still includes the CPU.
+	 */
 	regmap_write(ctrl->map, ctrl->cfg->mac_force_mode_ctrl, 0x217);
 
 	/*
@@ -508,7 +509,10 @@ static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	regmap_set_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl, 0x3 | BIT(4));
 
-	regmap_set_bits(ctrl->map, RTETH_931X_L2_UNKN_UC_FLD_PMSK, BIT(ctrl->cfg->cpu_port));
+	/* Do not join the CPU to L2_UNKN_UC_FLD_PMSK. DSA programs that
+	 * mask to front-panel ports only so FDB-miss unicast is not DMA'd
+	 * to the MIPS core; broadcast flood still includes the CPU.
+	 */
 	regmap_write(ctrl->map, ctrl->cfg->mac_force_mode_ctrl, 0x2a1d);
 }
 
