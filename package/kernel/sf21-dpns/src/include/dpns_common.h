@@ -443,7 +443,6 @@ struct dpns_vlan_priv {
 
 	void (*vlan_init)(struct dpns_vlan_priv *priv);
 	DECLARE_BITMAP(phy_ports_bitmap, DPNS_MAX_PORT);
-	DECLARE_BITMAP(wan_ports_bitmap, DPNS_MAX_PORT);
 	DECLARE_BITMAP(ivlan_index_bitmap, SF_IVLAN_LKP_TAB_MAX);
 	DECLARE_BITMAP(evlan_index_bitmap, SF_EVLAN_LKP_TAB_MAX);
 	DECLARE_BITMAP(vport_index_bitmap, SF_VLAN_VPORT_MAP_MAX);

@@ -34,7 +34,6 @@
 #include <net/nexthop.h>
 #include <net/arp.h>
 
-extern struct dpns_nat_subnet_info sf_wan_subnet[8];
 
 void default_vlan_init(VLAN_t * priv)
 {
@@ -114,7 +113,6 @@ void default_vlan_init(VLAN_t * priv)
 	memset(&priv->ivlan_index_bitmap, 0, sizeof(priv->ivlan_index_bitmap));
 	memset(&priv->evlan_index_bitmap, 0, sizeof(priv->evlan_index_bitmap));
 	memset(&priv->vport_index_bitmap, 0, sizeof(priv->vport_index_bitmap));
-	memset(&priv->wan_ports_bitmap, 0, sizeof(priv->wan_ports_bitmap));
 	memset(&priv->phy_ports_bitmap, 0xff, sizeof(priv->phy_ports_bitmap));
 	__set_bit(0, priv->evlan_index_bitmap);
 }
@@ -126,9 +124,6 @@ void dynamic_vlan_update(VLAN_t *priv)
 	int port;
 
 	for (port = 0; port < DPNS_MAX_PORT; port++) {
-		if ((*priv->wan_ports_bitmap & BIT(port)) && (*priv->phy_ports_bitmap & BIT(port)))
-			continue;
-
 		spin_lock_bh(&priv->vlan_lock);
 		list_for_each_entry(pos, &priv->vlan_list, node) {
 			if ((pos->vlan_ports & BIT(port)) != 0) {
@@ -322,37 +317,24 @@ static void dpns_vlan_netdev_event_work_fn(struct work_struct *work)
 	struct net_device *dev = netdev_work->dev;
 	dpns_port_t *dp_port = netdev_work->dp_port;
 	u16 vlan_id;
-	bool is_wan = false;
-	int i;
 
 	VLAN_DBG(DBG_LV, "%s, ifname:%s\n", netdev_cmd_to_name(netdev_work->event), dev->name);
-
-	for(i = 0; i < 8; i++) {
-		if (!strncmp(sf_wan_subnet[i].ifname, dev->name, IFNAMSIZ)) {
-			is_wan = true;
-			break;
-		}
-	}
 
 	if (dev->dev.parent) {
 		if (!is_vlan_dev(dev) && of_phy_is_fixed_link(dev->dev.parent->of_node))
 			__clear_bit(dp_port->port_id, priv->phy_ports_bitmap);
 	}
 
+	/*
+	 * The vendor driver turned the whole physical port into a tagged port
+	 * (EVLAN_XLT: push the VID to everything leaving the port) when a VLAN
+	 * device on it was a WAN device. That broke every other network on the
+	 * port, e.g. an untagged WAN or a second VLAN: their offloaded flows left
+	 * with the wrong tag. Offloaded flows get their tag from the L3 interface
+	 * entry of the NPU already, with the port in the "port with VLANs" mode
+	 * set by dynamic_vlan_update(), so the port-wide rule is not needed.
+	 */
 	switch (netdev_work->event) {
-	case NETDEV_REGISTER:
-		if (is_wan && is_vlan_dev(dev)) {
-			vlan_id = vlan_dev_vlan_id(dev);
-			__set_bit(dp_port->port_id, priv->wan_ports_bitmap);
-			evlan_xlt_table_update(priv, dp_port->port_id, dp_port->port_id, 1, 0, 0, 0, vlan_id, 1, 1, 0, 0, 0);
-		}
-		break;
-	case NETDEV_UNREGISTER:
-		if (*priv->wan_ports_bitmap & BIT(dp_port->port_id)) {
-			__clear_bit(dp_port->port_id, priv->wan_ports_bitmap);
-			evlan_xlt_table_update(priv, dp_port->port_id, dp_port->port_id, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0);
-		}
-		break;
 	case NETDEV_UP:
 		vport_dma_ndevs_add(priv, dev, dp_port);
 		if (is_vlan_dev(dev)) {
