@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Thu, 26 Nov 2026 16:30:00 +0100
+Subject: [PATCH] ARM: dts: BCM5301X: R7000: add the Internet LED
+
+The R7000 DTS has no Internet LED. As on the R6400, the LED is lit by
+the WAN port LED output of the switch, while GPIO 9 (white) and GPIO 8
+(amber) only select the colour. The bootloader leaves LED function 1
+at 0x0324 with no port mapped to it (function map 0x0000), so the LED
+stays dark whatever the GPIOs do.
+
+Add both GPIO LEDs and program the switch LEDs as on the R6400:
+function 0 = 0x3000, function 1 = 0x78 mapped to port 0 (WAN).
+
+Tested on an R7000: the Internet LED is white with WAN link and dark
+without; with GPIO 8 low and GPIO 9 high it is amber.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+--- a/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7000.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7000.dts
+@@ -39,6 +39,16 @@
+ 			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
+ 		};
+ 
++		led-wan-amber {
++			label = "bcm53xx:amber:wan";
++			gpios = <&chipcommon 8 GPIO_ACTIVE_LOW>;
++		};
++
++		led-wan-white {
++			label = "bcm53xx:white:wan";
++			gpios = <&chipcommon 9 GPIO_ACTIVE_LOW>;
++		};
++
+ 		led-5ghz {
+ 			label = "bcm53xx:white:5ghz";
+ 			gpios = <&chipcommon 12 GPIO_ACTIVE_LOW>;
+@@ -117,6 +127,16 @@
+ &srab {
+ 	status = "okay";
+ 
++	/*
++	 * The Internet LED is lit by the WAN port LED output of the switch,
++	 * GPIO 9 (white) and 8 (amber) only select the colour. Program the
++	 * switch LEDs as on the R6400: function 0 for the port LEDs,
++	 * function 1 for port 0 (WAN), which feeds the Internet LED.
++	 */
++	brcm,led-func0-ctl = <0x3000>;
++	brcm,led-func1-ctl = <0x78>;
++	brcm,led-func-map = <0x01>;
++
+ 	ports {
+ 		port@0 {
+ 			label = "wan";
