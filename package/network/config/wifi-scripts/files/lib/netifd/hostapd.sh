@@ -181,9 +181,9 @@ hostapd_prepare_device_config() {
 
 	[ -n "$acs_chan_bias" ] && append base_cfg "acs_chan_bias=$acs_chan_bias" "$N"
 
-	local brlist= br
+	local brlist= br basic_rate_list
 	json_get_values basic_rate_list basic_rate
-	local rlist= r
+	local rlist= r rate_list
 	json_get_values rate_list supported_rates
 
 	[ -n "$hwmode" ] && append base_cfg "hw_mode=$hwmode" "$N"
@@ -1365,7 +1365,8 @@ wpa_supplicant_add_network() {
 		multi_ap \
 		default_disabled
 
-	json_get_values basic_rate_list basic_rate
+	local iface_basic_rate_list
+	json_get_values iface_basic_rate_list basic_rate
 
 	set_default rsn_override 1
 
@@ -1641,17 +1642,19 @@ wpa_supplicant_add_network() {
 	[ -n "$bssid_blacklist" ] && append network_data "bssid_blacklist=$bssid_blacklist" "$N$T"
 	[ -n "$bssid_whitelist" ] && append network_data "bssid_whitelist=$bssid_whitelist" "$N$T"
 
-	[ -n "$basic_rate_list" ] && {
+	local br_list="$iface_basic_rate_list"
+	[ "$_w_mode" = "mesh" -o "$_w_mode" = "adhoc" ] && [ -z "$br_list" ] && br_list="$basic_rate_list"
+	[ -n "$br_list" ] && {
 		local br rate rate_list=
 
 		if [ "$mode" = mesh ]; then
-			for br in $basic_rate_list; do
+			for br in $br_list; do
 				rate="$(($br / 100))"
 				append rate_list "$rate" " "
 			done
 			[ -n "$rate_list" ] && append network_data "mesh_basic_rates=$rate_list" "$N$T"
 		else
-			for br in $basic_rate_list; do
+			for br in $br_list; do
 				wpa_supplicant_add_rate rate_list "$br"
 			done
 			[ -n "$rate_list" ] && append network_data "rates=$rate_list" "$N$T"
