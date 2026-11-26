@@ -1,0 +1,50 @@
+From 5e2c0d7a1b9f43e6a8d2c1f0b7e6d5c4a3b2c1d0 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Thu, 26 Nov 2026 11:40:00 +0100
+Subject: [PATCH] net: pse-pd: realtek-pse-mcu: add BCM59011
+
+The Zyxel GS1900-24EP A1 has a Gen1 MCU in front of Broadcom PSEs that
+report id 0xe011 and fail to probe ("unknown PSE id 0xe011"). Following
+the existing ids (0xe111 BCM59111, 0xe121 BCM59121) this is a BCM59011,
+an IEEE 802.3af part, so cap the ports at 15.4 W.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ drivers/net/pse-pd/realtek-pse-mcu-core.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/net/pse-pd/realtek-pse-mcu-core.c
++++ b/drivers/net/pse-pd/realtek-pse-mcu-core.c
+@@ -50,6 +50,7 @@
+ #define RTPSE_MCU_DEVICE_ID_RTL8238C		0x0238
+ #define RTPSE_MCU_DEVICE_ID_RTL8239		0x0039
+ #define RTPSE_MCU_DEVICE_ID_RTL8239C		0x0139
++#define RTPSE_MCU_DEVICE_ID_BCM59011		0xe011
+ #define RTPSE_MCU_DEVICE_ID_BCM59111		0xe111
+ #define RTPSE_MCU_DEVICE_ID_BCM59121		0xe121
+
+@@ -197,6 +198,14 @@ static const struct rtpse_mcu_chip_info
+ 	.pw_set_lsb_mW = 400,
+ };
+
++static const struct rtpse_mcu_chip_info bcm59011_info = {
++	.max_mW_per_port = 15400,
++	.name = "BCM59011",
++	.pw_read_lsb_mW = 200,
++	.pw_set_cmd = RTPSE_MCU_CMD_PORT_SET_POWER_LIMIT,
++	.pw_set_lsb_mW = 200,
++};
++
+ static const struct rtpse_mcu_chip_info bcm59111_info = {
+ 	.max_mW_per_port = 30000,
+ 	.name = "BCM59111",
+@@ -897,6 +906,9 @@ static int rtpse_mcu_discover(struct rtp
+ 	case RTPSE_MCU_DEVICE_ID_RTL8239C:
+ 		pse->chip = &rtl8239c_info;
+ 		break;
++	case RTPSE_MCU_DEVICE_ID_BCM59011:
++		pse->chip = &bcm59011_info;
++		break;
+ 	case RTPSE_MCU_DEVICE_ID_BCM59111:
+ 		pse->chip = &bcm59111_info;
+ 		break;
