@@ -424,6 +424,18 @@ struct dpns_common_priv {
 	void (*se_wait)(struct dpns_common_priv *priv, u32 reg, u32 mask);
 };
 
+/*
+ * QinQ (two 802.1Q tags) on a port: the NPU handles the inner VLAN like a
+ * plain VLAN; the port's egress VLAN translation pushes the outer tag in
+ * front of it. One outer/inner pair per port.
+ */
+struct dpns_vlan_qinq {
+	struct net_device *dev;	/* port device, carries the RX handler */
+	u16 svid;
+	u16 cvid;
+	bool valid;
+};
+
 struct dpns_vlan_priv {
 	struct dpns_common_priv	*cpriv;
 	void __iomem            *iobase;
@@ -446,6 +458,7 @@ struct dpns_vlan_priv {
 	DECLARE_BITMAP(ivlan_index_bitmap, SF_IVLAN_LKP_TAB_MAX);
 	DECLARE_BITMAP(evlan_index_bitmap, SF_EVLAN_LKP_TAB_MAX);
 	DECLARE_BITMAP(vport_index_bitmap, SF_VLAN_VPORT_MAP_MAX);
+	struct dpns_vlan_qinq		qinq[DPNS_HOST_PORT];
 };
 
 struct vlan_vport_entry {

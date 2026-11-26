@@ -10,6 +10,9 @@
 #define EVLAN_LKP_CLEAR		0x2000		//evlan_lkp clear control
 
 #define REAL_PORT_NUM		5
+
+/* QinQ: EVLAN_ACT row that sets both tags from the EVLAN_XLT entry */
+#define QINQ_EVLAN_ACT_IDX	3
 #define MAX_PORT_NUM		27
 
 

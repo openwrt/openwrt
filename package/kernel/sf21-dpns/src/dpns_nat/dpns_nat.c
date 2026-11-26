@@ -949,6 +949,7 @@ static int dpns_nat_add_ipv4(struct dpns_nat_priv *priv, struct flow_cls_offload
 			tunnel_en = true;
 			break;
 		case FLOW_ACTION_VLAN_PUSH:
+			/* QinQ: the last (inner) tag; the outer one comes from the port's VLAN translation */
 			vlan_id = act->vlan.vid;
 			vid = vlan_id;
 			break;
@@ -1313,6 +1314,7 @@ static int dpns_nat_add_ipv6(struct dpns_nat_priv *priv, struct flow_cls_offload
 			pppoe_hdr = (0x1100ULL << 48) | ((u64)act->pppoe.sid << 32) | PPP_IPV6;
 			break;
 		case FLOW_ACTION_VLAN_PUSH:
+			/* QinQ: the last (inner) tag; the outer one comes from the port's VLAN translation */
 			vlan_id = act->vlan.vid;
 			vid = vlan_id;
 			break;
@@ -1525,6 +1527,46 @@ err_free:
 	return ret;
 }
 
+/* the outer tag @svid in front of @cvid is handled by a port's VLAN translation */
+static bool dpns_nat_qinq_ok(struct dpns_nat_priv *priv, u16 svid, u16 cvid)
+{
+	VLAN_t *vlan_priv = priv->cpriv->vlan_priv;
+	bool found = false;
+	int port;
+
+	spin_lock_bh(&vlan_priv->vlan_lock);
+	for (port = 0; port < DPNS_HOST_PORT; port++)
+		if (vlan_priv->qinq[port].valid && vlan_priv->qinq[port].svid == svid &&
+		    vlan_priv->qinq[port].cvid == cvid)
+			found = true;
+	spin_unlock_bh(&vlan_priv->vlan_lock);
+
+	return found;
+}
+
+/*
+ * The NPU NAT entry carries a single 802.1Q tag. A second, outer 802.1Q tag
+ * is supported only for the QinQ pair whose outer tag the port's VLAN
+ * translation adds. 802.1ad tags are not supported: the NPU would insert
+ * them as 0x8100 tags, and it sends received 0x88a8 frames to the CPU.
+ */
+static bool dpns_nat_encap_ok(struct dpns_nat_priv *priv,
+			      const struct flow_offload_tuple *t)
+{
+	u16 vid[NF_FLOW_TABLE_ENCAP_MAX];
+	int i, n = 0;
+
+	for (i = 0; i < t->encap_num; i++) {
+		if (t->encap[i].proto == htons(ETH_P_8021AD))
+			return false;
+		if (t->encap[i].proto == htons(ETH_P_8021Q))
+			vid[n++] = t->encap[i].id;
+	}
+
+	/* the encaps are listed outer tag first */
+	return n < 2 || dpns_nat_qinq_ok(priv, vid[0], vid[1]);
+}
+
 static int dpns_nat_add(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
 {
 	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
@@ -1560,33 +1602,10 @@ static int dpns_nat_add(struct dpns_nat_priv *priv, struct flow_cls_offload *f)
 	if (atomic_read(&priv->flow_table.nelems) >= NPU_HNAT_SIZE)
 		return -ENOSPC;
 
-	/*
-	 * The NPU NAT entry carries a single 802.1Q tag. Stacked tags (QinQ) and
-	 * 802.1ad tags were programmed as one 0x8100 tag, which black-holed the
-	 * flow; keep such flows on the software path.
-	 */
-	{
-		const struct flow_offload_tuple *t = (void *)f->cookie;
-		struct flow_action_entry *a;
-		int i, push = 0, tags = 0;
-
-		flow_action_for_each(i, a, &rule->action) {
-			if (a->id != FLOW_ACTION_VLAN_PUSH)
-				continue;
-			/* the NPU always inserts a 0x8100 tag */
-			if (a->vlan.proto != htons(ETH_P_8021Q))
-				return -EOPNOTSUPP;
-			push++;
-		}
-		for (i = 0; i < t->encap_num; i++) {
-			if (t->encap[i].proto == htons(ETH_P_8021AD))
-				return -EOPNOTSUPP;
-			if (t->encap[i].proto == htons(ETH_P_8021Q))
-				tags++;
-		}
-		if (push > 1 || tags > 1)
-			return -EOPNOTSUPP;
-	}
+	/* this direction's received tags and the other direction's pushed tags */
+	if (!dpns_nat_encap_ok(priv, &flow->tuplehash[dir].tuple) ||
+	    !dpns_nat_encap_ok(priv, &flow->tuplehash[!dir].tuple))
+		return -EOPNOTSUPP;
 
 	entry = rhashtable_lookup_fast(&priv->flow_table, &f->cookie, dpns_nat_ht_params);
 	if (entry)

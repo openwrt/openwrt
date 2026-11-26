@@ -13,6 +13,8 @@
 #include <linux/bitops.h>
 #include <linux/of_platform.h>
 #include <linux/mfd/syscon.h>
+#include <linux/netdevice.h>
+#include <linux/if_vlan.h>
 #include "init.h"
 #include "ivlan_se.h"
 #include "evlan_se.h"
@@ -37,6 +39,7 @@
 
 void default_vlan_init(VLAN_t * priv)
 {
+	union evlan_act_table_cfg qinq_act = {0};
 	int i;
 
 	/* enable iport/ivlkp/ivxlt table
@@ -109,12 +112,122 @@ void default_vlan_init(VLAN_t * priv)
 			EVACT_DEL, EVACT_DEL, EVACT_DEL);
 	evlan_act_table_update(priv, 0, EVACT_REPLACE2, EVACT_REPLACE2,
 			EVACT_NONE, EVACT_NONE, EVACT_NONE);
+	/* QinQ: outer tag = XLT new_ovid, inner tag = XLT new_ivid */
+	qinq_act.table.sot_otag_action = EVACT_REPLACE2;
+	qinq_act.table.sot_itag_action = EVACT_REPLACE2;
+	priv->cpriv->table_write(priv->cpriv, EVLAN_ACT_DIRECT_TABLE, QINQ_EVLAN_ACT_IDX,
+				 qinq_act.data, sizeof(qinq_act));
+	memset(priv->qinq, 0, sizeof(priv->qinq));
 
 	memset(&priv->ivlan_index_bitmap, 0, sizeof(priv->ivlan_index_bitmap));
 	memset(&priv->evlan_index_bitmap, 0, sizeof(priv->evlan_index_bitmap));
 	memset(&priv->vport_index_bitmap, 0, sizeof(priv->vport_index_bitmap));
 	memset(&priv->phy_ports_bitmap, 0xff, sizeof(priv->phy_ports_bitmap));
 	__set_bit(0, priv->evlan_index_bitmap);
+}
+
+/*
+ * @dev is a QinQ device: an 802.1Q VLAN on top of an 802.1Q VLAN of a port.
+ * Returns the outer VID, or 0. An 802.1ad outer tag is not offloaded: the
+ * NPU sends received 0x88a8 frames to the CPU before the NAT stage.
+ */
+static u16 dpns_vlan_qinq_svid(struct net_device *dev)
+{
+	struct net_device *lower;
+
+	if (!is_vlan_dev(dev) || vlan_dev_vlan_proto(dev) != htons(ETH_P_8021Q))
+		return 0;
+	/* vlan_dev_real_dev() returns the bottom device, not the next one */
+	lower = vlan_dev_priv(dev)->real_dev;
+	if (!is_vlan_dev(lower) || vlan_dev_vlan_proto(lower) != htons(ETH_P_8021Q) ||
+	    is_vlan_dev(vlan_dev_priv(lower)->real_dev))
+		return 0;
+
+	return vlan_dev_vlan_id(lower);
+}
+
+/*
+ * The NPU removes the outer tag of double tagged frames that it sends to the
+ * CPU (ARP, flows not offloaded yet), so they arrive with the inner tag only.
+ * Put the outer tag back in front of it.
+ */
+static rx_handler_result_t dpns_vlan_qinq_rx(struct sk_buff **pskb)
+{
+	struct sk_buff *skb = *pskb;
+	struct dpns_vlan_qinq *qinq = rcu_dereference(skb->dev->rx_handler_data);
+
+	if (!skb_vlan_tag_present(skb) || skb->vlan_proto != htons(ETH_P_8021Q) ||
+	    skb_vlan_tag_get_id(skb) != qinq->cvid)
+		return RX_HANDLER_PASS;
+
+	skb = skb_share_check(skb, GFP_ATOMIC);
+	if (!skb)
+		return RX_HANDLER_CONSUMED;
+	*pskb = skb;
+
+	skb_push_rcsum(skb, skb->mac_len);
+	if (skb_vlan_push(skb, htons(ETH_P_8021Q), qinq->svid)) {
+		kfree_skb(skb);
+		return RX_HANDLER_CONSUMED;
+	}
+	skb_pull_rcsum(skb, skb->mac_len);
+	skb_reset_mac_len(skb);
+
+	return RX_HANDLER_ANOTHER;
+}
+
+/* called with RTNL held, from the netdev notifier */
+static void dpns_vlan_qinq_set(VLAN_t *priv, int port, struct net_device *dev,
+			       u16 svid, u16 cvid, bool up)
+{
+	struct dpns_vlan_qinq *qinq;
+	bool busy;
+	int err;
+
+	ASSERT_RTNL();
+	if (port >= DPNS_HOST_PORT)
+		return;
+	qinq = &priv->qinq[port];
+
+	if (!up) {
+		if (!qinq->valid || qinq->svid != svid || qinq->cvid != cvid)
+			return;
+		netdev_rx_handler_unregister(qinq->dev);
+		spin_lock_bh(&priv->vlan_lock);
+		qinq->valid = false;
+		spin_unlock_bh(&priv->vlan_lock);
+		return;
+	}
+
+	if (qinq->valid) {
+		if (qinq->svid != svid || qinq->cvid != cvid)
+			netdev_warn(dev, "only one QinQ pair per port is offloaded (%u.%u)\n",
+				    qinq->svid, qinq->cvid);
+		return;
+	}
+
+	/* the port's translation would add the outer tag to that VLAN too */
+	rcu_read_lock();
+	busy = !!__vlan_find_dev_deep_rcu(dev, htons(ETH_P_8021Q), cvid);
+	rcu_read_unlock();
+	if (busy) {
+		netdev_warn(dev, "QinQ %u.%u not offloaded: VLAN %u is also used untunnelled\n",
+			    svid, cvid, cvid);
+		return;
+	}
+
+	qinq->dev = dev;
+	qinq->svid = svid;
+	qinq->cvid = cvid;
+	err = netdev_rx_handler_register(dev, dpns_vlan_qinq_rx, qinq);
+	if (err) {
+		netdev_warn(dev, "QinQ %u.%u not offloaded: RX handler busy (%d)\n",
+			    svid, cvid, err);
+		return;
+	}
+	spin_lock_bh(&priv->vlan_lock);
+	qinq->valid = true;
+	spin_unlock_bh(&priv->vlan_lock);
 }
 
 void dynamic_vlan_update(VLAN_t *priv)
@@ -132,7 +245,18 @@ void dynamic_vlan_update(VLAN_t *priv)
 			}
 		}
 
-		if (count == PORT_WITH_NO_VLAN) {
+		if (port < DPNS_HOST_PORT && priv->qinq[port].valid) {
+			/*
+			 * One translation entry per egress port: flows of the inner
+			 * VID get the outer tag in front of it, other traffic of
+			 * the port misses and keeps its normal tag.
+			 */
+			evlan_xlt_table_update(priv, port, port, 1, 0,
+					       priv->qinq[port].cvid,
+					       priv->qinq[port].cvid,
+					       priv->qinq[port].svid, 1, 0,
+					       QINQ_EVLAN_ACT_IDX, 0, 0);
+		} else if (count == PORT_WITH_NO_VLAN) {
 			evlan_xlt_table_update(priv, port, port, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0);
 		} else {
 			evlan_xlt_table_update(priv, port, port, 1, 0, 0, 0, 0, 1, 1, 2, 0, 0);
@@ -388,10 +512,19 @@ static int dpns_vlan_netdevice_event(struct notifier_block *unused,
 	VLAN_t *priv = container_of(unused, VLAN_t, netdevice_nb);
 	COMMON_t *cpriv = priv->cpriv;
 	dpns_port_t *dp_port;
+	u16 svid;
 
 	dp_port = cpriv->port_by_netdev(cpriv, dev);
 	if (dp_port == NULL)
 		return NOTIFY_DONE;
+
+	/* before the work below programs the port's VLAN tables */
+	if (event == NETDEV_UP || event == NETDEV_DOWN) {
+		svid = dpns_vlan_qinq_svid(dev);
+		if (svid)
+			dpns_vlan_qinq_set(priv, dp_port->port_id, vlan_dev_real_dev(dev),
+					   svid, vlan_dev_vlan_id(dev), event == NETDEV_UP);
+	}
 
 	netdev_work = vlan_kzalloc(sizeof(*netdev_work), GFP_ATOMIC);
 	if (WARN_ON(!netdev_work))
