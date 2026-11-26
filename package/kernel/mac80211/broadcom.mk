@@ -34,55 +34,66 @@ config-$(CONFIG_PACKAGE_BRCM80211_DEBUG) += BRCMDBG
 config-$(CONFIG_LEDS_TRIGGERS) += B43_LEDS B43LEGACY_LEDS
 
 #Broadcom firmware
-ifneq ($(CONFIG_B43_FW_5_10),)
-  PKG_B43_FWV4_NAME:=broadcom-wl
-  PKG_B43_FWV4_VERSION:=5.10.56.27.3
-  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/driver/wl_apsta/wl_prebuilt.o
-  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)_mipsel.tar.bz2
-  PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
-  PKG_B43_FWV4_HASH:=26a8c370f48fc129d0731cfd751c36cae1419b0bc8ca35781126744e60eae009
-else
-ifneq ($(CONFIG_B43_FW_4_178),)
-  PKG_B43_FWV4_NAME:=broadcom-wl
-  PKG_B43_FWV4_VERSION:=4.178.10.4
-  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/linux/wl_apsta.o
-  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
-  PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
-  PKG_B43_FWV4_HASH:=32f6ad98facbb9045646fdc8b54bb03086d204153253f9c65d0234a5d90ae53f
-else
-ifneq ($(CONFIG_B43_FW_5_100_138),)
-  PKG_B43_FWV4_NAME:=broadcom-wl
-  PKG_B43_FWV4_VERSION:=5.100.138
-  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/linux/wl_apsta.o
-  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
-  PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
-  PKG_B43_FWV4_HASH:=f1e7067aac5b62b67b8b6e4c517990277804339ac16065eb13c731ff909ae46f
-else
-  PKG_B43_FWV4_NAME:=broadcom-wl
-  PKG_B43_FWV4_VERSION:=4.150.10.5
-  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/driver/wl_apsta_mimo.o
-  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
-  PKG_B43_FWV4_SOURCE_URL:=@OPENWRT
-  PKG_B43_FWV4_HASH:=a9f4e276a4d8d3a1cd0f2eb87080ae89b77f0a7140f06d4e9e2135fc44fdd533
-endif
-endif
-endif
-ifneq ($(CONFIG_B43_OPENFIRMWARE),)
-  PKG_B43_FWV4_NAME:=broadcom-wl
-  PKG_B43_FWV4_VERSION:=5.2
-  PKG_B43_FWV4_OBJECT:=openfwwf-$(PKG_B43_FWV4_VERSION)
-  PKG_B43_FWV4_SOURCE:=openfwwf-$(PKG_B43_FWV4_VERSION).tar.gz
-  PKG_B43_FWV4_SOURCE_URL:=http://netweb.ing.unibs.it/~openfwwf/firmware
-  PKG_B43_FWV4_HASH:=9de03320083201080b2e94b81637ac07a159cf4e6f3481383e1a217e627bc0dc
-endif
+PKG_B43_FWV4_NAME:=broadcom-wl
+PKG_B43_FWV4_VERSION:=5.100.138
+PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/linux/wl_apsta.o
+PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
 
-
+ifneq ($(CONFIG_PACKAGE_b43-firmware),)
 define Download/b43
   FILE:=$(PKG_B43_FWV4_SOURCE)
-  URL:=$(PKG_B43_FWV4_SOURCE_URL)
-  HASH:=$(PKG_B43_FWV4_HASH)
+  URL:=@OPENWRT
+  HASH:=f1e7067aac5b62b67b8b6e4c517990277804339ac16065eb13c731ff909ae46f
 endef
 $(eval $(call Download,b43))
+endif
+
+PKG_B43_OPENFW_VERSION:=5.2
+PKG_B43_OPENFW_OBJECT:=openfwwf-$(PKG_B43_OPENFW_VERSION)
+PKG_B43_OPENFW_SOURCE:=openfwwf-$(PKG_B43_OPENFW_VERSION).tar.gz
+
+ifneq ($(CONFIG_PACKAGE_b43-firmware-open),)
+define Download/b43-open
+  FILE:=$(PKG_B43_OPENFW_SOURCE)
+  URL:=http://netweb.ing.unibs.it/openfwwf/firmware \
+	https://src.fedoraproject.org/lookaside/pkgs/b43-openfwwf/openfwwf-5.2.tar.gz/e045a135453274e439ae183f8498b0fa
+  HASH:=9de03320083201080b2e94b81637ac07a159cf4e6f3481383e1a217e627bc0dc
+endef
+$(eval $(call Download,b43-open))
+endif
+
+PKG_B43_FW784_NAME:=broadcom-wl
+PKG_B43_FW784_VERSION:=6.30.163.46
+PKG_B43_FW784_OBJECT:=$(PKG_B43_FW784_NAME)-$(PKG_B43_FW784_VERSION).wl_apsta.o
+PKG_B43_FW784_SOURCE:=$(PKG_B43_FW784_NAME)-$(PKG_B43_FW784_VERSION).tar.bz2
+
+# 784.2 split by PHY type: each package has the files b43-fwsquash.py keeps
+# for its types; ucode13.fw (revision 13 G-PHY and LP-PHY cores) is in the
+# LP-PHY package only
+B43_FW784_PHYS:=ac ht n lp g lcn
+B43_FW784_TYPES_ac:=AC
+B43_FW784_TYPES_ht:=HT
+B43_FW784_TYPES_n:=N
+B43_FW784_TYPES_lp:=LP
+B43_FW784_TYPES_g:=G,A,AG
+B43_FW784_TYPES_lcn:=LCN,LCN40
+B43_FW784_DROP_g:=ucode13.fw
+B43_FW784_TITLE_ac:=AC-PHY
+B43_FW784_TITLE_ht:=HT-PHY
+B43_FW784_TITLE_n:=N-PHY
+B43_FW784_TITLE_lp:=LP-PHY
+B43_FW784_TITLE_g:=A-PHY and G-PHY
+B43_FW784_TITLE_lcn:=LCN-PHY and LCN40-PHY
+B43_FW784_COREREVS:=2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42
+
+ifneq ($(foreach phy,$(B43_FW784_PHYS),$(CONFIG_PACKAGE_b43-firmware-784-$(phy))),)
+define Download/b43-784
+  FILE:=$(PKG_B43_FW784_SOURCE)
+  URL:=@SF/b43-firmware
+  HASH:=a07c3b6b277833c7dbe61daa511f908cd66c5e2763eb7a0859abc36cd9335c2d
+endef
+$(eval $(call Download,b43-784))
+endif
 
 define KernelPackage/b43
   $(call KernelPackage/mac80211/Default)
@@ -92,7 +103,7 @@ define KernelPackage/b43
   	CONFIG_HW_RANDOM=y
   # Depend on PCI_SUPPORT to make sure we can select kmod-bcma or kmod-ssb
   DEPENDS += \
-	@PCI_SUPPORT +kmod-mac80211 +kmod-lib-cordic \
+	@PCI_SUPPORT +kmod-mac80211 +kmod-lib-cordic +b43-firmware \
 	$(if $(CONFIG_PACKAGE_B43_USE_SSB),+kmod-ssb) \
 	$(if $(CONFIG_PACKAGE_B43_USE_BCMA),+kmod-bcma)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/broadcom/b43/b43.ko
@@ -100,78 +111,37 @@ define KernelPackage/b43
   MENU:=1
 endef
 
-define KernelPackage/b43/config
+define Package/b43-firmware
+  SECTION:=firmware
+  CATEGORY:=Firmware
+  TITLE:=Broadcom 43xx firmware 666.2 (b43)
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/b43/firmware
+  MENU:=1
+endef
 
-config PACKAGE_B43_USE_SSB
-	select PACKAGE_kmod-ssb
-	tristate
-	depends on !TARGET_bcm47xx
-	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
-	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_SSB
+define Package/b43-firmware/description
+ Firmware 666.2 from Broadcom driver 5.100.138, cut with b43-fwcutter, for
+ kmod-b43.
+endef
 
-config PACKAGE_B43_USE_BCMA
-	select PACKAGE_kmod-bcma
-	tristate
-	depends on !TARGET_bcm47xx && !TARGET_bcm53xx
-	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
-	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA
+define Package/b43-firmware-open
+  SECTION:=firmware
+  CATEGORY:=Firmware
+  TITLE:=Open FirmWare for WiFi networks (b43)
+  URL:=http://netweb.ing.unibs.it/openfwwf/
+endef
 
-  if PACKAGE_kmod-b43
+define Package/b43-firmware-open/description
+ OpenFWWF 5.2, open source firmware for the G-PHY cores of revision 5 to 10,
+ installed in /lib/firmware/b43-open, where b43 loads it when the
+ proprietary firmware is missing. No QoS and no hardware crypto.
+endef
 
-	choice
-		prompt "b43 firmware version"
-		default B43_FW_5_100_138
-		help
-		  This option allows you to select the version of the b43 firmware.
-
-	config B43_FW_4_150
-		bool "Firmware 410.2160 from driver 4.150.10.5 (old stable)"
-		help
-		  Old stable firmware for BCM43xx devices.
-
-		  If unsure, select this.
-
-	config B43_FW_4_178
-		bool "Firmware 478.104 from driver 4.178.10.4"
-		help
-		  Older firmware for BCM43xx devices.
-
-		  If unsure, select the "stable" firmware.
-
-	config B43_FW_5_10
-		bool "Firmware 508.1084 from driver 5.10.56.27"
-		help
-		  Older firmware for BCM43xx devices.
-
-		  If unsure, select the "stable" firmware.
-
-	config B43_FW_5_100_138
-		bool "Firmware 666.2 from driver 5.100.138 (stable)"
-		help
-		  The currently default firmware for BCM43xx devices.
-
-		  This firmware currently gets most of the testing and is needed for some N-PHY devices.
-
-		  If unsure, select the this firmware.
-
-	config B43_OPENFIRMWARE
-		bool "Open FirmWare for WiFi networks"
-		help
-		  Opensource firmware for BCM43xx devices.
-
-		  Do _not_ select this, unless you know what you are doing.
-		  The Opensource firmware is not suitable for embedded devices, yet.
-		  It does not support QoS, which is bad for AccessPoints.
-		  It does not support hardware crypto acceleration, which is a showstopper
-		  for embedded devices with low CPU resources.
-
-		  If unsure, select the "stable" firmware.
-
-	endchoice
+define Package/b43-firmware/config
+  if PACKAGE_b43-firmware
 
 	config B43_FW_SQUASH
 		bool "Remove unnecessary firmware files"
-		depends on !B43_OPENFIRMWARE
 		default y
 		help
 		  This options allows you to remove unnecessary b43 firmware files
@@ -218,6 +188,54 @@ config PACKAGE_B43_USE_BCMA
 
 		  Example (keep files for G-PHY and N-PHY):
 		    G,N
+
+  endif
+endef
+
+define B43Firmware784
+  define Package/b43-firmware-784-$(1)
+    SECTION:=firmware
+    CATEGORY:=Firmware
+    TITLE:=Broadcom 43xx firmware 784.2, $(B43_FW784_TITLE_$(1)) (b43-next)
+    URL:=https://wireless.wiki.kernel.org/en/users/drivers/b43/firmware
+  endef
+
+  define Package/b43-firmware-784-$(1)/description
+   Firmware 784.2 from Broadcom driver 6.30.163.46, cut with b43-fwcutter:
+   the files for the $(B43_FW784_TITLE_$(1)) cores, installed in
+   /lib/firmware/b43-784 for kmod-b43-next.
+  endef
+
+  define Package/b43-firmware-784-$(1)/install
+	rm -rf $(PKG_BUILD_DIR)/b43-firmware-784-$(1)
+	mkdir -p $(PKG_BUILD_DIR)/b43-firmware-784-$(1)
+	tar xjf "$(DL_DIR)/$(PKG_B43_FW784_SOURCE)" -C "$(PKG_BUILD_DIR)/b43-firmware-784-$(1)"
+	b43-fwcutter -w $(PKG_BUILD_DIR)/b43-firmware-784-$(1) $(PKG_BUILD_DIR)/b43-firmware-784-$(1)/$(PKG_B43_FW784_OBJECT)
+	b43-fwsquash.py "$(B43_FW784_TYPES_$(1))" "$(B43_FW784_COREREVS)" "$(PKG_BUILD_DIR)/b43-firmware-784-$(1)/b43"
+	rm -f $(addprefix $(PKG_BUILD_DIR)/b43-firmware-784-$(1)/b43/,$(B43_FW784_DROP_$(1)))
+	$$(INSTALL_DIR) $$(1)/lib/firmware/b43-784
+	$$(INSTALL_DATA) $(PKG_BUILD_DIR)/b43-firmware-784-$(1)/b43/*.fw $$(1)/lib/firmware/b43-784/
+  endef
+endef
+$(foreach phy,$(B43_FW784_PHYS),$(eval $(call B43Firmware784,$(phy))))
+
+define KernelPackage/b43/config
+
+config PACKAGE_B43_USE_SSB
+	select PACKAGE_kmod-ssb
+	tristate
+	depends on !TARGET_bcm47xx
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_SSB
+
+config PACKAGE_B43_USE_BCMA
+	select PACKAGE_kmod-bcma
+	tristate
+	depends on !TARGET_bcm47xx && !TARGET_bcm53xx
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA
+
+  if PACKAGE_kmod-b43
 
 	choice
 		prompt "Supported buses"
@@ -402,24 +420,21 @@ define KernelPackage/brcmfmac/config
 endef
 
 
-define KernelPackage/b43/install
+define Package/b43-firmware/install
 	rm -rf $(1)/lib/firmware/
-ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
-	tar xzf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
-else
 	tar xjf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
-endif
 	$(INSTALL_DIR) $(1)/lib/firmware/
-ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
-	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/"
-	$(INSTALL_DIR) $(1)/lib/firmware/b43-open/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/ucode5.fw $(1)/lib/firmware/b43-open/ucode5.fw
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0bsinitvals5.fw $(1)/lib/firmware/b43-open/b0g0bsinitvals5.fw
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0initvals5.fw $(1)/lib/firmware/b43-open/b0g0initvals5.fw
-else
 	b43-fwcutter -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)
-endif
 ifneq ($(CONFIG_B43_FW_SQUASH),)
 	b43-fwsquash.py "$(CONFIG_B43_FW_SQUASH_PHYTYPES)" "$(CONFIG_B43_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43"
 endif
+endef
+
+define Package/b43-firmware-open/install
+	tar xzf "$(DL_DIR)/$(PKG_B43_OPENFW_SOURCE)" -C "$(PKG_BUILD_DIR)"
+	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_OPENFW_OBJECT)/"
+	$(INSTALL_DIR) $(1)/lib/firmware/b43-open/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_OPENFW_OBJECT)/ucode5.fw $(1)/lib/firmware/b43-open/ucode5.fw
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_OPENFW_OBJECT)/b0g0bsinitvals5.fw $(1)/lib/firmware/b43-open/b0g0bsinitvals5.fw
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_OPENFW_OBJECT)/b0g0initvals5.fw $(1)/lib/firmware/b43-open/b0g0initvals5.fw
 endef
