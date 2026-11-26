@@ -241,10 +241,12 @@ function setup_sta(data, config, phy_features) {
 	 * "basic_rate" itself is not a valid wpa_supplicant network field.
 	 */
 	let brates = config.basic_rate;
+	if (config.mode in [ 'mesh', 'adhoc' ])
+		brates ??= data.basic_rates;
 	config.basic_rate = null;
 	if (brates != null && length(brates) > 0) {
 		if (config.mode == 'mesh')
-			config.mesh_basic_rates = join(" ", map(brates, (br) => "" + int(br / 100)));
+			config.mesh_basic_rates = join(" ", map(brates, (br) => "" + int(+br / 100)));
 		else
 			config.rates = ratelist(brates);
 	}
