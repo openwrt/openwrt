@@ -443,6 +443,16 @@ define Device/edimax_br-6478ac-v2
 endef
 TARGET_DEVICES += edimax_br-6478ac-v2
 
+define Device/edimax_cap300
+  SOC := mt7620a
+  DEVICE_VENDOR := Edimax
+  DEVICE_MODEL := Pro CAP300
+  DEVICE_VARIANT := V1.0 A
+  IMAGE_SIZE := 12480k
+  DEVICE_PACKAGES := wpad-mbedtls -wpad-basic-mbedtls -swconfig
+endef
+TARGET_DEVICES += edimax_cap300
+
 define Device/edimax_ew-7476rpc
   SOC := mt7620a
   DEVICE_VENDOR := Edimax
