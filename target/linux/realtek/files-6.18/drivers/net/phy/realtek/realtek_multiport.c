@@ -15,6 +15,8 @@
 #include <linux/sfp.h>
 #include <linux/mii.h>
 #include <linux/mdio.h>
+#include <linux/slab.h>
+#include <linux/workqueue.h>
 #include "../phylib.h"
 
 /*
@@ -47,6 +49,10 @@
 
 #define RTL8214FC_MEDIA_COPPER		BIT(11)
 
+#define RTL8214FC_FIBRE_RX_PAGE		0x0c
+#define RTL8214FC_FIBRE_RX_CTRL		0x16
+#define RTL8214FC_FIBRE_RX_RESET	BIT(15)
+
 #define PHY_ID_RTL8214C			0x001cc942
 #define PHY_ID_RTL8218B_E		0x001cc980
 #define PHY_ID_RTL8214_OR_8218		0x001cc981
@@ -64,6 +70,12 @@
 struct rtl821x_shared_priv {
 	int base_addr;
 	bool setup_done;	/* the chip has been set up (RTL8214QF) */
+};
+
+struct rtl8214fc_priv {
+	struct phy_device *phydev;
+	struct delayed_work fibre_rx_work;
+	atomic_t link_down_latched;
 };
 
 static int rtl821x_package_join(struct phy_device *phydev, int ports)
@@ -377,6 +389,7 @@ static int rtl8214fc_get_features(struct phy_device *phydev)
 
 static int rtl8214fc_read_status(struct phy_device *phydev)
 {
+	struct rtl8214fc_priv *priv = phydev->priv;
 	bool changed;
 	int ret;
 
@@ -387,6 +400,10 @@ static int rtl8214fc_read_status(struct phy_device *phydev)
 		phydev->port = PORT_MII; /* for now aligend with rest of code */
 		ret = genphy_read_status(phydev);
 	}
+
+	/* Report a latched drop consumed by the recovery worker. */
+	if (!ret && atomic_xchg(&priv->link_down_latched, 0))
+		phydev->link = 0;
 
 	return ret;
 }
@@ -721,16 +738,100 @@ static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
 	return 0;
 }
 
+static void rtl8214fc_fibre_rx_work(struct work_struct *work)
+{
+	struct rtl8214fc_priv *priv = container_of(work, struct rtl8214fc_priv,
+						   fibre_rx_work.work);
+	int oldpage, oldxpage = -1, err, ret = 0;
+	struct phy_device *phydev = priv->phydev;
+
+	oldpage = phy_save_page(phydev);
+	if (oldpage < 0 || !__rtl8214fc_media_is_fibre(phydev))
+		goto restore;
+
+	oldxpage = __phy_read(phydev, RTL821x_EXT_PAGE_SELECT);
+	if (oldxpage < 0) {
+		ret = oldxpage;
+		goto restore;
+	}
+
+	ret = __phy_read(phydev, MII_BMSR);
+	if (ret < 0 || (ret & BMSR_LSTATUS))
+		goto restore;
+
+	/* Preserve the latched low for phylib */
+	atomic_set(&priv->link_down_latched, 1);
+
+	ret = __phy_read(phydev, MII_BMSR);
+	if (ret < 0 || (ret & BMSR_LSTATUS))
+		goto restore;
+
+	ret = __phy_write(phydev, RTL821x_EXT_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
+	if (ret < 0)
+		goto restore;
+
+	ret = rtl821x_write_page(phydev, RTL8214FC_FIBRE_RX_PAGE);
+	if (ret < 0)
+		goto restore;
+
+	ret = __phy_set_bits(phydev, RTL8214FC_FIBRE_RX_CTRL, RTL8214FC_FIBRE_RX_RESET);
+	msleep(100);
+	err = __phy_clear_bits(phydev, RTL8214FC_FIBRE_RX_CTRL, RTL8214FC_FIBRE_RX_RESET);
+	if (!ret)
+		ret = err;
+restore:
+	if (oldxpage >= 0) {
+		err = __phy_write(phydev, RTL821x_EXT_PAGE_SELECT, oldxpage);
+		if (ret >= 0)
+			ret = err;
+	}
+	ret = phy_restore_page(phydev, oldpage, ret);
+	if (ret < 0)
+		phydev_warn(phydev, "fiber RX recovery failed: %d\n", ret);
+}
+
+static void rtl8214fc_cancel_fibre_rx_work(void *data)
+{
+	struct rtl8214fc_priv *priv = data;
+
+	cancel_delayed_work_sync(&priv->fibre_rx_work);
+}
+
+static void rtl8214fc_sfp_link_up(void *upstream)
+{
+	struct phy_device *phydev = upstream;
+	struct rtl8214fc_priv *priv = phydev->priv;
+
+	mod_delayed_work(system_power_efficient_wq, &priv->fibre_rx_work,
+			 msecs_to_jiffies(500));
+}
+
+static void rtl8214fc_sfp_link_down(void *upstream)
+{
+	struct phy_device *phydev = upstream;
+
+	rtl8214fc_cancel_fibre_rx_work(phydev->priv);
+}
+
+static void rtl8214fc_sfp_detach(void *upstream, struct sfp_bus *bus)
+{
+	rtl8214fc_sfp_link_down(upstream);
+	phy_sfp_detach(upstream, bus);
+}
+
 static void rtl8214fc_sfp_remove(void *upstream)
 {
 	struct phy_device *phydev = upstream;
 
+	rtl8214fc_sfp_link_down(upstream);
 	rtl8214fc_media_set(phydev, false);
 }
 
 static const struct sfp_upstream_ops rtl8214fc_sfp_ops = {
 	.attach = phy_sfp_attach,
-	.detach = phy_sfp_detach,
+	.detach = rtl8214fc_sfp_detach,
+	.link_up = rtl8214fc_sfp_link_up,
+	.link_down = rtl8214fc_sfp_link_down,
 	.module_insert = rtl8214fc_sfp_insert,
 	.module_remove = rtl8214fc_sfp_remove,
 };
@@ -920,10 +1021,23 @@ static int rtl8218b_config_init(struct phy_device *phydev)
 
 static int rtl8214fc_phy_probe(struct phy_device *phydev)
 {
+	struct device *dev = &phydev->mdio.dev;
 	static int regs[] = {16, 19, 20, 21};
+	struct rtl8214fc_priv *priv;
 	int ret;
 
 	ret = rtl821x_package_join(phydev, 4);
+	if (ret)
+		return ret;
+
+	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	priv->phydev = phydev;
+	phydev->priv = priv;
+	INIT_DELAYED_WORK(&priv->fibre_rx_work, rtl8214fc_fibre_rx_work);
+	ret = devm_add_action_or_reset(dev, rtl8214fc_cancel_fibre_rx_work, priv);
 	if (ret)
 		return ret;
 
