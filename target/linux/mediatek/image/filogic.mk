@@ -1345,6 +1345,24 @@ define Device/creatlentem_clt-r30b1-ubi
 endef
 TARGET_DEVICES += creatlentem_clt-r30b1-ubi
 
+define Device/cudy_ap3000d-v1
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := AP3000D
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-cudy-ap3000d-v1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  SUPPORTED_DEVICES += R81
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGES := sysupgrade.bin
+  IMAGE_SIZE := 15424k
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += cudy_ap3000d-v1
+
 define Device/cudy_ap3000outdoor-v1
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := AP3000 Outdoor
