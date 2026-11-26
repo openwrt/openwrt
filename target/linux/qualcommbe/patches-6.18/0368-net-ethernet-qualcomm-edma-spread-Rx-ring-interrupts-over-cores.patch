@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Rau <alex@retroduction.org>
+Date: Mon, 19 Oct 2026 14:30:00 +0200
+Subject: [PATCH] net: ethernet: qualcomm: edma: spread Rx ring interrupts over the cores
+
+The EDMA driver maps the PPE queues of each core to its own Rx
+descriptor ring (one ring per core) and distributes received flows over
+those queues by hash, expecting the ring interrupts to be assigned to
+different cores. Nothing assigns them, so all Rx rings are serviced on
+the boot CPU and receive throughput is limited by a single core.
+
+Set the affinity (and hint) of each Rx ring interrupt to its core when
+the interrupts are requested, and clear the hint before they are freed.
+User space (irqbalance, /proc/irq) can still override it.
+
+On an IPQ9574 board (UniFi Cloud Gateway Fiber) a 16-stream TCP receive
+test over a 10G link went from 3.86 to 6.45 Gbit/s with this change
+(1.94 to 5.10 Gbit/s on a kernel without the board's MX rail vote).
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Alex Rau <alex@retroduction.org>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -436,6 +436,13 @@ static int edma_irq_register(void)
+ 			goto rx_desc_ring_intr_req_fail;
+ 		}
+ 
++		/* Each Rx desc ring serves the PPE queues of one core (see
++		 * edma_cfg_rx_rps_hash_map()), so steer its interrupt to that
++		 * core instead of leaving all rings on the boot CPU.
++		 */
++		irq_set_affinity_and_hint(edma_ctx->intr_info.intr_rx[i],
++					  cpumask_of(i % num_possible_cpus()));
++
+ 		pr_debug("RXDESC ring: %d IRQ:%d request success: %s\n",
+ 			 rx->ring_start + i,
+ 			 edma_ctx->intr_info.intr_rx[i],
+@@ -458,6 +465,7 @@ misc_intr_req_fail:
+ 	/* Free IRQ for RXDESC rings */
+ 	for (i = 0; i < rx->num_rings; i++) {
+ 		synchronize_irq(edma_ctx->intr_info.intr_rx[i]);
++		irq_update_affinity_hint(edma_ctx->intr_info.intr_rx[i], NULL);
+ 		free_irq(edma_ctx->intr_info.intr_rx[i],
+ 			 (void *)&edma_ctx->rx_rings[i]);
+ 	}
+@@ -799,6 +807,7 @@ void edma_destroy(struct ppe_device *ppe
+ 	/* Free IRQ for Rx DESC rings */
+ 	for (i = 0; i < rx->num_rings; i++) {
+ 		synchronize_irq(edma_ctx->intr_info.intr_rx[i]);
++		irq_update_affinity_hint(edma_ctx->intr_info.intr_rx[i], NULL);
+ 		free_irq(edma_ctx->intr_info.intr_rx[i],
+ 			 (void *)&edma_ctx->rx_rings[i]);
+ 		kfree(edma_rxdesc_irq_name[i]);

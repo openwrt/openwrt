@@ -1,0 +1,23 @@
+baudrate=115200
+bootargs=console=ttyMSM0,115200n8
+bootcmd=run ucg_button; run ucg_trial; run ucg_cmd_${ucg_boot}; bootdebbox
+bootcount=0
+bootdelay=1
+bootlimit=3
+ipaddr=192.168.1.1
+load_bootargs=setenv bootargs console=ttyMSM0,115200n8 $bootargsextra
+netmask=255.255.255.0
+serverip=192.168.1.3
+ucg_boot=owrt_a
+ucg_button=setexpr ucg_rb *0x01034004 % 2; if test "${ucg_rb}" = 0; then if test "${ucg_boot}" = install; then bootdebbox; fi; bootcmdrecovery; fi; setenv ucg_rb
+ucg_cmd_install=mmc dev 0 && ext4load mmc 0:6 0x50000000 /ucg/initramfs.itb && setenv bootargs console=ttyMSM0,115200n8 && bootm 0x50000000
+ucg_cmd_owrt_a=run ucg_load_a; run ucg_load_b
+ucg_cmd_owrt_b=run ucg_load_b; run ucg_load_a
+ucg_cmd_stock=bootdebbox
+ucg_flip=setenv ucg_prev ${ucg_boot}; if test "${ucg_prev}" = owrt_a; then setenv ucg_boot owrt_b; fi; if test "${ucg_prev}" = owrt_b; then setenv ucg_boot owrt_a; fi; setenv ucg_prev
+ucg_gpt=mmc dev 0 && mmc read 0x4F000000 2 0x20
+ucg_load_a=run ucg_gpt && setexpr.l ucg_kernel_start *0x4F000320 && mmc read 0x50000000 ${ucg_kernel_start} 0x8000 && setenv bootargs console=ttyMSM0,115200n8 root=PARTLABEL=owrt_rootfs_a rootwait && bootm 0x50000000
+ucg_load_b=run ucg_gpt && setexpr.l ucg_kernel_start *0x4F000420 && mmc read 0x50000000 ${ucg_kernel_start} 0x8000 && setenv bootargs console=ttyMSM0,115200n8 root=PARTLABEL=owrt_rootfs_b rootwait && bootm 0x50000000
+ucg_trial=if test "${upgrade_available}" = 1; then setexpr bootcount ${bootcount} + 1; if itest ${bootcount} -gt ${bootlimit}; then run ucg_trial_fail; else saveenv; fi; fi
+ucg_trial_fail=setenv upgrade_available 0; setenv bootcount 0; run ucg_flip; saveenv
+upgrade_available=0
