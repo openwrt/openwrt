@@ -2543,7 +2543,7 @@ endef
 define Device/keenetic_kn-1012-common
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
-		kmod-usb3 kmod-phy-airoha-en8811h kmod-sfp
+		kmod-usb3 kmod-sfp
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
