@@ -31,8 +31,6 @@ Link: https://patchwork.ozlabs.org/project/uboot/patch/20261114091049.2418574-4-
  drivers/net/mtk_eth/an8855.c | 24 ++++++++++++++++++++++++
  1 file changed, 24 insertions(+)
 
-diff --git a/drivers/net/mtk_eth/an8855.c b/drivers/net/mtk_eth/an8855.c
-index d06493018f0..c20da4c38bf 100644
 --- a/drivers/net/mtk_eth/an8855.c
 +++ b/drivers/net/mtk_eth/an8855.c
 @@ -96,6 +96,8 @@
@@ -52,7 +50,7 @@ index d06493018f0..c20da4c38bf 100644
  #define AN8855_RG_QP_CDR_LPF_MJV_LIM		(AN8855_QP_ANA_CSR_BASE + 0x0c)
  #define AN8855_RG_QP_CDR_LPF_SETVALUE		(AN8855_QP_ANA_CSR_BASE + 0x14)
  #define AN8855_RG_QP_CDR_PR_CKREF_DIV1		(AN8855_QP_ANA_CSR_BASE + 0x18)
-@@ -434,6 +437,27 @@ static int an8855_port_sgmii_init(struct an8855_switch_priv *priv, u32 port)
+@@ -434,6 +437,27 @@ static int an8855_port_sgmii_init(struct
  		return -EINVAL;
  	}
  
@@ -80,6 +78,3 @@ index d06493018f0..c20da4c38bf 100644
  	/* PLL */
  	an8855_reg_read(priv, AN8855_QP_DIG_MODE_CTRL_1, &val);
  	val &= ~(0x3 << 2);
--- 
-2.53.0
-
