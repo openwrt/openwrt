@@ -71,17 +71,6 @@ define Device/asiarf_ap7622-wh1
 endef
 TARGET_DEVICES += asiarf_ap7622-wh1
 
-define Device/smartrg_sdg-841-t6
-  DEVICE_VENDOR := Adtran
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := e2fsprogs f2fsck mkf2fs
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_MODEL := SDG-841-t6
-  DEVICE_DTS := mt7622-smartrg-sdg-841-t6
-  DEVICE_PACKAGES += kmod-mt7915e kmod-mt7915-firmware
-endef
-TARGET_DEVICES += smartrg_sdg-841-t6
-
 define Device/bananapi_bpi-r64
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R64
@@ -362,6 +351,15 @@ define Device/netgear_wax206
 endef
 TARGET_DEVICES += netgear_wax206
 
+define Device/reyee_ax3200-e5
+  DEVICE_VENDOR := reyee
+  DEVICE_MODEL := AX3200 E5
+  DEVICE_DTS := mt7622-reyee-ax3200-e5
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+endef
+TARGET_DEVICES += reyee_ax3200-e5
+
 define Device/ruijie_rg-ew3200gx-pro
   DEVICE_VENDOR := Ruijie
   DEVICE_MODEL := RG-EW3200GX PRO
@@ -371,14 +369,16 @@ define Device/ruijie_rg-ew3200gx-pro
 endef
 TARGET_DEVICES += ruijie_rg-ew3200gx-pro
 
-define Device/reyee_ax3200-e5
-  DEVICE_VENDOR := reyee
-  DEVICE_MODEL := AX3200 E5
-  DEVICE_DTS := mt7622-reyee-ax3200-e5
+define Device/smartrg_sdg-841-t6
+  DEVICE_VENDOR := Adtran
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915-firmware
+  DEVICE_PACKAGES := e2fsprogs f2fsck mkf2fs
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_MODEL := SDG-841-t6
+  DEVICE_DTS := mt7622-smartrg-sdg-841-t6
+  DEVICE_PACKAGES += kmod-mt7915e kmod-mt7915-firmware
 endef
-TARGET_DEVICES += reyee_ax3200-e5
+TARGET_DEVICES += smartrg_sdg-841-t6
 
 define Device/totolink_a8000ru
   DEVICE_VENDOR := TOTOLINK

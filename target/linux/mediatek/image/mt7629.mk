@@ -2,17 +2,6 @@ ifneq ($(KERNEL),6.1)
 DTS_DIR := $(DTS_DIR)/mediatek
 endif
 
-define Device/mediatek_mt7629-rfb
-  DEVICE_VENDOR := MediaTek
-  DEVICE_MODEL := MT7629 rfb AP
-  DEVICE_DTS := mt7629-rfb
-  DEVICE_PACKAGES := swconfig
-  UBOOT_PATH := $(STAGING_DIR_IMAGE)/mt7629_rfb-u-boot-mtk.bin
-  ARTIFACTS := u-boot.bin
-  ARTIFACT/u-boot.bin := append-uboot
-endef
-TARGET_DEVICES += mediatek_mt7629-rfb
-
 define Device/iptime_a6004mx
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A6004MX
@@ -45,6 +34,17 @@ define Device/linksys_ea7500-v3
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
 endef
 TARGET_DEVICES += linksys_ea7500-v3
+
+define Device/mediatek_mt7629-rfb
+  DEVICE_VENDOR := MediaTek
+  DEVICE_MODEL := MT7629 rfb AP
+  DEVICE_DTS := mt7629-rfb
+  DEVICE_PACKAGES := swconfig
+  UBOOT_PATH := $(STAGING_DIR_IMAGE)/mt7629_rfb-u-boot-mtk.bin
+  ARTIFACTS := u-boot.bin
+  ARTIFACT/u-boot.bin := append-uboot
+endef
+TARGET_DEVICES += mediatek_mt7629-rfb
 
 define Device/netgear_ex6250-v2
   DEVICE_VENDOR := NETGEAR
