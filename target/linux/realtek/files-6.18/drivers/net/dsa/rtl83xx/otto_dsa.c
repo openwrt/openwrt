@@ -1076,6 +1076,48 @@ static int otto_dsa_mdio_loaded(void)
 	return 0;
 }
 
+/* The serial LED controller of RTL93xx has 4 LED sets of up to 4 LEDs per port */
+#define OTTO_DSA_LED_SETS		4
+#define OTTO_DSA_LEDS_PER_PORT		4
+
+/* Number of LEDs per port in LED set @set, or -EINVAL if it is not usable */
+static int otto_dsa_led_set_size(struct device_node *led_node, u32 set)
+{
+	char name[sizeof("led_set4294967295")];
+	int size;
+
+	if (set >= OTTO_DSA_LED_SETS)
+		return -EINVAL;
+
+	snprintf(name, sizeof(name), "led_set%u", set);
+	size = of_property_count_u32_elems(led_node, name);
+	if (size < 1 || size > OTTO_DSA_LEDS_PER_PORT)
+		return -EINVAL;
+
+	return size;
+}
+
+static int otto_dsa_port_leds_probe(struct otto_dsa_priv *priv, struct device_node *dn,
+				    struct device_node *led_node, u32 pn)
+{
+	int leds;
+	u32 set;
+
+	if (of_property_read_u32(dn, "led-set", &set))
+		set = 0;
+
+	leds = otto_dsa_led_set_size(led_node, set);
+	if (leds < 0) {
+		dev_err(priv->dev, "Invalid led-set %u for port %u\n", set, pn);
+		return leds;
+	}
+
+	priv->ports[pn].led_set = set;
+	priv->ports[pn].leds_on_this_port = leds;
+
+	return 0;
+}
+
 static int otto_dsa_ports_probe(struct otto_dsa_priv *priv)
 {
 	struct device_node *ports __free(device_node) =
@@ -1092,8 +1134,7 @@ static int otto_dsa_ports_probe(struct otto_dsa_priv *priv)
 
 	for_each_available_child_of_node_scoped(ports, dn) {
 		const char *managed;
-		u32 led_set;
-		char led_set_str[16] = {0};
+		int err;
 
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
@@ -1114,16 +1155,11 @@ static int otto_dsa_ports_probe(struct otto_dsa_priv *priv)
 		}
 
 		priv->ports[pn].leds_on_this_port = 0;
-		if (led_node) {
-			if (of_property_read_u32(dn, "led-set", &led_set))
-				led_set = 0;
-			priv->ports[pn].led_set = led_set;
-			sprintf(led_set_str, "led_set%d", led_set);
-			priv->ports[pn].leds_on_this_port = of_property_count_u32_elems(led_node, led_set_str);
-			if (priv->ports[pn].leds_on_this_port > 4) {
-				dev_err(priv->dev, "led_set %d for port %d configuration is invalid\n", led_set, pn);
-				return -ENODEV;
-			}
+		/* The CPU port has no LEDs */
+		if (led_node && pn != priv->r->cpu_port) {
+			err = otto_dsa_port_leds_probe(priv, dn, led_node, pn);
+			if (err)
+				return err;
 		}
 
 		/* In-band status as phylink reads it */
