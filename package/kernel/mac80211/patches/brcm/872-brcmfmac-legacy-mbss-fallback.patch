@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Collin Rose <collinr@gmail.com>
+Date: Fri, 13 Nov 2026 22:05:00 -0500
+Subject: [PATCH] brcmfmac: fall back to legacy MBSS when interface_create
+ is unsupported
+
+Firmware that predates the interface_create iovar, including BCM43602
+7.35.177.56, makes the version query in
+brcmf_cfg80211_request_ap_if() fail. The function then returns
+-EOPNOTSUPP and never tries bsscfg:ssid. A second AP BSS fails, and
+hostapd disables the whole radio, including the primary AP.
+
+Fall through to the legacy MBSS path when the version query fails.
+Firmware that answers the query is unchanged.
+
+The same change was first published for a Netgear R8000 on this
+firmware, as patches/861-brcmfmac-r8000-legacy-mbss-fallback.patch in
+88plug/netgear-r8000-plus (GPL-2.0). It is re-ported here onto
+backports 7.2. The same early return is still in current mainline
+Linux.
+
+Upstream-Status: Submitted to linux-wireless
+https://lore.kernel.org/linux-wireless/CA+d3OrdhgXy8Dhfi_V=9sEqU=FK4tDzt4HVgOz9Uqw7OTP+8Jg@mail.gmail.com/
+
+Drop this patch once a backports release carries the upstream fix.
+
+https://github.com/88plug/netgear-r8000-plus/blob/netgear-r8000-plus/patches/861-brcmfmac-r8000-legacy-mbss-fallback.patch
+
+Tested on a SmartRG SR400ac (bcm53xx, smartrg_sr400ac) with two
+BCM43602/1 PCIe radios and brcmfmac43602-pcie firmware 7.35.177.56.
+The running image was OpenWrt 25.12.6, mac80211 from backports
+6.18.55, on kernel 6.12.112. Without the patch, interface_create v1,
+v2, and the version query all return -52, and the driver returns
+-EOPNOTSUPP without calling bsscfg:ssid. With the patch, the driver
+logs the unsupported version and then creates the second AP. A
+primary AP and a second AP stayed up together on 2.4 GHz HT20 and on
+5 GHz 80 MHz. The same result held after the patch was built into an
+image and the second AP was enabled. A second SR400ac on the same
+image and firmware reproduced the unpatched failure. The patched
+module was not loaded on that second unit.
+
+The patched site is unchanged between backports 6.18.55 and backports
+7.2, which this branch packages. The hunk applies to both.
+
+Signed-off-by: Collin Rose <collinr@gmail.com>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -758,8 +758,9 @@ static int brcmf_cfg80211_request_ap_if(struct brcmf_if *ifp)
+ 	err = brcmf_fil_bsscfg_int_query(ifp, "interface_create",
+ 					 &iface_create_ver);
+ 	if (err) {
+ 		brcmf_err("fail to get supported version, err=%d\n", err);
+-		return -EOPNOTSUPP;
++		/* Old firmware: use the legacy bsscfg:ssid path below. */
++		iface_create_ver = 0;
+ 	}
+ 
+ 	switch (iface_create_ver) {
