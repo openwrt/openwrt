@@ -169,6 +169,9 @@ gatonetworks,gdsp)
 glinet,gl-mt3000)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
 	;;
+iptime,be5100p)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x4000" "0x20000"
+	;;
 jiorouter,ax6000-jidu6101|\
 jiorouter,ax6000-jidu6j01)
 	. /lib/upgrade/nand.sh
