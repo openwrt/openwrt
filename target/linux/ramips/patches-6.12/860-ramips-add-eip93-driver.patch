@@ -223,7 +223,7 @@ algorithms.
 +	struct crypto_tfm *tfm = crypto_aead_tfm(ctfm);
 +	struct mtk_crypto_ctx *ctx = crypto_tfm_ctx(tfm);
 +	struct mtk_alg_template *tmpl = container_of(tfm->__crt_alg,
-+				struct mtk_alg_template, alg.skcipher.base);
++				struct mtk_alg_template, alg.aead.base);
 +	u32 flags = tmpl->flags;
 +	u32 nonce = 0;
 +	struct crypto_authenc_keys keys;
