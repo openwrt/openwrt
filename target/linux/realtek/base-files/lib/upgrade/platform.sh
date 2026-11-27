@@ -101,6 +101,18 @@ draytek_g2282x_set_part_name() {
 	esac
 }
 
+# The overlay is stored on a separate partition, instead of being appended
+# to the rootfs. default_do_upgrade does not know to erase it.
+engenius_ews2910p_write_cfg()
+{
+	if [ -z "$UPGRADE_BACKUP" ]; then
+		mtd erase rootfs_data
+		return
+	fi
+
+	mtd $MTD_ARGS write "$UPGRADE_BACKUP" rootfs_data
+}
+
 platform_do_upgrade() {
 	local board=$(board_name)
 
@@ -110,6 +122,11 @@ platform_do_upgrade() {
 		;;
 	draytek,g2282x)
 		draytek_g2282x_set_part_name || return 1
+		default_do_upgrade "$1"
+		;;
+	engenius,ews2910p-v1|\
+	engenius,ews2910p-v3)
+		engenius_ews2910p_write_cfg
 		default_do_upgrade "$1"
 		;;
 	linksys,lgs328c|\
