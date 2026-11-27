@@ -92,7 +92,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		sparx5_get_dev_misc_stats(portstats, inst, tinst);
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
-@@ -402,7 +402,7 @@ void sparx5_set_port_ifh_timestamp(void
+@@ -404,7 +404,7 @@ void sparx5_set_port_ifh_timestamp(void
  void sparx5_set_port_ifh_rew_op(void *ifh_hdr, u32 rew_op);
  void sparx5_set_port_ifh_pdu_type(void *ifh_hdr, u32 pdu_type);
  void sparx5_set_port_ifh_pdu_w16_offset(void *ifh_hdr, u32 pdu_w16_offset);
@@ -114,7 +114,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	ifh_encode_bitfield(ifh_hdr, 1, VSTAX + 79,  1);
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
-@@ -235,7 +235,7 @@ netdev_tx_t sparx5_port_xmit_impl(struct
+@@ -244,7 +244,7 @@ netdev_tx_t sparx5_port_xmit_impl(struct
  	netdev_tx_t ret;
  
  	memset(ifh, 0, IFH_LEN * 4);

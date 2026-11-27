@@ -107,7 +107,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  drop:
  	kfree_skb(skb);
-@@ -820,11 +810,12 @@ static int pppoe_ioctl(struct socket *so
+@@ -823,11 +813,12 @@ static int pppoe_ioctl(struct socket *so
  
  		/* Check that the socket referenced by the address
  		   actually exists. */

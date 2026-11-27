@@ -25,9 +25,9 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/net/l2tp/l2tp_core.c
 +++ b/net/l2tp/l2tp_core.c
-@@ -1258,9 +1258,9 @@ static int l2tp_xmit_core(struct l2tp_se
+@@ -1261,9 +1261,9 @@ static int l2tp_xmit_core(struct l2tp_se
  	else
- 		l2tp_build_l2tpv3_header(session, __skb_push(skb, session->hdr_len));
+ 		l2tp_build_l2tpv3_header(session, __skb_push(skb, hdr_len), send_seq);
  
 -	/* Reset skb netfilter state */
 -	memset(&(IPCB(skb)->opt), 0, sizeof(IPCB(skb)->opt));

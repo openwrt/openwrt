@@ -30,7 +30,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -5176,7 +5176,7 @@ static struct sk_buff *stmmac_construct_
+@@ -5180,7 +5180,7 @@ static struct sk_buff *stmmac_construct_
  
  static void stmmac_dispatch_skb_zc(struct stmmac_priv *priv, u32 queue,
  				   struct dma_desc *p, struct dma_desc *np,
@@ -39,7 +39,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  {
  	struct stmmac_rxq_stats *rxq_stats = &priv->xstats.rxq_stats[queue];
  	struct stmmac_channel *ch = &priv->channel[queue];
-@@ -5201,7 +5201,8 @@ static void stmmac_dispatch_skb_zc(struc
+@@ -5205,7 +5205,8 @@ static void stmmac_dispatch_skb_zc(struc
  		stmmac_rx_vlan(priv->dev, skb);
  	skb->protocol = eth_type_trans(skb, priv->dev);
  
@@ -49,7 +49,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		skb_checksum_none_assert(skb);
  	else
  		skb->ip_summed = CHECKSUM_UNNECESSARY;
-@@ -5428,7 +5429,8 @@ read_again:
+@@ -5436,7 +5437,8 @@ read_again:
  
  		switch (res) {
  		case STMMAC_XDP_PASS:

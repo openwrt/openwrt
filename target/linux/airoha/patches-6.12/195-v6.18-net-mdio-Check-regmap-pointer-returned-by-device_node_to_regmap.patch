@@ -24,7 +24,7 @@ Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
 ---
 --- a/drivers/net/mdio/mdio-airoha.c
 +++ b/drivers/net/mdio/mdio-airoha.c
-@@ -219,6 +219,8 @@
+@@ -219,6 +219,8 @@ static int airoha_mdio_probe(struct plat
  	priv = bus->priv;
  	priv->base_addr = addr;
  	priv->regmap = device_node_to_regmap(dev->parent->of_node);

@@ -41,7 +41,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  irqreturn_t sparx5_xtr_handler(int irq, void *_priv);
  netdev_tx_t sparx5_port_xmit_impl(struct sk_buff *skb, struct net_device *dev);
  int sparx5_manual_injection_mode(struct sparx5 *sparx5);
-@@ -470,10 +470,13 @@ static inline int sparx5_dcb_init(struct
+@@ -472,10 +472,13 @@ static inline int sparx5_dcb_init(struct
  #endif
  
  /* sparx5_netdev.c */
@@ -104,7 +104,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	/* Map to port netdev */
  	port = fi.src_port < sparx5->data->consts->n_ports ?
-@@ -242,9 +242,12 @@ netdev_tx_t sparx5_port_xmit_impl(struct
+@@ -251,9 +251,12 @@ netdev_tx_t sparx5_port_xmit_impl(struct
  			return NETDEV_TX_BUSY;
  
  		sparx5_set_port_ifh_rew_op(ifh, SPARX5_SKB_CB(skb)->rew_op);

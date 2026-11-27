@@ -51,7 +51,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	__set_bit(PHY_INTERFACE_MODE_SGMII,
  		  spx5_port->phylink_config.supported_interfaces);
  	__set_bit(PHY_INTERFACE_MODE_QSGMII,
-@@ -830,6 +836,7 @@ static int mchp_sparx5_probe(struct plat
+@@ -833,6 +839,7 @@ static int mchp_sparx5_probe(struct plat
  	struct initial_port_config *configs, *config;
  	struct device_node *np = pdev->dev.of_node;
  	struct device_node *ports, *portnp;
@@ -59,7 +59,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	struct reset_control *reset;
  	struct sparx5 *sparx5;
  	int idx = 0, err = 0;
-@@ -851,6 +858,7 @@ static int mchp_sparx5_probe(struct plat
+@@ -854,6 +861,7 @@ static int mchp_sparx5_probe(struct plat
  		return -EINVAL;
  
  	regs = sparx5->data->regs;
@@ -67,7 +67,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	/* Do switch core reset if available */
  	reset = devm_reset_control_get_optional_shared(&pdev->dev, "switch");
-@@ -880,7 +888,7 @@ static int mchp_sparx5_probe(struct plat
+@@ -883,7 +891,7 @@ static int mchp_sparx5_probe(struct plat
  
  	for_each_available_child_of_node(ports, portnp) {
  		struct sparx5_port_config *conf;
@@ -76,7 +76,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		u32 portno;
  
  		err = of_property_read_u32(portnp, "reg", &portno);
-@@ -910,13 +918,17 @@ static int mchp_sparx5_probe(struct plat
+@@ -913,13 +921,17 @@ static int mchp_sparx5_probe(struct plat
  			conf->sd_sgpio = ~0;
  		else
  			sparx5->sd_sgpio_remapping = true;

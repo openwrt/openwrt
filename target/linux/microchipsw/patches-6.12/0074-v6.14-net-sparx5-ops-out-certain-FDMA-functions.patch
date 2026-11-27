@@ -41,7 +41,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  {
  	struct sparx5_tx *tx = &sparx5->tx;
  	struct fdma *fdma = &tx->fdma;
-@@ -450,12 +451,13 @@ static u32 sparx5_fdma_port_ctrl(struct
+@@ -451,12 +452,13 @@ static u32 sparx5_fdma_port_ctrl(struct
  
  int sparx5_fdma_start(struct sparx5 *sparx5)
  {
@@ -122,7 +122,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  /* sparx5_mactable.c */
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
-@@ -232,9 +232,12 @@ netdev_tx_t sparx5_port_xmit_impl(struct
+@@ -241,9 +241,12 @@ netdev_tx_t sparx5_port_xmit_impl(struct
  	struct net_device_stats *stats = &dev->stats;
  	struct sparx5_port *port = netdev_priv(dev);
  	struct sparx5 *sparx5 = port->sparx5;
@@ -135,7 +135,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	memset(ifh, 0, IFH_LEN * 4);
  	sparx5_set_port_ifh(sparx5, ifh, port->portno);
  
-@@ -254,7 +257,7 @@ netdev_tx_t sparx5_port_xmit_impl(struct
+@@ -263,7 +266,7 @@ netdev_tx_t sparx5_port_xmit_impl(struct
  	skb_tx_timestamp(skb);
  	spin_lock(&sparx5->tx_lock);
  	if (sparx5->fdma_irq > 0)

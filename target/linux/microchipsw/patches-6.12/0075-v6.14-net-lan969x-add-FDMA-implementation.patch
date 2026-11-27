@@ -528,7 +528,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  {
  	/* Reload the RX channel */
  	spx5_wr(BIT(fdma->channel_id), sparx5, FDMA_CH_RELOAD);
-@@ -340,7 +337,7 @@ irqreturn_t sparx5_fdma_handler(int irq,
+@@ -341,7 +338,7 @@ irqreturn_t sparx5_fdma_handler(int irq,
  	return IRQ_HANDLED;
  }
  
@@ -594,7 +594,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  void sparx5_mact_pull_work(struct work_struct *work);
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
-@@ -267,6 +267,12 @@ netdev_tx_t sparx5_port_xmit_impl(struct
+@@ -276,6 +276,12 @@ netdev_tx_t sparx5_port_xmit_impl(struct
  	if (ret < 0)
  		goto drop;
  

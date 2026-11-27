@@ -24,7 +24,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
-@@ -990,6 +990,8 @@ static const struct sparx5_ops sparx5_op
+@@ -993,6 +993,8 @@ static const struct sparx5_ops sparx5_op
  	.is_port_25g             = &sparx5_port_is_25g,
  	.get_port_dev_index      = &sparx5_port_dev_mapping,
  	.get_port_dev_bit        = &sparx5_port_dev_mapping,
@@ -44,7 +44,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  };
  
  struct sparx5_main_io_resource {
-@@ -502,6 +504,7 @@ struct sparx5_sdlb_group {
+@@ -504,6 +506,7 @@ struct sparx5_sdlb_group {
  };
  
  extern struct sparx5_sdlb_group sdlb_groups[SPX5_SDLB_GROUP_CNT];
@@ -69,12 +69,13 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	rate = pol->rate * 1000;
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_psfp.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_psfp.c
-@@ -320,11 +320,12 @@ int sparx5_psfp_fm_del(struct sparx5 *sp
+@@ -320,12 +320,13 @@ int sparx5_psfp_fm_del(struct sparx5 *sp
  
  void sparx5_psfp_init(struct sparx5 *sparx5)
  {
 +	const struct sparx5_ops *ops = sparx5->data->ops;
  	const struct sparx5_sdlb_group *group;
+ 	u32 sg_ct_clks;
  	int i;
  
  	for (i = 0; i < sparx5->data->consts->n_lb_groups; i++) {
