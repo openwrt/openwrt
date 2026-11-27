@@ -1,0 +1,28 @@
+From 5b1e67cf72cabf412529b4fc6f7d0eb0c2b20cb4 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Wed, 15 Jul 2026 21:06:31 +0800
+Subject: [PATCH 22/23] Remove unused chansess in x11accept
+
+Fixes: 882f83806d5e ("Remove X11 single connection option")
+(cherry picked from commit 7f5b313978a16ba3773aa70cc06470b5a0aaf470)
+---
+ src/svr-x11fwd.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/src/svr-x11fwd.c
++++ b/src/svr-x11fwd.c
+@@ -132,13 +132,12 @@ fail:
+ 
+ /* accepts a new X11 socket */
+ /* returns DROPBEAR_FAILURE or DROPBEAR_SUCCESS */
+-static void x11accept(const struct Listener* listener, int sock) {
++static void x11accept(const struct Listener* UNUSED(listener), int sock) {
+ 
+ 	int fd;
+ 	struct sockaddr_in addr;
+ 	socklen_t len;
+ 	int ret;
+-	struct ChanSess * chansess = (struct ChanSess *)(listener->typedata);
+ 
+ 	len = sizeof(addr);
+ 

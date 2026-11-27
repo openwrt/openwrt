@@ -1,0 +1,65 @@
+From 6c094d33f590a5ded96c1f64a9709706d7297ff0 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Fri, 3 Jul 2026 23:51:39 +0800
+Subject: [PATCH 16/23] dbclient: Fix out of bounds write with ssh-askpass
+
+A >=1024 length password provided by a user through SSH_ASKPASS would
+result in a one byte write beyond the password buffer.
+Replace the read() loop with atomicio to simplify it.
+
+askpass is disabled by default, and dbclient would normally not be
+running with any additional privileges in this situation.
+
+(cherry picked from commit fab1ba6049c88519f0f2de7734eedea83b7f5e3c)
+---
+ src/cli-authpasswd.c | 17 ++++-------------
+ 1 file changed, 4 insertions(+), 13 deletions(-)
+
+--- a/src/cli-authpasswd.c
++++ b/src/cli-authpasswd.c
+@@ -28,6 +28,7 @@
+ #include "session.h"
+ #include "ssh.h"
+ #include "runopts.h"
++#include "atomicio.h"
+ 
+ #if DROPBEAR_CLI_PASSWORD_AUTH
+ 
+@@ -48,8 +49,9 @@ static int want_askpass()
+ static char *gui_getpass(const char *prompt) {
+ 
+ 	pid_t pid;
+-	int p[2], maxlen, len, status;
++	int p[2], status;
+ 	static char buf[DROPBEAR_MAX_CLI_PASS + 1];
++	size_t len;
+ 	char* helper = NULL;
+ 
+ 	TRACE(("enter gui_getpass"))
+@@ -87,17 +89,7 @@ static char *gui_getpass(const char *pro
+ 	}
+ 
+ 	close(p[1]);
+-	maxlen = sizeof(buf);
+-	while (maxlen > 0) {
+-		len = read(p[0], buf + sizeof(buf) - maxlen, maxlen);
+-		if (len > 0) {
+-			maxlen -= len;
+-		} else {
+-			if (errno != EINTR)
+-				break;
+-		}
+-	}
+-
++	len = atomicio(read, p[0], buf, sizeof(buf)-1);
+ 	close(p[0]);
+ 
+ 	while (waitpid(pid, &status, 0) < 0 && errno == EINTR)
+@@ -105,7 +97,6 @@ static char *gui_getpass(const char *pro
+ 	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+ 		return(NULL);
+ 
+-	len = sizeof(buf) - maxlen;
+ 	buf[len] = '\0';
+ 	if (len > 0 && buf[len - 1] == '\n')
+ 		buf[len - 1] = '\0';

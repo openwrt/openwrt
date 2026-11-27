@@ -1,0 +1,42 @@
+From d438b47cbf7e21c44385088869705e74533dfc2d Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Fri, 3 Jul 2026 23:35:21 +0800
+Subject: [PATCH 15/23] dropbearconvert: Avoid uninitialised read
+
+An openssh format input file with a nul byte could cause an out of
+bounds stack read. dropbearconvert would exit with failure.
+
+Reported by Yiyi Wang, Tsinghua University
+
+(cherry picked from commit ac9b4aa15cf36f2c16c5921faa4189bb7d2cb734)
+---
+ src/keyimport.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+--- a/src/keyimport.c
++++ b/src/keyimport.c
+@@ -402,10 +402,8 @@ static struct openssh_key *load_openssh_
+ 		errmsg = "Unable to open key file";
+ 		goto error;
+ 	}
+-	if (!fgets(buffer, sizeof(buffer), fp) ||
+-		0 != strncmp(buffer, "-----BEGIN ", 11) ||
+-		0 != strcmp(buffer+strlen(buffer)-17, "PRIVATE KEY-----\n")) {
+-		errmsg = "File does not begin with OpenSSH key header";
++	if (!fgets(buffer, sizeof(buffer), fp)) {
++		errmsg = "Short input";
+ 		goto error;
+ 	}
+ 	if (!strcmp(buffer, "-----BEGIN RSA PRIVATE KEY-----\n"))
+@@ -428,9 +426,9 @@ static struct openssh_key *load_openssh_
+ 			errmsg = "Unexpected end of file";
+ 			goto error;
+ 		}
+-		if (0 == strncmp(buffer, "-----END ", 9) &&
+-			0 == strcmp(buffer+strlen(buffer)-17, "PRIVATE KEY-----\n"))
++		if (0 == strncmp(buffer, "-----END ", 9)) {
+ 			break;					   /* done */
++		}
+ 		if ((p = strchr(buffer, ':')) != NULL) {
+ 			if (headers_done) {
+ 				errmsg = "Header found in body of key data";

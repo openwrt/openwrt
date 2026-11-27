@@ -1,0 +1,173 @@
+From cb9eb5e45b713d5bf7d59a59c8b3909c8c5d79ac Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Fri, 3 Jul 2026 20:59:08 +0800
+Subject: [PATCH 13/23] Check FD_SET doesn't overflow
+
+MAX_CHANNELS (1000) should already limit FDs to be < FD_SETSIZE, but
+it's possible that an unusual number of FDs might already be open before
+Dropbear starts running.
+
+(cherry picked from commit e40e93f101f5de52ddec80e77d44b1983d060ea9)
+---
+ src/common-channel.c |  8 ++++----
+ src/common-session.c |  8 ++++----
+ src/dbutil.c         | 13 ++++++++++++-
+ src/dbutil.h         |  1 +
+ src/listener.c       |  2 +-
+ src/netio.c          |  2 +-
+ src/svr-main.c       |  6 +++---
+ 7 files changed, 26 insertions(+), 14 deletions(-)
+
+--- a/src/common-channel.c
++++ b/src/common-channel.c
+@@ -560,22 +560,22 @@ void setchannelfds(fd_set *readfds, fd_s
+ 		   && ((ses.dataallowed && allow_reads) || channel->read_mangler)) {
+ 
+ 			if (channel->readfd >= 0) {
+-				FD_SET(channel->readfd, readfds);
++				dropbear_fd_set(channel->readfd, readfds);
+ 			}
+ 			
+ 			if (ERRFD_IS_READ(channel) && channel->errfd >= 0) {
+-					FD_SET(channel->errfd, readfds);
++					dropbear_fd_set(channel->errfd, readfds);
+ 			}
+ 		}
+ 
+ 		/* Stuff from the wire */
+ 		if (channel->writefd >= 0 && cbuf_getused(channel->writebuf) > 0) {
+-				FD_SET(channel->writefd, writefds);
++				dropbear_fd_set(channel->writefd, writefds);
+ 		}
+ 
+ 		if (ERRFD_IS_WRITE(channel) && channel->errfd >= 0 
+ 				&& cbuf_getused(channel->extrabuf) > 0) {
+-				FD_SET(channel->errfd, writefds);
++				dropbear_fd_set(channel->errfd, writefds);
+ 		}
+ 
+ 	} /* foreach channel */
+--- a/src/common-session.c
++++ b/src/common-session.c
+@@ -181,7 +181,7 @@ void session_loop(void(*loophandler)(voi
+ 		if (!fuzz.fuzzing) 
+ #endif
+ 		{
+-		FD_SET(ses.signal_pipe[0], &readfd);
++		dropbear_fd_set(ses.signal_pipe[0], &readfd);
+ 		}
+ 
+ 		/* set up for channels which can be read/written */
+@@ -199,13 +199,13 @@ void session_loop(void(*loophandler)(voi
+ 		if (ses.sock_in != -1 
+ 			&& (ses.remoteident || isempty(&ses.writequeue)) 
+ 			&& writequeue_has_space) {
+-			FD_SET(ses.sock_in, &readfd);
++			dropbear_fd_set(ses.sock_in, &readfd);
+ 		}
+ 
+ 		/* Ordering is important, this test must occur after any other function
+ 		might have queued packets (such as connection handlers) */
+ 		if (ses.sock_out != -1 && !isempty(&ses.writequeue)) {
+-			FD_SET(ses.sock_out, &writefd);
++			dropbear_fd_set(ses.sock_out, &writefd);
+ 		}
+ 
+ 		val = select(ses.maxfd+1, &readfd, &writefd, NULL, &timeout);
+@@ -443,7 +443,7 @@ static int ident_readln(int fd, char* bu
+ 	/* leave space to null-terminate */
+ 	while (pos < count-1) {
+ 
+-		FD_SET(fd, &fds);
++		dropbear_fd_set(fd, &fds);
+ 
+ 		timeout.tv_sec = 1;
+ 		timeout.tv_usec = 0;
+--- a/src/dbutil.c
++++ b/src/dbutil.c
+@@ -769,7 +769,7 @@ int fd_read_pending(int fd) {
+ 	struct timeval timeout;
+ 
+ 	DROPBEAR_FD_ZERO(&fds);
+-	FD_SET(fd, &fds);
++	dropbear_fd_set(fd, &fds);
+ 	while (1) {
+ 		timeout.tv_sec = 0;
+ 		timeout.tv_usec = 0;
+@@ -783,6 +783,17 @@ int fd_read_pending(int fd) {
+ 	}
+ }
+ 
++/* FD_SET() wrapper with an overflow check */
++void dropbear_fd_set(int fd, fd_set *set) {
++	if (fd < 0) {
++		return;
++	}
++	if (fd >= FD_SETSIZE) {
++		dropbear_exit("fd limit %d", fd);
++	}
++	FD_SET(fd, set);
++}
++
+ int m_snprintf(char *str, size_t size, const char *format, ...) {
+ 	va_list param;
+ 	int ret;
+--- a/src/dbutil.h
++++ b/src/dbutil.h
+@@ -98,6 +98,7 @@ char * expand_homedir_path_home(const ch
+ void fsync_parent_dir(const char* fn);
+ 
+ int fd_read_pending(int fd);
++void dropbear_fd_set(int fd, fd_set *set);
+ 
+ #if DROPBEAR_MSAN
+ /* FD_ZERO seems to leave some memory uninitialized. clear it to avoid false positives */
+--- a/src/listener.c
++++ b/src/listener.c
+@@ -46,7 +46,7 @@ void set_listener_fds(fd_set * readfds)
+ 		listener = ses.listeners[i];
+ 		if (listener != NULL) {
+ 			for (j = 0; j < listener->nsocks; j++) {
+-				FD_SET(listener->socks[j], readfds);
++				dropbear_fd_set(listener->socks[j], readfds);
+ 			}
+ 		}
+ 	}
+--- a/src/netio.c
++++ b/src/netio.c
+@@ -307,7 +307,7 @@ void set_connect_fds(fd_set *writefd) {
+ 			connect_try_next(c);
+ 		}
+ 		if (c->sock >= 0) {
+-			FD_SET(c->sock, writefd);
++			dropbear_fd_set(c->sock, writefd);
+ 		} else {
+ 			/* Final failure */
+ 			if (!c->errstring) {
+--- a/src/svr-main.c
++++ b/src/svr-main.c
+@@ -162,7 +162,7 @@ static void main_noinetd(int argc, char
+ 	}
+ 
+ 	for (i = 0; i < listensockcount; i++) {
+-		FD_SET(listensocks[i], &fds);
++		dropbear_fd_set(listensocks[i], &fds);
+ 	}
+ 
+ #if DROPBEAR_DO_REEXEC
+@@ -211,13 +211,13 @@ static void main_noinetd(int argc, char
+ 
+ 		/* listening sockets */
+ 		for (i = 0; i < listensockcount; i++) {
+-			FD_SET(listensocks[i], &fds);
++			dropbear_fd_set(listensocks[i], &fds);
+ 		}
+ 
+ 		/* pre-authentication clients */
+ 		for (i = 0; i < MAX_UNAUTH_CLIENTS; i++) {
+ 			if (childpipes[i] >= 0) {
+-				FD_SET(childpipes[i], &fds);
++				dropbear_fd_set(childpipes[i], &fds);
+ 				maxsock = MAX(maxsock, childpipes[i]);
+ 			}
+ 		}
