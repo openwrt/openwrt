@@ -59,6 +59,17 @@ define Device/microchip_sama5d2-icp
 endef
 TARGET_DEVICES += microchip_sama5d2-icp
 
+define Device/microchip_sama5d2-ptc-ek
+  $(Device/evaluation-dtb)
+  DEVICE_VENDOR := Microchip
+  DEVICE_MODEL := SAMA5D2 PTC Ek
+  DEVICE_DTS := at91-sama5d2_ptc_ek
+  SUPPORTED_DEVICES := atmel,sama5d2-ptc_ek
+  KERNEL_SIZE := 6144k
+  $(Device/evaluation-sdimage)
+endef
+TARGET_DEVICES += microchip_sama5d2-ptc-ek
+
 define Device/microchip_sama5d2-xplained
   $(Device/evaluation-dtb)
   DEVICE_VENDOR := Microchip
@@ -91,17 +102,6 @@ define Device/microchip_sama5d27-wlsom1-ek
   $(Device/evaluation-sdimage)
 endef
 TARGET_DEVICES += microchip_sama5d27-wlsom1-ek
-
-define Device/microchip_sama5d2-ptc-ek
-  $(Device/evaluation-dtb)
-  DEVICE_VENDOR := Microchip
-  DEVICE_MODEL := SAMA5D2 PTC Ek
-  DEVICE_DTS := at91-sama5d2_ptc_ek
-  SUPPORTED_DEVICES := atmel,sama5d2-ptc_ek
-  KERNEL_SIZE := 6144k
-  $(Device/evaluation-sdimage)
-endef
-TARGET_DEVICES += microchip_sama5d2-ptc-ek
 
 define Device/microchip_sama5d3-xplained
   $(Device/evaluation-dtb)
