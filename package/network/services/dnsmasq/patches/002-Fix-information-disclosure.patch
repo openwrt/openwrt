@@ -1,0 +1,59 @@
+From ea9bd30cd4a42dfe773bb7419b36be3ace66a5ba Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Wed, 10 Jun 2026 15:43:53 +0100
+Subject: [PATCH] Fix information disclosure.
+
+An oversight in commit f9f8d19bf5f636d2313b69399c3c24b89b53bee6
+leaves a code path where a repeat of a query gets an error reply
+which discloses the id field used in interactions with upstream
+servers ro get an answer to the query. By triggering this
+code path, an attacker can determine the id, which makes Kaminsky
+cache poisoning attacks much less expensive and much more certain.
+
+This bug exists in stable releases 2.91, 2.92 2.92rel2 and 2.93
+
+Thanks to Ronen Shustin from Project Atlas, Wiz for finding
+this problem.
+---
+ src/forward.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -201,12 +201,6 @@ static void forward_query(int udpfd, uni
+       unsigned int *bitvector = NULL;
+       unsigned short id = ntohs(header->id); /* Retrieve the id from the new query before we overwrite it. */
+       
+-      /* Get the case-scambled version of the query to resend. This is important because we
+-	 may fall through below and forward the query in the packet buffer again and we
+-	 want to use the same case scrambling as the first time. */
+-      blockdata_retrieve(forward->stash, forward->stash_len, (void *)header); 
+-      plen = forward->stash_len;
+-
+       for (src = &forward->frec_src; src; src = src->next)
+ 	if (src->orig_id == id && 
+ 	    sockaddr_isequal(&src->source, udpaddr))
+@@ -217,6 +211,11 @@ static void forward_query(int udpfd, uni
+ 	  old_src = 1;
+ 	  /* If a query is retried, use the log_id for the retry when logging the answer. */
+ 	  src->log_id = daemon->log_id;
++	  /* Get the case-scambled version of the query to resend. This is important because we
++	     may fall through below and forward the query in the packet buffer again and we
++	     want to use the same case scrambling as the first time. */
++	  blockdata_retrieve(forward->stash, forward->stash_len, (void *)header); 
++	  plen = forward->stash_len;
+ 	}
+       else
+ 	{
+@@ -263,7 +262,10 @@ static void forward_query(int udpfd, uni
+ 
+ 	     The original query we sent is now in packet buffer and the query name in the
+ 	     new instance is on daemon->namebuff. */
+-	    	  
++
++	  blockdata_retrieve(forward->stash, forward->stash_len, (void *)header); 
++	  plen = forward->stash_len;
++
+ 	  if (extract_name(header, forward->stash_len, NULL, daemon->workspacename, EXTR_NAME_EXTRACT, 0))
+ 	    {
+ 	      unsigned int i, gobig = 0;
