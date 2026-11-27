@@ -283,6 +283,7 @@ int nvram_commit(nvram_handle_t *h)
 	nvram_header_t *header = nvram_header(h);
 	char *init, *config, *refresh, *ncdl;
 	char *ptr, *end;
+	size_t len;
 	int i;
 	nvram_tuple_t *t;
 	nvram_header_t tmp;
@@ -323,17 +324,17 @@ int nvram_commit(nvram_handle_t *h)
 		}
 	}
 
-	/* End with a double NULL and pad to 4 bytes */
-	*ptr = '\0';
-	ptr++;
-
-	if( (int)ptr % 4 )
-		memset(ptr, 0, 4 - ((int)ptr % 4));
-
-	ptr++;
+	/*
+	 * End with a double NUL and pad with NULs to 4 bytes. The padding is
+	 * part of the length, so it must not keep the 0xFF of the cleared
+	 * data area.
+	 */
+	*ptr++ = '\0';
+	len = NVRAM_ROUNDUP(ptr - (char *) header, 4);
+	memset(ptr, 0, (char *) header + len - ptr);
 
 	/* Set new length */
-	header->len = NVRAM_ROUNDUP(ptr - (char *) header, 4);
+	header->len = len;
 
 	/* Little-endian CRC8 over the last 11 bytes of the header */
 	tmp.crc_ver_init   = header->crc_ver_init;
