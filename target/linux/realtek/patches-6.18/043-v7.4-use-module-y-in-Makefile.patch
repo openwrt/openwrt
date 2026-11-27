@@ -1,0 +1,56 @@
+From 56c7aa17f0f09844dcf2c25bbe76fc4a87519192 Mon Sep 17 00:00:00 2001
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Mon, 19 Oct 2026 01:26:27 -0300
+Subject: net: dsa: realtek: use <module>-y in Makefile
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Switch from <module>-objs to <module>-y to eliminate ifdefs and simplify
+conditional object list construction. Drop the obsolete trailing
+comment.
+
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Reviewed-by: Alvin Šipraga <alvin.sipraga@analog.com>
+Link: https://patch.msgid.link/20261019-realtek_mkf-v1-1-3246a77d5782@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/realtek/Makefile | 28 ++++++++++------------------
+ 1 file changed, 10 insertions(+), 18 deletions(-)
+
+--- a/drivers/net/dsa/realtek/Makefile
++++ b/drivers/net/dsa/realtek/Makefile
+@@ -1,23 +1,15 @@
+ # SPDX-License-Identifier: GPL-2.0
+ obj-$(CONFIG_NET_DSA_REALTEK)		+= realtek_dsa.o
+-realtek_dsa-objs			:= rtl83xx.o
+-
+-ifdef CONFIG_NET_DSA_REALTEK_MDIO
+-realtek_dsa-objs += realtek-mdio.o
+-endif
+-
+-ifdef CONFIG_NET_DSA_REALTEK_SMI
+-realtek_dsa-objs += realtek-smi.o
+-endif
++realtek_dsa-y				:= rtl83xx.o
++realtek_dsa-$(CONFIG_NET_DSA_REALTEK_MDIO)	+= realtek-mdio.o
++realtek_dsa-$(CONFIG_NET_DSA_REALTEK_SMI)	+= realtek-smi.o
+ 
+ obj-$(CONFIG_NET_DSA_REALTEK_RTL8366RB) += rtl8366.o
+-rtl8366-objs 				:= rtl8366-core.o rtl8366rb.o
+-ifdef CONFIG_NET_DSA_REALTEK_RTL8366RB_LEDS
+-rtl8366-objs 				+= rtl8366rb-leds.o
+-endif
++rtl8366-y				:= rtl8366-core.o rtl8366rb.o
++rtl8366-$(CONFIG_NET_DSA_REALTEK_RTL8366RB_LEDS) += rtl8366rb-leds.o
++
+ obj-$(CONFIG_NET_DSA_REALTEK_RTL8365MB) += rtl8365mb.o
+-rtl8365mb-objs := rtl8365mb_main.o \
+-		  rtl8365mb_table.o \
+-		  rtl8365mb_vlan.o \
+-		  rtl8365mb_l2.o \
+-# end of rtl8365mb-objs
++rtl8365mb-y				:= rtl8365mb_main.o \
++					   rtl8365mb_table.o \
++					   rtl8365mb_vlan.o \
++					   rtl8365mb_l2.o
