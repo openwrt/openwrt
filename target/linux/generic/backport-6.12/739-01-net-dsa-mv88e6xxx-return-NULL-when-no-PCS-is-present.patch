@@ -1,0 +1,26 @@
+From 14ca726ada7fd54a5640ad60ed4caa05df4203d4 Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Wed, 16 Oct 2024 10:58:29 +0100
+Subject: net: dsa: mv88e6xxx: return NULL when no PCS is present
+
+Rather than returning an EOPNOTSUPP error pointer when the switch
+has no support for PCS, return NULL to indicate that no PCS is
+required.
+
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+---
+ drivers/net/dsa/mv88e6xxx/chip.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -867,7 +867,7 @@ mv88e6xxx_mac_select_pcs(struct phylink_
+ {
+ 	struct dsa_port *dp = dsa_phylink_to_port(config);
+ 	struct mv88e6xxx_chip *chip = dp->ds->priv;
+-	struct phylink_pcs *pcs = ERR_PTR(-EOPNOTSUPP);
++	struct phylink_pcs *pcs = NULL;
+ 
+ 	if (chip->info->ops->pcs_ops)
+ 		pcs = chip->info->ops->pcs_ops->pcs_select(chip, dp->index,
