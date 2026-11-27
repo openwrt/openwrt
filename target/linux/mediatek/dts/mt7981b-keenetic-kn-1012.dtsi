@@ -222,9 +222,6 @@
 		rx-polarity = <PHY_POL_INVERT>;
 		interrupt-parent = <&pio>;
 		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
-		reset-gpios = <&pio 3 GPIO_ACTIVE_LOW>;
-		reset-assert-us = <10000>;
-		reset-deassert-us = <20000>;
 	};
 
 	switch: switch@1f {
