@@ -1,0 +1,222 @@
+From 8368970b62404ce2ce70d04c1cfff62700d7d8d5 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 20 May 2026 17:44:35 +0300
+Subject: [PATCH] wifi: rtw89: usb: Support switching to USB 3 mode
+
+The Realtek wifi 6/7 devices which support USB 3 are weird: when first
+plugged in, they pretend to be USB 2. The driver needs to send some
+commands to the device, which make it disappear and come back as a
+USB 3 device.
+
+Implement the required commands in rtw89.
+
+Add a new function rtw89_usb_write32_quiet() to avoid the warnings
+when writing to R_{AX,BE}_PAD_CTRL2. Even though the write succeeds,
+usb_control_msg() returns -EPROTO, probably because the USB device
+disappears immediately. This results in some confusing warnings in
+the kernel log.
+
+When a USB 3 device is plugged into a USB 2 port, rtw89 will try to
+switch it to USB 3 mode only once. The device will disappear and come
+back still in USB 2 mode, of course.
+
+Tested with RTL8832AU, RTL8832BU, RTL8832CU, and RTL8912AU.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/e955451c-93a1-4d04-8024-d224a04f1d4a@gmail.com
+(cherry picked from commit 8368970b62404ce2ce70d04c1cfff62700d7d8d5)
+[ context in reg.h adjusted, R_BE_SCOREBOARD is not in 6.18 ]
+---
+--- a/drivers/net/wireless/realtek/rtw89/reg.h
++++ b/drivers/net/wireless/realtek/rtw89/reg.h
+@@ -163,6 +163,19 @@
+ #define R_AX_DBG_PORT_SEL 0x00C0
+ #define B_AX_DEBUG_ST_MASK GENMASK(31, 0)
+ 
++#define R_AX_PAD_CTRL2 0x00C4
++#define B_AX_FORCE_U3_CK BIT(23)
++#define B_AX_USB2_FORCE BIT(22)
++#define B_AX_USB3_FORCE BIT(21)
++#define B_AX_USB3_USB2_TRANSITION BIT(20)
++#define B_AX_USB23_SW_MODE_V1 GENMASK(19, 18)
++#define USB_MODE_U2 0x1
++#define USB_MODE_U3 0x2
++#define B_AX_NO_PDN_CHIPOFF_V1 BIT(17)
++#define B_AX_RSM_EN_V1 BIT(16)
++#define B_AX_MATCH_CNT GENMASK(15, 8)
++#define USB_SWITCH_DELAY 0xF
++
+ #define R_AX_PMC_DBG_CTRL2 0x00CC
+ #define B_AX_SYSON_DIS_PMCR_AX_WRMSK BIT(2)
+ 
+@@ -4170,6 +4183,20 @@
+ #define B_BE_EF_DSB_EN BIT(11)
+ #define B_BE_EF_DLY_SEL_MASK GENMASK(3, 0)
+ 
++#define R_BE_PAD_CTRL2 0x00C4
++#define B_BE_USB23_SW_MODE BIT(31)
++#define B_BE_USB3_GEN_MODE BIT(30)
++#define B_BE_USB3_LANE_MODE BIT(29)
++#define B_BE_USB_AUTO_INSTALL_MASK BIT(28)
++#define B_BE_FORCE_CLK_U2 BIT(25)
++#define B_BE_FORCE_U2_CK BIT(24)
++#define B_BE_FORCE_U3_CK BIT(23)
++#define B_BE_USB2_FORCE BIT(22)
++#define B_BE_USB3_FORCE BIT(21)
++#define B_BE_NO_PDN_CHIPOFF_V1 BIT(17)
++#define B_BE_RSM_EN_V1 BIT(16)
++#define B_BE_MATCH_CNT GENMASK(15, 8)
++
+ #define R_BE_PMC_DBG_CTRL2 0x00CC
+ #define B_BE_EFUSE_BURN_GNT_MASK GENMASK(31, 24)
+ #define B_BE_DIS_IOWRAP_TIMEOUT BIT(16)
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -11,8 +11,8 @@
+ 
+ static void rtw89_usb_read_port_complete(struct urb *urb);
+ 
+-static void rtw89_usb_vendorreq(struct rtw89_dev *rtwdev, u32 addr,
+-				void *data, u16 len, u8 reqtype)
++static void __rtw89_usb_vendorreq(struct rtw89_dev *rtwdev, u32 addr,
++				  void *data, u16 len, u8 reqtype, bool warn)
+ {
+ 	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
+ 	struct usb_device *udev = rtwusb->udev;
+@@ -52,7 +52,7 @@ static void rtw89_usb_vendorreq(struct r
+ 
+ 		if (ret == -ESHUTDOWN || ret == -ENODEV)
+ 			set_bit(RTW89_FLAG_UNPLUGGED, rtwdev->flags);
+-		else if (ret < 0)
++		else if (ret < 0 && warn)
+ 			rtw89_warn(rtwdev,
+ 				   "usb %s%u 0x%x fail ret=%d value=0x%x attempt=%d\n",
+ 				   reqtype == RTW89_USB_VENQT_READ ? "read" : "write",
+@@ -69,6 +69,12 @@ static void rtw89_usb_vendorreq(struct r
+ 	}
+ }
+ 
++static void rtw89_usb_vendorreq(struct rtw89_dev *rtwdev, u32 addr,
++				void *data, u16 len, u8 reqtype)
++{
++	__rtw89_usb_vendorreq(rtwdev, addr, data, len, reqtype, true);
++}
++
+ static u32 rtw89_usb_read_cmac(struct rtw89_dev *rtwdev, u32 addr)
+ {
+ 	u32 addr32, val32, shift;
+@@ -157,6 +163,14 @@ static void rtw89_usb_ops_write32(struct
+ 	rtw89_usb_vendorreq(rtwdev, addr, &data, 4, RTW89_USB_VENQT_WRITE);
+ }
+ 
++static void rtw89_usb_write32_quiet(struct rtw89_dev *rtwdev, u32 addr, u32 val)
++{
++	__le32 data = cpu_to_le32(val);
++
++	__rtw89_usb_vendorreq(rtwdev, addr, &data, 4,
++			      RTW89_USB_VENQT_WRITE, false);
++}
++
+ static u32
+ rtw89_usb_ops_check_and_reclaim_tx_resource(struct rtw89_dev *rtwdev,
+ 					    u8 txch)
+@@ -1061,6 +1075,83 @@ static void rtw89_usb_intf_deinit(struct
+ 	usb_set_intfdata(intf, NULL);
+ }
+ 
++static int rtw89_usb_switch_mode_ax(struct rtw89_dev *rtwdev)
++{
++	u32 pad_ctrl2;
++
++	/* No known USB 3 devices with this chip. */
++	if (rtwdev->chip->chip_id == RTL8851B)
++		return 0;
++
++	pad_ctrl2 = rtw89_usb_ops_read32(rtwdev, R_AX_PAD_CTRL2);
++
++	rtw89_debug(rtwdev, RTW89_DBG_HCI, "%s: pad_ctrl2: %#x\n",
++		    __func__, pad_ctrl2);
++
++	/* Already tried to switch but it's a USB 2 port. */
++	if (u32_get_bits(pad_ctrl2, B_AX_MATCH_CNT) == USB_SWITCH_DELAY)
++		return 0;
++
++	/* Add delay to prevent some platforms would not detect USB switch */
++	u32p_replace_bits(&pad_ctrl2, USB_SWITCH_DELAY, B_AX_MATCH_CNT);
++
++	pad_ctrl2 &= ~(B_AX_FORCE_U3_CK | B_AX_USB2_FORCE |
++		       B_AX_USB3_FORCE | B_AX_USB3_USB2_TRANSITION);
++
++	u32p_replace_bits(&pad_ctrl2, USB_MODE_U3, B_AX_USB23_SW_MODE_V1);
++
++	pad_ctrl2 |= B_AX_NO_PDN_CHIPOFF_V1 | B_AX_RSM_EN_V1;
++
++	rtw89_usb_write32_quiet(rtwdev, R_AX_PAD_CTRL2, pad_ctrl2);
++
++	return 1;
++}
++
++static int rtw89_usb_switch_mode_be(struct rtw89_dev *rtwdev)
++{
++	u32 pad_ctrl2;
++
++	pad_ctrl2 = rtw89_usb_ops_read32(rtwdev, R_BE_PAD_CTRL2);
++
++	rtw89_debug(rtwdev, RTW89_DBG_HCI, "%s: pad_ctrl2: %#x\n",
++		    __func__, pad_ctrl2);
++
++	/* Already tried to switch but it's a USB 2 port. */
++	if (u32_get_bits(pad_ctrl2, B_BE_MATCH_CNT) == USB_SWITCH_DELAY)
++		return 0;
++
++	/* Add delay to prevent some platforms would not detect USB switch */
++	u32p_replace_bits(&pad_ctrl2, USB_SWITCH_DELAY, B_BE_MATCH_CNT);
++
++	pad_ctrl2 |= B_BE_RSM_EN_V1 | B_BE_NO_PDN_CHIPOFF_V1 |
++		     B_BE_USB_AUTO_INSTALL_MASK | B_BE_USB23_SW_MODE;
++
++	pad_ctrl2 &= ~(B_BE_USB3_FORCE | B_BE_USB2_FORCE |
++		       B_BE_FORCE_U3_CK | B_BE_FORCE_U2_CK |
++		       B_BE_FORCE_CLK_U2 | B_BE_USB3_GEN_MODE |
++		       B_BE_USB3_LANE_MODE);
++
++	rtw89_usb_write32_quiet(rtwdev, R_BE_PAD_CTRL2, pad_ctrl2);
++
++	return 1;
++}
++
++static int rtw89_usb_switch_mode(struct rtw89_dev *rtwdev)
++{
++	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
++
++	if (rtwusb->udev->speed == USB_SPEED_SUPER) {
++		rtw89_info(rtwdev,
++			   "2.4 GHz performance may be better in a USB 2 port\n");
++		return 0;
++	}
++
++	if (rtwdev->chip->chip_gen == RTW89_CHIP_AX)
++		return rtw89_usb_switch_mode_ax(rtwdev);
++
++	return rtw89_usb_switch_mode_be(rtwdev);
++}
++
+ int rtw89_usb_probe(struct usb_interface *intf,
+ 		    const struct usb_device_id *id)
+ {
+@@ -1093,6 +1184,13 @@ int rtw89_usb_probe(struct usb_interface
+ 		goto err_free_hw;
+ 	}
+ 
++	ret = rtw89_usb_switch_mode(rtwdev);
++	if (ret) {
++		/* Not a fail, but we do need to skip rtw89_core_register. */
++		ret = 0;
++		goto err_intf_deinit;
++	}
++
+ 	if (rtwusb->udev->speed == USB_SPEED_SUPER)
+ 		rtwdev->hci.dle_type = RTW89_HCI_DLE_TYPE_USB3;
+ 	else

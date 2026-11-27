@@ -1,0 +1,72 @@
+From 21b946104087cd48e16ea51903c421cc3962225b Mon Sep 17 00:00:00 2001
+From: Ping-Ke Shih <pkshih@realtek.com>
+Date: Tue, 4 Nov 2025 16:57:13 +0300
+Subject: [PATCH] wifi: rtw89: fill TX descriptor of FWCMD in shortcut
+
+TX type FWCMD is used to download firmware and send H2C commands, and
+it only fill few fields of TX description, such as desc_info->pkt_size.
+Therefore, early return the TX type FWCMD.
+
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Fedor Pchelkin <pchelkin@ispras.ru>
+Link: https://patch.msgid.link/20251104135720.321110-7-pchelkin@ispras.ru
+---
+--- a/drivers/net/wireless/realtek/rtw89/core.c
++++ b/drivers/net/wireless/realtek/rtw89/core.c
+@@ -1110,32 +1110,35 @@ rtw89_core_tx_update_desc_info(struct rt
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 	struct ieee80211_hdr *hdr = (void *)skb->data;
+ 	struct rtw89_addr_cam_entry *addr_cam;
+-	enum rtw89_core_tx_type tx_type;
+ 	enum btc_pkt_type pkt_type;
+ 	bool upd_wlan_hdr = false;
+ 	bool is_bmc;
+ 	u16 seq;
+ 
++	desc_info->pkt_size = skb->len;
++
++	if (unlikely(tx_req->tx_type == RTW89_CORE_TX_TYPE_FWCMD)) {
++		rtw89_core_tx_update_h2c_info(rtwdev, tx_req);
++		return;
++	}
++
++	tx_req->tx_type = rtw89_core_get_tx_type(rtwdev, skb);
++
+ 	if (tx_req->sta)
+ 		desc_info->mlo = tx_req->sta->mlo;
+ 	else if (tx_req->vif)
+ 		desc_info->mlo = ieee80211_vif_is_mld(tx_req->vif);
+ 
+ 	seq = (le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_SEQ) >> 4;
+-	if (tx_req->tx_type != RTW89_CORE_TX_TYPE_FWCMD) {
+-		tx_type = rtw89_core_get_tx_type(rtwdev, skb);
+-		tx_req->tx_type = tx_type;
+-
+-		addr_cam = rtw89_get_addr_cam_of(tx_req->rtwvif_link,
+-						 tx_req->rtwsta_link);
+-		if (addr_cam->valid && desc_info->mlo)
+-			upd_wlan_hdr = true;
+-	}
++	addr_cam = rtw89_get_addr_cam_of(tx_req->rtwvif_link,
++					 tx_req->rtwsta_link);
++	if (addr_cam->valid && desc_info->mlo)
++		upd_wlan_hdr = true;
++
+ 	is_bmc = (is_broadcast_ether_addr(hdr->addr1) ||
+ 		  is_multicast_ether_addr(hdr->addr1));
+ 
+ 	desc_info->seq = seq;
+-	desc_info->pkt_size = skb->len;
+ 	desc_info->is_bmc = is_bmc;
+ 	desc_info->wd_page = true;
+ 	desc_info->hiq = info->flags & IEEE80211_TX_CTL_SEND_AFTER_DTIM;
+@@ -1152,8 +1155,7 @@ rtw89_core_tx_update_desc_info(struct rt
+ 		rtw89_core_tx_update_ampdu_info(rtwdev, tx_req, pkt_type);
+ 		rtw89_core_tx_update_llc_hdr(rtwdev, desc_info, skb);
+ 		break;
+-	case RTW89_CORE_TX_TYPE_FWCMD:
+-		rtw89_core_tx_update_h2c_info(rtwdev, tx_req);
++	default:
+ 		break;
+ 	}
+ }

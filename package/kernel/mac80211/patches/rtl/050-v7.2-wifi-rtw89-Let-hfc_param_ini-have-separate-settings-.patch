@@ -1,0 +1,98 @@
+From c423ed43c93cd1e44dbcd77f94aff747df7b20a1 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sun, 19 Apr 2026 16:45:23 +0300
+Subject: [PATCH] wifi: rtw89: Let hfc_param_ini have separate settings for USB 2/3
+
+RTL8912AU needs different settings for USB 2 and USB 3.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/588bf309-4b92-454f-bfd6-5e81248abee3@gmail.com
+(cherry picked from commit c423ed43c93cd1e44dbcd77f94aff747df7b20a1)
+[ rtw8922d.c is not in 6.18, its hunk is dropped ]
+---
+--- a/drivers/net/wireless/realtek/rtw89/core.h
++++ b/drivers/net/wireless/realtek/rtw89/core.h
+@@ -4433,7 +4433,7 @@ struct rtw89_chip_info {
+ 	u16 max_amsdu_limit;
+ 	bool dis_2g_40m_ul_ofdma;
+ 	u32 rsvd_ple_ofst;
+-	const struct rtw89_hfc_param_ini *hfc_param_ini[RTW89_HCI_TYPE_NUM];
++	const struct rtw89_hfc_param_ini *hfc_param_ini[RTW89_HCI_DLE_TYPE_NUM];
+ 	const struct rtw89_dle_mem *dle_mem[RTW89_HCI_DLE_TYPE_NUM];
+ 	u8 wde_qempty_acq_grpnum;
+ 	u8 wde_qempty_mgq_grpsel;
+--- a/drivers/net/wireless/realtek/rtw89/mac.c
++++ b/drivers/net/wireless/realtek/rtw89/mac.c
+@@ -880,7 +880,7 @@ static int hfc_reset_param(struct rtw89_
+ 	struct rtw89_hfc_param *param = &rtwdev->mac.hfc_param;
+ 	u8 qta_mode = rtwdev->mac.dle_info.qta_mode;
+ 
+-	param_inis = rtwdev->chip->hfc_param_ini[rtwdev->hci.type];
++	param_inis = rtwdev->chip->hfc_param_ini[rtwdev->hci.dle_type];
+ 	if (!param_inis)
+ 		return -EINVAL;
+ 
+--- a/drivers/net/wireless/realtek/rtw89/rtw8851b.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8851b.c
+@@ -2594,6 +2594,7 @@ const struct rtw89_chip_info rtw8851b_ch
+ 	.rsvd_ple_ofst		= 0x2f800,
+ 	.hfc_param_ini		= {rtw8851b_hfc_param_ini_pcie,
+ 				   rtw8851b_hfc_param_ini_usb,
++				   rtw8851b_hfc_param_ini_usb,
+ 				   NULL},
+ 	.dle_mem		= {rtw8851b_dle_mem_pcie,
+ 				   rtw8851b_dle_mem_usb2,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852a.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852a.c
+@@ -2280,6 +2280,7 @@ const struct rtw89_chip_info rtw8852a_ch
+ 	.rsvd_ple_ofst		= 0x6f800,
+ 	.hfc_param_ini		= {rtw8852a_hfc_param_ini_pcie,
+ 				   rtw8852a_hfc_param_ini_usb,
++				   rtw8852a_hfc_param_ini_usb,
+ 				   NULL},
+ 	.dle_mem		= {rtw8852a_dle_mem_pcie,
+ 				   rtw8852a_dle_mem_usb,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852b.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852b.c
+@@ -903,6 +903,7 @@ const struct rtw89_chip_info rtw8852b_ch
+ 	.rsvd_ple_ofst		= 0x2f800,
+ 	.hfc_param_ini		= {rtw8852b_hfc_param_ini_pcie,
+ 				   rtw8852b_hfc_param_ini_usb,
++				   rtw8852b_hfc_param_ini_usb,
+ 				   NULL},
+ 	.dle_mem		= {rtw8852b_dle_mem_pcie,
+ 				   rtw8852b_dle_mem_usb3,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852bt.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852bt.c
+@@ -767,7 +767,7 @@ const struct rtw89_chip_info rtw8852bt_c
+ 	.max_amsdu_limit	= 5000,
+ 	.dis_2g_40m_ul_ofdma	= true,
+ 	.rsvd_ple_ofst		= 0x6f800,
+-	.hfc_param_ini		= {rtw8852bt_hfc_param_ini_pcie, NULL, NULL},
++	.hfc_param_ini		= {rtw8852bt_hfc_param_ini_pcie, NULL, NULL, NULL},
+ 	.dle_mem		= {rtw8852bt_dle_mem_pcie, NULL, NULL, NULL},
+ 	.wde_qempty_acq_grpnum	= 4,
+ 	.wde_qempty_mgq_grpsel	= 4,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852c.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852c.c
+@@ -3093,6 +3093,7 @@ const struct rtw89_chip_info rtw8852c_ch
+ 	.rsvd_ple_ofst		= 0x6f800,
+ 	.hfc_param_ini		= {rtw8852c_hfc_param_ini_pcie,
+ 				   rtw8852c_hfc_param_ini_usb,
++				   rtw8852c_hfc_param_ini_usb,
+ 				   NULL},
+ 	.dle_mem		= {rtw8852c_dle_mem_pcie,
+ 				   rtw8852c_dle_mem_usb2,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8922a.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8922a.c
+@@ -2952,7 +2952,7 @@ const struct rtw89_chip_info rtw8922a_ch
+ 	.max_amsdu_limit	= 8000,
+ 	.dis_2g_40m_ul_ofdma	= false,
+ 	.rsvd_ple_ofst		= 0x8f800,
+-	.hfc_param_ini		= {rtw8922a_hfc_param_ini_pcie, NULL, NULL},
++	.hfc_param_ini		= {rtw8922a_hfc_param_ini_pcie, NULL, NULL, NULL},
+ 	.dle_mem		= {rtw8922a_dle_mem_pcie, NULL, NULL, NULL},
+ 	.wde_qempty_acq_grpnum	= 4,
+ 	.wde_qempty_mgq_grpsel	= 4,

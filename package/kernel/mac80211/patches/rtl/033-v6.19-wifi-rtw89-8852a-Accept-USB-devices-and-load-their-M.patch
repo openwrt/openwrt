@@ -1,0 +1,50 @@
+From 1dfd11e70022a0117bdf3fd02d2b541c9c732845 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Fri, 7 Nov 2025 18:08:46 +0200
+Subject: [PATCH] wifi: rtw89: 8852a: Accept USB devices and load their MAC address
+
+Make rtw8852a_read_efuse() accept USB devices and load the MAC
+address from the correct offset.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/97412e2c-ac98-403c-9056-9d9fe1ed9f28@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852a.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852a.c
+@@ -621,14 +621,6 @@ static const struct rtw89_edcca_regs rtw
+ 	.tx_collision_t2r_st_mask	= B_TX_COLLISION_T2R_ST_M,
+ };
+ 
+-static void rtw8852ae_efuse_parsing(struct rtw89_efuse *efuse,
+-				    struct rtw8852a_efuse *map)
+-{
+-	ether_addr_copy(efuse->addr, map->e.mac_addr);
+-	efuse->rfe_type = map->rfe_type;
+-	efuse->xtal_cap = map->xtal_k;
+-}
+-
+ static void rtw8852a_efuse_parsing_tssi(struct rtw89_dev *rtwdev,
+ 					struct rtw8852a_efuse *map)
+ {
+@@ -674,12 +666,18 @@ static int rtw8852a_read_efuse(struct rt
+ 
+ 	switch (rtwdev->hci.type) {
+ 	case RTW89_HCI_TYPE_PCIE:
+-		rtw8852ae_efuse_parsing(efuse, map);
++		ether_addr_copy(efuse->addr, map->e.mac_addr);
++		break;
++	case RTW89_HCI_TYPE_USB:
++		ether_addr_copy(efuse->addr, map->u.mac_addr);
+ 		break;
+ 	default:
+ 		return -ENOTSUPP;
+ 	}
+ 
++	efuse->rfe_type = map->rfe_type;
++	efuse->xtal_cap = map->xtal_k;
++
+ 	rtw89_info(rtwdev, "chip rfe_type is %d\n", efuse->rfe_type);
+ 
+ 	return 0;

@@ -1,0 +1,46 @@
+From 233542f5b4a8ea1fe3535f8021d37e7e92ffc4e5 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Fri, 7 Nov 2025 18:06:27 +0200
+Subject: [PATCH] wifi: rtw89: Use the correct power sequences for USB/SDIO
+
+Make rtw89_mac_pwr_seq() select the right parts of the power sequences
+based on the interface type.
+
+This is only relevant for RTL8852A. The other chips don't use power
+sequences.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/dec13310-06eb-429e-acb8-4c5b62656836@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/mac.c
++++ b/drivers/net/wireless/realtek/rtw89/mac.c
+@@ -1294,11 +1294,26 @@ static int rtw89_mac_sub_pwr_seq(struct
+ static int rtw89_mac_pwr_seq(struct rtw89_dev *rtwdev,
+ 			     const struct rtw89_pwr_cfg * const *cfg_seq)
+ {
++	u8 intf_msk;
+ 	int ret;
+ 
++	switch (rtwdev->hci.type) {
++	case RTW89_HCI_TYPE_PCIE:
++		intf_msk = PWR_INTF_MSK_PCIE;
++		break;
++	case RTW89_HCI_TYPE_USB:
++		intf_msk = PWR_INTF_MSK_USB;
++		break;
++	case RTW89_HCI_TYPE_SDIO:
++		intf_msk = PWR_INTF_MSK_SDIO;
++		break;
++	default:
++		return -EOPNOTSUPP;
++	}
++
+ 	for (; *cfg_seq; cfg_seq++) {
+ 		ret = rtw89_mac_sub_pwr_seq(rtwdev, BIT(rtwdev->hal.cv),
+-					    PWR_INTF_MSK_PCIE, *cfg_seq);
++					    intf_msk, *cfg_seq);
+ 		if (ret)
+ 			return -EBUSY;
+ 	}

@@ -1,0 +1,123 @@
+From 80119a77e5b03747b8886505df1b3cb26f49168d Mon Sep 17 00:00:00 2001
+From: Lucid Duck <lucid_duck@justthetip.ca>
+Date: Wed, 1 Apr 2026 22:22:16 -0700
+Subject: [PATCH] wifi: rtw89: usb: fix TX flow control by tracking in-flight URBs
+
+rtw89_usb_ops_check_and_reclaim_tx_resource() returns a hardcoded
+placeholder value (42) instead of actual TX resource availability.
+This violates mac80211's flow control contract, preventing backpressure
+and causing uncontrolled URB accumulation under sustained TX load.
+
+Fix by adding per-channel atomic counters (tx_inflight[]) that track
+in-flight URBs. Increment before usb_submit_urb() with rollback on
+failure, decrement in the completion callback, and return the
+remaining capacity to mac80211. The firmware command channel (CH12)
+always returns 1 since it has its own flow control.
+
+The pre-increment pattern prevents a race where USB core completes the
+URB on another CPU before the submitting code increments the counter.
+
+128 URBs per channel provides headroom for RTL8832CU at 160 MHz
+bandwidth. Tested on RTL8852AU (USB3 80 MHz) where 64 and 128 showed
+equivalent throughput, and on RTL8832AU where 128 sustained full
+throughput under 8-stream parallel load.
+
+Tested on D-Link DWA-X1850 (RTL8832AU), kernel 6.19.8, Fedora 43:
+
+                     Unpatched -> Patched (128 URBs)
+  USB3 5GHz UL:      844 -> 837 Mbps (no regression)
+  USB3 5GHz retx:    3 -> 0
+  USB3 2.4GHz UL:    162 -> 164 Mbps (no regression)
+  4-stream UL:       858 -> 826 Mbps (within variance)
+  8-stream UL:       872 -> 826 Mbps (within variance)
+  UDP flood:         0% loss (690K datagrams)
+  60-second soak:    855 Mbps, 0 retransmits
+
+Reported-by: morrownr <morrownr@gmail.com>
+Signed-off-by: Lucid Duck <lucid_duck@justthetip.ca>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20260402052216.207858-1-lucid_duck@justthetip.ca
+---
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -161,16 +161,24 @@ static u32
+ rtw89_usb_ops_check_and_reclaim_tx_resource(struct rtw89_dev *rtwdev,
+ 					    u8 txch)
+ {
++	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
++	int inflight;
++
+ 	if (txch == RTW89_TXCH_CH12)
+ 		return 1;
+ 
+-	return 42; /* TODO some kind of calculation? */
++	inflight = atomic_read(&rtwusb->tx_inflight[txch]);
++	if (inflight >= RTW89_USB_MAX_TX_URBS_PER_CH)
++		return 0;
++
++	return RTW89_USB_MAX_TX_URBS_PER_CH - inflight;
+ }
+ 
+ static void rtw89_usb_write_port_complete(struct urb *urb)
+ {
+ 	struct rtw89_usb_tx_ctrl_block *txcb = urb->context;
+ 	struct rtw89_dev *rtwdev = txcb->rtwdev;
++	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
+ 	struct ieee80211_tx_info *info;
+ 	struct rtw89_txwd_body *txdesc;
+ 	struct sk_buff *skb;
+@@ -229,6 +237,8 @@ static void rtw89_usb_write_port_complet
+ 		break;
+ 	}
+ 
++	atomic_dec(&rtwusb->tx_inflight[txcb->txch]);
++
+ 	kfree(txcb);
+ }
+ 
+@@ -306,9 +316,13 @@ static void rtw89_usb_ops_tx_kick_off(st
+ 
+ 		skb_queue_tail(&txcb->tx_ack_queue, skb);
+ 
++		atomic_inc(&rtwusb->tx_inflight[txch]);
++
+ 		ret = rtw89_usb_write_port(rtwdev, txch, skb->data, skb->len,
+ 					   txcb);
+ 		if (ret) {
++			atomic_dec(&rtwusb->tx_inflight[txch]);
++
+ 			if (ret != -ENODEV)
+ 				rtw89_err(rtwdev, "write port txch %d failed: %d\n",
+ 					  txch, ret);
+@@ -684,8 +698,10 @@ static void rtw89_usb_init_tx(struct rtw
+ 	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(rtwusb->tx_queue); i++)
++	for (i = 0; i < ARRAY_SIZE(rtwusb->tx_queue); i++) {
+ 		skb_queue_head_init(&rtwusb->tx_queue[i]);
++		atomic_set(&rtwusb->tx_inflight[i], 0);
++	}
+ }
+ 
+ static void rtw89_usb_deinit_tx(struct rtw89_dev *rtwdev)
+--- a/drivers/net/wireless/realtek/rtw89/usb.h
++++ b/drivers/net/wireless/realtek/rtw89/usb.h
+@@ -31,6 +31,8 @@
+ #define R_AX_RXAGG_0			0x8900
+ #define B_AX_RXAGG_0_BUF_SZ_4K		GENMASK(7, 0)
+ 
++#define RTW89_USB_MAX_TX_URBS_PER_CH	128
++
+ struct rtw89_usb_info {
+ 	u32 usb_host_request_2;
+ 	u32 usb_wlan0_1;
+@@ -75,6 +77,7 @@ struct rtw89_usb {
+ 	struct usb_anchor tx_submitted;
+ 
+ 	struct sk_buff_head tx_queue[RTW89_TXCH_NUM];
++	atomic_t tx_inflight[RTW89_TXCH_NUM];
+ };
+ 
+ static inline struct rtw89_usb *rtw89_usb_priv(struct rtw89_dev *rtwdev)

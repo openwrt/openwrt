@@ -1,0 +1,143 @@
+From bf4a37f516f0382832c10a9d04414944d0d96591 Mon Sep 17 00:00:00 2001
+From: David Lee <sc.lee@realtek.com>
+Date: Mon, 25 May 2026 16:26:36 +0800
+Subject: [PATCH] wifi: rtw89: usb: skip ACPI capability check for USB devices
+
+Skip the ACPI capability check for all USB devices by default,
+allowing them to use their default configurations.
+
+For USB dongles, customers will manage their own compliance and
+certification. This initial patch focuses on the generic USB skip
+infrastructure; specific customer certifications and localized
+configurations will be handled by quirks afterward.
+
+Signed-off-by: David Lee <sc.lee@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20260525082636.31105-1-pkshih@realtek.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/regd.c
++++ b/drivers/net/wireless/realtek/rtw89/regd.c
+@@ -360,6 +360,7 @@ static void rtw89_regd_setup_unii4(struc
+ 				   struct wiphy *wiphy)
+ {
+ 	struct rtw89_regulatory_info *regulatory = &rtwdev->regulatory;
++	bool skip_acpi_dsm = rtwdev->hci.type == RTW89_HCI_TYPE_USB;
+ 	const struct rtw89_chip_info *chip = rtwdev->chip;
+ 	struct ieee80211_supported_band *sband;
+ 	struct rtw89_acpi_dsm_result res = {};
+@@ -377,6 +378,9 @@ static void rtw89_regd_setup_unii4(struc
+ 		return;
+ 	}
+ 
++	if (skip_acpi_dsm)
++		return;
++
+ 	bitmap_fill(regulatory->block_unii4, RTW89_REGD_MAX_COUNTRY_NUM);
+ 
+ 	ret = rtw89_acpi_evaluate_dsm(rtwdev, RTW89_ACPI_DSM_FUNC_UNII4_SUP, &res);
+@@ -426,6 +430,7 @@ static void __rtw89_regd_setup_policy_6g
+ static void rtw89_regd_setup_policy_6ghz(struct rtw89_dev *rtwdev)
+ {
+ 	struct rtw89_regulatory_info *regulatory = &rtwdev->regulatory;
++	bool skip_acpi_dsm = rtwdev->hci.type == RTW89_HCI_TYPE_USB;
+ 	const struct rtw89_acpi_country_code *country;
+ 	const struct rtw89_acpi_policy_6ghz *ptr;
+ 	struct rtw89_acpi_dsm_result res = {};
+@@ -433,6 +438,9 @@ static void rtw89_regd_setup_policy_6ghz
+ 	int i, j;
+ 	int ret;
+ 
++	if (skip_acpi_dsm)
++		return;
++
+ 	ret = rtw89_acpi_evaluate_dsm(rtwdev, RTW89_ACPI_DSM_FUNC_6G_BP, &res);
+ 	if (ret) {
+ 		rtw89_debug(rtwdev, RTW89_DBG_REGD,
+@@ -478,12 +486,16 @@ out:
+ static void rtw89_regd_setup_policy_6ghz_sp(struct rtw89_dev *rtwdev)
+ {
+ 	struct rtw89_regulatory_info *regulatory = &rtwdev->regulatory;
++	bool skip_acpi_dsm = rtwdev->hci.type == RTW89_HCI_TYPE_USB;
+ 	const struct rtw89_acpi_policy_6ghz_sp *ptr;
+ 	struct rtw89_acpi_dsm_result res = {};
+ 	bool enable;
+ 	u8 index;
+ 	int ret;
+ 
++	if (skip_acpi_dsm)
++		return;
++
+ 	ret = rtw89_acpi_evaluate_dsm(rtwdev, RTW89_ACPI_DSM_FUNC_6GHZ_SP_SUP, &res);
+ 	if (ret) {
+ 		rtw89_debug(rtwdev, RTW89_DBG_REGD,
+@@ -524,6 +536,7 @@ out:
+ static void rtw89_regd_setup_policy_6ghz_vlp(struct rtw89_dev *rtwdev)
+ {
+ 	struct rtw89_regulatory_info *regulatory = &rtwdev->regulatory;
++	bool skip_acpi_dsm = rtwdev->hci.type == RTW89_HCI_TYPE_USB;
+ 	const struct rtw89_acpi_policy_6ghz_vlp *ptr = NULL;
+ 	struct rtw89_acpi_dsm_result res = {};
+ 	bool enable;
+@@ -531,6 +544,9 @@ static void rtw89_regd_setup_policy_6ghz
+ 	int ret;
+ 	u8 val;
+ 
++	if (skip_acpi_dsm)
++		return;
++
+ 	/* By default, allow 6 GHz VLP on all countries except US and CA. */
+ 	val = ~(RTW89_ACPI_CONF_6GHZ_VLP_US | RTW89_ACPI_CONF_6GHZ_VLP_CA);
+ 
+@@ -574,6 +590,7 @@ static void rtw89_regd_setup_6ghz(struct
+ {
+ 	const struct rtw89_chip_info *chip = rtwdev->chip;
+ 	bool chip_support_6ghz = chip->support_bands & BIT(NL80211_BAND_6GHZ);
++	bool skip_acpi_dsm = rtwdev->hci.type == RTW89_HCI_TYPE_USB;
+ 	bool regd_allow_6ghz = chip_support_6ghz;
+ 	struct ieee80211_supported_band *sband;
+ 	struct rtw89_acpi_dsm_result res = {};
+@@ -583,6 +600,9 @@ static void rtw89_regd_setup_6ghz(struct
+ 	if (!chip_support_6ghz)
+ 		goto bottom;
+ 
++	if (skip_acpi_dsm)
++		goto bottom;
++
+ 	ret = rtw89_acpi_evaluate_dsm(rtwdev, RTW89_ACPI_DSM_FUNC_6G_DIS, &res);
+ 	if (ret) {
+ 		rtw89_debug(rtwdev, RTW89_DBG_REGD,
+@@ -661,10 +681,14 @@ const char *rtw89_regd_get_string(enum r
+ static void rtw89_regd_setup_reg_rules(struct rtw89_dev *rtwdev)
+ {
+ 	struct rtw89_regulatory_info *regulatory = &rtwdev->regulatory;
++	bool skip_acpi_dsm = rtwdev->hci.type == RTW89_HCI_TYPE_USB;
+ 	const struct rtw89_acpi_policy_reg_rules *ptr;
+ 	struct rtw89_acpi_dsm_result res = {};
+ 	int ret;
+ 
++	if (skip_acpi_dsm)
++		return;
++
+ 	regulatory->txpwr_uk_follow_etsi = true;
+ 
+ 	ret = rtw89_acpi_evaluate_dsm(rtwdev, RTW89_ACPI_DSM_FUNC_REG_RULES_EN, &res);
+--- a/drivers/net/wireless/realtek/rtw89/sar.c
++++ b/drivers/net/wireless/realtek/rtw89/sar.c
+@@ -693,6 +693,7 @@ static bool rtw89_tas_rolling_average(st
+ 
+ static void rtw89_tas_init(struct rtw89_dev *rtwdev)
+ {
++	bool skip_acpi_dsm = rtwdev->hci.type == RTW89_HCI_TYPE_USB;
+ 	const struct rtw89_chip_info *chip = rtwdev->chip;
+ 	struct rtw89_tas_info *tas = &rtwdev->tas;
+ 	const struct rtw89_acpi_policy_tas *ptr;
+@@ -702,6 +703,9 @@ static void rtw89_tas_init(struct rtw89_
+ 	if (!chip->support_tas)
+ 		return;
+ 
++	if (skip_acpi_dsm)
++		return;
++
+ 	ret = rtw89_acpi_evaluate_dsm(rtwdev, RTW89_ACPI_DSM_FUNC_TAS_EN, &res);
+ 	if (ret) {
+ 		rtw89_debug(rtwdev, RTW89_DBG_SAR,

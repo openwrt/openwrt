@@ -1,0 +1,90 @@
+From 5055188134c3cc755333fa19e5b8a0f3cb6fbb9a Mon Sep 17 00:00:00 2001
+From: Louis Kotze <loukot@gmail.com>
+Date: Thu, 16 Apr 2026 06:55:36 +0200
+Subject: [PATCH] wifi: rtw89: phy: increase RF calibration timeouts for USB transport
+
+USB transport adds significant latency to H2C/C2H round-trips used
+by RF calibration. The existing timeout values were designed for PCIe
+and are too tight for USB, causing "failed to wait RF DACK",
+"failed to wait RF TSSI" and similar errors on USB adapters.
+
+Apply a 4x timeout multiplier when the device uses USB transport.
+The multiplier is applied in rtw89_phy_rfk_report_wait() so all
+calibrations benefit without changing any call sites or PCIe
+timeout values.
+
+The 4x multiplier was chosen based on measured data from two
+independent testers (RTL8922AU, 6GHz MLO and 2.4/5GHz):
+
+  Calibration   PCIe timeout   Max measured (USB)   4x timeout
+  PRE_NTFY           5ms              1ms              20ms
+  DACK              58ms             72ms             232ms
+  RX_DCK           128ms            374ms             512ms
+  TSSI normal       20ms             24ms              80ms
+  TSSI scan          6ms             14ms              24ms
+  TXGAPK            54ms             18ms             216ms
+  IQK               84ms             53ms             336ms
+  DPK               34ms             30ms             136ms
+
+Tested with RTL8922AU on 6GHz MLO (5GHz + 6GHz simultaneous):
+25 connect/disconnect cycles with zero failures.
+
+The 4x multiplier was also verified under adverse host conditions
+on 5GHz. 5 cycles per scenario, stress-ng as the load generator,
+max observed time per calibration:
+
+  Calibration  PCIe  4x   Baseline  CPU stress  Mem stress  Combined
+  PRE_NTFY       5   20     0         0           0           1
+  DACK          58  232    71 (!)    71 (!)      71 (!)      71 (!)
+  RX_DCK       128  512    23        22          22          23
+  IQK           84  336    53        53          53          53
+  DPK           34  136    23        23          26          23
+  TSSI          20   80     6         9          14           9
+  TXGAPK        54  216    16        16          16          16
+
+Legend: (!) = exceeds PCIe budget but within 4x budget.
+
+Two observations from that matrix:
+
+1. DACK exceeds the stock PCIe budget (58ms) in baseline on 5GHz
+   on this hardware. Without the 4x multiplier, DACK fails
+   -ETIMEDOUT deterministically on every connect, no stress
+   needed. This is the condition the patch addresses.
+
+2. Calibration times appear dominated by USB transport round-trip
+   latency rather than host load, though hardware and external
+   component factors may also contribute. DACK stays at 71ms
+   across all four scenarios. Host-side stress has essentially
+   zero effect on observed calibration duration. Bumping the
+   multiplier above 4x would not address a failure mode that
+   this stress matrix produces.
+
+Reported-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Link: https://github.com/Lucid-Duck/rtw89-usb3-gap/tree/main/evidence/crash-2026-04-11
+Signed-off-by: Louis Kotze <loukot@gmail.com>
+Tested-by: Devin Wittmayer <lucid_duck@justthetip.ca> # RTL8922AU (BrosTrend BE6500)
+Tested-by: Devin Wittmayer <lucid_duck@justthetip.ca> # RTL8852AU (D-Link DWA-X1850 A1)
+Tested-by: Devin Wittmayer <lucid_duck@justthetip.ca> # RTL8852AU (D-Link DWA-X1850 B1)
+Tested-by: Devin Wittmayer <lucid_duck@justthetip.ca> # RTL8852BU (BrosTrend AX4L)
+Tested-by: Devin Wittmayer <lucid_duck@justthetip.ca> # RTL8852CU (EDUP AX5400)
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20260416045536.817930-1-loukot@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/phy.c
++++ b/drivers/net/wireless/realtek/rtw89/phy.c
+@@ -3622,6 +3622,14 @@ int rtw89_phy_rfk_report_wait(struct rtw
+ 	struct rtw89_rfk_wait_info *wait = &rtwdev->rfk_wait;
+ 	unsigned long time_left;
+ 
++	/*
++	 * USB transport adds latency to H2C/C2H round-trips, so RF
++	 * calibrations take longer than on PCIe. Apply a 4x multiplier
++	 * to avoid spurious timeouts.
++	 */
++	if (rtwdev->hci.type == RTW89_HCI_TYPE_USB)
++		ms *= 4;
++
+ 	/* Since we can't receive C2H event during SER, use a fixed delay. */
+ 	if (test_bit(RTW89_FLAG_SER_HANDLING, rtwdev->flags)) {
+ 		fsleep(1000 * ms / 2);

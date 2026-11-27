@@ -1,0 +1,60 @@
+From 030b8d5878e87ba9b91c48727135dba6e0f0fc11 Mon Sep 17 00:00:00 2001
+From: Ping-Ke Shih <pkshih@realtek.com>
+Date: Sat, 1 Nov 2025 21:19:55 +0200
+Subject: [PATCH] wifi: rtw89: 8832cu: turn off TX partial mode
+
+The TX partial mode in USB devices will cause timeout to wait for payload,
+causing SER 0x999 and disconnection. Turn off this mode according to
+design suggestion.
+
+rtw89_8852cu 2-4:1.0: FW status = 0xee001108
+rtw89_8852cu 2-4:1.0: FW BADADDR = 0x18605fc8
+rtw89_8852cu 2-4:1.0: FW EPC/RA = 0x0
+rtw89_8852cu 2-4:1.0: FW MISC = 0x1010000
+rtw89_8852cu 2-4:1.0: R_AX_HALT_C2H = 0x999
+rtw89_8852cu 2-4:1.0: R_AX_SER_DBG_INFO = 0x71020010
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55e
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55a
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55a
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55e
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55e
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55e
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55a
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55e
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55a
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55e
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f554
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f556
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55a
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55a
+rtw89_8852cu 2-4:1.0: [ERR]fw PC = 0x2013f55e
+rtw89_8852cu 2-4:1.0: --->
+err=0x999
+rtw89_8852cu 2-4:1.0: R_AX_SER_DBG_INFO =0x71020010
+rtw89_8852cu 2-4:1.0: R_AX_SER_DBG_INFO =0x71020010
+rtw89_8852cu 2-4:1.0: DBG Counter 1 (R_AX_DRV_FW_HSK_4)=0x00000000
+rtw89_8852cu 2-4:1.0: DBG Counter 2 (R_AX_DRV_FW_HSK_5)=0x00000000
+rtw89_8852cu 2-4:1.0: R_AX_DMAC_ERR_ISR=0x00000000
+rtw89_8852cu 2-4:1.0: R_AX_DMAC_ERR_IMR=0x00000000
+rtw89_8852cu 2-4:1.0: R_AX_CMAC_ERR_ISR [0]=0x00000000
+rtw89_8852cu 2-4:1.0: R_AX_CMAC_FUNC_EN [0]=0xf000803f
+rtw89_8852cu 2-4:1.0: R_AX_CK_EN [0]=0xffffffff
+rtw89_8852cu 2-4:1.0: R_AX_CMAC_ERR_IMR [0]=0x00000000
+rtw89_8852cu 2-4:1.0: [CMAC] : CMAC1 not enabled
+
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Link: https://patch.msgid.link/3904dd9f-2178-41e5-95c2-7a9f6268e935@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/mac.c
++++ b/drivers/net/wireless/realtek/rtw89/mac.c
+@@ -2324,7 +2324,8 @@ static int sec_eng_init_ax(struct rtw89_
+ 	if (chip->chip_id == RTL8852C)
+ 		val |= B_AX_UC_MGNT_DEC;
+ 	if (chip->chip_id == RTL8852A || chip->chip_id == RTL8852B ||
+-	    chip->chip_id == RTL8851B)
++	    chip->chip_id == RTL8851B ||
++	    (chip->chip_id == RTL8852C && rtwdev->hci.type == RTW89_HCI_TYPE_USB))
+ 		val &= ~B_AX_TX_PARTIAL_MODE;
+ 	rtw89_write32(rtwdev, R_AX_SEC_ENG_CTRL, val);
+ 

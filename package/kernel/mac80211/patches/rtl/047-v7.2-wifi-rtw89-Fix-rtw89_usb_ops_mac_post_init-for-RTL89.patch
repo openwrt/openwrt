@@ -1,0 +1,33 @@
+From 0df7f0c22d96024f4a9db9f32693c6ea527c0c9d Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sun, 19 Apr 2026 16:43:12 +0300
+Subject: [PATCH] wifi: rtw89: Fix rtw89_usb_ops_mac_post_init() for RTL8922AU
+
+Skip most of the function because RTL8922AU only needs to configure the
+RX aggregation here.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/71329cd6-0249-4654-be1d-74c8823f4888@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -827,6 +827,9 @@ static int rtw89_usb_ops_mac_post_init(s
+ 	enum usb_device_speed speed;
+ 	u32 ep;
+ 
++	if (rtwdev->chip->chip_id == RTL8922A)
++		goto rx_agg_cfg;
++
+ 	rtw89_write32_clr(rtwdev, info->usb3_mac_npi_config_intf_0,
+ 			  B_AX_SSPHY_LFPS_FILTER);
+ 
+@@ -848,6 +851,7 @@ static int rtw89_usb_ops_mac_post_init(s
+ 		rtw89_write8(rtwdev, info->usb_endpoint_2 + 1, NUMP);
+ 	}
+ 
++rx_agg_cfg:
+ 	rtw89_usb_rx_agg_cfg(rtwdev);
+ 
+ 	return 0;

@@ -1,0 +1,25 @@
+From a2f1fc9ab6fb0d5c9d701a516c342944258fb20e Mon Sep 17 00:00:00 2001
+From: Jan Gerber <j@mailb.org>
+Date: Fri, 12 Dec 2025 01:54:21 +0100
+Subject: [PATCH] wifi: rtw89: 8852au: add support for TP TX30U Plus
+
+the device shows up like this and everything seams to work:
+
+Bus 004 Device 003: ID 3625:010d Realtek 802.11ax WLAN Adapter
+
+Signed-off-by: Jan Gerber <j@mailb.org>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20251212005515.2059533-1-j@mailb.org
+---
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852au.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852au.c
+@@ -60,6 +60,8 @@ static const struct usb_device_id rtw_88
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8852au_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x2357, 0x0141, 0xff, 0xff, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8852au_info },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x3625, 0x010d, 0xff, 0xff, 0xff),
++	  .driver_info = (kernel_ulong_t)&rtw89_8852au_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x3625, 0x010f, 0xff, 0xff, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8852au_info },
+ 	{},

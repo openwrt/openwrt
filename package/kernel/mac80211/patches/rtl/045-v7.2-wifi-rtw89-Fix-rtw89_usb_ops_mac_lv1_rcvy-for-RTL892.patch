@@ -1,0 +1,41 @@
+From 6f4621340312d7cfd4f2acc3115cd5879fd770c3 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sun, 19 Apr 2026 16:40:59 +0300
+Subject: [PATCH] wifi: rtw89: Fix rtw89_usb_ops_mac_lv1_rcvy() for RTL8922AU
+
+RTL8922AU uses a different register and mask to reset TX/RX. Add them
+here.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/fd6ae7f6-0035-45d8-8832-49a053fd217d@gmail.com
+(cherry picked from commit 6f4621340312d7cfd4f2acc3115cd5879fd770c3)
+[ context in reg.h adjusted, R_BE_HCI_BUF_IMR is not in 6.18 ]
+---
+--- a/drivers/net/wireless/realtek/rtw89/reg.h
++++ b/drivers/net/wireless/realtek/rtw89/reg.h
+@@ -4580,6 +4580,10 @@
+ #define R_BE_LTR_LATENCY_IDX2_V1 0x361C
+ #define R_BE_LTR_LATENCY_IDX3_V1 0x3620
+ 
++#define R_BE_USB2_WLAN_TRX_OPT_PAR2 0x41BC
++#define B_BE_USB2_USBRX_RST BIT(1)
++#define B_BE_USB2_USBTX_RST BIT(0)
++
+ #define R_BE_H2CREG_DATA0 0x7140
+ #define R_BE_H2CREG_DATA1 0x7144
+ #define R_BE_H2CREG_DATA2 0x7148
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -871,6 +871,10 @@ static int rtw89_usb_ops_mac_lv1_rcvy(st
+ 		reg = R_AX_USB_WLAN0_1_V1;
+ 		mask = B_AX_USBRX_RST_V1 | B_AX_USBTX_RST_V1;
+ 		break;
++	case RTL8922A:
++		reg = R_BE_USB2_WLAN_TRX_OPT_PAR2;
++		mask = B_BE_USB2_USBRX_RST | B_BE_USB2_USBTX_RST;
++		break;
+ 	default:
+ 		rtw89_err(rtwdev, "%s: fix me\n", __func__);
+ 		return -EOPNOTSUPP;

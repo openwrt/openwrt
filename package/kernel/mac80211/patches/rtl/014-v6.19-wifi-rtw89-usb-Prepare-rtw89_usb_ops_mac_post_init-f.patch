@@ -1,0 +1,77 @@
+From 199afd3af12c81f663734d8fe290197288618ada Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sat, 1 Nov 2025 21:23:33 +0200
+Subject: [PATCH] wifi: rtw89: usb: Prepare rtw89_usb_ops_mac_post_init() for RTL8852CU
+
+The registers used in rtw89_usb_ops_mac_post_init() are located at
+different offsets in RTL8852CU, so move them to struct rtw89_usb_info,
+which is filled in each chip's driver.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/c12b621a-037c-4870-ac12-9795ddde6b53@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/rtw8851bu.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8851bu.c
+@@ -12,6 +12,9 @@ static const struct rtw89_usb_info rtw88
+ 	.usb_host_request_2		= R_AX_USB_HOST_REQUEST_2,
+ 	.usb_wlan0_1			= R_AX_USB_WLAN0_1,
+ 	.hci_func_en			= R_AX_HCI_FUNC_EN,
++	.usb3_mac_npi_config_intf_0	= R_AX_USB3_MAC_NPI_CONFIG_INTF_0,
++	.usb_endpoint_0			= R_AX_USB_ENDPOINT_0,
++	.usb_endpoint_2			= R_AX_USB_ENDPOINT_2,
+ 	.bulkout_id = {
+ 		[RTW89_DMA_ACH0] = 3,
+ 		[RTW89_DMA_ACH1] = 4,
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852bu.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852bu.c
+@@ -12,6 +12,9 @@ static const struct rtw89_usb_info rtw88
+ 	.usb_host_request_2		= R_AX_USB_HOST_REQUEST_2,
+ 	.usb_wlan0_1			= R_AX_USB_WLAN0_1,
+ 	.hci_func_en			= R_AX_HCI_FUNC_EN,
++	.usb3_mac_npi_config_intf_0	= R_AX_USB3_MAC_NPI_CONFIG_INTF_0,
++	.usb_endpoint_0			= R_AX_USB_ENDPOINT_0,
++	.usb_endpoint_2			= R_AX_USB_ENDPOINT_2,
+ 	.bulkout_id = {
+ 		[RTW89_DMA_ACH0] = 3,
+ 		[RTW89_DMA_ACH1] = 4,
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -709,10 +709,11 @@ static int rtw89_usb_ops_mac_pre_deinit(
+ static int rtw89_usb_ops_mac_post_init(struct rtw89_dev *rtwdev)
+ {
+ 	struct rtw89_usb *rtwusb = rtw89_usb_priv(rtwdev);
++	const struct rtw89_usb_info *info = rtwusb->info;
+ 	enum usb_device_speed speed;
+ 	u32 ep;
+ 
+-	rtw89_write32_clr(rtwdev, R_AX_USB3_MAC_NPI_CONFIG_INTF_0,
++	rtw89_write32_clr(rtwdev, info->usb3_mac_npi_config_intf_0,
+ 			  B_AX_SSPHY_LFPS_FILTER);
+ 
+ 	speed = rtwusb->udev->speed;
+@@ -728,9 +729,9 @@ static int rtw89_usb_ops_mac_post_init(s
+ 		if (ep == 8)
+ 			continue;
+ 
+-		rtw89_write8_mask(rtwdev, R_AX_USB_ENDPOINT_0,
++		rtw89_write8_mask(rtwdev, info->usb_endpoint_0,
+ 				  B_AX_EP_IDX, ep);
+-		rtw89_write8(rtwdev, R_AX_USB_ENDPOINT_2 + 1, NUMP);
++		rtw89_write8(rtwdev, info->usb_endpoint_2 + 1, NUMP);
+ 	}
+ 
+ 	return 0;
+--- a/drivers/net/wireless/realtek/rtw89/usb.h
++++ b/drivers/net/wireless/realtek/rtw89/usb.h
+@@ -24,6 +24,9 @@ struct rtw89_usb_info {
+ 	u32 usb_host_request_2;
+ 	u32 usb_wlan0_1;
+ 	u32 hci_func_en;
++	u32 usb3_mac_npi_config_intf_0;
++	u32 usb_endpoint_0;
++	u32 usb_endpoint_2;
+ 	u8 bulkout_id[RTW89_DMA_CH_NUM];
+ };
+ 

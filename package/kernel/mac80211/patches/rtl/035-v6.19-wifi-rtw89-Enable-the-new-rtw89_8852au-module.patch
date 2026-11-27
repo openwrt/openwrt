@@ -1,0 +1,55 @@
+From 623c177323ec16c2c72b4ea0ad68bda223928488 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Fri, 7 Nov 2025 18:10:19 +0200
+Subject: [PATCH] wifi: rtw89: Enable the new rtw89_8852au module
+
+Tested in station mode and a little in AP mode.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/180a5e77-9297-4ffc-80d5-191dfef47661@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/Kconfig
++++ b/drivers/net/wireless/realtek/rtw89/Kconfig
+@@ -88,6 +88,18 @@ config RTW89_8852AE
+ 
+ 	  802.11ax PCIe wireless network (Wi-Fi 6) adapter
+ 
++config RTW89_8852AU
++	tristate "Realtek 8852AU USB wireless network (Wi-Fi 6) adapter"
++	depends on m
++	depends on USB
++	select RTW89_CORE
++	select RTW89_USB
++	select RTW89_8852A
++	help
++	  Select this option will enable support for 8852AU chipset
++
++	  802.11ax USB wireless network (Wi-Fi 6) adapter
++
+ config RTW89_8852BE
+ 	tristate "Realtek 8852BE PCI wireless network (Wi-Fi 6) adapter"
+ 	depends on m
+--- a/drivers/net/wireless/realtek/rtw89/Makefile
++++ b/drivers/net/wireless/realtek/rtw89/Makefile
+@@ -43,6 +43,9 @@ rtw89_8852a-objs := rtw8852a.o \
+ obj-$(CPTCFG_RTW89_8852AE) += rtw89_8852ae.o
+ rtw89_8852ae-objs := rtw8852ae.o
+ 
++obj-$(CPTCFG_RTW89_8852AU) += rtw89_8852au.o
++rtw89_8852au-objs := rtw8852au.o
++
+ obj-$(CPTCFG_RTW89_8852B_COMMON) += rtw89_8852b_common.o
+ rtw89_8852b_common-objs := rtw8852b_common.o
+ 
+--- a/local-symbols
++++ b/local-symbols
+@@ -414,6 +414,7 @@ RTW89_8922A=
+ RTW89_8851BE=
+ RTW89_8851BU=
+ RTW89_8852AE=
++RTW89_8852AU=
+ RTW89_8852BE=
+ RTW89_8852BU=
+ RTW89_8852BTE=

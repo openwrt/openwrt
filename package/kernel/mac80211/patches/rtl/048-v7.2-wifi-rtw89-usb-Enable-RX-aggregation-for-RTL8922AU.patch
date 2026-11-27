@@ -1,0 +1,60 @@
+From 32cee8a9bb66ceb434b9eae32beb17403287c4d5 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sun, 19 Apr 2026 16:43:53 +0300
+Subject: [PATCH] wifi: rtw89: usb: Enable RX aggregation for RTL8922AU
+
+It uses the same settings as RTL8852CU, but the register and bit names
+have "BE" instead of "AX".
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/bd9e444f-257c-48c8-8adb-f58432b2c5c2@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/usb.c
++++ b/drivers/net/wireless/realtek/rtw89/usb.c
+@@ -803,6 +803,17 @@ static void rtw89_usb_rx_agg_cfg_v2(stru
+ 	rtw89_write32(rtwdev, R_AX_RXAGG_1_V1, 0x1F);
+ }
+ 
++static void rtw89_usb_rx_agg_cfg_v3(struct rtw89_dev *rtwdev)
++{
++	const u32 rxagg_0 = FIELD_PREP_CONST(B_BE_RXAGG_0_EN, 1) |
++			    FIELD_PREP_CONST(B_BE_RXAGG_0_NUM_TH, 255) |
++			    FIELD_PREP_CONST(B_BE_RXAGG_0_TIME_32US_TH, 32) |
++			    FIELD_PREP_CONST(B_BE_RXAGG_0_BUF_SZ_1K, 20);
++
++	rtw89_write32(rtwdev, R_BE_RXAGG_0_V1, rxagg_0);
++	rtw89_write32(rtwdev, R_BE_RXAGG_1_V1, 0x1F);
++}
++
+ static void rtw89_usb_rx_agg_cfg(struct rtw89_dev *rtwdev)
+ {
+ 	switch (rtwdev->chip->chip_id) {
+@@ -814,6 +825,9 @@ static void rtw89_usb_rx_agg_cfg(struct
+ 	case RTL8852C:
+ 		rtw89_usb_rx_agg_cfg_v2(rtwdev);
+ 		break;
++	case RTL8922A:
++		rtw89_usb_rx_agg_cfg_v3(rtwdev);
++		break;
+ 	default:
+ 		rtw89_warn(rtwdev, "%s: USB RX agg not support\n", __func__);
+ 		return;
+--- a/drivers/net/wireless/realtek/rtw89/usb.h
++++ b/drivers/net/wireless/realtek/rtw89/usb.h
+@@ -29,6 +29,14 @@
+ 
+ #define R_AX_RXAGG_1_V1			0x6004
+ 
++#define R_BE_RXAGG_0_V1			0x6000
++#define B_BE_RXAGG_0_EN			BIT(31)
++#define B_BE_RXAGG_0_NUM_TH		GENMASK(23, 16)
++#define B_BE_RXAGG_0_TIME_32US_TH	GENMASK(15, 8)
++#define B_BE_RXAGG_0_BUF_SZ_1K		GENMASK(7, 0)
++
++#define R_BE_RXAGG_1_V1			0x6004
++
+ #define R_AX_RXAGG_0			0x8900
+ #define B_AX_RXAGG_0_BUF_SZ_4K		GENMASK(7, 0)
+ 

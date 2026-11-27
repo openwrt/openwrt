@@ -1,0 +1,27 @@
+From ef42cf705ca32c07a58133817567ac06ef74dc19 Mon Sep 17 00:00:00 2001
+From: Dan Hamik <dan@hamik.net>
+Date: Wed, 12 Nov 2025 07:04:51 +0000
+Subject: [PATCH] wifi: rtw89: rtw8852bu: Added dev id for ASUS AX57 NANO USB Wifi dongle
+
+Add the USB device ID 0x0b05:0x1cb6 to the rtw8852bu driver to support the
+ASUS AX57 Nano WiFi 6 USB adapter.This device uses the same Realtek
+RTL8852BU chipset as other supported models.
+
+Tested on: Linux Mint 22 with kernel 6.8.0-87-generic.
+The adapter initializes successfully and connects to networks.
+
+Signed-off-by: Dan Hamik <dan@hamik.net>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/010f019a76e1a84b-0a6f5e9f-2a43-4a9d-9c30-de4ae6363011-000000@us-east-2.amazonses.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852bu.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852bu.c
+@@ -50,6 +50,8 @@ static const struct usb_device_id rtw_88
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8852bu_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x0b05, 0x1a62, 0xff, 0xff, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8852bu_info },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x0b05, 0x1cb6, 0xff, 0xff, 0xff),
++	  .driver_info = (kernel_ulong_t)&rtw89_8852bu_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x0db0, 0x6931, 0xff, 0xff, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&rtw89_8852bu_info },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x0db0, 0xf0c8, 0xff, 0xff, 0xff),

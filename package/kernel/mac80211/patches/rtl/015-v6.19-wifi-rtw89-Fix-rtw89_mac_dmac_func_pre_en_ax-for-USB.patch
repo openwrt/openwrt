@@ -1,0 +1,32 @@
+From 32e0381e86031d0289b98e82a7a872ed1698676d Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sat, 1 Nov 2025 21:24:05 +0200
+Subject: [PATCH] wifi: rtw89: Fix rtw89_mac_dmac_func_pre_en_ax() for USB/SDIO
+
+Set the DMA mode according to the interface type.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/d2250e72-0aa1-422c-8f7f-9aeb283ca376@gmail.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/mac.c
++++ b/drivers/net/wireless/realtek/rtw89/mac.c
+@@ -3986,8 +3986,15 @@ static void rtw89_mac_dmac_func_pre_en_a
+ 
+ 	val = rtw89_read32(rtwdev, R_AX_HAXI_INIT_CFG1);
+ 	val &= ~(B_AX_DMA_MODE_MASK | B_AX_STOP_AXI_MST);
+-	val |= FIELD_PREP(B_AX_DMA_MODE_MASK, DMA_MOD_PCIE_1B) |
+-	       B_AX_TXHCI_EN_V1 | B_AX_RXHCI_EN_V1;
++	val |= B_AX_TXHCI_EN_V1 | B_AX_RXHCI_EN_V1;
++
++	if (rtwdev->hci.type == RTW89_HCI_TYPE_PCIE)
++		val |= FIELD_PREP(B_AX_DMA_MODE_MASK, DMA_MOD_PCIE_1B);
++	else if (rtwdev->hci.type == RTW89_HCI_TYPE_USB)
++		val |= FIELD_PREP(B_AX_DMA_MODE_MASK, DMA_MOD_USB);
++	else
++		val |= FIELD_PREP(B_AX_DMA_MODE_MASK, DMA_MOD_SDIO);
++
+ 	rtw89_write32(rtwdev, R_AX_HAXI_INIT_CFG1, val);
+ 
+ 	rtw89_write32_clr(rtwdev, R_AX_HAXI_DMA_STOP1,

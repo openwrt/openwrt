@@ -1,0 +1,59 @@
+From d3a9e132a4c6273a5254e743da14887502e928c8 Mon Sep 17 00:00:00 2001
+From: Ping-Ke Shih <pkshih@realtek.com>
+Date: Wed, 17 Dec 2025 15:26:46 +0800
+Subject: [PATCH] wifi: rtw89: correct use sequence of driver_data in skb->info
+
+As ieee80211_tx_info is used to assist filling TX descriptor, and layout of
+IEEE80211_SKB_CB(skb)->driver_data (accessing by RTW89_TX_SKB_CB()) is
+union, so driver_data must be used by/after rtw89_hci_tx_write() or just
+before calling rtw89_hci_tx_write(). Otherwise, ieee80211_tx_info::control
+data is overwritten.
+
+Found this by using injected packets which uses ieee80211_tx_info::control,
+but always sending incorrect data rate.
+
+Cc: Fedor Pchelkin <pchelkin@ispras.ru>
+Fixes: d5da3d9fb05f ("wifi: rtw89: process TX wait skbs for USB via C2H handler")
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Tested-by: Fedor Pchelkin <pchelkin@ispras.ru>
+Link: https://patch.msgid.link/20251217072646.43209-1-pkshih@realtek.com
+---
+--- a/drivers/net/wireless/realtek/rtw89/core.c
++++ b/drivers/net/wireless/realtek/rtw89/core.c
+@@ -1135,7 +1135,7 @@ rtw89_core_tx_update_desc_info(struct rt
+ 	if (addr_cam->valid && desc_info->mlo)
+ 		upd_wlan_hdr = true;
+ 
+-	if (rtw89_is_tx_rpt_skb(rtwdev, tx_req->skb))
++	if (info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS || tx_req->with_wait)
+ 		rtw89_tx_rpt_init(rtwdev, tx_req);
+ 
+ 	is_bmc = (is_broadcast_ether_addr(hdr->addr1) ||
+@@ -1267,13 +1267,15 @@ static int rtw89_core_tx_write_link(stru
+ 	tx_req.rtwvif_link = rtwvif_link;
+ 	tx_req.rtwsta_link = rtwsta_link;
+ 	tx_req.desc_info.sw_mld = sw_mld;
+-	rcu_assign_pointer(skb_data->wait, wait);
++	tx_req.with_wait = !!wait;
+ 
+ 	rtw89_traffic_stats_accu(rtwdev, rtwvif, skb, true, true);
+ 	rtw89_wow_parse_akm(rtwdev, skb);
+ 	rtw89_core_tx_update_desc_info(rtwdev, &tx_req);
+ 	rtw89_core_tx_wake(rtwdev, &tx_req);
+ 
++	rcu_assign_pointer(skb_data->wait, wait);
++
+ 	ret = rtw89_hci_tx_write(rtwdev, &tx_req);
+ 	if (ret) {
+ 		rtw89_err(rtwdev, "failed to transmit skb to HCI\n");
+--- a/drivers/net/wireless/realtek/rtw89/core.h
++++ b/drivers/net/wireless/realtek/rtw89/core.h
+@@ -1207,6 +1207,8 @@ struct rtw89_core_tx_request {
+ 	struct rtw89_vif_link *rtwvif_link;
+ 	struct rtw89_sta_link *rtwsta_link;
+ 	struct rtw89_tx_desc_info desc_info;
++
++	bool with_wait;
+ };
+ 
+ struct rtw89_txq {
