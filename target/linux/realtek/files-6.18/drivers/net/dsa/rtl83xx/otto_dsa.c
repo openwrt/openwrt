@@ -1078,32 +1078,32 @@ static int otto_dsa_mdio_loaded(void)
 
 static int otto_dsa_ports_probe(struct otto_dsa_priv *priv)
 {
-	struct device_node *dn, *phy_node, *led_node;
+	struct device_node *ports __free(device_node) =
+		of_get_child_by_name(priv->dev->of_node, "ethernet-ports");
+	struct device_node *led_node __free(device_node) =
+		of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
+	struct device_node *phy_node;
 	u32 pn;
 
-	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-switch");
-	if (!dn) {
-		dev_err(priv->dev, "No RTL switch node in DTS\n");
+	if (!ports) {
+		dev_err(priv->dev, "No ethernet-ports node in DTS\n");
 		return -ENODEV;
 	}
 
-	led_node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
-
-	for_each_node_by_name(dn, "port") {
+	for_each_available_child_of_node_scoped(ports, dn) {
 		const char *managed;
 		u32 led_set;
 		char led_set_str[16] = {0};
-
-		if (!of_device_is_available(dn))
-			continue;
 
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
+		priv->ports[pn].phy = !!phy_node;
+		of_node_put(phy_node);
 		priv->ports[pn].has_pcs = fwnode_property_present(of_fwnode_handle(dn),
 								  "pcs-handle");
-		if (pn != priv->r->cpu_port && !phy_node && !priv->ports[pn].has_pcs) {
+		if (pn != priv->r->cpu_port && !priv->ports[pn].phy && !priv->ports[pn].has_pcs) {
 			dev_err(priv->dev, "Port node %d has neither pcs-handle nor phy-handle\n", pn);
 			continue;
 		}
@@ -1116,13 +1116,11 @@ static int otto_dsa_ports_probe(struct otto_dsa_priv *priv)
 			sprintf(led_set_str, "led_set%d", led_set);
 			priv->ports[pn].leds_on_this_port = of_property_count_u32_elems(led_node, led_set_str);
 			if (priv->ports[pn].leds_on_this_port > 4) {
-				of_node_put(dn);
 				dev_err(priv->dev, "led_set %d for port %d configuration is invalid\n", led_set, pn);
 				return -ENODEV;
 			}
 		}
 
-		priv->ports[pn].phy = !!phy_node;
 		/* In-band status as phylink reads it */
 		if (!of_property_read_string(dn, "managed", &managed) &&
 		    !strcmp(managed, "in-band-status"))
