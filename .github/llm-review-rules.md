@@ -2,7 +2,8 @@
 
 Project-specific patterns to flag, even when other in-tree files still
 use the deprecated form. The LLM review routine reads this at session
-start.
+start. The formality bot checks the `formality-rule` blocks on its own,
+so their findings need no repeating.
 
 ## Deprecated device-tree patterns
 
@@ -11,14 +12,84 @@ start.
   (constants from `include/dt-bindings/leds/common.h`; pick the
   `LED_COLOR_ID_<COLOR>` and `LED_FUNCTION_<FUNC>` matching the old
   `<color>:<function>` string, falling back to `function = "<func>";`
-  if no matching `LED_FUNCTION_*` constant exists).
+  if no matching `LED_FUNCTION_*` constant exists). The older
+  `label = "<device>:<color>:<function>"` and `label = "<function>:<color>"`
+  forms are replaced the same way.
+
+  ```formality-rule
+  files: target/linux/**/*.dts*
+  added: label = "white:
+  added: label = "red:
+  added: label = "green:
+  added: label = "blue:
+  added: label = "amber:
+  added: label = "yellow:
+  added: label = "orange:
+  added: label = "purple:
+  added: label = "violet:
+  added: label = "cyan:
+  added: label = "pink:
+  added: label = "ir:
+  added: label = "rgb:
+  added: label = "lime:
+  added: label = "multi:
+  message: Use `color = <LED_COLOR_ID_...>;` and `function = LED_FUNCTION_...;` instead of `label = "<color>:<function>"`, or `function = "<func>";` where no constant matches.
+  ```
+
+  ```formality-rule
+  files: target/linux/**/*.dts*
+  added: :white:
+  added: :red:
+  added: :green:
+  added: :blue:
+  added: :amber:
+  added: :yellow:
+  added: :orange:
+  added: :purple:
+  added: :violet:
+  added: :cyan:
+  added: :pink:
+  added: :ir:
+  added: :rgb:
+  added: :lime:
+  added: :multi:
+  added: :white"
+  added: :red"
+  added: :green"
+  added: :blue"
+  added: :amber"
+  added: :yellow"
+  added: :orange"
+  added: :purple"
+  added: :violet"
+  added: :cyan"
+  added: :pink"
+  added: :ir"
+  added: :rgb"
+  added: :lime"
+  added: :multi"
+  message: Use `color = <LED_COLOR_ID_...>;` and `function = LED_FUNCTION_...;` instead of an LED name with the color in it, such as `label = "<device>:<color>:<function>"` or `label = "<function>:<color>"`.
+  ```
 - **MAC from MTD.** `mediatek,mtd-eeprom = <&factory 0xNNNN>;` --> use
   `nvmem-cells = <&macaddr_factory_NN>;` +
   `nvmem-cell-names = "mac-address";`.
+
+  ```formality-rule
+  files: target/linux/**/*.dts*
+  added: mediatek,mtd-eeprom
+  message: Use `nvmem-cells` and `nvmem-cell-names` instead of `mediatek,mtd-eeprom`.
+  ```
 - **Prefixed calibration variant.**
   `qcom,ath10k-calibration-variant = "...";` /
   `qcom,ath11k-calibration-variant = "...";` --> use
   `qcom,calibration-variant = "...";` with the same value.
+
+  ```formality-rule
+  files: target/linux/**/*.dts*
+  added: qcom,ath10k-calibration-variant
+  added: qcom,ath11k-calibration-variant
+  message: Use `qcom,calibration-variant` with the same value.
+  ```
 
 ## Patch regeneration
 
