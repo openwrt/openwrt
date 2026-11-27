@@ -1127,28 +1127,62 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	return NETDEV_TX_OK;
 }
 
+static struct sk_buff *rteth_create_skb_unaligned(struct rteth_rx_info *rx,
+						  struct page *page, unsigned int offset,
+						  unsigned int frag_len)
+{
+	unsigned int len = min(frag_len, 96U);
+	struct sk_buff *skb;
+
+	skb = napi_alloc_skb(&rx->napi, len);
+	if (unlikely(!skb))
+		return NULL;
+
+	offset += rx->ctrl->cfg->skb_headroom;
+	skb_put_data(skb, page_address(page) + offset, len);
+	if (len < frag_len)
+		skb_add_rx_frag(skb, 0, page, offset + len, frag_len - len,
+				RTETH_PPOOL_FRAG_SIZE);
+	else
+		page_pool_put_full_page(rx->pool, page, true);
+
+	return skb;
+}
+
+static struct sk_buff *rteth_create_skb_aligned(struct rteth_rx_info *rx,
+						struct page *page, unsigned int offset,
+						unsigned int frag_len)
+{
+	struct sk_buff *skb;
+
+	skb = napi_build_skb(page_address(page) + offset, RTETH_PPOOL_FRAG_SIZE);
+	if (unlikely(!skb))
+		return NULL;
+
+	skb_reserve(skb, rx->ctrl->cfg->skb_headroom);
+	skb_put(skb, frag_len);
+
+	return skb;
+}
+
 static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int slot)
 {
 	struct rteth_frag *frag = &ctrl->rx_data[ring].frag[slot];
-	unsigned int offset = ctrl->rx_info[ring].offset[slot];
-	struct page *page = ctrl->rx_info[ring].page[slot];
-	struct page_pool *pool = ctrl->rx_info[ring].pool;
+	struct rteth_rx_info *rx = &ctrl->rx_info[ring];
+	unsigned int offset = rx->offset[slot];
+	struct page *page = rx->page[slot];
 	struct net_device *dev = ctrl->dev;
-	unsigned int len = frag->len;
 	struct metadata_dst *md_dst;
 	struct rteth_dsa_tag tag;
 	struct sk_buff *skb;
 
-	page_pool_dma_sync_for_cpu(pool, page, offset + ctrl->cfg->skb_headroom, len);
-	skb = napi_build_skb(page_address(page) + offset, RTETH_PPOOL_FRAG_SIZE);
+	page_pool_dma_sync_for_cpu(rx->pool, page, offset + ctrl->cfg->skb_headroom, frag->len);
+	skb = ctrl->cfg->create_skb(rx, page, offset, frag->len);
 	if (unlikely(!skb)) {
-		page_pool_put_full_page(pool, page, true);
+		page_pool_put_full_page(rx->pool, page, true);
 		return NULL;
 	}
-
-	skb_reserve(skb, ctrl->cfg->skb_headroom);
 	skb_mark_for_recycle(skb);
-	skb_put(skb, len);
 
 	ctrl->cfg->decode_tag(frag, &tag);
 	if (netdev_uses_dsa(dev) && tag.port < ctrl->cfg->cpu_port) {
@@ -1255,8 +1289,10 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		if (is_tail && skb) {
 			if (unlikely(skb->len < ETH_HLEN + ETH_FCS_LEN)) {
 				rx_errors += rteth_free_skb(&skb);
+			} else if (unlikely(pskb_trim(skb, skb->len - ETH_FCS_LEN) ||
+					    !pskb_may_pull(skb, ETH_HLEN))) {
+				rx_dropped += rteth_free_skb(&skb);
 			} else {
-				pskb_trim(skb, skb->len - ETH_FCS_LEN);
 				rx_bytes += skb->len;
 				rx_packets++;
 				skb->protocol = eth_type_trans(skb, dev);
@@ -1527,6 +1563,7 @@ static const struct rteth_cfg rteth_838x_cfg = {
 	.confirm_disable_irqs	= rteth_83xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_83xx_enable_rx_irq,
 	.update_counter		= rteth_83xx_update_counter,
+	.create_skb		= rteth_create_skb_unaligned,
 	.create_tx_header	= rteth_838x_create_tx_header,
 	.decode_tag		= rteth_838x_decode_tag,
 	.hw_en_rxtx		= rteth_838x_hw_en_rxtx,
@@ -1564,6 +1601,7 @@ static const struct rteth_cfg rteth_839x_cfg = {
 	.confirm_disable_irqs	= rteth_83xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_83xx_enable_rx_irq,
 	.update_counter		= rteth_83xx_update_counter,
+	.create_skb		= rteth_create_skb_aligned,
 	.create_tx_header	= rteth_839x_create_tx_header,
 	.decode_tag		= rteth_839x_decode_tag,
 	.hw_en_rxtx		= rteth_839x_hw_en_rxtx,
@@ -1603,6 +1641,7 @@ static const struct rteth_cfg rteth_930x_cfg = {
 	.confirm_disable_irqs	= rteth_93xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_93xx_enable_rx_irq,
 	.update_counter		= rteth_93xx_update_counter,
+	.create_skb		= rteth_create_skb_aligned,
 	.create_tx_header	= rteth_93xx_create_tx_header,
 	.decode_tag		= rteth_93xx_decode_tag,
 	.hw_en_rxtx		= rteth_930x_hw_en_rxtx,
@@ -1641,6 +1680,7 @@ static const struct rteth_cfg rteth_931x_cfg = {
 	.confirm_disable_irqs	= rteth_93xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_93xx_enable_rx_irq,
 	.update_counter		= rteth_93xx_update_counter,
+	.create_skb		= rteth_create_skb_aligned,
 	.create_tx_header	= rteth_93xx_create_tx_header,
 	.decode_tag		= rteth_93xx_decode_tag,
 	.hw_en_rxtx		= rteth_931x_hw_en_rxtx,

@@ -330,6 +330,8 @@ struct rteth_cfg {
 	int l2_tbl_flush_ctrl;
 	void (*confirm_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings);
 	void (*enable_rx_irq)(struct rteth_ctrl *ctrl, int ring);
+	struct sk_buff *(*create_skb)(struct rteth_rx_info *rx, struct page *page,
+				      unsigned int offset, unsigned int frag_len);
 	void (*create_tx_header)(struct rteth_frag *frag, unsigned int dest_port, int prio);
 	bool (*decode_tag)(struct rteth_frag *frag, struct rteth_dsa_tag *tag);
 	void (*hw_en_rxtx)(struct rteth_ctrl *ctrl);
