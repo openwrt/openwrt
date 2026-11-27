@@ -1,0 +1,138 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/*
+ * Dragonglass DGX25 (NAND variant) - AX1800 Dual-band Wireless Router
+ *
+ * Specs:
+ * - SoC: MediaTek MT7621AT (MIPS 1004Kc, dual-core @ 880 MHz)
+ * - RAM: 256 MB DDR3 (W632GG6MB-09 / NT5CC128M16JR-EK)
+ * - Flash: Winbond W25N01GV 128 MB (MT7621 parallel NAND)
+ * - WiFi: MediaTek MT7915D (AX1800) - DBDC 2.4G + 5G (single PCIe, pcie1)
+ * - Ports: 1x WAN + 4x LAN (DSA, MT7530 switch)
+ * - USB: 1x USB 3.0
+ *
+ * NOTE: The factory-installed U-Boot runs a "dual image check" that
+ * requires a squashfs rootfs sub-image inside the kernel FIT. This
+ * OpenWrt build creates a kernel-only FIT (no embedded rootfs). To
+ * enable auto-boot, the U-Boot bootcmd must be changed to skip the
+ * dual image check:
+ *   setenv bootcmd nand read 0x82000000 0x180000 0x400000\; bootm 0x82000000
+ *   setenv bootdelay 2
+ *   saveenv
+ * Alternatively, include rootfs in the FIT via external-static-with-rootfs
+ * (requires enlarging the kernel partition and adjusting the UBI offset).
+ */
+
+#include "mt7621_dragonglass_dgx25.dtsi"
+
+/ {
+	compatible = "dragonglass,dgx25-nand", "dragonglass,dgx25", "mediatek,mt7621-soc";
+	model = "Dragonglass DGX25 NAND (AX1800)";
+};
+
+/*
+ * Parallel NAND flash (128 MB via MT7621 NAND controller):
+ *	u-boot:  0x000000-0x080000 (512 KB)
+ *	config:  0x080000-0x100000 (512 KB)
+ *	factory: 0x100000-0x180000 (512 KB)
+ *	firmware: 0x180000-0x7800000 (~119 MB, kernel+UBI)
+ */
+&nand {
+	status = "okay";
+
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "config";
+			reg = <0x80000 0x80000>;
+		};
+
+		partition@100000 {
+			label = "factory";
+			reg = <0x100000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x1000>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					compatible = "mac-base";
+					reg = <0x4 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				macaddr_factory_3fff4: macaddr@3fff4 {
+					reg = <0x3fff4 0x6>;
+				};
+
+				macaddr_factory_3fffa: macaddr@3fffa {
+					reg = <0x3fffa 0x6>;
+				};
+			};
+		};
+
+		partition@180000 {
+			label = "firmware";
+			reg = <0x180000 0x7680000>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x400000>;
+			};
+
+			partition@400000 {
+				label = "ubi";
+				reg = <0x400000 0x7280000>;
+			};
+		};
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_3fff4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	ports {
+		port@4 {
+			nvmem-cells = <&macaddr_factory_3fffa>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};

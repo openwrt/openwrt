@@ -1217,6 +1217,69 @@ define Device/dlink_dra-1360-a1
 endef
 TARGET_DEVICES += dlink_dra-1360-a1
 
+define Device/dragonglass_dgx25
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Dragonglass
+  DEVICE_MODEL := DGX25
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7915-firmware kmod-mt7916-firmware kmod-usb3
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma | pad-to 64k
+  IMAGE_SIZE := 15808k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES += dragonglass,dgx25
+endef
+TARGET_DEVICES += dragonglass_dgx25
+
+define Device/dragonglass_dgx25-nand
+  $(Device/nand)
+  DEVICE_VENDOR := Dragonglass
+  DEVICE_MODEL := DGX25 NAND
+  PAGESIZE := 2048
+  BLOCKSIZE := 128k
+  MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=124KiB --max-leb-cnt=96 --space-fixup --squash-uids
+  UBIFS_OPTS  := --min-io-size=2048 --leb-size=124KiB --max-leb-cnt=96
+  UBINIZE_OPTS := -E 5
+  DEVICE_DTS := mt7621_dragonglass_dgx25-nand
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7915-firmware kmod-mt7916-firmware kmod-usb3
+  KERNEL_SIZE := 4096k
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES += dragonglass,dgx25-nand
+endef
+TARGET_DEVICES += dragonglass_dgx25-nand
+
+define Device/dragonglass_dgr7
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Dragonglass
+  DEVICE_MODEL := DGR7
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGE_SIZE := 7552k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+  IMAGE/factory.bin := $$(KERNEL) | pad-to $$(IMAGE_SIZE)
+  SUPPORTED_DEVICES += dragonglass,dgr7
+endef
+TARGET_DEVICES += dragonglass_dgr7
+
+define Device/dragonglass_dgr7-16m
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Dragonglass
+  DEVICE_MODEL := DGR7
+  DEVICE_VARIANT := 16M
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGE_SIZE := 15744k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+  IMAGE/factory.bin := $$(KERNEL) | pad-to $$(IMAGE_SIZE)
+  SUPPORTED_DEVICES += dragonglass,dgr7-16m
+endef
+TARGET_DEVICES += dragonglass_dgr7-16m
+
 define Device/dual-q_h721
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)

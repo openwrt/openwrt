@@ -1,0 +1,92 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/*
+ * Dragonglass DGX25 (NOR variant) - AX1800 Dual-band Wireless Router
+ *
+ * Specs:
+ * - SoC: MediaTek MT7621AT (MIPS 1004Kc, dual-core @ 880 MHz)
+ * - RAM: 256 MB DDR3 (W632GG6MB-09 / NT5CC128M16JR-EK)
+ * - Flash: Macronix MX25L12835F 16 MB SPI NOR
+ * - WiFi: MediaTek MT7915D (AX1800) - DBDC 2.4G + 5G (single PCIe, pcie1)
+ * - Ports: 1x WAN + 4x LAN (DSA, MT7530 switch)
+ * - USB: 1x USB 3.0
+ */
+
+#include "mt7621_dragonglass_dgx25.dtsi"
+
+/ {
+	compatible = "dragonglass,dgx25", "mediatek,mt7621-soc";
+	model = "Dragonglass DGX25 (AX1800)";
+};
+
+/*
+ * SPI-NOR flash layout (16 MB MX25L12835F)
+ *	u-boot:   0x000000-0x030000 (192 KB, read-only)
+ *	config:   0x030000-0x040000 ( 64 KB, read-only)
+ *	factory:  0x040000-0x080000 (256 KB, read-only)
+ *	config2:  0x080000-0x090000 ( 64 KB, read-only)
+ *	firmware: 0x090000-0x1000000  (15.4 MB)
+ */
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x00000 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "config";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x40000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_10000: eeprom@10000 {
+						reg = <0x10000 0x1000>;
+					};
+
+					macaddr_factory_1002a: macaddr@1002a {
+						reg = <0x1002a 0x6>;
+					};
+
+					macaddr_factory_10024: macaddr@10024 {
+						reg = <0x10024 0x6>;
+					};
+				};
+			};
+
+			partition@80000 {
+				label = "config2";
+				reg = <0x80000 0x10000>;
+				read-only;
+			};
+
+			partition@90000 {
+				label = "firmware";
+				reg = <0x90000 0xf70000>;
+				compatible = "denx,uimage";
+			};
+		};
+	};
+};

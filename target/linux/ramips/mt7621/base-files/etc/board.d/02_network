@@ -326,6 +326,15 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii Config ethaddr)
 		label_mac=$lan_mac
 		;;
+	yuncore,ax820)
+		label_mac=$(mtd_get_mac_binary Factory 0x4)
+		;;
+	dragonglass,dgx25|\
+	dragonglass,dgx25-nand)
+		label_mac=$(mtd_get_mac_binary factory 0x2a)
+		wan_mac=$(mtd_get_mac_binary factory 0x24)
+		;;
+
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
