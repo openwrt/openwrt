@@ -852,6 +852,14 @@ define Device/meraki_common
 	DEVICE_PACKAGES := ath10k-firmware-qca9887-ct kmod-eeprom-at24 kmod-leds-lp5562
 endef
 
+define Device/meraki_gx20
+	$(call Device/meraki_common)
+	DEVICE_MODEL := GX20
+	DEVICE_DTS_CONFIG := config@2
+	DEVICE_PACKAGES += -ath10k-board-qca4019 -ath10k-firmware-qca9887-ct
+endef
+TARGET_DEVICES += meraki_gx20
+
 define Device/meraki_mr20
 	$(call Device/meraki_common)
 	DEVICE_MODEL := MR20
@@ -896,14 +904,6 @@ define Device/meraki_z3
 	DEVICE_PACKAGES += -ath10k-firmware-qca9887-ct ipq-wifi-meraki_z3
 endef
 TARGET_DEVICES += meraki_z3
-
-define Device/meraki_gx20
-	$(call Device/meraki_common)
-	DEVICE_MODEL := GX20
-	DEVICE_DTS_CONFIG := config@2
-	DEVICE_PACKAGES += -ath10k-board-qca4019 -ath10k-firmware-qca9887-ct
-endef
-TARGET_DEVICES += meraki_gx20
 
 define Device/meraki_z3c
 	$(call Device/meraki_common)
@@ -1011,14 +1011,6 @@ define Device/netgear_rbr20
 endef
 TARGET_DEVICES += netgear_rbr20
 
-define Device/netgear_rbs20
-	$(call Device/netgear_rbx20)
-	DEVICE_MODEL := RBS20
-	NETGEAR_BOARD_ID := RBS20
-	NETGEAR_HW_ID := 29765641+0+128+512+2x2+2x2+2x2
-endef
-TARGET_DEVICES += netgear_rbs20
-
 define Device/netgear_rbx40
 	$(call Device/netgear_orbi)
 	NETGEAR_HW_ID := 29765515+0+4096+512+2x2+2x2+2x2
@@ -1036,14 +1028,6 @@ define Device/netgear_rbr40
 endef
 TARGET_DEVICES += netgear_rbr40
 
-define Device/netgear_rbs40
-	$(call Device/netgear_rbx40)
-	DEVICE_MODEL := RBS40
-	DEVICE_VARIANT := v1
-	NETGEAR_BOARD_ID := RBS40
-endef
-TARGET_DEVICES += netgear_rbs40
-
 define Device/netgear_rbx50
 	$(call Device/netgear_orbi)
 	NETGEAR_HW_ID := 29765352+0+4000+512+2x2+2x2+4x4
@@ -1060,6 +1044,22 @@ define Device/netgear_rbr50
 	NETGEAR_BOARD_ID := RBR50
 endef
 TARGET_DEVICES += netgear_rbr50
+
+define Device/netgear_rbs20
+	$(call Device/netgear_rbx20)
+	DEVICE_MODEL := RBS20
+	NETGEAR_BOARD_ID := RBS20
+	NETGEAR_HW_ID := 29765641+0+128+512+2x2+2x2+2x2
+endef
+TARGET_DEVICES += netgear_rbs20
+
+define Device/netgear_rbs40
+	$(call Device/netgear_rbx40)
+	DEVICE_MODEL := RBS40
+	DEVICE_VARIANT := v1
+	NETGEAR_BOARD_ID := RBS40
+endef
+TARGET_DEVICES += netgear_rbs40
 
 define Device/netgear_rbs50
 	$(call Device/netgear_rbx50)
@@ -1434,14 +1434,6 @@ define Device/zte_mf287_common
 	IMAGE/recovery.bin := append-squashfs4-fakeroot | sysupgrade-tar kernel=$$$$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE) rootfs=$$$$@ | append-metadata
 endef
 
-define Device/zte_mf287plus
-	$(call Device/zte_mf287_common)
-	DEVICE_PACKAGES += ipq-wifi-zte_mf287plus
-	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
-	DEVICE_MODEL := MF287Plus
-endef
-TARGET_DEVICES += zte_mf287plus
-
 define Device/zte_mf287
 	$(call Device/zte_mf287_common)
 	DEVICE_PACKAGES += ipq-wifi-zte_mf287
@@ -1449,6 +1441,14 @@ define Device/zte_mf287
 	DEVICE_MODEL := MF287
 endef
 TARGET_DEVICES += zte_mf287
+
+define Device/zte_mf287plus
+	$(call Device/zte_mf287_common)
+	DEVICE_PACKAGES += ipq-wifi-zte_mf287plus
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	DEVICE_MODEL := MF287Plus
+endef
+TARGET_DEVICES += zte_mf287plus
 
 define Device/zte_mf287pro
 	$(call Device/zte_mf287_common)
