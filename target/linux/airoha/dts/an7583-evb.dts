@@ -29,12 +29,24 @@
 	gpio-ranges = <&an7583_pinctrl 0 2 53>;
 
 	mdio0_pins: mdio0-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
+		
 		conf {
 			pins = "mdio_0";
 			output-high;
 		};
 	};
-
+	
+	spi_pins: spi-pins {
+		mux {
+			function = "spi";
+			groups = "spi";
+		};
+	};
+	
 	pcie0_rst_pins: pcie0-rst-pins {
 		conf {
 			pins = "pcie_reset0";
@@ -58,6 +70,8 @@
 };
 
 &snfi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_pins>;
 	status = "okay";
 };
 
@@ -81,6 +95,45 @@
 };
 
 &i2c0 {
+	status = "okay";
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+		};
+	};
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_rst_pins>;
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x0800 0 0 0 0>;
+		wifi@1,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+		};
+	};
+};
+
+
+&usb0 {
+	mediatek,u3p-dis-msk = <0x1>;
+	mediatek,u2p-dis-msk = <0x1>;
+	status = "okay";
+};
+
+&usb_phy {
 	status = "okay";
 };
 
