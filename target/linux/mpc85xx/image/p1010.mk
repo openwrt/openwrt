@@ -49,6 +49,19 @@ define Device/enterasys_ws-ap3715i
 endef
 TARGET_DEVICES += enterasys_ws-ap3715i
 
+define Device/sophos_red-15w-rev1
+  DEVICE_VENDOR := Sophos
+  DEVICE_MODEL := RED 15w
+  DEVICE_VARIANT := Rev.1
+  DEVICE_PACKAGES := kmod-phy-realtek
+  # Original firmware uses a dedicated DTB-partition.
+  # The bootloader however supports FIT-images.
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += sophos_red-15w-rev1
+
 define Device/tplink_tl-wdr4900-v1
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := TL-WDR4900
@@ -109,16 +122,3 @@ define Device/watchguard_firebox-t15
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += watchguard_firebox-t15
-
-define Device/sophos_red-15w-rev1
-  DEVICE_VENDOR := Sophos
-  DEVICE_MODEL := RED 15w
-  DEVICE_VARIANT := Rev.1
-  DEVICE_PACKAGES := kmod-phy-realtek
-  # Original firmware uses a dedicated DTB-partition.
-  # The bootloader however supports FIT-images.
-  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-endef
-TARGET_DEVICES += sophos_red-15w-rev1
