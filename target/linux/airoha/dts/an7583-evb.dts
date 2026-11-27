@@ -29,9 +29,20 @@
 	gpio-ranges = <&an7583_pinctrl 0 2 53>;
 
 	mdio0_pins: mdio0-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
 		conf {
 			pins = "mdio_0";
 			output-high;
+		};
+	};
+
+	spi_pins: spi-pins {
+		mux {
+			function = "spi";
+			groups = "spi";
 		};
 	};
 
@@ -58,6 +69,8 @@
 };
 
 &snfi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_pins>;
 	status = "okay";
 };
 

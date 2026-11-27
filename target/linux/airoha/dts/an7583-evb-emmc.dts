@@ -79,6 +79,10 @@
 	gpio-ranges = <&an7583_pinctrl 0 2 53>;
 
 	mdio0_pins: mdio0-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
 		conf {
 			pins = "mdio_0";
 			output-high;
