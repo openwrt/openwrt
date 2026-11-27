@@ -1,0 +1,60 @@
+From c7689ab739e08b687a38bc910f585ab9b2d1ea12 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20H=C3=A4rdeman?= <david@hardeman.nu>
+Date: Tue, 17 Nov 2026 00:12:21 +0000
+Subject: [PATCH] Fix hosts file index collision between --addn-hosts dirs and
+ --hostsdir
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Files found in an --addn-hosts directory get their index from
+expand_filelist(), which counts on from the largest index in the
+--addn-hosts list and doesn't advance daemon->host_index. Files in a
+--hostsdir directory get theirs from daemon->host_index
+(dyndir_addhosts()), which doesn't know about the former, so files of
+both can get the same index.
+
+When such a --hostsdir file changes, cache_remove_uid() then also
+removes the names read from the --addn-hosts file with the same index,
+and they stay gone until the next SIGHUP. E.g. with
+--addn-hosts=/dir1 (containing a.hosts) and --hostsdir=/dir2, creating
+/dir2/x.hosts flushes the names from /dir1/a.hosts.
+record_source() also logs the wrong file for them. The names are lost
+since 2.88, where a changed --hostsdir file has its old names removed
+(commits 0017dd7 and 0ba25a0); before, the collision only affected the
+logged source.
+
+Allocate the indices in expand_filelist() from daemon->host_index as
+well, and advance it, so that all hosts files get unique indices.
+
+Link: https://lists.thekelleys.org.uk/pipermail/dnsmasq-discuss/2026q4/018636.html
+Signed-off-by: David Härdeman <david@hardeman.nu>
+---
+ src/option.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/src/option.c
++++ b/src/option.c
+@@ -5742,8 +5742,10 @@ struct hostsfile *expand_filelist(struct
+   struct hostsfile *ah, *last, *next, **up;
+   struct dirent **namelist;
+ 
+-  /* find largest used index */
+-  for (last = NULL, i = SRC_AH, ah = list; ah; ah = ah->next)
++  /* find largest used index. Files found in --hostsdir directories
++     take theirs from daemon->host_index too (dyndir_addhosts()), so
++     start there and advance it below, to keep all indices unique. */
++  for (last = NULL, i = daemon->host_index, ah = list; ah; ah = ah->next)
+     {
+       last = ah;
+       
+@@ -5841,6 +5843,9 @@ struct hostsfile *expand_filelist(struct
+ 	    free(namelist);
+ 	  }
+       }
++
++  if (daemon->host_index < (int)i)
++    daemon->host_index = i;
+   
+   return list;
+ }
