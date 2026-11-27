@@ -127,6 +127,7 @@ static struct fe_soc_data rt3050_data = {
 static struct fe_soc_data rt5350_data = {
 	.init_data = rt5350_init_data,
 	.reg_table = rt5350_reg_table,
+	.dly_int_default = FE_DLY_INT_DEFAULT,
 	.set_mac = rt5350_set_mac,
 	.fwd_config = rt5350_fwd_config,
 	.switch_init = rt3050_esw_init,

@@ -208,7 +208,86 @@ static void fe_get_ethtool_stats(struct net_device *dev,
 	} while (u64_stats_fetch_retry(&hwstats->syncp, start));
 }
 
+static void fe_dly_get(u32 cfg, u32 *usecs, u32 *frames)
+{
+	if (!(cfg & FE_DLY_CFG_EN))
+		return;
+
+	*usecs = FIELD_GET(FE_DLY_CFG_PTIME, cfg) * FE_DELAY_TIME;
+	*frames = FIELD_GET(FE_DLY_CFG_PINT, cfg);
+}
+
+static int fe_get_coalesce(struct net_device *dev, struct ethtool_coalesce *ec,
+			   struct kernel_ethtool_coalesce *kernel_coal,
+			   struct netlink_ext_ack *extack)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+
+	fe_dly_get(priv->dly_int_cfg & 0xffff, &ec->rx_coalesce_usecs,
+		   &ec->rx_max_coalesced_frames);
+	fe_dly_get(priv->dly_int_cfg >> FE_DLY_CFG_TX_SHIFT,
+		   &ec->tx_coalesce_usecs, &ec->tx_max_coalesced_frames);
+
+	return 0;
+}
+
+/* One direction of the delay interrupt: off when both are 0, otherwise an
+ * interrupt after that many frames or that time, whichever comes first.
+ */
+static int fe_dly_set(u32 usecs, u32 frames, u32 *cfg,
+		      struct netlink_ext_ack *extack)
+{
+	*cfg = 0;
+	if (!usecs && !frames)
+		return 0;
+
+	if (!usecs || !frames) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "usecs and frames must both be 0 (off) or both be set");
+		return -EINVAL;
+	}
+
+	if (frames > FIELD_MAX(FE_DLY_CFG_PINT) ||
+	    usecs > FIELD_MAX(FE_DLY_CFG_PTIME) * FE_DELAY_TIME) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "delay is limited to 127 frames and 5100 us");
+		return -EINVAL;
+	}
+
+	*cfg = FE_DLY_CFG_EN | FIELD_PREP(FE_DLY_CFG_PINT, frames) |
+	       FIELD_PREP(FE_DLY_CFG_PTIME, DIV_ROUND_UP(usecs, FE_DELAY_TIME));
+
+	return 0;
+}
+
+static int fe_set_coalesce(struct net_device *dev, struct ethtool_coalesce *ec,
+			   struct kernel_ethtool_coalesce *kernel_coal,
+			   struct netlink_ext_ack *extack)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	u32 rx, tx;
+	int err;
+
+	err = fe_dly_set(ec->rx_coalesce_usecs, ec->rx_max_coalesced_frames,
+			 &rx, extack);
+	if (err)
+		return err;
+
+	err = fe_dly_set(ec->tx_coalesce_usecs, ec->tx_max_coalesced_frames,
+			 &tx, extack);
+	if (err)
+		return err;
+
+	fe_set_dly_int(priv, rx | (tx << FE_DLY_CFG_TX_SHIFT));
+
+	return 0;
+}
+
 static struct ethtool_ops fe_ethtool_ops = {
+	.supported_coalesce_params = ETHTOOL_COALESCE_USECS |
+				     ETHTOOL_COALESCE_MAX_FRAMES,
+	.get_coalesce		= fe_get_coalesce,
+	.set_coalesce		= fe_set_coalesce,
 	.get_link_ksettings	= fe_get_link_ksettings,
 	.set_link_ksettings	= fe_set_link_ksettings,
 	.get_drvinfo		= fe_get_drvinfo,
