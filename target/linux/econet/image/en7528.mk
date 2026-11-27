@@ -1,12 +1,5 @@
 TRX_ENDIAN := le
 
-define Device/en7528_generic
-  DEVICE_VENDOR := EN7528
-  DEVICE_MODEL := Generic
-  DEVICE_DTS := en7528_generic
-endef
-TARGET_DEVICES += en7528_generic
-
 define Device/dasan_h660gm-a
   $(call Device/tclinux-ubi)
   DEVICE_VENDOR := DASAN
@@ -30,6 +23,13 @@ define Device/dasan_h660gm-a-generic
 endef
 TARGET_DEVICES += dasan_h660gm-a-generic
 
+define Device/en7528_generic
+  DEVICE_VENDOR := EN7528
+  DEVICE_MODEL := Generic
+  DEVICE_DTS := en7528_generic
+endef
+TARGET_DEVICES += en7528_generic
+
 define Device/jiofiber_en7528
   $(call Device/tclinux-ubi)
   DEVICE_VENDOR := JioFiber
@@ -40,15 +40,6 @@ define Device/jiofiber_en7528
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
 endef
 
-define Device/jiofiber_jcow414
-  $(Device/jiofiber_en7528)
-  DEVICE_MODEL := JCOW414
-  DEVICE_ALT0_VENDOR := JioFiber
-  DEVICE_ALT0_MODEL := JCO4032
-  DEVICE_DTS := en7528_jiofiber_jcow414
-endef
-TARGET_DEVICES += jiofiber_jcow414
-
 define Device/jiofiber_jcow407
   $(Device/jiofiber_en7528)
   DEVICE_MODEL := JCOW407
@@ -57,3 +48,12 @@ define Device/jiofiber_jcow407
   DEVICE_DTS := en7528_jiofiber_jcow407
 endef
 TARGET_DEVICES += jiofiber_jcow407
+
+define Device/jiofiber_jcow414
+  $(Device/jiofiber_en7528)
+  DEVICE_MODEL := JCOW414
+  DEVICE_ALT0_VENDOR := JioFiber
+  DEVICE_ALT0_MODEL := JCO4032
+  DEVICE_DTS := en7528_jiofiber_jcow414
+endef
+TARGET_DEVICES += jiofiber_jcow414
