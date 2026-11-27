@@ -107,6 +107,14 @@ static inline struct phy_device *get_base_phy(struct phy_device *phydev)
 	return get_package_phy(phydev, 0);
 }
 
+/* The PHY at the base address of its package, as joined, sets up the whole package */
+static inline bool rtl821x_is_package_base(struct phy_device *phydev)
+{
+	struct rtl821x_shared_priv *shared_priv = phy_package_get_priv(phydev);
+
+	return phydev->mdio.addr == shared_priv->base_addr;
+}
+
 static int rtl821x_match_phy_device(struct phy_device *phydev)
 {
 	int oldpage, oldxpage, chip_mode, chip_cfg_mode;
@@ -906,7 +914,7 @@ static int rtl8218d_config_init(struct phy_device *phydev)
 
 	rtl821x_config_init(phydev);
 
-	if (phydev->mdio.addr % 8)
+	if (!rtl821x_is_package_base(phydev))
 		return 0;
 	/*
 	 * The RTl8218D has two MAC (aka SoC side) operation modes. Either dual QSGMII
@@ -976,7 +984,7 @@ static int rtl8218b_config_init(struct phy_device *phydev)
 
 	rtl821x_config_init(phydev);
 
-	if (phydev->mdio.addr % 8)
+	if (!rtl821x_is_package_base(phydev))
 		return 0;
 	/*
 	 * Realtek provides two ways of initializing the PHY package. Either by U-Boot or via
@@ -1053,7 +1061,7 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 	if (ret)
 		return ret;
 
-	if (phydev->mdio.addr % 8 == 0) {
+	if (rtl821x_is_package_base(phydev)) {
 		/* Force all ports to copper */
 		phy_write(phydev, RTL821x_EXT_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
 		for (int port = 0; port < 4; port++)
