@@ -27,6 +27,24 @@ realtek_remove_ubi_volume() {
 	[ -z "$ubivol" ] || ubirmvol "/dev/$ubidev" -N "$1"
 }
 
+# Stock U-Boot boots from slot <sw_commit> (0: ubi_k0, 1: ubi_k1).
+# sw_tryactive=0/1 boots from that slot once and then resets to 2.
+# sw_tryactive=2 means no trial is pending.
+# OpenWrt is always installed to slot 1. sw_commit is set to 0 before
+# upgrade so an interrupted upgrade boots the stock firmware in slot 0.
+alphion_asee1447_do_upgrade() {
+	CI_KERNPART="ubi_k1"
+	CI_ROOTPART="ubi_r1"
+
+	sync
+	[ "$(fw_printenv -n sw_commit 2>/dev/null)" = "0" ] || \
+		fw_setenv sw_commit 0 || nand_do_upgrade_failed
+	nand_do_flash_file "$1" && \
+		fw_setenv sw_tryactive 1 && \
+		nand_do_upgrade_success
+	nand_do_upgrade_failed
+}
+
 buffalo_wsr1500ax2s_crc32() {
 	local crc
 
@@ -76,12 +94,45 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
+	alphion,asee-1447)
+		alphion_asee1447_check_slot || return 1
+		;;
 	draytek,g2282x)
 		draytek_g2282x_set_part_name || return 1
 		;;
 	esac
 
 	return 0
+}
+
+# Both slots hold stock firmware. The committed one (sw_commit), which
+# U-Boot boots, and an older one left over from a previous update.
+# OpenWrt always installs to slot 1, so a first install is only allowed
+# if the committed stock firmware is in slot 0. If it is in slot 1,
+# refuse unless the user forces it with -F or changes sw_commit.
+alphion_asee1447_check_slot() {
+	local commit_slot
+
+	[ "$(rootfs_type)" = "tmpfs" ] || return 0
+
+	commit_slot=$(fw_printenv -n sw_commit 2>/dev/null)
+	case "$commit_slot" in
+	0)
+		return 0
+		;;
+	1)
+		echo "alphion,asee-1447: The active stock firmware is in slot 1." >&2
+		echo "Installing OpenWrt will overwrite slot 1 containing the active stock firmware." >&2
+		echo "Set sw_commit=0 to switch to slot 0 and retry," >&2
+		echo "or use sysupgrade -F to overwrite slot 1 anyway." >&2
+		return 1
+		;;
+	*)
+		echo "alphion,asee-1447: Could not read sw_commit from U-Boot environment." >&2
+		echo "Refusing to install OpenWrt." >&2
+		return 1
+		;;
+	esac
 }
 
 # Active slot is a "bootpartition" variable in the SYSINFO mtd
@@ -105,6 +156,9 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	alphion,asee-1447)
+		alphion_asee1447_do_upgrade "$1"
+		;;
 	buffalo,wsr-1500ax2s)
 		buffalo_wsr1500ax2s_do_upgrade "$1"
 		;;
