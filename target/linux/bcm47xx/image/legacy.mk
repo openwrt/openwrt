@@ -124,6 +124,16 @@ define Device/huawei_e970
 endef
 TARGET_DEVICES += huawei_e970
 
+define Device/linksys_wrt54g
+  DEVICE_MODEL := WRT54G
+  DEVICE_PACKAGES := kmod-b43
+  $(Device/linksys)
+  DEVICE_ID := W54G
+  VERSION := 4.71.1
+  DEFAULT := n
+endef
+TARGET_DEVICES += linksys_wrt54g
+
 define Device/linksys_wrt54g3g
   DEVICE_MODEL := WRT54G3G
   DEVICE_PACKAGES := kmod-b43
@@ -158,16 +168,6 @@ define Device/linksys_wrt54g3gv2-vf
 endef
 TARGET_DEVICES += linksys_wrt54g3gv2-vf
 
-define Device/linksys_wrt54g
-  DEVICE_MODEL := WRT54G
-  DEVICE_PACKAGES := kmod-b43
-  $(Device/linksys)
-  DEVICE_ID := W54G
-  VERSION := 4.71.1
-  DEFAULT := n
-endef
-TARGET_DEVICES += linksys_wrt54g
-
 define Device/linksys_wrt54gs
   DEVICE_MODEL := WRT54GS
   DEVICE_VARIANT := v1/v2/v3
@@ -193,17 +193,6 @@ define Device/linksys_wrt54gs-v4
   DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt54gs-v4
-
-define Device/linksys_wrtsl54gs
-  DEVICE_MODEL := WRTSL54GS
-  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
-  $(Device/linksys)
-  FILESYSTEMS := $(FS_128K)
-  DEVICE_ID := W54U
-  VERSION := 2.08.1
-  DEFAULT := n
-endef
-TARGET_DEVICES += linksys_wrtsl54gs
 
 define Device/linksys_wrt150n
   DEVICE_MODEL := WRT150N
@@ -237,6 +226,17 @@ define Device/linksys_wrt300n-v1
   DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt300n-v1
+
+define Device/linksys_wrtsl54gs
+  DEVICE_MODEL := WRTSL54GS
+  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+  $(Device/linksys)
+  FILESYSTEMS := $(FS_128K)
+  DEVICE_ID := W54U
+  VERSION := 2.08.1
+  DEFAULT := n
+endef
+TARGET_DEVICES += linksys_wrtsl54gs
 
 define Device/motorola_wa840g
   DEVICE_MODEL := WA840G
