@@ -1,0 +1,73 @@
+--- a/elf/Makefile
++++ b/elf/Makefile
+@@ -1447,7 +1447,7 @@
+ endif
+ 
+ # Command to link into a larger single relocatable object.
+-reloc-link = $(LINK.o) -nostdlib -nostartfiles -r
++reloc-link = $(LINK.o) -nostdlib -nostartfiles -r -Wl,-z,muldefs
+ 
+ $(objpfx)dl-allobjs.os: $(all-rtld-routines:%=$(objpfx)%.os)
+ 	$(reloc-link) -o $@ $^
+@@ -1483,7 +1483,7 @@
+ $(objpfx)librtld.map: $(objpfx)dl-allobjs.os $(common-objpfx)libc_pic.a
+ 	@-rm -f $@T
+ 	for symbol in $(rtld-stubbed-symbols); do \
+-		echo ".globl $$symbol"; \
++		echo ".weak $$symbol"; \
+ 		echo "$$symbol:"; \
+ 	done | $(CC) -o $@T.o $(ASFLAGS) -c -x assembler -
+ 	$(reloc-link) -o $@.o $@T.o '-Wl,-(' $^ -lgcc '-Wl,-)' -Wl,-Map,$@T
+@@ -1516,7 +1516,7 @@
+ 	$(MAKE) -f $< -f rtld-Rules
+ 
+ $(objpfx)librtld.os: $(objpfx)dl-allobjs.os $(objpfx)rtld-libc.a
+-	$(LINK.o) -nostdlib -nostartfiles -r -o $@ '-Wl,-(' $^ -lgcc '-Wl,-)' \
++	$(reloc-link) -o $@ '-Wl,-(' $^ -lgcc '-Wl,-)' \
+ 		  -Wl,-Map,$@.map
+ 
+ generated += librtld.map librtld.mk rtld-libc.a librtld.os.map
+--- a/include/ctype.h
++++ b/include/ctype.h
+@@ -14,7 +14,7 @@
+ libc_hidden_proto (tolower)
+ libc_hidden_proto (toupper)
+ 
+-# if IS_IN (libc)
++# if IS_IN (libc) || IS_IN (rtld)
+ 
+ /* These accessors are used by the optimized macros to find the
+    thread-local cache of ctype information from the current thread's
+@@ -71,7 +71,7 @@
+ extern const uint32_t _nl_C_LC_CTYPE_toupper[] attribute_hidden;
+ extern const uint32_t _nl_C_LC_CTYPE_tolower[] attribute_hidden;
+ 
+-# endif	/* IS_IN (libc).  */
++# endif	/* IS_IN (libc) || IS_IN (rtld).  */
+ #endif  /* Not _ISOMAC.  */
+ 
+ #endif /* ctype.h */
+--- a/sysdeps/nptl/stdio-lock.h
++++ b/sysdeps/nptl/stdio-lock.h
+@@ -92,7 +92,7 @@
+ #define _IO_cleanup_region_end(_doit) \
+   __libc_cleanup_region_end (_doit)
+ 
+-#if defined _LIBC && IS_IN (libc)
++#if defined _LIBC && (IS_IN (libc) || IS_IN (rtld))
+ 
+ # ifdef __EXCEPTIONS
+ #  define _IO_acquire_lock(_fp) \
+--- a/sysdeps/unix/sysv/linux/aarch64/pointer_guard.h
++++ b/sysdeps/unix/sysv/linux/aarch64/pointer_guard.h
+@@ -19,6 +19,10 @@
+ #ifndef POINTER_GUARD_H
+ #define POINTER_GUARD_H
+ 
++#ifndef __ASSEMBLER__
++# include <stdint.h>
++#endif
++
+ /* Pointer mangling is supported for AArch64.  */
+ #if (IS_IN (rtld) \
+      || (!defined SHARED && (IS_IN (libc) \
