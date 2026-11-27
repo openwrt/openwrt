@@ -39,5 +39,17 @@ define Build/Compile
 
 endef
 
+# Staged whenever this package builds, so a bootloader that embeds the
+# blob needs only a build dependency, not the firmware package
+ifneq ($(CONFIG_TARGET_mediatek_filogic),)
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	cat \
+		$(PKG_BUILD_DIR)/airoha/EthMD32.dm.bin \
+		$(PKG_BUILD_DIR)/airoha/EthMD32.DSP.bin \
+		> $(STAGING_DIR_IMAGE)/EthMD32.bin
+endef
+endif
+
 include $(wildcard ./*.mk)
 #$(eval $(call BuildPackage,linux-firmware))
