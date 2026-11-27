@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 26 Nov 2026 18:13:47 -0800
+Subject: [PATCH] wifi: ath9k: pass the NAPI context to mac80211
+
+Now that RX runs from a NAPI poll, use ieee80211_rx_napi() so that
+mac80211 hands data frames to napi_gro_receive() instead of
+netif_receive_skb_list(), and the stack can merge TCP segments before
+they are routed, bridged or delivered locally.
+
+ath_flushrecv() also calls ath_rx_tasklet(), from process context while
+the hardware is being stopped, so it keeps passing no NAPI context.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/ath/ath9k/recv.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/recv.c b/drivers/net/wireless/ath/ath9k/recv.c
+index 7855274..c060e3a 100644
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -1252,7 +1252,8 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp, int budget)
+ 		if (ieee80211_is_ack(hdr->frame_control))
+ 			ath_dynack_sample_ack_ts(sc->sc_ah, skb, rs.rs_tstamp);
+ 
+-		ieee80211_rx(hw, skb);
++		/* ath_flushrecv() runs outside the NAPI poll */
++		ieee80211_rx_napi(hw, NULL, skb, flush ? NULL : &sc->napi);
+ 
+ requeue_drop_frag:
+ 		if (sc->rx.frag) {
