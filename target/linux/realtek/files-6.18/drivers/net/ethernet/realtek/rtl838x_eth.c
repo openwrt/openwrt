@@ -636,6 +636,7 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 
 		ctrl->rx_info[r].slot = 0;
 		ctrl->rx_info[r].skb = NULL;
+		ctrl->rx_info[r].more = false;
 		ctrl->rx_data[r].ring[RTETH_RX_RING_SIZE - 1] |= RTETH_RING_WRAP;
 	}
 
@@ -1231,12 +1232,12 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 	struct page_pool *pool;
 	struct page *new_page;
 	dma_addr_t packet_dma;
-	bool is_head, is_tail;
+	bool is_head, more;
 	struct sk_buff *skb;
 
 	pool = rx_info->pool;
 	skb = rx_info->skb;
-	is_tail = !skb;
+	more = rx_info->more;
 
 	while (work_done < budget) {
 		slot = rx_info->slot;
@@ -1248,9 +1249,9 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 
 		frag = &ctrl->rx_data[ring].frag[slot];
 		len = frag->len;
-		is_head = is_tail;
-		is_tail = !frag->more;
-		if (is_tail)
+		is_head = !more;
+		more = frag->more;
+		if (!more)
 			work_done++;
 
 		if (unlikely(len > RTETH_SKB_FRAG_SIZE)) {
@@ -1286,7 +1287,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 			}
 		}
 
-		if (is_tail && skb) {
+		if (!more && skb) {
 			if (unlikely(skb->len < ETH_HLEN + ETH_FCS_LEN)) {
 				rx_errors += rteth_free_skb(&skb);
 			} else if (unlikely(pskb_trim(skb, skb->len - ETH_FCS_LEN) ||
@@ -1320,6 +1321,7 @@ recycle:
 	spin_unlock(&ctrl->rx_lock);
 
 	rx_info->skb = skb;
+	rx_info->more = more;
 
 	return work_done;
 }

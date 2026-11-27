@@ -268,6 +268,7 @@ struct rteth_rx_info {
 	struct napi_struct	napi;
 	struct page_pool	*pool;
 	struct sk_buff		*skb; /* unprocessed SKB from last receive loop */
+	bool			more; /* last RX descriptor indicated a continuation */
 	struct page		*page[RTETH_RX_RING_SIZE];
 	unsigned int		offset[RTETH_RX_RING_SIZE];
 };
