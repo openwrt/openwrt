@@ -1,0 +1,124 @@
+From a7954f9a0782cf603c64ec5cb75e70d1eadd1152 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Fri, 13 Nov 2026 17:45:54 +0000
+Subject: [PATCH] wifi: brcmfmac: cyw: Only use Infineon external SAE if
+ supported
+
+The SDIO device IDs of some Infineon chips are shared with Synaptics
+parts - e.g. the SYN43436s in the Raspberry Pi Zero 2 W is a
+BCM43430/1, like the CYW43438 - so the Synaptics firmware is run with
+the CYW vendor ops. That firmware advertises "extsae", but the CYW
+external SAE implementation relies on the mgmt_frame and auth_status
+iovars, which it lacks. The SAE commit frame is never sent and the
+connection times out.
+
+Instead of unconditionally installing the CYW mgmt_tx and
+external_auth ops, do it from feat_attach, and only if the firmware
+supports both iovars; otherwise the generic external SAE support is
+used. Both iovars are set-only, so a get returns BCME_UNSUPPORTED
+whether or not they exist - probe with a zero-length set instead,
+which Infineon firmware rejects with a length/allocation error.
+
+Move the BRCMF_FW_UNSUPPORTED definition to fwil.h so that vendor
+modules can use it.
+
+Link: https://github.com/raspberrypi/linux/issues/7528
+Assisted-by: Claude
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ .../broadcom/brcm80211/brcmfmac/cyw/core.c    | 42 +++++++++++++++++--
+ .../broadcom/brcm80211/brcmfmac/feature.c     |  2 -
+ .../broadcom/brcm80211/brcmfmac/fwil.h        |  3 ++
+ 3 files changed, 41 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/core.c
+@@ -10,6 +10,7 @@
+ #include <fwvid.h>
+ #include <fwil.h>
+ #include <fweh.h>
++#include <feature.h>
+ 
+ #include "vops.h"
+ #include "fwil_types.h"
+@@ -232,10 +233,43 @@ brcmf_cyw_external_auth(struct wiphy *wi
+ 	return ret;
+ }
+ 
+-static void brcmf_cyw_get_cfg80211_ops(struct brcmf_pub *drvr)
++/* Check for a set-only iovar. A get returns BCME_UNSUPPORTED whether or not
++ * the iovar exists, so issue a zero-length set instead: firmware that knows
++ * the iovar rejects it as malformed, firmware that doesn't returns
++ * BCME_UNSUPPORTED.
++ */
++static bool brcmf_cyw_set_iovar_supported(struct brcmf_if *ifp, char *name)
+ {
+-	drvr->ops->mgmt_tx = brcmf_cyw_mgmt_tx;
+-	drvr->ops->external_auth = brcmf_cyw_external_auth;
++	u8 dummy = 0;
++	int err;
++
++	/* we need to know the firmware error */
++	ifp->fwil_fwerr = true;
++	err = brcmf_fil_iovar_data_set(ifp, name, &dummy, 0);
++	ifp->fwil_fwerr = false;
++
++	return err != -BRCMF_FW_UNSUPPORTED;
++}
++
++static void brcmf_cyw_feat_attach(struct brcmf_if *ifp)
++{
++	struct brcmf_pub *drvr = ifp->drvr;
++
++	if (!(drvr->feat_flags & BIT(BRCMF_FEAT_SAE_EXT)))
++		return;
++
++	/* Some non-Infineon firmware sharing a chip ID with Infineon parts
++	 * (e.g. SYN43436s, BCM43430/1) advertises "extsae" but implements
++	 * external SAE using the assoc_mgr_cmd interface rather than the
++	 * mgmt_frame/auth_status iovars, so only use the latter if present.
++	 */
++	if (brcmf_cyw_set_iovar_supported(ifp, "mgmt_frame") &&
++	    brcmf_cyw_set_iovar_supported(ifp, "auth_status")) {
++		drvr->ops->mgmt_tx = brcmf_cyw_mgmt_tx;
++		drvr->ops->external_auth = brcmf_cyw_external_auth;
++	} else {
++		brcmf_dbg(INFO, "using generic external SAE support\n");
++	}
+ }
+ 
+ static s32
+@@ -373,9 +407,9 @@ static void brcmf_cyw_register_event_han
+ }
+ 
+ const struct brcmf_fwvid_ops brcmf_cyw_ops = {
++	.feat_attach = brcmf_cyw_feat_attach,
+ 	.set_sae_password = brcmf_cyw_set_sae_pwd,
+ 	.alloc_fweh_info = brcmf_cyw_alloc_fweh_info,
+ 	.activate_events = brcmf_cyw_activate_events,
+-	.get_cfg80211_ops = brcmf_cyw_get_cfg80211_ops,
+ 	.register_event_handlers = brcmf_cyw_register_event_handlers,
+ };
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
+@@ -17,8 +17,6 @@
+ #include "feature.h"
+ #include "common.h"
+ 
+-#define BRCMF_FW_UNSUPPORTED	23
+-
+ /*
+  * expand feature list to array of feature strings.
+  */
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwil.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwil.h
+@@ -8,6 +8,9 @@
+ 
+ #include "debug.h"
+ 
++/* firmware error code for an unknown iovar/command (BCME_UNSUPPORTED) */
++#define BRCMF_FW_UNSUPPORTED	23
++
+ /*******************************************************************************
+  * Dongle command codes that are interpreted by firmware
+  ******************************************************************************/

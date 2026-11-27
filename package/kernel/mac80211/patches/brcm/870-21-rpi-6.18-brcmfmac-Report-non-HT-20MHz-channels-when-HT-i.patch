@@ -1,0 +1,47 @@
+From d1c061caf2d6e69718b5fc47420a1a9eb29b9ee9 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 23 Nov 2026 12:34:40 +0000
+Subject: [PATCH] wifi: brcmfmac: Report non-HT 20MHz channels when HT is
+ unsupported
+
+brcmf_cfg80211_get_channel reports every 20MHz chanspec as
+NL80211_CHAN_WIDTH_20, i.e. HT20, even when the band has no HT
+capabilities. That happens when the firmware's locale disables 11n
+(nmode=0) - the SYN43436s CLM does this for RU, UA, BY and the world
+locales, among others - because brcmf_setup_wiphybands then never
+registers any HT capabilities.
+
+cfg80211 rejects an HT20 chandef on a band without HT, so 60 seconds
+after every regulatory hint reg_check_chans_work decides that the
+station's channel is unusable and disconnects it (reason 3). The
+reconnection brings another hint from the AP's Country IE, giving an
+endless disconnect/reconnect cycle every ~61 seconds.
+
+Report NL80211_CHAN_WIDTH_20_NOHT when the band has no HT capabilities.
+
+See: https://github.com/raspberrypi/firmware/issues/2019
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ .../net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c  | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -5922,7 +5922,14 @@ static int brcmf_cfg80211_get_channel(st
+ 		width = NL80211_CHAN_WIDTH_40;
+ 		break;
+ 	case BRCMU_CHAN_BW_20:
+-		width = NL80211_CHAN_WIDTH_20;
++		/* cfg80211 rejects an HT20 chandef if the band has no HT
++		 * capabilities, which happens when the firmware's locale
++		 * disables 11n (nmode=0).
++		 */
++		if (wiphy->bands[band] && wiphy->bands[band]->ht_cap.ht_supported)
++			width = NL80211_CHAN_WIDTH_20;
++		else
++			width = NL80211_CHAN_WIDTH_20_NOHT;
+ 		break;
+ 	case BRCMU_CHAN_BW_80P80:
+ 		width = NL80211_CHAN_WIDTH_80P80;

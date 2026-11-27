@@ -1,0 +1,36 @@
+From 76b96bf09694c66d2614e7a7ca96c089f8a55f48 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 16 Nov 2026 10:12:32 +0000
+Subject: [PATCH] wifi: brcmfmac: cyw: Disable FWSUP with generic external SAE
+
+Synaptics firmware for the SYN43436s and SYN43436P supports the
+in-firmware supplicant (FWSUP), so after an external SAE
+authentication the driver selects PSK offload, the supplicant skips
+the 4-way handshake, and the firmware doesn't perform it either. The
+AP then deauthenticates the station.
+
+Until now this has been avoided by disabling FWSUP with the
+feature_disable module parameter. Instead, clear the FWSUP feature
+when the generic (non-Infineon) external SAE support is in use, so
+that WPA3 works regardless of any module parameters.
+
+Assisted-by: Claude
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/core.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/core.c
+@@ -269,6 +269,11 @@ static void brcmf_cyw_feat_attach(struct
+ 		drvr->ops->external_auth = brcmf_cyw_external_auth;
+ 	} else {
+ 		brcmf_dbg(INFO, "using generic external SAE support\n");
++		/* This firmware doesn't perform the 4-way handshake after an
++		 * external SAE authentication, so the in-firmware supplicant
++		 * must not be used - leave it to the host.
++		 */
++		drvr->feat_flags &= ~BIT(BRCMF_FEAT_FWSUP);
+ 	}
+ }
+ 
