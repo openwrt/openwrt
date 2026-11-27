@@ -186,6 +186,9 @@ sub mconf_depends {
 			if ($vdep) {
 				my @vdeps;
 
+				# Provider precedence: default variant first (last one lands at
+				# the head), then the real-name bearer (unshifted onto @vdep by
+				# metadata.pm), then the remaining providers in package scan order.
 				foreach my $v (@$vdep) {
 					next if $v->{buildonly};
 					if ($v->{variant_default}) {
