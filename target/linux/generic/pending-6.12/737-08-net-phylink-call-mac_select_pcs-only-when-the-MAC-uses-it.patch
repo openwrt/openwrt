@@ -1,0 +1,54 @@
+From e922902c84ca8892b332a37bdf15c55e2f96bd83 Mon Sep 17 00:00:00 2001
+From: Marco Martins <marcomartins86@gmail.com>
+Date: Sun, 8 Nov 2026 02:14:33 +0000
+Subject: [PATCH] net: phylink: call mac_select_pcs only when the MAC uses it
+
+737-02 ("net: phylink: introduce internal phylink PCS handling") makes
+phylink_validate_mac_and_pcs() and phylink_inband_caps() call
+.mac_select_pcs whenever a MAC has one, where the 6.12 code these patches
+apply to calls it only when phylink_create() found the MAC using it
+(using_mac_select_pcs), as phylink_major_config() still does.
+
+On 6.12, DSA gives every switch a .mac_select_pcs that returns
+-EOPNOTSUPP for drivers without PCS support. Upstream removed it in v6.13
+(ecb595ebba0e "net: dsa: remove dsa_port_phylink_mac_select_pcs()"), so
+its phylink does not need the check. Here the error makes validation fail
+for every port of such a switch, the MV88E6060 among them, and no port is
+created:
+
+  failed to connect to PHY: -EOPNOTSUPP
+  error -95 setting up PHY for tree 0, switch 0, port 0
+
+Check using_mac_select_pcs again in both places, and do not take an error
+pointer for a PCS in phylink_inband_caps(), which would dereference it.
+
+Link: https://github.com/openwrt/openwrt/issues/26029
+Signed-off-by: Marco Martins <marcomartins86@gmail.com>
+---
+ drivers/net/phy/phylink.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -714,7 +714,7 @@ static int phylink_validate_mac_and_pcs(
+ 	mutex_lock(&pl->state_mutex);
+ 
+ 	/* Get the PCS for this interface mode */
+-	if (pl->mac_ops->mac_select_pcs) {
++	if (pl->using_mac_select_pcs) {
+ 		pcs = pl->mac_ops->mac_select_pcs(pl->config, state->interface);
+ 		if (IS_ERR(pcs)) {
+ 			mutex_unlock(&pl->state_mutex);
+@@ -1149,10 +1149,10 @@ static unsigned int phylink_inband_caps(
+ 
+ 	mutex_lock(&pl->state_mutex);
+ 
+-	if (pl->mac_ops->mac_select_pcs) {
++	if (pl->using_mac_select_pcs) {
+ 		pcs = pl->mac_ops->mac_select_pcs(pl->config,
+ 						  interface);
+-		pcs_found = !!pcs;
++		pcs_found = !IS_ERR_OR_NULL(pcs);
+ 	} else if (test_bit(interface, pl->config->pcs_interfaces)) {
+ 		list_for_each_entry(pcs, &pl->pcs_list, list) {
+ 			if (!phylink_validate_pcs_interface(pcs, interface)) {
