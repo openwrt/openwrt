@@ -70,14 +70,15 @@ so their findings need no repeating.
   added: :multi"
   message: Use `color = <LED_COLOR_ID_...>;` and `function = LED_FUNCTION_...;` instead of an LED name with the color in it, such as `label = "<device>:<color>:<function>"` or `label = "<function>:<color>"`.
   ```
-- **MAC from MTD.** `mediatek,mtd-eeprom = <&factory 0xNNNN>;` --> use
-  `nvmem-cells = <&macaddr_factory_NN>;` +
-  `nvmem-cell-names = "mac-address";`.
+- **EEPROM from MTD.** `mediatek,mtd-eeprom = <&factory 0xNNNN>;` --> add
+  an `eeprom@NNNN` cell to the partition's `nvmem-layout` and use
+  `nvmem-cells = <&eeprom_factory_NNNN>;` +
+  `nvmem-cell-names = "eeprom";`.
 
   ```formality-rule
   files: target/linux/**/*.dts*
   added: mediatek,mtd-eeprom
-  message: Use `nvmem-cells` and `nvmem-cell-names` instead of `mediatek,mtd-eeprom`.
+  message: Read the EEPROM through an nvmem cell, `nvmem-cells` with `nvmem-cell-names = "eeprom"`, instead of `mediatek,mtd-eeprom`.
   ```
 - **Prefixed calibration variant.**
   `qcom,ath10k-calibration-variant = "...";` /
