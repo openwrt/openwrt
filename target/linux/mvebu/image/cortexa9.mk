@@ -135,16 +135,6 @@ define Device/fortinet_fg-30e
 endef
 TARGET_DEVICES += fortinet_fg-30e
 
-define Device/fortinet_fwf-30e
-  $(Device/fortinet)
-  DEVICE_MODEL := FortiWiFi 30E
-  DEVICE_DTS := armada-385-fortinet-fwf-30e
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
-    gzip-filename FWF30E
-  DEVICE_PACKAGES += kmod-ath9k wpad-basic-mbedtls
-endef
-TARGET_DEVICES += fortinet_fwf-30e
-
 define Device/fortinet_fg-50e
   $(Device/fortinet)
   DEVICE_MODEL := FortiGate 50E
@@ -171,6 +161,16 @@ define Device/fortinet_fg-52e
     gzip-filename FGT52E
 endef
 TARGET_DEVICES += fortinet_fg-52e
+
+define Device/fortinet_fwf-30e
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiWiFi 30E
+  DEVICE_DTS := armada-385-fortinet-fwf-30e
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FWF30E
+  DEVICE_PACKAGES += kmod-ath9k wpad-basic-mbedtls
+endef
+TARGET_DEVICES += fortinet_fwf-30e
 
 define Device/fortinet_fwf-50e-2r
   $(Device/fortinet)
@@ -267,22 +267,6 @@ define Device/linksys_wrt1200ac
 endef
 TARGET_DEVICES += linksys_wrt1200ac
 
-define Device/linksys_wrt1900acs
-  $(call Device/linksys)
-  $(Device/dsa-migration)
-  DEVICE_MODEL := WRT1900ACS
-  DEVICE_VARIANT := v1
-  DEVICE_ALT0_VENDOR := Linksys
-  DEVICE_ALT0_MODEL := WRT1900ACS
-  DEVICE_ALT0_VARIANT := v2
-  DEVICE_ALT1_VENDOR := Linksys
-  DEVICE_ALT1_MODEL := Shelby
-  DEVICE_DTS := armada-385-linksys-shelby
-  DEVICE_PACKAGES += mwlwifi-firmware-88w8864 kmod-dsa-mv88e6xxx
-  SUPPORTED_DEVICES += armada-385-linksys-shelby linksys,shelby
-endef
-TARGET_DEVICES += linksys_wrt1900acs
-
 define Device/linksys_wrt1900ac-v1
   $(call Device/linksys)
   $(Device/kernel-size-migration)
@@ -310,6 +294,22 @@ define Device/linksys_wrt1900ac-v2
   SUPPORTED_DEVICES += armada-385-linksys-cobra linksys,cobra
 endef
 TARGET_DEVICES += linksys_wrt1900ac-v2
+
+define Device/linksys_wrt1900acs
+  $(call Device/linksys)
+  $(Device/dsa-migration)
+  DEVICE_MODEL := WRT1900ACS
+  DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := Linksys
+  DEVICE_ALT0_MODEL := WRT1900ACS
+  DEVICE_ALT0_VARIANT := v2
+  DEVICE_ALT1_VENDOR := Linksys
+  DEVICE_ALT1_MODEL := Shelby
+  DEVICE_DTS := armada-385-linksys-shelby
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864 kmod-dsa-mv88e6xxx
+  SUPPORTED_DEVICES += armada-385-linksys-shelby linksys,shelby
+endef
+TARGET_DEVICES += linksys_wrt1900acs
 
 define Device/linksys_wrt3200acm
   $(call Device/linksys)

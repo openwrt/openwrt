@@ -97,6 +97,13 @@ define Device/marvell_armada-3720-db
 endef
 TARGET_DEVICES += marvell_armada-3720-db
 
+define Device/methode_edpu
+  $(call Device/methode_udpu)
+  DEVICE_MODEL := eDPU
+  DEVICE_DTS := armada-3720-eDPU
+endef
+TARGET_DEVICES += methode_edpu
+
 define Build/methode-gpt-emmc
   cp $@ $@.tmp 2>/dev/null || true
   ptgen -g -o $@.tmp -l 1024 \
@@ -139,13 +146,6 @@ define Device/methode_udpu
   DEVICE_DTS := armada-3720-uDPU
 endef
 TARGET_DEVICES += methode_udpu
-
-define Device/methode_edpu
-  $(call Device/methode_udpu)
-  DEVICE_MODEL := eDPU
-  DEVICE_DTS := armada-3720-eDPU
-endef
-TARGET_DEVICES += methode_edpu
 
 define Device/ripe_atlas-v5
   $(call Device/Default-arm64)
