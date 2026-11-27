@@ -1098,6 +1098,11 @@ static int otto_dsa_ports_probe(struct otto_dsa_priv *priv)
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
+		if (pn > priv->r->cpu_port) {
+			dev_err(priv->dev, "Port node %u is beyond the CPU port\n", pn);
+			continue;
+		}
+
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
 		priv->ports[pn].phy = !!phy_node;
 		of_node_put(phy_node);
