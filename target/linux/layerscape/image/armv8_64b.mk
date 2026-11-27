@@ -128,28 +128,6 @@ define Device/fsl_ls1012a-frdm
 endef
 TARGET_DEVICES += fsl_ls1012a-frdm
 
-define Device/fsl_ls1012a-rdb
-  $(Device/fix-sysupgrade)
-  DEVICE_VENDOR := NXP
-  DEVICE_MODEL := LS1012A-RDB
-  DEVICE_PACKAGES += \
-    layerscape-ppfe \
-    kmod-hwmon-ina2xx \
-    kmod-iio-fxas21002c-i2c \
-    kmod-iio-fxos8700-i2c \
-    kmod-ppfe
-  IMAGE/firmware.bin := \
-    ls-clean | \
-    ls-append $(1)-bl2.pbl | pad-to 1M | \
-    ls-append $(1)-fip.bin | pad-to 5M | \
-    ls-append $(1)-uboot-env.bin | pad-to 10M | \
-    ls-append pfe.itb | pad-to 15M | \
-    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
-    append-kernel | pad-to 32M | \
-    append-rootfs | pad-rootfs | check-size
-endef
-TARGET_DEVICES += fsl_ls1012a-rdb
-
 define Device/fsl_ls1012a-frwy-sdboot
   $(Device/rework-sdcard-images)
   $(Device/fsl-sdboot)
@@ -174,6 +152,28 @@ define Device/fsl_ls1012a-frwy-sdboot
     append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
 endef
 TARGET_DEVICES += fsl_ls1012a-frwy-sdboot
+
+define Device/fsl_ls1012a-rdb
+  $(Device/fix-sysupgrade)
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := LS1012A-RDB
+  DEVICE_PACKAGES += \
+    layerscape-ppfe \
+    kmod-hwmon-ina2xx \
+    kmod-iio-fxas21002c-i2c \
+    kmod-iio-fxos8700-i2c \
+    kmod-ppfe
+  IMAGE/firmware.bin := \
+    ls-clean | \
+    ls-append $(1)-bl2.pbl | pad-to 1M | \
+    ls-append $(1)-fip.bin | pad-to 5M | \
+    ls-append $(1)-uboot-env.bin | pad-to 10M | \
+    ls-append pfe.itb | pad-to 15M | \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
+    append-kernel | pad-to 32M | \
+    append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += fsl_ls1012a-rdb
 
 define Device/fsl_ls1028a-rdb
   DEVICE_VENDOR := NXP
@@ -262,32 +262,6 @@ define Device/fsl_ls1043a-rdb-sdboot
     append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
 endef
 TARGET_DEVICES += fsl_ls1043a-rdb-sdboot
-
-define Device/watchguard_firebox-t40
-  DEVICE_VENDOR := WatchGuard
-  DEVICE_MODEL := Firebox T40
-  SUPPORTED_DEVICES := watchguard,firebox-t40
-  DEVICE_DTS := fsl-ls1043a-watchguard-firebox-t40
-  # WatchGuard U-Boot may otherwise pass the DTB to Linux at an unusable in-place address.
-  DEVICE_DTS_LOADADDR := 0x90000000
-  FILESYSTEMS := squashfs
-  T40_ROOTFS_PARTSIZE := 1024
-  T40_BOOTFS_PARTSIZE := 128
-  KERNEL := kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
-  # USB recovery on the T40 needs a real FIT with a separate initrd payload.
-  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb with-initrd
-  IMAGES := sysupgrade.bin sdcard.img.gz
-  # Sysupgrade only needs the FIT payload; the on-device updater copies it into
-  # the existing ext2 SYSA boot partition instead of shipping a full 128 MiB image.
-  IMAGE/sysupgrade.bin := sysupgrade-tar kernel=$$(IMAGE_KERNEL) | append-metadata
-  IMAGE/sdcard.img.gz := t40-sdcard | gzip
-  DEVICE_PACKAGES += \
-    kmod-gpio-button-hotplug \
-    kmod-gpio-nxp-74hc164 \
-    kmod-leds-gpio \
-    kmod-spi-gpio
-endef
-TARGET_DEVICES += watchguard_firebox-t40
 
 define Device/fsl_ls1046a-frwy
   DEVICE_VENDOR := NXP
@@ -510,3 +484,29 @@ define Device/traverse_ten64-mtd
   SUPPORTED_DEVICES = traverse,ten64
 endef
 TARGET_DEVICES += traverse_ten64-mtd
+
+define Device/watchguard_firebox-t40
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := Firebox T40
+  SUPPORTED_DEVICES := watchguard,firebox-t40
+  DEVICE_DTS := fsl-ls1043a-watchguard-firebox-t40
+  # WatchGuard U-Boot may otherwise pass the DTB to Linux at an unusable in-place address.
+  DEVICE_DTS_LOADADDR := 0x90000000
+  FILESYSTEMS := squashfs
+  T40_ROOTFS_PARTSIZE := 1024
+  T40_BOOTFS_PARTSIZE := 128
+  KERNEL := kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
+  # USB recovery on the T40 needs a real FIT with a separate initrd payload.
+  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb with-initrd
+  IMAGES := sysupgrade.bin sdcard.img.gz
+  # Sysupgrade only needs the FIT payload; the on-device updater copies it into
+  # the existing ext2 SYSA boot partition instead of shipping a full 128 MiB image.
+  IMAGE/sysupgrade.bin := sysupgrade-tar kernel=$$(IMAGE_KERNEL) | append-metadata
+  IMAGE/sdcard.img.gz := t40-sdcard | gzip
+  DEVICE_PACKAGES += \
+    kmod-gpio-button-hotplug \
+    kmod-gpio-nxp-74hc164 \
+    kmod-leds-gpio \
+    kmod-spi-gpio
+endef
+TARGET_DEVICES += watchguard_firebox-t40
