@@ -780,6 +780,34 @@ define Device/tama_w06
 endef
 TARGET_DEVICES += tama_w06
 
+define Device/teltonika_rut200
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT200
+  DEVICE_VARIANT := v1-v4
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut2m
+  IMAGE_SIZE := 15424k
+  BLOCKSIZE := 64k
+  DEVICE_PACKAGES +=kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-usb-net-cdc-ether
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += teltonika_rut200
+
+define Device/teltonika_rut241
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT241
+  DEVICE_VARIANT := v1-v4
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut2m
+  IMAGE_SIZE := 15424k
+  BLOCKSIZE := 64k
+  DEVICE_PACKAGES += uqmi kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += teltonika_rut241
+
 define Device/teltonika_rut9x1
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT951
@@ -1417,6 +1445,16 @@ define Device/wrtnode_wrtnode2r
 endef
 TARGET_DEVICES += wrtnode_wrtnode2r
 
+define Device/xiaomi_mi-ra75
+  IMAGE_SIZE := 14976k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := MiWiFi Range Extender AC1200 
+  DEVICE_VARIANT := RA75
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += xiaomi,mira75
+endef
+TARGET_DEVICES += xiaomi_mi-ra75
+
 define Device/xiaomi_mi-router-4a-100m
   IMAGE_SIZE := 14976k
   DEVICE_VENDOR := Xiaomi
@@ -1479,15 +1517,16 @@ define Device/xiaomi_miwifi-nano
 endef
 TARGET_DEVICES += xiaomi_miwifi-nano
 
-define Device/xiaomi_mi-ra75
-  IMAGE_SIZE := 14976k
-  DEVICE_VENDOR := Xiaomi
-  DEVICE_MODEL := MiWiFi Range Extender AC1200 
-  DEVICE_VARIANT := RA75
-  DEVICE_PACKAGES := kmod-mt76x2
-  SUPPORTED_DEVICES += xiaomi,mira75
+define Device/yuncore_1200f
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Yuncore
+  DEVICE_MODEL := 1200F
+  DEVICE_ALT0_VENDOR := KuWFi
+  DEVICE_ALT0_MODEL := AP1200F
+  SUPPORTED_DEVICES += yuncore,1200f
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap -kmod-mt76x2 -kmod-mt76x2-common -kmod-mt76x02-common
 endef
-TARGET_DEVICES += xiaomi_mi-ra75
+TARGET_DEVICES += yuncore_1200f
 
 define Device/yuncore_cpe200
   IMAGE_SIZE := 7872k
@@ -1530,42 +1569,3 @@ define Device/zyxel_keenetic-extra-ii
 	check-size | zyimage -d 6162 -v "ZyXEL Keenetic Extra II"
 endef
 TARGET_DEVICES += zyxel_keenetic-extra-ii
-
-define Device/teltonika_rut200
-  DEVICE_VENDOR := Teltonika
-  DEVICE_MODEL := RUT200
-  DEVICE_VARIANT := v1-v4
-  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut2m
-  IMAGE_SIZE := 15424k
-  BLOCKSIZE := 64k
-  DEVICE_PACKAGES +=kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-usb-net-cdc-ether
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
-endef
-TARGET_DEVICES += teltonika_rut200
-
-define Device/teltonika_rut241
-  DEVICE_VENDOR := Teltonika
-  DEVICE_MODEL := RUT241
-  DEVICE_VARIANT := v1-v4
-  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut2m
-  IMAGE_SIZE := 15424k
-  BLOCKSIZE := 64k
-  DEVICE_PACKAGES += uqmi kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
-endef
-TARGET_DEVICES += teltonika_rut241
-
-define Device/yuncore_1200f
-  IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Yuncore
-  DEVICE_MODEL := 1200F
-  DEVICE_ALT0_VENDOR := KuWFi
-  DEVICE_ALT0_MODEL := AP1200F
-  SUPPORTED_DEVICES += yuncore,1200f
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap -kmod-mt76x2 -kmod-mt76x2-common -kmod-mt76x02-common
-endef
-TARGET_DEVICES += yuncore_1200f

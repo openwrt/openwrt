@@ -309,18 +309,18 @@ define Device/ampedwireless_ally_common
   KERNEL_INITRAMFS := $$(KERNEL) | edimax-header -s CSYS -m RN68 -f 0x001c0000 -S 0x01100000
 endef
 
+define Device/ampedwireless_ally-00x19k
+  $(Device/ampedwireless_ally_common)
+  DEVICE_MODEL := ALLY-00X19K
+endef
+TARGET_DEVICES += ampedwireless_ally-00x19k
+
 define Device/ampedwireless_ally-r1900k
   $(Device/ampedwireless_ally_common)
   DEVICE_MODEL := ALLY-R1900K
   DEVICE_PACKAGES += kmod-usb3
 endef
 TARGET_DEVICES += ampedwireless_ally-r1900k
-
-define Device/ampedwireless_ally-00x19k
-  $(Device/ampedwireless_ally_common)
-  DEVICE_MODEL := ALLY-00X19K
-endef
-TARGET_DEVICES += ampedwireless_ally-00x19k
 
 define Device/arcadyan_we410443
   $(Device/dsa-migration)
@@ -395,6 +395,20 @@ define Device/asiarf_ap7621-nv1
 	-wpad-basic-mbedtls -uboot-envtools
 endef
 TARGET_DEVICES += asiarf_ap7621-nv1
+
+define Device/asus_4g-ax56
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := 4G-AX56
+  IMAGE_SIZE := 51200k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-serial-option \
+	kmod-usb-net-cdc-ncm comgt-ncm
+endef
+TARGET_DEVICES += asus_4g-ax56
 
 define Device/asus_rp-ac56
   $(Device/dsa-migration)
@@ -473,18 +487,6 @@ define Device/asus_rt-ac85u
 endef
 TARGET_DEVICES += asus_rt-ac85u
 
-define Device/asus_rt-n56u-b1
-  $(Device/dsa-migration)
-  $(Device/uimage-lzma-loader)
-  DEVICE_VENDOR := ASUS
-  DEVICE_MODEL := RT-N56U
-  DEVICE_VARIANT := B1
-  IMAGE_SIZE := 16064k
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport -uboot-envtools
-endef
-TARGET_DEVICES += asus_rt-n56u-b1
-
 define Device/asus_rt-ax53u
   $(Device/nand)
   DEVICE_VENDOR := ASUS
@@ -524,19 +526,17 @@ define Device/asus_rt-ax54
 endef
 TARGET_DEVICES += asus_rt-ax54
 
-define Device/asus_4g-ax56
-  $(Device/nand)
+define Device/asus_rt-n56u-b1
+  $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := ASUS
-  DEVICE_MODEL := 4G-AX56
-  IMAGE_SIZE := 51200k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
-	check-size
-  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-serial-option \
-	kmod-usb-net-cdc-ncm comgt-ncm
+  DEVICE_MODEL := RT-N56U
+  DEVICE_VARIANT := B1
+  IMAGE_SIZE := 16064k
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
-TARGET_DEVICES += asus_4g-ax56
+TARGET_DEVICES += asus_rt-n56u-b1
 
 define Device/beeline_smartbox-flash
   $(Device/nand)
@@ -625,6 +625,16 @@ define Device/belkin_rt1800
 endef
 TARGET_DEVICES += belkin_rt1800
 
+define Device/bolt_arion
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := BOLT
+  DEVICE_MODEL := Arion
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+endef
+TARGET_DEVICES += bolt_arion
+
 define Device/buffalo_wsr-1166dhp
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -700,16 +710,6 @@ define Device/buffalo_wsr-600dhp
   SUPPORTED_DEVICES += wsr-600
 endef
 TARGET_DEVICES += buffalo_wsr-600dhp
-
-define Device/bolt_arion
-  $(Device/dsa-migration)
-  $(Device/uimage-lzma-loader)
-  IMAGE_SIZE := 32448k
-  DEVICE_VENDOR := BOLT
-  DEVICE_MODEL := Arion
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
-endef
-TARGET_DEVICES += bolt_arion
 
 define Device/comfast_cf-e390ax
   $(Device/dsa-migration)
@@ -916,6 +916,28 @@ define Device/cudy_x6-v2
   SUPPORTED_DEVICES += cudy,x6 R30
 endef
 TARGET_DEVICES += cudy_x6-v2
+
+define Device/d-team_newifi-d2
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := D-Team
+  DEVICE_MODEL := Newifi D2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+	kmod-usb-ledtrig-usbport -uboot-envtools
+endef
+TARGET_DEVICES += d-team_newifi-d2
+
+define Device/d-team_pbr-m1
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := PandoraBox
+  DEVICE_MODEL := PBR-M1
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-mmc-mtk \
+	kmod-usb3 kmod-usb-ledtrig-usbport -uboot-envtools
+  SUPPORTED_DEVICES += pbr-m1
+endef
+TARGET_DEVICES += d-team_pbr-m1
 
 define Device/dlink_covr-x1860-a1
   $(Device/dsa-migration)
@@ -1217,6 +1239,14 @@ define Device/dlink_dra-1360-a1
 endef
 TARGET_DEVICES += dlink_dra-1360-a1
 
+# Branded version of Genexis / Inteno EX400 (difference is one LED)
+define Device/dna_valokuitu-plus-ex400
+  $(Device/genexis_pulse-ex400/common)
+  DEVICE_VENDOR := DNA
+  DEVICE_MODEL := Valokuitu Plus EX400
+endef
+TARGET_DEVICES += dna_valokuitu-plus-ex400
+
 define Device/dual-q_h721
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1227,36 +1257,6 @@ define Device/dual-q_h721
 	-wpad-basic-mbedtls -uboot-envtools
 endef
 TARGET_DEVICES += dual-q_h721
-
-define Device/d-team_newifi-d2
-  $(Device/dsa-migration)
-  $(Device/uimage-lzma-loader)
-  IMAGE_SIZE := 32448k
-  DEVICE_VENDOR := D-Team
-  DEVICE_MODEL := Newifi D2
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport -uboot-envtools
-endef
-TARGET_DEVICES += d-team_newifi-d2
-
-define Device/d-team_pbr-m1
-  $(Device/dsa-migration)
-  IMAGE_SIZE := 32448k
-  DEVICE_VENDOR := PandoraBox
-  DEVICE_MODEL := PBR-M1
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-mmc-mtk \
-	kmod-usb3 kmod-usb-ledtrig-usbport -uboot-envtools
-  SUPPORTED_DEVICES += pbr-m1
-endef
-TARGET_DEVICES += d-team_pbr-m1
-
-# Branded version of Genexis / Inteno EX400 (difference is one LED)
-define Device/dna_valokuitu-plus-ex400
-  $(Device/genexis_pulse-ex400/common)
-  DEVICE_VENDOR := DNA
-  DEVICE_MODEL := Valokuitu Plus EX400
-endef
-TARGET_DEVICES += dna_valokuitu-plus-ex400
 
 define Device/edimax_ra21s
   $(Device/dsa-migration)
@@ -1659,16 +1659,6 @@ define Device/gnubee_gb-pc2
 endef
 TARGET_DEVICES += gnubee_gb-pc2
 
-define Device/hanyang_hyc-g920
-  $(Device/dsa-migration)
-  $(Device/uimage-lzma-loader)
-  DEVICE_VENDOR := Hanyang
-  DEVICE_MODEL := CJ-Hello HYC-G920
-  IMAGE_SIZE := 15744k
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt76x2 kmod-usb-ledtrig-usbport
-endef
-TARGET_DEVICES += hanyang_hyc-g920
-
 define Device/h3c_tx180x
   $(Device/nand)
   KERNEL_SIZE := 8192k
@@ -1722,6 +1712,16 @@ define Device/haier_har-20s2u1
 endef
 TARGET_DEVICES += haier_har-20s2u1
 
+define Device/hanyang_hyc-g920
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Hanyang
+  DEVICE_MODEL := CJ-Hello HYC-G920
+  IMAGE_SIZE := 15744k
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt76x2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += hanyang_hyc-g920
+
 define Device/hilink_hlk-7621a-evb
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1745,6 +1745,18 @@ define Device/hiwifi_hc5962
 endef
 TARGET_DEVICES += hiwifi_hc5962
 
+define Device/huasifei_ws1208v2
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Huasifei
+  DEVICE_MODEL := WS1208V2
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-mmc-mtk \
+	kmod-usb3 kmod-usb-net-cdc-mbim kmod-usb-net-qmi-wwan \
+	kmod-usb-serial-option -uboot-envtools
+endef
+TARGET_DEVICES += huasifei_ws1208v2
+
 define Device/humax_e10
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1763,18 +1775,6 @@ define Device/humax_e10
   DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 -uboot-envtools
 endef
 TARGET_DEVICES += humax_e10
-
-define Device/huasifei_ws1208v2
-  $(Device/dsa-migration)
-  $(Device/uimage-lzma-loader)
-  IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Huasifei
-  DEVICE_MODEL := WS1208V2
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-mmc-mtk \
-	kmod-usb3 kmod-usb-net-cdc-mbim kmod-usb-net-qmi-wwan \
-	kmod-usb-serial-option -uboot-envtools
-endef
-TARGET_DEVICES += huasifei_ws1208v2
 
 define Device/iodata_wn-ax1167gr
   $(Device/dsa-migration)
@@ -2924,18 +2924,6 @@ define Device/telco-electronics_x1
 endef
 TARGET_DEVICES += telco-electronics_x1
 
-define Device/tenbay_t-mb5eu-v01
-  $(Device/dsa-migration)
-  DEVICE_VENDOR := Tenbay
-  DEVICE_MODEL := T-MB5EU-V01
-  DEVICE_DTS_CONFIG := config@1
-  DEVICE_PACKAGES += kmod-mt7915-firmware kmod-usb3 -uboot-envtools
-  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  IMAGE_SIZE := 15808k
-  SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
-endef
-TARGET_DEVICES += tenbay_t-mb5eu-v01
-
 define Device/teltonika_rutm_common
   $(Device/nand)
   DEVICE_VENDOR := Teltonika
@@ -2950,14 +2938,12 @@ define Device/teltonika_rutm_common
   IMAGE/factory.bin := append-ubi | check-size | append-teltonika-metadata
 endef
 
-define Device/teltonika_rutm50
+define Device/teltonika_rutm11
   $(Device/teltonika_rutm_common)
-  DEVICE_MODEL := RUTM50
-  DEVICE_ALT0_VENDOR := Teltonika
-  DEVICE_ALT0_MODEL := RUTM51
-  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-net-cdc-ncm
+  DEVICE_MODEL := RUTM11
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-net-cdc-mbim
 endef
-TARGET_DEVICES += teltonika_rutm50
+TARGET_DEVICES += teltonika_rutm11
 
 define Device/teltonika_rutm30
   $(Device/teltonika_rutm_common)
@@ -2968,12 +2954,26 @@ define Device/teltonika_rutm30
 endef
 TARGET_DEVICES += teltonika_rutm30
 
-define Device/teltonika_rutm11
+define Device/teltonika_rutm50
   $(Device/teltonika_rutm_common)
-  DEVICE_MODEL := RUTM11
-  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-net-cdc-mbim
+  DEVICE_MODEL := RUTM50
+  DEVICE_ALT0_VENDOR := Teltonika
+  DEVICE_ALT0_MODEL := RUTM51
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-net-cdc-ncm
 endef
-TARGET_DEVICES += teltonika_rutm11
+TARGET_DEVICES += teltonika_rutm50
+
+define Device/tenbay_t-mb5eu-v01
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Tenbay
+  DEVICE_MODEL := T-MB5EU-V01
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES += kmod-mt7915-firmware kmod-usb3 -uboot-envtools
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 15808k
+  SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
+endef
+TARGET_DEVICES += tenbay_t-mb5eu-v01
 
 define Device/thunder_timecloud
   $(Device/dsa-migration)
@@ -3016,6 +3016,19 @@ define Device/tozed_zlt-s12-pro
 endef
 TARGET_DEVICES += tozed_zlt-s12-pro
 
+define Device/tplink_archer-a6-v3
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := Archer A6
+  DEVICE_VARIANT := V3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e \
+	kmod-mt7663-firmware-ap -uboot-envtools
+  TPLINK_BOARD_ID := ARCHER-A6-V3
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_archer-a6-v3
+
 define Device/tplink_archer-ax21-v4
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
@@ -3039,19 +3052,6 @@ define Device/tplink_archer-ax23-v1
   IMAGE_SIZE := 15744k
 endef
 TARGET_DEVICES += tplink_archer-ax23-v1
-
-define Device/tplink_archer-a6-v3
-  $(Device/dsa-migration)
-  $(Device/tplink-safeloader)
-  DEVICE_MODEL := Archer A6
-  DEVICE_VARIANT := V3
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e \
-	kmod-mt7663-firmware-ap -uboot-envtools
-  TPLINK_BOARD_ID := ARCHER-A6-V3
-  KERNEL := $(KERNEL_DTB) | uImage lzma
-  IMAGE_SIZE := 15744k
-endef
-TARGET_DEVICES += tplink_archer-a6-v3
 
 define Device/tplink_archer-c6-v3
   $(Device/dsa-migration)
@@ -3465,6 +3465,19 @@ define Device/wavlink_wl-wn533a8
 endef
 TARGET_DEVICES += wavlink_wl-wn533a8
 
+define Device/wavlink_wl-wn573hx1
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN573HX1
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += wavlink_wl-wn573hx1
+
 define Device/wavlink_ws-wn552k1-c
   $(Device/dsa-migration)
   DEVICE_VENDOR := Wavlink
@@ -3489,19 +3502,6 @@ define Device/wavlink_ws-wn572hp3-4g
 	kmod-usb3 kmod-usb-net-rndis comgt-ncm -uboot-envtools
 endef
 TARGET_DEVICES += wavlink_ws-wn572hp3-4g
-
-define Device/wavlink_wl-wn573hx1
-  $(Device/uimage-lzma-loader)
-  IMAGE_SIZE := 15808k
-  DEVICE_VENDOR := Wavlink
-  DEVICE_MODEL := WL-WN573HX1
-  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
-	check-size | append-metadata
-  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
-endef
-TARGET_DEVICES += wavlink_wl-wn573hx1
 
 define Device/wevo_11acnas
   $(Device/dsa-migration)
@@ -3583,6 +3583,20 @@ define Device/wodesys_wd-r1802u
 endef
 TARGET_DEVICES += wodesys_wd-r1802u
 
+define Device/xiaomi_mi-router-3-pro
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 255488k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 3 Pro
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += xiaomi,mir3p
+endef
+TARGET_DEVICES += xiaomi_mi-router-3-pro
+
 define Device/xiaomi_nand_separate
   $(Device/nand)
   $(Device/uimage-lzma-loader)
@@ -3612,20 +3626,6 @@ define Device/xiaomi_mi-router-3g-v2
   SUPPORTED_DEVICES += xiaomi,mir3g-v2
 endef
 TARGET_DEVICES += xiaomi_mi-router-3g-v2
-
-define Device/xiaomi_mi-router-3-pro
-  $(Device/nand)
-  $(Device/uimage-lzma-loader)
-  IMAGE_SIZE := 255488k
-  DEVICE_VENDOR := Xiaomi
-  DEVICE_MODEL := Mi Router 3 Pro
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
-	check-size
-  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += xiaomi,mir3p
-endef
-TARGET_DEVICES += xiaomi_mi-router-3-pro
 
 define Device/xiaomi_mi-router-4
   $(Device/xiaomi_nand_separate)
