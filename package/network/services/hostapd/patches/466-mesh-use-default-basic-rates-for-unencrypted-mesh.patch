@@ -1,0 +1,53 @@
+From: Andreas Ziegler <dev@andreas-ziegler.de>
+Date: Thu, 26 Nov 2026 02:54:00 +0100
+Subject: [PATCH] mesh: match kernel 2.4 GHz default basic rates for unencrypted mesh
+
+When mesh_basic_rates is not explicitly configured on 2.4 GHz
+(HOSTAPD_MODE_IEEE80211G), wpa_supplicant_mesh_init() unconditionally
+overrides bss->conf->basic_rates with basic_rates_erp (1, 2, 5.5, 6, 11,
+12, 24 Mbps). Unencrypted kernel-managed 802.11s meshes (such as `iw dev ...
+mesh join`, OpenWrt <= 22.03, and wpad-basic-* setups) rely on Linux
+cfg80211 __cfg80211_join_mesh(), which defaults on 2.4 GHz to 1 Mbps
+only as the sole basic rate for backward compatibility. Strict basic-rate
+matching in mac80211 causes peering failure between wpa_supplicant and
+kernel-MPM nodes.
+
+Keep the basic_rates_erp override when mesh security is enabled
+(preserving backward compatibility with existing SAE encrypted meshes),
+and use { 10, 0 } (1 Mbps) for unencrypted 2.4 GHz meshes so both
+beacons and peering frames match Linux cfg80211's default basic rates.
+
+Ref: https://github.com/openwrt/openwrt/issues/15826
+Signed-off-by: Andreas Ziegler <dev@andreas-ziegler.de>
+---
+ wpa_supplicant/mesh.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+--- a/wpa_supplicant/mesh.c
++++ b/wpa_supplicant/mesh.c
+@@ -367,6 +367,7 @@ static int wpa_supplicant_mesh_init(stru
+ 	struct hostapd_config *conf;
+ 	struct mesh_conf *mconf;
+ 	int basic_rates_erp[] = { 10, 20, 55, 60, 110, 120, 240, 0 };
++	int basic_rates_open[] = { 10, 0 };
+ 	int frequency;
+ 	bool is_dfs;
+ 	u8 chan;
+@@ -529,9 +530,14 @@ static int wpa_supplicant_mesh_init(stru
+ 		 * advertised in beacons match the one in peering frames, sigh.
+ 		 */
+ 		if (conf->hw_mode == HOSTAPD_MODE_IEEE80211G) {
+-			bss->conf->basic_rates = os_memdup(
+-				basic_rates_erp,
+-				sizeof(basic_rates_erp));
++			if (mconf->security != MESH_CONF_SEC_NONE)
++				bss->conf->basic_rates = os_memdup(
++					basic_rates_erp,
++					sizeof(basic_rates_erp));
++			else
++				bss->conf->basic_rates = os_memdup(
++					basic_rates_open,
++					sizeof(basic_rates_open));
+ 			if (!bss->conf->basic_rates)
+ 				goto out_free;
+ 		}
