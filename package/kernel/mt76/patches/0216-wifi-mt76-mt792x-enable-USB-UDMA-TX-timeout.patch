@@ -1,0 +1,41 @@
+From ece1f4a5a86f775710277ac0254f2dcecb5f7283 Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Sat, 13 Jun 2026 17:41:30 -0500
+Subject: [PATCH] wifi: mt76: mt792x: enable USB UDMA TX timeout
+
+Configure the USB UDMA TX timeout limit and enable timeout detection
+during DMA initialization, matching the vendor driver setup. Use a
+longer timeout to avoid false alarms.
+
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Link: https://patch.msgid.link/20260613224131.2396026-6-sean.wang@kernel.org
+---
+ mt792x_usb.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/mt792x_usb.c b/mt792x_usb.c
+index 7aafffd0..ff763f51 100644
+--- a/mt792x_usb.c
++++ b/mt792x_usb.c
+@@ -11,6 +11,7 @@
+ #include "mt792x.h"
+ #include "mt76_connac2_mac.h"
+ 
++#define MT792X_USB_TX_TIMEOUT_LIMIT	50000
+ #define MT792X_USB_UDMA_IDLE_TIMEOUT	1000
+ 
+ static int mt792xu_read32(struct mt76_dev *dev, u32 addr, void *buf)
+@@ -396,6 +397,10 @@ int mt792xu_dma_init(struct mt792x_dev *dev, bool resume)
+ 	mt76_set(dev, MT_UDMA_WLCFG_0,
+ 		 MT_WL_RX_EN | MT_WL_TX_EN |
+ 		 MT_WL_RX_MPSZ_PAD0 | MT_TICK_1US_EN);
++	mt76_rmw(dev, MT_UDMA_WLCFG_1, MT_WL_TX_TMOUT_LMT,
++		 FIELD_PREP(MT_WL_TX_TMOUT_LMT,
++			    MT792X_USB_TX_TIMEOUT_LIMIT));
++	mt76_set(dev, MT_UDMA_WLCFG_0, MT_WL_TX_TMOUT_FUNC_EN);
+ 	mt76_clear(dev, MT_UDMA_WLCFG_0,
+ 		   MT_WL_RX_AGG_TO | MT_WL_RX_AGG_LMT);
+ 	mt76_clear(dev, MT_UDMA_WLCFG_1, MT_WL_RX_AGG_PKT_LMT);
+-- 
+2.54.0 (Apple Git-157)
+
