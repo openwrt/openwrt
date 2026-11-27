@@ -235,7 +235,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	msg1 = FIELD_PREP(QDMA_ETH_TXMSG_FPORT_MASK, fport) |
  	       FIELD_PREP(QDMA_ETH_TXMSG_METER_MASK, 0x7f);
  
-@@ -2147,8 +2150,7 @@ static void airoha_ethtool_get_drvinfo(s
+@@ -2144,8 +2147,7 @@ static void airoha_ethtool_get_drvinfo(s
  				       struct ethtool_drvinfo *info)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -245,7 +245,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	strscpy(info->driver, eth->dev->driver->name, sizeof(info->driver));
  	strscpy(info->bus_info, dev_name(eth->dev), sizeof(info->bus_info));
-@@ -2161,7 +2163,7 @@ static void airoha_ethtool_get_mac_stats
+@@ -2158,7 +2160,7 @@ static void airoha_ethtool_get_mac_stats
  	struct airoha_gdm_port *port = dev->port;
  	unsigned int start;
  
@@ -254,7 +254,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	do {
  		start = u64_stats_fetch_begin(&port->stats.syncp);
  		stats->FramesTransmittedOK = port->stats.tx_ok_pkts;
-@@ -2201,7 +2203,7 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2198,7 +2200,7 @@ airoha_ethtool_get_rmon_stats(struct net
  		     ARRAY_SIZE(hw_stats->rx_len) + 1);
  
  	*ranges = airoha_ethtool_rmon_ranges;
@@ -263,7 +263,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	do {
  		int i;
  
-@@ -2221,18 +2223,17 @@ static int airoha_qdma_set_chan_tx_sched
+@@ -2218,18 +2220,17 @@ static int airoha_qdma_set_chan_tx_sched
  					 const u16 *weights, u8 n_weights)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -284,7 +284,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			       TWRR_RW_CMD_MASK |
  			       FIELD_PREP(TWRR_CHAN_IDX_MASK, channel) |
  			       FIELD_PREP(TWRR_QUEUE_IDX_MASK, i) |
-@@ -2240,13 +2241,12 @@ static int airoha_qdma_set_chan_tx_sched
+@@ -2237,13 +2238,12 @@ static int airoha_qdma_set_chan_tx_sched
  		err = read_poll_timeout(airoha_qdma_rr, status,
  					status & TWRR_RW_CMD_DONE,
  					USEC_PER_MSEC, 10 * USEC_PER_MSEC,
@@ -300,7 +300,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			CHAN_QOS_MODE_MASK(channel),
  			__field_prep(CHAN_QOS_MODE_MASK(channel), mode));
  
-@@ -2312,9 +2312,9 @@ static int airoha_qdma_get_tx_ets_stats(
+@@ -2309,9 +2309,9 @@ static int airoha_qdma_get_tx_ets_stats(
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	struct airoha_gdm_port *port = dev->port;
  
@@ -312,7 +312,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  					    REG_CNTR_VAL((channel << 1) + 1));
  	u64 tx_packets = (cpu_tx_packets - port->cpu_tx_packets) +
  			 (fwd_tx_packets - port->fwd_tx_packets);
-@@ -2577,17 +2577,16 @@ static int airoha_qdma_set_tx_rate_limit
+@@ -2574,17 +2574,16 @@ static int airoha_qdma_set_tx_rate_limit
  					 u32 bucket_size)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -332,7 +332,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  							 REG_EGRESS_TRTCM_CFG,
  							 i, rate, bucket_size);
  		if (err)
-@@ -2637,11 +2636,11 @@ static int airoha_tc_htb_alloc_leaf_queu
+@@ -2634,11 +2633,11 @@ static int airoha_tc_htb_alloc_leaf_queu
  	return 0;
  }
  
@@ -346,7 +346,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	int i;
  
  	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++) {
-@@ -2720,7 +2719,6 @@ static int airoha_dev_tc_matchall(struct
+@@ -2717,7 +2716,6 @@ static int airoha_dev_tc_matchall(struct
  {
  	enum trtcm_unit_type unit_type = TRTCM_BYTE_UNIT;
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -354,7 +354,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	u32 rate = 0, bucket_size = 0;
  
  	switch (f->command) {
-@@ -2745,7 +2743,7 @@ static int airoha_dev_tc_matchall(struct
+@@ -2742,7 +2740,7 @@ static int airoha_dev_tc_matchall(struct
  		fallthrough;
  	}
  	case TC_CLSMATCHALL_DESTROY:
@@ -363,7 +363,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  						unit_type);
  	default:
  		return -EOPNOTSUPP;
-@@ -2757,8 +2755,7 @@ static int airoha_dev_setup_tc_block_cb(
+@@ -2754,8 +2752,7 @@ static int airoha_dev_setup_tc_block_cb(
  {
  	struct net_device *netdev = cb_priv;
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);

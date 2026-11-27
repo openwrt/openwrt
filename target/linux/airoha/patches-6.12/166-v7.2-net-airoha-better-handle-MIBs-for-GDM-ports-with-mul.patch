@@ -308,7 +308,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int airoha_dev_change_mtu(struct net_device *netdev, int mtu)
-@@ -2308,20 +2335,19 @@ static void airoha_ethtool_get_mac_stats
+@@ -2305,20 +2332,19 @@ static void airoha_ethtool_get_mac_stats
  					 struct ethtool_eth_mac_stats *stats)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -338,7 +338,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static const struct ethtool_rmon_hist_range airoha_ethtool_rmon_ranges[] = {
-@@ -2341,8 +2367,7 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2338,8 +2364,7 @@ airoha_ethtool_get_rmon_stats(struct net
  			      const struct ethtool_rmon_hist_range **ranges)
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
@@ -348,7 +348,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	unsigned int start;
  
  	BUILD_BUG_ON(ARRAY_SIZE(airoha_ethtool_rmon_ranges) !=
-@@ -2355,7 +2380,7 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2352,7 +2377,7 @@ airoha_ethtool_get_rmon_stats(struct net
  	do {
  		int i;
  
@@ -357,7 +357,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		stats->fragments = hw_stats->rx_fragment;
  		stats->jabbers = hw_stats->rx_jabber;
  		for (i = 0; i < ARRAY_SIZE(airoha_ethtool_rmon_ranges) - 1;
-@@ -2363,7 +2388,7 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2360,7 +2385,7 @@ airoha_ethtool_get_rmon_stats(struct net
  			stats->hist[i] = hw_stats->rx_len[i];
  			stats->hist_tx[i] = hw_stats->tx_len[i];
  		}
@@ -366,7 +366,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int airoha_qdma_set_chan_tx_sched(struct net_device *netdev,
-@@ -3202,6 +3227,7 @@ static int airoha_alloc_gdm_device(struc
+@@ -3199,6 +3224,7 @@ static int airoha_alloc_gdm_device(struc
  
  	netdev->dev.of_node = of_node_get(np);
  	dev = netdev_priv(netdev);
@@ -374,7 +374,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	dev->port = port;
  	dev->eth = eth;
  	dev->nbq = nbq;
-@@ -3241,9 +3267,8 @@ static int airoha_alloc_gdm_port(struct
+@@ -3238,9 +3264,8 @@ static int airoha_alloc_gdm_port(struct
  	if (!port)
  		return -ENOMEM;
  
