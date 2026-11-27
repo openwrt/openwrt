@@ -397,3 +397,6 @@ endef
 $(eval $(foreach drv,$(PKG_DRIVERS),$(call KernelPackage,$(drv))))
 $(eval $(call KernelPackage,cfg80211))
 $(eval $(call KernelPackage,mac80211))
+$(eval $(call BuildPackage,b43-firmware))
+$(eval $(call BuildPackage,b43-firmware-open))
+$(foreach phy,$(B43_FW784_PHYS),$(eval $(call BuildPackage,b43-firmware-784-$(phy))))

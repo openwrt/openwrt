@@ -17,7 +17,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
     BUILD_ISL = y
   endif
 endif
-ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43),)
+ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43-firmware)$(CONFIG_PACKAGE_b43-firmware-open)$(CONFIG_PACKAGE_b43-firmware-784-ac)$(CONFIG_PACKAGE_b43-firmware-784-ht)$(CONFIG_PACKAGE_b43-firmware-784-n)$(CONFIG_PACKAGE_b43-firmware-784-lp)$(CONFIG_PACKAGE_b43-firmware-784-g)$(CONFIG_PACKAGE_b43-firmware-784-lcn),)
   BUILD_B43_TOOLS = y
 endif
 ifneq ($(CONFIG_SDK)$(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2),)
