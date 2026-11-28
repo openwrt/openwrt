@@ -78,6 +78,19 @@ define Device/cambiumnetworks_xe3-4
 endef
 TARGET_DEVICES += cambiumnetworks_xe3-4
 
+define Device/dlink_dba-x1230p
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := D-Link
+	DEVICE_MODEL := DBA-X1230P
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@cp03-c1
+	SOC := ipq6000
+	DEVICE_PACKAGES := ipq-wifi-dlink_dba-x1230p
+endef
+TARGET_DEVICES += dlink_dba-x1230p
+
 define Device/glinet_gl-common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
