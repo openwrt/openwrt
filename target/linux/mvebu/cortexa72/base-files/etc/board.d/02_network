@@ -13,7 +13,8 @@ case "$board" in
 checkpoint,v-80)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "eth1"
 	;;
-checkpoint,v-81)
+checkpoint,v-81|\
+checkpoint,v-81wd)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8" "eth1 eth2"
 	;;
 globalscale,mochabin)
