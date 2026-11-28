@@ -11,30 +11,6 @@
 	partition@50000 {
 		compatible = "denx,uimage";
 		label = "firmware";
-		reg = <0x50000 0x7a0000>;
-	};
-
-	partition@7f0000 {
-		label = "TM_1";
-		reg = <0x7f0000 0x200000>;
-		read-only;
-	};
-
-	partition@9f0000 {
-		label = "TM_2";
-		reg = <0x9f0000 0x400000>;
-		read-only;
-	};
-
-	partition@df0000 {
-		label = "manufacture";
-		reg = <0xdf0000 0x190000>;
-		read-only;
-	};
-
-	partition@f80000 {
-		label = "storage";
-		reg = <0xf80000 0x80000>;
-		read-only;
+		reg = <0x50000 0xfb0000>;
 	};
 };
