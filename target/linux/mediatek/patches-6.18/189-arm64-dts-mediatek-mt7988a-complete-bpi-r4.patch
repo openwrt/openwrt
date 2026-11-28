@@ -5,7 +5,7 @@ Subject: [PATCH 32/32] WIP: add BPi-R4
 
 --- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-2g5.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-2g5.dts
-@@ -20,3 +20,16 @@
+@@ -20,3 +20,22 @@
  	pinctrl-0 = <&i2p5gbe_led0_pins>;
  	pinctrl-names = "i2p5gbe-led";
  };
@@ -21,6 +21,12 @@ Subject: [PATCH 32/32] WIP: add BPi-R4
 +&int_2p5g_phy {
 +	pinctrl-names = "i2p5gbe-led";
 +	pinctrl-0 = <&i2p5gbe_led0_pins>;
++};
++
++&i2p5gbe_led0 {
++	status = "okay";
++	function = LED_FUNCTION_LAN;
++	color = <LED_COLOR_ID_GREEN>;
 +};
 --- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-emmc.dtso
 +++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-emmc.dtso
