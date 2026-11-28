@@ -807,7 +807,7 @@ define Device/cudy_m1300-v2
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := M1300
-  DEVICE_VARIANT := v2
+  DEVICE_VARIANT := v2/v3
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
 	-uboot-envtools
   UIMAGE_NAME := R15
