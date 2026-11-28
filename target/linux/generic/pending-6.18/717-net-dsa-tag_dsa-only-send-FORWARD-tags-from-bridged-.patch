@@ -1,0 +1,46 @@
+From: Junfeng Yang <didiglobalusa@gmail.com>
+Date: Fri, 13 Nov 2026 01:44:34 -0800
+Subject: [PATCH] net: dsa: tag_dsa: only send FORWARD tags from bridged
+ ports
+
+dsa_xmit_ll() builds a FORWARD tag whenever skb->offload_fwd_mark is
+set, using the bridge number of the egress port to pick the virtual
+source device. A standalone port has no bridge: dsa_port_bridge_num_get()
+returns 0 and the tag names a device that stands for no bridge at all.
+The comment further down in the same function already says that a
+standalone port always sends FROM_CPU.
+
+The bridge only sets the mark for ports that offload it, but the mark
+can also be left over from reception on another port, for example when
+the netfilter flowtable routes a frame from a bridged port straight to a
+standalone one.
+
+Look up the bridge first and require one before using FORWARD, so that a
+standalone port always sends FROM_CPU.
+
+Fixes: d82f8ab0d874 ("net: dsa: tag_dsa: offload the bridge forwarding process")
+Signed-off-by: Junfeng Yang <didiglobalusa@gmail.com>
+---
+
+--- a/net/dsa/tag_dsa.c
++++ b/net/dsa/tag_dsa.c
+@@ -135,7 +135,9 @@ static struct sk_buff *dsa_xmit_ll(struc
+ 	enum dsa_cmd cmd;
+ 	u8 *dsa_header;
+ 
+-	if (skb->offload_fwd_mark) {
++	br_dev = dsa_port_bridge_dev_get(dp);
++
++	if (skb->offload_fwd_mark && br_dev) {
+ 		unsigned int bridge_num = dsa_port_bridge_num_get(dp);
+ 		struct dsa_switch_tree *dst = dp->ds->dst;
+ 
+@@ -153,8 +155,6 @@ static struct sk_buff *dsa_xmit_ll(struc
+ 		tag_port = dp->index;
+ 	}
+ 
+-	br_dev = dsa_port_bridge_dev_get(dp);
+-
+ 	/* If frame is already 802.1Q tagged, we can convert it to a DSA
+ 	 * tag (avoiding a memmove), but only if the port is standalone
+ 	 * (in which case we always send FROM_CPU) or if the port's
