@@ -61,7 +61,7 @@
 	lx_clk: lx_clk {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
-		clock-frequency  = <175000000>;
+		clock-frequency = <175000000>;
 	};
 
 	soc: soc {
@@ -358,12 +358,12 @@
 
 		/* Disable SLV SPI CS - freeing any associated GPIOs */
 		pinmux_disable_slv_spi_cs: disable-slv-spi-cs {
-			pinctrl-single,bits = <0x0 0x0 0x3E0>;
+			pinctrl-single,bits = <0x0 0x0 0x3e0>;
 		};
 
 		/* Disable SLV SPI SDO - freeing any associated GPIOs */
 		pinmux_disable_slv_spi_sdo: disable-slv-spi-sdo {
-			pinctrl-single,bits = <0x0 0x0 0x1F>;
+			pinctrl-single,bits = <0x0 0x0 0x1f>;
 		};
 	};
 

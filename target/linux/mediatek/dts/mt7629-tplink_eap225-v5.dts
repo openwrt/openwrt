@@ -120,13 +120,13 @@
 
 			partition@A0000 {
 				label = "Radio";
-				reg = <0x000A0000 0x00010000>;
+				reg = <0x000a0000 0x00010000>;
 				read-only;
 			};
 
 			partition@B0000 {
 				label = "Extra";
-				reg = <0x000B0000 0x00010000>;
+				reg = <0x000b0000 0x00010000>;
 				read-only;
 			};
 
@@ -134,12 +134,12 @@
 			/* OpenWrt flash layout: combine kernel and rootfs from OEM layout */
 			partition@C0000 {
 				label = "firmware";
-				reg = <0x000C0000 0x00D80000>;
+				reg = <0x000c0000 0x00d80000>;
 			};
 
 			partition@E40000 {
 				label = "Config";
-				reg = <0x00E40000 0x0001B0000>;
+				reg = <0x00e40000 0x0001b0000>;
 				read-only;
 			};
 		};

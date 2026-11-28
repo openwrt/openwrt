@@ -88,14 +88,14 @@
 			label = "firmware1";
 			compatible = "denx,fit";
 			openwrt,cmdline-match = "mtdparts=master";
-			reg = <0x500000 0x1E00000>;
+			reg = <0x500000 0x1e00000>;
 		};
 
 		partition@2300000 {
 			label = "firmware2";
 			compatible = "denx,fit";
 			openwrt,cmdline-match = "mtdparts=slave";
-			reg = <0x2300000 0x1E00000>;
+			reg = <0x2300000 0x1e00000>;
 		};
 
 		partition@4100000 {

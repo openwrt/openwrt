@@ -249,7 +249,7 @@
 
 			partition@C0000 {
 				label = "Bootloader";
-				reg = <0x000C0000 0x00080000>;
+				reg = <0x000c0000 0x00080000>;
 				read-only;
 			};
 
@@ -271,7 +271,7 @@
 
 			partition@1C0000 {
 				label = "Config1";
-				reg = <0x001C0000 0x00080000>;
+				reg = <0x001c0000 0x00080000>;
 				read-only;
 			};
 
@@ -283,7 +283,7 @@
 
 			partition@2C0000 {
 				compatible = "denx,fit";
-				reg = <0x002C0000 0x02D00000>;
+				reg = <0x002c0000 0x02d00000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 				label = "Kernel1";
@@ -302,7 +302,7 @@
 
 			partition@2FC0000 {
 				compatible = "denx,fit";
-				reg = <0x02FC0000 0x02D00000>;
+				reg = <0x02fc0000 0x02d00000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 				label = "Kernel2";
@@ -321,7 +321,7 @@
 
 			partition@5CC0000 {
 				label = "Factory";
-				reg = <0x05CC0000 0x00100000>;
+				reg = <0x05cc0000 0x00100000>;
 				read-only;
 
 				nvmem-layout {
@@ -341,13 +341,13 @@
 
 			partition@5DC0000 {
 				label = "Mydlink";
-				reg = <0x05DC0000 0x00200000>;
+				reg = <0x05dc0000 0x00200000>;
 				read-only;
 			};
 
 			partition@5FC0000 {
 				label = "Storage";
-				reg = <0x05FC0000 0x00300000>;
+				reg = <0x05fc0000 0x00300000>;
 				read-only;
 			};
 		};
