@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pengji Li <wjjsn@qq.com>
+Subject: [PATCH] mtd: spinand: foresee: add support for FS35ND01G
+
+Add the 1 Gbit FORESEE SPI NAND used by the TCL T20 Pro. The chip ID is
+cd ea 11. Use single-I/O cache operations and require six bits of ECC
+per 512 bytes. The TCL board uses its host BCH engine to match the OEM
+OOB layout; on-die ECC layout and status handling were not tested.
+
+---
+--- a/drivers/mtd/nand/spi/foresee.c
++++ b/drivers/mtd/nand/spi/foresee.c
+@@ -25,6 +25,15 @@
+ 		SPINAND_PROG_LOAD_1S_1S_4S_OP(false, 0, NULL, 0),
+ 		SPINAND_PROG_LOAD_1S_1S_1S_OP(false, 0, NULL, 0));
+ 
++static SPINAND_OP_VARIANTS(fs35nd01g_read_cache_variants,
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_1S_OP(0, 1, NULL, 0, 0));
++
++static SPINAND_OP_VARIANTS(fs35nd01g_write_cache_variants,
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(true, 0, NULL, 0));
++
++static SPINAND_OP_VARIANTS(fs35nd01g_update_cache_variants,
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(false, 0, NULL, 0));
++
+ static int f35sqa002g_ooblayout_ecc(struct mtd_info *mtd, int section,
+ 				    struct mtd_oob_region *region)
+ {
+@@ -91,6 +100,14 @@
+ 		     SPINAND_HAS_QE_BIT,
+ 		     SPINAND_ECCINFO(&f35sqa002g_ooblayout,
+ 				     f35sqa002g_ecc_get_status)),
++	SPINAND_INFO("FS35ND01G-S1Y2QWFI000",
++		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xea, 0x11),
++		     NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
++		     NAND_ECCREQ(6, 512),
++		     SPINAND_INFO_OP_VARIANTS(&fs35nd01g_read_cache_variants,
++					      &fs35nd01g_write_cache_variants,
++					      &fs35nd01g_update_cache_variants),
++		     0, SPINAND_ECCINFO(NULL, NULL)),
+ };
+ 
+ static const struct spinand_manufacturer_ops foresee_spinand_manuf_ops = {
