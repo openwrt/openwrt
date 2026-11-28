@@ -108,9 +108,9 @@ const Network = {
 				return ctx.table("Status", data);
 			}
 
-			let ifdata = status[name];
+			let ifdata = status[name] ?? {};
 			let data = {
-				Status: interface_status(ifdata),
+				Status: ifdata != {} ? interface_status(ifdata): "unknown",
 			};
 			if (ifdata.up)
 				data.Uptime = time_format(ifdata.uptime);
