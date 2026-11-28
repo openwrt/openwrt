@@ -223,6 +223,59 @@ static inline void fe_int_enable(u32 mask)
 	fe_reg_r32(FE_REG_FE_INT_ENABLE);
 }
 
+/* The delay interrupt of one direction: the frame engine raises it after a
+ * number of done events or a time, whichever comes first (FE_REG_DLY_INT_CFG).
+ */
+static u32 fe_dly_int_bit(struct fe_priv *priv, bool rx)
+{
+	if (priv->soc->rx_int == RT5350_RX_DONE_INT)
+		return rx ? RT5350_RX_DLY_INT : RT5350_TX_DLY_INT;
+
+	return rx ? FE_RX_DLY_INT : FE_TX_DLY_INT;
+}
+
+static u32 fe_int_all(struct fe_priv *priv)
+{
+	return priv->soc->rx_int | priv->soc->tx_int |
+	       fe_dly_int_bit(priv, true) | fe_dly_int_bit(priv, false);
+}
+
+static void fe_update_irq_en(struct fe_priv *priv)
+{
+	u32 cfg = priv->dly_int_cfg;
+
+	priv->irq_en = (cfg & FE_DLY_CFG_EN) ? fe_dly_int_bit(priv, true) :
+					       priv->soc->rx_int;
+	priv->irq_en |= ((cfg >> FE_DLY_CFG_TX_SHIFT) & FE_DLY_CFG_EN) ?
+			fe_dly_int_bit(priv, false) : priv->soc->tx_int;
+}
+
+/* Called by ethtool -C. A poll that was running while napi_disable() waited
+ * enables the interrupts at its end; mask them again. The poll scheduled at
+ * the end enables the interrupts of the new configuration when it completes.
+ */
+void fe_set_dly_int(struct fe_priv *priv, u32 cfg)
+{
+	bool running = netif_running(priv->netdev);
+
+	if (running) {
+		fe_int_disable(fe_int_all(priv));
+		napi_disable(&priv->rx_napi);
+		fe_int_disable(fe_int_all(priv));
+	}
+
+	priv->dly_int_cfg = cfg;
+	fe_reg_w32(cfg, FE_REG_DLY_INT_CFG);
+	fe_update_irq_en(priv);
+
+	if (running) {
+		napi_enable(&priv->rx_napi);
+		local_bh_disable();
+		napi_schedule(&priv->rx_napi);
+		local_bh_enable();
+	}
+}
+
 static inline void fe_hw_set_macaddr(struct fe_priv *priv, const unsigned char *mac)
 {
 	unsigned long flags;
@@ -1169,11 +1222,16 @@ static int fe_poll(struct napi_struct *napi, int budget)
 	struct fe_priv *priv = container_of(napi, struct fe_priv, rx_napi);
 	struct fe_hw_stats *hwstat = priv->hw_stats;
 	int tx_done, rx_done, tx_again;
-	u32 status, fe_status, status_reg, mask;
+	u32 status, fe_status, status_reg, mask, dly;
 	u32 tx_intr, rx_intr, status_intr;
 
 	status = fe_reg_r32(FE_REG_FE_INT_STATUS);
 	fe_status = status;
+
+	/* the delay interrupts only wake the poll, which reads the done bits */
+	dly = status & (fe_dly_int_bit(priv, true) | fe_dly_int_bit(priv, false));
+	if (dly)
+		fe_reg_w32(dly, FE_REG_FE_INT_STATUS);
 	tx_intr = priv->soc->tx_int;
 	rx_intr = priv->soc->rx_int;
 	status_intr = priv->soc->status_int;
@@ -1218,7 +1276,7 @@ static int fe_poll(struct napi_struct *napi, int budget)
 		}
 
 		if (napi_complete_done(napi, rx_done))
-			fe_int_enable(tx_intr | rx_intr);
+			fe_int_enable(priv->irq_en);
 	} else {
 		rx_done = budget;
 	}
@@ -1266,12 +1324,14 @@ static irqreturn_t fe_handle_irq(int irq, void *dev)
 	if (unlikely(!status))
 		return IRQ_NONE;
 
-	int_mask = (priv->soc->rx_int | priv->soc->tx_int);
+	int_mask = fe_int_all(priv);
 	if (likely(status & int_mask)) {
-		if (likely(napi_schedule_prep(&priv->rx_napi))) {
-			fe_int_disable(int_mask);
+		/* With NAPI disabled a status bit would otherwise keep the
+		 * level interrupt asserted.
+		 */
+		fe_int_disable(int_mask);
+		if (likely(napi_schedule_prep(&priv->rx_napi)))
 			__napi_schedule(&priv->rx_napi);
-		}
 	} else {
 		fe_reg_w32(status, FE_REG_FE_INT_STATUS);
 	}
@@ -1283,11 +1343,9 @@ static irqreturn_t fe_handle_irq(int irq, void *dev)
 static void fe_poll_controller(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
-	u32 int_mask = priv->soc->tx_int | priv->soc->rx_int;
-
-	fe_int_disable(int_mask);
+	fe_int_disable(fe_int_all(priv));
 	fe_handle_irq(dev->irq, dev);
-	fe_int_enable(int_mask);
+	fe_int_enable(priv->irq_en);
 }
 #endif
 
@@ -1363,10 +1421,11 @@ static void fe_hw_config(struct net_device *dev)
 	else
 		fe_hw_set_macaddr(priv, dev->dev_addr);
 
-	/* disable delay interrupt */
-	fe_reg_w32(0, FE_REG_DLY_INT_CFG);
+	/* Program the configured delay interrupt. */
+	fe_reg_w32(priv->dly_int_cfg, FE_REG_DLY_INT_CFG);
+	fe_update_irq_en(priv);
 
-	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
+	fe_int_disable(fe_int_all(priv));
 
 	/* frame engine will push VLAN tag regarding to VIDX feild in Tx desc */
 	if (fe_reg_table[FE_REG_FE_DMA_VID_BASE])
@@ -1434,7 +1493,7 @@ static int fe_open(struct net_device *dev)
 		netif_carrier_on(dev);
 
 	napi_enable(&priv->rx_napi);
-	fe_int_enable(priv->soc->tx_int | priv->soc->rx_int);
+	fe_int_enable(priv->irq_en);
 	netif_start_queue(dev);
 
 	return 0;
@@ -1448,7 +1507,7 @@ static int fe_stop(struct net_device *dev)
 	u32 dma_cfg;
 
 	netif_tx_disable(dev);
-	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
+	fe_int_disable(fe_int_all(priv));
 	napi_disable(&priv->rx_napi);
 
 	if (priv->phy && !priv->dsa_switch)
@@ -1812,6 +1871,7 @@ static int fe_probe(struct platform_device *pdev)
 	priv->netdev = netdev;
 	priv->dev = &pdev->dev;
 	priv->soc = soc;
+	priv->dly_int_cfg = soc->dly_int_default;
 	priv->msg_enable = netif_msg_init(fe_msg_level, FE_DEFAULT_MSG_ENABLE);
 	priv->rx_ring.frag_size = fe_max_frag_size(ETH_DATA_LEN);
 	priv->rx_ring.rx_buf_size = fe_max_buf_size(priv->rx_ring.frag_size);
