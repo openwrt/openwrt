@@ -1,0 +1,49 @@
+From a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0 Mon Sep 17 00:00:00 2001
+From: Jerry Sinopop <sinomaxpop@gmail.com>
+Date: Wed, 26 Aug 2026 17:16:04 +0000
+Subject: [PATCH] mips: econet: timer: fix timer block mapping at boot
+
+timer_init() used DIV_ROUND_UP(num_possible_cpus(), 2) to determine how
+many register blocks to iomap. At early boot with VPE-based SMP, MIPS
+reports num_possible_cpus()=1 (VPEs not yet brought online), giving
+num_blocks=1. Only membase[0] is then mapped via of_iomap.
+
+The EN7528/EN751627 SoCs have 2 physical cores, each with 2 VPEs, giving
+NR_CPUS=4 and two timer register blocks (one per core). cevt_init()
+calls cevt_dev_init() for each possible CPU; with NR_CPUS=4,
+reg_compare() dereferences membase[1], which is NULL, causing a kernel
+panic.
+
+Fix: replace the runtime calculation with ECONET_NUM_BLOCKS, which is
+DIV_ROUND_UP(NR_CPUS, 2) evaluated at compile time (the same expression
+used to declare the membase[] array), so the loop bound and array size
+are provably consistent.
+
+Signed-off-by: Jerry Sinopop <sinomaxpop@gmail.com>
+---
+ drivers/clocksource/timer-econet-en751221.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/clocksource/timer-econet-en751221.c b/drivers/clocksource/timer-econet-en751221.c
+index 4008076..9b0722d 100644
+--- a/drivers/clocksource/timer-econet-en751221.c
++++ b/drivers/clocksource/timer-econet-en751221.c
+@@ -170,7 +170,6 @@
+ 
+ static int __init timer_init(struct device_node *np)
+ {
+-	int num_blocks = DIV_ROUND_UP(num_possible_cpus(), 2);
+ 	struct clk *clk;
+ 	int ret;
+ 
+@@ -182,7 +181,7 @@
+ 
+ 	econet_timer.freq_hz = clk_get_rate(clk);
+ 
+-	for (int i = 0; i < num_blocks; i++) {
++	for (int i = 0; i < ECONET_NUM_BLOCKS; i++) {
+ 		econet_timer.membase[i] = of_iomap(np, i);
+ 		if (!econet_timer.membase[i]) {
+ 			pr_err("%pOFn: failed to map register [%d]\n", np, i);
+-- 
+2.37.1 (Apple Git-137.1)
