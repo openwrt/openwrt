@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Peter Zahradnik <petzah@znik.co.uk>
+Date: Fri, 27 Nov 2026 07:54:20 +0000
+Subject: [PATCH] net: dsa: lantiq_gswip: enable assisted learning on CPU
+ port
+
+Frames injected by the CPU are not learned by the switch, so addresses
+behind foreign bridge ports such as Wi-Fi interfaces are unknown to it.
+
+When a station that was last seen behind a switch port (e.g. the uplink
+to another access point) roams onto a local Wi-Fi interface, the switch
+keeps its learned entry pointing at that port. Traffic for the station
+arriving on the same port is then filtered in hardware instead of being
+forwarded to the CPU, until the entry ages out after about 300 seconds.
+DHCP OFFER and ACK packets are lost, and the client gives up and roams
+away again.
+
+Now that FDB entries on the CPU port are programmed into the hardware,
+enable assisted learning on the CPU port so DSA installs the addresses
+the bridge learns on foreign ports there. Writing the static CPU-port
+entry for the same MAC address and FID replaces the stale learned entry.
+
+This is the same approach other DSA drivers use for this problem:
+mt7530, felix and sja1105 already enable assisted learning on the CPU
+port, and commit 88c71cc0ad98 ("net: dsa: mxl862xx: enable assisted
+learning on CPU port") fixed the same symptom (lost DHCP OFFER/ACK
+after a client roams onto a local Wi-Fi interface) on MxL862xx.
+
+Tested on a BT Home Hub 5A (xRX200, GSWIP 2.1) used as a wired access
+point with a VLAN-aware bridge, with images built from OpenWrt 25.12.6
+(kernel 6.12) and from main (kernel 6.18):
+- without this patch, clients roaming onto the AP from another AP get
+  no downlink traffic for about 20 seconds and then roam back
+- with this patch, the stale uplink entry is gone as soon as the client
+  associates, on both kernels and also right after a reboot
+- in a 4 hour run per kernel with STP enabled, none of 25 roams onto
+  the AP (8 on 6.12, 17 on 6.18) left a stale entry, and every DHCP
+  request (about 1200 per run) was answered
+- an earlier 6 hour test on 6.12 saw 14 working roams and 193 DHCP
+  transactions without retransmissions
+
+Link: https://github.com/openwrt/openwrt/issues/11650
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Peter Zahradnik <petzah@znik.co.uk>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/net/dsa/lantiq/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip.c
+@@ -679,6 +679,15 @@ static int gswip_setup(struct dsa_switch
+ 
+ 	ds->configure_vlan_while_not_filtering = false;
+ 
++	/* Frames injected by the CPU are not learned by the switch, so
++	 * addresses behind foreign bridge ports (e.g. Wi-Fi) are unknown to
++	 * it. A station roaming from the uplink side onto such a port keeps
++	 * a stale learned entry pointing at the uplink and frames for it
++	 * coming in on that port are dropped until the entry ages out.
++	 * Let DSA install the bridge-learned addresses on the CPU port.
++	 */
++	ds->assisted_learning_on_cpu_port = true;
++
+ 	return 0;
+ }
+ 
