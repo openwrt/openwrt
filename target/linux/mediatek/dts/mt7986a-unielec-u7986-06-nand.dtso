@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "unielec,u7986-06", "mediatek,mt7986";
+};
+
+/*
+ * Select the FIT storage explicitly. Do not add rootdisk-* aliases: the
+ * BootROM source fixup must not override the storage selected by U-Boot.
+ */
+&{/chosen} {
+	rootdisk = <&nand_rootdisk>;
+};
+
+&gmac0 {
+	nvmem-cells = <&nand_macaddr_factory_4 (-1)>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&gmac1 {
+	nvmem-cells = <&nand_macaddr_factory_4 (-2)>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&wifi {
+	nvmem-cells = <&nand_eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+	status = "okay";
+};
