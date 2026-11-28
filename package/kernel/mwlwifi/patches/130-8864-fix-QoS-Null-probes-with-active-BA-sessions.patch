@@ -1,0 +1,29 @@
+From 8bf4551bc20d585cf64a023ec8a954c43ea19a1a Mon Sep 17 00:00:00 2001
+From: Qingfang Deng <dqfext@gmail.com>
+Date: Fri, 13 Nov 2026 09:58:11 +0800
+Subject: [PATCH 1/2] 8864: fix QoS Null probes with active BA sessions
+
+mac80211 sends client probes as QoS Null frames without A-MPDU handling.
+If the peer already has an active transmit BA session for the probe's
+TID, the 88W8864 transmit path incorrectly applies its Block Ack
+assertion and drops the probe.
+
+Exclude QoS Null frames from aggregation handling.
+
+Signed-off-by: Qingfang Deng <dqfext@gmail.com>
+---
+ hif/pcie/8864/tx.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/hif/pcie/8864/tx.c
++++ b/hif/pcie/8864/tx.c
+@@ -732,7 +732,8 @@ void pcie_8864_tx_xmit(struct ieee80211_
+ 
+ 	if (sta && sta->deflink.ht_cap.ht_supported &&
+ 	  !(xmitcontrol & EAGLE_TXD_XMITCTRL_USE_MC_RATE) &&
+-	    ieee80211_is_data_qos(wh->frame_control)) {
++	    ieee80211_is_data_qos(wh->frame_control) &&
++	    !ieee80211_is_qos_nullfunc(wh->frame_control)) {
+ 		tid = qos & 0xf;
+ 		pcie_tx_count_packet(sta, tid);
+ 
