@@ -1,0 +1,55 @@
+From cb1ab673deb59c3dd661b70307c23cb2d2eaf381 Mon Sep 17 00:00:00 2001
+From: Alex Rau <alex@retroduction.org>
+Date: Sat, 14 Nov 2026 18:03:43 +0100
+Subject: [PATCH] ARM: dts: marvell: armada-385-linksys-shelby: add PCIe reset
+ GPIOs for the WLAN radios
+
+The PERST# lines of the two on-board 88W8864 radios are wired to MPP46
+(5 GHz radio, pcie1) and MPP45 (2.4 GHz radio, pcie2). Declare them as
+reset-gpios so pci-mvebu can reset the radios on port setup and on
+unbind/bind; the chip has no other reset path once its firmware runs.
+The cold 5 GHz chip needs the full 100 ms after PERST# release before it
+answers configuration cycles, hence the explicit reset-delay-us.
+
+Signed-off-by: Alex Rau <alex@retroduction.org>
+---
+ .../dts/marvell/armada-385-linksys-shelby.dts | 31 +++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+--- a/arch/arm/boot/dts/marvell/armada-385-linksys-shelby.dts
++++ b/arch/arm/boot/dts/marvell/armada-385-linksys-shelby.dts
+@@ -345,3 +345,34 @@
+ 		};
+ 	};
+ };
++
++/*
++ * PERST# of the two on-board 88W8864 radios. Undocumented by Linksys; found
++ * by probing: MPP46 (left by U-Boot as the "pcie0 rstout" function) resets
++ * the 5 GHz radio on pcie1, MPP45 (plain GPIO, external pull-up) resets the
++ * 2.4 GHz radio on pcie2. Declaring them lets the kernel assert PERST# on
++ * port setup, which is the only way to return the radios to their bootrom
++ * (needed to reload mwlwifi or recover a hung radio without a power cycle).
++ */
++&pciec {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie_reset_pins>;
++};
++
++&pcie1 {
++	reset-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
++	/* explicit: the 5 GHz radio needs the full post-reset wait */
++	reset-delay-us = <100000>;
++};
++
++&pcie2 {
++	reset-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
++	reset-delay-us = <100000>;
++};
++
++&pinctrl {
++	pcie_reset_pins: pcie-reset-pins {
++		marvell,pins = "mpp45", "mpp46";
++		marvell,function = "gpio";
++	};
++};
