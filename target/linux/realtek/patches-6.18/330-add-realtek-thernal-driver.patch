@@ -5,11 +5,11 @@
  	  temperature threshold, the interrupt will occur.
  
 +config REALTEK_THERMAL
-+	tristate "Realtek RTL838x and RTL930x thermal sensor support"
-+	depends on RTL838X || RTL839X || RTL930X || RTL960X || COMPILE_TEST
++	tristate "Realtek RTL838x, RTL839x, RTL930x, RTL931x and RTL960x thermal sensor support"
++	depends on RTL838X || RTL839X || RTL930X || RTL931X || RTL960X || COMPILE_TEST
 +	depends on THERMAL_OF
 +	help
-+	  Support thermal sensor in Realtek RTL838x, RTL839x, RTL930x and RTL960x SoCs
++	  Support thermal sensor in Realtek RTL838x, RTL839x, RTL930x, RTL931x and RTL960x SoCs
 +
  endif
 --- a/drivers/thermal/Makefile

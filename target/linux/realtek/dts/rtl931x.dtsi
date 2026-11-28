@@ -349,6 +349,11 @@
 		table {
 			compatible = "realtek,rtl9311-table", "realtek,otto-table";
 		};
+
+		soc_thermal: thermal {
+			compatible = "realtek,rtl9310-thermal";
+			#thermal-sensor-cells = <0>;
+		};
 	};
 
 	pinmux@1b00103c {
@@ -441,6 +446,22 @@
 
 		pinmux_gpio_mdio_en: gpio-mdio-en {
 			pinctrl-single,bits = <0x0 0x100 0x100>;
+		};
+	};
+
+	thermal_zones: thermal-zones {
+		cpu-thermal {
+			polling-delay-passive = <1000>;
+			polling-delay = <1000>;
+			coefficients = <1000 0>;
+			thermal-sensors = <&soc_thermal>;
+			trips {
+				critical {
+					temperature = <105000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+			};
 		};
 	};
 };

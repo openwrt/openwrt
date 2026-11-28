@@ -45,6 +45,20 @@
 #define RTL9300_COMPARE_DLY_SHIFT	(0)
 #define RTL9300_COMPARE_DLY_MASK	GENMASK(RTL9300_COMPARE_DLY_SHIFT + 15, RTL9300_COMPARE_DLY_SHIFT)
 
+#define RTL9310_TM0_CTRL0		0x80
+#define RTL9310_TM0_CTRL1		0x84
+#define RTL9310_TM0_CTRL2		0x88
+#define RTL9310_TM0_CTRL4		0x90
+#define RTL9310_TM0_RESULT0		0xa0
+#define RTL9310_TM0_RESULT_LATCH	0xb0
+#define RTL9310_TM_RSTB			BIT(31)
+#define RTL9310_TM_DIGT_ORDER_SEL	BIT(28)
+#define RTL9310_TM_REG_A		0x7467000
+#define RTL9310_TM_REG_B_MASK		GENMASK(31, 10)
+#define RTL9310_TM_REG_B		0x380fff
+#define RTL9310_TM_ADC_OSR_SEL_MASK	GENMASK(2, 0)
+#define RTL9310_TM_ADC_OSR_SEL		1
+
 #define RTL9607_THERMAL_CTRL_0		0x150
 #define RTL9607_REG_PPOW		BIT(29)
 #define RTL9607_THERMAL_CTRL_2		0x158
@@ -174,6 +188,62 @@ static const struct realtek_thermal_chip rtl9300_chip = {
 	.init = rtl9300_thermal_init
 };
 
+static int rtl9310_thermal_init(struct regmap *regmap)
+{
+	int ret;
+
+	ret = regmap_write(regmap, RTL9310_TM0_RESULT_LATCH, 1);
+	if (ret)
+		return ret;
+
+	ret = regmap_write(regmap, RTL9310_TM0_CTRL0, RTL9310_TM_REG_A);
+	if (ret)
+		return ret;
+
+	ret = regmap_update_bits(regmap, RTL9310_TM0_CTRL1,
+				 RTL9310_TM_REG_B_MASK | RTL9310_TM_ADC_OSR_SEL_MASK,
+				 FIELD_PREP(RTL9310_TM_REG_B_MASK, RTL9310_TM_REG_B) |
+				 FIELD_PREP(RTL9310_TM_ADC_OSR_SEL_MASK, RTL9310_TM_ADC_OSR_SEL));
+	if (ret)
+		return ret;
+
+	ret = regmap_update_bits(regmap, RTL9310_TM0_CTRL2,
+				 RTL9310_TM_DIGT_ORDER_SEL, RTL9310_TM_DIGT_ORDER_SEL);
+	if (ret)
+		return ret;
+
+	return regmap_update_bits(regmap, RTL9310_TM0_CTRL4,
+				  RTL9310_TM_RSTB, RTL9310_TM_RSTB);
+}
+
+static int rtl9310_get_temp(struct thermal_zone_device *tz, int *res)
+{
+	struct realtek_thermal_priv *priv = thermal_zone_device_priv(tz);
+	int offset = thermal_zone_get_offset(tz);
+	int slope = thermal_zone_get_slope(tz);
+	u32 val;
+	int ret;
+
+	ret = regmap_read(priv->regmap, RTL9310_TM0_RESULT0, &val);
+	if (ret)
+		return ret;
+
+	if (!(val & RTL9607_TEMP_OUT_MASK))
+		return -EAGAIN;
+
+	*res = (sign_extend32(val, 18) >> 10) * slope + offset;
+	return 0;
+}
+
+static const struct thermal_zone_device_ops rtl9310_ops = {
+	.get_temp = rtl9310_get_temp,
+};
+
+static const struct realtek_thermal_chip rtl9310_chip = {
+	.ops = &rtl9310_ops,
+	.init = rtl9310_thermal_init
+};
+
 static int rtl9607_thermal_init(struct regmap *regmap)
 {
 	return regmap_update_bits(regmap, RTL9607_THERMAL_CTRL_0,
@@ -249,6 +319,7 @@ static const struct of_device_id realtek_sensor_ids[] = {
 	{ .compatible = "realtek,rtl8380-thermal", .data = &rtl8380_chip, },
 	{ .compatible = "realtek,rtl8390-thermal", .data = &rtl8390_chip, },
 	{ .compatible = "realtek,rtl9300-thermal", .data = &rtl9300_chip, },
+	{ .compatible = "realtek,rtl9310-thermal", .data = &rtl9310_chip, },
 	{ .compatible = "realtek,rtl9607-thermal", .data = &rtl9607_chip, },
 	{ /* sentinel */ }
 };
