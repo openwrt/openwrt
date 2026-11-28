@@ -538,6 +538,13 @@ function generate(config) {
 	else
 		set_default(config, 'enable_background_radar', false);
 
+	/* No country in wireless-regdb has both a DFS-free 160 MHz block and
+	 * a DFS one, so excluding DFS at 160/320 MHz either does nothing
+	 * or leaves ACS without any usable channel.
+	 */
+	if (config.htmode in [ 'VHT160', 'HE160', 'EHT160', 'EHT320' ])
+		delete config.acs_exclude_dfs;
+
 	append_vars(config, [ 'acs_chan_bias', 'acs_exclude_dfs', 'enable_background_radar' ]);
 
 	/* TX Power */
