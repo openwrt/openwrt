@@ -15,7 +15,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -803,7 +803,12 @@
+@@ -803,7 +803,12 @@ int mtk_hqos_port_queue(struct mtk_eth *
  	int cls = mtk_hqos_priority_queue(eth, priority);
  	u8 mapped;
  
@@ -31,7 +31,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	return mapped ? mapped - 1 : cls;
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1468,6 +1468,8 @@
+@@ -1468,6 +1468,8 @@ struct mtk_eth {
   * @hw_stats:		Packet statistics counter
   */
  struct mtk_mac {
@@ -42,7 +42,7 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	u8				ppe_idx;
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -834,10 +834,63 @@
+@@ -834,10 +834,63 @@ mtk_eth_setup_tc_block(struct net_device
  	}
  }
  
