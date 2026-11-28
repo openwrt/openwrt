@@ -47,6 +47,7 @@ platform_copy_config_helper() {
 
 platform_copy_config() {
 	case "$(board_name)" in
+	ubnt,edgerouter-poe|\
 	ubnt,erlite|\
 	ubnt,usg)
 		platform_copy_config_helper /dev/sda1 vfat
@@ -132,6 +133,7 @@ platform_do_upgrade() {
 	ubnt,edgerouter-6p)
 		kernel=/dev/mmcblk0p1
 		;;
+	ubnt,edgerouter-poe|\
 	ubnt,erlite|\
 	ubnt,usg)
 		kernel=/dev/sda1
@@ -164,6 +166,7 @@ platform_check_image() {
 	itus,shield-router | \
 	ubnt,edgerouter-4 | \
 	ubnt,edgerouter-6p | \
+	ubnt,edgerouter-poe | \
 	ubnt,erlite | \
 	ubnt,usg | \
 	cisco,vedge1000)

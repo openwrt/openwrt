@@ -1,0 +1,38 @@
+From f391a93ac6c065af183a70fde7a724b68e97b260 Mon Sep 17 00:00:00 2001
+From: Henry Essinghigh <henry@essinghigh.dev>
+Date: Sat, 24 Oct 2026 21:46:00 +0100
+Subject: [PATCH] watchdog: octeon-wdt: report the full heartbeat timeout
+
+The driver implements a long watchdog heartbeat using shorter hardware
+periods. Report the complete heartbeat through watchdog_device.timeout,
+not the hardware interrupt period, and update it when setting a timeout.
+
+Otherwise WDIOC_SETTIMEOUT returns the initial five-second period after
+programming a thirty-second heartbeat. A subsequent initialization by
+procd reuses that value and reduces the heartbeat to five seconds, equal
+to its default keepalive interval.
+
+Signed-off-by: Henry Essinghigh <henry@essinghigh.dev>
+---
+ drivers/watchdog/octeon-wdt-main.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/watchdog/octeon-wdt-main.c
++++ b/drivers/watchdog/octeon-wdt-main.c
+@@ -462,6 +462,7 @@ static int octeon_wdt_set_timeout(struct
+ 		return -1;
+ 
+ 	octeon_wdt_calc_parameters(t);
++	wdog->timeout = t;
+ 
+ 	if (disable)
+ 		return 0;
+@@ -555,7 +556,7 @@ static int __init octeon_wdt_init(void)
+ 
+ 	pr_info("Initial granularity %d Sec\n", timeout_sec);
+ 
+-	octeon_wdt.timeout	= timeout_sec;
++	octeon_wdt.timeout	= heartbeat;
+ 	octeon_wdt.max_timeout	= UINT_MAX;
+ 
+ 	watchdog_set_nowayout(&octeon_wdt, nowayout);
