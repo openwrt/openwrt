@@ -214,6 +214,8 @@ platform_do_upgrade() {
 	routerich,be7200|\
 	snr,snr-cpe-ax2|\
 	teralink,tl3020-256mb|\
+	totolink,X30|\
+	totolink,x30|\
 	tplink,be450-ubi|\
 	tplink,tl-7dr7230*|\
 	tplink,tl-7dr7250*|\
@@ -472,6 +474,8 @@ platform_check_image() {
 	qihoo,360t7-ubi|\
 	routerich,ax3000-ubootmod|\
 	teralink,tl3020-256mb|\
+	totolink,X30|\
+	totolink,x30|\
 	tplink,be450-ubi|\
 	tplink,tl-7dr7230*|\
 	tplink,tl-7dr7250*|\
