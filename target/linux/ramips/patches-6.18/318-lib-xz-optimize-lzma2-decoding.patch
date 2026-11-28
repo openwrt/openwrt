@@ -1,0 +1,55 @@
+From c31611238dc292b2acfbd5b9b73e9382d6bcfb5f Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Tue, 17 Nov 2026 23:46:18 +0000
+Subject: [PATCH] lib/xz: optimize LZMA2 dictionary repeats for ramips
+
+Split dictionary matches into contiguous forward copies at the source
+wrap point. This avoids checking for wrap on each byte while preserving
+short-distance matches that read bytes just written by the same loop.
+
+Use -O3 only for the runtime xz_dec_lzma2.o on ramips. The early
+decompressor includes this code directly with its existing build flags.
+
+The format, dictionary size, output bounds and checksum handling do
+not change.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+ lib/xz/Makefile       |  2 ++
+ lib/xz/xz_dec_lzma2.c | 16 ++++++++++++----
+ 2 files changed, 14 insertions(+), 4 deletions(-)
+
+--- a/lib/xz/Makefile
++++ b/lib/xz/Makefile
+@@ -1,4 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
++CFLAGS_xz_dec_lzma2.o += -O3
++
+ obj-$(CONFIG_XZ_DEC) += xz_dec.o
+ xz_dec-y := xz_dec_syms.o xz_dec_stream.o xz_dec_lzma2.o
+ xz_dec-$(CONFIG_XZ_DEC_BCJ) += xz_dec_bcj.o
+--- a/lib/xz/xz_dec_lzma2.c
++++ b/lib/xz/xz_dec_lzma2.c
+@@ -362,10 +362,18 @@ static bool dict_repeat(struct dictionar
+ 		back += dict->end;
+ 
+ 	do {
+-		dict->buf[dict->pos++] = dict->buf[back++];
+-		if (back == dict->end)
+-			back = 0;
+-	} while (--left > 0);
++		uint32_t copy = min_t(size_t, left, dict->end - back);
++		const uint8_t *src = dict->buf + back;
++		uint8_t *dst = dict->buf + dict->pos;
++
++		left -= copy;
++		dict->pos += copy;
++		/* Preserve forward semantics for overlapping LZ matches. */
++		do {
++			*dst++ = *src++;
++		} while (--copy > 0);
++		back = 0;
++	} while (left > 0);
+ 
+ 	if (dict->full < dict->pos)
+ 		dict->full = dict->pos;
