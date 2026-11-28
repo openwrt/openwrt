@@ -130,6 +130,7 @@ cudy,p2-v1)
 	ucidef_set_led_netdev "internet" "internet" "white:wan" "wan"
 	ucidef_set_led_netdev "5g" "5g" "white:mobile" "usb0"
 	;;
+bo,rt622-g31-g2|\
 elecom,wrc-x3000gs3)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
 	;;
@@ -389,6 +390,11 @@ smartrg,sdg-9000)
 	ucidef_set_led_netdev "wan-green" "WAN" "mdio-bus:08:green:wan" "wan" "link_2500 link_5000"
 	ucidef_set_led_netdev "wan-orange" "WAN" "mdio-bus:08:orange:wan" "wan" "link_100 link_1000"
 	ucidef_set_led_netdev "wan-white" "WAN" "mdio-bus:08:white:wan" "wan" "link_10000"
+	;;
+snr,advance-ax2)
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan-2ghz" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan-5ghz" "phy1-ap0" "link tx rx"
 	;;
 teltonika,rutc50)
 	ucidef_set_led_netdev "wan-green" "WAN" "mdio-bus:00:green:wan" "wan" "link_1000 tx rx"
