@@ -10,9 +10,16 @@
 	model = "Aruba AP-32x";
 	compatible = "aruba,ap-32x", "qcom,ipq8064";
 
-	memory@0 {
-		reg = <0x41500000 0x1eb00000>;
+	/*
+	 * Units ship with 256 or 512 MB of RAM. Describe the smaller size as
+	 * a fallback; the decompressor replaces it with APBoot's MEM ATAG
+	 * (see openwrt,memory-from-atags). Keep the node name "memory": the
+	 * ATAG is written to /memory, and the kernel would merge a separate
+	 * memory@... node with it.
+	 */
+	memory {
 		device_type = "memory";
+		reg = <0x41500000 0x0eb00000>;
 	};
 
 	aliases {
@@ -31,6 +38,7 @@
 	};
 
 	chosen {
+		openwrt,memory-from-atags;
 		stdout-path = "serial0:115200n8";
 		bootargs-append = " ubi.mtd=aos1 ubi.mtd=ubifs ubi.block=0,aos1 root=/dev/ubiblock0_0";
 	};
