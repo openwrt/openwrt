@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Thu, 30 Jul 2026 02:30:00 +0000
+Subject: [PATCH] mips: mt7620: use long calls in observed failure objects
+
+MT7620 is already known to sporadically misexecute direct J-type calls.
+Linux 6.18 exposed additional failures in the SPI core and IPv6 UDP code.
+
+Build only the objects containing the observed failure functions with long
+calls. Applying -mlong-calls to the whole kernel prevents the MT7620 PDMA
+from processing its first transmit descriptor on the tested hardware,
+while the targeted workaround retains the known-good frame-engine code
+generation.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+ drivers/spi/Makefile | 4 ++++
+ net/ipv6/Makefile    | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -7,6 +7,10 @@ ccflags-$(CONFIG_SPI_DEBUG) := -DDEBUG
+ 
+ # small core, mostly translating board-specific
+ # config declarations into driver model code
++ifdef CONFIG_NET_RALINK_MT7620
++CFLAGS_spi.o			+= -mlong-calls
++endif
++
+ obj-$(CONFIG_SPI_MASTER)		+= spi.o
+ obj-$(CONFIG_SPI_MEM)			+= spi-mem.o
+ obj-$(CONFIG_SPI_MUX)			+= spi-mux.o
+--- a/net/ipv6/Makefile
++++ b/net/ipv6/Makefile
+@@ -5,6 +5,10 @@
+ 
+ obj-$(CONFIG_IPV6) += ipv6.o
+ 
++ifdef CONFIG_NET_RALINK_MT7620
++CFLAGS_udp.o += -mlong-calls
++endif
++
+ ipv6-y :=	af_inet6.o anycast.o ip6_output.o ip6_input.o addrconf.o \
+ 		addrlabel.o \
+ 		route.o ip6_fib.o ipv6_sockglue.o ndisc.o udp.o udplite.o \
