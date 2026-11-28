@@ -30,11 +30,9 @@ Link: https://patchwork.ozlabs.org/project/uboot/patch/20261114091049.2418574-2-
  drivers/net/mtk_eth/an8855.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/mtk_eth/an8855.c b/drivers/net/mtk_eth/an8855.c
-index a2589a2ad31..663cc5d935e 100644
 --- a/drivers/net/mtk_eth/an8855.c
 +++ b/drivers/net/mtk_eth/an8855.c
-@@ -627,8 +627,8 @@ static int an8855_port_sgmii_init(struct an8855_switch_priv *priv, u32 port)
+@@ -627,8 +627,8 @@ static int an8855_port_sgmii_init(struct
  	an8855_reg_read(priv, AN8855_RX_CTRL_8, &val);
  	val &= ~(0xfff << 16);
  	val |= (0x200 << 16);
@@ -45,6 +43,3 @@ index a2589a2ad31..663cc5d935e 100644
  	an8855_reg_write(priv, AN8855_RX_CTRL_8, val);
  
  	/* Frequency memter */
--- 
-2.53.0
-
