@@ -1,0 +1,74 @@
+#!/bin/sh
+
+# The pair button, as on the stock firmware of TP-Link powerline adapters: a
+# short press starts pairing, or ends one that is under way, and the status
+# LED blinks while it runs; held for 6 seconds, the adapter leaves its
+# powerline network for one of its own. All LEDs blink once after either
+# changed the network.
+
+. /lib/functions.sh
+
+blink_all() {
+	local pin value path
+
+	# with the board's LED control switch, and only while it has the LEDs on
+	pin="$(uci -q get system.led_control.gpio_pin)" || return 0
+	value="$(uci -q get system.led_control.value)"
+	[ "$value" = "$(jsonfilter -i /etc/board.json -e '@.gpioswitch.led_control.default')" ] || return 0
+
+	case "$pin" in
+	*[!0-9]*) path="/sys/class/gpio/$pin/value" ;;
+	*) path="/sys/class/gpio/gpio$pin/value" ;;
+	esac
+
+	echo "$((!value))" > "$path"
+	sleep 1
+	echo "$value" > "$path"
+}
+
+# a pairing under way on this host, which bcmplc pair keeps a file for
+pairing() {
+	local pid="$(cat /var/run/bcmplc-pair.pid 2>/dev/null)"
+
+	[ -n "$pid" ] && [ "$(cat "/proc/$pid/comm" 2>/dev/null)" = bcmplc ]
+}
+
+pair() {
+	local ret
+
+	. /etc/diag.sh
+
+	status_led="$running"
+	[ -n "$status_led" ] && status_led_set_timer 500 500
+
+	set -o pipefail
+	bcmplc pair 2>&1 | logger -t bcmplc
+	ret=$?
+
+	set_state done
+	[ "$ret" = 0 ] && blink_all
+}
+
+case "$ACTION" in
+pressed)
+	return 6
+;;
+timeout)
+	pairing && bcmplc cancel && sleep 2
+
+	set -o pipefail
+	bcmplc leave 2>&1 | logger -t bcmplc && blink_all
+;;
+released)
+	# longer presses do nothing more, or left the network above
+	[ "$SEEN" -lt 4 ] || return 0
+
+	if pairing; then
+		bcmplc cancel
+	else
+		pair &
+	fi
+;;
+esac
+
+return 0

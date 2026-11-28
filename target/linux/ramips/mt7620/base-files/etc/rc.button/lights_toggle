@@ -1,0 +1,13 @@
+#!/bin/sh
+
+[ "$ACTION" = "released" ] || exit 0
+
+# the LED button switches all LEDs off and on with the board's LED control
+# switch, and the setting stays after a restart
+value="$(uci -q get system.led_control.value)" || exit 0
+
+uci set system.led_control.value="$((!value))"
+uci commit system
+/etc/init.d/gpio_switch restart
+
+exit 0
