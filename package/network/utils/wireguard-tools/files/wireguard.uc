@@ -51,6 +51,16 @@ function parse_address(addr) {
 	return { family: 4, address: addr, mask: 32 };
 }
 
+// wg reads the config that proto_setup() builds line by line, so a value that
+// holds a newline would add lines of its own, a [Peer] among them.
+function has_newline(values) {
+	for (let v in values)
+		for (let e in (type(v) == 'array' ? v : [ v ]))
+			if (type(e) == 'string' && index(e, '\n') >= 0)
+				return true;
+	return false;
+}
+
 function load_peers(cursor, iface) {
 	let peers = [];
 	let peer_type = sprintf('wireguard_%s', iface);
@@ -70,6 +80,11 @@ function load_peers(cursor, iface) {
 
 		if (!peer_key) {
 			warn('wireguard: ', iface, ', peer section ', peer_section['.name'], ': no public_key, skipping the peer\n');
+			return;
+		}
+
+		if (has_newline([ peer_key, peer_eph, peer_port, peer_a_ips, peer_p_ka, peer_psk ])) {
+			warn('wireguard: ', iface, ', peer section ', peer_section['.name'], ': a value holds a newline, skipping the peer\n');
 			return;
 		}
 
@@ -161,6 +176,12 @@ function proto_setup(proto) {
 
 	let iface = proto.iface;
 	let config = proto.config;
+
+	if (has_newline([ config.private_key, config.fwmark ])) {
+		warn('wireguard: ', iface, ': private_key or fwmark holds a newline\n');
+		proto.setup_failed();
+		return;
+	}
 
 	system(sprintf('ip link add dev %s type wireguard 2>/dev/null || true', iface));
 
