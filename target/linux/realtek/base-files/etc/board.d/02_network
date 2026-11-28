@@ -221,7 +221,6 @@ realtek_setup_macs()
 	sirivision,sr-st3408f|\
 	sirivision,sr-st3808f|\
 	sirivision,sr-st31212f|\
-	tplink,tl-st5008f-v2|\
 	ubnt,usw-pro-max-24-poe|\
 	ubnt,usw-pro-xg-10-poe|\
 	ubnt,usw-pro-xg-8-poe|\
@@ -297,6 +296,10 @@ realtek_setup_macs()
 		[ -z "$lan_mac" ] || [ "$mac_prefix" = "00:e0:4c:00:00" ] && lan_mac=$(macaddr_random)
 		lan_mac_start=$lan_mac
 		eth0_mac=$lan_mac
+		;;
+	tplink,tl-st5008f-v2)
+		lan_mac="$(get_mac_label)"
+		ucidef_set_network_device_mac eth1 "$(macaddr_setbit_la "$lan_mac")"
 		;;
 	xikestor,sks8300-8x)
 		lan_mac=$(mtd_get_mac_binary board-info 0x1f1)
