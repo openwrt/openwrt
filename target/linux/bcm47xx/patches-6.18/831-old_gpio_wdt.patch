@@ -1,7 +1,12 @@
+From 0294358e11cbcb9c754f4c6056a070e8b36b5dd8 Mon Sep 17 00:00:00 2001
+From: Mathias Adam <m.adam--openwrt@adamis.de>
+Date: Mon, 16 Sep 2013 21:07:52 +0000
+Subject: [PATCH] bcm47xx: add generic GPIO watchdog driver
+
 This generic GPIO watchdog is used on Huawei E970 (bcm47xx)
 
 Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
-
+---
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
 @@ -1858,6 +1858,15 @@ config WDT_MTX1
@@ -32,7 +37,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
  obj-$(CONFIG_OCTEON_WDT) += octeon-wdt.o
 --- /dev/null
 +++ b/drivers/watchdog/old_gpio_wdt.c
-@@ -0,0 +1,298 @@
+@@ -0,0 +1,304 @@
 +/*
 + *      Driver for GPIO-controlled Hardware Watchdogs.
 + *
@@ -96,6 +101,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 +#include <linux/old_gpio_wdt.h>
 +
 +static int ticks = 100 * HZ;
++static bool gpio_wdt_probed;
 +
 +static struct {
 +	struct completion stop;
@@ -271,6 +277,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 +	gpio_wdt_device.default_ticks = ticks;
 +
 +	gpio_wdt_start();
++	gpio_wdt_probed = true;
 +	dev_info(&pdev->dev, "GPIO Hardware Watchdog driver (gpio=%i interval=%i/%i)\n",
 +		gpio_wdt_data->gpio, gpio_wdt_data->first_interval, gpio_wdt_data->interval);
 +	return 0;
@@ -278,6 +285,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 +
 +static void gpio_wdt_remove(struct platform_device *pdev)
 +{
++	gpio_wdt_probed = false;
 +	/* FIXME: do we need to lock this test ? */
 +	if (gpio_wdt_device.queue) {
 +		gpio_wdt_device.queue = 0;
@@ -308,6 +316,9 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 +static int gpio_wdt_init_late(void)
 +{
 +	int ret;
++
++	if (!gpio_wdt_probed)
++		return 0;
 +
 +	ret = misc_register(&gpio_wdt_misc);
 +	if (ret < 0) {
