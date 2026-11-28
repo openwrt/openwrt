@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Israel Cueto <github@bumblecito.com>
+Date: Wed, 18 Nov 2026 00:14:43 +0000
+Subject: [PATCH] realtek: add SFP quirk for ODI DFP-34X-2C3
+
+Add a quirk for the ODI DFP-34X-2C3 XPON SFP module.
+
+The module supports 2500Base-X. Register it with the existing
+sfp_quirk_2500basex quirk so the SFP driver recognizes this
+specific module.
+
+Upstream-Status: Pending
+
+Signed-off-by: Israel Cueto <github@bumblecito.com>
+---
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -616,6 +616,9 @@
+ 	// 1000BASE-LX / 1300MBd in its EEPROM
+ 	SFP_QUIRK("HSGQ", "HSGQ-XPON-Stick", sfp_quirk_2500basex,
+ 		  sfp_fixup_ignore_tx_fault),
++
++       /* ODI DFP-34X-2C3 XPON stick supports 2500Base-X */
++       SFP_QUIRK_S("ODI", "DFP-34X-2C3", sfp_quirk_2500basex),
+ 
+ 	// Lantech 8330-262D-E and 8330-265D can operate at 2500base-X, but
+ 	// incorrectly report 2500MBd NRZ in their EEPROM.
