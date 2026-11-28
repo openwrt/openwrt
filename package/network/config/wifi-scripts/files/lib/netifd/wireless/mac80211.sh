@@ -504,6 +504,11 @@ mac80211_hostapd_setup_base() {
 			append base_cfg "he_spr_sr_control=$he_spr_sr_control" "$N"
 		else
 			append base_cfg "he_bss_color_disabled=1" "$N"
+			# Without a colour, clients can't tell this BSS's PPDUs from
+			# another's, so forbid them spatial reuse. With no SR Parameter
+			# Set at all they may use non-SRG OBSS PD up to -62 dBm, and
+			# ignore this AP's weaker frames as an OBSS's.
+			append base_cfg "he_spr_sr_control=3" "$N"
 		fi
 
 
