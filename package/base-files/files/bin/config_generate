@@ -13,6 +13,16 @@ if [ -n "$FORCE" ] || [ ! -s $CFG ]; then
 fi
 [ -s /etc/config/network -a -s /etc/config/system ] && exit 0
 
+generate_stp() {
+	# RSTP only with ustpd: without it the kernel falls back to slow 802.1D
+	[ -x /sbin/ustpd ] || return 0
+	# 61440: lowest possible priority, so OpenWrt never wins the root election
+	uci -q batch <<-EOF
+		set network.$1.stp='1'
+		set network.$1.priority='61440'
+	EOF
+}
+
 generate_bridge() {
 	local name=$1
 	local macaddr=$2
@@ -26,6 +36,7 @@ generate_bridge() {
 			set network.$name.macaddr=$macaddr
 		EOF
 	fi
+	generate_stp $name
 }
 
 bridge_vlan_id=0
@@ -122,6 +133,7 @@ generate_network() {
 			set network.@device[-1].type='bridge'
 		EOF
 		for port in $ports; do uci add_list network.@device[-1].ports="$port"; done
+		[ "$1" = "lan" ] && generate_stp @device[-1]
 		[ -n "$macaddr" ] && {
 			for port in $ports; do
 				uci -q batch <<-EOF
