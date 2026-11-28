@@ -172,7 +172,7 @@ list_static_conffiles() {
 
 	find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
 		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
-		\( -type f -o -type l \) $filter 2>/dev/null
+		\( -type f -o -type l $find_dirs \) $filter 2>/dev/null
 }
 
 build_list_of_backup_config_files() {
@@ -224,8 +224,9 @@ build_list_of_backup_overlay_files() {
 	# busybox grep bug when file is empty
 	[ -s "$packagesfiles" ] || echo > $packagesfiles
 
-	( cd /overlay/upper/; find .$SAVE_OVERLAY_PATH \( -type f -o -type l \) $find_filter | sed \
+	( cd /overlay/upper/; find .$SAVE_OVERLAY_PATH \( -type f -o -type l $find_dirs \) $find_filter | sed \
 		-e 's,^\.,,' \
+		-e '\,^/$,d' \
 		-e '\,^/etc/board.json$,d' \
 		-e '\,^/etc/board-base.json$,d' \
 		-e '\,^/etc/luci-uploads/\.placeholder,d' \
@@ -264,6 +265,14 @@ if [ $SKIP_UNCHANGED = 1 ]; then
 	find_filter='( ( -exec test -e /rom/{} ; -exec cmp -s /{} /rom/{} ; ) -o -print )'
 fi
 
+# Back up directories (owner, mode) only if tar can store them without their contents
+find_dirs=""
+tar_no_recursion=""
+if tar -c --no-recursion -f /dev/null -C / . 2>/dev/null; then
+	find_dirs="-o -type d"
+	tar_no_recursion="--no-recursion"
+fi
+
 include /lib/upgrade
 
 create_backup_archive() {
@@ -277,7 +286,19 @@ create_backup_archive() {
 		return 0
 	}
 	run_hooks "$CONFFILES" $sysupgrade_init_conffiles
-	ask_bool 0 "Edit config file list" && vi "$CONFFILES"
+	if ask_bool 0 "Edit config file list"; then
+		cp "$CONFFILES" "$CONFFILES.orig"
+		vi "$CONFFILES"
+		# Add the contents of directories added in the editor
+		[ -z "$tar_no_recursion" ] || {
+			awk 'FILENAME == ARGV[1] { old[$0]; next } !($0 in old)' "$CONFFILES.orig" "$CONFFILES" |
+				while read -r dir; do
+					[ -d "$dir" ] && find "$dir" \( -type f -o -type l -o -type d \)
+				done | cat "$CONFFILES" - | awk '!seen[$0]++' > "$CONFFILES.new"
+			mv "$CONFFILES.new" "$CONFFILES"
+		}
+		rm -f "$CONFFILES.orig"
+	fi
 
 	[ "$conf_tar" != "-" ] || conf_tar=""
 
@@ -324,7 +345,7 @@ create_backup_archive() {
 
 		# Rest of archive with config files and ending padding
 		if [ $ret -eq 0 ]; then
-			tar c${TAR_V} -C / -T "$CONFFILES" || ret=1
+			tar c${TAR_V} $tar_no_recursion -C / -T "$CONFFILES" || ret=1
 		fi
 
 		[ $ret -eq 0 ]
