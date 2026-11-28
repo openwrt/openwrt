@@ -436,10 +436,34 @@ function start()
 }
 
 
+/* the device has interfaces, but none of them exists any more */
+function wdev_ifaces_gone(wdev)
+{
+	let found = false;
+
+	for (let section, data in wdev.handler_data) {
+		if (data.type != "vif" || !data.ifname)
+			continue;
+
+		if (access("/sys/class/net/" + data.ifname))
+			return false;
+
+		found = true;
+	}
+
+	return found;
+}
+
 function retry_setup()
 {
 	if (this.delete)
 		return;
+
+	if (this.state == "up" && wdev_ifaces_gone(this)) {
+		this.dbg("interfaces are gone, restart");
+		this.teardown();
+		return;
+	}
 
 	if (this.state != "down" || !this.autostart)
 		return;

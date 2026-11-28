@@ -1,6 +1,13 @@
 #!/bin/sh
 
-[ "${ACTION}" = "add" ] && [ -f /etc/board.json ] && {
+[ -f /etc/board.json ] || exit 0
+
+case "${ACTION}" in
+add)
 	/sbin/wifi config
 	ubus call network.wireless retry
-}
+	;;
+remove)
+	ubus call network.wireless retry
+	;;
+esac
