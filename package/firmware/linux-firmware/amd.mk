@@ -1,9 +1,7 @@
-Package/amd64-microcode = $(call Package/firmware-default,AMD64 CPU microcode,,LICENSE.amd-ucode)
+Package/amd64-microcode = $(call Package/firmware-default,AMD64 CPU microcode,@TARGET_x86,LICENSE.amd-ucode)
 define Package/amd64-microcode/install
-	$(INSTALL_DIR) $(1)/lib/firmware/amd-ucode
-	$(CP) \
-		$(PKG_BUILD_DIR)/amd-ucode/*.bin \
-		$(1)/lib/firmware/amd-ucode
+	$(INSTALL_DIR) $(1)/boot
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/amd-ucode.img $(1)/boot/amd-ucode.img
 endef
 
 $(eval $(call BuildPackage,amd64-microcode))
