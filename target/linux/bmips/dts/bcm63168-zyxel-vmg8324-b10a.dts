@@ -1,0 +1,350 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * ZyXEL VMG8324-B10A (MitraStar ODM, CFE board id "963168VX")
+ *
+ * Hardware facts are taken from the CFE boardparms table of this board
+ * (decoded from the stock CFE in NAND block 0) and the stock boot log:
+ *  - BCM63168D0, 128 MiB DDR3, 128 MiB SLC NAND (Hamming, 512 B steps)
+ *  - BCM53124S (identifies as BCM53125) on HSSPI SSB0, LAN1-4 = ports 1-4,
+ *    uplink RGMII to SoC switch port 6, 1000FD
+ *  - WAN on SoC internal GPHY (switch0 port 3, phy4)
+ *  - serial LEDs via 74HC164 (ledInit 0x1100: data low, shift inverted)
+ */
+
+#include "bcm63268.dtsi"
+
+/ {
+	model = "ZyXEL VMG8324-B10A";
+	compatible = "zyxel,vmg8324-b10a", "brcm,bcm63168", "brcm,bcm63268";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		/*
+		 * boardparms: reset = EXT_INTR_0, SES = EXT_INTR_1, WLAN = EXT_INTR_2.
+		 * WPS (GPIO 33) and WiFi (GPIO 34) verified on the unit. The stock
+		 * firmware uses the WiFi button to toggle all WLAN on/off (wlmngr
+		 * do_EnableDisable), which matches KEY_RFKILL.
+		 */
+		reset {
+			label = "reset";
+			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+
+		wlan {
+			label = "wlan";
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cferom_6a0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&hsspi {
+	status = "okay";
+
+	/* boardparms: ext switch bp_usConfigType = BP_ENET_CONFIG_HS_SPI_SSB_0 */
+	switch@0 {
+		compatible = "brcm,bcm53125";
+		reg = <0>;
+		spi-max-frequency = <781000>;
+		spi-cpha;
+		spi-cpol;
+		dsa,member = <1 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+			};
+
+			port@8 {
+				reg = <8>;
+
+				phy-mode = "rgmii-id";
+				ethernet = <&switch0port6>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&leds {
+	status = "okay";
+
+	brcm,serial-leds;
+	brcm,serial-dat-low;
+	brcm,serial-shift-inv;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_serial_led>;
+
+	/*
+	 * Index = LED controller output. Serial LEDs (74HC164) and the
+	 * direct GPIO LEDs muxed to the controller (GPIO LEDCtrl 0x72d700:
+	 * GPIO 8,9,10,12,14,15,17,20,21,22) share the index space.
+	 * Polarity taken from boardparms. All LEDs below were verified on the
+	 * front panel; the other boardparms LED outputs have no LED fitted.
+	 */
+
+	led@0 {
+		/* GPHY0 Spd 0 - WAN LED */
+		reg = <0>;
+		brcm,hardware-controlled;
+		brcm,link-signal-sources = <0>;
+	};
+
+	led@1 {
+		/* GPHY0 Spd 1 - WAN LED */
+		reg = <1>;
+		brcm,hardware-controlled;
+		brcm,link-signal-sources = <1>;
+	};
+
+	led@2 {
+		/* bp_usGpioLedWanError, serial 2 AL */
+		reg = <2>;
+		active-low;
+		function = LED_FUNCTION_WAN_ONLINE;
+		color = <LED_COLOR_ID_RED>;
+	};
+
+	led@3 {
+		/* boardparms id 25, serial 3 AL - front "USB2" */
+		reg = <3>;
+		active-low;
+		function = LED_FUNCTION_USB;
+		function-enumerator = <2>;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+	led@4 {
+		/* bp_usGpioVoip1Led, serial 4 AL */
+		reg = <4>;
+		active-low;
+		function = "phone";
+		function-enumerator = <1>;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+	led@5 {
+		/* bp_usGpioVoip2Led, serial 5 AL */
+		reg = <5>;
+		active-low;
+		function = "phone";
+		function-enumerator = <2>;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+	led@6 {
+		/* boardparms id 27, serial 6 AL - front "USB1" */
+		reg = <6>;
+		active-low;
+		function = LED_FUNCTION_USB;
+		function-enumerator = <1>;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+	led@7 {
+		/* bp_usGpioLedSesWireless, serial 7 active-high - front "2.4" */
+		reg = <7>;
+		function = LED_FUNCTION_WLAN;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+
+
+
+	led@12 {
+		/* GPHY0 Act - WAN LED */
+		reg = <12>;
+		brcm,hardware-controlled;
+	};
+
+	led@14 {
+		/* bp_usGpioLedAdsl, GPIO 14 AL */
+		reg = <14>;
+		active-low;
+		function = "dsl";
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+
+
+	led_power_green: led@20 {
+		/* bp_usGpioLedBlPowerOn, GPIO 20 AL */
+		reg = <20>;
+		active-low;
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+	led_power_red: led@21 {
+		/* bp_usGpioLedBlStop, GPIO 21 AL */
+		reg = <21>;
+		active-low;
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_RED>;
+		panic-indicator;
+	};
+
+};
+
+&nflash {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		reg = <0>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <15>;
+		nand-on-flash-bbt;
+		brcm,nand-oob-sector-size = <64>;
+
+		/*
+		 * The CFE erases every block of the image slots without a
+		 * JFFS2 cleanmarker at power-on: write one after each erase.
+		 */
+		openwrt,jffs2-cleanmarker-range = <0x0020000 0x7aa0000>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * Layout from the CFE NVRAM NAND partition table
+			 * (ulNandPartOfsKb/ulNandPartSizeKb @ cferom 0x7d0):
+			 * slot 1 at 0x20000 (0x3aa0000), slot 2 at 0x4000000
+			 * (0x3ac0000). Each slot starts with one 128 KiB MSTC tag
+			 * block, followed by the JFFS2 with vmlinux.lz; OpenWrt
+			 * adds UBI behind it. The CFE boots the slot with the
+			 * higher imageSequence and flashes new images into the
+			 * other one, so the parser splits only the booted slot
+			 * and leaves the other as plain img1/img2.
+			 */
+
+			partition@0 {
+				label = "cferom";
+				reg = <0x0000000 0x0020000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_cferom_6a0: macaddr@6a0 {
+						compatible = "mac-base";
+						reg = <0x6a0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@20000 {
+				compatible = "zyxel,mstc-wfi-split";
+				label = "wfi";
+				reg = <0x0020000 0x7aa0000>;
+				zyxel,img1-size = <0x3aa0000>;
+				zyxel,img2-offset = <0x3fe0000>;
+			};
+
+			partition@7b00000 {
+				label = "data";
+				reg = <0x7b00000 0x0400000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&switch0 {
+	dsa,member = <0 0>;
+
+	ports {
+		port@3 {
+			reg = <3>;
+			label = "wan";
+
+			phy-handle = <&phy4>;
+		};
+
+		switch0port6: port@6 {
+			reg = <6>;
+			label = "extsw";
+
+			phy-mode = "rgmii-id";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};
