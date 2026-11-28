@@ -1,0 +1,72 @@
+From d12338f1ccf1366d2225f1f42dc873d49c38fc4e Mon Sep 17 00:00:00 2001
+From: Tomasz Maciej Nowak <tmn505@gmail.com>
+Date: Wed, 4 Nov 2026 15:29:35 +0100
+Subject: [PATCH 12/16] ARM: dts: rv1103-luckfox-pico-mini-b: populate
+ regulators
+
+Source is a USB connected to EA3036C power management IC.
+
+Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
+---
+ arch/arm/dts/rv1103-luckfox-pico-mini-b.dts | 44 +++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+--- a/arch/arm/dts/rv1103-luckfox-pico-mini-b.dts
++++ b/arch/arm/dts/rv1103-luckfox-pico-mini-b.dts
+@@ -19,12 +19,56 @@
+ 	chosen {
+ 		stdout-path = "serial2:115200n8";
+ 	};
++
++	vcc_1v8: regulator-vcc-1v8 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_1v8";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-always-on;
++		regulator-boot-on;
++		vin-supply = <&vcc_sys>;
++	};
++
++	vcc_3v3: regulator-vcc-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++		regulator-boot-on;
++		vin-supply = <&vcc_sys>;
++	};
++
++	vcc_sys: regulator-vcc-5v0 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_5v0";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	vdd_arm: regulator-vdd-0v9 {
++		compatible = "regulator-fixed";
++		regulator-name = "vdd_0v9";
++		regulator-min-microvolt = <900000>;
++		regulator-max-microvolt = <900000>;
++		regulator-always-on;
++		regulator-boot-on;
++		vin-supply = <&vcc_sys>;
++	};
++};
++
++&cpu0 {
++	cpu-supply = <&vdd_arm>;
+ };
+ 
+ &sdmmc {
+ 	bus-width = <4>;
+ 	cap-sd-highspeed;
+ 	disable-wp;
++	vmmc-supply = <&vcc_3v3>;
+ 	status = "okay";
+ };
+ 

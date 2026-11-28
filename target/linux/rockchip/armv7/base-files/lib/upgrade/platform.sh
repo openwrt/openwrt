@@ -196,6 +196,10 @@ platform_check_image() {
 		herospeed_ab_check_image "$@"
 		return $?
 		;;
+	luckfox,webbee)
+		nand_do_platform_check "$board" "$1"
+		return $?
+		;;
 	*)
 		return 1
 		;;
@@ -208,6 +212,9 @@ platform_do_upgrade() {
 	case "$board" in
 	herospeed,rv1126-imx415)
 		herospeed_ab_do_upgrade "$1"
+		;;
+	luckfox,webbee)
+		nand_do_upgrade "$1"
 		;;
 	*)
 		default_do_upgrade "$1"

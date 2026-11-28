@@ -1,0 +1,93 @@
+From 8161760a35b3eb1c1d961670dcbf626b65461f90 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Sun, 30 Aug 2026 10:12:19 +0200
+Subject: [PATCH 6/6] ARM: dts: rockchip: rv1106: Add tsadc and thermal zones
+
+Ported from the vendor derived DT; adds a cooling map to cpu0 which
+the original lacked.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ arch/arm/boot/dts/rockchip/rv1106.dtsi | 57 ++++++++++++++++++++++++++
+ 1 file changed, 57 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1106.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1106.dtsi
+@@ -9,6 +9,7 @@
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/pinctrl/rockchip.h>
++#include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+ 	#address-cells = <1>;
+@@ -196,6 +197,43 @@
+ 		};
+ 	};
+ 
++	thermal_zones: thermal-zones {
++		soc_thermal: soc-thermal {
++			polling-delay-passive = <20>;
++			polling-delay = <1000>;
++			sustainable-power = <2100>;
++			thermal-sensors = <&tsadc 0>;
++
++			trips {
++				threshold: trip-point-0 {
++					temperature = <75000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				target: trip-point-1 {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				soc_crit: soc-crit {
++					temperature = <115000>;
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&target>;
++					cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++					contribution = <4096>;
++				};
++			};
++		};
++	};
++
+ 	soc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+@@ -370,6 +408,25 @@
+ 			status = "disabled";
+ 		};
+ 
++		tsadc: tsadc@ff3c8000 {
++			compatible = "rockchip,rv1106-tsadc";
++			reg = <0xff3c8000 0x1000>;
++			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL_HIGH>;
++			rockchip,grf = <&grf>;
++			clocks = <&cru CLK_TSADC>, <&cru PCLK_TSADC>,
++				 <&cru CLK_TSADC_TSEN>;
++			clock-names = "tsadc", "apb_pclk", "tsen";
++			assigned-clocks = <&cru CLK_TSADC>, <&cru CLK_TSADC_TSEN>;
++			assigned-clock-rates = <1000000>, <12000000>;
++			resets = <&cru SRST_TSADC>, <&cru SRST_P_TSADC>;
++			reset-names = "tsadc", "tsadc-apb";
++			#thermal-sensor-cells = <1>;
++			rockchip,hw-tshut-temp = <120000>;
++			rockchip,hw-tshut-mode = <0>; /* tshut mode 0:CRU 1:GPIO */
++			rockchip,hw-tshut-polarity = <0>; /* tshut polarity 0:LOW 1:HIGH */
++			status = "disabled";
++		};
++
+ 		u2phy: usb2-phy@ff3e0000 {
+ 			compatible = "rockchip,rv1106-usb2phy";
+ 			reg = <0xff3e0000 0x8000>;

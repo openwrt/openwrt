@@ -1,0 +1,127 @@
+From 1bf29a65c1651e6e7ad4134ef31693d544d190ee Mon Sep 17 00:00:00 2001
+From: Vladislav Leonov <vlad@zlab.su>
+Date: Mon, 10 Aug 2026 15:10:59 +0300
+Subject: [PATCH 07/19] phy: rockchip: inno-usb2: Add support for RV1106
+
+The RV1106 has a single USB2 PHY with only an OTG port, so add its
+phy_cfgs entry with the OTG port's control/status/detect bit offsets
+and charger-detection register layout.
+
+Also add rv1106_usb2phy_tuning() to apply the vendor HS PHY tuning:
+enable pre-emphasis in all line states, raise the Tx pre-emphasis
+strength and eye height, increase the 45ohm HS ODT drive strength,
+lower the Rx squelch trigger point, bypass squelch detector
+calibration, disable the differential receiver to save power, and
+switch the HS disconnect detector to single-ended mode (needed for
+reliable unplug detection).
+
+The register offsets and values are ported from the Rockchip vendor
+BSP kernel; one difference is that the BSP driver additionally lowered
+the Tx pre-emphasis strength on newer chip revisions via
+rockchip_get_cpu_version(), which has no mainline equivalent, so only
+the new revision's tuning value is kept here.
+
+Signed-off-by: Vladislav Leonov <vlad@zlab.su>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 76 +++++++++++++++++++
+ 1 file changed, 76 insertions(+)
+
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -1637,6 +1637,38 @@ static int rk3588_usb2phy_tuning(struct
+ 	return ret;
+ }
+ 
++static int rv1106_usb2phy_tuning(struct rockchip_usb2phy *rphy)
++{
++	int ret;
++
++	/* Always enable pre-emphasis in SOF & EOP & chirp & non-chirp state */
++	ret = regmap_update_bits(rphy->phy_base, 0x30, GENMASK(2, 0), 0x07);
++
++	/* Set Tx HS pre_emphasize strength to 3'b001 */
++	ret |= regmap_update_bits(rphy->phy_base, 0x40, GENMASK(5, 3), 0x01 << 3);
++
++	/* Set RX Squelch trigger point configure to 4'b0000 (112.5 mV) */
++	ret |= regmap_update_bits(rphy->phy_base, 0x64, GENMASK(6, 3), 0x00 << 3);
++
++	/* Turn off differential receiver by default to save power */
++	ret |= regmap_update_bits(rphy->phy_base, 0x100, BIT(6), 0);
++
++	/* Set 45ohm HS ODT value to 5'b10111 to increase driver strength */
++	ret |= regmap_update_bits(rphy->phy_base, 0x11c, GENMASK(4, 0), 0x17);
++
++	/* Set Tx HS eye height tuning to 3'b011 (462 mV) */
++	ret |= regmap_update_bits(rphy->phy_base, 0x124, GENMASK(4, 2), 0x03 << 2);
++
++	/* Bypass Squelch detector calibration */
++	ret |= regmap_update_bits(rphy->phy_base, 0x1a4, GENMASK(7, 4), 0x01 << 4);
++	ret |= regmap_update_bits(rphy->phy_base, 0x1b4, GENMASK(7, 4), 0x01 << 4);
++
++	/* Set HS disconnect detect mode to single ended detect mode */
++	ret |= regmap_update_bits(rphy->phy_base, 0x70, BIT(2), BIT(2));
++
++	return ret;
++}
++
+ static const struct rockchip_usb2phy_cfg rk3036_phy_cfgs[] = {
+ 	{
+ 		.reg = 0x17c,
+@@ -2344,6 +2376,49 @@ static const struct rockchip_usb2phy_cfg
+ 	{ /* sentinel */ }
+ };
+ 
++static const struct rockchip_usb2phy_cfg rv1106_phy_cfgs[] = {
++	{
++		.reg = 0xff3e0000,
++		.num_ports	= 1,
++		.phy_tuning	= rv1106_usb2phy_tuning,
++		.clkout_ctl	= { 0x0058, 4, 4, 1, 0 },
++		.port_cfgs	= {
++			[USB2PHY_PORT_OTG] = {
++				.phy_sus	= { 0x0050, 8, 0, 0, 0x1d1 },
++				.bvalid_det_en	= { 0x0100, 2, 2, 0, 1 },
++				.bvalid_det_st	= { 0x0104, 2, 2, 0, 1 },
++				.bvalid_det_clr = { 0x0108, 2, 2, 0, 1 },
++				.idfall_det_en	= { 0x0100, 5, 5, 0, 1 },
++				.idfall_det_st	= { 0x0104, 5, 5, 0, 1 },
++				.idfall_det_clr = { 0x0108, 5, 5, 0, 1 },
++				.idrise_det_en	= { 0x0100, 4, 4, 0, 1 },
++				.idrise_det_st	= { 0x0104, 4, 4, 0, 1 },
++				.idrise_det_clr = { 0x0108, 4, 4, 0, 1 },
++				.ls_det_en	= { 0x0100, 0, 0, 0, 1 },
++				.ls_det_st	= { 0x0104, 0, 0, 0, 1 },
++				.ls_det_clr	= { 0x0108, 0, 0, 0, 1 },
++				.utmi_avalid	= { 0x0060, 10, 10, 0, 1 },
++				.utmi_bvalid	= { 0x0060, 9, 9, 0, 1 },
++				.utmi_id	= { 0x0060, 6, 6, 0, 1 },
++				.utmi_ls	= { 0x0060, 5, 4, 0, 1 },
++			},
++		},
++		.chg_det = {
++			.opmode		= { 0x0050, 8, 0, 0, 0x1d7 },
++			.cp_det		= { 0x0060, 13, 13, 0, 1 },
++			.dcp_det	= { 0x0060, 12, 12, 0, 1 },
++			.dp_det		= { 0x0060, 14, 14, 0, 1 },
++			.idm_sink_en	= { 0x0058, 8, 8, 0, 1 },
++			.idp_sink_en	= { 0x0058, 7, 7, 0, 1 },
++			.idp_src_en	= { 0x0058, 9, 9, 0, 1 },
++			.rdm_pdwn_en	= { 0x0058, 10, 10, 0, 1 },
++			.vdm_src_en	= { 0x0058, 12, 12, 0, 1 },
++			.vdp_src_en	= { 0x0058, 11, 11, 0, 1 },
++		},
++	},
++	{ /* sentinel */ }
++};
++
+ static const struct rockchip_usb2phy_cfg rv1108_phy_cfgs[] = {
+ 	{
+ 		.reg = 0x100,
+@@ -2443,6 +2518,7 @@ static const struct of_device_id rockchi
+ 	{ .compatible = "rockchip,rk3568-usb2phy", .data = &rk3568_phy_cfgs },
+ 	{ .compatible = "rockchip,rk3576-usb2phy", .data = &rk3576_phy_cfgs },
+ 	{ .compatible = "rockchip,rk3588-usb2phy", .data = &rk3588_phy_cfgs },
++	{ .compatible = "rockchip,rv1106-usb2phy", .data = &rv1106_phy_cfgs },
+ 	{ .compatible = "rockchip,rv1108-usb2phy", .data = &rv1108_phy_cfgs },
+ 	{ .compatible = "rockchip,rv1126-usb2phy", .data = &rv1126_phy_cfgs },
+ 	{}

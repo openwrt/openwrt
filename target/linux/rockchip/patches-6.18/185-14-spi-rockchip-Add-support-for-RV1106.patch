@@ -1,0 +1,24 @@
+From 41e885e54b5a769ffa5ab6e29065f6472c0c5642 Mon Sep 17 00:00:00 2001
+From: Vladislav Leonov <vlad@zlab.su>
+Date: Mon, 10 Aug 2026 15:11:09 +0300
+Subject: [PATCH 14/19] spi: rockchip: Add support for RV1106
+
+Add the "rockchip,rv1106-spi" compatible to the match table. No driver
+changes are needed beyond that, since the controller behaves like the
+other Rockchip variants already handled by the driver.
+
+Signed-off-by: Vladislav Leonov <vlad@zlab.su>
+---
+ drivers/spi/spi-rockchip.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/spi/spi-rockchip.c
++++ b/drivers/spi/spi-rockchip.c
+@@ -1035,6 +1035,7 @@ static const struct of_device_id rockchi
+ 	{ .compatible = "rockchip,rk3328-spi", },
+ 	{ .compatible = "rockchip,rk3368-spi", },
+ 	{ .compatible = "rockchip,rk3399-spi", },
++	{ .compatible = "rockchip,rv1106-spi", },
+ 	{ .compatible = "rockchip,rv1108-spi", },
+ 	{ .compatible = "rockchip,rv1126-spi", },
+ 	{ },

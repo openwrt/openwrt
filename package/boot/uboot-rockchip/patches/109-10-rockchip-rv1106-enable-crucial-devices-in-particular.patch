@@ -1,0 +1,83 @@
+From 3b4f6118692cdf32c70ba8ca8235d237d892e710 Mon Sep 17 00:00:00 2001
+From: Tomasz Maciej Nowak <tmn505@gmail.com>
+Date: Mon, 2 Nov 2026 01:02:45 +0100
+Subject: [PATCH 10/16] rockchip: rv1106: enable crucial devices in particular
+ boot phases
+
+This fixes NAND probe in SPL:
+
+Trying to boot from SPI NAND
+Could not get clock for spi@ffac0000: -22
+SPI NAND probe failed.
+Error: -19
+
+Aswell move the properties to u-boot snippets and reference the rv1106
+snippet in luckfox pico snippet.
+
+Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
+---
+ arch/arm/dts/rv1103-luckfox-pico-mini-b-u-boot.dtsi | 11 ++++++++++-
+ arch/arm/dts/rv1103-luckfox-pico-mini-b.dts         |  3 ---
+ arch/arm/dts/rv1106-u-boot.dtsi                     | 12 ++++++++++++
+ 3 files changed, 22 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/dts/rv1103-luckfox-pico-mini-b-u-boot.dtsi
++++ b/arch/arm/dts/rv1103-luckfox-pico-mini-b-u-boot.dtsi
+@@ -1,10 +1,19 @@
+ // SPDX-License-Identifier: GPL-2.0+
+ // (C) Copyright 2026 Simon Glass <sjg@chromium.org>
+ 
+-#include "rockchip-u-boot.dtsi"
++#include "rv1106-u-boot.dtsi"
+ 
+ / {
+ 	chosen {
+ 		u-boot,spl-boot-order = &spi_nand;
+ 	};
+ };
++
++&spi_nand {
++	bootph-pre-ram;
++	bootph-some-ram;
++};
++
++&uart2 {
++	bootph-all;
++};
+--- a/arch/arm/dts/rv1103-luckfox-pico-mini-b.dts
++++ b/arch/arm/dts/rv1103-luckfox-pico-mini-b.dts
+@@ -34,8 +34,6 @@
+ 	spi_nand: flash@0 {
+ 		compatible = "spi-nand";
+ 		reg = <0>;
+-		bootph-pre-ram;
+-		bootph-some-ram;
+ 		spi-max-frequency = <75000000>;
+ 		spi-rx-bus-width = <4>;
+ 		spi-tx-bus-width = <1>;
+@@ -76,7 +74,6 @@
+ };
+ 
+ &uart2 {
+-	bootph-all;
+ 	status = "okay";
+ };
+ 
+--- a/arch/arm/dts/rv1106-u-boot.dtsi
++++ b/arch/arm/dts/rv1106-u-boot.dtsi
+@@ -2,3 +2,15 @@
+ // (C) Copyright 2022 Rockchip Electronics Co., Ltd
+ 
+ #include "rockchip-u-boot.dtsi"
++
++&cru {
++	bootph-all;
++};
++
++&grf {
++	bootph-all;
++};
++
++&xin24m {
++	bootph-all;
++};

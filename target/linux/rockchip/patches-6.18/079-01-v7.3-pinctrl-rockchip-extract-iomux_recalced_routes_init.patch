@@ -1,0 +1,58 @@
+From 83a9c8385ff10775958188c8f2a115c71c45b7ef Mon Sep 17 00:00:00 2001
+From: Hugo VALTIER <hugo@ahdrone.com>
+Date: Fri, 17 Jul 2026 09:59:15 +0200
+Subject: [PATCH 1/5] pinctrl: rockchip: extract iomux_recalced_routes_init()
+
+Extract the per-bank recalced_mask and route_mask computation out of
+rockchip_pinctrl_get_soc_data() into a separate function and call it
+from rockchip_pinctrl_probe().
+This allows SoC-specific init code to swap the mux tables before
+the masks are computed.
+
+No functional change intended.
+
+Signed-off-by: Hugo VALTIER <hugo@ahdrone.com>
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+---
+ drivers/pinctrl/pinctrl-rockchip.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-rockchip.c
++++ b/drivers/pinctrl/pinctrl-rockchip.c
+@@ -3830,7 +3830,18 @@ static struct rockchip_pin_ctrl *rockchi
+ 
+ 			bank_pins += 8;
+ 		}
++	}
+ 
++	return ctrl;
++}
++
++static void iomux_recalced_routes_init(struct rockchip_pinctrl *info)
++{
++	struct rockchip_pin_ctrl *ctrl = info->ctrl;
++	struct rockchip_pin_bank *bank = ctrl->pin_banks;
++	int i, j;
++
++	for (i = 0; i < ctrl->nr_banks; ++i, ++bank) {
+ 		/* calculate the per-bank recalced_mask */
+ 		for (j = 0; j < ctrl->niomux_recalced; j++) {
+ 			int pin = 0;
+@@ -3851,8 +3862,6 @@ static struct rockchip_pin_ctrl *rockchi
+ 			}
+ 		}
+ 	}
+-
+-	return ctrl;
+ }
+ 
+ #define RK3288_GRF_GPIO6C_IOMUX		0x64
+@@ -3965,6 +3974,8 @@ static int rockchip_pinctrl_probe(struct
+ 	/* try to find the optional reference to the ioc1 syscon */
+ 	info->regmap_ioc1 = syscon_regmap_lookup_by_phandle_optional(np, "rockchip,ioc1");
+ 
++	iomux_recalced_routes_init(info);
++
+ 	ret = rockchip_pinctrl_register(pdev, info);
+ 	if (ret)
+ 		return ret;

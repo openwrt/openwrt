@@ -1,0 +1,28 @@
+From 1a2bdab4fea4383ba9061afecebac85957532754 Mon Sep 17 00:00:00 2001
+From: Vladislav Leonov <vlad@zlab.su>
+Date: Mon, 10 Aug 2026 15:11:14 +0300
+Subject: [PATCH 18/19] ARM: dts: rockchip: add
+ arm,cpu-registers-not-fw-configured to RV1106 timer node
+
+The firmware on RV1106 does not initialize CNTVOFF, so the virtual
+counter may have a bogus offset relative to the physical one.
+
+Add the arm,cpu-registers-not-fw-configured property to the arch timer
+node so the kernel does not trust firmware-configured timer registers
+and uses the physical timer instead of the virtual one.
+
+Signed-off-by: Vladislav Leonov <vlad@zlab.su>
+---
+ arch/arm/boot/dts/rockchip/rv1106.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1106.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1106.dtsi
+@@ -57,6 +57,7 @@
+ 		clock-frequency = <24000000>;
+ 		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>,
+ 			     <GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>;
++		arm,cpu-registers-not-fw-configured;
+ 	};
+ 
+ 	xin24m: oscillator {

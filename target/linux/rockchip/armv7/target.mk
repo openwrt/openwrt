@@ -3,7 +3,7 @@ SUBTARGET:=armv7
 BOARDNAME:=RV11xx boards (32 bit)
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
-FEATURES+=emmc
+FEATURES+=emmc nand
 KERNELNAME:=zImage dtbs
 
 define Target/Description

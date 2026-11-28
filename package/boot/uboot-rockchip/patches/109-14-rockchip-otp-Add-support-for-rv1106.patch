@@ -1,0 +1,27 @@
+From d60e4caba2bb1efb37c4ae3d02ffaf51a1fc1274 Mon Sep 17 00:00:00 2001
+From: Finley Xiao <finley.xiao@rock-chips.com>
+Date: Tue, 24 May 2022 11:35:41 +0800
+Subject: [PATCH 14/16] rockchip: otp: Add support for rv1106
+
+Add support for the OTP controller in RV1106. The OTPC is similar to the
+OTPC in RK3568 and can use the same ops for reading OTP data.
+
+Signed-off-by: Finley Xiao <finley.xiao@rock-chips.com>
+Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
+---
+ drivers/misc/rockchip-otp.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/misc/rockchip-otp.c
++++ b/drivers/misc/rockchip-otp.c
+@@ -411,6 +411,10 @@ static const struct udevice_id rockchip_
+ 		.data = (ulong)&rk3588_data,
+ 	},
+ 	{
++		.compatible = "rockchip,rv1106-otp",
++		.data = (ulong)&rk3568_data,
++	},
++	{
+ 		.compatible = "rockchip,rv1126-otp",
+ 		.data = (ulong)&rv1126_data,
+ 	},

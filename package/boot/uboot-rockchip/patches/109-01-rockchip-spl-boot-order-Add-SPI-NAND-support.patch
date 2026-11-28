@@ -1,0 +1,54 @@
+From e900985b559adb77e2c6d3c83edfcc95ad852ae4 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <festevam@nabladev.com>
+Date: Tue, 7 Jul 2026 09:31:03 -0600
+Subject: [PATCH 01/16] rockchip: spl-boot-order: Add SPI NAND support
+
+Make spl-boot-order accept booting from SPI NAND as well.
+
+With this change, it is possible to specify spi_nand as the boot medium
+like this:
+
+u-boot,spl-boot-order = &spi_nand;
+
+Signed-off-by: Fabio Estevam <festevam@nabladev.com>
+Signed-off-by: Simon Glass <sjg@chromium.org>
+---
+ arch/arm/mach-rockchip/spl-boot-order.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/mach-rockchip/spl-boot-order.c
++++ b/arch/arm/mach-rockchip/spl-boot-order.c
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include <dm.h>
++#include <dm/device_compat.h>
+ #include <fdt_support.h>
+ #include <log.h>
+ #include <mmc.h>
+@@ -75,6 +76,9 @@ static int spl_node_to_boot_device(int n
+ 	 */
+ 	if (!uclass_find_device_by_of_offset(UCLASS_SPI_FLASH, node, &parent))
+ 		return BOOT_DEVICE_SPI;
++	if (CONFIG_IS_ENABLED(SPI_NAND_LOAD) &&
++	    !fdt_node_check_compatible(gd->fdt_blob, node, "spi-nand"))
++		return BOOT_DEVICE_SPI;
+ 
+ 	if (!uclass_find_device_by_of_offset(UCLASS_UFS, node, &parent))
+ 		return BOOT_DEVICE_UFS;
+@@ -223,8 +227,14 @@ int spl_decode_boot_device(u32 boot_devi
+ 			}
+ 
+ 			ret = uclass_find_device_by_of_offset(UCLASS_SPI_FLASH, node, &dev);
++			if (ret && CONFIG_IS_ENABLED(SPI_NAND_LOAD)) {
++				ret = uclass_find_device_by_of_offset(UCLASS_MTD, node, &dev);
++				if (!ret && !device_is_compatible(dev, "spi-nand"))
++					ret = -ENODEV;
++			}
+ 			if (ret) {
+-				debug("%s: could not find udevice for %s\n", __func__, conf);
++				debug("%s: could not find udevice for %s\n",
++				      __func__, conf);
+ 				continue;
+ 			}
+ 

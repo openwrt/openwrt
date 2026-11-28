@@ -1,0 +1,76 @@
+From 6b72c8300df3af2050588b33284cc421f8b68c2f Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Sun, 30 Aug 2026 10:11:39 +0200
+Subject: [PATCH 4/6] ARM: dts: rockchip: rv1106: Add CPU OPP table
+
+408-1296 MHz on RV1106; RV1103 deletes the two top OPPs. Ported from
+the vendor derived DT.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ arch/arm/boot/dts/rockchip/rv1103.dtsi |  6 ++++
+ arch/arm/boot/dts/rockchip/rv1106.dtsi | 40 ++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1103.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1103.dtsi
+@@ -14,3 +14,9 @@
+ };
+ 
+ /delete-node/ &gpio2;
++
++/* RV1103 tops out at 1.104 GHz */
++&cpu0_opp_table {
++	/delete-node/ opp-1200000000;
++	/delete-node/ opp-1296000000;
++};
+--- a/arch/arm/boot/dts/rockchip/rv1106.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1106.dtsi
+@@ -54,7 +54,47 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0xf00>;
++			clock-latency = <40000>;
+ 			clocks = <&cru ARMCLK>;
++			#cooling-cells = <2>; /* min followed by max */
++			operating-points-v2 = <&cpu0_opp_table>;
++		};
++	};
++
++	cpu0_opp_table: opp-table-cpu0 {
++		compatible = "operating-points-v2";
++		opp-shared;
++
++		opp-408000000 {
++			opp-hz = /bits/ 64 <408000000>;
++			opp-microvolt = <850000 850000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-600000000 {
++			opp-hz = /bits/ 64 <600000000>;
++			opp-microvolt = <850000 850000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-816000000 {
++			opp-hz = /bits/ 64 <816000000>;
++			opp-microvolt = <850000 850000 1000000>;
++			clock-latency-ns = <40000>;
++			opp-suspend;
++		};
++		opp-1104000000 {
++			opp-hz = /bits/ 64 <1104000000>;
++			opp-microvolt = <850000 850000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1200000000 {
++			opp-hz = /bits/ 64 <1200000000>;
++			opp-microvolt = <850000 850000 1000000>;
++			clock-latency-ns = <40000>;
++		};
++		opp-1296000000 {
++			opp-hz = /bits/ 64 <1296000000>;
++			opp-microvolt = <875000 850000 1000000>;
++			clock-latency-ns = <40000>;
+ 		};
+ 	};
+ 

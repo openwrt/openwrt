@@ -1,0 +1,188 @@
+From 12c1eb07ef6500583b4cf548a22e00b635c573ad Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <festevam@nabladev.com>
+Date: Tue, 7 Jul 2026 09:31:04 -0600
+Subject: [PATCH 02/16] spl: Add SPI NAND support via MTD in SPL
+
+Add support for booting U-Boot SPL from SPI NAND devices using the MTD
+subsystem:
+
+- Introduce CONFIG_SPL_SPI_NAND_LOAD to enable SPL loading from SPI
+  NAND flash.
+- Implement spl_spi_nand.c as a dedicated SPL loader that reads the
+  FIT image from SPI NAND via MTD.
+- Update common/spl/Kconfig and the Makefiles to include the new
+  loader in SPL builds.
+- Adjust drivers/mtd/Makefile and drivers/mtd/nand/Makefile to build
+  the necessary SPI NAND MTD objects only when SPL_SPI_NAND_LOAD is
+  enabled, avoiding a size impact on other boards.
+
+This allows boards like the Omega4 RV1103B to boot SPL directly from
+SPI NAND, keeping the SPL small and avoiding unnecessary inclusion of
+SPI NOR code.
+
+Signed-off-by: Fabio Estevam <festevam@nabladev.com>
+Signed-off-by: Simon Glass <sjg@chromium.org>
+---
+ common/spl/Kconfig        | 10 ++++-
+ common/spl/Makefile       |  1 +
+ common/spl/spl_spi_nand.c | 82 +++++++++++++++++++++++++++++++++++++++
+ drivers/mtd/Makefile      |  1 +
+ drivers/mtd/nand/Makefile | 13 ++++++-
+ 5 files changed, 105 insertions(+), 2 deletions(-)
+ create mode 100644 common/spl/spl_spi_nand.c
+
+--- a/common/spl/Kconfig
++++ b/common/spl/Kconfig
+@@ -1576,13 +1576,21 @@ config SPL_SPI_LOAD
+ 	  Enable support for loading next stage, U-Boot or otherwise, from
+ 	  SPI NOR in U-Boot SPL.
+ 
++config SPL_SPI_NAND_LOAD
++	bool "Support loading from SPI NAND flash"
++	depends on SPL
++	depends on MTD && DM_MTD
++	help
++	  Enable support for loading next stage, U-Boot or otherwise, from
++	  SPI NAND in U-Boot SPL.
++
+ endif # SPL_SPI_FLASH_SUPPORT
+ 
+ config SYS_SPI_U_BOOT_OFFS
+ 	hex "address of u-boot payload in SPI flash"
+ 	default 0x8000 if ARCH_SUNXI
+ 	default 0x0
+-	depends on SPL_SPI_LOAD || SPL_SPI_SUNXI
++	depends on SPL_SPI_LOAD || SPL_SPI_NAND_LOAD || SPL_SPI_SUNXI
+ 	help
+ 	  Address within SPI-Flash from where the u-boot payload is fetched
+ 	  from.
+--- a/common/spl/Makefile
++++ b/common/spl/Makefile
+@@ -36,6 +36,7 @@ obj-$(CONFIG_$(PHASE_)NVME) += spl_nvme.
+ obj-$(CONFIG_$(PHASE_)SEMIHOSTING) += spl_semihosting.o
+ obj-$(CONFIG_$(PHASE_)DFU) += spl_dfu.o
+ obj-$(CONFIG_$(PHASE_)SPI_LOAD) += spl_spi.o
++obj-$(CONFIG_$(PHASE_)SPI_NAND_LOAD) += spl_spi_nand.o
+ obj-$(CONFIG_$(PHASE_)RAM_SUPPORT) += spl_ram.o
+ obj-$(CONFIG_$(PHASE_)USB_SDP_SUPPORT) += spl_sdp.o
+ obj-$(CONFIG_$(PHASE_)UFS_SUPPORT) += spl_ufs.o
+--- /dev/null
++++ b/common/spl/spl_spi_nand.c
+@@ -0,0 +1,82 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++/*
++ * SPL loader for SPI NAND devices using the MTD subsystem.
++ *
++ * Based on spl_spi.c, which is:
++ *
++ * Copyright (C) 2011 OMICRON electronics GmbH
++ *
++ * based on drivers/mtd/nand/raw/nand_spl_load.c
++ *
++ * Copyright (C) 2011
++ * Heiko Schocher, DENX Software Engineering, hs@denx.de.
++ */
++
++#include <config.h>
++#include <image.h>
++#include <log.h>
++#include <errno.h>
++#include <spl.h>
++#include <spl_load.h>
++#include <asm/io.h>
++#include <dm/device_compat.h>
++#include <dm/ofnode.h>
++#include <dm/uclass.h>
++#include <mtd.h>
++
++static struct mtd_info *spl_spi_nand_get_mtd(void)
++{
++	struct udevice *dev;
++	int ret;
++
++	for (ret = uclass_first_device_err(UCLASS_MTD, &dev);
++	     dev;
++	     ret = uclass_next_device_err(&dev)) {
++		if (ret)
++			continue;
++		if (device_is_compatible(dev, "spi-nand"))
++			return dev_get_uclass_priv(dev);
++	}
++
++	return NULL;
++}
++
++static ulong spl_spinand_fit_read(struct spl_load_info *load, ulong offs,
++				  ulong size, void *buf)
++{
++	struct mtd_info *mtd = load->priv;
++	size_t retlen = 0;
++	int ret;
++
++	ret = mtd_read(mtd, offs, size, &retlen, buf);
++	if (ret && ret != -EUCLEAN) {
++		printf("SPI NAND read failed offs=0x%lx size=0x%lx ret=%d\n",
++		       offs, size, ret);
++		return 0;
++	}
++	if (retlen != size)
++		return 0;
++
++	return retlen;
++}
++
++static int spl_spinand_load_image(struct spl_image_info *spl_image,
++				  struct spl_boot_device *bootdev)
++{
++	struct spl_load_info load;
++	struct mtd_info *mtd;
++
++	mtd = spl_spi_nand_get_mtd();
++	if (!mtd) {
++		puts("SPI NAND probe failed.\n");
++		return -ENODEV;
++	}
++
++	spl_load_init(&load, spl_spinand_fit_read, mtd, 1);
++
++	return spl_load(spl_image, bootdev, &load, 0, CONFIG_SYS_SPI_U_BOOT_OFFS);
++}
++
++/* Use priority 1 so that boards can override this */
++SPL_LOAD_IMAGE_METHOD("SPI NAND", 1, BOOT_DEVICE_SPI, spl_spinand_load_image);
+--- a/drivers/mtd/Makefile
++++ b/drivers/mtd/Makefile
+@@ -34,6 +34,7 @@ else
+ ifneq ($(mtd-y),)
+ obj-$(CONFIG_SPL_MTD) += mtd.o
+ endif
++obj-$(CONFIG_SPL_SPI_NAND_LOAD) += nand/
+ obj-$(CONFIG_$(PHASE_)NAND_SUPPORT) += nand/
+ obj-$(CONFIG_SPL_ONENAND_SUPPORT) += onenand/
+ obj-$(CONFIG_$(PHASE_)SPI_FLASH_SUPPORT) += spi/
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
+@@ -1,10 +1,21 @@
+ # SPDX-License-Identifier: GPL-2.0+
+ 
+-ifeq ($(CONFIG_XPL_BUILD)$(CONFIG_TPL_BUILD),)
+ nandcore-objs := core.o bbt.o
++
++ifeq ($(CONFIG_XPL_BUILD)$(CONFIG_TPL_BUILD),)
++
++# U-Boot proper
+ obj-$(CONFIG_MTD_NAND_CORE) += nandcore.o
+ obj-$(CONFIG_MTD_RAW_NAND) += raw/
+ obj-$(CONFIG_MTD_SPI_NAND) += spi/
++
+ else
++
++# SPL / XPL / TPL
++# SPL has no MTD_NAND_CORE symbol, so we must key off SPI NAND usage
++obj-$(CONFIG_SPL_SPI_NAND_LOAD) += nandcore.o
++obj-$(CONFIG_SPL_SPI_NAND_LOAD) += spi/
++
++# raw NAND still follows the normal SPL rule
+ obj-$(CONFIG_$(PHASE_)NAND_SUPPORT) += raw/
+ endif

@@ -1,0 +1,33 @@
+From 7cce4a9cbab874cf66b7f2b13eaeb9935ab05e0a Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Sun, 30 Aug 2026 10:11:02 +0200
+Subject: [PATCH 3/6] ARM: dts: rockchip: rv1106: Drop rk3588-saradc fallback,
+ add reset
+
+The RV1106 SARADC is 2 channels at 10 bits - binding against the
+rk3588 driver data would use a wrong channel table and voltage scale
+(the dedicated rv1106 compatible was added to the driver for this
+reason). Also wire up the APB reset.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+---
+ arch/arm/boot/dts/rockchip/rv1106.dtsi | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/rockchip/rv1106.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1106.dtsi
+@@ -319,11 +319,13 @@
+ 		};
+ 
+ 		saradc: adc@ff3c0000 {
+-			compatible = "rockchip,rv1106-saradc", "rockchip,rk3588-saradc";
++			compatible = "rockchip,rv1106-saradc";
+ 			reg = <0xff3c0000 0x100>;
+ 			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cru CLK_SARADC>, <&cru PCLK_SARADC>;
+ 			clock-names = "saradc", "apb_pclk";
++			resets = <&cru SRST_P_SARADC>;
++			reset-names = "saradc-apb";
+ 			#io-channel-cells = <1>;
+ 			status = "disabled";
+ 		};

@@ -1,0 +1,58 @@
+From 32d1d88c4165d0da31d3bfda912e80e8110d6fc1 Mon Sep 17 00:00:00 2001
+From: Daniele Briguglio <hello@superkali.me>
+Date: Sun, 19 Apr 2026 13:43:08 +0200
+Subject: [PATCH] clk: rockchip: add helper to register auxiliary GRFs
+
+Add rockchip_clk_add_grf() as a helper to register an auxiliary GRF
+into the clock provider's aux_grf_table. This encapsulates the
+struct rockchip_aux_grf allocation and hashtable insertion, so SoC
+clock drivers do not need to open-code it.
+
+Suggested-by: Heiko Stuebner <heiko@sntech.de>
+Signed-off-by: Daniele Briguglio <hello@superkali.me>
+Link: https://patch.msgid.link/20260419-rk3588-mclk-gate-grf-v4-3-513a42dd1dcc@superkali.me
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ drivers/clk/rockchip/clk.c | 18 ++++++++++++++++++
+ drivers/clk/rockchip/clk.h |  3 +++
+ 2 files changed, 21 insertions(+)
+
+--- a/drivers/clk/rockchip/clk.c
++++ b/drivers/clk/rockchip/clk.c
+@@ -429,6 +429,24 @@ void rockchip_clk_of_add_provider(struct
+ }
+ EXPORT_SYMBOL_GPL(rockchip_clk_of_add_provider);
+ 
++int rockchip_clk_add_grf(struct rockchip_clk_provider *ctx,
++			 struct regmap *grf,
++			 enum rockchip_grf_type type)
++{
++	struct rockchip_aux_grf *aux_grf;
++
++	aux_grf = kzalloc_obj(*aux_grf);
++	if (!aux_grf)
++		return -ENOMEM;
++
++	aux_grf->grf = grf;
++	aux_grf->type = type;
++	hash_add(ctx->aux_grf_table, &aux_grf->node, type);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(rockchip_clk_add_grf);
++
+ void rockchip_clk_register_plls(struct rockchip_clk_provider *ctx,
+ 				struct rockchip_pll_clock *list,
+ 				unsigned int nr_pll, int grf_lock_offset)
+--- a/drivers/clk/rockchip/clk.h
++++ b/drivers/clk/rockchip/clk.h
+@@ -1190,6 +1190,9 @@ struct rockchip_clk_provider *rockchip_c
+ void rockchip_clk_finalize(struct rockchip_clk_provider *ctx);
+ void rockchip_clk_of_add_provider(struct device_node *np,
+ 				struct rockchip_clk_provider *ctx);
++int rockchip_clk_add_grf(struct rockchip_clk_provider *ctx,
++			 struct regmap *grf,
++			 enum rockchip_grf_type type);
+ unsigned long rockchip_clk_find_max_clk_id(struct rockchip_clk_branch *list,
+ 					   unsigned int nr_clk);
+ void rockchip_clk_register_branches(struct rockchip_clk_provider *ctx,
