@@ -32,8 +32,8 @@ endef
 # " at %s version %s free bootbase".
 define Build/tclinux-free-bootbase-jump
 	@[ "$(KERNEL_LOADADDR)" = 0x80020000 ] || { \
-		$(call ERROR_MESSAGE,WARNING: KERNEL_LOADADDR changed); \
-		rm -f $@; \
+		$(call ERROR_MESSAGE,ERROR: tclinux-free-bootbase-jump needs KERNEL_LOADADDR 0x80020000); \
+		false; \
 	}
 	printf '$(if $(CONFIG_BIG_ENDIAN),\010\000\200\000,\000\200\000\010)' > $@.new
 	dd if=/dev/zero bs=122876 count=1 >> $@.new
