@@ -1,0 +1,54 @@
+From bae05f87686e8463decd652f9544d058ea76375b Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 12 Oct 2026 07:44:37 +0100
+Subject: [PATCH 02/24] dt-bindings: arm: Add ZTE ZX279128S platform
+ descriptions
+
+Describe the SoC board compatibility, SRAM used by the parked second CPU
+and the SMP enable method.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+
+--- a/Documentation/devicetree/bindings/arm/cpus.yaml
++++ b/Documentation/devicetree/bindings/arm/cpus.yaml
+@@ -270,6 +270,7 @@ properties:
+           - ste,dbx500-smp
+           - ti,am3352
+           - ti,am4372
++          - zte,zx279128s-smp
+ 
+   cpu-release-addr:
+     oneOf:
+--- a/Documentation/devicetree/bindings/arm/zte.yaml
++++ b/Documentation/devicetree/bindings/arm/zte.yaml
+@@ -11,7 +11,8 @@ maintainers:
+ 
+ description: |
+   ARM platforms using SoCs designed by ZTE. Currently this supports devices
+-  based on the zx297520v3 SoC which is found in LTE routers.
++  based on the zx297520v3 SoC which is found in LTE routers, and on the
++  zx279128s SoC which is found in home gateways.
+ 
+ properties:
+   $nodename:
+@@ -23,4 +24,9 @@ properties:
+               - dlink,dwr932m
+           - const: zte,zx297520v3
+ 
++      - items:
++          - enum:
++              - zte,zxhn-h3600
++          - const: zte,zx279128s
++
+ additionalProperties: true
+--- a/Documentation/devicetree/bindings/sram/sram.yaml
++++ b/Documentation/devicetree/bindings/sram/sram.yaml
+@@ -95,6 +95,7 @@ patternProperties:
+             - samsung,exynos4210-sysram-ns
+             - socionext,milbeaut-smp-sram
+             - stericsson,u8500-esram
++            - zte,zx279128s-smp-sram
+ 
+       reg:
+         description:
