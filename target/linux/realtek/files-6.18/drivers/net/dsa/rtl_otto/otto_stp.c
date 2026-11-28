@@ -8,7 +8,7 @@
 #include <net/switchdev.h>
 
 #include "otto_dsa.h"
-#include "stp.h"
+#include "otto_stp.h"
 
 #define RTL838X_VLAN_STP_CTRL			(0x3b20)
 #define RTL839X_ST_CTRL				(0x27e4)

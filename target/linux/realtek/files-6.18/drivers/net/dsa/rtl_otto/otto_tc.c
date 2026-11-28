@@ -10,12 +10,12 @@
 #include <linux/rhashtable.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
-#include "mirror.h"
-#include "pie.h"
-#include "qos.h"
+#include "otto_mirror.h"
+#include "otto_pie.h"
+#include "otto_qos.h"
 #include "otto_dsa.h"
-#include "stats.h"
-#include "tc.h"
+#include "otto_stats.h"
+#include "otto_tc.h"
 
 struct rtl83xx_flow {
 	unsigned long cookie;

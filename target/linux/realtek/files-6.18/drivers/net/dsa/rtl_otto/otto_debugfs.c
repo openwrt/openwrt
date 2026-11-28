@@ -5,11 +5,11 @@
 #include <linux/regmap.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
-#include "mac.h"
-#include "l2.h"
+#include "otto_mac.h"
+#include "otto_l2.h"
 #include "otto_dsa.h"
-#include "vlan.h"
-#include "stp.h"
+#include "otto_vlan.h"
+#include "otto_stp.h"
 
 #define RTL838X_STORM_CTRL_PORT_UC(p)		(0x4718 + (((p) << 2)))
 #define RTL838X_STORM_CTRL_PORT_MC(p)		(0x478c + (((p) << 2)))

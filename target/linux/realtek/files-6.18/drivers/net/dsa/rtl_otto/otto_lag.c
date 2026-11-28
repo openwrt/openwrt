@@ -8,7 +8,7 @@
 #include <linux/string.h>
 #include <net/dsa.h>
 
-#include "lag.h"
+#include "otto_lag.h"
 #include "otto_dsa.h"
 
 /* Link aggregation (Trunking) */

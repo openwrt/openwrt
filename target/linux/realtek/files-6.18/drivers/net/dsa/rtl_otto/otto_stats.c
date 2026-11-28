@@ -13,9 +13,9 @@
 #include <linux/string.h>
 #include <net/dsa.h>
 
-#include "pie.h"
+#include "otto_pie.h"
 #include "otto_dsa.h"
-#include "stats.h"
+#include "otto_stats.h"
 
 #define MIB_ITEM(_reg, _offset, _size) \
 		{.reg = _reg, .offset = _offset, .size = _size}

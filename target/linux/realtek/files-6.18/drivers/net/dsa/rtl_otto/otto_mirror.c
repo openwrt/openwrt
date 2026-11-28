@@ -5,7 +5,7 @@
 #include <linux/regmap.h>
 #include <net/dsa.h>
 
-#include "mirror.h"
+#include "otto_mirror.h"
 #include "otto_dsa.h"
 
 #define RTL930X_MIR_CTRL			(0xA2A0)

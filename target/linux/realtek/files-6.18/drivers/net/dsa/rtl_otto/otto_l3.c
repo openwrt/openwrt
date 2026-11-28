@@ -94,12 +94,12 @@
 #include <net/nexthop.h>
 #include <uapi/linux/rtnetlink.h>
 
-#include "fdb.h"
-#include "l2.h"
-#include "l3.h"
-#include "pie.h"
+#include "otto_fdb.h"
+#include "otto_l2.h"
+#include "otto_l3.h"
+#include "otto_pie.h"
 #include "otto_dsa.h"
-#include "stats.h"
+#include "otto_stats.h"
 
 /* Route entry types */
 #define ROUTE_TYPE_IP4UC	0
@@ -4512,7 +4512,7 @@ static void otto_l3_930x_dump_print(struct seq_file *m, const struct otto_l3_930
  * safely: seq_read_iter() advances the position past a row and then skips
  * its show() whenever the output buffer fills, which loses that row for good
  * because the position no longer identifies it. single_open() renders the
- * whole dump in one pass, the way debugfs.c dumps the larger L2 table.
+ * whole dump in one pass, the way otto_debugfs.c dumps the larger L2 table.
  */
 static int otto_l3_930x_dump_show(struct seq_file *m, void *v)
 {
@@ -4945,7 +4945,7 @@ static void otto_l3_dbgfs_remove(void *data)
 #define OTTO_L3_DBG_ROOT_DIR	"realtek_otto_l3"
 
 /* A debugfs tree of its own rather than a subtree of the "rtl838x" directory
- * debugfs.c creates: otto_l3_probe() runs before the init there, so
+ * otto_debugfs.c creates: otto_l3_probe() runs before the init there, so
  * priv->dbgfs_dir does not exist yet at this point. A second switch in one
  * system would find the name taken and log the warning below rather than
  * share the tree, since the directory is tied to @dev's devm lifetime.

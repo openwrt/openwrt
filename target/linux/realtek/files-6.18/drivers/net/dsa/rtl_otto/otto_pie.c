@@ -8,7 +8,7 @@
 #include <linux/lockdep.h>
 #include <linux/regmap.h>
 
-#include "pie.h"
+#include "otto_pie.h"
 #include "otto_dsa.h"
 
 /* Packet Inspection Engine

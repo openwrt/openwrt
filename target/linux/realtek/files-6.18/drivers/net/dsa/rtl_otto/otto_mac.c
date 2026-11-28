@@ -11,7 +11,7 @@
 #include <linux/regmap.h>
 #include <net/dsa.h>
 
-#include "mac.h"
+#include "otto_mac.h"
 #include "otto_dsa.h"
 
 /* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
