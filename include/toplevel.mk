@@ -84,9 +84,11 @@ endif
 
 _ignore = $(foreach p,$(IGNORE_PACKAGES),--ignore $(p))
 
-# package/kernel/linux names these files in SCAN_DEPS, so the package scan
-# reads them although they sit in the target tree.
-SCAN_DEPS_packageinfo:=target/linux/*/modules.mk target/linux/feeds/*/modules.mk
+# package/kernel/linux names these files in SCAN_DEPS, including the
+# modules/*.mk files a modules.mk includes, so the package scan reads
+# them although they sit in the target tree.
+SCAN_DEPS_packageinfo:=target/linux/*/modules.mk target/linux/feeds/*/modules.mk \
+	target/linux/*/modules/*.mk target/linux/feeds/*/modules/*.mk
 
 # $(1): scan target, $(2): scan directory, $(3): scan depth
 SCAN_STAMP=tmp/info/.scan-$(1).stamp
