@@ -1,0 +1,22 @@
+From 47a2ad0d827acdce5e12dfbbcda40228ab731364 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Tue, 24 Nov 2026 20:42:06 +0300
+Subject: [PATCH] MAINTAINERS: Track the CS7542 reset controller
+
+Include the driver and its shared reset specifiers.
+
+Link: https://lore.kernel.org/all/awXFhjXhZ-e_QM_R@x1g10/
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -2650,7 +2650,9 @@ F:	Documentation/devicetree/bindings/pin
+ F:	Documentation/devicetree/bindings/soc/cortina/
+ F:	drivers/clk/clk-cs7542.c
+ F:	drivers/pinctrl/pinctrl-cs7542.c
++F:	drivers/reset/reset-cs7542.c
+ F:	include/dt-bindings/clock/cortina,cs7542-clock.h
++F:	include/dt-bindings/reset/cortina,cs7542-reset.h
+ 
+ ARM/CORTINA SYSTEMS GEMINI ARM ARCHITECTURE
+ M:	Hans Ulli Kroll <ulli.kroll@googlemail.com>

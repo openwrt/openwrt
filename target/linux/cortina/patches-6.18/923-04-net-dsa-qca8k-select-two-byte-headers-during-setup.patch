@@ -1,0 +1,52 @@
+From 833a4e45826f0c5d026210d152d9aa7d3252f9fd Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Tue, 24 Nov 2026 03:44:37 +0300
+Subject: [PATCH] net: dsa: qca8k: select two-byte headers during setup
+
+The QCA tagger handles two-byte switch headers, but setup only programs
+per-port header enable modes. The global HEADER_CTRL length selector can
+remain in four-byte mode when firmware configured it and no reset GPIO
+is supplied. Software tagger selection then disagrees with the switch.
+
+Clear the global four-byte selector before enabling CPU header ports or
+registering the user MDIO bus. Preserve the identifier and all other
+bits, and abort setup if the register update fails. The register access
+uses the existing MDIO transport before an in-band management conduit
+is available.
+
+Both ISIS and ISISC document the length selector at bit 16 of register
+0x98. This does not add support for the optional four-byte protocol.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+OpenWrt context: generic multi-CPU patches remove the CPU-port lookup
+from setup. Refresh context only; the added header selection is unchanged.
+
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1966,6 +1966,14 @@ qca8k_setup(struct dsa_switch *ds)
+ 	int ret;
+ 	u32 mask;
+ 
++	/* The QCA tagger uses two-byte headers, regardless of firmware setup. */
++	ret = regmap_clear_bits(priv->regmap, QCA8K_REG_GLOBAL_HDR_CTRL,
++				QCA8K_GLOBAL_HDR_CTRL_LEN_4B);
++	if (ret) {
++		dev_err(priv->dev, "failed selecting two-byte QCA headers\n");
++		return ret;
++	}
++
+ 	/* Parse CPU port config to be later used in phy_link mac_config */
+ 	ret = qca8k_parse_port_config(priv);
+ 	if (ret)
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -149,6 +149,8 @@
+ #define   QCA8K_PORT_STATUS_LINK_AUTO			BIT(9)
+ #define   QCA8K_PORT_STATUS_LINK_PAUSE			BIT(10)
+ #define   QCA8K_PORT_STATUS_FLOW_AUTO			BIT(12)
++#define QCA8K_REG_GLOBAL_HDR_CTRL			0x098
++#define   QCA8K_GLOBAL_HDR_CTRL_LEN_4B		BIT(16)
+ #define QCA8K_REG_PORT_HDR_CTRL(_i)			(0x9c + (_i * 4))
+ #define   QCA8K_PORT_HDR_CTRL_RX_MASK			GENMASK(3, 2)
+ #define   QCA8K_PORT_HDR_CTRL_TX_MASK			GENMASK(1, 0)

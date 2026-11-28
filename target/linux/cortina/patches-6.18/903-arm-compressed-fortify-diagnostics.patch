@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Mon, 23 Nov 2026 11:00:00 +0300
+Subject: [PATCH] ARM: compressed: use fatal FORTIFY field diagnostics
+
+GCC 15 retains a run-time FORTIFY field-boundary check in the ATAG
+command-line merge. The default warning uses WARN_ONCE, which requires
+writable .data..once state and warn_slowpath_fmt. Neither is available
+in the position-independent ARM decompressor, so the zImage link fails.
+
+Use the existing fatal decompressor error path for these diagnostics.
+Keep the FORTIFY checks enabled instead of discarding their state or
+turning off hardening. Normal bounded copies retain their behaviour.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+
+---
+AI assistance: Codex reproduced the GCC 15.3 object failure, implemented
+this local compatibility fix and verified a Linux 6.18.64 zImage link.
+
+--- a/arch/arm/boot/compressed/atags_to_fdt.c
++++ b/arch/arm/boot/compressed/atags_to_fdt.c
+@@ -1,4 +1,10 @@
+ // SPDX-License-Identifier: GPL-2.0
++/* The decompressor has neither writable WARN_ONCE state nor printk. */
++#define fortify_warn_once(condition, ...) do { \
++	if (condition) \
++		error("detected field-spanning write"); \
++} while (0)
++
+ #include <linux/libfdt_env.h>
+ #include <asm/setup.h>
+ #include <libfdt.h>
