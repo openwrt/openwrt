@@ -7,7 +7,7 @@ OTHER_MENU:=Other modules
 define KernelPackage/mmc-mtk
   SUBMENU:=Other modules
   TITLE:=MediaTek SD/MMC Card Interface support
-  DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621) +kmod-mmc
+  DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621||TARGET_ramips_mt7621_small) +kmod-mmc
   KCONFIG:= \
 	CONFIG_MMC \
 	CONFIG_MMC_CQHCI \
@@ -48,7 +48,7 @@ define KernelPackage/sdhci-mt7620
   SUBMENU:=Other modules
   TITLE:=MT7620 SDCI
   CONFLICTS:=kmod-mmc-mtk
-  DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621) +kmod-mmc
+  DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621||TARGET_ramips_mt7621_small) +kmod-mmc
   KCONFIG:= \
 	CONFIG_MTK_MMC \
 	CONFIG_MTK_AEE_KDUMP=n \
@@ -67,7 +67,7 @@ define KernelPackage/i2c-ralink
   $(call i2c_defaults,$(I2C_RALINK_MODULES),59)
   TITLE:=Ralink I2C Controller
   DEPENDS:=+kmod-i2c-core @TARGET_ramips \
-	@!(TARGET_ramips_mt7621||TARGET_ramips_mt76x8)
+	@!(TARGET_ramips_mt7621||TARGET_ramips_mt7621_small||TARGET_ramips_mt76x8)
 endef
 
 define KernelPackage/i2c-ralink/description
@@ -84,7 +84,7 @@ define KernelPackage/i2c-mt7628
   $(call i2c_defaults,$(I2C_MT7621_MODULES),59)
   TITLE:=MT7621/MT7628/MT7688 I2C Controller
   DEPENDS:=+kmod-i2c-core \
-	@(TARGET_ramips_mt7621||TARGET_ramips_mt76x8)
+	@(TARGET_ramips_mt7621||TARGET_ramips_mt7621_small||TARGET_ramips_mt76x8)
 endef
 
 define KernelPackage/i2c-mt7628/description
@@ -136,7 +136,7 @@ $(eval $(call KernelPackage,dsa-mt7620))
 define KernelPackage/hsdma-mtk
   SUBMENU:=Other modules
   TITLE:=MediaTek HSDMA Engine
-  DEPENDS:=@TARGET_ramips @TARGET_ramips_mt7621
+  DEPENDS:=@TARGET_ramips @(TARGET_ramips_mt7621||TARGET_ramips_mt7621_small)
   KCONFIG:= \
 	CONFIG_DMADEVICES=y \
 	CONFIG_MTK_HSDMA
@@ -178,7 +178,7 @@ $(eval $(call KernelPackage,sound-mt7620))
 define KernelPackage/keyboard-sx951x
   SUBMENU:=Other modules
   TITLE:=Semtech SX9512/SX9513
-  DEPENDS:=@TARGET_ramips_mt7621 +kmod-input-core
+  DEPENDS:=@(TARGET_ramips_mt7621||TARGET_ramips_mt7621_small) +kmod-input-core
   KCONFIG:= \
 	CONFIG_KEYBOARD_SX951X \
 	CONFIG_INPUT_KEYBOARD=y
