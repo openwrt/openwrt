@@ -1,3 +1,11 @@
+From 81ebf13b9ea73b9eed903f9b79119fb117ba8723 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Tue, 12 May 2009 22:02:19 +0000
+Subject: [PATCH] bcma, ssb: select the USB host controller glue drivers
+
+Select USB_HCD_BCMA and USB_HCD_SSB whenever EHCI or OHCI support is
+enabled.
+
 This prevents the options from being delete with make kernel_oldconfig.
 ---
  drivers/ssb/Kconfig |    2 ++

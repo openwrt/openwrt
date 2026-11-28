@@ -1,3 +1,12 @@
+From 480003e9eb0dac5dba032fbce64c35c34ff386ce Mon Sep 17 00:00:00 2001
+From: Alberto Bursi <bobafetthotmail@gmail.com>
+Date: Sun, 12 Jul 2020 15:35:54 +0200
+Subject: [PATCH] ARM: mvebu: select ARCH_WANT_LIBATA_LEDS for Armada 38x
+
+Select ARCH_WANT_LIBATA_LEDS for Armada 38x to make the libata LED
+triggers available, which are used for the disk LEDs of the Kobol
+Helios4.
+---
 --- a/arch/arm/mach-mvebu/Kconfig
 +++ b/arch/arm/mach-mvebu/Kconfig
 @@ -66,6 +66,7 @@ config MACH_ARMADA_38X

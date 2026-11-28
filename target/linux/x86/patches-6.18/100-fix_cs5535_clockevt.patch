@@ -1,3 +1,12 @@
+From c26dec971e91e15adfd6d88d541ae9feb10f741b Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Thu, 21 Jan 2016 13:28:25 +0000
+Subject: [PATCH] clocksource: cs5535: check for event handler
+
+Only call the event handler of the CS5535 clock event device if it is
+set. This fixes a kernel crash on Geode devices when the interrupt fires
+before the handler has been registered.
+---
 --- a/drivers/clocksource/timer-cs5535.c
 +++ b/drivers/clocksource/timer-cs5535.c
 @@ -128,7 +128,9 @@ static irqreturn_t mfgpt_tick(int irq, v

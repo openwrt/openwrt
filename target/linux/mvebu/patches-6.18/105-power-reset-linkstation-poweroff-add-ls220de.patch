@@ -1,3 +1,11 @@
+From be0f1c1b268a99ea25c9797a4ed725835ca79fea Mon Sep 17 00:00:00 2001
+From: Daniel González Cabanelas <dgcbueu@gmail.com>
+Date: Tue, 21 Feb 2023 00:43:55 +0100
+Subject: [PATCH] power: reset: linkstation-poweroff: add LS220D and LS220DE
+
+Add the compatibles of the Buffalo LinkStation LS220D and LS220DE to the
+linkstation-poweroff driver.
+---
 --- a/drivers/power/reset/linkstation-poweroff.c
 +++ b/drivers/power/reset/linkstation-poweroff.c
 @@ -142,6 +142,12 @@ static void linkstation_poweroff(void)

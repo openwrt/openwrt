@@ -1,3 +1,12 @@
+From 4e46ae1f69b5ff1cf09b2e2eee69a7c38a00202d Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Sun, 30 Aug 2020 22:26:14 +0200
+Subject: [PATCH] ARM: dts: kirkwood-netgear_readynas_duo_v2: adapt for OpenWrt
+
+Adapt the device tree of the NETGEAR ReadyNAS Duo v2 to OpenWrt: change
+the flash partitions, update the buttons and add the LED aliases used by
+OpenWrt to indicate the boot, failsafe, running and upgrade states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-netgear_readynas_duo_v2.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-netgear_readynas_duo_v2.dts
 @@ -19,6 +19,13 @@

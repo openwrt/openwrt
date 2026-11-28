@@ -1,4 +1,7 @@
-spi: airoha-snfi: enable for EcoNet EN7528
+From fab098cb6121647ca9cc6e501d56ebe8a9ea550b Mon Sep 17 00:00:00 2001
+From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Mon, 29 Dec 2025 13:12:20 +0400
+Subject: [PATCH] spi: airoha-snfi: enable for EcoNet EN7528
 
 Enable the Airoha SNFI (SPI NAND Flash Interface) driver for EcoNet
 EN7528 SoC. The EN7528 shares the same SPI controller and NFI DMA
@@ -8,6 +11,7 @@ Using the DMA-capable SNFI driver provides significantly better
 performance compared to the manual mode spi-en7523 driver.
 
 Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
+---
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
 @@ -62,7 +62,7 @@ comment "SPI Master Controller Drivers"

@@ -1,3 +1,12 @@
+From d94d14a5ed16680f1873ad3c2e0cd2e166e54966 Mon Sep 17 00:00:00 2001
+From: FUKAUMI Naoki <naoki@radxa.com>
+Date: Wed, 24 Jul 2024 14:48:09 +0900
+Subject: [PATCH] arm64: dts: rockchip: rock-3c: add LED aliases and stop heartbeat
+
+Add the LED aliases used by OpenWrt to indicate the boot, failsafe,
+running and upgrade states and replace the default heartbeat trigger of
+the Radxa ROCK 3C, so that the LED reflects these states.
+---
 --- a/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts
 @@ -16,6 +16,10 @@

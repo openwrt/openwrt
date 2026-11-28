@@ -1,3 +1,12 @@
+From 1773aa5163cc3039ae29f3261d84f98c14836937 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@openwrt.org>
+Date: Fri, 20 Mar 2015 08:49:08 +0000
+Subject: [PATCH] MIPS: octeon: add image cmdline hack
+
+Use a command line embedded into the kernel image (__image_cmdline) on
+Octeon: if it starts with '-', it replaces the command line passed by
+the bootloader, otherwise it is appended to it.
+---
 --- a/arch/mips/cavium-octeon/setup.c
 +++ b/arch/mips/cavium-octeon/setup.c
 @@ -653,6 +653,35 @@ void octeon_user_io_init(void)

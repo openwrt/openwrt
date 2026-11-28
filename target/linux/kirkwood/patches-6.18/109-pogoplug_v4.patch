@@ -1,3 +1,13 @@
+From c19f811c4d732f634ac18f33ae95e954ac9e8c81 Mon Sep 17 00:00:00 2001
+From: Alberto Bursi <alberto.bursi@outlook.it>
+Date: Tue, 2 Jan 2018 16:07:19 +0100
+Subject: [PATCH] ARM: dts: kirkwood-pogoplug-series-4: adapt for OpenWrt
+
+Adapt the device tree of the Pogoplug Series 4 to OpenWrt: change the
+flash partitions, set the boot arguments, update the buttons and add the
+LED aliases used by OpenWrt to indicate the boot, failsafe, running and
+upgrade states.
+---
 --- a/arch/arm/boot/dts/marvell/kirkwood-pogoplug-series-4.dts
 +++ b/arch/arm/boot/dts/marvell/kirkwood-pogoplug-series-4.dts
 @@ -18,12 +18,20 @@

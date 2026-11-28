@@ -1,3 +1,11 @@
+From 95d5a99537a587103976120de0b0ba4d27e07d62 Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Wed, 12 Apr 2023 10:43:43 +0200
+Subject: [PATCH] powerpc: 85xx: add support for the Aerohive BR200-WP
+
+Add the BR200_WP platform option and the image build rules for the
+Aerohive BR200-WP.
+---
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
 @@ -40,6 +40,16 @@ config BSC9132_QDS
