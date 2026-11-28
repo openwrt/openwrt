@@ -361,6 +361,16 @@ define Device/hak5_wifi-pineapple-mk7
 endef
 TARGET_DEVICES += hak5_wifi-pineapple-mk7
 
+define Device/heltec_ht-hd01-v2
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := Heltec
+  DEVICE_MODEL := HT-HD01-V2
+  DEVICE_ALT0_VENDOR := Heltec
+  DEVICE_ALT0_MODEL := Wi-Fi HaLow Dongle V2
+  DEVICE_PACKAGES := kmod-mmc-mtk
+endef
+TARGET_DEVICES += heltec_ht-hd01-v2
+
 define Device/hilink_hlk-7628n
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := HILINK
