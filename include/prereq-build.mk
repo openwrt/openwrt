@@ -237,6 +237,22 @@ ifeq ($(HOST_OS),Linux)
 	Missing libintl.h Please install the musl-libintl package if musl libc))
 endif
 
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+ifeq ($(HOST_OS),Linux)
+$(eval $(call SetupHostCommand,bwrap,\
+	Please install bubblewrap (bwrap) for CONFIG_BUILD_SANDBOX, \
+	bwrap --version 2>&1 | grep bubblewrap))
+
+# bwrap needs unprivileged user namespaces. Ubuntu >= 24.04 restricts them
+# via AppArmor for binaries without a profile, and many containers lack them.
+$(eval $(call TestHostCommand,bwrap-userns, \
+	bwrap cannot create a sandbox. Unprivileged user namespaces may be \
+	disabled (on Ubuntu use the distribution bwrap or set \
+	kernel.apparmor_restrict_unprivileged_userns=0)., \
+	bwrap --ro-bind / / --unshare-net --unshare-pid true))
+endif
+endif
+
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
 	$(STAGING_DIR_HOST)/bin/gcc -O2 -I$(TOPDIR)/tools/include -o $@ $<
