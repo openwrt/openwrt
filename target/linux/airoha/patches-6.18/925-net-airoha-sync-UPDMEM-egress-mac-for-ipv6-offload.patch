@@ -1,0 +1,98 @@
+From 325f8f0420a8523b170426b2296615d3ee737f67 Mon Sep 17 00:00:00 2001
+From: Yaoming Chen <cc201008@gmail.com>
+Date: Mon, 12 Oct 2026 20:03:52 +0800
+Subject: [PATCH] net: airoha: sync PPE UPDMEM egress MAC for offloaded IPv6 flows
+
+Routed IPv6 FOE entries do not carry the egress source MAC inline;
+they store an SMAC id and the hardware resolves the address through
+the UPDMEM table, which airoha_ppe_init_upd_mem() only programs with
+the GDM port's own dev_addr at probe time.
+
+The netdev the flow actually egresses can legally carry a different
+address: on PON setups the authentication MAC belongs to the pon
+device while each service VLAN routes with its own address, so
+offloaded IPv6 frames left the port with a stale source MAC and were
+silently dropped upstream. IPv4 was unaffected since HNAPT entries
+embed the MAC inline, which made the failure hard to diagnose: TCP
+handshake and TLS completed over the slow path and the transfer
+stalled exactly when the flow got offloaded.
+
+Before writing smac_id for routed IPv6 entries, program the UPDMEM
+slot with the source address of this flow.
+
+airoha_set_macaddr() writes the same slot from the ndo_open and
+ndo_set_mac_address paths, and the flowtable offload path writes it
+from airoha_ppe_foe_entry_prepare() under flow_offload_mutex. Both
+writers use a two-step DATA/CTRL sequence that must not interleave,
+and airoha_enable_qos_for_gdm34()/airoha_disable_qos_for_gdm34()
+already hold flow_offload_mutex across their airoha_set_macaddr()
+calls - so the serialization lives in airoha_ppe_init_upd_mem()
+itself as a dedicated leaf lock: every writer converges there, the
+probe-time caller included, and the lock is never held while
+acquiring flow_offload_mutex, so there is no nesting and no
+re-entrancy.
+
+Tested on a Nokia XG-040G-MD (AN7581, GPON WAN, PPPoE over a service
+VLAN carrying its own MAC address): IPv6 HTTPS transfers went from
+stalling at the 15 s curl cap with partial bytes to completing at line
+rate with hardware offloading enabled, matching IPv4 throughput.
+
+Fixes: 00a7678310fe3 ("net: airoha: Introduce flowtable offload support")
+Signed-off-by: Yaoming Chen <cc201008@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_ppe.c | 28 ++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -416,6 +416,19 @@
+ 						  dsa_port);
+ 
+ 			smac_id = port->id;
++			/*
++			 * Routed IPv6 entries resolve the egress source MAC
++			 * through the UPDMEM table indexed by smac_id. The
++			 * egress netdev can legally carry a different address
++			 * than the GDM port itself: on PON setups the
++			 * authentication MAC lives on the pon device while
++			 * each service VLAN routes with its own address. Keep
++			 * the table entry in sync with the source address this
++			 * flow is actually going to use.
++			 */
++			if (type >= PPE_PKT_TYPE_IPV6_ROUTE_3T)
++				airoha_ppe_init_upd_mem(dev,
++							data->eth.h_source);
+ 		}
+ 	}
+ 
+@@ -1529,10 +1542,21 @@
+ 
+ void airoha_ppe_init_upd_mem(struct airoha_gdm_dev *dev, const u8 *addr)
+ {
++	static DEFINE_MUTEX(updmem_lock);
++
+ 	struct airoha_gdm_port *port = dev->port;
+ 	struct airoha_eth *eth = dev->eth;
+ 	u32 val;
+ 
++	/*
++	 * Routed IPv6 entries resolve the egress source MAC through the
++	 * UPDMEM table indexed by smac_id; the ndo_open/ndo_set_mac_address
++	 * writers hold flow_offload_mutex (QoS paths re-lock via
++	 * airoha_set_macaddr()), so this lock also serializes the leaf
++	 * against them.
++	 */
++	mutex_lock(&updmem_lock);
++
+ 	val = (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5];
+ 	airoha_fe_wr(eth, REG_UPDMEM_DATA(0), val);
+ 	airoha_fe_wr(eth, REG_UPDMEM_CTRL(0),
+@@ -1545,6 +1569,8 @@
+ 		     FIELD_PREP(PPE_UPDMEM_ADDR_MASK, port->id) |
+ 		     FIELD_PREP(PPE_UPDMEM_OFFSET_MASK, 1) |
+ 		     PPE_UPDMEM_WR_MASK | PPE_UPDMEM_REQ_MASK);
++
++	mutex_unlock(&updmem_lock);
+ }
+ 
+ struct airoha_ppe_dev *airoha_ppe_get_dev(struct device *dev)
