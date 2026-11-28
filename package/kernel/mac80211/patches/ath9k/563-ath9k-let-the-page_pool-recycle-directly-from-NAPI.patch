@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 26 Nov 2026 18:14:14 -0800
+Subject: [PATCH] wifi: ath9k: let the page_pool recycle directly from NAPI
+
+Tie the RX page_pool to the NAPI instance. Pages freed in that NAPI's
+softirq context, which covers frames the stack consumes or drops while
+the poll runs, then go straight back into the pool's lockless cache
+instead of through its ptr_ring.
+
+The pool must not outlive this link with NAPI still enabled:
+ath9k_deinit_device() and the error path of ath9k_init_device() already
+disable NAPI before ath_rx_cleanup() destroys the pool, and the pool is
+created after netif_napi_add() while NAPI is still disabled.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/ath/ath9k/recv.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/ath/ath9k/recv.c b/drivers/net/wireless/ath/ath9k/recv.c
+index c060e3a..c69ed94 100644
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -133,6 +133,7 @@ static int ath_rx_page_pool_create(struct ath_softc *sc, int nbufs)
+ 	pp_params.pool_size = DIV_ROUND_UP(nbufs, (PAGE_SIZE << order) / size);
+ 	pp_params.nid = NUMA_NO_NODE;
+ 	pp_params.dev = sc->dev;
++	pp_params.napi = &sc->napi;
+ 	pp_params.flags = PP_FLAG_DMA_MAP;
+ 
+ 	/* EDMA chips clear the RX status from the CPU side */

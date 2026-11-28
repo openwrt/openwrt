@@ -1,0 +1,336 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 26 Nov 2026 18:13:23 -0800
+Subject: [PATCH] wifi: ath9k: replace the interrupt tasklet with NAPI
+
+The interrupt handler masks the hardware interrupts and leaves the work
+to a tasklet, which handles RX, TX completion and the other events and
+then unmasks them. RX handles at most about 512 frames per run, and any
+frames left over stay on the ring until the next interrupt.
+
+Run that work from a NAPI poll on a dummy net_device instead. RX now
+uses the NAPI budget: when it runs out, the RX status bits are kept and
+the poll runs again, so a busy RX queue does not wait for another
+interrupt and the softirq can balance ath9k against other NAPI
+instances. The other events are handled as before, once per interrupt.
+
+The poll re-enables the hardware interrupts at the end of every run,
+also when it is going to run again. The interrupt handler masks all of
+them, not only RX, so leaving them masked between runs would hold back
+the beacon alerts and TX completions for as long as RX stays busy. A
+draft that did so made a Meraki MX60 AP (AR9300-family PCIe card) stop
+beaconing under a saturating TCP upload, and its client missed channel
+switches.
+
+NAPI is enabled at probe and stays enabled except while
+ath_reset_internal() runs, which is how the tasklet was used. NAPI drops
+a schedule request while it is disabled, and the interrupt handler masks
+the hardware interrupts before scheduling, so the reset path now enables
+NAPI before it enables the IRQ again. ath9k_stop() and the WoW suspend
+path wait for a running poll with napi_synchronize() where they called
+tasklet_kill().
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/ath/ath9k/ath9k.h |  7 +--
+ drivers/net/wireless/ath/ath9k/init.c  | 21 +++++++--
+ drivers/net/wireless/ath/ath9k/main.c  | 60 ++++++++++++++++++++------
+ drivers/net/wireless/ath/ath9k/recv.c  | 12 +++---
+ drivers/net/wireless/ath/ath9k/wow.c   |  4 +-
+ 5 files changed, 77 insertions(+), 27 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/ath9k.h b/drivers/net/wireless/ath/ath9k/ath9k.h
+index adfd114..83ec030 100644
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -581,7 +581,7 @@ bool ath_stoprecv(struct ath_softc *sc);
+ u32 ath_calcrxfilter(struct ath_softc *sc);
+ int ath_rx_init(struct ath_softc *sc, int nbufs);
+ void ath_rx_cleanup(struct ath_softc *sc);
+-int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp);
++int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp, int budget);
+ struct ath_txq *ath_txq_setup(struct ath_softc *sc, int qtype, int subtype);
+ void ath_txq_unlock_complete(struct ath_softc *sc, struct ath_txq *txq);
+ void ath_tx_cleanupq(struct ath_softc *sc, struct ath_txq *txq);
+@@ -991,7 +991,8 @@ struct ath_softc {
+ 	struct survey_info survey[ATH9K_NUM_CHANNELS];
+ 
+ 	spinlock_t intr_lock;
+-	struct tasklet_struct intr_tq;
++	struct net_device *napi_dev;
++	struct napi_struct napi;
+ 	struct tasklet_struct bcon_tasklet;
+ 	struct ath_hw *sc_ah;
+ 	void __iomem *mem;
+@@ -1127,7 +1128,7 @@ static inline void ath_read_cachesize(struct ath_common *common, int *csz)
+ 	common->bus_ops->read_cachesize(common, csz);
+ }
+ 
+-void ath9k_tasklet(struct tasklet_struct *t);
++int ath9k_poll(struct napi_struct *napi, int budget);
+ int ath_cabq_update(struct ath_softc *);
+ u8 ath9k_parse_mpdudensity(u8 mpdudensity);
+ irqreturn_t ath_isr(int irq, void *dev);
+diff --git a/drivers/net/wireless/ath/ath9k/init.c b/drivers/net/wireless/ath/ath9k/init.c
+index 09e8977..c515c5a 100644
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -866,7 +866,6 @@ static int ath9k_init_softc(u16 devid, struct ath_softc *sc,
+ 	spin_lock_init(&sc->sc_pm_lock);
+ 	spin_lock_init(&sc->chan_lock);
+ 	mutex_init(&sc->mutex);
+-	tasklet_setup(&sc->intr_tq, ath9k_tasklet);
+ 	tasklet_setup(&sc->bcon_tasklet, ath9k_beacon_tasklet);
+ 
+ 	timer_setup(&sc->sleep_timer, ath_ps_full_sleep, 0);
+@@ -1159,15 +1158,24 @@ int ath9k_init_device(u16 devid, struct ath_softc *sc,
+ 
+ 	reg = &common->regulatory;
+ 
++	sc->napi_dev = alloc_netdev_dummy(0);
++	if (!sc->napi_dev) {
++		error = -ENOMEM;
++		goto deinit;
++	}
++	netif_napi_add(sc->napi_dev, &sc->napi, ath9k_poll);
++
+ 	/* Setup TX DMA */
+ 	error = ath_tx_init(sc, ATH_TXBUF);
+ 	if (error != 0)
+-		goto deinit;
++		goto napi_del;
+ 
+ 	/* Setup RX DMA */
+ 	error = ath_rx_init(sc, ATH_RXBUF);
+ 	if (error != 0)
+-		goto deinit;
++		goto napi_del;
++
++	napi_enable(&sc->napi);
+ 
+ 	ath9k_init_txpower_limits(sc);
+ 
+@@ -1208,7 +1216,11 @@ debug_cleanup:
+ unregister:
+ 	ieee80211_unregister_hw(hw);
+ rx_cleanup:
++	napi_disable(&sc->napi);
+ 	ath_rx_cleanup(sc);
++napi_del:
++	netif_napi_del(&sc->napi);
++	free_netdev(sc->napi_dev);
+ deinit:
+ 	ath9k_deinit_softc(sc);
+ 	return error;
+@@ -1251,7 +1263,10 @@ void ath9k_deinit_device(struct ath_softc *sc)
+ 	ath9k_deinit_debug(sc);
+ 	ath9k_deinit_wow(hw);
+ 	ieee80211_unregister_hw(hw);
++	napi_disable(&sc->napi);
+ 	ath_rx_cleanup(sc);
++	netif_napi_del(&sc->napi);
++	free_netdev(sc->napi_dev);
+ 	ath9k_deinit_softc(sc);
+ }
+ 
+diff --git a/drivers/net/wireless/ath/ath9k/main.c b/drivers/net/wireless/ath/ath9k/main.c
+index e87d1b4..94ed1f0 100644
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -292,7 +292,7 @@ static int ath_reset_internal(struct ath_softc *sc, struct ath9k_channel *hchan)
+ 	__ath_cancel_work(sc);
+ 
+ 	disable_irq(sc->irq);
+-	tasklet_disable(&sc->intr_tq);
++	napi_disable(&sc->napi);
+ 	tasklet_disable(&sc->bcon_tasklet);
+ 	spin_lock_bh(&sc->sc_pcu_lock);
+ 
+@@ -343,10 +343,15 @@ static int ath_reset_internal(struct ath_softc *sc, struct ath9k_channel *hchan)
+ 		r = -EIO;
+ 
+ out:
+-	enable_irq(sc->irq);
+ 	spin_unlock_bh(&sc->sc_pcu_lock);
++	/*
++	 * NAPI must be enabled before the IRQ: an interrupt that finds it
++	 * disabled masks the hardware interrupts with nobody left to
++	 * unmask them.
++	 */
++	napi_enable(&sc->napi);
++	enable_irq(sc->irq);
+ 	tasklet_enable(&sc->bcon_tasklet);
+-	tasklet_enable(&sc->intr_tq);
+ 
+ 	return r;
+ }
+@@ -375,13 +380,14 @@ static void ath_node_detach(struct ath_softc *sc, struct ieee80211_sta *sta)
+ 	ath_dynack_node_deinit(sc->sc_ah, an);
+ }
+ 
+-void ath9k_tasklet(struct tasklet_struct *t)
++int ath9k_poll(struct napi_struct *napi, int budget)
+ {
+-	struct ath_softc *sc = from_tasklet(sc, t, intr_tq);
++	struct ath_softc *sc = container_of(napi, struct ath_softc, napi);
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	enum ath_reset_type type;
+ 	unsigned long flags;
++	int work_done = 0;
+ 	u32 status;
+ 	u32 rxmask;
+ 
+@@ -450,10 +456,19 @@ void ath9k_tasklet(struct tasklet_struct *t)
+ 		/* Check for high priority Rx first */
+ 		if ((ah->caps.hw_caps & ATH9K_HW_CAP_EDMA) &&
+ 		    (status & ATH9K_INT_RXHP))
+-			ath_rx_tasklet(sc, 0, true);
++			work_done = ath_rx_tasklet(sc, 0, true, budget);
+ 
+-		ath_rx_tasklet(sc, 0, false);
++		if (work_done < budget)
++			work_done += ath_rx_tasklet(sc, 0, false,
++						    budget - work_done);
+ 		sc->rx_active_count++;
++
++		/* Out of budget: look at the RX queues again on the next poll */
++		if (work_done >= budget) {
++			spin_lock_irqsave(&sc->intr_lock, flags);
++			sc->intrstatus |= status & rxmask;
++			spin_unlock_irqrestore(&sc->intr_lock, flags);
++		}
+ 	}
+ 
+ 	if (status & ATH9K_INT_TX) {
+@@ -479,11 +494,27 @@ void ath9k_tasklet(struct tasklet_struct *t)
+ 
+ 	ath9k_btcoex_handle_interrupt(sc, status);
+ 
+-	/* re-enable hardware interrupt */
++	if (work_done < budget)
++		napi_complete_done(napi, work_done);
++
++	/*
++	 * Re-enable the hardware interrupts even when the poll runs again.
++	 * They are masked as a whole, so keeping them masked while RX is
++	 * busy would also hold back the beacon alerts and TX completions.
++	 * The interrupt handler only records the new status bits and masks
++	 * them again.
++	 */
+ 	ath9k_hw_resume_interrupts(ah);
++
++	spin_unlock(&sc->sc_pcu_lock);
++	ath9k_ps_restore(sc);
++	return work_done;
++
+ out:
++	napi_complete(napi);
+ 	spin_unlock(&sc->sc_pcu_lock);
+ 	ath9k_ps_restore(sc);
++	return 0;
+ }
+ 
+ irqreturn_t ath_isr(int irq, void *dev)
+@@ -600,7 +631,7 @@ chip_reset:
+ 	if (sched) {
+ 		/* turn off every interrupt */
+ 		ath9k_hw_kill_interrupts(ah);
+-		tasklet_schedule(&sc->intr_tq);
++		napi_schedule(&sc->napi);
+ 	}
+ 
+ 	return IRQ_HANDLED;
+@@ -934,7 +965,7 @@ static void ath9k_stop(struct ieee80211_hw *hw, bool suspend)
+ 
+ 	spin_lock_bh(&sc->sc_pcu_lock);
+ 
+-	/* prevent tasklets to enable interrupts once we disable them */
++	/* prevent the NAPI poll from enabling interrupts once we disable them */
+ 	ah->imask &= ~ATH9K_INT_GLOBAL;
+ 
+ 	/* make sure h/w will not generate any interrupt
+@@ -943,10 +974,13 @@ static void ath9k_stop(struct ieee80211_hw *hw, bool suspend)
+ 
+ 	spin_unlock_bh(&sc->sc_pcu_lock);
+ 
+-	/* we can now sync irq and kill any running tasklets, since we already
+-	 * disabled interrupts and not holding a spin lock */
++	/*
++	 * we can now sync irq, wait for the NAPI poll and kill the beacon
++	 * tasklet, since we already disabled interrupts and not holding a
++	 * spin lock
++	 */
+ 	synchronize_irq(sc->irq);
+-	tasklet_kill(&sc->intr_tq);
++	napi_synchronize(&sc->napi);
+ 	tasklet_kill(&sc->bcon_tasklet);
+ 
+ 	prev_idle = sc->ps_idle;
+diff --git a/drivers/net/wireless/ath/ath9k/recv.c b/drivers/net/wireless/ath/ath9k/recv.c
+index d894bc3..7855274 100644
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -524,8 +524,8 @@ start_recv:
+ static void ath_flushrecv(struct ath_softc *sc)
+ {
+ 	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
+-		ath_rx_tasklet(sc, 1, true);
+-	ath_rx_tasklet(sc, 1, false);
++		ath_rx_tasklet(sc, 1, true, INT_MAX);
++	ath_rx_tasklet(sc, 1, false, INT_MAX);
+ }
+ 
+ bool ath_stoprecv(struct ath_softc *sc)
+@@ -1108,7 +1108,7 @@ exit:
+ 	rcu_read_unlock();
+ }
+ 
+-int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp)
++int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp, int budget)
+ {
+ 	struct ath_rxbuf *bf;
+ 	struct sk_buff *skb = NULL, *requeue_skb, *hdr_skb;
+@@ -1124,7 +1124,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp)
+ 	u64 tsf = 0;
+ 	unsigned long flags;
+ 	dma_addr_t new_buf_addr;
+-	unsigned int budget = 512;
++	int done = 0;
+ 	struct ieee80211_hdr *hdr;
+ 
+ 	if (edma)
+@@ -1270,7 +1270,7 @@ requeue:
+ 			ath_rx_edma_buf_link(sc, qtype);
+ 		}
+ 
+-		if (!budget--)
++		if (++done >= budget)
+ 			break;
+ 	} while (1);
+ 
+@@ -1279,5 +1279,5 @@ requeue:
+ 		ath9k_hw_set_interrupts(ah);
+ 	}
+ 
+-	return 0;
++	return done;
+ }
+diff --git a/drivers/net/wireless/ath/ath9k/wow.c b/drivers/net/wireless/ath/ath9k/wow.c
+index ed4152c..afee153 100644
+--- a/drivers/net/wireless/ath/ath9k/wow.c
++++ b/drivers/net/wireless/ath/ath9k/wow.c
+@@ -260,11 +260,11 @@ int ath9k_suspend(struct ieee80211_hw *hw,
+ 	spin_unlock_bh(&sc->sc_pcu_lock);
+ 
+ 	/*
+-	 * we can now sync irq and kill any running tasklets, since we already
++	 * we can now sync irq and wait for the NAPI poll, since we already
+ 	 * disabled interrupts and not holding a spin lock
+ 	 */
+ 	synchronize_irq(sc->irq);
+-	tasklet_kill(&sc->intr_tq);
++	napi_synchronize(&sc->napi);
+ 
+ 	ath9k_hw_wow_enable(ah, triggers);
+ 
