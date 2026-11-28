@@ -408,7 +408,7 @@
 	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
 
 	aqr113c_0: ethernet-phy@0 {
-		compatible ="ethernet-phy-ieee802.3-c45";
+		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <0>;
 		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
 		reset-assert-us = <100000>;
@@ -419,7 +419,7 @@
 	};
 
 	aqr113c_8: ethernet-phy@8 {
-		compatible ="ethernet-phy-ieee802.3-c45";
+		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <8>;
 		reset-gpios = <&tlmm 59 GPIO_ACTIVE_LOW>;
 		reset-assert-us = <100000>;

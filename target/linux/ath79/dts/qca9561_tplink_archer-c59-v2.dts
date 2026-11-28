@@ -13,10 +13,10 @@
 
 &leds {
 	usb	{
-		label =	"green:usb";
-		gpios =	<&led_gpio 7 GPIO_ACTIVE_LOW>;
-		linux,default-trigger =	"usbport";
-		trigger-sources	= <&hub_port0>;
+		label = "green:usb";
+		gpios = <&led_gpio 7 GPIO_ACTIVE_LOW>;
+		linux,default-trigger = "usbport";
+		trigger-sources = <&hub_port0>;
 	};
 };
 

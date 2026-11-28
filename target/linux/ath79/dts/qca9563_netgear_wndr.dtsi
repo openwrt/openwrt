@@ -279,7 +279,7 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&macaddr_caldata_c>, <&cal_art_5000>;
 		nvmem-cell-names = "mac-address", "calibration";
-		qca,gpio-mask=<0xf6ff>;	/* unmask pin 9 for RFKILL button */
+		qca,gpio-mask = <0xf6ff>;	/* unmask pin 9 for RFKILL button */
 		#gpio-cells = <2>;
 		gpio-controller;
 	};

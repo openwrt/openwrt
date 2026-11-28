@@ -250,8 +250,8 @@
 	};
 
 	psci {
-		compatible  = "arm,psci-0.2";
-		method      = "smc";
+		compatible = "arm,psci-0.2";
+		method = "smc";
 	};
 
 	reserved-memory {
@@ -1057,12 +1057,12 @@
 			};
 
 			u2_auto_load_valid_p0: usb2-alv-p0@8cc,1 {
-				reg  = <0x8cc 1>;
+				reg = <0x8cc 1>;
 				bits = <0 1>;
 			};
 
 			u2_intr_p0: usb2-intr-p0@8cc,2 {
-				reg  = <0x8cc 1>;
+				reg = <0x8cc 1>;
 				bits = <1 5>;
 			};
 		};
