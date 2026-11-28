@@ -356,6 +356,7 @@ struct fe_tx_dma {
 
 struct fe_priv;
 struct metadata_dst;
+struct ppe_v1;
 
 struct fe_phy {
 	/* make sure that phy operations are atomic */
@@ -399,6 +400,7 @@ struct fe_soc_data {
 	u32 tx_int;
 	u32 status_int;
 	u32 checksum_bit;
+	u32 ppe_entries;
 };
 
 #define FE_FLAG_PADDING_64B		BIT(0)
@@ -497,9 +499,7 @@ struct fe_priv {
 	struct reset_control		*rst_fe;
 	struct reset_control		*rst_esw;
 	bool				fe_needs_reinit;
-	struct mtk_foe_entry		*foe_table;
-	dma_addr_t			foe_table_phys;
-	struct flow_offload __rcu	**foe_flow_table;
+	struct ppe_v1			*ppe;
 };
 
 extern const struct of_device_id of_fe_match[];

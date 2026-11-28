@@ -7,6 +7,7 @@ ralink-eth-y					+= mtk_eth_soc.o ethtool.o
 ralink-eth-$(CONFIG_NET_RALINK_MDIO)		+= mdio.o
 ralink-eth-$(CONFIG_NET_RALINK_MDIO_RT2880)	+= mdio_rt2880.o
 ralink-eth-$(CONFIG_NET_RALINK_MDIO_MT7620)	+= mdio_mt7620.o
+ralink-eth-$(CONFIG_NET_RALINK_PPE_V1)		+= ppe_v1.o ppe_v1_offload.o
 
 ralink-eth-$(CONFIG_NET_RALINK_RT2880)	+= soc_rt2880.o
 ralink-eth-$(CONFIG_NET_RALINK_RT3050)	+= soc_rt3050.o

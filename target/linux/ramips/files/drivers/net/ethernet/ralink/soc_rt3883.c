@@ -57,6 +57,7 @@ static struct fe_soc_data rt3883_data = {
 	.mdio_write = rt2880_mdio_write,
 	.mdio_adjust_link = rt2880_mdio_link_adjust,
 	.port_init = rt2880_port_init,
+	.ppe_entries = 16384,
 };
 
 const struct of_device_id of_fe_match[] = {
