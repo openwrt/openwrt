@@ -196,6 +196,8 @@ TARGET_DEVICES += asus_rt-ac5300
 define Device/asus_rt-ac56u
   $(call Device/asus)
   DEVICE_MODEL := RT-AC56U
+  DEVICE_ALT0_VENDOR := ASUS
+  DEVICE_ALT0_MODEL := RT-AC56R
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
   ASUS_PRODUCTID := RT-AC56U
 endef
