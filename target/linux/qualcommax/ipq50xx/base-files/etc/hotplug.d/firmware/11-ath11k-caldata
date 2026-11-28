@@ -67,6 +67,11 @@ case "$FIRMWARE" in
 		[ -n "$label_mac" ] && ath11k_patch_mac "$(macaddr_add "$label_mac" -1)" 0
 		ath11k_set_macflag
 		;;
+	netgear,wax630e)
+		caldata_extract "0:art" 0x1000 0x20000
+		ath11k_patch_mac $(mtd_get_mac_binary "0:mfgdata" 0x6) 0
+		ath11k_set_macflag
+		;;
 	tplink,archer-ax55-v1)
 		caldata_extract "0:ART" 0x1000 0x20000
 		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
@@ -156,6 +161,11 @@ case "$FIRMWARE" in
 		[ -n "$label_mac" ] && ath11k_patch_mac "$(macaddr_add "$label_mac" -2)" 0
 		ath11k_set_macflag
 		;;
+	netgear,wax630e)
+		caldata_extract "0:art" 0x26800 0x20000
+		ath11k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:mfgdata" 0x6) 64) 0
+		ath11k_set_macflag
+		;;
 	tplink,archer-ax55-v1)
 		caldata_extract "0:ART" 0x26800 0x20000
 		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
@@ -216,6 +226,11 @@ case "$FIRMWARE" in
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
 		ath11k_remove_regdomain
+		ath11k_set_macflag
+		;;
+	netgear,wax630e)
+		caldata_extract "0:art" 0x4c000 0x20000
+		ath11k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:mfgdata" 0x6) 32) 0
 		ath11k_set_macflag
 		;;
 	tplink,eap650-outdoor-v1)

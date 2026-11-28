@@ -12,5 +12,13 @@ boot() {
 	linksys,spnmx56)
 		mtd resetbc s_env || true
 	;;
+	netgear,wax630e)
+		# U-Boot counts every start and switches the slot after three,
+		# the stock firmware resets it. Skip RAM boots via TFTP, they
+		# have no ubi.mtd= from bootipq.
+		grep -q "ubi.mtd=" /proc/cmdline || return 0
+		[ "$(fw_printenv -n boot_count 2>/dev/null)" = "0" ] || \
+			fw_setenv boot_count 0
+	;;
 	esac
 }
