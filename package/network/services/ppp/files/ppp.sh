@@ -106,6 +106,26 @@ ppp_generic_init_config() {
 	proto_config_add_boolean norelease
 }
 
+# A configured interface that already runs DHCPv6 on this PPP link, e.g.
+# wan6 with device '@wan': odhcp6c names its ubus object after the device,
+# so a second client there fails to register and is restarted at once.
+ppp_dhcpv6_on_link() {
+	local section="$1" iface="$2" pppdev="$3"
+	local val
+
+	config_get val "$section" proto
+	[ "$val" = "dhcpv6" ] || return 0
+	config_get_bool val "$section" disabled 0
+	[ "$val" = 0 ] || return 0
+	config_get_bool val "$section" auto 1
+	[ "$val" = 1 ] || return 0
+	config_get val "$section" device
+	[ -n "$val" ] || config_get val "$section" ifname
+	case "$val" in
+	"@$iface"|"$pppdev") ppp_own6="$section" ;;
+	esac
+}
+
 ppp_generic_setup() {
 	local config="$1"; shift
 	local localip
@@ -119,6 +139,18 @@ ppp_generic_setup() {
 	elif [ -z "$ipv6" -o "$ipv6" = auto ]; then
 		ipv6=1
 		autoipv6=1
+	fi
+
+	if [ "$autoipv6" = 1 ]; then
+		local ppp_own6=
+		# 3g.sh includes this file with INCLUDE_ONLY and loads no functions.sh
+		type config_load >/dev/null 2>&1 || . /lib/functions.sh
+		config_load network
+		config_foreach ppp_dhcpv6_on_link interface "$config" "${pppname:-${proto:-ppp}-$config}"
+		if [ -n "$ppp_own6" ]; then
+			logger -p warn -t ppp "$config: not adding ${config}_6, interface $ppp_own6 already runs DHCPv6 on this link; set ipv6 '1' on $config"
+			autoipv6=
+		fi
 	fi
 
 	if [ "$autoipv6" != 1 ]; then
