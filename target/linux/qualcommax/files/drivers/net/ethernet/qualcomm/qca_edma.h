@@ -215,6 +215,11 @@
 #define EDMA_TX_MAX_SEGS	32
 #define EDMA_TX_MIN_SEG		16
 #define EDMA_TX_RING_THRESH	(EDMA_TX_MAX_SEGS + 1)
+/* The shortest segment the engine cuts a TSO frame into. Below it the
+ * engine flags the frame's completion with an error, and for a segment size
+ * of 108 its segments carried 256 bytes each.
+ */
+#define EDMA_TX_MIN_MSS		256
 
 /* A ring index wraps by masking, so a ring is a power of two. The size
  * registers are sixteen bits wide, but a fill ring pins a page per entry and

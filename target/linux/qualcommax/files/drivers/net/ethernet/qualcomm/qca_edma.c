@@ -1988,13 +1988,17 @@ static bool edma_tx_needs_linearize(const struct sk_buff *skb)
 }
 
 /* A GRO aggregate on its frag_list can need more descriptors than a frame
- * may take; it is segmented in software rather than made linear.
+ * may take; it is segmented in software rather than made linear. So is a
+ * GSO frame of segments shorter than the engine cuts, which GRO builds of
+ * the size of the first segment it took.
  */
 static netdev_features_t edma_ndo_features_check(struct sk_buff *skb,
 						 struct net_device *netdev,
 						 netdev_features_t features)
 {
-	if (skb_is_gso(skb) && edma_tx_needs_linearize(skb))
+	if (skb_is_gso(skb) &&
+	    (skb_shinfo(skb)->gso_size < EDMA_TX_MIN_MSS ||
+	     edma_tx_needs_linearize(skb)))
 		features &= ~NETIF_F_GSO_MASK;
 
 	/* The switch inserts a C-tag behind an S-tag already in the frame and
@@ -2054,6 +2058,18 @@ static netdev_tx_t edma_xmit(struct sk_buff *skb, struct net_device *netdev,
 
 	if (skb->len < ETH_HLEN + (tagged ? QCA_HDR_LEN : 0))
 		goto drop;
+
+	/* The stack hands a GSO frame of one segment on as it is, as
+	 * tcp_gso_segment() has nothing to cut, so the features check does not
+	 * keep such a frame from the ring when its segment is shorter than the
+	 * engine cuts. It is sent as the plain frame it is, its checksum still
+	 * asked for.
+	 */
+	if (skb_is_gso(skb) && skb_shinfo(skb)->gso_size < EDMA_TX_MIN_MSS) {
+		if (skb_unclone(skb, GFP_ATOMIC))
+			goto drop;
+		skb_gso_reset(skb);
+	}
 
 	if (edma_tx_needs_linearize(skb) && skb_linearize(skb))
 		goto drop;
