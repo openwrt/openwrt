@@ -1,0 +1,48 @@
+From b93e5ba686a656c9cb6d464f29b16d2c002bbe9b Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Tue, 10 Nov 2026 10:20:19 +0100
+Subject: [PATCH net-next v4 3/6] net: mvneta: check the TX queue range of an
+ mqprio offload
+
+An mqprio offload without a shaper can map a traffic class to TX
+queues that do not exist. Reading the class statistics then reads past
+the TX queue array of the device, also as an unprivileged user:
+
+  # kernel command line: mvneta.txq_number=4
+  tc qdisc add dev eth2 root handle 100: mqprio num_tc 2 \
+    map 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 queues 4@0 4@4 hw 1
+  tc -s class show dev eth2
+
+mvneta_setup_mqprio() checks the queue ranges against the number of RX
+queues, and against the number of TX queues only when a shaper is set.
+With fewer TX than RX queues a range can pass the RX check and end
+beyond the last TX queue. Check every queue of a class against both
+numbers.
+
+Found by an AI code review agent while working on this series, and
+confirmed on a Turris Omnia (Armada 385) booted with
+mvneta.txq_number=4. Without this patch the setup was accepted, and
+the class dump as uid 65534 caused a kernel oops in
+mqprio_dump_class_stats(). With this patch the range is rejected with
+-EINVAL, so the class dump stays within the TX queue array. Tested
+with the series applied up to this patch and with the whole series
+applied. No kernel selftest covers the mvneta mqprio offload.
+
+Fixes: 4906887a8ae5 ("net: mvneta: Implement mqprio support")
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ drivers/net/ethernet/marvell/mvneta.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -5285,7 +5285,8 @@ static int mvneta_setup_mqprio(struct ne
+ 		for (rxq = mqprio->qopt.offset[tc];
+ 		     rxq < mqprio->qopt.count[tc] + mqprio->qopt.offset[tc];
+ 		     rxq++) {
+-			if (rxq >= rxq_number)
++			/* The range sets the TX queues of the class as well */
++			if (rxq >= rxq_number || rxq >= txq_number)
+ 				return -EINVAL;
+ 
+ 			mvneta_map_vlan_prio_to_rxq(pp, tc, rxq);

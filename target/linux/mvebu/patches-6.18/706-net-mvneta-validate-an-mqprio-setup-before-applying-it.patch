@@ -1,0 +1,198 @@
+From d230c6c26b8261df4dcc02576913217ce417a8a7 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Tue, 10 Nov 2026 10:20:20 +0100
+Subject: [PATCH net-next v4 5/6] net: mvneta: validate an mqprio setup before
+ applying it
+
+A failed mqprio offload setup leaves part of its configuration in the
+hardware. When one max_rate is not a multiple of 10 kbit/s, the
+command fails, but the RX queue mapping, the rate limit mode and the
+rates of TX queues 0-3 are already written:
+
+  tc qdisc add dev eth2 root handle 100: mqprio num_tc 2 \
+    map 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 queues 4@0 4@4 hw 1 \
+    mode channel shaper bw_rlimit max_rate 10Mbit 10001kbit
+
+mvneta_setup_mqprio() checks the queue ranges and rates while it
+programs them, and the qdisc then fails to attach without calling the
+driver again.
+
+Check the whole configuration first and write to the hardware only
+when it is valid, so a setup that the driver rejects changes nothing.
+A class without queues is still accepted. This also covers a rejected
+replace under a new handle, which runs while the old offload stays
+attached:
+
+  tc qdisc add dev eth2 root handle 100: mqprio num_tc 2 \
+    map 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 queues 4@0 4@4 hw 1 \
+    mode channel shaper bw_rlimit max_rate 10Mbit 10Mbit
+  tc qdisc replace dev eth2 root handle 200: mqprio num_tc 2 \
+    map 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 queues 4@0 4@4 hw 1 \
+    mode channel shaper bw_rlimit max_rate 10Mbit 10001kbit
+
+The hardware setup of the old qdisc is kept. The rejected qdisc never
+enabled its offload, so its mqprio_destroy() still calls
+netdev_set_num_tc(dev, 0). Until the old qdisc is deleted, tc shows it
+without traffic classes and the stack spreads the flows over all TX
+queues.
+
+Found by an AI code review agent while working on this series, and
+confirmed on a Turris Omnia (Armada 385). Without this patch, after
+the first command failed, TX queues 0-3 stayed limited to 10 Mbit/s
+and the VLAN priority map stayed set. With this patch both failed
+commands leave every register unchanged, and after the failed replace
+the 10 Mbit/s limits of 100: stay in effect. No kernel selftest covers
+the mvneta mqprio offload.
+
+Fixes: e9f7099d0730 ("net: mvneta: Allow having more than one queue per TC")
+Fixes: 2551dc9e398c ("net: mvneta: Add TC traffic shaping offload")
+Link: https://lore.kernel.org/netdev/20261022144814.66366-1-shawnq1@163.com/
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ drivers/net/ethernet/marvell/mvneta.c | 90 +++++++++++++--------------
+ 1 file changed, 44 insertions(+), 46 deletions(-)
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -5232,11 +5232,10 @@ static void mvneta_disable_per_queue_rat
+ 	}
+ }
+ 
+-static int mvneta_setup_queue_rates(struct mvneta_port *pp, int queue,
+-				    u64 min_rate, u64 max_rate)
++/* Convert a rate limit to the token bucket refill of a TX queue */
++static int mvneta_txq_refill_val(u64 min_rate, u64 max_rate, u32 *val)
+ {
+ 	u32 refill_val, rem;
+-	u32 val = 0;
+ 
+ 	/* Convert to from Bps to bps */
+ 	max_rate *= 8;
+@@ -5251,12 +5250,8 @@ static int mvneta_setup_queue_rates(stru
+ 	    refill_val > MVNETA_TXQ_BUCKET_REFILL_VALUE_MAX)
+ 		return -EINVAL;
+ 
+-	val = refill_val;
+-	val |= (MVNETA_TXQ_BUCKET_REFILL_PERIOD <<
+-		MVNETA_TXQ_BUCKET_REFILL_PERIOD_SHIFT);
+-
+-	pp->txqs[queue].bucket_refill = val;
+-	mvreg_write(pp, MVNETA_TXQ_BUCKET_REFILL_REG(queue), val);
++	*val = refill_val | (MVNETA_TXQ_BUCKET_REFILL_PERIOD <<
++			     MVNETA_TXQ_BUCKET_REFILL_PERIOD_SHIFT);
+ 
+ 	return 0;
+ }
+@@ -5284,8 +5279,10 @@ static void mvneta_restore_per_queue_rat
+ static int mvneta_setup_mqprio(struct net_device *dev,
+ 			       struct tc_mqprio_qopt_offload *mqprio)
+ {
++	bool shaper = mqprio->shaper == TC_MQPRIO_SHAPER_BW_RATE;
+ 	struct mvneta_port *pp = netdev_priv(dev);
+-	int rxq, txq, tc, ret;
++	u32 refill[TC_QOPT_MAX_QUEUE];
++	int queue, last, tc, ret;
+ 	u8 num_tc;
+ 
+ 	num_tc = mqprio->qopt.num_tc;
+@@ -5294,58 +5291,59 @@ static int mvneta_setup_mqprio(struct ne
+ 	if (num_tc && mqprio->qopt.hw != TC_MQPRIO_HW_OFFLOAD_TCS)
+ 		return 0;
+ 
+-	if (num_tc > rxq_number)
+-		return -EINVAL;
+-
+-	mvneta_clear_rx_prio_map(pp);
+-
+ 	if (!num_tc) {
++		mvneta_clear_rx_prio_map(pp);
+ 		mvneta_disable_per_queue_rate_limit(pp);
+ 		netdev_reset_tc(dev);
+ 		return 0;
+ 	}
+ 
+-	netdev_set_num_tc(dev, mqprio->qopt.num_tc);
+-
+-	for (tc = 0; tc < mqprio->qopt.num_tc; tc++) {
+-		netdev_set_tc_queue(dev, tc, mqprio->qopt.count[tc],
+-				    mqprio->qopt.offset[tc]);
+-
+-		for (rxq = mqprio->qopt.offset[tc];
+-		     rxq < mqprio->qopt.count[tc] + mqprio->qopt.offset[tc];
+-		     rxq++) {
+-			/* The range sets the TX queues of the class as well */
+-			if (rxq >= rxq_number || rxq >= txq_number)
+-				return -EINVAL;
+-
+-			mvneta_map_vlan_prio_to_rxq(pp, tc, rxq);
+-		}
+-	}
++	/* Check everything first, a rejected setup must not change anything */
++	if (num_tc > rxq_number || (shaper && num_tc > txq_number))
++		return -EINVAL;
+ 
+-	if (mqprio->shaper != TC_MQPRIO_SHAPER_BW_RATE) {
++	for (tc = 0; tc < num_tc; tc++) {
++		if (!mqprio->qopt.count[tc])
++			continue;
++
++		last = mqprio->qopt.offset[tc] + mqprio->qopt.count[tc];
++		if (last > rxq_number || last > txq_number)
++			return -EINVAL;
++
++		if (!shaper)
++			continue;
++
++		ret = mvneta_txq_refill_val(mqprio->min_rate[tc],
++					    mqprio->max_rate[tc], &refill[tc]);
++		if (ret)
++			return ret;
++	}
++
++	/* This can only fail before it writes to the hardware */
++	if (shaper) {
++		ret = mvneta_enable_per_queue_rate_limit(pp);
++		if (ret)
++			return ret;
++	} else {
+ 		mvneta_disable_per_queue_rate_limit(pp);
+-		return 0;
+ 	}
+ 
+-	if (mqprio->qopt.num_tc > txq_number)
+-		return -EINVAL;
++	mvneta_clear_rx_prio_map(pp);
++	netdev_set_num_tc(dev, num_tc);
+ 
+-	ret = mvneta_enable_per_queue_rate_limit(pp);
+-	if (ret)
+-		return ret;
+-
+-	for (tc = 0; tc < mqprio->qopt.num_tc; tc++) {
+-		for (txq = mqprio->qopt.offset[tc];
+-		     txq < mqprio->qopt.count[tc] + mqprio->qopt.offset[tc];
+-		     txq++) {
+-			if (txq >= txq_number)
+-				return -EINVAL;
+-
+-			ret = mvneta_setup_queue_rates(pp, txq,
+-						       mqprio->min_rate[tc],
+-						       mqprio->max_rate[tc]);
+-			if (ret)
+-				return ret;
++	for (tc = 0; tc < num_tc; tc++) {
++		netdev_set_tc_queue(dev, tc, mqprio->qopt.count[tc],
++				    mqprio->qopt.offset[tc]);
++
++		last = mqprio->qopt.offset[tc] + mqprio->qopt.count[tc];
++		for (queue = mqprio->qopt.offset[tc]; queue < last; queue++) {
++			mvneta_map_vlan_prio_to_rxq(pp, tc, queue);
++			if (!shaper)
++				continue;
++
++			pp->txqs[queue].bucket_refill = refill[tc];
++			mvreg_write(pp, MVNETA_TXQ_BUCKET_REFILL_REG(queue),
++				    refill[tc]);
+ 		}
+ 	}
+ 
