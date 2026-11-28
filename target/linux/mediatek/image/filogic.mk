@@ -1315,6 +1315,30 @@ define Device/creatlentem_clt-r30b1-112m
 endef
 TARGET_DEVICES += creatlentem_clt-r30b1-112m
 
+define Device/dragonglass_dgx21
+  DEVICE_VENDOR := Dragonglass
+  DEVICE_MODEL := DGX21
+  DEVICE_VARIANT := 128M
+  DEVICE_DTS := mt7981b-dragonglass-dgx21
+  SUPPORTED_DEVICES += dragonglass,dgx21
+  IMAGE_SIZE := 114688k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  $(call Device/creatlentem_clt-r30b1-common)
+endef
+TARGET_DEVICES += dragonglass_dgx21
+
+define Device/dragonglass_dgx21-256m
+  DEVICE_VENDOR := Dragonglass
+  DEVICE_MODEL := DGX21
+  DEVICE_VARIANT := 256M
+  DEVICE_DTS := mt7981b-dragonglass-dgx21-256m
+  SUPPORTED_DEVICES += dragonglass,dgx21-256m
+  IMAGE_SIZE := 240128k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  $(call Device/creatlentem_clt-r30b1-common)
+endef
+TARGET_DEVICES += dragonglass_dgx21-256m
+
 define Device/creatlentem_clt-r30b1
   DEVICE_DTS := mt7981b-creatlentem-clt-r30b1
   SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-rfb

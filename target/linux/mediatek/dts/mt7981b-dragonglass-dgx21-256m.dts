@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7981b-creatlentem-clt-r30b1-common.dtsi"
+
+/ {
+	model = "Dragonglass DGX21 (256M)";
+	compatible = "dragonglass,dgx21-256m", "mediatek,mt7981";
+
+	/* 512 MiB DDR.
+	 *
+	 * The common dtsi declares 256 MiB (0x10000000). This SKU populates a
+	 * 512 MiB part, so the memory node is redeclared here; identical node
+	 * names are merged by dtc and this value wins.
+	 *
+	 * ATF keeps CONFIG_MT7981_DRAM_SIZE_AUTO=y, so the bootloader detects
+	 * the real size at runtime and patches the node it hands over. This
+	 * override keeps the DTS self-consistent on its own.
+	 */
+	memory@40000000 {
+		reg = <0 0x40000000 0 0x20000000>;
+		device_type = "memory";
+	};
+};
+
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+};
+
+/* Single UBI partition filling the NMBM-usable area of the 256 MiB SPI-NAND.
+ *
+ * The chip is 0x10000000 (256 MiB). NMBM reserves the top 64 erase blocks for
+ * bad-block management: 64 * 0x20000 (128 KiB block) = 0x800000 (8 MiB), so
+ * the usable area ends at 0x10000000 - 0x1000000 = 0xF000000.
+ *
+ * The ubi partition starts at 0x580000, after BL2 (1 MiB), u-boot-env
+ * (512 KiB), Factory (2 MiB) and FIP (2 MiB):
+ *
+ *   ubi size = 0xF000000 - 0x580000 = 0xEA80000 = 240128 KiB (~234.5 MiB)
+ *
+ * Exceeding this overlaps the NMBM reserved region: u-boot then fails to
+ * attach UBI and traps, leaving the device in a boot loop. Keep this value,
+ * the u-boot mtdparts and IMAGE_SIZE in filogic.mk in agreement.
+ *
+ * This yields a large writable overlay from rootfs_data (no extroot needed).
+ * Requires the matching 256 MiB u-boot mtdparts (240128k(ubi)); factory
+ * full-flash programming only, not for OTA onto 64/128 MiB units.
+ */
+&ubi {
+	reg = <0x0580000 0xEA80000>;
+};
+
+/*
+ * Dragonglass factory MAC layout (written by eth_mac, same as MTK SDK fw):
+ *   Factory+0x24 = WAN (base), +0x2a = LAN (base+1),
+ *   +0x04 = 2.4G (base+2), +0x0a = 5G (base+3).
+ * Upstream common dtsi maps them the other way round (gmac0/LAN <- 0x24).
+ */
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_2a 0>;
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_24 0>;
+};
