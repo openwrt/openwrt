@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Thu, 5 Nov 2026 11:30:00 +0100
+Subject: [PATCH] mt76: mcu: do not keep the responses nobody waits for
+
+Only a sender that waits for its response takes skbs off mcu.res_q, with
+mcu.mutex held from the send to the last response it reads.  Everything
+else that arrives there - the answer to a message sent without wait_resp,
+an answer after its sender timed out, an event a driver routes there
+although nobody asked for it (mt7915: MCU_EXT_EVENT_WA_TX_STAT, seq 0
+included) - stayed queued until the next waiting sender drained it.
+
+With the WED offload of an MT7916 carrying the downstream traffic no such
+sender came for hours: res_q grew by ~2 skbs a second, each with its page
+of the MCU RX queue's page pool, invisible to kmemleak (still on a list)
+and to the slab counters, until the OOM killer rebooted the router after
+about two days.
+
+Drop the skb when no message is in flight (mcu.mutex not held: nobody can
+want it), and keep at most 64 queued either way, dropping the oldest.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mcu.c
++++ b/mcu.c
+@@ -46,9 +46,34 @@ struct sk_buff *mt76_mcu_get_response(st
+ }
+ EXPORT_SYMBOL_GPL(mt76_mcu_get_response);
+ 
++/* responses a waiting sender has not picked up yet; older ones are stale */
++#define MT76_MCU_RES_Q_MAX	64
++
+ void mt76_mcu_rx_event(struct mt76_dev *dev, struct sk_buff *skb)
+ {
++	/*
++	 * Only a sender that waits for its response takes skbs off res_q,
++	 * and it holds mcu.mutex from the send to the last response it reads
++	 * (mt76_mcu_skb_send_and_get_msg()).  Everything else that arrives
++	 * here - the answer to a message sent without wait_resp, an answer
++	 * after its sender timed out, an event the driver routes here though
++	 * nobody asked for it (mt7915: MCU_EXT_EVENT_WA_TX_STAT, seq 0
++	 * included) - stayed queued until the next waiting sender drained
++	 * it.  With the WED offload of an MT7916 carrying the traffic no such
++	 * sender came for hours, and the queue, every skb with its page of
++	 * the MCU RX queue, grew until the OOM killer.
++	 *
++	 * With no message in flight nobody can want the skb: drop it.  Keep
++	 * at most MT76_MCU_RES_Q_MAX either way, dropping the oldest.
++	 */
++	if (!mutex_is_locked(&dev->mcu.mutex)) {
++		dev_kfree_skb_any(skb);
++		return;
++	}
++
+ 	skb_queue_tail(&dev->mcu.res_q, skb);
++	while (skb_queue_len(&dev->mcu.res_q) > MT76_MCU_RES_Q_MAX)
++		dev_kfree_skb_any(skb_dequeue(&dev->mcu.res_q));
+ 	wake_up(&dev->mcu.wait);
+ }
+ EXPORT_SYMBOL_GPL(mt76_mcu_rx_event);

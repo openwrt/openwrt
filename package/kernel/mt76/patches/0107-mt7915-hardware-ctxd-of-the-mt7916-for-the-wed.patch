@@ -1,0 +1,121 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Sat, 31 Oct 2026 12:00:00 +0100
+Subject: [PATCH] mt7915 hardware ctxd of the mt7916 for the wed
+
+With a WED the vendor driver sets the hardware CTXD (cut-through TXD) up on
+the card (chips/mt7916.c, whnat_en): the MT7916's WFDMA is told that the first
+buffer of the descriptors of the WED's TX rings (18 and 19) is the TXD:
+CTXD_CFG BAND0/BAND1_CTXD_EN with the ring numbers, CTXD_CASCADE_NUM 0,
+CTXD_TIMEOUT 0xa (0xff and a delay interrupt tick of 0xffff before the E2
+revision), GLO_CFG CSR_WFDMA_DUMMY_REG (bit 10) and GLO_CFG_EXT1
+CSR_TX_FCTRL_MODE (packet based TX flow control).  The stock unit reads
+CTXD_CFG 0x000a09e5 and GLO_CFG_EXT1 0x9c800404 with the WED running, the
+chip reset has them as 0x000a49a4 and 0x8c800404.
+
+Without it the card does not take the first buffer for the TXD: the WA
+firmware parses the packet of the WED's descriptor as one and keeps printing
+"drop by reason ..., msdu id = <random>" for the flows of the PPE.  Only for
+a WED that does not take the RX (the Airoha one).  It is set again in
+mt7915_dma_reset(): a full reset (wfsys) brings both registers back to
+their reset values.
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+--- a/mt7915/dma.c
++++ b/mt7915/dma.c
+@@ -166,6 +166,40 @@ static void mt7915_dma_config(struct mt7
+ 	}
+ }
+ 
++/*
++ * What the vendor driver does on the card with a WED (chips/mt7916.c, the
++ * stock unit reads CTXD_CFG 0x000a09e5 and GLO_CFG_EXT1 bit 28 set): the
++ * hardware CTXD for the WED's TX rings (18 and 19).  Without it the card does
++ * not take the first buffer of a WED descriptor for the TXD and the WA
++ * firmware parses the packet as one ("drop by reason ... msdu id").
++ */
++static void mt7915_dma_wed_ctxd(struct mt7915_dev *dev)
++{
++	bool e2 = (mt76_rr(dev, MT_CBTOP_RESV_CID) & 0xff) >= 2;
++	u32 mask = MT_WFDMA0_CTXD_CFG_TIMEOUT | MT_WFDMA0_CTXD_CFG_CASCADE_NUM |
++		   MT_WFDMA0_CTXD_CFG_BAND1_RING | MT_WFDMA0_CTXD_CFG_BAND1_EN |
++		   MT_WFDMA0_CTXD_CFG_BAND0_RING | MT_WFDMA0_CTXD_CFG_BAND0_EN;
++	u32 val;
++
++	if (e2) {
++		mt76_set(dev, MT_WFDMA0_GLO_CFG, MT_WFDMA0_GLO_CFG_HW_CTXD);
++	} else {
++		/* delay interrupt tick threshold, about 3449 us */
++		mt76_rmw_field(dev, MT_WFDMA_DLY_INT_TICK, GENMASK(15, 0), 0xffff);
++	}
++
++	val = FIELD_PREP(MT_WFDMA0_CTXD_CFG_TIMEOUT, e2 ? 0xa : 0xff) |
++	      FIELD_PREP(MT_WFDMA0_CTXD_CFG_CASCADE_NUM, 0) |
++	      FIELD_PREP(MT_WFDMA0_CTXD_CFG_BAND1_RING, 19) |
++	      MT_WFDMA0_CTXD_CFG_BAND1_EN |
++	      FIELD_PREP(MT_WFDMA0_CTXD_CFG_BAND0_RING, 18) |
++	      MT_WFDMA0_CTXD_CFG_BAND0_EN;
++	mt76_rmw(dev, MT_WFDMA0_CTXD_CFG, mask, val);
++
++	/* packet based TX flow control */
++	mt76_set(dev, MT_WFDMA0_GLO_CFG_EXT1, MT_WFDMA0_GLO_CFG_EXT1_TX_FCTRL_MODE);
++}
++
+ static void __mt7915_dma_prefetch(struct mt7915_dev *dev, u32 ofs)
+ {
+ #define PREFETCH(_base, _depth)	((_base) << 16 | (_depth))
+@@ -509,6 +543,9 @@ int mt7915_dma_init(struct mt7915_dev *d
+ 			if (is_mt7915(mdev))
+ 				mt76_rmw(dev, MT_WFDMA0_EXT0_CFG, MT_WFDMA0_EXT0_RXWB_KEEP,
+ 					 MT_WFDMA0_EXT0_RXWB_KEEP);
++			if (is_mt7916(mdev) &&
++			    !mtk_wed_get_rx_capa(&mdev->mmio.wed))
++				mt7915_dma_wed_ctxd(dev);
+ 		}
+ 	} else {
+ 		mt76_clear(dev, MT_WFDMA_HOST_CONFIG, MT_WFDMA_HOST_CONFIG_WED);
+@@ -724,6 +761,11 @@ int mt7915_dma_reset(struct mt7915_dev *
+ 		mt76_rmw(dev, MT_WFDMA0_EXT0_CFG, MT_WFDMA0_EXT0_RXWB_KEEP,
+ 			 MT_WFDMA0_EXT0_RXWB_KEEP);
+ 
++	/* a full reset (wfsys) brings CTXD_CFG and GLO_CFG_EXT1 back to reset */
++	if (mtk_wed_device_active(wed) && is_mt7916(&dev->mt76) &&
++	    !mtk_wed_get_rx_capa(wed))
++		mt7915_dma_wed_ctxd(dev);
++
+ 	mt7915_dma_enable(dev, !force);
+ 
+ 	return 0;
+--- a/mt7915/regs.h
++++ b/mt7915/regs.h
+@@ -594,6 +594,8 @@ enum offs_rev {
+ 
+ #define MT_WFDMA0_GLO_CFG		MT_WFDMA0(0x208)
+ #define MT_WFDMA0_GLO_CFG_TX_DMA_EN	BIT(0)
++/* CSR_WFDMA_DUMMY_REG of the vendor: the hardware CTXD (cut-through TXD) */
++#define MT_WFDMA0_GLO_CFG_HW_CTXD	BIT(10)
+ #define MT_WFDMA0_GLO_CFG_RX_DMA_EN	BIT(2)
+ #define MT_WFDMA0_GLO_CFG_OMIT_TX_INFO	BIT(28)
+ #define MT_WFDMA0_GLO_CFG_OMIT_RX_INFO	BIT(27)
+@@ -639,6 +641,20 @@ enum offs_rev {
+ #define MT_WFDMA_EXT_CSR_PHYS(ofs)	(MT_WFDMA_EXT_CSR_PHYS_BASE + (ofs))
+ 
+ #define MT_WFDMA_HOST_CONFIG		MT_WFDMA_EXT_CSR_PHYS(0x30)
++
++/* the revision the vendor driver compares: E1 0, E2 2 (HW_REV is another register) */
++#define MT_CBTOP_RESV_CID		0x70010210
++
++#define MT_WFDMA0_GLO_CFG_EXT1		MT_WFDMA0(0x2b4)
++#define MT_WFDMA0_GLO_CFG_EXT1_TX_FCTRL_MODE	BIT(28)
++#define MT_WFDMA0_CTXD_CFG		MT_WFDMA0(0x2bc)
++#define MT_WFDMA0_CTXD_CFG_BAND0_EN	BIT(0)
++#define MT_WFDMA0_CTXD_CFG_BAND0_RING	GENMASK(5, 1)
++#define MT_WFDMA0_CTXD_CFG_BAND1_EN	BIT(6)
++#define MT_WFDMA0_CTXD_CFG_BAND1_RING	GENMASK(11, 7)
++#define MT_WFDMA0_CTXD_CFG_CASCADE_NUM	GENMASK(15, 12)
++#define MT_WFDMA0_CTXD_CFG_TIMEOUT	GENMASK(23, 16)
++#define MT_WFDMA_DLY_INT_TICK		MT_WFDMA_EXT_CSR(0x38)
+ #define MT_WFDMA_HOST_CONFIG_PDMA_BAND	BIT(0)
+ #define MT_WFDMA_HOST_CONFIG_WED	BIT(1)
+ 

@@ -1,0 +1,58 @@
+From 1287c2b7cfffe52dfd9e789fd483ff33b49adee1 Mon Sep 17 00:00:00 2001
+From: Lukasz M <lukasz1992m+openwrt@gmail.com>
+Date: Tue, 13 Oct 2026 21:00:00 +0200
+Subject: [PATCH] [PATCH 5/8] wifi: mt76: do not dereference a NULL chandef when
+
+ setting a channel
+
+__mt76_set_channel() dereferences phy->chandef.chan when deciding
+whether to reset dfs_state, without checking that a channel was ever
+assigned. phy->chandef is only assigned from a channel context, and none
+of those assignments runs before mt76_phy_init(), so a phy that has
+never been assigned one has a NULL chan here.
+
+That state is reachable: mt76_scan_work() is queued on every phy in
+dev->scan.phy_mask, and that mask is built from the requested channels,
+so a scan covering both bands runs scan_work on the phy of the band that
+never had an interface. scan.c also restores with
+mt76_set_channel(phy, &phy->main_chandef, false), passing a NULL
+destination.
+
+Drop a transition to no channel, which is not a channel change, and
+treat an unknown current channel as an unknown dfs state. Returning
+early also keeps phy->chan_state non-NULL for mt76_update_survey() and
+mt76_get_survey().
+
+Signed-off-by: Lukasz M <lukasz1992m+openwrt@gmail.com>
+---
+ mac80211.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1061,6 +1061,15 @@ int __mt76_set_channel(struct mt76_phy *
+ 	int timeout = HZ / 5;
+ 	int ret;
+ 
++	/* A phy without an operating channel cannot be switched to one.
++	 * mt76_phy_init() does not set chandef, it is only assigned from a
++	 * channel context, so a phy that has never been assigned one has a
++	 * NULL chan here. Dropping the transition keeps chan_state valid
++	 * for mt76_update_survey() and mt76_get_survey() below.
++	 */
++	if (!chandef->chan)
++		return 0;
++
+ 	mt76_worker_disable(&dev->tx_worker);
+ 	mt76_txq_schedule_pending(phy);
+ 
+@@ -1068,7 +1077,8 @@ int __mt76_set_channel(struct mt76_phy *
+ 	wait_event_timeout(dev->tx_wait, !mt76_has_tx_pending(phy), timeout);
+ 	mt76_update_survey(phy);
+ 
+-	if (phy->chandef.chan->center_freq != chandef->chan->center_freq ||
++	if (!phy->chandef.chan ||
++	    phy->chandef.chan->center_freq != chandef->chan->center_freq ||
+ 	    phy->chandef.width != chandef->width)
+ 		phy->dfs_state = MT_DFS_STATE_UNKNOWN;
+ 

@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mt76
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_LICENSE:=BSD-3-Clause-Clear
 PKG_LICENSE_FILES:=
@@ -476,6 +476,15 @@ ifdef CONFIG_PACKAGE_kmod-mt7663u
 endif
 ifdef CONFIG_PACKAGE_kmod-mt7915e
   PKG_MAKE_FLAGS += CONFIG_MT7915E=m
+  ifneq ($(CONFIG_TARGET_airoha),)
+    PKG_MAKE_FLAGS += CONFIG_MT76_NPU=y
+    NOSTDINC_FLAGS += -DCONFIG_MT76_NPU
+  endif
+  ifneq ($(CONFIG_TARGET_airoha_an7563),)
+    # TX through the WED of the AN7552 (built into the kernel, interface of
+    # the MediaTek WED); only this subtarget builds NET_AIROHA_SOC_WED
+    NOSTDINC_FLAGS += -DCONFIG_NET_MEDIATEK_SOC_WED
+  endif
   ifdef CONFIG_TARGET_mediatek_filogic
     PKG_MAKE_FLAGS += CONFIG_MT798X_WMAC=y
     NOSTDINC_FLAGS += -DCONFIG_MT798X_WMAC

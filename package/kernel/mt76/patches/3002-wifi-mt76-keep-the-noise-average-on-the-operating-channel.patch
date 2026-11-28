@@ -1,0 +1,40 @@
+From: Colin Whittaker <colin.whittaker@adtran.com>
+Date: Sat, 17 Oct 2026 10:00:00 -0700
+Subject: [PATCH] wifi: mt76: keep the noise average on the operating channel
+
+mt7915 and mt7996 restart their noise average at each channel set,
+and the next update seeds it from one IPI histogram reading. After a
+scan or an off-channel visit, the phy sets the operating channel
+again, and its channel state still holds the noise floor. The
+restart then makes the noise jump to one reading and settle again.
+If the readings have no counts, the driver reports no noise until an
+update reads counts.
+
+When the phy sets the operating channel, continue the average from
+the noise floor that the channel state holds. After a CSA or a
+channel context change, that is the noise floor that the channel
+state saved for the new channel. An off-channel set, or a channel
+with no saved noise floor, still restarts the average.
+
+Signed-off-by: Colin Whittaker <colin.whittaker@adtran.com>
+---
+ mt7915/main.c |    8 +++++++-
+ 2 files changed, 14 insertions(+), 2 deletions(-)
+
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -368,7 +368,13 @@ int mt7915_set_channel(struct mt76_phy *
+ 	mt7915_mac_cca_stats_reset(phy);
+ 
+ 	mt7915_mac_reset_counters(phy);
+-	phy->noise = 0;
++	/* continue the noise average of the operating channel instead of
++	 * starting it again from a single IPI histogram reading
++	 */
++	if (mphy->offchannel)
++		phy->noise = 0;
++	else
++		phy->noise = -mphy->chan_state->noise << 4;
+ 
+ out:
+ 	if (!mt76_testmode_enabled(phy->mt76))

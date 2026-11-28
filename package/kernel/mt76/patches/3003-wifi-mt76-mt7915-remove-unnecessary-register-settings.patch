@@ -1,0 +1,135 @@
+From: Henry Yen <henry.yen@mediatek.com>
+Date: Wed, 6 Mar 2024 12:42:06 +0800
+Subject: [PATCH] wifi: mt76: mt7915: remove unnecessary register settings
+
+Remove unnecessary register settings from the driver layer,
+and let firmware take over the configuration control.
+
+Signed-off-by: Henry.Yen <henry.yen@mediatek.com>
+---
+ mt7915/init.c |   35 -----------------------------------
+ mt7915/mac.c  |   43 +------------------------------------------
+ 2 files changed, 1 insertions(+), 77 deletions(-)
+
+--- a/mt7915/init.c
++++ b/mt7915/init.c
+@@ -527,30 +527,6 @@ mt7915_mac_init_band(struct mt7915_dev *
+ {
+ 	u32 mask, set;
+ 
+-	mt76_rmw_field(dev, MT_TMAC_CTCR0(band),
+-		       MT_TMAC_CTCR0_INS_DDLMT_REFTIME, 0x3f);
+-	mt76_set(dev, MT_TMAC_CTCR0(band),
+-		 MT_TMAC_CTCR0_INS_DDLMT_VHT_SMPDU_EN |
+-		 MT_TMAC_CTCR0_INS_DDLMT_EN);
+-
+-	mask = MT_MDP_RCFR0_MCU_RX_MGMT |
+-	       MT_MDP_RCFR0_MCU_RX_CTL_NON_BAR |
+-	       MT_MDP_RCFR0_MCU_RX_CTL_BAR;
+-	set = FIELD_PREP(MT_MDP_RCFR0_MCU_RX_MGMT, MT_MDP_TO_HIF) |
+-	      FIELD_PREP(MT_MDP_RCFR0_MCU_RX_CTL_NON_BAR, MT_MDP_TO_HIF) |
+-	      FIELD_PREP(MT_MDP_RCFR0_MCU_RX_CTL_BAR, MT_MDP_TO_HIF);
+-	mt76_rmw(dev, MT_MDP_BNRCFR0(band), mask, set);
+-
+-	mask = MT_MDP_RCFR1_MCU_RX_BYPASS |
+-	       MT_MDP_RCFR1_RX_DROPPED_UCAST |
+-	       MT_MDP_RCFR1_RX_DROPPED_MCAST;
+-	set = FIELD_PREP(MT_MDP_RCFR1_MCU_RX_BYPASS, MT_MDP_TO_HIF) |
+-	      FIELD_PREP(MT_MDP_RCFR1_RX_DROPPED_UCAST, MT_MDP_TO_HIF) |
+-	      FIELD_PREP(MT_MDP_RCFR1_RX_DROPPED_MCAST, MT_MDP_TO_HIF);
+-	mt76_rmw(dev, MT_MDP_BNRCFR1(band), mask, set);
+-
+-	mt76_rmw_field(dev, MT_DMA_DCR0(band), MT_DMA_DCR0_MAX_RX_LEN, 0x680);
+-
+ 	/* mt7915: disable rx rate report by default due to hw issues */
+ 	mt76_clear(dev, MT_DMA_DCR0(band), MT_DMA_DCR0_RXD_G5_EN);
+ 
+@@ -688,23 +664,12 @@ u8 mt7915_vow_sta_bss_grp(struct mt76_vi
+ void mt7915_mac_init(struct mt7915_dev *dev)
+ {
+ 	int i;
+-	u32 rx_len = is_mt7915(&dev->mt76) ? 0x400 : 0x680;
+-
+-	/* config pse qid6 wfdma port selection */
+-	if (!is_mt7915(&dev->mt76) && dev->hif2)
+-		mt76_rmw(dev, MT_WF_PP_TOP_RXQ_WFDMA_CF_5, 0,
+-			 MT_WF_PP_TOP_RXQ_QID6_WFDMA_HIF_SEL_MASK);
+-
+-	mt76_rmw_field(dev, MT_MDP_DCR1, MT_MDP_DCR1_MAX_RX_LEN, rx_len);
+ 
+ 	if (!is_mt7915(&dev->mt76))
+ 		mt76_clear(dev, MT_MDP_DCR2, MT_MDP_DCR2_RX_TRANS_SHORT);
+ 	else
+ 		mt76_clear(dev, MT_PLE_HOST_RPT0, MT_PLE_HOST_RPT0_TX_LATENCY);
+ 
+-	/* enable hardware de-agg */
+-	mt76_set(dev, MT_MDP_DCR0, MT_MDP_DCR0_DAMSDU_EN);
+-
+ 	for (i = 0; i < mt7915_wtbl_size(dev); i++)
+ 		mt7915_mac_wtbl_update(dev, i,
+ 				       MT_WTBL_UPDATE_ADM_COUNT_CLEAR);
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -1119,61 +1119,20 @@ void mt7915_mac_reset_counters(struct mt
+ 
+ void mt7915_mac_set_timing(struct mt7915_phy *phy)
+ {
+-	s16 coverage_class = phy->coverage_class;
+ 	struct mt7915_dev *dev = phy->dev;
+-	struct mt7915_phy *ext_phy = mt7915_ext_phy(dev);
+-	u32 val, reg_offset;
+-	u32 cck = FIELD_PREP(MT_TIMEOUT_VAL_PLCP, 231) |
+-		  FIELD_PREP(MT_TIMEOUT_VAL_CCA, 48);
+-	u32 ofdm = FIELD_PREP(MT_TIMEOUT_VAL_PLCP, 60) |
+-		   FIELD_PREP(MT_TIMEOUT_VAL_CCA, 28);
++	u32 val;
+ 	u8 band = phy->mt76->band_idx;
+-	int eifs_ofdm = 84, sifs = 10, offset;
+ 	bool a_band = !(phy->mt76->chandef.chan->band == NL80211_BAND_2GHZ);
+ 
+ 	if (!test_bit(MT76_STATE_RUNNING, &phy->mt76->state))
+ 		return;
+ 
+-	if (ext_phy)
+-		coverage_class = max_t(s16, dev->phy.coverage_class,
+-				       ext_phy->coverage_class);
+-
+-	mt76_set(dev, MT_ARB_SCR(band),
+-		 MT_ARB_SCR_TX_DISABLE | MT_ARB_SCR_RX_DISABLE);
+-	udelay(1);
+-
+-	offset = 3 * coverage_class;
+-	reg_offset = FIELD_PREP(MT_TIMEOUT_VAL_PLCP, offset) |
+-		     FIELD_PREP(MT_TIMEOUT_VAL_CCA, offset);
+-
+-	if (!is_mt7915(&dev->mt76)) {
+-		if (!a_band) {
+-			mt76_wr(dev, MT_TMAC_ICR1(band),
+-				FIELD_PREP(MT_IFS_EIFS_CCK, 314));
+-			eifs_ofdm = 78;
+-		} else {
+-			eifs_ofdm = 84;
+-		}
+-	} else if (a_band) {
+-		sifs = 16;
+-	}
+-
+-	mt76_wr(dev, MT_TMAC_CDTR(band), cck + reg_offset);
+-	mt76_wr(dev, MT_TMAC_ODTR(band), ofdm + reg_offset);
+-	mt76_wr(dev, MT_TMAC_ICR0(band),
+-		FIELD_PREP(MT_IFS_EIFS_OFDM, eifs_ofdm) |
+-		FIELD_PREP(MT_IFS_RIFS, 2) |
+-		FIELD_PREP(MT_IFS_SIFS, sifs) |
+-		FIELD_PREP(MT_IFS_SLOT, phy->slottime));
+-
+ 	if (phy->slottime < 20 || a_band)
+ 		val = MT7915_CFEND_RATE_DEFAULT;
+ 	else
+ 		val = MT7915_CFEND_RATE_11B;
+ 
+ 	mt76_rmw_field(dev, MT_AGG_ACR0(band), MT_AGG_ACR_CFEND_RATE, val);
+-	mt76_clear(dev, MT_ARB_SCR(band),
+-		   MT_ARB_SCR_TX_DISABLE | MT_ARB_SCR_RX_DISABLE);
+ }
+ 
+ void mt7915_mac_enable_nf(struct mt7915_dev *dev, bool band)
