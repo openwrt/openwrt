@@ -78,6 +78,21 @@ define Device/cambiumnetworks_xe3-4
 endef
 TARGET_DEVICES += cambiumnetworks_xe3-4
 
+define Device/datto_ap440
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Datto
+	DEVICE_MODEL := AP440
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@datto.ap440
+	SOC := ipq6010
+	KERNEL_IN_UBI := 1
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-rootfs | pad-to 1k | dualboot-datachk-nand-image ce_type=AP440
+	DEVICE_PACKAGES := ipq-wifi-datto_ap440
+endef
+TARGET_DEVICES += datto_ap440
+
 define Device/glinet_gl-common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

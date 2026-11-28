@@ -234,6 +234,9 @@ platform_do_upgrade() {
 		fw_setenv bootcount 0
 		nand_do_upgrade "$1"
 		;;
+	datto,ap440)
+		platform_do_upgrade_dualboot_datachk "$1"
+		;;
 	glinet,gl-ax1800|\
 	glinet,gl-axt1800|\
 	netgear,rbr350|\
