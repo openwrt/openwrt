@@ -1,0 +1,81 @@
+From 5283106b5b0e3264a8b555f2d23182819f499f9f Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Mon, 23 Nov 2026 22:09:26 +0300
+Subject: [PATCH] PCI: add CS7542 PHY and host driver hooks
+
+Integrate the separate SerDes and DesignWare host drivers. The existing global provider supplies the PCIe gates and resets.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+
+Shared reset domains are provided by the posted common global provider (013).
+
+Upstream-Status: Pending [https://lore.kernel.org/all/20261123-b4-cs7542-pcie-v2-0-f589a9cd0bef@gmail.com/]
+The link identifies the latest posted v2. Root-Port/PERST and sequence
+review follow-up is prepared locally for a later revision, not yet posted.
+Preserve Linux6.18's MSI-domain field and lack of keep_rp_msi_en.
+
+The PCIe host consumes reset controls. The global provider selects the
+reset controller framework.
+Link: https://lore.kernel.org/all/f5d30781ae9502cd76ee2b6757f96a0e5ffa8b71.camel@pengutronix.de/
+---
+--- a/drivers/pci/controller/dwc/Kconfig
++++ b/drivers/pci/controller/dwc/Kconfig
+@@ -93,6 +93,17 @@ config PCIE_BT1
+ 	  Enables support for the PCIe controller in the Baikal-T1 SoC to work
+ 	  in host mode. It's based on the Synopsys DWC PCIe v4.60a IP-core.
+ 
++config PCIE_CS7542
++	tristate "Cortina Systems CS7542 PCIe controller"
++	depends on OF && HAS_IOMEM && PCI_MSI && COMMON_CLK
++	select PCIE_DW_HOST
++	select GENERIC_PHY
++	help
++	  Enable the DesignWare PCIe host controllers on Cortina CS7542.
++	  The global clock/reset provider and a generic PHY are required.
++	  The application interrupt handles both legacy INTx and MSI.
++	  The module is called pcie-cs7542.
++
+ config PCI_IMX6
+ 	bool
+ 
+@@ -518,4 +529,5 @@ config PCIE_VISCONTI_HOST
+ 	  Say Y here if you want PCIe controller support on Toshiba Visconti SoC.
+ 	  This driver supports TMPV7708 SoC.
+ 
++
+ endmenu
+--- a/drivers/pci/controller/dwc/Makefile
++++ b/drivers/pci/controller/dwc/Makefile
+@@ -6,6 +6,7 @@ obj-$(CONFIG_PCIE_DW_EP) += pcie-designw
+ obj-$(CONFIG_PCIE_DW_PLAT) += pcie-designware-plat.o
+ obj-$(CONFIG_PCIE_AMD_MDB) += pcie-amd-mdb.o
+ obj-$(CONFIG_PCIE_BT1) += pcie-bt1.o
++obj-$(CONFIG_PCIE_CS7542) += pcie-cs7542.o
+ obj-$(CONFIG_PCI_DRA7XX) += pci-dra7xx.o
+ obj-$(CONFIG_PCI_EXYNOS) += pci-exynos.o
+ obj-$(CONFIG_PCIE_FU740) += pcie-fu740.o
+--- a/drivers/phy/Kconfig
++++ b/drivers/phy/Kconfig
+@@ -153,4 +153,15 @@ source "drivers/phy/ti/Kconfig"
+ source "drivers/phy/intel/Kconfig"
+ source "drivers/phy/xilinx/Kconfig"
+ 
++config PHY_CS7542_PCIE
++	tristate "Cortina Systems CS7542 PCIe SerDes"
++	depends on OF && HAS_IOMEM && COMMON_CLK
++	select GENERIC_PHY
++	select MFD_SYSCON
++	help
++	  Support the three CS7542 Snow Bush SerDes lanes in PCIe mode
++	  with a 24 MHz reference clock. Lane resets share the global syscon.
++	  SATA mode and other reference frequencies are not supported.
++	  The module is called phy-cs7542-pcie.
++
+ endmenu
+--- a/drivers/phy/Makefile
++++ b/drivers/phy/Makefile
+@@ -44,3 +44,4 @@ obj-$(CONFIG_GENERIC_PHY)		+= allwinner/
+ 					   tegra/	\
+ 					   ti/		\
+ 					   xilinx/
++obj-$(CONFIG_PHY_CS7542_PCIE) += phy-cs7542-pcie.o

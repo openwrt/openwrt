@@ -1,0 +1,78 @@
+From 93f8d0b0e94381bbba1ffc974056fe68531824d7 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Mon, 23 Nov 2026 23:40:37 +0300
+Subject: [PATCH] net: add CS7542 Ethernet and reviewed MDIO driver hooks
+
+Carry the tested Ethernet driver and separate Clause22 MDIO controller. Place MDIO Kconfig and Makefile entries in sorted order after Andrew Lunn review.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+
+Use the shared global reset domain and the reviewed Ethernet reset cleanup.
+MDIO source and its sorted hooks remain unchanged.
+Link: https://lore.kernel.org/all/20261126-b4-cs7542-ethernet-v3-0-5db5d372e1bd@gmail.com/
+The link identifies posted v3; bounded RX ownership retry is a local follow-up.
+---
+--- a/drivers/net/ethernet/cortina/Kconfig
++++ b/drivers/net/ethernet/cortina/Kconfig
+@@ -20,4 +20,16 @@ config GEMINI_ETHERNET
+ 	help
+ 	  This driver supports StorLink SL351x (Gemini) dual Gigabit Ethernet.
+ 
++config CS7542_ETHERNET
++	tristate "Cortina CS7542 network engine"
++	depends on OF && OF_RESERVED_MEM && HAS_IOMEM
++	select PHYLINK
++	select MFD_SYSCON
++	help
++	  Support the CS7542 network engine GMACs with a CPU DMA datapath.
++	  A dedicated queue-manager DDR reservation and exclusive ownership
++	  of the complete NE and LSO/SSP DMA reset domain are required.
++	  To compile this driver as a module, choose M; the module is named
++	  cs7542-eth.
++
+ endif # NET_VENDOR_CORTINA
+--- a/drivers/net/ethernet/cortina/Makefile
++++ b/drivers/net/ethernet/cortina/Makefile
+@@ -2,3 +2,5 @@
+ # Makefile for the Cortina Gemini network device drivers.
+ 
+ obj-$(CONFIG_GEMINI_ETHERNET) += gemini.o
++obj-$(CONFIG_CS7542_ETHERNET) += cs7542-eth.o
++cs7542-eth-y := cs752x_ne.o cs752x_fe.o cs752x_sch_tm.o
+--- a/drivers/net/mdio/Kconfig
++++ b/drivers/net/mdio/Kconfig
+@@ -87,6 +87,18 @@ config MDIO_BCM_UNIMAC
+ config MDIO_CAVIUM
+ 	tristate
+ 
++config MDIO_CS75XX
++	tristate "Cortina Systems CS7542 MDIO controller"
++	depends on OF_MDIO && HAS_IOMEM
++	help
++	  Support Clause 22 PHY register access through the CS7542 MDIO
++	  controller, retaining the prescaler configured by platform firmware.
++	  Transactions use bounded polling.
++	  Device Tree describes the PHYs sharing this management bus.
++
++	  To compile this driver as a module, choose M here: the module
++	  will be called mdio-cs75xx.
++
+ config MDIO_GPIO
+ 	tristate "GPIO lib-based bitbanged MDIO buses"
+ 	depends on MDIO_BITBANG
+@@ -282,4 +294,5 @@ config MDIO_BUS_MUX_MMIOREG
+ 	  Currently, only 8/16/32 bits registers are supported.
+ 
+ 
++
+ endif
+--- a/drivers/net/mdio/Makefile
++++ b/drivers/net/mdio/Makefile
+@@ -11,6 +11,7 @@ obj-$(CONFIG_MDIO_BCM_IPROC)		+= mdio-bc
+ obj-$(CONFIG_MDIO_BCM_UNIMAC)		+= mdio-bcm-unimac.o
+ obj-$(CONFIG_MDIO_BITBANG)		+= mdio-bitbang.o
+ obj-$(CONFIG_MDIO_CAVIUM)		+= mdio-cavium.o
++obj-$(CONFIG_MDIO_CS75XX)		+= mdio-cs75xx.o
+ obj-$(CONFIG_MDIO_GPIO)			+= mdio-gpio.o
+ obj-$(CONFIG_MDIO_HISI_FEMAC)		+= mdio-hisi-femac.o
+ obj-$(CONFIG_MDIO_I2C)			+= mdio-i2c.o

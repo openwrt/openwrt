@@ -1,0 +1,48 @@
+From a2d782a76d368d9e33e45f1494a2e4880d152a3d Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Fri, 27 Nov 2026 01:47:30 +0300
+Subject: [PATCH] gpio: cs75xx: delegate mapped banks to pinctrl
+
+Enable the generic pinctrl backend only when gpio-ranges is declared.
+Mapped descriptor consumers then own both mux and GPIO; other banks
+retain their previous behavior. IRQ register operations are unchanged.
+
+This is a local follow-up; physical validation of the new consumer is
+pending. Personal LCD UI/modem sources are outside the target patch.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+ drivers/gpio/gpio-cs75xx.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpio/gpio-cs75xx.c
++++ b/drivers/gpio/gpio-cs75xx.c
+@@ -5,8 +5,9 @@
+  * Each bank has 32 lines with direction, data and interrupt registers.
+  * Whether a pin is driven by the GPIO bank or by its peripheral function
+  * (NAND, Ethernet, UART, ...) is selected in the global control block,
+- * which this driver does not touch: the pin mux is left as the boot loader
+- * set it up.
++ * which this driver does not access directly. Banks declaring gpio-ranges
++ * delegate pin ownership and mux selection to the pinctrl backend. Banks
++ * without a mapping retain the boot loader setup.
+  */
+ 
+ #include <linux/bitops.h>
+@@ -18,6 +19,7 @@
+ #include <linux/irq.h>
+ #include <linux/module.h>
+ #include <linux/platform_device.h>
++#include <linux/property.h>
+ #include <linux/slab.h>
+ 
+ #define CS75XX_GPIO_CFG		0x00	/* 1: input, 0: output */
+@@ -235,6 +237,8 @@ static int cs75xx_gpio_probe(struct plat
+ 		.dat = g->base + CS75XX_GPIO_IN,
+ 		.set = g->base + CS75XX_GPIO_OUT,
+ 		.dirin = g->base + CS75XX_GPIO_CFG,
++		.flags = device_property_present(dev, "gpio-ranges") ?
++			 GPIO_GENERIC_PINCTRL_BACKEND : 0,
+ 	};
+ 
+ 	ret = gpio_generic_chip_init(&g->chip, &config);

@@ -1,0 +1,26 @@
+From fca35cc3f53a288ba8fbe1890d88359146fdcff5 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Fri, 27 Nov 2026 01:47:31 +0300
+Subject: [PATCH] ARM: dts: cortina: map GPIO bank4 to its pinctrl range
+
+Connect bank4 GPIO0..31 to pins128..159 so descriptor consumers use
+standard pin ownership instead of direct global mux accesses.
+
+This is a local follow-up; physical validation of the new consumer is
+pending. Personal LCD UI/modem sources are outside the target patch.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+ arch/arm/boot/dts/cortina/cs7542.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/cortina/cs7542.dtsi
++++ b/arch/arm/boot/dts/cortina/cs7542.dtsi
+@@ -151,6 +151,7 @@
+ 			interrupts = <10>;
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
++			gpio-ranges = <&pinctrl 0 128 32>;
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 		};
