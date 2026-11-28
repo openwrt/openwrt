@@ -149,6 +149,7 @@ platform_do_upgrade() {
 	sim,simax1800u|\
 	tplink,ec330-g5u-v1|\
 	tplink,ex220-v1-nand|\
+	tplink,mr600-v5-eu|\
 	wifire,s1500-nbn|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
