@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+#include "mt7987a-tenda-be12-pro-common.dtsi"
+
+/ {
+	model = "Tenda BE12 Pro (OpenWrt U-Boot layout)";
+	compatible = "tenda,be12-pro-ubootmod", "mediatek,mt7987a", "mediatek,mt7987";
+};
+
+&chosen {
+	bootargs-override = "console=ttyS0,115200n1 earlycon=uart8250,mmio32,0x11000000 root=/dev/fit0 rootwait";
+	rootdisk = <&ubi_fit>;
+};
+
+/* Raw NAND: BL2, U-Boot and Linux must all use this same address space. */
+&partitions {
+	/delete-node/ partition@780000;
+	/delete-node/ partition@d80000;
+	/delete-node/ partition@6780000;
+	/delete-node/ partition@6b80000;
+
+	partition@0 {
+		label = "BL2";
+		reg = <0x0 0x100000>;
+	};
+
+	partition@100000 {
+		label = "FIP";
+		reg = <0x100000 0x200000>;
+		read-only;
+	};
+
+	partition@300000 {
+		/* Keep the OEM environment available for restoration. */
+		read-only;
+	};
+
+	partition@780000 {
+		label = "ubi";
+		reg = <0x780000 0x7880000>;
+
+		volumes {
+			ubi_fit: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
+	};
+};
