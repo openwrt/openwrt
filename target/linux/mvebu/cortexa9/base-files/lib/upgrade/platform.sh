@@ -40,6 +40,10 @@ platform_do_upgrade() {
 		CI_DATA_UBIPART=ubi
 		nand_do_upgrade "$1"
 		;;
+	wd,cloud-mirror-gen1)
+		CI_KERNPART="uImage"
+		nand_do_upgrade "$1"
+		;;
 	buffalo,ls421de|\
 	wd,cloud-ex2-ultra|\
 	wd,cloud-mirror-gen2)
