@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_VERSION:=3.5.9
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_BUILD_FLAGS:=no-mips16 gc-sections no-lto
 
 PKG_BUILD_PARALLEL:=1
@@ -167,7 +167,7 @@ been deemed insecure by the cryptography community, or something similar.  See
 https://www.openssl.org/docs/man3.0/man7/OSSL_PROVIDER-legacy.html
 endef
 
-$(eval $(call Package/openssl/add-engine,afalg))
+$(eval $(call Package/openssl/add-engine,afalg,,0))
 define Package/libopenssl-afalg
   $(call Package/openssl/Default)
   $(call Package/openssl/engine/Default)
@@ -179,6 +179,11 @@ endef
 define Package/libopenssl-afalg/description
 This package adds an engine that enables hardware acceleration
 through the AF_ALG kernel interface.
+The engine is installed disabled. Every request is a round trip to the
+kernel, so small requests can be slower than in software, and the engine
+cannot tell a hardware driver from a software one. To make it the
+default AES-CBC implementation for all applications, set
+openssl.afalg.enabled to 1 with uci and reboot.
 See https://www.openssl.org/docs/man3.0/man5/config.html#Engine-Configuration
 and https://openwrt.org/docs/techref/hardware/cryptographic.hardware.accelerators
 The engine_id is "afalg"
