@@ -6,8 +6,8 @@
 #include <net/dsa.h>
 
 #include "otto_dsa.h"
-#include "vlan.h"
-#include "stp.h"
+#include "otto_vlan.h"
+#include "otto_stp.h"
 
 /* VLAN register definitions private to this translation unit. */
 #define RTL838X_VLAN_PROFILE(idx)		(0x3A88 + ((idx) << 2))

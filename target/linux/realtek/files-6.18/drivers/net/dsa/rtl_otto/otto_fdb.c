@@ -8,10 +8,10 @@
 #include <linux/soc/realtek/otto_table.h>
 #include <linux/string.h>
 
-#include "fdb.h"
-#include "l2.h"
-#include "l3.h"
-#include "lag.h"
+#include "otto_fdb.h"
+#include "otto_l2.h"
+#include "otto_l3.h"
+#include "otto_lag.h"
 #include "otto_dsa.h"
 
 #define OTTO_FDB_L3_REFCOUNT_MAX	0x7fff

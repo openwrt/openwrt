@@ -5,17 +5,17 @@
 #include <linux/etherdevice.h>
 #include <linux/regmap.h>
 
-#include "lag.h"
-#include "l2.h"
-#include "pie.h"
-#include "qos.h"
-#include "mirror.h"
-#include "mac.h"
+#include "otto_lag.h"
+#include "otto_l2.h"
+#include "otto_pie.h"
+#include "otto_qos.h"
+#include "otto_mirror.h"
+#include "otto_mac.h"
 #include "otto_dsa.h"
-#include "stats.h"
-#include "tc.h"
-#include "vlan.h"
-#include "stp.h"
+#include "otto_stats.h"
+#include "otto_tc.h"
+#include "otto_vlan.h"
+#include "otto_stp.h"
 
 #define RTL931X_TRK_HASH_CTRL			(0xBA70)
 #define RTL931X_TRK_CTRL			(0xBA78)

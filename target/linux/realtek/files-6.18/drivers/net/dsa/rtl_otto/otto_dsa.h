@@ -9,14 +9,14 @@
 
 #include <linux/soc/realtek/otto_table.h>
 
-#include "l2.h"
-#include "lag.h"
-#include "mac.h"
-#include "mirror.h"
-#include "pie.h"
-#include "stats.h"
-#include "stp.h"
-#include "vlan.h"
+#include "otto_l2.h"
+#include "otto_lag.h"
+#include "otto_mac.h"
+#include "otto_mirror.h"
+#include "otto_pie.h"
+#include "otto_stats.h"
+#include "otto_stp.h"
+#include "otto_vlan.h"
 
 #define MAX_PRIOS 8
 #define MAX_INTF_MTUS 8

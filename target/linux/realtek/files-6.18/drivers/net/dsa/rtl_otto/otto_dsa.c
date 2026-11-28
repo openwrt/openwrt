@@ -21,19 +21,19 @@
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
-#include "fdb.h"
-#include "l2.h"
-#include "l3.h"
-#include "lag.h"
-#include "mac.h"
-#include "mirror.h"
+#include "otto_fdb.h"
+#include "otto_l2.h"
+#include "otto_l3.h"
+#include "otto_lag.h"
+#include "otto_mac.h"
+#include "otto_mirror.h"
 #include "otto_dsa.h"
-#include "pie.h"
-#include "qos.h"
-#include "stats.h"
-#include "stp.h"
-#include "tc.h"
-#include "vlan.h"
+#include "otto_pie.h"
+#include "otto_qos.h"
+#include "otto_stats.h"
+#include "otto_stp.h"
+#include "otto_tc.h"
+#include "otto_vlan.h"
 
 static const u8 ipv4_ll_mcast_addr_base[ETH_ALEN] = {
 	0x01, 0x00, 0x5e, 0x00, 0x00, 0x00

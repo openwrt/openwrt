@@ -6,17 +6,17 @@
 #include <linux/regmap.h>
 #include <net/nexthop.h>
 
-#include "lag.h"
-#include "l2.h"
-#include "l3.h"
-#include "pie.h"
-#include "qos.h"
-#include "mirror.h"
-#include "mac.h"
+#include "otto_lag.h"
+#include "otto_l2.h"
+#include "otto_l3.h"
+#include "otto_pie.h"
+#include "otto_qos.h"
+#include "otto_mirror.h"
+#include "otto_mac.h"
 #include "otto_dsa.h"
-#include "stats.h"
-#include "vlan.h"
-#include "stp.h"
+#include "otto_stats.h"
+#include "otto_vlan.h"
+#include "otto_stp.h"
 
 /* 802.1X */
 #define RTL838X_RMA_BPDU_FLD_PMSK		(0x4348)

@@ -6,7 +6,7 @@
 #include <linux/soc/realtek/otto_table.h>
 #include <linux/string.h>
 
-#include "l2.h"
+#include "otto_l2.h"
 #include "otto_dsa.h"
 
 #define RTL838X_L2_CTRL_0			(0x3200)

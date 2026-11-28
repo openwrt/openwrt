@@ -17,7 +17,7 @@ Signed-off-by: Taiga Ogawa <zectaiga@gmail.com>
 +++ b/drivers/net/dsa/Kconfig
 @@ -88,6 +88,8 @@ source "drivers/net/dsa/realtek/Kconfig"
  
- source "drivers/net/dsa/rtl83xx/Kconfig"
+ source "drivers/net/dsa/rtl_otto/Kconfig"
  
 +source "drivers/net/dsa/rtl960x/Kconfig"
 +
@@ -29,7 +29,7 @@ Signed-off-by: Taiga Ogawa <zectaiga@gmail.com>
 @@ -25,5 +25,6 @@ obj-y				+= ocelot/
  obj-y				+= qca/
  obj-y				+= realtek/
- obj-y				+= rtl83xx/
+ obj-y				+= rtl_otto/
 +obj-y				+= rtl960x/
  obj-y				+= sja1105/
  obj-y				+= xrs700x/
