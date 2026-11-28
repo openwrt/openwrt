@@ -463,6 +463,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.set_receive_management_action = rtldsa_931x_set_receive_management_action,
 	.qos_queue_sched_set = otto_qos_931x_queue_sched_set,
 	.qos_queue_drops_update = otto_qos_931x_queue_drops_update,
+	.qos_red_set = otto_qos_931x_red_set,
 	.tc_egress_shaper_set = otto_tc_931x_egress_shaper_set,
 	.tc_max_burst = U16_MAX,
 	.qos_init = otto_qos_931x_init,
