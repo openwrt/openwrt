@@ -1,0 +1,105 @@
+From feb0a8c9316428f7d580c63a6fc505f877564612 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 05:31:27 +0100
+Subject: [PATCH] selftests: drivers: net: rss_api: skip without RSS
+ support
+
+Six of the tests read the RSS configuration without checking that the
+device has RSS at all, and fail with EOPNOTSUPP on single queue devices
+like the MediaTek SoC Ethernet (mtk_eth_soc) instead of skipping, as
+the other tests of the file do through _require_2qs(). Skip them when
+the RSS get operation isn't supported.
+
+Devices like stmmac report an RSS key and table but have no Rx flow
+hash fields (ethtool -n rx-flow-hash: EOPNOTSUPP) and no additional
+RSS contexts. The flow hash tests then fail on a missing 'flow-hash'
+key and the context notification test on EOPNOTSUPP. Skip them too, as
+test_rss_ctx_add does for devices with one queue.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ drivers/net/hw/rss_api.py | 27 ++++++++++++++++++++++++---
+ 1 file changed, 26 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/hw/rss_api.py
++++ b/drivers/net/hw/rss_api.py
+@@ -22,6 +22,20 @@ def _require_2qs(cfg):
+     return qcnt
+ 
+ 
++def _require_rss(cfg):
++    try:
++        return cfg.ethnl.rss_get({"header": {"dev-index": cfg.ifindex}})
++    except NlError as e:
++        if e.error == errno.EOPNOTSUPP:
++            raise KsftSkipEx("RSS not supported by the device") from e
++        raise
++
++
++def _require_flow_hash(cfg):
++    if "flow-hash" not in _require_rss(cfg):
++        raise KsftSkipEx("Rx flow hash fields not supported by the device")
++
++
+ def _ethtool_create(cfg, act, opts):
+     output = ethtool(f"{act} {cfg.ifname} {opts}").stdout
+     # Output will be something like: "New RSS context is 1" or
+@@ -206,6 +220,7 @@ def test_rxfh_nl_set_key(cfg):
+     Test setting hashing key via Netlink.
+     """
+ 
++    _require_rss(cfg)
+     dflt = cfg.ethnl.rss_get({"header": {"dev-index": cfg.ifindex}})
+     defer(cfg.ethnl.rss_set,
+           {"header": {"dev-index": cfg.ifindex},
+@@ -238,6 +253,7 @@ def test_rxfh_fields(cfg):
+     Test reading Rx Flow Hash over Netlink.
+     """
+ 
++    _require_flow_hash(cfg)
+     flow_types = ["tcp4", "tcp6", "udp4", "udp6"]
+     ethnl = EthtoolFamily()
+ 
+@@ -251,6 +267,7 @@ def test_rxfh_fields(cfg):
+ def test_rxfh_fields_set(cfg):
+     """ Test configuring Rx Flow Hash over Netlink. """
+ 
++    _require_flow_hash(cfg)
+     flow_types = ["tcp4", "tcp6", "udp4", "udp6"]
+ 
+     # Collect current settings
+@@ -321,6 +338,7 @@ def test_rxfh_fields_set_xfrm(cfg):
+         cfg.ethnl.rss_set({"header": {"dev-index": cfg.ifindex},
+                            "input-xfrm": xfrm, "flow-hash": fh})
+ 
++    _require_flow_hash(cfg)
+     # Install the reset handler
+     cfg_old = cfg.ethnl.rss_get({"header": {"dev-index": cfg.ifindex}})
+     # symmetric hashing is config-order-sensitive make sure we leave
+@@ -359,6 +377,7 @@ def test_rxfh_fields_set_xfrm(cfg):
+ def test_rxfh_fields_ntf(cfg):
+     """ Test Rx Flow Hash notifications. """
+ 
++    _require_flow_hash(cfg)
+     cur = _ethtool_get_cfg(cfg, "tcp4")
+     if cur == "sdfn":
+         change = {"ip-src", "ip-dst"}
+@@ -428,11 +447,17 @@ def test_rss_ctx_add(cfg):
+ def test_rss_ctx_ntf(cfg):
+     """ Test notifications for creating additional RSS contexts """
+ 
++    _require_rss(cfg)
+     ethnl = EthtoolFamily()
+     ethnl.ntf_subscribe("monitor")
+ 
+     # Create / delete via Netlink
+-    ctx = cfg.ethnl.rss_create_act({"header": {"dev-index": cfg.ifindex}})
++    try:
++        ctx = cfg.ethnl.rss_create_act({"header": {"dev-index": cfg.ifindex}})
++    except NlError as e:
++        if e.error == errno.EOPNOTSUPP:
++            raise KsftSkipEx("RSS contexts not supported by the device") from e
++        raise
+     cfg.ethnl.rss_delete_act({
+         "header": {"dev-index": cfg.ifindex},
+         "context": ctx["context"],

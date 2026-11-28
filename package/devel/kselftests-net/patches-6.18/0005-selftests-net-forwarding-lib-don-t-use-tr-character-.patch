@@ -1,0 +1,38 @@
+From a8493865e511d18dae0bf92c11b31864be82703d Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 06:22:48 +0100
+Subject: [PATCH] selftests: net: forwarding: lib: don't use tr character
+ classes
+
+payload_template_calc_checksum() upper-cases the hex payload for dc with
+tr '[:lower:]' '[:upper:]'. busybox tr only knows character classes with
+FEATURE_TR_CLASSES, which OpenWrt's default busybox lacks; there it maps
+the literal characters, dc gets lowercase digits, and the IGMPv3/MLDv2
+checksums come out empty (bridge_mdb.sh MODE_IS_INCLUDE tests fail with
+"Source not add to source list"). The payload is hex, so map a-f only.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ net/forwarding/lib.sh | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/net/forwarding/lib.sh
++++ b/net/forwarding/lib.sh
+@@ -1938,7 +1938,7 @@ payload_template_calc_checksum()
+ 	    # number of bytes.
+ 	    echo "${payload%:}:00:" |
+ 		sed 's/CHECKSUM/00:00/g' |
+-		tr '[:lower:]' '[:upper:]' |
++		tr 'a-f' 'A-F' |
+ 		# Add the word to the checksum.
+ 		sed 's/\(..\):\(..\):/\1\2+\n/g' |
+ 		# Strip the extra odd byte we pushed if left unconverted.
+@@ -1948,7 +1948,7 @@ payload_template_calc_checksum()
+ 	    echo "FFFF r - p"	# Bit-flip and print.
+ 	) |
+ 	    dc |
+-	    tr '[:upper:]' '[:lower:]'
++	    tr 'A-F' 'a-f'
+ }
+ 
+ payload_template_expand_checksum()

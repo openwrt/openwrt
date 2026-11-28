@@ -1,0 +1,31 @@
+From b57c8041c9b3ea6e5e9e081980b92db796e07a06 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 05:31:55 +0100
+Subject: [PATCH] selftests: drivers: net: stats: skip downup hammer
+ without channels
+
+procfs_downup_hammer changes the channel count and fails with
+EOPNOTSUPP on devices that can't report it (MediaTek SoC Ethernet).
+Skip it there, as check_pause and check_fec do for their features.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ drivers/net/stats.py | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/stats.py
++++ b/drivers/net/stats.py
+@@ -264,7 +264,12 @@ def procfs_downup_hammer(cfg) -> None:
+     to sleep when reading the stats, or don't protect against races.
+     """
+     # Max out the queues, we'll flip between max and 1
+-    channels = ethnl.channels_get({'header': {'dev-index': cfg.ifindex}})
++    try:
++        channels = ethnl.channels_get({'header': {'dev-index': cfg.ifindex}})
++    except NlError as e:
++        if e.error == errno.EOPNOTSUPP:
++            raise KsftSkipEx("channels not supported by the device") from e
++        raise
+     if channels['combined-count'] == 0:
+         rx_type = 'rx'
+     else:

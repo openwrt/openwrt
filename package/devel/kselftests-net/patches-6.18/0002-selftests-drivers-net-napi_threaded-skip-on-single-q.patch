@@ -1,0 +1,71 @@
+From 8aeb5594a4666c4a6bcd3c51ef99e292fa5f82a0 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 22 Nov 2026 05:31:43 +0100
+Subject: [PATCH] selftests: drivers: net: napi_threaded: skip on single
+ queue devices
+
+The tests need two channels and two NAPI instances, and fail when the
+device has fewer, or doesn't support getting its channel count at all
+(ethtool -l: EOPNOTSUPP), as the MediaTek SoC Ethernet, whose NAPIs
+belong to a dummy netdev. Skip instead, like other driver tests do for
+missing features.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ drivers/net/napi_threaded.py | 22 ++++++++++++++++------
+ 1 file changed, 16 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/napi_threaded.py
++++ b/drivers/net/napi_threaded.py
+@@ -6,9 +6,10 @@ Test napi threaded states.
+ """
+ 
+ from lib.py import ksft_run, ksft_exit
+-from lib.py import ksft_eq, ksft_ne, ksft_ge
++from lib.py import ksft_eq, ksft_ne
++from lib.py import KsftSkipEx
+ from lib.py import NetDrvEnv, NetdevFamily
+-from lib.py import cmd, defer, ethtool
++from lib.py import CmdExitFailure, cmd, defer, ethtool
+ 
+ 
+ def _assert_napi_threaded_enabled(nl, napi_id) -> None:
+@@ -28,9 +29,18 @@ def _set_threaded_state(cfg, threaded) -
+         fp.write(str(threaded).encode('utf-8'))
+ 
+ 
++def _require_2_napis(napis) -> None:
++    if len(napis) < 2:
++        raise KsftSkipEx(f"Device has {len(napis)} NAPIs, the test needs 2")
++
++
+ def _setup_deferred_cleanup(cfg) -> None:
+-    combined = ethtool(f"-l {cfg.ifname}", json=True)[0].get("combined", 0)
+-    ksft_ge(combined, 2)
++    try:
++        combined = ethtool(f"-l {cfg.ifname}", json=True)[0].get("combined", 0)
++    except CmdExitFailure as e:
++        raise KsftSkipEx("Device can't change its channel count") from e
++    if combined < 2:
++        raise KsftSkipEx(f"Device has {combined} combined channels, the test needs 2")
+     defer(ethtool, f"-L {cfg.ifname} combined {combined}")
+ 
+     threaded = cmd(f"cat /sys/class/net/{cfg.ifname}/threaded").stdout
+@@ -75,7 +85,7 @@ def enable_dev_threaded_disable_napi_thr
+     """
+ 
+     napis = nl.napi_get({'ifindex': cfg.ifindex}, dump=True)
+-    ksft_ge(len(napis), 2)
++    _require_2_napis(napis)
+ 
+     napi0_id = napis[0]['id']
+     napi1_id = napis[1]['id']
+@@ -106,7 +116,7 @@ def change_num_queues(cfg, nl) -> None:
+     """
+ 
+     napis = nl.napi_get({'ifindex': cfg.ifindex}, dump=True)
+-    ksft_ge(len(napis), 2)
++    _require_2_napis(napis)
+ 
+     napi0_id = napis[0]['id']
+     napi1_id = napis[1]['id']

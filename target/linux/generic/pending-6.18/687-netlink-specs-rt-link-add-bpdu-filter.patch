@@ -1,0 +1,29 @@
+From 7104f2f4a3f481ae3f733cd5b4c4e5299237594c Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sat, 21 Nov 2026 12:00:00 +0100
+Subject: [PATCH] netlink: specs: rt-link: add bpdu-filter
+
+710-bridge-add-knob-for-filtering-rx-tx-BPDU-pack.patch adds
+IFLA_BRPORT_BPDU_FILTER (45) to the bridge port attributes, but not to
+the rt-link netlink spec. YNL users (ynl cli, the drivers/net Python
+selftests) then fail to decode any RTM_GETLINK reply of a bridge port
+with "Space 'linkinfo-brport-attrs' has no attribute with value '45'",
+e.g. drivers/net/stats.py on the LAN port of an OpenWrt One.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ Documentation/netlink/specs/rt-link.yaml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/Documentation/netlink/specs/rt-link.yaml
++++ b/Documentation/netlink/specs/rt-link.yaml
+@@ -1689,6 +1689,9 @@ attribute-sets:
+       -
+         name: backup-nhid
+         type: u32
++      -
++        name: bpdu-filter
++        type: u8
+   -
+     name: linkinfo-gre-attrs
+     name-prefix: ifla-gre-
