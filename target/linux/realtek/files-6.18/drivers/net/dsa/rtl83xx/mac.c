@@ -104,6 +104,10 @@
 
 #define RTL931X_MAC_FORCE_MODE_CTRL		(0x0DCC)
 
+/* Per-port TX/RX EEE enables, 1 bit per port; ports 32-55 in the second word */
+#define RTL931X_EEE_PORT_TX_EN			(0x5644)
+#define RTL931X_EEE_PORT_RX_EN			(0x564C)
+
 #define RTL931X_SMI_PHY_ABLTY_GET_SEL(port)	(0x0cac + ((port) / 16) * 4)
 #define RTL931X_SMI_PHY_ABLTY_MDIO		0x0
 #define RTL931X_SMI_PHY_ABLTY_SDS		0x2
@@ -157,7 +161,7 @@ void otto_mac_838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	/* Enable EEE MAC support on ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			priv->r->set_mac_eee(priv, i, enable);
+			priv->r->mac_set_eee(priv, i, enable);
 	}
 	priv->eee_enabled = enable;
 }
@@ -210,7 +214,7 @@ void otto_mac_839x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			priv->r->set_mac_eee(priv, i, enable);
+			priv->r->mac_set_eee(priv, i, enable);
 	}
 	priv->eee_enabled = enable;
 }
@@ -240,10 +244,11 @@ void otto_mac_930x_set_eee(struct otto_dsa_priv *priv, int port, bool enable)
 		return;
 
 	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
-	v = enable ? 0x3f : 0x0;
 
 	/* Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit */
-	regmap_write_bits(priv->map, otto_mac_930x_force_mode_ctrl(port), v << 10, v << 10);
+	regmap_update_bits(priv->map, otto_mac_930x_force_mode_ctrl(port),
+			   RTL930X_MAC_FORCE_EEE_MASK,
+			   enable ? RTL930X_MAC_FORCE_EEE_MASK : 0);
 
 	/* Set TX/RX EEE state */
 	v = enable ? 0x3 : 0x0;
@@ -259,7 +264,7 @@ void otto_mac_930x_init_eee(struct otto_dsa_priv *priv, bool enable)
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->r->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			priv->r->set_mac_eee(priv, i, enable);
+			priv->r->mac_set_eee(priv, i, enable);
 	}
 
 	priv->eee_enabled = enable;
@@ -307,6 +312,43 @@ int otto_mac_931x_port_ctrl(int p)
 int otto_mac_931x_max_len_reg(int p)
 {
 	return RTL931X_MAC_L2_PORT_MAX_LEN_CTRL + (p << 2);
+}
+
+/* Enables or disables the EEE capability of a port */
+void otto_mac_931x_set_eee(struct otto_dsa_priv *priv, int port, bool enable)
+{
+	bool tx_lpi = enable && priv->ports[port].eee_tx_lpi;
+	int word = port / 32;
+	u32 bit = BIT(port % 32);
+
+	pr_debug("In %s: setting port %d to %d, TX LPI %d\n", __func__, port,
+		 enable, tx_lpi);
+
+	/* Set EEE state for 100M, 1G, 2.5G, 5G and 10G */
+	regmap_update_bits(priv->map, otto_mac_931x_force_mode_ctrl(port),
+			   RTL931X_MAC_FORCE_EEE_MASK,
+			   enable ? RTL931X_MAC_FORCE_EEE_MASK : 0);
+
+	/* Set TX/RX EEE state */
+	regmap_update_bits(priv->map, RTL931X_EEE_PORT_TX_EN + (word << 2),
+			   bit, tx_lpi ? bit : 0);
+	regmap_update_bits(priv->map, RTL931X_EEE_PORT_RX_EN + (word << 2),
+			   bit, enable ? bit : 0);
+
+	priv->ports[port].eee_enabled = enable;
+}
+
+void otto_mac_931x_init_eee(struct otto_dsa_priv *priv, bool enable)
+{
+	pr_debug("Setting up EEE, state: %d\n", enable);
+
+	/* Setup EEE on all ports */
+	for (int i = 0; i < priv->r->cpu_port; i++) {
+		if (priv->ports[i].phy)
+			priv->r->mac_set_eee(priv, i, enable);
+	}
+
+	priv->eee_enabled = enable;
 }
 
 int
@@ -430,12 +472,20 @@ static void otto_mac_93xx_phylink_config(struct phylink_config *config,
 	const struct rtldsa_mac_force_mode_cfg *cfg;
 	bool force_dynamic_phy;
 	int port = dp->index;
+	u32 eee = 0;
 
 	/* Nothing to be done for the CPU-port */
 	if (port == priv->r->cpu_port)
 		return;
 
 	cfg = &priv->r->mac_force_mode;
+
+	guard(mutex)(&priv->reg_mutex);
+
+	/* Keep the EEE enables when the register is rewritten below */
+	if (priv->ports[port].eee_enabled)
+		eee = priv->r->mac_force_mode_eee_mask;
+
 	force_dynamic_phy = !priv->ports[port].phy &&
 		(mode == MLO_AN_PHY || state->interface == PHY_INTERFACE_MODE_SGMII);
 
@@ -449,14 +499,14 @@ static void otto_mac_93xx_phylink_config(struct phylink_config *config,
 	if (mode == MLO_AN_FIXED || force_dynamic_phy) {
 		/* Keep links that require force mode forced down. */
 		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port),
-			     cfg->force_en_mask | cfg->fc_force_en_mask);
+			     cfg->force_en_mask | cfg->fc_force_en_mask | eee);
 		if (force_dynamic_phy)
 			otto_mac_link_state_source_set(priv, port,
 						       RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
 						       state->interface);
 	} else {
-		/* Disable MAC completely */
-		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), 0);
+		/* Disable MAC completely, retaining EEE enables */
+		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), eee);
 	}
 }
 
@@ -614,6 +664,9 @@ static void otto_mac_93xx_phylink_link_up(struct phylink_config *config,
 			duplex = phydev->duplex;
 	}
 
+	/* Serialize the read-modify-write with the EEE bits set by ethtool */
+	guard(mutex)(&priv->reg_mutex);
+
 	regmap_read(priv->map, priv->r->mac_force_mode_ctrl(port), &mcr);
 	mcr &= ~(cfg->rx_pause_mask | cfg->tx_pause_mask);
 	mcr |= cfg->fc_force_en_mask;
@@ -759,12 +812,16 @@ int otto_mac_set_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 
-	if (e->eee_enabled && !priv->eee_enabled) {
-		pr_info("Globally enabling EEE\n");
-		priv->r->init_eee(priv, true);
-	}
+	scoped_guard(mutex, &priv->reg_mutex) {
+		priv->ports[port].eee_tx_lpi = e->tx_lpi_enabled;
 
-	priv->r->set_mac_eee(priv, port, e->eee_enabled);
+		if (e->eee_enabled && !priv->eee_enabled) {
+			pr_info("Globally enabling EEE\n");
+			priv->r->mac_init_eee(priv, true);
+		}
+
+		priv->r->mac_set_eee(priv, port, e->eee_enabled);
+	}
 
 	if (e->eee_enabled)
 		pr_info("Enabled EEE for port %d\n", port);
