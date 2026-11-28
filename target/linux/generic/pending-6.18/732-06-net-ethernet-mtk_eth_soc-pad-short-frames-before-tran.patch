@@ -1,0 +1,33 @@
+From 7d77f65a4eef0510c82c7ed3882561a295039545 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 25 Nov 2026 15:02:02 +0000
+Subject: [PATCH] net: ethernet: mtk_eth_soc: pad short frames before transmit
+
+The XGMAC of the MT7988 holds back a transmitted frame of 32 bytes or
+less until the next frame is transmitted. Such frames reach the driver
+from a DSA conduit, where the tagger has already added its header and
+the stack has not padded the frame to the minimum Ethernet length.
+Pad every frame to ETH_ZLEN in mtk_start_xmit() before the descriptors
+are counted. MediaTek's SDK pads short frames in its 5.4 driver for the
+same hardware.
+
+Fixes: 445eb6448ed3 ("net: ethernet: mtk_eth_soc: add basic support for MT7988 SoC")
+Link: https://github.com/mediatek/mtk-openwrt-feeds/commit/abdb6a671e5eeedc8638b9824a7b430324fdf6b0
+Link: https://github.com/mediatek/mtk-openwrt-feeds/commit/9d278805bfb0434e005a93ebbeab354199b1bce7
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1957,6 +1957,9 @@ static netdev_tx_t mtk_start_xmit(struct
+ 			goto dropped;
+ 	}
+ 
++	if (skb_put_padto(skb, ETH_ZLEN))
++		goto dropped;
++
+ 	/* normally we can rely on the stack not calling this more than once,
+ 	 * however we have 2 queues running on the same ring so we need to lock
+ 	 * the ring access
