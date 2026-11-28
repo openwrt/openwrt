@@ -12,6 +12,7 @@
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/of_mdio.h>
 #include <linux/phy.h>
 #include <linux/phylink.h>
 #include <linux/platform_device.h>
@@ -22,6 +23,10 @@
 #include "rtl960x_dsa.h"
 #include "rtl960x_l2.h"
 #include "rtl960x_vlan.h"
+
+/* Family-specific data and limits */
+#define RTL960X_PHYADDRMAX		3
+#define RTL960X_PAGE_SELECT		31
 
 /* Forced MAC ability of a port, used to force the CPU ports' link up */
 #define RTL960X_FORCE_P_ABLTY_REG(_port)	(0x1cc + (_port) * 4)
@@ -41,6 +46,29 @@
  * second HSGMII SerDes, so keep GMAC0 on port 9 as the default.
  */
 #define RTL960X_DEFAULT_CPU_PORT		9
+
+/* PHY indirect access registers */
+#define RTL960X_GPHY_INDIRECT_WRITE_DATA_REG		0x0
+#define RTL960X_GPHY_INDIRECT_COMMAND_REG		0x4
+#define   RTL960X_INDIRECT_COMMAND_RW_MASK		BIT(22)
+#define     RTL960X_INDIRECT_COMMAND_RW_READ		0
+#define     RTL960X_INDIRECT_COMMAND_RW_WRITE		1
+#define   RTL960X_INDIRECT_COMMAND_RUN			BIT(21)
+#define   RTL960X_INDIRECT_COMMAND_PHYID_MASK		GENMASK(20, 16)
+#define   RTL960X_INDIRECT_COMMAND_OCP_ADDR_MASK	GENMASK(15, 0)
+#define RTL960X_GPHY_INDIRECT_READ_DATA_REG		0x8
+#define   RTL960X_GPHY_STATUS_BUSY			BIT(16)
+#define   RTL960X_GPHY_READ_DATA_MASK			GENMASK(15, 0)
+
+#define RTL960X_WRAP_GPHY_MISC			0x114
+#define   RTL960X_PHY_PATCH_DONE		BIT(0)
+
+/* The PHY OCP addresses of PHY registers 0~16, 24~31 start here */
+#define RTL960X_PHY_OCP_ADDR_PHYREG_BASE	0xa400
+
+#define RTL960X_PHY_OCP_ADDR_EEE_ABLE		0xA5C4
+#define RTL960X_PHY_OCP_ADDR_EEE_ADV		0xA5D0
+#define RTL960X_PHY_OCP_ADDR_EEE_LPABLE		0xA5D2
 
 /*
  * Port isolation registers - one egress portmask per port. Bits 28:11 are
@@ -238,6 +266,220 @@ static int rtl960x_port_remove_isolation(struct rtl960x_dsa *priv, int port,
 {
 	return regmap_clear_bits(priv->map, RTL960X_PORT_ISOLATION_REG(port),
 				 mask);
+}
+
+static int rtl960x_phy_poll_busy(struct rtl960x_dsa *priv)
+{
+	u32 val;
+
+	return regmap_read_poll_timeout(priv->map,
+					RTL960X_GPHY_INDIRECT_READ_DATA_REG,
+					val, !(val & RTL960X_GPHY_STATUS_BUSY),
+					10, 1000);
+}
+
+static int rtl960x_phy_ocp_run_cmd(struct rtl960x_dsa *priv, int phy,
+				   u32 ocp_addr, u32 cmd_type)
+{
+	u32 val;
+	int ret;
+
+	val = RTL960X_INDIRECT_COMMAND_RUN;
+	val |= FIELD_PREP(RTL960X_INDIRECT_COMMAND_RW_MASK, cmd_type);
+	val |= FIELD_PREP(RTL960X_INDIRECT_COMMAND_PHYID_MASK, phy);
+	val |= FIELD_PREP(RTL960X_INDIRECT_COMMAND_OCP_ADDR_MASK, ocp_addr);
+	ret = regmap_write(priv->map, RTL960X_GPHY_INDIRECT_COMMAND_REG, val);
+	if (ret)
+		return ret;
+
+	return rtl960x_phy_poll_busy(priv);
+}
+
+static int rtl960x_phy_ocp_read(struct rtl960x_dsa *priv, int phy,
+				  u32 ocp_addr, u16 *data)
+{
+	u32 val;
+	int ret;
+
+	mutex_lock(&priv->map_lock);
+
+	ret = rtl960x_phy_poll_busy(priv);
+	if (ret)
+		goto out;
+
+	ret = rtl960x_phy_ocp_run_cmd(priv, phy, ocp_addr,
+				      RTL960X_INDIRECT_COMMAND_RW_READ);
+	if (ret)
+		goto out;
+
+	/* Get PHY register data */
+	ret = regmap_read(priv->map, RTL960X_GPHY_INDIRECT_READ_DATA_REG, &val);
+	if (ret)
+		goto out;
+
+	*data = val & RTL960X_GPHY_READ_DATA_MASK;
+
+out:
+	mutex_unlock(&priv->map_lock);
+
+	return ret;
+}
+
+static int rtl960x_phy_ocp_write(struct rtl960x_dsa *priv, int phy,
+				 u32 ocp_addr, u16 data)
+{
+	int ret;
+
+	mutex_lock(&priv->map_lock);
+
+	ret = rtl960x_phy_poll_busy(priv);
+	if (ret)
+		goto out;
+
+	/* Set PHY register data */
+	ret = regmap_write(priv->map, RTL960X_GPHY_INDIRECT_WRITE_DATA_REG, data);
+	if (ret)
+		goto out;
+
+	ret = rtl960x_phy_ocp_run_cmd(priv, phy, ocp_addr,
+				      RTL960X_INDIRECT_COMMAND_RW_WRITE);
+	if (ret)
+		goto out;
+
+	ret = rtl960x_phy_poll_busy(priv);
+	if (ret)
+		goto out;
+
+out:
+	mutex_unlock(&priv->map_lock);
+
+	return ret;
+}
+
+static int rtl960x_user_mdio_read(struct mii_bus *bus, int phy, int regnum)
+{
+	struct rtl960x_dsa *priv = bus->priv;
+	u32 ocp_addr;
+	u16 val;
+	int ret;
+
+	if (phy > RTL960X_PHYADDRMAX)
+		return -EINVAL;
+
+	if (regnum == RTL960X_PAGE_SELECT)
+		return priv->page[phy];
+	else if (regnum > 15 && regnum < 24)
+		ocp_addr = ((priv->page[phy] & 0xfff) << 4) + (regnum - 16) * 2;
+	else
+		ocp_addr = RTL960X_PHY_OCP_ADDR_PHYREG_BASE + regnum * 2;
+
+	ret = rtl960x_phy_ocp_read(priv, phy, ocp_addr, &val);
+	if (ret) {
+		dev_err(priv->dev,
+			"failed to read PHY%d reg %02x @ %04x, ret %pe\n", phy,
+			regnum, ocp_addr, ERR_PTR(ret));
+		return ret;
+	}
+
+	dev_dbg(priv->dev, "read PHY%d register 0x%02x @ %04x, val <- %04x\n",
+		phy, regnum, ocp_addr, val);
+
+	return val;
+}
+
+static int rtl960x_user_mdio_write(struct mii_bus *bus, int phy, int regnum,
+				   u16 val)
+{
+	struct rtl960x_dsa *priv = bus->priv;
+	u32 ocp_addr;
+	int ret;
+
+	if (phy > RTL960X_PHYADDRMAX)
+		return -EINVAL;
+
+	if (regnum == RTL960X_PAGE_SELECT) {
+		if (val >= 0xffff)
+			return -EINVAL;
+
+		priv->page[phy] = val;
+		return 0;
+	} else if (regnum > 15 && regnum < 24) {
+		ocp_addr = ((priv->page[phy] & 0xfff) << 4) + (regnum - 16) * 2;
+	} else {
+		ocp_addr = RTL960X_PHY_OCP_ADDR_PHYREG_BASE + regnum * 2;
+	}
+
+	ret = rtl960x_phy_ocp_write(priv, phy, ocp_addr, val);
+	if (ret) {
+		dev_err(priv->dev,
+			"failed to write PHY%d reg %02x @ %04x, ret %pe\n", phy,
+			regnum, ocp_addr, ERR_PTR(ret));
+		return ret;
+	}
+
+	dev_dbg(priv->dev, "write PHY%d register 0x%02x @ %04x, val -> %04x\n",
+		phy, regnum, ocp_addr, val);
+
+	return 0;
+}
+
+static int rtl960x_user_mdio_read_c45(struct mii_bus *bus, int phy, int devad,
+				      int regnum)
+{
+	struct rtl960x_dsa *priv = bus->priv;
+	u32 ocp_addr;
+	u16 val;
+	int ret;
+
+	if (phy > RTL960X_PHYADDRMAX)
+		return -EINVAL;
+
+	if (devad == MDIO_MMD_PCS && regnum == MDIO_PCS_EEE_ABLE)
+		ocp_addr = RTL960X_PHY_OCP_ADDR_EEE_ABLE;
+	else if (devad == MDIO_MMD_AN && regnum == MDIO_AN_EEE_ADV)
+		ocp_addr = RTL960X_PHY_OCP_ADDR_EEE_ADV;
+	else if (devad == MDIO_MMD_AN && regnum == MDIO_AN_EEE_LPABLE)
+		ocp_addr = RTL960X_PHY_OCP_ADDR_EEE_LPABLE;
+	else
+		/* Only the EEE registers are mapped; others read as 0, as the
+		 * hardware does, so the generic MMD code is not tripped up by
+		 * an error.
+		 */
+		return 0;
+
+	ret = rtl960x_phy_ocp_read(priv, phy, ocp_addr, &val);
+	if (ret) {
+		dev_err(priv->dev, "failed to read PHY%d OCP %04x, ret %d\n",
+			phy, ocp_addr, ret);
+		return ret;
+	}
+
+	return val;
+}
+
+static int rtl960x_user_mdio_write_c45(struct mii_bus *bus, int phy,
+				       int devad, int regnum, u16 val)
+{
+	struct rtl960x_dsa *priv = bus->priv;
+	int ret;
+
+	if (phy > RTL960X_PHYADDRMAX)
+		return -EINVAL;
+
+	/* Only the EEE advertisement register is writable; writes to other
+	 * registers are ignored, as the hardware does.
+	 */
+	if (devad != MDIO_MMD_AN || regnum != MDIO_AN_EEE_ADV)
+		return 0;
+
+	ret = rtl960x_phy_ocp_write(priv, phy, RTL960X_PHY_OCP_ADDR_EEE_ADV, val);
+	if (ret) {
+		dev_err(priv->dev, "failed to write PHY%d OCP %04x, ret %d\n",
+			phy, RTL960X_PHY_OCP_ADDR_EEE_ADV, ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 static int rtl960x_port_mib_reset(struct rtl960x_dsa *priv, u32 pmask)
@@ -665,6 +907,57 @@ static enum dsa_tag_protocol rtl960x_dsa_get_tag_protocol(struct dsa_switch *ds,
 	return DSA_TAG_PROTO_RTL8_4AP;
 }
 
+/**
+ * rtl960x_setup_user_mdio() - register the user mii bus driver
+ * @ds: DSA switch associated with this user_mii_bus
+ *
+ * Registers the MDIO bus for built-in Ethernet PHYs, and associates it with
+ * the mandatory 'mdio' child OF node of the switch.
+ *
+ * Context: Can sleep.
+ * Return: 0 on success, negative value for failure.
+ */
+static int rtl960x_setup_user_mdio(struct dsa_switch *ds)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	struct device_node *mdio_np;
+	struct mii_bus *bus;
+	int ret = 0;
+
+	mdio_np = of_get_child_by_name(priv->dev->of_node, "mdio");
+	if (!mdio_np) {
+		dev_err(priv->dev, "no MDIO bus node\n");
+		return -ENODEV;
+	}
+
+	bus = devm_mdiobus_alloc(priv->dev);
+	if (!bus) {
+		ret = -ENOMEM;
+		goto err_put_node;
+	}
+
+	bus->priv = priv;
+	bus->name = "Realtek user MII";
+	bus->read = rtl960x_user_mdio_read;
+	bus->write = rtl960x_user_mdio_write;
+	bus->read_c45 = rtl960x_user_mdio_read_c45;
+	bus->write_c45 = rtl960x_user_mdio_write_c45;
+	snprintf(bus->id, MII_BUS_ID_SIZE, "%s:user_mii", dev_name(priv->dev));
+	bus->parent = priv->dev;
+
+	ret = devm_of_mdiobus_register(priv->dev, bus, mdio_np);
+	if (ret) {
+		dev_err(priv->dev, "unable to register MDIO bus %s\n",
+			bus->id);
+		goto err_put_node;
+	}
+
+err_put_node:
+	of_node_put(mdio_np);
+
+	return ret;
+}
+
 static int rtl960x_dsa_setup(struct dsa_switch *ds)
 {
 	struct rtl960x_dsa *priv = ds->priv;
@@ -729,7 +1022,20 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 		return ret;
 
 	/* Every user port starts standalone (see rtl960x_vlan_setup). */
-	return rtl960x_vlan_setup(ds);
+	ret = rtl960x_vlan_setup(ds);
+	if (ret)
+		return ret;
+
+	/*
+	 * PHY_PATCH_DONE enables PHY control via SoC. This is required for PHY
+	 * access, including patching and must be set before the PHYs are probed.
+	 */
+	ret = regmap_set_bits(priv->map, RTL960X_WRAP_GPHY_MISC,
+			      RTL960X_PHY_PATCH_DONE);
+	if (ret)
+		return ret;
+
+	return rtl960x_setup_user_mdio(ds);
 }
 
 static int rtl960x_port_bridge_join(struct dsa_switch *ds, int port,
@@ -1054,6 +1360,10 @@ static int rtl960x_dsa_probe(struct platform_device *pdev)
 	priv->ds = ds;
 
 	ret = devm_mutex_init(dev, &priv->l2_lock);
+	if (ret)
+		return ret;
+
+	ret = devm_mutex_init(dev, &priv->map_lock);
 	if (ret)
 		return ret;
 
