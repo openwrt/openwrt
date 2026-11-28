@@ -50,7 +50,7 @@ endef
 
 define Package/ppp
 $(call Package/ppp/Default)
-  DEPENDS:= +USE_GLIBC:libcrypt-compat +kmod-ppp
+  DEPENDS:= +USE_GLIBC:libcrypt-compat +kmod-ppp +ucode +ucode-mod-fs +ucode-mod-ubus
   TITLE:=PPP daemon
   USERID:=ppp=454:ppp=454
   VARIANT:=default
@@ -58,7 +58,7 @@ endef
 
 define Package/ppp-multilink
 $(call Package/ppp/Default)
-  DEPENDS:= +USE_GLIBC:libcrypt-compat +kmod-ppp
+  DEPENDS:= +USE_GLIBC:libcrypt-compat +kmod-ppp +ucode +ucode-mod-fs +ucode-mod-ubus
   TITLE:=PPP daemon (with multilink support)
   USERID:=ppp=454:ppp=454
   VARIANT:=multilink
@@ -215,6 +215,7 @@ define Package/ppp/install
 	$(INSTALL_DIR) $(1)/usr/share/acl.d
 	$(INSTALL_DATA) ./files/pppd_acl.json $(1)/usr/share/acl.d/pppd.json
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
+	$(INSTALL_BIN) ./files/ppp.uc $(1)/lib/netifd/proto/
 	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/netifd/proto/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp-up $(1)/lib/netifd/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp6-up $(1)/lib/netifd/
