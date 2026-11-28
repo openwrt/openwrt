@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oli Z <damnms@trustserv.de>
+Subject: [PATCH] net: mediatek: ppe: match MxL862xx tag_8021q bridge flows
+
+The PPE receive hook runs before DSA removes the switch tag. L2 flow
+lookup in __mtk_ppe_check_skb() accepts the MediaTek and the YT922x
+tag only, so bridge flows ingressing via an MxL862xx conduit in
+tag_8021q mode never bind, although tc flower has installed them on
+the conduit's PPE and the hardware learns the flows.
+
+The MxL862xx tag_8021q frame has the same layout as the YT922x
+four-byte tag: an outer 802.1Q CPU tag carrying the management VID,
+followed by the bridge VLAN. On a VLAN-aware bridge the switch inserts
+the PVID as that inner tag, so the bridge VID is visible to the
+lookup. Share the YT922x case.
+
+Signed-off-by: Oli Z <damnms@trustserv.de>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
+@@ -1105,10 +1105,13 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 				tag += 4;
+ 			break;
+ 		case DSA_TAG_PROTO_YT922X_4B:
++		case DSA_TAG_PROTO_MXL862_8021Q:
+ 			/* The outer 802.1Q-shaped header is a CPU port tag,
+ 			 * not the bridge VID. Skip it before looking for an
+ 			 * optional customer VLAN header, just as the tagger
+-			 * does later in the receive path.
++			 * does later in the receive path. On a VLAN-aware
++			 * MxL862xx bridge the switch inserts the PVID as
++			 * the inner tag, so the bridge VID is visible here.
+ 			 */
+ 			if (!pskb_may_pull(skb, 2 * VLAN_HLEN))
+ 				goto out;
