@@ -14,10 +14,12 @@ config NET_SIFLOWER_ETH_DPNS
 	tristate "Siflower DPNS driver"
 	help
 	  Support the Dataplane network subsystem of SiFlower SF21A6826/SF21H8898 SoC.
+	  This driver only initializes the DPNS for basic packet forwarding to the
+	  host. Leave it disabled when the out-of-tree kmod-sf21-dpns package
+	  (with hardware flow offload) drives the DPNS instead.
 
 config NET_SIFLOWER_ETH_XGMAC
 	tristate "Siflower Ethernet MAC driver"
-	depends on NET_SIFLOWER_ETH_DPNS
 	select MII
 	select PAGE_POOL
 	select PHYLINK
@@ -28,14 +30,12 @@ config NET_SIFLOWER_ETH_XGMAC
 
 config NET_SIFLOWER_ETH_DMA
 	tristate "Siflower Ethernet DMA driver"
-	depends on NET_SIFLOWER_ETH_DPNS
 	select PAGE_POOL
 	help
 	  Support the Ethernet controller of SiFlower SF21A6826/SF21H8898 SoC.
 
 config NET_SIFLOWER_ETH_XPCS
 	tristate "Siflower Ethernet XPCS driver"
-	depends on NET_SIFLOWER_ETH_DPNS
 	select PAGE_POOL
 	help
 	  Support the PCS block of SiFlower SF21A6826/SF21H8898 SoC.

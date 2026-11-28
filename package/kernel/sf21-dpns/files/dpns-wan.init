@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+# Keep the DPNS WAN table in sync with the network/firewall configuration.
+START=21
+USE_PROCD=1
+
+start_service() {
+	/usr/sbin/dpns-wan
+}
+
+reload_service() {
+	/usr/sbin/dpns-wan
+}
+
+service_triggers() {
+	procd_add_reload_trigger network firewall
+}
