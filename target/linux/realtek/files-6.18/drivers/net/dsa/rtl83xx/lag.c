@@ -10,6 +10,7 @@
 
 #include "lag.h"
 #include "otto_dsa.h"
+#include "stp.h"
 
 /* Link aggregation (Trunking) */
 #define TRUNK_DISTRIBUTION_ALGO_SPA_BIT         BIT(0)
@@ -172,6 +173,7 @@ static bool otto_lag_83xx_can_offload(struct dsa_switch *ds,
 				      struct net_device *lag,
 				      struct netdev_lag_upper_info *info)
 {
+	struct otto_dsa_priv *priv = ds->priv;
 	int id;
 
 	id = dsa_lag_id(ds->dst, lag);
@@ -181,7 +183,11 @@ static bool otto_lag_83xx_can_offload(struct dsa_switch *ds,
 	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH)
 		return false;
 
-	if (info->hash_type != NETDEV_LAG_HASH_L2 && info->hash_type != NETDEV_LAG_HASH_L23)
+	if (info->hash_type != NETDEV_LAG_HASH_L2 && info->hash_type != NETDEV_LAG_HASH_L23 &&
+	    info->hash_type != NETDEV_LAG_HASH_L34)
+		return false;
+
+	if (info->hash_type == NETDEV_LAG_HASH_L34 && !priv->r->lag_offload_l34)
 		return false;
 
 	return true;
@@ -201,6 +207,12 @@ int otto_lag_port_change(struct dsa_switch *ds, int port)
 	if (lag_group < 0)
 		return lag_group;
 
+	/* Block a port before it leaves the hardware trunk, see
+	 * otto_stp_port_state_set()
+	 */
+	if (!dp->lag_tx_enabled)
+		otto_stp_port_state_set(ds, port, dp->stp_state);
+
 	if (priv->r->lag_set_port_members) {
 		/* Set same port members again, the function should check against
 		 * lag_tx_enabled and set egress ports accordingly.
@@ -211,6 +223,18 @@ int otto_lag_port_change(struct dsa_switch *ds, int port)
 		if (ret)
 			return ret;
 	}
+
+	/* ... and let it forward again only once it is back in the trunk */
+	if (dp->lag_tx_enabled)
+		otto_stp_port_state_set(ds, port, dp->stp_state);
+
+	/* Addresses are learned on the member port, not on the trunk. Entries
+	 * learned while the trunk had other members stop forwarding once the
+	 * member set changes, until the address is learned again.
+	 */
+	for (int p = 0; p < ds->num_ports; p++)
+		if (priv->lags_port_members[lag_group] & BIT_ULL(p))
+			rtldsa_port_fast_age(ds, p);
 
 	return 0;
 }
@@ -307,7 +331,9 @@ int otto_lag_port_join(struct dsa_switch *ds, int port, struct dsa_lag lag,
 
 	err = otto_lag_add(priv->ds, group, port, info);
 	if (err) {
-		err = -EINVAL;
+		/* Keep -EOPNOTSUPP: DSA then runs the LAG in software */
+		if (err != -EOPNOTSUPP)
+			err = -EINVAL;
 		goto out;
 	}
 
@@ -328,6 +354,7 @@ out:
 int otto_lag_port_leave(struct dsa_switch *ds, int port, struct dsa_lag lag)
 {
 	int group, err;
+	struct dsa_port *dp = dsa_to_port(ds, port);
 	struct otto_dsa_priv *priv = ds->priv;
 
 	mutex_lock(&priv->reg_mutex);
@@ -362,6 +389,16 @@ int otto_lag_port_leave(struct dsa_switch *ds, int port, struct dsa_lag lag)
 
 out:
 	mutex_unlock(&priv->reg_mutex);
+
+	/* DSA puts a bridged port back to BR_STATE_FORWARDING before it clears
+	 * dp->lag, so otto_stp_port_state_set() turned that into BLOCKING again
+	 * for a member without lag_tx_enabled. Nothing sets the state later for
+	 * a port that was not in a bridge either. Apply the bridge port state
+	 * again now that the port is no longer a LAG member.
+	 */
+	if (!err && dp)
+		otto_stp_port_state_set(ds, port, dp->stp_state);
+
 	return err;
 }
 
@@ -626,7 +663,24 @@ int otto_lag_838x_trk_mbr_ctr(int group)
 int otto_lag_838x_set_distribution_algorithm(struct otto_dsa_priv *priv,
 					     int group, int algoidx, u32 algomsk)
 {
+	u32 cur, idx;
+	int i;
+
 	algoidx &= 1; /* RTL838X only supports 2 concurrent algorithms */
+
+	/* layer2 and layer3+4 share slot 0, layer2+3 uses slot 1. Refuse a
+	 * different mask while another active LAG uses the same slot, the
+	 * bond then falls back to software.
+	 */
+	regmap_read(priv->map, RTL838X_TRK_HASH_CTRL + (algoidx << 2), &cur);
+	for (i = 0; i < priv->ds->num_lag_ids; i++) {
+		if (i == group || !priv->lags_port_members[i])
+			continue;
+		regmap_read(priv->map, RTL838X_TRK_HASH_IDX_CTRL + ((i >> 3) << 2), &idx);
+		if (((idx >> (i % 8)) & 1) == algoidx && cur != algomsk)
+			return -EOPNOTSUPP;
+	}
+
 	regmap_write_bits(priv->map, RTL838X_TRK_HASH_IDX_CTRL + ((group >> 3) << 2),
 			  1 << (group % 8), algoidx << (group % 8));
 	regmap_write(priv->map, RTL838X_TRK_HASH_CTRL + (algoidx << 2), algomsk);
@@ -637,14 +691,25 @@ int otto_lag_83xx_set_port_members(struct otto_dsa_priv *priv, int group,
 				 u64 members, struct netdev_lag_upper_info *info)
 {
 	int reg = priv->r->trk_mbr_ctr(group);
+	u64 tx_members = 0;
 
 	priv->lags_port_members[group] = members;
 
+	/* Only ports allowed to transmit may be trunk members in hardware, else
+	 * the ASIC hashes forwarded frames onto them and they are lost. Such a
+	 * port must also be blocked, see otto_stp_port_state_set().
+	 */
+	for (int i = 0; i < ARRAY_SIZE(priv->ports); i++)
+		if ((members & BIT_ULL(i)) &&
+		    (!priv->r->lag_tx_uses_member_mask ||
+		     (priv->ports[i].dp && priv->ports[i].dp->lag_tx_enabled)))
+			tx_members |= BIT_ULL(i);
+
 	if (priv->r->cpu_port >= 32) {
-		regmap_write(priv->map, reg, upper_32_bits(members));
+		regmap_write(priv->map, reg, upper_32_bits(tx_members));
 		reg += 4;
 	}
-	regmap_write(priv->map, reg, lower_32_bits(members));
+	regmap_write(priv->map, reg, lower_32_bits(tx_members));
 
 	return 0;
 }
