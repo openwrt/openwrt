@@ -1,0 +1,87 @@
+From 23fcaa8a4d34c6e9fa69f0148b68cb1df3135d9b Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 28 Nov 2026 10:01:01 +0300
+Subject: [PATCH] net: ath10k: add scoped Cortina native flowtable delegation
+
+Add CS7542 flowtable callbacks while retaining the normal native MAC,
+encryption and TX status paths. Scope hardware admission to supported
+PCI devices and ordinary station/AP interfaces.
+
+A bind may arrive from NETDEV_REGISTER under RTNL. Convert the owner's
+EBUSY refusal to EOPNOTSUPP at this TC boundary so nft retains its
+software hook instead of aborting wireless interface creation. Later
+ordinary flowtable binding can admit hardware forwarding. Preserve
+UNBIND error propagation and balanced owner-symbol references.
+
+Upstream-Status: Pending
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -17,6 +17,12 @@
+ #include <linux/bitfield.h>
+ #include <linux/random.h>
+ 
++#if IS_ENABLED(CONFIG_CS7542_FE_LIVE_OWNER)
++#include <linux/pci.h>
++#include <linux/cs7542_wfo_native.h>
++#include <net/flow_offload.h>
++#endif
++
+ #include "hif.h"
+ #include "core.h"
+ #include "debug.h"
+@@ -9520,7 +9526,52 @@ exit:
+ 	return ret;
+ }
+ 
++#if IS_ENABLED(CONFIG_CS7542_FE_LIVE_OWNER)
++static int ath10k_native_setup_tc(struct ieee80211_hw *hw,
++				  struct ieee80211_vif *vif,
++				  struct net_device *dev,
++				  enum tc_setup_type type, void *data)
++{
++	typeof(cs7542_wfo_setup_tc) *setup;
++	struct flow_block_offload *block = data;
++	struct ath10k *ar = hw->priv;
++	enum cs7542_wfo_vif_kind kind;
++	int error = -EOPNOTSUPP;
++
++	setup = symbol_get(cs7542_wfo_setup_tc);
++	if (!setup)
++		return error;
++	if (type != TC_SETUP_FT || !block || !dev || !vif)
++		goto put;
++	/* Teardown of a retained binding needs no live PCI/vif identity. */
++	if (block->command == FLOW_BLOCK_UNBIND) {
++		error = setup(NULL, dev, 0, type, data);
++		goto put;
++	}
++	if (!ar->dev || !dev_is_pci(ar->dev) || vif->valid_links)
++		goto put;
++	if (vif->type == NL80211_IFTYPE_STATION)
++		kind = CS7542_WFO_STATION;
++	else if (vif->type == NL80211_IFTYPE_AP)
++		kind = CS7542_WFO_AP;
++	else
++		goto put;
++	error = setup(to_pci_dev(ar->dev), dev, kind, type, data);
++	/* nft can bind while NETDEV_REGISTER already holds RTNL. Defer to
++	 * software instead of vetoing creation of the wireless interface.
++	 */
++	if (block->command == FLOW_BLOCK_BIND && error == -EBUSY)
++		error = -EOPNOTSUPP;
++put:
++	symbol_put(cs7542_wfo_setup_tc);
++	return error;
++}
++#endif
++
+ static const struct ieee80211_ops ath10k_ops = {
++#if IS_ENABLED(CONFIG_CS7542_FE_LIVE_OWNER)
++	.net_setup_tc			= ath10k_native_setup_tc,
++#endif
+ 	.tx				= ath10k_mac_op_tx,
+ 	.wake_tx_queue			= ath10k_mac_op_wake_tx_queue,
+ 	.start				= ath10k_start,

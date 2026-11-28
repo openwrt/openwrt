@@ -1,0 +1,92 @@
+From 7d46e2e3e77bd7e8a09882e061103c010a8aac2e Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 28 Nov 2026 10:01:00 +0300
+Subject: [PATCH] net: ath9k: add scoped Cortina native flowtable delegation
+
+Add CS7542 flowtable callbacks while retaining the normal native MAC,
+encryption and TX status paths. Scope hardware admission to supported
+PCI devices and ordinary station/AP interfaces.
+
+A bind may arrive from NETDEV_REGISTER under RTNL. Convert the owner's
+EBUSY refusal to EOPNOTSUPP at this TC boundary so nft retains its
+software hook instead of aborting wireless interface creation. Later
+ordinary flowtable binding can admit hardware forwarding. Preserve
+UNBIND error propagation and balanced owner-symbol references.
+
+Upstream-Status: Pending
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -16,6 +16,12 @@
+ 
+ #include <linux/nl80211.h>
+ #include <linux/delay.h>
++
++#if IS_ENABLED(CONFIG_CS7542_FE_LIVE_OWNER)
++#include <linux/pci.h>
++#include <linux/cs7542_wfo_native.h>
++#include <net/flow_offload.h>
++#endif
+ #include "ath9k.h"
+ #include "btcoex.h"
+ #include "hsr.h"
+@@ -2799,6 +2805,49 @@ static int ath9k_get_txpower(struct ieee
+ 	return 0;
+ }
+ 
++#if IS_ENABLED(CONFIG_CS7542_FE_LIVE_OWNER)
++/* No wiphy lock, PE session or backports object is passed into the NE. */
++static int ath9k_native_setup_tc(struct ieee80211_hw *hw,
++				 struct ieee80211_vif *vif,
++				 struct net_device *dev,
++				 enum tc_setup_type type, void *data)
++{
++	struct ath_softc *sc = hw->priv;
++	typeof(cs7542_wfo_setup_tc) *setup;
++	struct flow_block_offload *block = data;
++	enum cs7542_wfo_vif_kind kind = 0;
++	int error = -EOPNOTSUPP;
++
++	setup = symbol_get(cs7542_wfo_setup_tc);
++	if (!setup)
++		return error;
++	if (type != TC_SETUP_FT || !block || !dev || !vif)
++		goto put;
++	/* Retained UNBIND does not depend on current vif type/link/PCI state. */
++	if (block->command == FLOW_BLOCK_UNBIND) {
++		error = setup(NULL, dev, 0, type, data);
++		goto put;
++	}
++	if (!dev_is_pci(sc->dev) || vif->valid_links)
++		goto put;
++	if (vif->type == NL80211_IFTYPE_STATION)
++		kind = CS7542_WFO_STATION;
++	else if (vif->type == NL80211_IFTYPE_AP)
++		kind = CS7542_WFO_AP;
++	else
++		goto put;
++	error = setup(to_pci_dev(sc->dev), dev, kind, type, data);
++	/* nft can bind while NETDEV_REGISTER already holds RTNL. Defer to
++	 * software instead of vetoing creation of the wireless interface.
++	 */
++	if (block->command == FLOW_BLOCK_BIND && error == -EBUSY)
++		error = -EOPNOTSUPP;
++put:
++	symbol_put(cs7542_wfo_setup_tc);
++	return error;
++}
++#endif
++
+ struct ieee80211_ops ath9k_ops = {
+ 	.add_chanctx = ieee80211_emulate_add_chanctx,
+ 	.remove_chanctx = ieee80211_emulate_remove_chanctx,
+@@ -2851,4 +2900,7 @@ struct ieee80211_ops ath9k_ops = {
+ 	.sw_scan_complete   = ath9k_sw_scan_complete,
+ 	.get_txpower        = ath9k_get_txpower,
+ 	.wake_tx_queue      = ath9k_wake_tx_queue,
++#if IS_ENABLED(CONFIG_CS7542_FE_LIVE_OWNER)
++	.net_setup_tc       = ath9k_native_setup_tc,
++#endif
+ };
