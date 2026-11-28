@@ -6,9 +6,9 @@ legacy_mtk_mmc_full_upgrade() {
 	local diskdev partdev diff oldrecovery
 
 	if grep -q root=/dev/mmcblk0p2 /proc/cmdline; then
-	    oldrecovery=1
+		oldrecovery=1
 	else
-	    oldrecovery=2
+		oldrecovery=2
 	fi
 
 	export_bootdevice && export_partdevice diskdev 0 || {
@@ -54,7 +54,7 @@ legacy_mtk_mmc_full_upgrade() {
 				echo "Writing image to /dev/$partdev..."
 				get_image "$@" | dd of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
 			else
-			    echo "Unable to find partition $part device, skipped."
+				echo "Unable to find partition $part device, skipped."
 			fi
 		done < /tmp/partmap.image
 
