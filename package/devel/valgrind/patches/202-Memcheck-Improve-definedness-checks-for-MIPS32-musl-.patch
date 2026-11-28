@@ -1,0 +1,172 @@
+From 7b29a3f2aba0f9fbd9de577ce0a0a1b07d95830c Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Wed, 25 Nov 2026 02:38:24 +0100
+Subject: Memcheck: Improve definedness checks for MIPS32 musl string loops
+
+Musl's word-at-a-time string routines can load undefined bytes after
+a defined terminator. The MIPS32 compiler can keep the byte-test
+constants in registers set in a preceding block, so the literal-based
+heuristic misses the loop. GCC uses addition for the byte test in the
+OpenWrt build. Clang can use subtraction for the same test.
+
+Use the existing operand-use analysis for 32-bit addition and
+subtraction and enable precise 32-bit equality checks on MIPS32 musl
+builds. This lets Memcheck determine when the defined terminator is
+enough to fix the branch outcome.
+
+Add a regression test for both instruction forms that also checks
+that a genuinely undefined branch is still reported. Verified uname,
+logread, and the Clang-compiled musl strlen and memchr reproducers on
+big-endian MIPS32 OpenWrt.
+
+Assisted-by: LLM
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ memcheck/mc_translate.c                  |  8 +++++
+ memcheck/tests/mips32/Makefile.am        | 10 ++++--
+ memcheck/tests/mips32/haszero.c          | 44 ++++++++++++++++++++++++
+ memcheck/tests/mips32/haszero.stderr.exp |  8 +++++
+ memcheck/tests/mips32/haszero.vgtest     |  3 ++
+ memcheck/tests/mips32/haszero_mips.S     | 23 +++++++++++++
+ 6 files changed, 94 insertions(+), 2 deletions(-)
+ create mode 100644 memcheck/tests/mips32/haszero.c
+ create mode 100644 memcheck/tests/mips32/haszero.stderr.exp
+ create mode 100644 memcheck/tests/mips32/haszero.vgtest
+ create mode 100644 memcheck/tests/mips32/haszero_mips.S
+
+--- a/memcheck/mc_translate.c
++++ b/memcheck/mc_translate.c
+@@ -27,6 +27,7 @@
+    The GNU General Public License is contained in the file COPYING.
+ */
+ 
++#include "config.h"             // For MUSL_LIBC
+ #include "pub_tool_basics.h"
+ #include "pub_tool_poolalloc.h"     // For mc_include.h
+ #include "pub_tool_hashtable.h"     // For mc_include.h
+@@ -8997,6 +8998,13 @@ IRSB* MC_(instrument) ( VgCallbackClosur
+       mce.dlbo.dl_CmpEQ64_CmpNE64 = DLexpensive;
+ #     elif defined(VGA_arm)
+       mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
++#     elif defined(VGA_mips32) && defined(MUSL_LIBC)
++      // musl's word-at-a-time string routines can test a word containing
++      // undefined bytes after a known terminator. On MIPS the loop can
++      // take the byte-test constants from registers set in an earlier block.
++      mce.dlbo.dl_Add32           = DLauto;
++      mce.dlbo.dl_Sub32           = DLauto;
++      mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
+ #     endif
+ 
+       /* preInstrumentationAnalysis() will allocate &mce.tmpHowUsed and then
+--- a/memcheck/tests/mips32/Makefile.am
++++ b/memcheck/tests/mips32/Makefile.am
+@@ -7,11 +7,17 @@ dist_noinst_SCRIPTS = \
+ EXTRA_DIST = $(noinst_SCRIPTS) \
+ 	bad_sioc.stderr.exp bad_sioc.stdout.exp bad_sioc.vgtest \
+ 	fadvise64.stderr.exp fadvise64.stderr.exp-BE \
+-	fadvise64.vgtest
++	fadvise64.vgtest \
++	haszero.stderr.exp haszero.vgtest
+ 
+ 
+ check_PROGRAMS = \
+ 	bad_sioc      \
+-	fadvise64
++	fadvise64 \
++	haszero
+ 
+ fadvise64_CFLAGS = $(AM_CFLAGS) -Wno-uninitialized
++
++haszero_SOURCES = haszero.c haszero_mips.S
++haszero_CFLAGS = $(AM_CFLAGS) @FLAG_M32@
++haszero_CCASFLAGS = $(AM_CCASFLAGS) @FLAG_M32@ -g
+--- /dev/null
++++ b/memcheck/tests/mips32/haszero.c
+@@ -0,0 +1,44 @@
++#include <stdint.h>
++#include <stdio.h>
++
++#include "config.h"
++#include "memcheck/memcheck.h"
++
++extern unsigned haszero_add(const uint32_t *, uint32_t, uint32_t);
++extern unsigned haszero_sub(const uint32_t *, uint32_t, uint32_t);
++
++/* Keep the constants out of the translated block's immediate operands. */
++static volatile uint32_t addend = 0xfefefeffU;
++static volatile uint32_t subtrahend = 0x01010101U;
++static volatile uint32_t high_bits = 0x80808080U;
++
++int main(int argc, char **argv)
++{
++   if (argc > 1) {
++#if defined(MUSL_LIBC) && !defined(NVALGRIND)
++      return 0;
++#else
++      return 1;
++#endif
++   }
++
++   uint32_t word = 0x00414141U;
++   unsigned char *bytes = (unsigned char *)&word;
++
++   /* Leave the zero byte defined, regardless of byte order. */
++   for (unsigned i = 0; i < sizeof(word); i++)
++      if (bytes[i] != 0)
++         VALGRIND_MAKE_MEM_UNDEFINED(&bytes[i], 1);
++
++   if (!haszero_add(&word, addend, high_bits) ||
++       !haszero_sub(&word, subtrahend, high_bits)) {
++      fputs("Failed to find the defined zero byte\n", stderr);
++      return 1;
++   }
++
++   /* Both branches now depend on undefined data and should report it. */
++   VALGRIND_MAKE_MEM_UNDEFINED(&word, sizeof(word));
++   unsigned add = haszero_add(&word, addend, high_bits);
++   unsigned sub = haszero_sub(&word, subtrahend, high_bits);
++   return !(add && sub);
++}
+--- /dev/null
++++ b/memcheck/tests/mips32/haszero.stderr.exp
+@@ -0,0 +1,8 @@
++Conditional jump or move depends on uninitialised value(s)
++   at 0x........: haszero_add (haszero_mips.S:22)
++   by 0x........: main (haszero.c:41)
++
++Conditional jump or move depends on uninitialised value(s)
++   at 0x........: haszero_sub (haszero_mips.S:23)
++   by 0x........: main (haszero.c:42)
++
+--- /dev/null
++++ b/memcheck/tests/mips32/haszero.vgtest
+@@ -0,0 +1,3 @@
++prereq: ./haszero --supported
++prog: haszero
++vgopts: -q --num-callers=2 --expensive-definedness-checks=auto
+--- /dev/null
++++ b/memcheck/tests/mips32/haszero_mips.S
+@@ -0,0 +1,23 @@
++	.text
++	.set noreorder
++
++	.macro haszero name, arithmetic
++	.globl \name
++	.type \name, @function
++\name:
++	lw $t0, 0($a0)
++	\arithmetic $v0, $t0, $a1
++	nor $t0, $t0, $zero
++	and $v0, $v0, $t0
++	and $v0, $v0, $a2
++	beqz $v0, 1f
++	move $v0, $zero
++	li $v0, 1
++1:
++	jr $ra
++	nop
++	.size \name, .-\name
++	.endm
++
++	haszero haszero_add, addu
++	haszero haszero_sub, subu

@@ -1,0 +1,560 @@
+From 46e66636cebe4958e36a996a21b6c50e784f679b Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Wed, 25 Nov 2026 02:38:24 +0100
+Subject: mips: Match the Linux sigaction ABI
+
+Linux on MIPS uses a kernel-provided signal return trampoline, and its
+sigaction structure ends with the signal mask. Since Linux 5.11 the
+kernel clears the obsolete SA_RESTORER bit. Valgrind expected that bit
+back in its host signal action, causing logread to abort when changing
+the SIGPIPE disposition. The guest wrapper also read and wrote an
+extra restorer pointer past the end of the kernel structure.
+
+Use the Linux layout for host and guest actions on MIPS32 and MIPS64.
+Leave the host restorer to the kernel and use Valgrind's existing
+trampolines when delivering guest signals. For the legacy MIPS32
+syscall, read only the first input mask word and zero the upper words
+in the result, as the kernel does.
+
+Add a regression test for querying actions without modifying adjacent
+data, legacy mask conversion, and signal delivery. Verified on
+big-endian MIPS32 OpenWrt and little-endian MIPS64 Linux.
+
+Assisted-by: LLM
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ coregrind/m_sigframe/sigframe-mips32-linux.c  | 20 +----
+ coregrind/m_sigframe/sigframe-mips64-linux.c  |  8 +-
+ coregrind/m_signals.c                         | 36 +++------
+ coregrind/m_syswrap/syswrap-linux.c           | 57 +++++++++-----
+ include/vki/vki-mips32-linux.h                | 30 +-------
+ include/vki/vki-mips64-linux.h                | 27 +------
+ none/tests/linux/Makefile.am                  |  8 ++
+ none/tests/linux/mips_sigaction_abi.c         | 77 +++++++++++++++++++
+ .../tests/linux/mips_sigaction_abi.stdout.exp |  1 +
+ none/tests/linux/mips_sigaction_abi.vgtest    |  3 +
+ 10 files changed, 151 insertions(+), 116 deletions(-)
+ create mode 100644 none/tests/linux/mips_sigaction_abi.c
+ create mode 100644 none/tests/linux/mips_sigaction_abi.stdout.exp
+ create mode 100644 none/tests/linux/mips_sigaction_abi.vgtest
+
+--- a/coregrind/m_sigframe/sigframe-mips32-linux.c
++++ b/coregrind/m_sigframe/sigframe-mips32-linux.c
+@@ -132,6 +132,8 @@ void VG_(sigframe_create)( ThreadId tid,
+   Int sigNo = siginfo->si_signo;
+   struct vg_sig_private *priv;
+ 
++  vg_assert(restorer == NULL);
++
+   /* Stack must be 8-byte aligned */
+   sp_top_of_frame &= ~0xf;
+ 
+@@ -200,14 +202,7 @@ void VG_(sigframe_create)( ThreadId tid,
+       tst->arch.vex.guest_r29 = (Addr) frame;
+       tst->arch.vex.guest_r25 = (Addr) handler;
+ 
+-      if (flags & VKI_SA_RESTORER)
+-        {
+-          tst->arch.vex.guest_r31 = (Addr) restorer;  
+-        }
+-      else
+-        {
+-          tst->arch.vex.guest_r31 = (Addr)&VG_(mips32_linux_SUBST_FOR_rt_sigreturn);
+-        }
++      tst->arch.vex.guest_r31 = (Addr)&VG_(mips32_linux_SUBST_FOR_rt_sigreturn);
+ 
+     }
+   else
+@@ -235,14 +230,7 @@ void VG_(sigframe_create)( ThreadId tid,
+       tst->arch.vex.guest_r29 = (Addr) frame;
+       tst->arch.vex.guest_r25 = (Addr) handler;
+ 
+-      if (flags & VKI_SA_RESTORER)
+-        {
+-          tst->arch.vex.guest_r31 = (Addr) restorer;  
+-        }
+-      else
+-        {
+-          tst->arch.vex.guest_r31 = (Addr)&VG_(mips32_linux_SUBST_FOR_sigreturn);
+-        }
++      tst->arch.vex.guest_r31 = (Addr)&VG_(mips32_linux_SUBST_FOR_sigreturn);
+     }
+ 
+   priv->magicPI       = 0x31415927;
+--- a/coregrind/m_sigframe/sigframe-mips64-linux.c
++++ b/coregrind/m_sigframe/sigframe-mips64-linux.c
+@@ -126,6 +126,9 @@ void VG_(sigframe_create) ( ThreadId tid
+    ThreadState* tst = VG_(get_ThreadState)(tid);
+    Int sigNo = siginfo->si_signo;
+    struct vg_sig_private *priv;
++
++   vg_assert(restorer == NULL);
++
+    /* Stack must be 16-byte aligned */
+    sp_top_of_frame &= ~0xf;
+ 
+@@ -181,10 +184,7 @@ void VG_(sigframe_create) ( ThreadId tid
+    tst->arch.vex.guest_r29 = (Addr) frame;
+    tst->arch.vex.guest_r25 = (Addr) handler;
+ 
+-   if (flags & VKI_SA_RESTORER) 
+-      tst->arch.vex.guest_r31 = (Addr) restorer;
+-   else 
+-      tst->arch.vex.guest_r31 = (Addr)&VG_(mips64_linux_SUBST_FOR_rt_sigreturn);
++   tst->arch.vex.guest_r31 = (Addr)&VG_(mips64_linux_SUBST_FOR_rt_sigreturn);
+ 
+    priv->magicPI       = 0x31415927;
+    priv->sigNo_private = sigNo;
+--- a/coregrind/m_signals.c
++++ b/coregrind/m_signals.c
+@@ -928,7 +928,7 @@ void calculate_SKSS_from_SCSS ( SKSS* ds
+       if (skss_handler != VKI_SIG_IGN && skss_handler != VKI_SIG_DFL)
+          skss_flags |= VKI_SA_SIGINFO;
+ 
+-#     if !defined(VGP_riscv64_linux)
++#     if defined(VKI_SA_RESTORER)
+       /* use our own restorer */
+       skss_flags |= VKI_SA_RESTORER;
+ #     endif
+@@ -1161,10 +1161,8 @@ static void handle_SCSS_change ( Bool fo
+ 
+       ksa.ksa_handler = skss.skss_per_sig[sig].skss_handler;
+       ksa.sa_flags    = skss.skss_per_sig[sig].skss_flags;
+-#     if !defined(VGP_ppc32_linux) && !defined(VGP_mips32_linux) && \
+-         !defined(VGP_riscv64_linux) && \
+-         !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+-         !defined(VGO_solaris) && !defined(VGO_freebsd)
++#     if defined(VGO_linux) && defined(VKI_SA_RESTORER) && \
++         !defined(VGP_ppc32_linux)
+       ksa.sa_restorer = my_sigreturn;
+ #     endif
+       /* Re above ifdef (also the assertion below), PaulM says:
+@@ -1208,11 +1206,8 @@ static void handle_SCSS_change ( Bool fo
+ #        endif
+          vg_assert(ksa_old.sa_flags 
+                    == skss_old.skss_per_sig[sig].skss_flags);
+-#        if !defined(VGP_ppc32_linux) && !defined(VGP_mips32_linux) && \
+-            !defined(VGP_mips64_linux) && !defined(VGP_nanomips_linux) && \
+-            !defined(VGP_riscv64_linux) && \
+-            !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+-            !defined(VGO_solaris) && !defined(VGO_freebsd)
++#        if defined(VGO_linux) && defined(VKI_SA_RESTORER) && \
++            !defined(VGP_ppc32_linux) && !defined(VGP_nanomips_linux)
+          vg_assert(ksa_old.sa_restorer == my_sigreturn);
+ #        endif
+          VG_(sigaddset)( &ksa_old.sa_mask, VKI_SIGKILL );
+@@ -1330,8 +1325,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo
+       old_act->ksa_handler = scss.scss_per_sig[signo].scss_handler;
+       old_act->sa_flags    = scss.scss_per_sig[signo].scss_flags;
+       old_act->sa_mask     = scss.scss_per_sig[signo].scss_mask;
+-#     if !defined(VGP_riscv64_linux) && !defined(VGO_darwin) && \
+-         !defined(VGO_freebsd) && !defined(VGO_solaris)
++#     if defined(VGO_linux) && defined(VKI_SA_RESTORER)
+       old_act->sa_restorer = scss.scss_per_sig[signo].scss_restorer;
+ #     endif
+    }
+@@ -1343,8 +1337,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo
+       scss.scss_per_sig[signo].scss_mask     = new_act->sa_mask;
+ 
+       scss.scss_per_sig[signo].scss_restorer = NULL;
+-#     if !defined(VGP_riscv64_linux) && !defined(VGO_darwin) && \
+-         !defined(VGO_freebsd) && !defined(VGO_solaris)
++#     if defined(VGO_linux) && defined(VKI_SA_RESTORER)
+       scss.scss_per_sig[signo].scss_restorer = new_act->sa_restorer;
+ #     endif
+ 
+@@ -1703,8 +1696,7 @@ void VG_(kill_self)(Int sigNo)
+ 
+    sa.ksa_handler = VKI_SIG_DFL;
+    sa.sa_flags = 0;
+-#  if !defined(VGP_riscv64_linux) && !defined(VGO_darwin) && \
+-      !defined(VGO_freebsd) && !defined(VGO_solaris)
++#  if defined(VGO_linux) && defined(VKI_SA_RESTORER)
+    sa.sa_restorer = 0;
+ #  endif
+    VG_(sigemptyset)(&sa.sa_mask);
+@@ -3102,8 +3094,7 @@ void pp_ksigaction ( vki_sigaction_toK_t
+    VG_(printf)("pp_ksigaction: handler %p, flags 0x%x, restorer %p\n", 
+                sa->ksa_handler, 
+                (UInt)sa->sa_flags, 
+-#              if !defined(VGP_riscv64_linux) && !defined(VGO_darwin) && \
+-                  !defined(VGO_freebsd) && !defined(VGO_solaris)
++#              if defined(VGO_linux) && defined(VKI_SA_RESTORER)
+                   sa->sa_restorer
+ #              else
+                   (void*)0
+@@ -3125,8 +3116,7 @@ void VG_(set_default_handler)(Int signo)
+ 
+    sa.ksa_handler = VKI_SIG_DFL;
+    sa.sa_flags = 0;
+-#  if !defined(VGP_riscv64_linux) && !defined(VGO_darwin) && \
+-      !defined(VGO_freebsd) && !defined(VGO_solaris)
++#  if defined(VGO_linux) && defined(VKI_SA_RESTORER)
+    sa.sa_restorer = 0;
+ #  endif
+    VG_(sigemptyset)(&sa.sa_mask);
+@@ -3247,8 +3237,7 @@ void VG_(sigstartup_actions) ( void )
+ 
+ 	 tsa.ksa_handler = (void *)sync_signalhandler;
+ 	 tsa.sa_flags = VKI_SA_SIGINFO;
+-#        if !defined(VGP_riscv64_linux) && !defined(VGO_darwin) && \
+-            !defined(VGO_freebsd) && !defined(VGO_solaris)
++#        if defined(VGO_linux) && defined(VKI_SA_RESTORER)
+ 	 tsa.sa_restorer = 0;
+ #        endif
+ 	 VG_(sigfillset)(&tsa.sa_mask);
+@@ -3275,8 +3264,7 @@ void VG_(sigstartup_actions) ( void )
+       scss.scss_per_sig[i].scss_mask     = sa.sa_mask;
+ 
+       scss.scss_per_sig[i].scss_restorer = NULL;
+-#     if !defined(VGP_riscv64_linux) && !defined(VGO_darwin) && \
+-         !defined(VGO_freebsd) && !defined(VGO_solaris)
++#     if defined(VGO_linux) && defined(VKI_SA_RESTORER)
+       scss.scss_per_sig[i].scss_restorer = sa.sa_restorer;
+ #     endif
+ 
+--- a/coregrind/m_syswrap/syswrap-linux.c
++++ b/coregrind/m_syswrap/syswrap-linux.c
+@@ -4894,10 +4894,27 @@ void convert_sigset_to_rt(const vki_old_
+    VG_(sigemptyset)(set);
+    set->sig[0] = *oldset;
+ }
++
++#if defined(VGP_mips32_linux)
++/* MIPS uses the same struct for both calls. The legacy syscall reads
++   the first mask word and writes the entire mask. */
++typedef vki_sigaction_toK_t vki_legacy_sigaction_t;
++#define LEGACY_SIGACTION_MASK_WORD sa_mask.sig[0]
++#else
++typedef struct vki_old_sigaction vki_legacy_sigaction_t;
++#define LEGACY_SIGACTION_MASK_WORD sa_mask
++#endif
++
+ PRE(sys_sigaction)
+ {
+    vki_sigaction_toK_t   new, *newp;
+    vki_sigaction_fromK_t old, *oldp;
++#if defined(VGP_mips32_linux)
++   const SizeT act_size = offsetof(vki_legacy_sigaction_t, sa_mask)
++                          + sizeof(vki_old_sigset_t);
++#else
++   const SizeT act_size = sizeof(vki_legacy_sigaction_t);
++#endif
+ 
+    PRINT("sys_sigaction ( %ld, %#lx, %#lx )",  SARG1, ARG2, ARG3);
+    PRE_REG_READ3(int, "sigaction",
+@@ -4907,21 +4924,20 @@ PRE(sys_sigaction)
+    newp = oldp = NULL;
+ 
+    if (ARG2 != 0) {
+-      struct vki_old_sigaction *sa = (struct vki_old_sigaction *)(Addr)ARG2;
++      vki_legacy_sigaction_t *sa = (vki_legacy_sigaction_t *)(Addr)ARG2;
+       PRE_MEM_READ( "sigaction(act->sa_handler)", (Addr)&sa->ksa_handler, sizeof(sa->ksa_handler));
+-      PRE_MEM_READ( "sigaction(act->sa_mask)", (Addr)&sa->sa_mask, sizeof(sa->sa_mask));
++      PRE_MEM_READ( "sigaction(act->sa_mask)", (Addr)&sa->LEGACY_SIGACTION_MASK_WORD,
++                    sizeof(sa->LEGACY_SIGACTION_MASK_WORD));
+       PRE_MEM_READ( "sigaction(act->sa_flags)", (Addr)&sa->sa_flags, sizeof(sa->sa_flags));
+-#     if !defined(VGP_riscv64_linux)
+-      /* Check the sa_restorer field. More recent Linux platforms completely
+-         drop this member. */
+-      if (ML_(safe_to_deref)(sa,sizeof(struct vki_old_sigaction))
++#     if defined(VKI_SA_RESTORER)
++      if (ML_(safe_to_deref)(sa,act_size)
+           && (sa->sa_flags & VKI_SA_RESTORER))
+          PRE_MEM_READ( "sigaction(act->sa_restorer)", (Addr)&sa->sa_restorer, sizeof(sa->sa_restorer));
+ #     endif
+    }
+ 
+    if (ARG3 != 0) {
+-      PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
++      PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(vki_legacy_sigaction_t));
+       oldp = &old;
+    }
+ 
+@@ -4929,39 +4945,43 @@ PRE(sys_sigaction)
+       aren't accessible then sigaction returns EFAULT and we cannot
+       use either struct for our own bookkeeping. Just fail early. */
+    if (ARG2 != 0
+-       && ! ML_(safe_to_deref)((void *)(Addr)ARG2,
+-                               sizeof(struct vki_old_sigaction))) {
++       && ! ML_(safe_to_deref)((void *)(Addr)ARG2, act_size)) {
+       VG_(umsg)("Warning: bad act handler address %p in sigaction()\n",
+                 (void *)(Addr)ARG2);
+       SET_STATUS_Failure ( VKI_EFAULT );
+    } else if ((ARG3 != 0
+                && ! ML_(safe_to_deref)((void *)(Addr)ARG3,
+-                                       sizeof(struct vki_old_sigaction)))) {
++                                       sizeof(vki_legacy_sigaction_t)))) {
+       VG_(umsg)("Warning: bad oldact handler address %p in sigaction()\n",
+                 (void *)(Addr)ARG3);
+       SET_STATUS_Failure ( VKI_EFAULT );
+    } else {
+       if (ARG2 != 0) {
+-         struct vki_old_sigaction *oldnew =
+-            (struct vki_old_sigaction *)(Addr)ARG2;
++         vki_legacy_sigaction_t *oldnew = (vki_legacy_sigaction_t *)(Addr)ARG2;
+ 
+          new.ksa_handler = oldnew->ksa_handler;
+          new.sa_flags = oldnew->sa_flags;
++#        if defined(VKI_SA_RESTORER)
+          new.sa_restorer = oldnew->sa_restorer;
+-         convert_sigset_to_rt(&oldnew->sa_mask, &new.sa_mask);
++#        endif
++         convert_sigset_to_rt(&oldnew->LEGACY_SIGACTION_MASK_WORD, &new.sa_mask);
+          newp = &new;
+       }
+ 
+       SET_STATUS_from_SysRes( VG_(do_sys_sigaction)(ARG1, newp, oldp) );
+ 
+       if (ARG3 != 0 && SUCCESS && RES == 0) {
+-         struct vki_old_sigaction *oldold =
+-            (struct vki_old_sigaction *)(Addr)ARG3;
++         vki_legacy_sigaction_t *oldold = (vki_legacy_sigaction_t *)(Addr)ARG3;
+ 
+          oldold->ksa_handler = oldp->ksa_handler;
+          oldold->sa_flags = oldp->sa_flags;
++#        if defined(VKI_SA_RESTORER)
+          oldold->sa_restorer = oldp->sa_restorer;
+-         oldold->sa_mask = oldp->sa_mask.sig[0];
++#        endif
++#        if defined(VGP_mips32_linux)
++         VG_(sigemptyset)(&oldold->sa_mask);
++#        endif
++         oldold->LEGACY_SIGACTION_MASK_WORD = oldp->sa_mask.sig[0];
+       }
+   }
+ }
+@@ -4969,8 +4989,9 @@ POST(sys_sigaction)
+ {
+    vg_assert(SUCCESS);
+    if (RES == 0 && ARG3 != 0)
+-      POST_MEM_WRITE( ARG3, sizeof(struct vki_old_sigaction));
++      POST_MEM_WRITE( ARG3, sizeof(vki_legacy_sigaction_t));
+ }
++#undef LEGACY_SIGACTION_MASK_WORD
+ #endif
+ 
+ PRE(sys_signalfd)
+@@ -5035,7 +5056,7 @@ PRE(sys_rt_sigaction)
+       PRE_MEM_READ( "rt_sigaction(act->sa_handler)", (Addr)&sa->ksa_handler, sizeof(sa->ksa_handler));
+       PRE_MEM_READ( "rt_sigaction(act->sa_mask)", (Addr)&sa->sa_mask, sizeof(sa->sa_mask));
+       PRE_MEM_READ( "rt_sigaction(act->sa_flags)", (Addr)&sa->sa_flags, sizeof(sa->sa_flags));
+-#     if !defined(VGP_riscv64_linux)
++#     if defined(VKI_SA_RESTORER)
+       if (ML_(safe_to_deref)(sa,sizeof(vki_sigaction_toK_t))
+           && (sa->sa_flags & VKI_SA_RESTORER))
+          PRE_MEM_READ( "rt_sigaction(act->sa_restorer)", (Addr)&sa->sa_restorer, sizeof(sa->sa_restorer));
+--- a/include/vki/vki-mips32-linux.h
++++ b/include/vki/vki-mips32-linux.h
+@@ -95,9 +95,6 @@ extern UWord VKI_PAGE_SIZE;
+ typedef void __vki_signalfn_t(int);
+ typedef __vki_signalfn_t __user *__vki_sighandler_t;
+ 
+-typedef void __vki_restorefn_t(void);
+-typedef __vki_restorefn_t __user *__vki_sigrestore_t;
+-
+ #define VKI_SIG_DFL	((__vki_sighandler_t)0)	/* default signal handling */
+ #define VKI_SIG_IGN	((__vki_sighandler_t)1)	/* ignore signal */
+ 
+@@ -163,36 +160,13 @@ typedef struct {
+ #define VKI_SA_ONESHOT		VKI_SA_RESETHAND
+ //#define VKI_SA_INTERRUPT	0x20000000 /* dummy -- ignored */
+ 
+-#define VKI_SA_RESTORER		0x04000000
+-
+ #define VKI_SS_ONSTACK		1
+ #define VKI_SS_DISABLE		2
+ 
+-struct vki_old_sigaction {
+-        // [[Nb: a 'k' prefix is added to "sa_handler" because
+-        // bits/sigaction.h (which gets dragged in somehow via signal.h)
+-        // #defines it as something else.  Since that is done for glibc's
+-        // purposes, which we don't care about here, we use our own name.]]
+-    unsigned long sa_flags;
+-        __vki_sighandler_t ksa_handler;
+-        vki_old_sigset_t sa_mask;
+-        __vki_sigrestore_t sa_restorer;
+-};
+-
+-struct vki_sigaction {
+-        unsigned int    sa_flags;
+-        __vki_sighandler_t  sa_handler;
+-        vki_sigset_t        sa_mask;
+-};
+-
+-
+ struct vki_sigaction_base {
+-        // [[See comment about extra 'k' above]]
+-        unsigned long sa_flags;
++	unsigned int sa_flags;
+ 	__vki_sighandler_t ksa_handler;
+-
+-	vki_sigset_t sa_mask;		/* mask last for extensibility */
+-        __vki_sigrestore_t sa_restorer;
++	vki_sigset_t sa_mask;
+ };
+ 
+ /* On Linux we use the same type for passing sigactions to
+--- a/include/vki/vki-mips64-linux.h
++++ b/include/vki/vki-mips64-linux.h
+@@ -104,9 +104,6 @@ extern UWord VKI_PAGE_SIZE;
+ typedef void __vki_signalfn_t(int);
+ typedef __vki_signalfn_t __user *__vki_sighandler_t;
+ 
+-typedef void __vki_restorefn_t(void);
+-typedef __vki_restorefn_t __user *__vki_sigrestore_t;
+-
+ #define VKI_SIG_DFL     ((__vki_sighandler_t)0)   /* default signal handling */
+ #define VKI_SIG_IGN     ((__vki_sighandler_t)1)   /* ignore signal */
+ #define VKI_SIG_ERR     ((__vki_sighandler_t)-1)  /* error return from signal */
+@@ -173,35 +170,13 @@ typedef struct {
+ #define VKI_SA_ONESHOT          VKI_SA_RESETHAND
+ //#define VKI_SA_INTERRUPT      0x20000000  /* dummy -- ignored */
+ 
+-#define VKI_SA_RESTORER         0x04000000
+-
+ #define VKI_SS_ONSTACK          1
+ #define VKI_SS_DISABLE          2
+ 
+-struct vki_old_sigaction {
+-       // [[Nb: a 'k' prefix is added to "sa_handler" because
+-       // bits/sigaction.h (which gets dragged in somehow via signal.h)
+-       // #defines it as something else.  Since that is done for glibc's
+-       // purposes, which we don't care about here, we use our own name.]]
+-       unsigned long sa_flags;
+-       __vki_sighandler_t ksa_handler;
+-       vki_old_sigset_t sa_mask;
+-       __vki_sigrestore_t sa_restorer;
+-};
+-
+-struct vki_sigaction {
+-       unsigned int    sa_flags;
+-       __vki_sighandler_t  sa_handler;
+-       vki_sigset_t        sa_mask;
+-};
+-
+-
+ struct vki_sigaction_base {
+-       // [[See comment about extra 'k' above]]
+        unsigned int sa_flags;
+        __vki_sighandler_t ksa_handler;
+-       vki_sigset_t sa_mask;           // mask last for extensibility
+-       __vki_sigrestore_t sa_restorer;
++       vki_sigset_t sa_mask;
+ };
+ 
+ /* On Linux we use the same type for passing sigactions to
+--- a/none/tests/linux/Makefile.am
++++ b/none/tests/linux/Makefile.am
+@@ -13,6 +13,7 @@ EXTRA_DIST = \
+ 	clonev.stdout.exp clonev.vgtest \
+ 	getdents_filter.stdout.exp getdents_filter.vgtest \
+         membarrier.stderr.exp membarrier.vgtest \
++	mips_sigaction_abi.stdout.exp mips_sigaction_abi.vgtest \
+ 	mremap.stderr.exp mremap.stderr.exp-glibc27 mremap.vgtest \
+ 	mremap2.stdout.exp mremap2.vgtest \
+ 	mremap3.stdout.exp mremap3.vgtest \
+@@ -54,6 +55,13 @@ if HAVE_NR_MEMBARRIER
+         check_PROGRAMS += membarrier
+ endif
+ 
++if VGCONF_ARCHS_INCLUDE_MIPS64
++check_PROGRAMS += mips_sigaction_abi
++else
++if VGCONF_ARCHS_INCLUDE_MIPS32
++check_PROGRAMS += mips_sigaction_abi
++endif
++endif
+ 
+ AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
+ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
+--- /dev/null
++++ b/none/tests/linux/mips_sigaction_abi.c
+@@ -0,0 +1,77 @@
++#include <errno.h>
++#include <signal.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <sys/syscall.h>
++#include <unistd.h>
++
++/* MIPS uses a 128-bit mask and has no restorer in the kernel structure. */
++struct kernel_sigaction {
++   unsigned int flags;
++   void (*handler)(int);
++   unsigned long mask[16 / sizeof(unsigned long)];
++};
++
++struct result {
++   struct kernel_sigaction action;
++   volatile unsigned long sentinel;
++};
++
++static const unsigned long sentinel = 0x13579bdfUL;
++static volatile sig_atomic_t delivered;
++
++static void handler(int signo)
++{
++   delivered = signo;
++}
++
++static void check(int condition, const char *message)
++{
++   if (!condition) {
++      fprintf(stderr, "%s\n", message);
++      exit(1);
++   }
++}
++
++int main(void)
++{
++   const unsigned long low_mask = 1UL << (SIGUSR2 - 1);
++   struct kernel_sigaction act = {
++      .flags = SA_RESTART,
++      .handler = handler,
++      .mask = {low_mask, 1}
++   };
++   struct result old = { .sentinel = sentinel };
++
++   check(!syscall(SYS_rt_sigaction, SIGUSR1, &act, NULL, sizeof(act.mask)),
++         "rt_sigaction install failed");
++   check(!syscall(SYS_rt_sigaction, SIGUSR1, NULL, &old.action, sizeof(act.mask)),
++         "rt_sigaction query failed");
++   check(old.sentinel == sentinel, "rt_sigaction changed adjacent data");
++   check(old.action.handler == handler && old.action.flags == SA_RESTART &&
++         old.action.mask[0] == low_mask && old.action.mask[1] == 1,
++         "rt_sigaction returned the wrong action");
++   check(!raise(SIGUSR1) && delivered == SIGUSR1, "signal delivery failed");
++
++#ifdef SYS_sigaction
++   /* Legacy sigaction returns the first mask word and zeros the rest. */
++   if (syscall(SYS_sigaction, SIGUSR1, NULL, &old.action) == 0) {
++      check(old.sentinel == sentinel, "sigaction changed adjacent data");
++      check(old.action.handler == handler && old.action.flags == SA_RESTART &&
++            old.action.mask[0] == low_mask, "sigaction returned the wrong action");
++      for (unsigned i = 1; i < sizeof(act.mask) / sizeof(act.mask[0]); i++)
++         check(old.action.mask[i] == 0, "sigaction failed to clear the upper mask");
++
++      check(!syscall(SYS_sigaction, SIGUSR1, &act, NULL), "sigaction install failed");
++      check(!syscall(SYS_rt_sigaction, SIGUSR1, NULL, &old.action, sizeof(act.mask)),
++            "rt_sigaction query after legacy install failed");
++      check(old.action.mask[0] == low_mask && old.action.mask[1] == 0,
++            "sigaction used more than the first input mask word");
++   } else {
++      check(errno == ENOSYS, "sigaction query failed");
++   }
++#endif
++
++   puts("MIPS sigaction ABI OK");
++   return 0;
++}
+--- /dev/null
++++ b/none/tests/linux/mips_sigaction_abi.stdout.exp
+@@ -0,0 +1 @@
++MIPS sigaction ABI OK
+--- /dev/null
++++ b/none/tests/linux/mips_sigaction_abi.vgtest
+@@ -0,0 +1,3 @@
++prereq: test -x mips_sigaction_abi
++prog: mips_sigaction_abi
++vgopts: -q
