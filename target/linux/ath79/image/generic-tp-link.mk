@@ -402,6 +402,30 @@ define Device/tplink_cpe710-v2
 endef
 TARGET_DEVICES += tplink_cpe710-v2
 
+define Device/tplink_deco-m4r-v1
+  $(Device/tplink-safeloader-uimage)
+  SOC := qca9563
+  IMAGE_SIZE := 13824k
+  DEVICE_MODEL := Deco M4R
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  SUPPORTED_DEVICES += deco-m4r-v1
+  TPLINK_BOARD_ID := DECO-M4R-V1
+endef
+TARGET_DEVICES += tplink_deco-m4r-v1
+
+define Device/tplink_deco-s4-v2
+  $(Device/tplink-safeloader-uimage)
+  SOC := qca9563
+  IMAGE_SIZE := 13824k
+  DEVICE_MODEL := Deco S4
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct uencrypt-mbedtls
+  SUPPORTED_DEVICES += deco-s4-v2
+  TPLINK_BOARD_ID := DECO-S4-V2
+endef
+TARGET_DEVICES += tplink_deco-s4-v2
+
 define Device/tplink-eap2x5
   $(Device/tplink-safeloader)
   LOADER_TYPE := elf
@@ -512,30 +536,6 @@ define Device/tplink_f52-outdoor-v1
   TPLINK_BOARD_ID := F52-V1
 endef
 TARGET_DEVICES += tplink_f52-outdoor-v1
-
-define Device/tplink_deco-m4r-v1
-  $(Device/tplink-safeloader-uimage)
-  SOC := qca9563
-  IMAGE_SIZE := 13824k
-  DEVICE_MODEL := Deco M4R
-  DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
-  SUPPORTED_DEVICES += deco-m4r-v1
-  TPLINK_BOARD_ID := DECO-M4R-V1
-endef
-TARGET_DEVICES += tplink_deco-m4r-v1
-
-define Device/tplink_deco-s4-v2
-  $(Device/tplink-safeloader-uimage)
-  SOC := qca9563
-  IMAGE_SIZE := 13824k
-  DEVICE_MODEL := Deco S4
-  DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct uencrypt-mbedtls
-  SUPPORTED_DEVICES += deco-s4-v2
-  TPLINK_BOARD_ID := DECO-S4-V2
-endef
-TARGET_DEVICES += tplink_deco-s4-v2
 
 define Device/tplink_re350k-v1
   $(Device/tplink-safeloader)
@@ -700,6 +700,17 @@ define Device/tplink_tl-wpa8630-v1
 endef
 TARGET_DEVICES += tplink_tl-wpa8630-v1
 
+define Device/tplink_tl-wr1043n-v5
+  $(Device/tplink-safeloader-uimage)
+  SOC := qca9563
+  IMAGE_SIZE := 15104k
+  DEVICE_MODEL := TL-WR1043N
+  DEVICE_VARIANT := v5
+  TPLINK_BOARD_ID := TLWR1043NV5
+  SUPPORTED_DEVICES += tl-wr1043n-v5
+endef
+TARGET_DEVICES += tplink_tl-wr1043n-v5
+
 define Device/tplink_tl-wr1043nd-v1
   $(Device/tplink-8m)
   SOC := ar9132
@@ -747,17 +758,6 @@ define Device/tplink_tl-wr1043nd-v4
   SUPPORTED_DEVICES += tl-wr1043nd-v4
 endef
 TARGET_DEVICES += tplink_tl-wr1043nd-v4
-
-define Device/tplink_tl-wr1043n-v5
-  $(Device/tplink-safeloader-uimage)
-  SOC := qca9563
-  IMAGE_SIZE := 15104k
-  DEVICE_MODEL := TL-WR1043N
-  DEVICE_VARIANT := v5
-  TPLINK_BOARD_ID := TLWR1043NV5
-  SUPPORTED_DEVICES += tl-wr1043n-v5
-endef
-TARGET_DEVICES += tplink_tl-wr1043n-v5
 
 define Device/tplink_tl-wr1045nd-v2
   $(Device/tplink-8mlzma)

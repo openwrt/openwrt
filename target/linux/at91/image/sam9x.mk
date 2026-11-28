@@ -112,15 +112,6 @@ define Device/atmel_at91sam9x35ek
 endef
 TARGET_DEVICES += atmel_at91sam9x35ek
 
-define Device/microchip_sam9x60ek
-  $(Device/evaluation-dtb)
-  DEVICE_VENDOR := Microchip
-  DEVICE_MODEL := SAM9X60-EK
-  DEVICE_DTS := at91-sam9x60ek
-  $(Device/evaluation-sdimage)
-endef
-TARGET_DEVICES += microchip_sam9x60ek
-
 define Device/calamp_lmu5000
   $(Device/production)
   DEVICE_VENDOR := CalAmp
@@ -216,3 +207,12 @@ define Device/laird_wb45n
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB -c 955
 endef
 TARGET_DEVICES += laird_wb45n
+
+define Device/microchip_sam9x60ek
+  $(Device/evaluation-dtb)
+  DEVICE_VENDOR := Microchip
+  DEVICE_MODEL := SAM9X60-EK
+  DEVICE_DTS := at91-sam9x60ek
+  $(Device/evaluation-sdimage)
+endef
+TARGET_DEVICES += microchip_sam9x60ek

@@ -558,6 +558,15 @@ define Device/tplink_tl-wr941-v4
 endef
 TARGET_DEVICES += tplink_tl-wr941-v4
 
+define Device/tplink_tl-wr941n-v7-cn
+  $(Device/tplink-4mlzma)
+  SOC := qca9558
+  DEVICE_MODEL := TL-WR941N
+  DEVICE_VARIANT := v7 (CN)
+  TPLINK_HWID := 0x09410007
+endef
+TARGET_DEVICES += tplink_tl-wr941n-v7-cn
+
 define Device/tplink_tl-wr941nd-v5
   $(Device/tplink-4mlzma)
   SOC := ar9341
@@ -577,12 +586,3 @@ define Device/tplink_tl-wr941nd-v6
   SUPPORTED_DEVICES += tl-wr941nd-v6
 endef
 TARGET_DEVICES += tplink_tl-wr941nd-v6
-
-define Device/tplink_tl-wr941n-v7-cn
-  $(Device/tplink-4mlzma)
-  SOC := qca9558
-  DEVICE_MODEL := TL-WR941N
-  DEVICE_VARIANT := v7 (CN)
-  TPLINK_HWID := 0x09410007
-endef
-TARGET_DEVICES += tplink_tl-wr941n-v7-cn

@@ -285,6 +285,25 @@ define Device/ubnt_unifi-ap-lr
 endef
 TARGET_DEVICES += ubnt_unifi-ap-lr
 
+define Device/ubnt_unifi-ap-outdoor-plus
+  $(Device/ubnt-bz)
+  $(Device/ubnt-unifi-jffs2)
+  DEVICE_MODEL := UniFi AP Outdoor+
+  SUPPORTED_DEVICES += unifi-outdoor-plus
+  DEFAULT := n
+endef
+TARGET_DEVICES += ubnt_unifi-ap-outdoor-plus
+
+define Device/ubnt_unifi-ap-pro
+  $(Device/ubnt-unifi-jffs2)
+  SOC := ar9344
+  DEVICE_MODEL := UniFi AP Pro
+  UBNT_CHIP := ar934x
+  SUPPORTED_DEVICES += uap-pro
+  DEFAULT := n
+endef
+TARGET_DEVICES += ubnt_unifi-ap-pro
+
 define Device/ubnt_unifiac-lite
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC Lite
@@ -323,22 +342,3 @@ define Device/ubnt_unifiac-pro
   SUPPORTED_DEVICES += unifiac-pro
 endef
 TARGET_DEVICES += ubnt_unifiac-pro
-
-define Device/ubnt_unifi-ap-outdoor-plus
-  $(Device/ubnt-bz)
-  $(Device/ubnt-unifi-jffs2)
-  DEVICE_MODEL := UniFi AP Outdoor+
-  SUPPORTED_DEVICES += unifi-outdoor-plus
-  DEFAULT := n
-endef
-TARGET_DEVICES += ubnt_unifi-ap-outdoor-plus
-
-define Device/ubnt_unifi-ap-pro
-  $(Device/ubnt-unifi-jffs2)
-  SOC := ar9344
-  DEVICE_MODEL := UniFi AP Pro
-  UBNT_CHIP := ar934x
-  SUPPORTED_DEVICES += uap-pro
-  DEFAULT := n
-endef
-TARGET_DEVICES += ubnt_unifi-ap-pro

@@ -12,6 +12,35 @@ define Device/lantiq_easy88444
 endef
 TARGET_DEVICES += lantiq_easy88444
 
+define Device/lantiq_easy98000-nand
+  DEVICE_VENDOR := Lantiq
+  DEVICE_MODEL := EASY98000 Falcon Eval Board
+  DEVICE_VARIANT := NAND
+  IMAGE_SIZE := 3904k
+  DEVICE_PACKAGES := kmod-dm9000 kmod-i2c-lantiq kmod-eeprom-at24
+  DEFAULT := n
+endef
+TARGET_DEVICES += lantiq_easy98000-nand
+
+define Device/lantiq_easy98000-nor
+  DEVICE_VENDOR := Lantiq
+  DEVICE_MODEL := EASY98000 Falcon Eval Board
+  DEVICE_VARIANT := NOR
+  IMAGE_SIZE := 3904k
+  DEVICE_PACKAGES := kmod-dm9000 kmod-i2c-lantiq kmod-eeprom-at24
+  DEFAULT := n
+endef
+TARGET_DEVICES += lantiq_easy98000-nor
+
+define Device/lantiq_easy98000-sflash
+  DEVICE_VENDOR := Lantiq
+  DEVICE_MODEL := EASY98000 Falcon Eval Board
+  DEVICE_VARIANT := SFLASH
+  IMAGE_SIZE := 7424k
+  DEVICE_PACKAGES := kmod-dm9000 kmod-i2c-lantiq kmod-eeprom-at24
+endef
+TARGET_DEVICES += lantiq_easy98000-sflash
+
 define Device/lantiq_easy98020
   DEVICE_VENDOR := Lantiq
   DEVICE_MODEL := Falcon SFU Reference Board (EASY98020)
@@ -50,35 +79,6 @@ define Device/lantiq_easy98035synce1588
   IMAGE_SIZE := 7424k
 endef
 TARGET_DEVICES += lantiq_easy98035synce1588
-
-define Device/lantiq_easy98000-nand
-  DEVICE_VENDOR := Lantiq
-  DEVICE_MODEL := EASY98000 Falcon Eval Board
-  DEVICE_VARIANT := NAND
-  IMAGE_SIZE := 3904k
-  DEVICE_PACKAGES := kmod-dm9000 kmod-i2c-lantiq kmod-eeprom-at24
-  DEFAULT := n
-endef
-TARGET_DEVICES += lantiq_easy98000-nand
-
-define Device/lantiq_easy98000-nor
-  DEVICE_VENDOR := Lantiq
-  DEVICE_MODEL := EASY98000 Falcon Eval Board
-  DEVICE_VARIANT := NOR
-  IMAGE_SIZE := 3904k
-  DEVICE_PACKAGES := kmod-dm9000 kmod-i2c-lantiq kmod-eeprom-at24
-  DEFAULT := n
-endef
-TARGET_DEVICES += lantiq_easy98000-nor
-
-define Device/lantiq_easy98000-sflash
-  DEVICE_VENDOR := Lantiq
-  DEVICE_MODEL := EASY98000 Falcon Eval Board
-  DEVICE_VARIANT := SFLASH
-  IMAGE_SIZE := 7424k
-  DEVICE_PACKAGES := kmod-dm9000 kmod-i2c-lantiq kmod-eeprom-at24
-endef
-TARGET_DEVICES += lantiq_easy98000-sflash
 
 define Device/lantiq_falcon-mdu
   DEVICE_VENDOR := Lantiq

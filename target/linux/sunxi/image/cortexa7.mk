@@ -92,39 +92,6 @@ define Device/lemaker_bananapi
 endef
 TARGET_DEVICES += lemaker_bananapi
 
-define Device/pine64_pinecube
-  $(call Device/FitImageGzip)
-  DEVICE_VENDOR := Pine64
-  DEVICE_MODEL := PineCube
-  SOC := sun8i-s3
-  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-pinecube
-endef
-TARGET_DEVICES += pine64_pinecube
-
-define Device/sinovoip_bpi-m2-berry
-  $(call Device/FitImageGzip)
-  DEVICE_VENDOR := Sinovoip
-  DEVICE_MODEL := Banana Pi M2 Berry
-  DEVICE_PACKAGES:=kmod-ata-sunxi kmod-brcmfmac \
-	cypress-firmware-43430-sdio wpad-basic-mbedtls
-  SUPPORTED_DEVICES += lemaker,bananapi-m2-berry
-  SOC := sun8i-v40
-  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-bananapi-m2-berry
-endef
-TARGET_DEVICES += sinovoip_bpi-m2-berry
-
-define Device/sinovoip_bpi-m2-ultra
-  $(call Device/FitImageGzip)
-  DEVICE_VENDOR := Sinovoip
-  DEVICE_MODEL := Banana Pi M2 Ultra
-  DEVICE_PACKAGES:=kmod-ata-sunxi kmod-brcmfmac \
-	brcmfmac-firmware-43430a0-sdio wpad-basic-mbedtls
-  SUPPORTED_DEVICES += lemaker,bananapi-m2-ultra
-  SOC := sun8i-r40
-  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-bananapi-m2-ultra
-endef
-TARGET_DEVICES += sinovoip_bpi-m2-ultra
-
 define Device/lemaker_bananapro
   $(call Device/FitImageGzip)
   DEVICE_VENDOR := LeMaker
@@ -181,6 +148,25 @@ define Device/merrii_hummingbird
 endef
 TARGET_DEVICES += merrii_hummingbird
 
+define Device/myir_myd-yt113x-emmc
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := MYIR
+  DEVICE_MODEL := MYD-YT113X (eMMC)
+  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-eeprom-at24 kmod-gpio-pca953x kmod-rtc-rx8025
+  SOC := sun8i-t113s
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+endef
+TARGET_DEVICES += myir_myd-yt113x-emmc
+
+define Device/myir_myd-yt113x-spi
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := MYIR
+  DEVICE_MODEL := MYD-YT113X (SPI)
+  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-eeprom-at24 kmod-gpio-pca953x kmod-rtc-rx8025
+  SOC := sun8i-t113s
+endef
+TARGET_DEVICES += myir_myd-yt113x-spi
+
 define Device/olimex_a20-olinuxino-lime
   $(call Device/FitImageGzip)
   DEVICE_VENDOR := Olimex
@@ -218,6 +204,35 @@ define Device/olimex_a20-olinuxino-micro
 endef
 TARGET_DEVICES += olimex_a20-olinuxino-micro
 
+define Device/olimex_olinuxino
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Olimex
+  DEVICE_MODEL := Olinuxino T113
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SOC := sun8i-t113s
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+endef
+TARGET_DEVICES += olimex_olinuxino
+
+define Device/pine64_pinecube
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Pine64
+  DEVICE_MODEL := PineCube
+  SOC := sun8i-s3
+  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-pinecube
+endef
+TARGET_DEVICES += pine64_pinecube
+
+define Device/rongpin_rp-t113
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Rongpin
+  DEVICE_MODEL := RP-T113
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-rtl8xxxu rtl8723bu-firmware wpad-basic-mbedtls
+  SOC := sun8i-t113s
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+endef
+TARGET_DEVICES += rongpin_rp-t113
+
 define Device/roofull_beelink-x2
   $(call Device/FitImageGzip)
   DEVICE_VENDOR := Roofull
@@ -227,6 +242,18 @@ define Device/roofull_beelink-x2
   SOC := sun8i-h3
 endef
 TARGET_DEVICES += roofull_beelink-x2
+
+define Device/sinovoip_bpi-m2-berry
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Sinovoip
+  DEVICE_MODEL := Banana Pi M2 Berry
+  DEVICE_PACKAGES:=kmod-ata-sunxi kmod-brcmfmac \
+	cypress-firmware-43430-sdio wpad-basic-mbedtls
+  SUPPORTED_DEVICES += lemaker,bananapi-m2-berry
+  SOC := sun8i-v40
+  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-bananapi-m2-berry
+endef
+TARGET_DEVICES += sinovoip_bpi-m2-berry
 
 define Device/sinovoip_bpi-m2-plus
   $(call Device/FitImageGzip)
@@ -238,6 +265,18 @@ define Device/sinovoip_bpi-m2-plus
   SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-bananapi-m2-plus
 endef
 TARGET_DEVICES += sinovoip_bpi-m2-plus
+
+define Device/sinovoip_bpi-m2-ultra
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Sinovoip
+  DEVICE_MODEL := Banana Pi M2 Ultra
+  DEVICE_PACKAGES:=kmod-ata-sunxi kmod-brcmfmac \
+	brcmfmac-firmware-43430a0-sdio wpad-basic-mbedtls
+  SUPPORTED_DEVICES += lemaker,bananapi-m2-ultra
+  SOC := sun8i-r40
+  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-bananapi-m2-ultra
+endef
+TARGET_DEVICES += sinovoip_bpi-m2-ultra
 
 define Device/sinovoip_bpi-m3
   $(call Device/FitImageGzip)
@@ -260,6 +299,24 @@ define Device/sinovoip_bpi-p2-zero
   SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-bananapi-p2-zero
 endef
 TARGET_DEVICES += sinovoip_bpi-p2-zero
+
+define Device/widora_mangopi-mqdual-t113
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Widora
+  DEVICE_MODEL := MangoPi MQDual T113
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SOC := sun8i-t113s
+endef
+TARGET_DEVICES += widora_mangopi-mqdual-t113
+
+define Device/xunlong_orangepi-2
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi 2
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SOC := sun8i-h3
+endef
+TARGET_DEVICES += xunlong_orangepi-2
 
 define Device/xunlong_orangepi-one
   $(call Device/FitImageGzip)
@@ -314,60 +371,3 @@ define Device/xunlong_orangepi-zero
   SOC := sun8i-h2-plus
 endef
 TARGET_DEVICES += xunlong_orangepi-zero
-
-define Device/xunlong_orangepi-2
-  $(call Device/FitImageGzip)
-  DEVICE_VENDOR := Xunlong
-  DEVICE_MODEL := Orange Pi 2
-  DEVICE_PACKAGES:=kmod-rtc-sunxi
-  SOC := sun8i-h3
-endef
-TARGET_DEVICES += xunlong_orangepi-2
-
-define Device/widora_mangopi-mqdual-t113
-  $(call Device/FitImageGzip)
-  DEVICE_VENDOR := Widora
-  DEVICE_MODEL := MangoPi MQDual T113
-  DEVICE_PACKAGES:=kmod-rtc-sunxi
-  SOC := sun8i-t113s
-endef
-TARGET_DEVICES += widora_mangopi-mqdual-t113
-
-define Device/myir_myd-yt113x-emmc
-  $(call Device/FitImageGzip)
-  DEVICE_VENDOR := MYIR
-  DEVICE_MODEL := MYD-YT113X (eMMC)
-  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-eeprom-at24 kmod-gpio-pca953x kmod-rtc-rx8025
-  SOC := sun8i-t113s
-  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
-endef
-TARGET_DEVICES += myir_myd-yt113x-emmc
-
-define Device/myir_myd-yt113x-spi
-  $(call Device/FitImageGzip)
-  DEVICE_VENDOR := MYIR
-  DEVICE_MODEL := MYD-YT113X (SPI)
-  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-eeprom-at24 kmod-gpio-pca953x kmod-rtc-rx8025
-  SOC := sun8i-t113s
-endef
-TARGET_DEVICES += myir_myd-yt113x-spi
-
-define Device/olimex_olinuxino
-  $(call Device/FitImageGzip)
-  DEVICE_VENDOR := Olimex
-  DEVICE_MODEL := Olinuxino T113
-  DEVICE_PACKAGES:=kmod-rtc-sunxi
-  SOC := sun8i-t113s
-  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
-endef
-TARGET_DEVICES += olimex_olinuxino
-
-define Device/rongpin_rp-t113
-  $(call Device/FitImageGzip)
-  DEVICE_VENDOR := Rongpin
-  DEVICE_MODEL := RP-T113
-  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-rtl8xxxu rtl8723bu-firmware wpad-basic-mbedtls
-  SOC := sun8i-t113s
-  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
-endef
-TARGET_DEVICES += rongpin_rp-t113

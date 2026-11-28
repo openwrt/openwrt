@@ -14,19 +14,6 @@ define Device/netgear_wnr612-v2
 endef
 TARGET_DEVICES += netgear_wnr612-v2
 
-define Device/on_n150r
-  $(Device/netgear_generic)
-  SOC := ar7240
-  DEVICE_VENDOR := On Networks
-  DEVICE_MODEL := N150R
-  UIMAGE_MAGIC := 0x32303631
-  NETGEAR_BOARD_ID := N150R
-  IMAGE_SIZE := 3712k
-  SUPPORTED_DEVICES += n150r
-  DEFAULT := n
-endef
-TARGET_DEVICES += on_n150r
-
 define Device/netgear_wnr1000-v2
   $(Device/netgear_generic)
   SOC := ar7240
@@ -57,3 +44,16 @@ define Device/netgear_wnr2000-v3
   DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wnr2000-v3
+
+define Device/on_n150r
+  $(Device/netgear_generic)
+  SOC := ar7240
+  DEVICE_VENDOR := On Networks
+  DEVICE_MODEL := N150R
+  UIMAGE_MAGIC := 0x32303631
+  NETGEAR_BOARD_ID := N150R
+  IMAGE_SIZE := 3712k
+  SUPPORTED_DEVICES += n150r
+  DEFAULT := n
+endef
+TARGET_DEVICES += on_n150r

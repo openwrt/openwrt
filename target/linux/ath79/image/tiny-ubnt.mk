@@ -9,16 +9,6 @@ define Device/ubnt_airrouter
 endef
 TARGET_DEVICES += ubnt_airrouter
 
-define Device/ubnt_nanobridge-m
-  $(Device/ubnt-xm)
-  SOC := ar7241
-  DEVICE_MODEL := NanoBridge M
-  DEVICE_PACKAGES += rssileds
-  SUPPORTED_DEVICES += bullet-m
-  DEFAULT := n
-endef
-TARGET_DEVICES += ubnt_nanobridge-m
-
 define Device/ubnt_bullet-m-ar7240
   $(Device/ubnt-xm)
   SOC := ar7240
@@ -41,15 +31,25 @@ define Device/ubnt_bullet-m-ar7241
 endef
 TARGET_DEVICES += ubnt_bullet-m-ar7241
 
-define Device/ubnt_picostation-m
+define Device/ubnt_nanobridge-m
   $(Device/ubnt-xm)
   SOC := ar7241
-  DEVICE_MODEL := Picostation M
+  DEVICE_MODEL := NanoBridge M
   DEVICE_PACKAGES += rssileds
   SUPPORTED_DEVICES += bullet-m
   DEFAULT := n
 endef
-TARGET_DEVICES += ubnt_picostation-m
+TARGET_DEVICES += ubnt_nanobridge-m
+
+define Device/ubnt_nanostation-loco-m
+  $(Device/ubnt-xm)
+  SOC := ar7241
+  DEVICE_MODEL := Nanostation Loco M
+  DEVICE_PACKAGES += rssileds
+  SUPPORTED_DEVICES += bullet-m
+  DEFAULT := n
+endef
+TARGET_DEVICES += ubnt_nanostation-loco-m
 
 define Device/ubnt_nanostation-m
   $(Device/ubnt-xm)
@@ -61,12 +61,12 @@ define Device/ubnt_nanostation-m
 endef
 TARGET_DEVICES += ubnt_nanostation-m
 
-define Device/ubnt_nanostation-loco-m
+define Device/ubnt_picostation-m
   $(Device/ubnt-xm)
   SOC := ar7241
-  DEVICE_MODEL := Nanostation Loco M
+  DEVICE_MODEL := Picostation M
   DEVICE_PACKAGES += rssileds
   SUPPORTED_DEVICES += bullet-m
   DEFAULT := n
 endef
-TARGET_DEVICES += ubnt_nanostation-loco-m
+TARGET_DEVICES += ubnt_picostation-m

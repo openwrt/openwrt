@@ -47,16 +47,6 @@ endef
 TARGET_DEVICES += linksys_wrt610n-v1
 
   # BCMA SoC with SSB WiFi
-define Device/linksys_wrt610n-v2
-  DEVICE_MODEL := WRT610N
-  DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-bgmac kmod-b43 $(USB2_PACKAGES)
-  $(Device/linksys)
-  DEVICE_ID := 610N
-  VERSION := 2.0.0
-endef
-TARGET_DEVICES += linksys_wrt610n-v2
-
 define Device/linksys_e3000-v1
   DEVICE_MODEL := E3000
   DEVICE_VARIANT := v1
@@ -66,6 +56,16 @@ define Device/linksys_e3000-v1
   VERSION := 1.0.3
 endef
 TARGET_DEVICES += linksys_e3000-v1
+
+define Device/linksys_wrt610n-v2
+  DEVICE_MODEL := WRT610N
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-bgmac kmod-b43 $(USB2_PACKAGES)
+  $(Device/linksys)
+  DEVICE_ID := 610N
+  VERSION := 2.0.0
+endef
+TARGET_DEVICES += linksys_wrt610n-v2
 
 # generic has Ethernet drivers as modules so overwrite standard image
 define Device/standard

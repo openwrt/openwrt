@@ -334,13 +334,6 @@ define Device/netgear_rbr750
 endef
 TARGET_DEVICES += netgear_rbr750
 
-define Device/netgear_rbs750
-	$(call Device/netgear_rbx750)
-	DEVICE_MODEL := RBS750
-	NETGEAR_BOARD_ID := U12H416T00_NETGEAR
-endef
-TARGET_DEVICES += netgear_rbs750
-
 define Device/netgear_rbx850
 	$(call Device/netgear_rbx750_850)
 	DEVICE_PACKAGES += ipq-wifi-netgear_rbk850
@@ -353,6 +346,13 @@ define Device/netgear_rbr850
 	NETGEAR_BOARD_ID := U12H404T00_NETGEAR
 endef
 TARGET_DEVICES += netgear_rbr850
+
+define Device/netgear_rbs750
+	$(call Device/netgear_rbx750)
+	DEVICE_MODEL := RBS750
+	NETGEAR_BOARD_ID := U12H416T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbs750
 
 define Device/netgear_rbs850
 	$(call Device/netgear_rbx850)

@@ -227,18 +227,6 @@ define Device/adtran_bsap1840
 endef
 TARGET_DEVICES += adtran_bsap1840
 
-define Device/alcatel_hh40v
-  SOC := qca9531
-  DEVICE_VENDOR := Alcatel
-  DEVICE_MODEL := HH40V
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-serial-option kmod-usb-net-rndis
-  IMAGE_SIZE := 14976k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs
-endef
-TARGET_DEVICES += alcatel_hh40v
-
 define Device/airtight_c-75
   SOC := qca9550
   DEVICE_VENDOR := AirTight Networks
@@ -252,6 +240,18 @@ define Device/airtight_c-75
   KERNEL_SIZE := 15936k
 endef
 TARGET_DEVICES += airtight_c-75
+
+define Device/alcatel_hh40v
+  SOC := qca9531
+  DEVICE_VENDOR := Alcatel
+  DEVICE_MODEL := HH40V
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-serial-option kmod-usb-net-rndis
+  IMAGE_SIZE := 14976k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs
+endef
+TARGET_DEVICES += alcatel_hh40v
 
 define Device/alfa-network_ap121f
   SOC := ar9331
@@ -663,6 +663,18 @@ define Device/buffalo_bhr-4grv2
 endef
 TARGET_DEVICES += buffalo_bhr-4grv2
 
+define Device/buffalo_wzr-450hp2
+  $(Device/buffalo_common)
+  SOC := qca9558
+  DEVICE_MODEL := WZR-450HP2
+  DEVICE_ALT0_VENDOR := Buffalo
+  DEVICE_ALT0_MODEL := WZR-450HP2D
+  BUFFALO_PRODUCT := WZR-450HP2
+  IMAGE_SIZE := 15936k
+  SUPPORTED_DEVICES += wzr-450hp2
+endef
+TARGET_DEVICES += buffalo_wzr-450hp2
+
 define Device/buffalo_wzr_ar7161
   $(Device/buffalo_common)
   SOC := ar7161
@@ -733,18 +745,6 @@ define Device/buffalo_wzr-hp-g450h
   SUPPORTED_DEVICES += wzr-hp-g450h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g450h
-
-define Device/buffalo_wzr-450hp2
-  $(Device/buffalo_common)
-  SOC := qca9558
-  DEVICE_MODEL := WZR-450HP2
-  DEVICE_ALT0_VENDOR := Buffalo
-  DEVICE_ALT0_MODEL := WZR-450HP2D
-  BUFFALO_PRODUCT := WZR-450HP2
-  IMAGE_SIZE := 15936k
-  SUPPORTED_DEVICES += wzr-450hp2
-endef
-TARGET_DEVICES += buffalo_wzr-450hp2
 
 define Device/comfast_cf-e110n-v2
   SOC := qca9533
@@ -1518,6 +1518,22 @@ define Device/engenius_ecb600
 endef
 TARGET_DEVICES += engenius_ecb600
 
+define Device/engenius_ews_dual_ap
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+endef
+
+define Device/engenius_ens1750
+  $(Device/engenius_ews_dual_ap)
+  DEVICE_MODEL := ENS1750
+  SENAO_IMGNAME := ar71xx-generic-ens1750
+endef
+TARGET_DEVICES += engenius_ens1750
+
 define Device/engenius_ens202ext-v1
   $(Device/senao_loader_okli)
   SOC := ar9341
@@ -1609,28 +1625,12 @@ define Device/engenius_ews511ap
 endef
 TARGET_DEVICES += engenius_ews511ap
 
-define Device/engenius_ews_dual_ap
-  $(Device/senao_loader_okli)
-  SOC := qca9558
-  DEVICE_VENDOR := EnGenius
-  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
-  IMAGE_SIZE := 11584k
-  LOADER_FLASH_OFFS := 0x220000
-endef
-
 define Device/engenius_ews660ap
   $(Device/engenius_ews_dual_ap)
   DEVICE_MODEL := EWS660AP
   SENAO_IMGNAME := ar71xx-generic-ews660ap
 endef
 TARGET_DEVICES += engenius_ews660ap
-
-define Device/engenius_ens1750
-  $(Device/engenius_ews_dual_ap)
-  DEVICE_MODEL := ENS1750
-  SENAO_IMGNAME := ar71xx-generic-ens1750
-endef
-TARGET_DEVICES += engenius_ens1750
 
 define Device/enterasys_ws-ap3705i
   SOC := ar9344
@@ -2552,36 +2552,6 @@ define Device/openmesh_mr1750-v2
 endef
 TARGET_DEVICES += openmesh_mr1750-v2
 
-define Device/openmesh_om2p-v1
-  $(Device/openmesh_common_256k)
-  SOC := ar7240
-  DEVICE_MODEL := OM2P
-  DEVICE_VARIANT := v1
-  OPENMESH_CE_TYPE := OM2P
-  SUPPORTED_DEVICES += om2p
-endef
-TARGET_DEVICES += openmesh_om2p-v1
-
-define Device/openmesh_om2p-v2
-  $(Device/openmesh_common_256k)
-  SOC := ar9330
-  DEVICE_MODEL := OM2P
-  DEVICE_VARIANT := v2
-  OPENMESH_CE_TYPE := OM2P
-  SUPPORTED_DEVICES += om2pv2
-endef
-TARGET_DEVICES += openmesh_om2p-v2
-
-define Device/openmesh_om2p-v4
-  $(Device/openmesh_common_256k)
-  SOC := qca9533
-  DEVICE_MODEL := OM2P
-  DEVICE_VARIANT := v4
-  OPENMESH_CE_TYPE := OM2P
-  SUPPORTED_DEVICES += om2pv4
-endef
-TARGET_DEVICES += openmesh_om2p-v4
-
 define Device/openmesh_om2p-hs-v1
   $(Device/openmesh_common_256k)
   SOC := ar9341
@@ -2630,6 +2600,36 @@ define Device/openmesh_om2p-lc
   SUPPORTED_DEVICES += om2p-lc
 endef
 TARGET_DEVICES += openmesh_om2p-lc
+
+define Device/openmesh_om2p-v1
+  $(Device/openmesh_common_256k)
+  SOC := ar7240
+  DEVICE_MODEL := OM2P
+  DEVICE_VARIANT := v1
+  OPENMESH_CE_TYPE := OM2P
+  SUPPORTED_DEVICES += om2p
+endef
+TARGET_DEVICES += openmesh_om2p-v1
+
+define Device/openmesh_om2p-v2
+  $(Device/openmesh_common_256k)
+  SOC := ar9330
+  DEVICE_MODEL := OM2P
+  DEVICE_VARIANT := v2
+  OPENMESH_CE_TYPE := OM2P
+  SUPPORTED_DEVICES += om2pv2
+endef
+TARGET_DEVICES += openmesh_om2p-v2
+
+define Device/openmesh_om2p-v4
+  $(Device/openmesh_common_256k)
+  SOC := qca9533
+  DEVICE_MODEL := OM2P
+  DEVICE_VARIANT := v4
+  OPENMESH_CE_TYPE := OM2P
+  SUPPORTED_DEVICES += om2pv4
+endef
+TARGET_DEVICES += openmesh_om2p-v4
 
 define Device/openmesh_om5p
   $(Device/openmesh_common_64k)
@@ -2961,6 +2961,17 @@ define Device/ruckus_common
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
 endef
 
+define Device/ruckus_r500
+  $(Device/ruckus_common)
+  SOC := qca9557
+  DEVICE_MODEL := R500
+  IMAGE_SIZE := 63744k
+  BLOCKSIZE := 256k
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+		     kmod-i2c-gpio kmod-tpm-i2c-infineon
+endef
+TARGET_DEVICES += ruckus_r500
+
 define Device/ruckus_zf7025
   $(Device/ruckus_common)
   SOC := ar7240
@@ -2969,6 +2980,19 @@ define Device/ruckus_zf7025
   BLOCKSIZE := 256k
 endef
 TARGET_DEVICES += ruckus_zf7025
+
+define Device/ruckus_zf73xx_common
+  $(Device/ruckus_common)
+  DEVICE_PACKAGES := -swconfig kmod-usb2 kmod-usb-chipidea2
+  IMAGE_SIZE := 31744k
+endef
+
+define Device/ruckus_zf7321
+  $(Device/ruckus_zf73xx_common)
+  SOC := ar9342
+  DEVICE_MODEL := ZoneFlex 7321[-U]
+endef
+TARGET_DEVICES += ruckus_zf7321
 
 define Device/ruckus_gd11_common
   $(Device/ruckus_common)
@@ -3000,36 +3024,12 @@ define Device/ruckus_zf7363
 endef
 TARGET_DEVICES += ruckus_zf7363
 
-define Device/ruckus_zf73xx_common
-  $(Device/ruckus_common)
-  DEVICE_PACKAGES := -swconfig kmod-usb2 kmod-usb-chipidea2
-  IMAGE_SIZE := 31744k
-endef
-
-define Device/ruckus_zf7321
-  $(Device/ruckus_zf73xx_common)
-  SOC := ar9342
-  DEVICE_MODEL := ZoneFlex 7321[-U]
-endef
-TARGET_DEVICES += ruckus_zf7321
-
 define Device/ruckus_zf7372
   $(Device/ruckus_zf73xx_common)
   SOC := ar9344
   DEVICE_MODEL := ZoneFlex 7352/7372[-E/-U]
 endef
 TARGET_DEVICES += ruckus_zf7372
-
-define Device/ruckus_r500
-  $(Device/ruckus_common)
-  SOC := qca9557
-  DEVICE_MODEL := R500
-  IMAGE_SIZE := 63744k
-  BLOCKSIZE := 256k
-  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct \
-		     kmod-i2c-gpio kmod-tpm-i2c-infineon
-endef
-TARGET_DEVICES += ruckus_r500
 
 define Device/samsung_wam250
   SOC := ar9344
@@ -3388,17 +3388,6 @@ define Device/yuncore_a930
 endef
 TARGET_DEVICES += yuncore_a930
 
-define Device/yuncore_xd3200
-  SOC := qca9563
-  DEVICE_VENDOR := YunCore
-  DEVICE_MODEL := XD3200
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 16000k
-  IMAGES += tftp.bin
-  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
-endef
-TARGET_DEVICES += yuncore_xd3200
-
 define Device/yuncore_cpe830
   SOC := qca9533
   DEVICE_VENDOR := YunCore
@@ -3412,6 +3401,17 @@ define Device/yuncore_cpe830
 endef
 TARGET_DEVICES += yuncore_cpe830
 
+define Device/yuncore_xd3200
+  SOC := qca9563
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := XD3200
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
+endef
+TARGET_DEVICES += yuncore_xd3200
+
 define Device/yuncore_xd4200
   SOC := qca9563
   DEVICE_VENDOR := YunCore
@@ -3423,6 +3423,16 @@ define Device/yuncore_xd4200
 endef
 TARGET_DEVICES += yuncore_xd4200
 
+define Device/zbtlink_zbt-wd323
+  SOC := ar9344
+  DEVICE_VENDOR := ZBT
+  DEVICE_MODEL := WD323
+  IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES := kmod-usb2 kmod-i2c-gpio kmod-rtc-pcf8563 \
+	kmod-usb-serial-cp210x uqmi
+endef
+TARGET_DEVICES += zbtlink_zbt-wd323
+
 define Device/ziking_cpe46b
   SOC := ar9330
   DEVICE_VENDOR := ZiKing
@@ -3433,15 +3443,22 @@ define Device/ziking_cpe46b
 endef
 TARGET_DEVICES += ziking_cpe46b
 
-define Device/zbtlink_zbt-wd323
-  SOC := ar9344
-  DEVICE_VENDOR := ZBT
-  DEVICE_MODEL := WD323
-  IMAGE_SIZE := 16000k
-  DEVICE_PACKAGES := kmod-usb2 kmod-i2c-gpio kmod-rtc-pcf8563 \
-	kmod-usb-serial-cp210x uqmi
+define Device/zyxel_nbg6616
+  SOC := qca9557
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := NBG6616
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-rtc-pcf8563 \
+	kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15232k
+  RAS_BOARD := NBG6616
+  RAS_ROOTFS_SIZE := 14464k
+  RAS_VERSION := "OpenWrt Linux-$(LINUX_VERSION)"
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | pad-to 64k | check-size | zyxel-ras-image
+  SUPPORTED_DEVICES += nbg6616
 endef
-TARGET_DEVICES += zbtlink_zbt-wd323
+TARGET_DEVICES += zyxel_nbg6616
 
 define Device/zyxel_nwa11xx
   $(Device/loader-okli-uimage)
@@ -3490,20 +3507,3 @@ define Device/zyxel_nwa1123-ni
   ZYXEL_MODEL_STRING := AAEO
 endef
 TARGET_DEVICES += zyxel_nwa1123-ni
-
-define Device/zyxel_nbg6616
-  SOC := qca9557
-  DEVICE_VENDOR := Zyxel
-  DEVICE_MODEL := NBG6616
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-rtc-pcf8563 \
-	kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 15232k
-  RAS_BOARD := NBG6616
-  RAS_ROOTFS_SIZE := 14464k
-  RAS_VERSION := "OpenWrt Linux-$(LINUX_VERSION)"
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | pad-to 64k | check-size | zyxel-ras-image
-  SUPPORTED_DEVICES += nbg6616
-endef
-TARGET_DEVICES += zyxel_nbg6616

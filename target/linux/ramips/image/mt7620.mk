@@ -625,20 +625,6 @@ define Device/hongdian_h8922-v30
 endef
 TARGET_DEVICES += hongdian_h8922-v30
 
-define Device/humax_e2
-  SOC := mt7620a
-  IMAGE_SIZE := 7744k
-  DEVICE_VENDOR := HUMAX
-  DEVICE_MODEL := E2
-  DEVICE_ALT0_VENDOR := HUMAX
-  DEVICE_ALT0_MODEL := QUANTUM E2
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
-	edimax-header -s CSYS -m RN75 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-	check-size | append-metadata
-  DEVICE_PACKAGES := kmod-mt76x0e
-endef
-TARGET_DEVICES += humax_e2
-
 define Device/sunvalley_filehub_common
   SOC := mt7620n
   IMAGE_SIZE := 6144k
@@ -663,6 +649,20 @@ define Device/hootoo_ht-tm05
   DEVICE_MODEL := HT-TM05
 endef
 TARGET_DEVICES += hootoo_ht-tm05
+
+define Device/humax_e2
+  SOC := mt7620a
+  IMAGE_SIZE := 7744k
+  DEVICE_VENDOR := HUMAX
+  DEVICE_MODEL := E2
+  DEVICE_ALT0_VENDOR := HUMAX
+  DEVICE_ALT0_MODEL := QUANTUM E2
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m RN75 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt76x0e
+endef
+TARGET_DEVICES += humax_e2
 
 define Device/iodata_wn-ac1167gr
   SOC := mt7620a
@@ -1203,18 +1203,21 @@ define Device/snr_cpe-w4n-mt
 endef
 TARGET_DEVICES += snr_cpe-w4n-mt
 
-define Device/tplink_archer-c20i
+define Device/tplink_archer-c2-v1
   $(Device/tplink-v2)
   SOC := mt7620a
   IMAGE_SIZE := 7808k
+  SUPPORTED_DEVICES += tplink,c2-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
-  TPLINK_HWID := 0xc2000001
-  TPLINK_HWREV := 58
-  DEVICE_MODEL := Archer C20i
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
-  SUPPORTED_DEVICES += c20i
+  TPLINK_HWID := 0xc7500001
+  TPLINK_HWREV := 50
+  IMAGES := sysupgrade.bin
+  DEVICE_MODEL := Archer C2
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport kmod-switch-rtl8367b
 endef
-TARGET_DEVICES += tplink_archer-c20i
+TARGET_DEVICES += tplink_archer-c2-v1
 
 define Device/tplink_archer-c20-v1
   $(Device/tplink-v2)
@@ -1233,21 +1236,18 @@ define Device/tplink_archer-c20-v1
 endef
 TARGET_DEVICES += tplink_archer-c20-v1
 
-define Device/tplink_archer-c2-v1
+define Device/tplink_archer-c20i
   $(Device/tplink-v2)
   SOC := mt7620a
   IMAGE_SIZE := 7808k
-  SUPPORTED_DEVICES += tplink,c2-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
-  TPLINK_HWID := 0xc7500001
-  TPLINK_HWREV := 50
-  IMAGES := sysupgrade.bin
-  DEVICE_MODEL := Archer C2
-  DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
-	kmod-usb-ledtrig-usbport kmod-switch-rtl8367b
+  TPLINK_HWID := 0xc2000001
+  TPLINK_HWREV := 58
+  DEVICE_MODEL := Archer C20i
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += c20i
 endef
-TARGET_DEVICES += tplink_archer-c2-v1
+TARGET_DEVICES += tplink_archer-c20i
 
 define Device/tplink_archer-c5-v4
   $(Device/tplink-v2)

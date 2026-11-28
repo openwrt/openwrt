@@ -41,13 +41,6 @@ define Device/Default
   KERNEL := kernel-bin
 endef
 
-define Device/imx8m
-  DEVICE_VENDOR := NXP
-  DEVICE_MODEL := i.MX8M
-  DEVICE_DTS := $(basename $(notdir $(wildcard $(DTS_DIR)/freescale/imx8m*.dts)))
-endef
-TARGET_DEVICES += imx8m
-
 define Device/gateworks_venice
   $(call Device/Default)
   FILESYSTEMS := squashfs ext4
@@ -87,27 +80,12 @@ define Device/gateworks_venice
 endef
 TARGET_DEVICES += gateworks_venice
 
-
-define Device/olimex_imx8mp-som
-  $(call Device/Default)
-  FILESYSTEMS := squashfs ext4
-  DEVICE_VENDOR := Olimex
-  DEVICE_MODEL := i.MX8MP-SOM-EVB
-  SUPPORTED_DEVICES := \
-	olimex,imx8mp-som-evb
-  BOOT_SCRIPT := olimex_imx8mp_som_evb
-  PARTITION_OFFSET := 16M
-  DEVICE_DTS := imx8mp-olimex-som-evb
-  DEVICE_PACKAGES := \
-	kmod-eeprom-at24 \
-	kmod-leds-gpio \
-	kmod-can kmod-can-flexcan
-  UBOOT := imx8mp_olimex_som_evb
-  IMAGES := img.gz
-  IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | sdcard-img-add-uboot | gzip | append-metadata
+define Device/imx8m
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := i.MX8M
+  DEVICE_DTS := $(basename $(notdir $(wildcard $(DTS_DIR)/freescale/imx8m*.dts)))
 endef
-TARGET_DEVICES += olimex_imx8mp-som
-
+TARGET_DEVICES += imx8m
 
 define Device/kontron_osm-s-imx8mp
   $(call Device/Default)
@@ -129,3 +107,25 @@ define Device/kontron_osm-s-imx8mp
   IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | sdcard-img-add-uboot | gzip | append-metadata
 endef
 TARGET_DEVICES += kontron_osm-s-imx8mp
+
+
+define Device/olimex_imx8mp-som
+  $(call Device/Default)
+  FILESYSTEMS := squashfs ext4
+  DEVICE_VENDOR := Olimex
+  DEVICE_MODEL := i.MX8MP-SOM-EVB
+  SUPPORTED_DEVICES := \
+	olimex,imx8mp-som-evb
+  BOOT_SCRIPT := olimex_imx8mp_som_evb
+  PARTITION_OFFSET := 16M
+  DEVICE_DTS := imx8mp-olimex-som-evb
+  DEVICE_PACKAGES := \
+	kmod-eeprom-at24 \
+	kmod-leds-gpio \
+	kmod-can kmod-can-flexcan
+  UBOOT := imx8mp_olimex_som_evb
+  IMAGES := img.gz
+  IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | sdcard-img-add-uboot | gzip | append-metadata
+endef
+TARGET_DEVICES += olimex_imx8mp-som
+

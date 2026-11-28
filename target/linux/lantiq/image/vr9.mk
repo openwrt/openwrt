@@ -214,18 +214,6 @@ define Device/avm_fritz5490-micron
 endef
 TARGET_DEVICES += avm_fritz5490-micron
 
-define Device/avm_fritz7360sl
-  $(Device/dsa-migration)
-  $(Device/AVM)
-  DEVICE_MODEL := FRITZ!Box 7360 SL
-  IMAGE_SIZE := 15744k
-  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls \
-	kmod-usb-dwc2 fritz-tffs xrx200-rev1.1-phy11g-firmware \
-	xrx200-rev1.2-phy11g-firmware
-  SUPPORTED_DEVICES += FRITZ7360SL
-endef
-TARGET_DEVICES += avm_fritz7360sl
-
 define Device/avm_fritz7360-v2
   $(Device/dsa-migration)
   $(Device/AVM)
@@ -237,6 +225,18 @@ define Device/avm_fritz7360-v2
 	xrx200-rev1.2-phy11g-firmware
 endef
 TARGET_DEVICES += avm_fritz7360-v2
+
+define Device/avm_fritz7360sl
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  DEVICE_MODEL := FRITZ!Box 7360 SL
+  IMAGE_SIZE := 15744k
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls \
+	kmod-usb-dwc2 fritz-tffs xrx200-rev1.1-phy11g-firmware \
+	xrx200-rev1.2-phy11g-firmware
+  SUPPORTED_DEVICES += FRITZ7360SL
+endef
+TARGET_DEVICES += avm_fritz7360sl
 
 define Device/avm_fritz7362sl
   $(Device/dsa-migration)

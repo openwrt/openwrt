@@ -39,27 +39,6 @@ define Device/goodtop_gt-swtxg8fm
 endef
 TARGET_DEVICES += goodtop_gt-swtxg8fm
 
-define Device/sirivision_sr-st3408f
-  SOC := rtl9303
-  UIMAGE_MAGIC := 0x93000000
-  DEVICE_VENDOR := Sirivision
-  DEVICE_MODEL := SR-ST3408F
-  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
-  IMAGE_SIZE := 13312k
-  $(Device/kernel-lzma)
-endef
-TARGET_DEVICES += sirivision_sr-st3408f
-
-define Device/sirivision_sr-st3808f
-  SOC := rtl9303
-  UIMAGE_MAGIC := 0x93000000
-  DEVICE_VENDOR := Sirivision
-  DEVICE_MODEL := SR-ST3808F
-  IMAGE_SIZE := 13312k
-  $(Device/kernel-lzma)
-endef
-TARGET_DEVICES += sirivision_sr-st3808f
-
 define Device/hasivo-stock-patch-installer
   # Stock download patch requires a filename starting with patch, ending in .tar.gz, and no longer than 64 bytes.
   DEVICE_IMG_NAME = $$(if $$(filter factory.patch.tar.gz,$$(2)),patch-openwrt-$$(DEVICE_NAME).tar.gz,$$(DEVICE_IMG_PREFIX)-$$(1)-$$(2))
@@ -341,6 +320,27 @@ define Device/plasmacloud_psx10
   DEVICE_MODEL := PSX10
 endef
 TARGET_DEVICES += plasmacloud_psx10
+
+define Device/sirivision_sr-st3408f
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Sirivision
+  DEVICE_MODEL := SR-ST3408F
+  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
+  IMAGE_SIZE := 13312k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += sirivision_sr-st3408f
+
+define Device/sirivision_sr-st3808f
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Sirivision
+  DEVICE_MODEL := SR-ST3808F
+  IMAGE_SIZE := 13312k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += sirivision_sr-st3808f
 
 define Device/tplink_tl-st1008f-v2
   SOC := rtl9303
