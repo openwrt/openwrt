@@ -3,7 +3,6 @@
 #
 
 linksys_get_target_firmware() {
-
 	local cur_boot_part mtd_ubi0
 
 	cur_boot_part=$(/usr/sbin/fw_printenv -n boot_part)
