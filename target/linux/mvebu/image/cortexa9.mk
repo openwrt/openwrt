@@ -172,6 +172,16 @@ define Device/fortinet_fg-52e
 endef
 TARGET_DEVICES += fortinet_fg-52e
 
+define Device/fortinet_fwf-50e
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiWiFi 50E
+  DEVICE_DTS := armada-385-fortinet-fwf-50e
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FWF50E
+  DEVICE_PACKAGES += kmod-ath9k wpad-basic-mbedtls
+endef
+TARGET_DEVICES += fortinet_fwf-50e
+
 define Device/fortinet_fwf-50e-2r
   $(Device/fortinet)
   DEVICE_MODEL := FortiWiFi 50E-2R

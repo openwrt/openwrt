@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "armada-385-fortinet-fg-5xe.dtsi"
+
+/ {
+	model = "Fortinet FortiWiFi 50E";
+	compatible = "fortinet,fwf-50e", "marvell,armada385", "marvell,armada380";
+};
+
+&pciec {
+	status = "okay";
+};
+
+&pcie2 {
+	status = "okay";
+};
