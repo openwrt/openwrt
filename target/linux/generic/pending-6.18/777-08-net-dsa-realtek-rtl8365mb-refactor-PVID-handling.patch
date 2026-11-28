@@ -1,0 +1,244 @@
+From 823f182f828a2541048aa70cf6435a3f80611a9d Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Mon, 16 Nov 2026 21:50:21 +0000
+Subject: [PATCH net-next v15 08/15] net: dsa: realtek: rtl8365mb: refactor PVID handling
+
+The PVID helpers (rtl8365mb_vlan_port_get_pvid(),
+rtl8365mb_vlan_pvid_port_set() and rtl8365mb_vlan_pvid_port_clear())
+work on a VLAN MC table index, which only family C has. Family D stores
+a raw VID in a per-port register, so it needs its own implementation, and
+also needs its PVID registers cleared at setup.
+
+Move the helpers behind struct rtl8365mb_family_info, as already done
+for the VLAN 4k accessors: the existing code becomes the family C
+implementation (rtl8365mb_c_vlan_port_get_pvid() and the like), and
+the three functions above only call it through the vlan_port_get_pvid,
+vlan_pvid_port_set and vlan_pvid_port_clear pointers in the family
+info. Also add a vlan_port_reset_pvid hook, implemented as a no-op on
+family C (rtl8365mb_c_vlan_port_reset_pvid()) so existing setup
+behavior is preserved. The callers are not changed. The following patch
+adds the family D implementation without any is_d() check in the shared
+code.
+
+No functional change.
+
+The family C functions are not static because they are referenced from
+the family C info in rtl8365mb_main.c.
+
+Tested-by: Gustavo Foletto Mora <gusfmora@gmail.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.h      |   8 ++
+ drivers/net/dsa/realtek/rtl8365mb_main.c |   4 +
+ drivers/net/dsa/realtek/rtl8365mb_vlan.c | 101 +++++++++++++++++++++--
+ drivers/net/dsa/realtek/rtl8365mb_vlan.h |   6 ++
+ 4 files changed, 111 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.h
++++ b/drivers/net/dsa/realtek/rtl8365mb.h
+@@ -9,6 +9,8 @@ enum rtl8365mb_family {
+ 	RTL8365MB_FAMILY_D,
+ };
+ 
++struct dsa_switch;
++struct netlink_ext_ack;
+ struct rtl8365mb_jam_tbl_entry;
+ struct rtl8365mb_vlan4k;
+ 
+@@ -23,6 +25,12 @@ struct rtl8365mb_family_info {
+ 			    struct rtl8365mb_vlan4k *vlan4k);
+ 	int (*vlan_4k_write)(struct realtek_priv *priv,
+ 			     const struct rtl8365mb_vlan4k *vlan4k);
++	int (*vlan_port_get_pvid)(struct realtek_priv *priv, int port,
++				  u16 *pvid);
++	int (*vlan_port_reset_pvid)(struct realtek_priv *priv, int port);
++	int (*vlan_pvid_port_set)(struct dsa_switch *ds, int port, u16 vid,
++				  struct netlink_ext_ack *extack);
++	int (*vlan_pvid_port_clear)(struct dsa_switch *ds, int port, u16 vid);
+ };
+ 
+ const struct rtl8365mb_family_info *
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -752,6 +752,10 @@ static const struct rtl8365mb_family_inf
+ 	.ext_config_forcemode = rtl8365mb_c_ext_config_forcemode,
+ 	.vlan_4k_read = rtl8365mb_c_vlan_4k_read,
+ 	.vlan_4k_write = rtl8365mb_c_vlan_4k_write,
++	.vlan_port_get_pvid = rtl8365mb_c_vlan_port_get_pvid,
++	.vlan_port_reset_pvid = rtl8365mb_c_vlan_port_reset_pvid,
++	.vlan_pvid_port_set = rtl8365mb_c_vlan_pvid_port_set,
++	.vlan_pvid_port_clear = rtl8365mb_c_vlan_pvid_port_clear,
+ };
+ 
+ /**
+--- a/drivers/net/dsa/realtek/rtl8365mb_vlan.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_vlan.c
+@@ -856,7 +856,7 @@ static int rtl8365mb_vlan_get_pvid_mc(st
+ }
+ 
+ /*
+- * rtl8365mb_vlan_port_get_pvid - Retrieve the port PVID
++ * rtl8365mb_c_vlan_port_get_pvid - Retrieve the port PVID (family C)
+  * @priv: realtek switch private structure
+  * @port: port index
+  * @pvid: pointer to store the retrieved VLAN ID
+@@ -866,7 +866,8 @@ static int rtl8365mb_vlan_get_pvid_mc(st
+  * Context: Can sleep. Takes and releases &priv->map_lock.
+  * Return: 0 on success or a negative error code on failure.
+  */
+-int rtl8365mb_vlan_port_get_pvid(struct realtek_priv *priv, int port, u16 *pvid)
++int rtl8365mb_c_vlan_port_get_pvid(struct realtek_priv *priv, int port,
++				   u16 *pvid)
+ {
+ 	struct rtl8365mb_vlanmc vlanmc;
+ 	u8 vlanmc_idx;
+@@ -881,6 +882,43 @@ int rtl8365mb_vlan_port_get_pvid(struct
+ }
+ 
+ /*
++ * rtl8365mb_c_vlan_port_reset_pvid() - Put a port's PVID in its neutral state
++ * (family C)
++ * @priv: realtek_priv pointer
++ * @port: the port number
++ *
++ * Family C is left as it was before family D support: its PVID registers are
++ * not touched at setup, to preserve existing driver behavior.
++ *
++ * Return: 0.
++ */
++int rtl8365mb_c_vlan_port_reset_pvid(struct realtek_priv *priv, int port)
++{
++	return 0;
++}
++
++/*
++ * rtl8365mb_vlan_port_get_pvid() - Retrieve the port PVID
++ * @priv: realtek switch private structure
++ * @port: port index
++ * @pvid: pointer to store the retrieved VLAN ID
++ *
++ * Returns the port PVID if defined or 0 if not, as implemented by the chip
++ * family.
++ *
++ * Context: Can sleep. Takes and releases &priv->map_lock.
++ * Return: 0 on success or a negative error code on failure.
++ */
++int rtl8365mb_vlan_port_get_pvid(struct realtek_priv *priv, int port, u16 *pvid)
++{
++	const struct rtl8365mb_family_info *fi;
++
++	fi = rtl8365mb_get_family_info(priv);
++
++	return fi->vlan_port_get_pvid(priv, port, pvid);
++}
++
++/*
+  * rtl8365mb_vlan_port_get_framefilter() - Get the ingress frame filtering mode
+  * for a port
+  * @priv: realtek switch private structure
+@@ -942,8 +980,8 @@ rtl8365mb_vlan_port_set_framefilter(stru
+ }
+ 
+ /*
+- * rtl8365mb_vlan_pvid_port_set() - Configure a port's PVID and associated
+- * VLANMC entry
++ * rtl8365mb_c_vlan_pvid_port_set() - Configure a port's PVID and associated
++ * VLANMC entry (family C)
+  * @ds: dsa switch instance
+  * @port: port index
+  * @vid: target VID
+@@ -957,8 +995,8 @@ rtl8365mb_vlan_port_set_framefilter(stru
+  * Takes and releases &priv->map_lock.
+  * Return: 0 on success, or a negative error code on failure.
+  */
+-int rtl8365mb_vlan_pvid_port_set(struct dsa_switch *ds, int port, u16 vid,
+-				 struct netlink_ext_ack *extack)
++int rtl8365mb_c_vlan_pvid_port_set(struct dsa_switch *ds, int port, u16 vid,
++				   struct netlink_ext_ack *extack)
+ {
+ 	enum rtl8365mb_frame_ingress accepted_frame, prev_accepted_frame;
+ 	struct realtek_priv *priv = ds->priv;
+@@ -1050,7 +1088,32 @@ undo_vlan_mc_port_set:
+ }
+ 
+ /*
+- * rtl8365mb_vlan_pvid_port_clear() - Remove a port's PVID configuration
++ * rtl8365mb_vlan_pvid_port_set() - Configure a port's PVID
++ * @ds: dsa switch instance
++ * @port: port index
++ * @vid: target VID
++ * @extack: netlink extended ACK for error reporting
++ *
++ * Configures the PVID as implemented by the chip family.
++ *
++ * Context: Can sleep. Must be called with &priv->vlan_lock held.
++ * Takes and releases &priv->map_lock.
++ * Return: 0 on success, or a negative error code on failure.
++ */
++int rtl8365mb_vlan_pvid_port_set(struct dsa_switch *ds, int port, u16 vid,
++				 struct netlink_ext_ack *extack)
++{
++	const struct rtl8365mb_family_info *fi;
++	struct realtek_priv *priv = ds->priv;
++
++	fi = rtl8365mb_get_family_info(priv);
++
++	return fi->vlan_pvid_port_set(ds, port, vid, extack);
++}
++
++/*
++ * rtl8365mb_c_vlan_pvid_port_clear() - Remove a port's PVID configuration
++ * (family C)
+  * @ds: dsa switch instance
+  * @port: port index
+  * @vid:  VLAN VID for PVID
+@@ -1062,7 +1125,7 @@ undo_vlan_mc_port_set:
+  * Takes and releases &priv->map_lock.
+  * Return: 0 on success, or a negative error code on failure.
+  */
+-int rtl8365mb_vlan_pvid_port_clear(struct dsa_switch *ds, int port, u16 vid)
++int rtl8365mb_c_vlan_pvid_port_clear(struct dsa_switch *ds, int port, u16 vid)
+ {
+ 	enum rtl8365mb_frame_ingress accepted_frame, prev_accepted_frame;
+ 	struct realtek_priv *priv = ds->priv;
+@@ -1135,3 +1198,25 @@ undo_set_framefilter:
+ 
+ 	return ret;
+ }
++
++/*
++ * rtl8365mb_vlan_pvid_port_clear() - Remove a port's PVID configuration
++ * @ds: dsa switch instance
++ * @port: port index
++ * @vid:  VLAN VID for PVID
++ *
++ * Removes the PVID as implemented by the chip family.
++ *
++ * Context: Can sleep. Must be called with &priv->vlan_lock held.
++ * Takes and releases &priv->map_lock.
++ * Return: 0 on success, or a negative error code on failure.
++ */
++int rtl8365mb_vlan_pvid_port_clear(struct dsa_switch *ds, int port, u16 vid)
++{
++	const struct rtl8365mb_family_info *fi;
++	struct realtek_priv *priv = ds->priv;
++
++	fi = rtl8365mb_get_family_info(priv);
++
++	return fi->vlan_pvid_port_clear(ds, port, vid);
++}
+--- a/drivers/net/dsa/realtek/rtl8365mb_vlan.h
++++ b/drivers/net/dsa/realtek/rtl8365mb_vlan.h
+@@ -28,6 +28,12 @@ int rtl8365mb_d_vlan_4k_read(struct real
+ 			     struct rtl8365mb_vlan4k *vlan4k);
+ int rtl8365mb_d_vlan_4k_write(struct realtek_priv *priv,
+ 			      const struct rtl8365mb_vlan4k *vlan4k);
++int rtl8365mb_c_vlan_port_get_pvid(struct realtek_priv *priv, int port,
++				   u16 *pvid);
++int rtl8365mb_c_vlan_port_reset_pvid(struct realtek_priv *priv, int port);
++int rtl8365mb_c_vlan_pvid_port_set(struct dsa_switch *ds, int port, u16 vid,
++				   struct netlink_ext_ack *extack);
++int rtl8365mb_c_vlan_pvid_port_clear(struct dsa_switch *ds, int port, u16 vid);
+ 
+ int rtl8365mb_vlan_port_get_pvid(struct realtek_priv *priv, int port,
+ 				 u16 *pvid);
