@@ -274,10 +274,11 @@
 	nand@0 {
 		compatible = "spi-nand";
 		reg = <0>;
+
 		nand-ecc-engine = <&qpic_nand>;
-		nand-bus-width = <8>;
-		nand-ecc-strength = <4>;
+		nand-ecc-strength = <4>; /* Vendor use ECC4 on 128B OOB flash */
 		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
 
 		partitions {
 			compatible = "qcom,smem-part";
