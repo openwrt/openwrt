@@ -86,6 +86,23 @@ mtd_get_mac_ascii() {
 	get_mac_ascii "$part" "$key"
 }
 
+mtd_get_raw_ascii() {
+	local mtdname="$1"
+	local key="$2"
+	local part
+	local raw_val
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "mtd_get_raw_ascii: partition $mtdname not found!" >&2
+		return
+	fi
+
+	raw_val=$(strings "$part" | sed -n 's/^'"$key"'=//p')
+
+	[ -n "$raw_val" ] && echo "$raw_val"
+}
+
 mtd_get_mac_encrypted_arcadyan() {
 	local iv="00000000000000000000000000000000"
 	local key="2A4B303D7644395C3B2B7053553C5200"
