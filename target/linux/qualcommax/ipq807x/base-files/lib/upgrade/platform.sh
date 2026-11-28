@@ -276,6 +276,7 @@ platform_do_upgrade() {
 		tcl_upgrade_prepare
 		nand_do_upgrade "$1"
 		;;
+	tplink,deco-x60-v2|\
 	tplink,deco-x80-5g|\
 	tplink,eap620hd-v1|\
 	tplink,eap660hd-v1)
