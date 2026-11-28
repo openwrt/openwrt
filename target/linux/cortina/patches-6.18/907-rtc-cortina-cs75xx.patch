@@ -1,0 +1,46 @@
+From 6d465adc217db57ee516ea6061e95e6b7358968c Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Mon, 23 Nov 2026 22:09:26 +0300
+Subject: [PATCH] rtc: add CS7542 calendar driver hooks
+
+Integrate the posted CS7542 calendar driver with the on-CPU RTCs. Keep
+the Makefile list alphabetical.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+The accompanying C source matches posted RTC v4. Its physical calendar
+covers years 0000-9999, verified with guarded direct-callback year-zero
+and century transition tests. Normal RTC core validation is unchanged.
+Link: https://lore.kernel.org/all/20261124-b4-cs7542-rtc-v4-2-bceefd844074@gmail.com/
+---
+ drivers/rtc/Kconfig  | 9 +++++++++
+ drivers/rtc/Makefile | 1 +
+ 2 files changed, 10 insertions(+)
+
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -1411,6 +1411,15 @@ config RTC_DRV_ASM9260
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called rtc-asm9260.
+ 
++config RTC_DRV_CS75XX
++	tristate "Cortina Systems CS7542 RTC"
++	depends on OF && HAS_IOMEM
++	help
++	  Support the calendar clock of the Cortina Systems CS7542 SoC.
++	  The hardware's four-digit calendar covers years 0000-9999.
++	  Alarm interrupts are not supported.
++	  The module will be named rtc-cs75xx.
++
+ config RTC_DRV_CV1800
+ 	tristate "Sophgo CV1800 RTC"
+ 	depends on SOPHGO_CV1800_RTCSYS || COMPILE_TEST
+--- a/drivers/rtc/Makefile
++++ b/drivers/rtc/Makefile
+@@ -44,6 +44,7 @@ obj-$(CONFIG_RTC_DRV_CADENCE)	+= rtc-cad
+ obj-$(CONFIG_RTC_DRV_CMOS)	+= rtc-cmos.o
+ obj-$(CONFIG_RTC_DRV_CPCAP)	+= rtc-cpcap.o
+ obj-$(CONFIG_RTC_DRV_CROS_EC)	+= rtc-cros-ec.o
++obj-$(CONFIG_RTC_DRV_CS75XX)	+= rtc-cs75xx.o
+ obj-$(CONFIG_RTC_DRV_CV1800)	+= rtc-cv1800.o
+ obj-$(CONFIG_RTC_DRV_DA9052)	+= rtc-da9052.o
+ obj-$(CONFIG_RTC_DRV_DA9055)	+= rtc-da9055.o

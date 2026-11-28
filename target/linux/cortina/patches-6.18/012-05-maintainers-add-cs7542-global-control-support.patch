@@ -1,0 +1,36 @@
+From 62ab6fe3229a74cf07bcbd1996333707ae49e3bd Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Mon, 23 Nov 2026 07:58:50 +0300
+Subject: [PATCH] MAINTAINERS: Add CS7542 global control support
+
+Track the global control binding, strap clock provider and pin
+multiplexer independently of the pending platform series.
+
+AI assistance: Codex prepared this change from the existing OpenWrt port
+and GPL vendor sources.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+Link: https://lore.kernel.org/all/20261123-cs7542-syscon-v3-5-f1c07a1703f8@gmail.com/
+---
+ MAINTAINERS | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -2642,6 +2642,16 @@ F:	tools/perf/tests/shell/lib/*coresight
+ F:	tools/perf/util/cs-etm-decoder/*
+ F:	tools/perf/util/cs-etm.*
+ 
++ARM/CORTINA SYSTEMS CS7542 GLOBAL CONTROL
++M:	Fil Dunsky <filipp.dunsky@gmail.com>
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Maintained
++F:	Documentation/devicetree/bindings/pinctrl/cortina,cs7542-pinctrl.yaml
++F:	Documentation/devicetree/bindings/soc/cortina/
++F:	drivers/clk/clk-cs7542.c
++F:	drivers/pinctrl/pinctrl-cs7542.c
++F:	include/dt-bindings/clock/cortina,cs7542-clock.h
++
+ ARM/CORTINA SYSTEMS GEMINI ARM ARCHITECTURE
+ M:	Hans Ulli Kroll <ulli.kroll@googlemail.com>
+ M:	Linus Walleij <linus.walleij@linaro.org>

@@ -1,0 +1,40 @@
+From ff4fa5e10d5b078fa9d0dcca2b8d595b48972afb Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Mon, 23 Nov 2026 21:16:13 +0300
+Subject: [PATCH] hwrng CS7542
+
+Backport the locally prepared and RAM-tested CS7542 drivers.
+
+Link: https://lore.kernel.org/all/20261124-b4-cs7542-trng-v2-0-0192937b44be@gmail.com/
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+ drivers/char/hw_random/Kconfig  | 10 ++++++++++
+ drivers/char/hw_random/Makefile |  1 +
+ 2 files changed, 11 insertions(+)
+
+--- a/drivers/char/hw_random/Kconfig
++++ b/drivers/char/hw_random/Kconfig
+@@ -615,6 +615,16 @@ config HW_RANDOM_ROCKCHIP
+ 
+ 	  If unsure, say Y.
+ 
++config HW_RANDOM_CS75XX
++	tristate "Cortina Systems CS7542 random number generator"
++	depends on OF && HAS_IOMEM
++	select MFD_SYSCON
++	help
++	  Support the Elliptic random number generator in the CS7542 SoC.
++	  Access the shared global control block through a syscon regmap.
++	  Provide polled reads through the hardware RNG framework.
++	  The module will be named cs75xx-trng.
++
+ endif # HW_RANDOM
+ 
+ config UML_RANDOM
+--- a/drivers/char/hw_random/Makefile
++++ b/drivers/char/hw_random/Makefile
+@@ -52,3 +52,4 @@ obj-$(CONFIG_HW_RANDOM_CN10K) += cn10k-r
+ obj-$(CONFIG_HW_RANDOM_POLARFIRE_SOC) += mpfs-rng.o
+ obj-$(CONFIG_HW_RANDOM_ROCKCHIP) += rockchip-rng.o
+ obj-$(CONFIG_HW_RANDOM_JH7110) += jh7110-trng.o
++obj-$(CONFIG_HW_RANDOM_CS75XX) += cs75xx-trng.o

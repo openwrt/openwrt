@@ -1,0 +1,3973 @@
+From 521df9ece3346207713b666eb23bc8df57fbc111 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 28 Nov 2026 11:25:10 +0300
+Subject: [PATCH] net: cortina: add checked native Wi-Fi flowtable forwarding
+
+Delegate supported ath9k and ath10k flows to the forwarding engine while
+retaining normal MAC encryption, packet numbers and TX status. Validate
+immutable receive identities before delivery or ordinary software fallback.
+Retire result graphs and endpoint labels only after reference withdrawal
+and bounded fixed-profile quiescence; quarantine uncertain ownership.
+
+Initialize translated skb IP headers before normal Wi-Fi TX. Document
+physical correctness checks, the measured throughput correction and
+the remaining workload and hardware-qualification limits.
+
+Upstream-Status: Pending
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+
+--- a/Documentation/networking/device_drivers/ethernet/cortina/cs7542-flowtable.rst
++++ b/Documentation/networking/device_drivers/ethernet/cortina/cs7542-flowtable.rst
+@@ -22,7 +22,8 @@ publishing a lookup. Unsupported request
+ IPv6 uses exact 128-bit addresses without NAT66/NPTv6. Extension headers,
+ fragments, link-local/multicast destinations and non-TCP/UDP traffic stay
+ in software. IPv6 route and NDP changes revoke affected admission, as do
+-ICMPv6 Packet Too Big messages. Wi-Fi acceleration is not enabled.
++ICMPv6 Packet Too Big messages. The native Wi-Fi paths described below
++extend the physical wired-port frontend without changing NAT66 policy.
+ 
+ TCP admission additionally requires an established conntrack state. The
+ flowtable supplies that state together with the route MTU. SYN, FIN,
+@@ -44,21 +45,69 @@ FDB, neighbours, route MTU and the same
+ An observed ambiguity, withdrawn flow or pending invalidation cannot use
+ this path. It does not admit a new unobserved flow or fabricate activity.
+ 
++Native Wi-Fi path
++-----------------
++
++An optional mac80211 net_setup_tc callback attests an AR9580 or QCA9880 PCI
++STA/AP interface to the built-in owner. Both endpoints must remain in the
++initial network namespace. Missing support, unsupported interfaces and
++ambiguous route, neighbour or bridge-FDB observations retain software
++forwarding.
++
++The owner copies admitted wireless input into the ordinary network-engine
++TX queue and consumes the original only after successful publication. A
++CPU3 miss returns the unedited packet through CPU1. An edited CPU1 result
++requires a live immutable receipt matching CLASS, HIT forwarding result,
++format epoch, interface label, tuple and Ethernet identity before normal
++native Wi-Fi transmission. Unknown edited results are dropped rather than
++sent through software NAT again. Checked input and output fences stop new
++admission and drain old readers before interface references are released.
++
++This is forwarding-engine NAT/routing through the native MAC stack, not PE
++firmware or Wi-Fi DMA takeover. Encryption, packet numbers and TX status
++remain with native ath9k/ath10k and mac80211. It requires no laboratory
++mailbox, PE session or additional reserved-memory region. The unchanged
++network engine still requires its normal top-of-DDR QM reservation. A
++missing native callback keeps the interface on the software path.
++
+ Resource lifetime
+ -----------------
+ 
+-There are 16 admitted direction selectors and eight immutable result
+-records in this implementation. A result includes every hardware-visible
+-forwarding dependency. Identical results may be shared by independent
+-selectors. A retired selector may be rebound only after invalidation and
+-complete readback, with the original immutable result still present.
+-Removing one selector does not retire another selector sharing its result.
+-
+-This is not general result reclamation. An incompatible result consumes
+-another record. Eight different retained results exhaust this small
+-allocation pool until a verified complete network-engine reset. Further
+-flows fall back to software. A successful lookup withdrawal is not treated
+-as proof that all in-flight hardware references have drained.
++The implementation admits up to 16 simultaneous direction selectors and
++eight result graphs. A live result includes every hardware-visible
++forwarding dependency and remains immutable while referenced. Identical
++results may be shared. Removing one selector does not retire its neighbour.
++
++The built-in owner can reclaim a native graph only when every member is
++withdrawn and no backend cookie refers to it. It verifies inactive CLASS
++images, all historical hash affinities, overflow and retained ACL state.
++Lookup withdrawal alone does not establish retirement of in-flight work.
++
++For the fixed external-DDR profile, the owner pauses common NI receive
++calendar admission and allows IRQ/NAPI buffer returns to run. It requires
++empty NI state, matching packet-engine counters and all expected QM/TM
++buffer credits, observed unchanged for at least 100 microseconds. An
++independent hard timer restores admission at a two-millisecond deadline.
++Expiry or busy state refuses reclamation. These are measured conditions
++on this profile, not a documented universal silicon retirement command.
++
++Only after that observation does the owner clear parent and dependent
++table rows with readback. It then releases graph slots and historical
++bucket affinities. Class-scoped ACL traps remain immutable; rebinding
++checks their retained image. Generations, version fences and selector
++high-water history are preserved. Uncertain transactions retain ownership
++and quarantine admission. No FE/QM/TM reset or HIT bitmap clear is used.
++The simultaneous pool limits remain unchanged; unsupported or currently
++full/busy cases use software.
++
++Wireless endpoint labels use a separate, non-wrapping software generation.
++An unregistered interface alone does not release its hardware label:
++retained leases and receive identities continue to pin that label. Once
++those references are gone, the owner drains old RCU readers, verifies
++completion of the Linux TX DMA ring and requires the same engine quiet
++condition before reusing the label. A busy drain can use a never-published
++label instead; exhaustion falls back to software.
++This does not require an engine reset or reuse a previous software epoch.
+ 
+ Failed or ambiguous hardware transactions close admission and retain the
+ state needed for isolation and recovery. The current replaceable modules
+@@ -85,6 +134,109 @@ not evidence of uninterrupted hardware r
+ Validation and provenance
+ -------------------------
+ 
++Additional installed-image checks on 28 November exercised plain routed
++IPv6 through ath9k STA and AP on both radios. The ath10k AP software and
++hardware TCP/UDP controls each returned 100 exact replies. Both hardware
++directions showed fresh chip HIT transitions and no marked LAN1 frames
++after warmup. Ath9k STA TCP returned 400 exact replies with two fresh
++HIT transitions; thirteen postwarm frames used the CPU over forty seconds.
++Ath9k AP TCP returned 400 exact replies. Its UDP run returned 97/100
++compared with 99/100 in the software control; these are not zero-loss
++or endurance qualifications. TCP and UDP retain ordinary software fallback.
++
++Matched software/hardware UDP traces placed the newly observed missing
++requests beyond the Wi-Fi stack TX boundary, absent from the host echo
++server, with no capture overflow. A host scan reproduced common delays.
++This does not retrospectively prove the cause of an older DNS timeout.
++The initial pipelined TCP echo comparison measured software flowtable
++111/119 and hardware 51/57 Mbit/s on this WLAN/host path. A later review
++found missing skb network/transport offsets on translated Wi-Fi output.
++Fresh RX skbs bypassed the receive stack and reached the MAC classifier
++with an unset IP header. Initialize those offsets after receipt/packet
++validation and internal label removal, before handing the frame to Linux.
++Two reversed-order framed echo pairs in a normal-root RAM boot measured
++hardware 105.5/111.1 and software 112.4/99.6 Mbit/s, with exact data and
++fresh chip HIT transitions in both directions. The matching full image
++then passed read-only RAM/automatic return before NAND installation.
++Installed kernel and five module payloads were checked against the image.
++
++Standard iperf3 on that installed image measured hardware/software
++168.7/143.8 Mbit/s from LAN to WAN and 269.5/249.7 in reverse. Each test
++used one TCP stream, two seconds of omitted warmup and eight measured
++seconds. Simultaneous hardware/software controls shared the same radio
++window: 90.9/92.4 Mbit/s outward and 155.6/113.5 in reverse. Traffic was
++local: a LAN namespace, Almond+ 5GHz STA, the existing AP and PC Wi-Fi.
++An earlier post-install echo window stalled both modes, with long TCP
++draining; its cause is not established and those results are retained.
++These short checks do not establish endurance, an ASIC line rate or a
++performance advantage across other radios, roles or traffic patterns.
++
++The later label-lifetime kernel image received compatible native MAC
++module APK updates. A contended BIND returns unsupported to nft so that
++NETDEV_REGISTER can retain its software hook while holding RTNL. Later
++ordinary flowtable binding admits hardware forwarding. UNBIND errors
++remain unchanged.
++
++The installed combination exercised eight real AP interface removal/
++creation cycles. The opaque owner API observed reused
++hardware VIDs with strictly increasing software epochs. The independent
++watchdog bounded teardown, and an ordinary reboot returned to OpenWrt
++with the original settings and UI. Model checks separately covered
++20,000 allocator reuses, retained leases/receipts and failure quarantine.
++
++
++An installed 28 November personal image with backend 10 checked distinct
++UDP SNAT actions from physical LAN1 through native ath10k STA WAN to an
++external DNS endpoint. Thirty different translated-port actions completed
++360 nonce-checked replies with no marked CPU LAN1 frames after warmup.
++First-packet controls verified the capture path. The same NAND boot
++performed 59 graph reclaims without resetting the engine;
++a live neighbouring socket completed 321 replies without error.
++Ordinary conservative flowtable expiry may renew its internal selectors;
++the test retains that distinction instead of requiring permanent IDs.
++
++These are bounded correctness checks, not throughput or endurance tests.
++The total combines qualified phases from three partial fixture runs and
++a final nine-flow pass. Earlier fixture stops covered overly strict
++selector/readiness assumptions and one UDP timeout whose cause was not
++established; its neighbouring flow continued. That event is retained,
++and these measurements are not a zero-loss qualification. The final
++paced segment needed no UDP retransmission.
++
++Earlier installed backend-9 checks additionally qualify AP IPv4 NAT on
++both radios and plain routed IPv6 through ath10k STA WAN. The new graph
++churn test does not rerun or relabel those earlier protocol/role matrices.
++Native Wi-Fi encryption and TX status remain with the normal MAC drivers.
++The personal image's unused laboratory reservation is absent from the
++public target DT; complete configurations are not identical.
++
++
++On 27 November the native ath9k path was checked on installed Almond+
++OpenWrt 6.18.64, from physical LAN1 to an AR9580 2.4 GHz STA Wi-Fi WAN.
++For TCP and UDP, twelve nonce-checked DNS replies completed with the normal
++firewall4 hardware-offload flag, HW_OFFLOAD, fresh owned ASIC HIT transitions
++in both directions and zero marked CPU LAN1 frames. The TCP software
++control contained 24 marked frames. Original UCI settings were restored;
++both tests used the same normal NAND boot without another kernel launch.
++
++A subsequent installed normal image also qualifies the QCA9880 native
++ath10k STA WAN at 5180 MHz. TCP and UDP each completed twelve exact DNS
++replies with the ordinary hardware flag, fresh owned ASIC HIT transitions
++in both directions and zero marked CPU LAN1 frames. Both software controls
++recorded twelve replies and 24 frames. The 5 GHz packet checks share one
++normal NAND boot; temporary configuration and PC routing were restored.
++Read-only samples during warmup retain a fresh HIT transition even if a
++later identical rearm refreshes the current sticky-bit baseline.
++
++Those checks qualify IPv4 NAT for the two STA WAN paths. Later AP LAN
++and Wi-Fi IPv6 checks are recorded above, under a separate installed
++source/configuration scope. They are not a throughput,
++endurance or full 802.11 processing-acceleration claim. The personal
++test image retained an unused laboratory memory reservation;
++that reservation and its boot marker are excluded from the public draft.
++Kernel/DT boot qualification and packet evidence must retain that distinction.
++
++
+ IPv6 is a local development extension to the published IPv4 RFC. On
+ Almond+ it was checked in a RAM kernel with physical LAN1 and WAN ports
+ and the ordinary firewall4 hardware-offload setting. For each of TCP and
+@@ -126,7 +278,8 @@ Review questions
+   flowtable's classifier request, or through a different common interface?
+ * Is the standard DSA tag-selection property appropriate for this CPU
+   parser constraint and the two-conduit switch setup?
+-* What hardware evidence would be sufficient to permit reclamation of
+-  different result records and clearing the sticky HIT state safely?
++* Is the bounded fixed-profile retirement condition sufficient, and is
++  there a documented silicon drain primitive? Sticky HIT clearing remains
++  unsupported.
+ * Should the built-in owner and replaceable algorithm be consolidated
+   before a non-RFC submission?
+--- a/drivers/net/ethernet/cortina/Kconfig
++++ b/drivers/net/ethernet/cortina/Kconfig
+@@ -54,7 +54,8 @@ config CS7542_FE_LIVE_OWNER
+ 	  Serialize forwarding-engine transactions with network-engine reset.
+ 	  Uncertain hardware state is retained until a verified reset.
+ 	  Rules use numeric leases under the same mutex as table access.
+-	  Immutable action records remain allocated after lookup withdrawal.
++	  Live action records remain immutable while referenced. Fully withdrawn
++	  native graphs can be reclaimed after owner-verified quiescence.
+ 
+ config CS7542_FE_HOT_BACKEND
+ 	bool "CS7542 replaceable forwarding backend"
+@@ -76,7 +77,8 @@ config CS7542_FE_BACKEND
+ 	  Install supported forwarding rules and retire their lookup selectors.
+ 	  Hardware uncertainty retains the module until checked detachment.
+ 	  The backend receives typed, bounded table operations from the owner.
+-	  Retained actions can be shared or rebound only with identical contents.
++	  Live actions can be shared or rebound only with identical contents.
++	  Fully withdrawn native graphs may be reclaimed by the built-in owner.
+ 
+ config CS7542_FE_WIRED
+ 	bool "CS7542 wired IPv4/IPv6 TCP and UDP forwarding"
+@@ -84,8 +86,10 @@ config CS7542_FE_WIRED
+ 	default n
+ 	help
+ 	  Accept hardware flowtable requests on the CS7542 wired DSA path.
+-	  Plain routed IPv6 is supported alongside IPv4 NAT. Wi-Fi and
+-	  unsupported policies continue through the CPU.
++	  Plain routed IPv6 is supported alongside IPv4 NAT. Attested native
++	  ath9k/ath10k interfaces can also delegate FE forwarding; normal MAC,
++	  encryption and TX status remain in the radio driver. Unsupported
++	  interfaces and policies continue through the CPU.
+ 	  TCP requires an established connection; SYN and FIN stay in software.
+ 	  Route, neighbor, MTU and tag state are checked before admission.
+ 
+@@ -95,7 +99,8 @@ config CS7542_FLOWTABLE
+ 	depends on NET_DSA_QCA8K_4B_MODE
+ 	default n
+ 	help
+-	  Wired IPv4 NAT and plain IPv6 TCP/UDP routing through the CS7542 FE.
++	  IPv4 NAT and plain IPv6 TCP/UDP routing through the CS7542 FE.
++	  Wired DSA and attested native ath9k/ath10k paths are supported.
+ 	  This RFC frontend is loadable; the Ethernet owner remains built in.
+ 	  Users must explicitly request hardware flowtable offload in nftables.
+ 	  Selecting the driver alone does not change the firewall configuration.
+--- a/drivers/net/ethernet/cortina/cs752x_fe.c
++++ b/drivers/net/ethernet/cortina/cs752x_fe.c
+@@ -461,6 +461,27 @@ int cs752x_fe_init(struct device *dev, v
+ 	if (ret)
+ 		return ret;
+ 
++	if (IS_ENABLED(CONFIG_CS7542_FE_LIVE_OWNER)) {
++		/* Internal CPU3 injection must return unedited misses to the
++		 * serviced CPU1 path. CLASS/SDB4 and FWD/VOQ0 are outside both
++		 * the existing defaults and the owner's hot leases (5+).
++		 */
++		ret = fe_voqpol_write(dev, fe, 0,
++				      CS_CPU_PORT0_VOQ_BASE + CS_CPU_PORT_VOQ_STRIDE);
++		if (ret)
++			return ret;
++		ret = fe_fwdrslt_write(dev, fe, 0, 0);
++		if (ret)
++			return ret;
++		ret = fe_sdb_write(dev, fe, 4, 0);
++		if (ret)
++			return ret;
++		ret = fe_class_write(dev, fe, 4, 4, 3, 0,
++				     CS_CLASS_PORT_RULE_PRIORITY);
++		if (ret)
++			return ret;
++	}
++
+ 	writel(FIELD_PREP(FE_PE_CONFIG_1_INS_CPUHDR_VOQ,
+ 			  FE_PE_CONFIG_1_ALL_CPU_PORTS) |
+ 	       FE_PE_CONFIG_1_INS_CPUHDR_CRYPTO |
+--- a/drivers/net/ethernet/cortina/cs752x_ne.c
++++ b/drivers/net/ethernet/cortina/cs752x_ne.c
+@@ -7,6 +7,7 @@
+ #include <linux/hrtimer.h>
+ #include <linux/ethtool.h>
+ #include <linux/interrupt.h>
++#include <linux/if_vlan.h>
+ #include <linux/io.h>
+ #include <linux/iopoll.h>
+ #include <linux/module.h>
+@@ -33,6 +34,9 @@
+ 
+ #ifdef CONFIG_CS7542_FE_LIVE_OWNER
+ #include <linux/cs7542_fe_live.h>
++#include <linux/cs7542_wfo_native.h>
++#include "cs_wfo_transport.h"
++#include "cs_fe_retire.h"
+ #endif
+ 
+ #define CS_NE_PORTS			3
+@@ -859,6 +863,9 @@ static int cs_ne_rx_poll(struct napi_str
+ 	struct sk_buff *skb;
+ 	void *data;
+ 	u32 wr, rd, next, w1, hdre_hi, hdre_lo, pkt_size;
++#ifdef CONFIG_CS7542_FE_LIVE_OWNER
++	u32 cpu_header[4];
++#endif
+ 	u32 off, total, dma_bytes, seg, nbufs, remaining;
+ 	unsigned int i;
+ 	int done = 0;
+@@ -942,6 +949,13 @@ static int cs_ne_rx_poll(struct napi_str
+ 		} else {
+ 			ndev->stats.rx_packets++;
+ 			ndev->stats.rx_bytes += skb->len;
++#ifdef CONFIG_CS7542_FE_LIVE_OWNER
++			for (i = 0; i < ARRAY_SIZE(cpu_header); i++)
++				cpu_header[i] = readl(desc + 16 + i * 4);
++			if (cs7542_fe_live_wfo_receive(ne->fe_live, port->id,
++						       skb, cpu_header))
++				goto recycle;
++#endif
+ 			skb->protocol = eth_type_trans(skb, ndev);
+ 			napi_gro_receive(napi, skb);
+ 		}
+@@ -1104,7 +1118,7 @@ static void cs_ne_tx_reap(struct cs_ne *
+ 	spin_unlock(&txq->lock);
+ }
+ 
+-static void cs_ne_tx_desc(struct cs_ne_txq *txq, int port_id, dma_addr_t dma,
++static void cs_ne_tx_desc(struct cs_ne_txq *txq, u32 header, dma_addr_t dma,
+ 			  u32 len, u32 total, bool sof, bool eof)
+ {
+ 	u32 *desc = txq->desc + txq->head * 8;
+@@ -1122,7 +1136,7 @@ static void cs_ne_tx_desc(struct cs_ne_t
+ 	desc[1] = dma;
+ 	desc[2] = sof ? total << 16 : 0;
+ 	desc[3] = word3;
+-	desc[4] = CS_NE_HDRA_CPU_PKT | FIELD_PREP(TX_HDRA_DVOQ, port_id * 8);
++	desc[4] = header;
+ 	desc[5] = 0;
+ 	desc[6] = 0;
+ 	desc[7] = 0;
+@@ -1167,7 +1181,9 @@ static netdev_tx_t cs_ne_xmit_sg(struct
+ 		buf->dma = dma;
+ 		buf->len = len;
+ 		buf->page = !!frag;
+-		cs_ne_tx_desc(txq, port->id, dma, len, skb->len, !frag,
++		cs_ne_tx_desc(txq, CS_NE_HDRA_CPU_PKT |
++			      FIELD_PREP(TX_HDRA_DVOQ, port->id * 8),
++			      dma, len, skb->len, !frag,
+ 			      i == nfrags);
+ 		txq->head = (txq->head + 1) & (CS_NE_TX_DESC_NUM - 1);
+ 	}
+@@ -1299,6 +1315,86 @@ static netdev_tx_t cs_ne_start_xmit(stru
+ 	return NETDEV_TX_OK;
+ }
+ 
++#ifdef CONFIG_CS7542_FE_LIVE_OWNER
++static const struct net_device_ops cs_ne_netdev_ops;
++
++int cs7542_ne_wfo_setup_tc(struct net_device *conduit, u32 wireless_ifindex,
++			   int type, void *data)
++{
++#ifdef CONFIG_CS7542_FT_LIVE_BRIDGE
++	struct cs_ne_port *port;
++
++	ASSERT_RTNL();
++	if (!conduit || conduit->netdev_ops != &cs_ne_netdev_ops)
++		return -ENODEV;
++	port = netdev_priv(conduit);
++	if (port->id != 1)
++		return -EXDEV;
++	return cs7542_ft_live_setup_wireless(port->live, wireless_ifindex,
++					    type, data);
++#else
++	return -EOPNOTSUPP;
++#endif
++}
++
++int cs7542_ne_wfo_xmit(struct net_device *conduit, struct sk_buff *skb,
++		       unsigned int label)
++{
++	struct cs_ne_port *port;
++	struct cs_ne_tx_buf *buf;
++	struct cs_ne_txq *txq;
++	struct cs_ne *ne;
++	dma_addr_t dma;
++	int error = -EAGAIN;
++
++	/* No netdev_priv access until this is an actual native NE device. */
++	if (!conduit || conduit->netdev_ops != &cs_ne_netdev_ops || !skb ||
++	    skb_is_nonlinear(skb) || skb_is_gso(skb) ||
++	    skb->len < CS_NE_TX_MIN_LEN ||
++	    skb->ip_summed == CHECKSUM_PARTIAL || skb_vlan_tag_present(skb) ||
++	    !cs_wfo_frame(skb->data, skb->len, label))
++		return -EINVAL;
++	port = netdev_priv(conduit);
++	if (port->id != 1)
++		return -EXDEV;
++	ne = port->ne;
++	txq = &ne->txq;
++	spin_lock_bh(&txq->lock);
++	/* Last-port close/terminal cleanup use this same lock. */
++	if (!port->opened || txq->stopping || txq->poll_stopping || txq->fault)
++		goto unlock;
++	cs_ne_tx_complete(ne);
++	if (txq->fault || cs_ne_tx_free(txq) < 2)
++		goto unlock;
++	dma = dma_map_single(ne->dev, skb->data, skb->len, DMA_TO_DEVICE);
++	if (dma_mapping_error(ne->dev, dma)) {
++		error = -EIO;
++		goto unlock;
++	}
++	/* The owned copy must not retain a wireless netdevice after its
++	 * unregister. Completion only belongs to this native NE from here.
++	 */
++	skb->dev = conduit;
++	buf = &txq->bufs[txq->head];
++	buf->skb = skb;
++	buf->dma = dma;
++	buf->len = skb->len;
++	buf->page = false;
++	cs_ne_tx_desc(txq, cs_wfo_tx_header(), dma, skb->len, skb->len,
++		      true, true);
++	dma_wmb();
++	txq->head = (txq->head + 1) & (CS_NE_TX_DESC_NUM - 1);
++	writel(txq->head, ne->dma + DMA_LSO_TXQ_WPTR(0));
++	if (cs_ne_tx_free(txq) < CS_NE_TX_MAX_FRAGS + 2)
++		cs_ne_tx_stop_all(ne);
++	cs_ne_tx_arm_timer(txq);
++	error = 0;
++unlock:
++	spin_unlock_bh(&txq->lock);
++	return error;
++}
++#endif
++
+ static void cs_ne_mac_enable(struct cs_ne_port *port, bool enable)
+ {
+ 	u32 mask = NI_MAC_RX_RST | NI_MAC_TX_RST | NI_MAC_RX_EN | NI_MAC_TX_EN;
+@@ -1884,6 +1980,148 @@ static void __iomem *cs_ne_iomap(struct
+ 	return devm_ioremap_resource(&pdev->dev, res);
+ }
+ 
++#ifdef CONFIG_CS7542_FE_LIVE_OWNER
++struct cs_ne_retire_gate {
++	struct hrtimer timer;
++	struct cs_ne *ne;
++	u32 saved;
++	bool active;
++	int restore_error;
++};
++
++/* Gate state and its only register are serialized by the NI lock. */
++static void cs_ne_retire_restore(struct cs_ne_retire_gate *gate)
++{
++	lockdep_assert_held(&gate->ne->ni_lock);
++	ni_wr(gate->ne, NI_RX_AGG_CONFIG, gate->saved);
++	if (ni_rd(gate->ne, NI_RX_AGG_CONFIG) != gate->saved)
++		gate->restore_error = -EIO;
++	WRITE_ONCE(gate->active, false);
++}
++
++static enum hrtimer_restart cs_ne_retire_timeout(struct hrtimer *timer)
++{
++	struct cs_ne_retire_gate *gate = container_of(timer,
++		struct cs_ne_retire_gate, timer);
++	unsigned long flags;
++
++	spin_lock_irqsave(&gate->ne->ni_lock, flags);
++	if (gate->active)
++		cs_ne_retire_restore(gate);
++	spin_unlock_irqrestore(&gate->ne->ni_lock, flags);
++	return HRTIMER_NORESTART;
++}
++
++/*
++ * After a verified lookup cut, pause common NI admission while old FE work
++ * completes. IRQs/NAPI must remain runnable to return RX buffers. A hard timer
++ * restores admission if this sleeping task loses its deadline. This fixed
++ * profile check is not a general DMA shutdown or engine reset primitive.
++ */
++static int cs_ne_fe_retire_quiet(void *context, u64 end_us)
++{
++	struct cs_ne *ne = context;
++	struct cs_ne_retire_gate gate = { .ne = ne };
++	struct cs_fe_retire_sample sample;
++	u16 pools[8] = {};
++	unsigned long flags;
++	u64 began, deadline, stable = 0;
++	u32 previous = 0;
++	unsigned int i;
++	int error = -EAGAIN;
++	bool tx_empty;
++
++	if (!ne->hw_active || !ne->hw_accessible || ne->hw_cleanup_done)
++		return -EAGAIN;
++	/* Endpoint removal has fenced its producers and drained CPU readers.
++	 * Do not mistake an empty fabric for completion of an older frame still
++	 * waiting in the Linux TX DMA ring. Other live producers may resume after
++	 * this check; the retired endpoint cannot publish another descriptor.
++	 */
++	spin_lock_bh(&ne->txq.lock);
++	tx_empty = false;
++	if (!ne->txq.stopping && !ne->txq.poll_stopping && !ne->txq.fault) {
++		cs_ne_tx_complete(ne);
++		tx_empty = !ne->txq.fault && ne->txq.head == ne->txq.tail;
++	}
++	spin_unlock_bh(&ne->txq.lock);
++	if (!tx_empty)
++		return -EAGAIN;
++	for (i = 0; i < CS_NE_PORTS; i++)
++		if (ne->ports[i])
++			pools[i] = cs_ne_rx_pool_size[i];
++	hrtimer_setup_on_stack(&gate.timer, cs_ne_retire_timeout,
++			       CLOCK_MONOTONIC, HRTIMER_MODE_ABS_HARD);
++	if (hrtimer_resolution > NSEC_PER_USEC) {
++		destroy_hrtimer_on_stack(&gate.timer);
++		return -EAGAIN;
++	}
++	spin_lock_irqsave(&ne->ni_lock, flags);
++	gate.saved = ni_rd(ne, NI_RX_AGG_CONFIG);
++	began = ktime_get_ns();
++	deadline = min(end_us, div_u64(began, NSEC_PER_USEC) + 2000) * NSEC_PER_USEC;
++	if ((gate.saved & (BIT(0) | BIT(1) | BIT(8))) ||
++	    readl(ne->fe + 0x220) != 0x10d8 || readl(ne->tm) ||
++	    (qm_rd(ne, QM_CONFIG_1) &
++	     (QM_MEM_CONFIG | QM_CPU_BANKS | QM_PAGING_SIZE)) != 0x272 ||
++	    began >= deadline)
++		goto unlock;
++	WRITE_ONCE(gate.active, true);
++	hrtimer_start(&gate.timer, ns_to_ktime(deadline), HRTIMER_MODE_ABS_HARD);
++	ni_wr(ne, NI_RX_AGG_CONFIG, gate.saved | NI_RX_PORT_CAL_DIS);
++	if (ni_rd(ne, NI_RX_AGG_CONFIG) != (gate.saved | NI_RX_PORT_CAL_DIS)) {
++		error = -EIO;
++		goto finish_locked;
++	}
++	spin_unlock_irqrestore(&ne->ni_lock, flags);
++	do {
++		u64 stamp;
++
++		sample.ni_fifo = ni_rd(ne, 0x0a8);
++		sample.pp_state = readl(ne->fe + 0x218);
++		sample.pp_count = readl(ne->fe + 0x21c);
++		sample.pe_debug = readl(ne->fe + 0x250);
++		sample.qm_status = qm_rd(ne, 0x014);
++		sample.tm_buffers = readl(ne->tm + 0x008);
++		sample.tm_global = readl(ne->tm + 0x00c);
++		sample.tm_internal = readl(ne->tm + 0x068);
++		for (i = 0; i < 4; i++) {
++			sample.cpu_free[i] = qm_rd(ne, 0x084 + i * 4);
++			sample.cpu_total[i] = qm_rd(ne, 0x094 + i * 4);
++		}
++		stamp = ktime_get_ns();
++		if (stamp >= deadline || !READ_ONCE(gate.active))
++			break;
++		if (cs_fe_retire_empty(&sample, pools)) {
++			if (!stable || previous != sample.pe_debug) {
++				stable = stamp;
++			} else if (stamp - stable >= 100 * NSEC_PER_USEC) {
++				error = 0;
++				break;
++			}
++		} else {
++			stable = 0;
++		}
++		previous = sample.pe_debug;
++		usleep_range(10, 20);
++	} while (ktime_get_ns() < deadline);
++	spin_lock_irqsave(&ne->ni_lock, flags);
++	/* Timeout restoration invalidates the observation, even if counters match. */
++	if (!gate.active || ktime_get_ns() >= deadline)
++		error = -EAGAIN;
++finish_locked:
++	if (gate.active)
++		cs_ne_retire_restore(&gate);
++	if (gate.restore_error)
++		error = gate.restore_error;
++unlock:
++	spin_unlock_irqrestore(&ne->ni_lock, flags);
++	hrtimer_cancel(&gate.timer);
++	destroy_hrtimer_on_stack(&gate.timer);
++	return error;
++}
++#endif
++
+ static int cs_ne_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -1959,7 +2197,7 @@ static int cs_ne_probe(struct platform_d
+ 		min_t(resource_size_t,
+ 		      resource_size(platform_get_resource_byname(
+ 			      pdev, IORESOURCE_MEM, "fe")),
+-		      UINT_MAX));
++		      UINT_MAX), cs_ne_fe_retire_quiet, ne);
+ 	if (IS_ERR(ne->fe_live))
+ 		return PTR_ERR(ne->fe_live);
+ 	ret = devm_add_action_or_reset(dev, cs_ne_live_release, ne);
+--- a/drivers/net/ethernet/cortina/cs7542_fe_live.c
++++ b/drivers/net/ethernet/cortina/cs7542_fe_live.c
+@@ -23,6 +23,7 @@
+ #include <net/route.h>
+ #include <net/arp.h>
+ #include <linux/capability.h>
++#include <linux/netfilter.h>
+ #include "cs_fe_hot.h"
+ #include "cs_fe_backend.h"
+ #define CS_FE_NATIVE_AVAILABLE                                            \
+@@ -34,6 +35,37 @@
+ #endif
+ #if CS_FE_NATIVE_AVAILABLE
+ #include "cs_fe_native_state.h"
++#include "cs_wfo_packet.h"
++#include "cs_wfo_receipt.h"
++#include "cs_wfo_labels.h"
++static_assert(CS_WFO_RECEIPTS == CS_FE_BACKEND_LEASES);
++static_assert(CS_WFO_RESULT_ROWS == CS_FE_BACKEND_ACTIONS);
++#define CS_WFO_ENDPOINTS 4
++struct cs_wfo_cached_input {
++	struct cs_wfo_packet packet;
++	unsigned long expires;
++	bool valid, ambiguous;
++};
++
++struct cs_wfo_live_receipt {
++	struct rcu_head rcu;
++	struct cs_wfo_receipt identity;
++	/* Changed only under the owner's producer fence. Identity is immutable. */
++	bool admitting;
++};
++
++struct cs_wfo_endpoint {
++	struct net_device __rcu *dev;
++	struct cs7542_fe_live *owner;
++	struct nf_hook_ops hook;
++	/* Serializes ingress observations and link pause/cache invalidation. */
++	spinlock_t cache_lock;
++	struct cs_wfo_cached_input cache[32];
++	u64 epoch;
++	u16 label;
++	u8 kind;
++	bool injecting, hook_registered, paused;
++};
+ #endif
+ #include "cs_fe_acl_guard.h"
+ 
+@@ -46,6 +78,8 @@ struct cs7542_fe_live {
+ 	struct net_device *ports[CS_FE_LIVE_PORTS];
+ 	void __iomem *base;
+ 	unsigned int extent;
++	int (*retire_quiet)(void *context, u64 end_us);
++	void *quiet_context;
+ 	bool initialized, online, closing, reset_verified, quarantine_ref;
+ 	u64 epoch;
+ 	struct cs7542_fe_hot_sample hot_before[CS_FE_BACKEND_LEASES];
+@@ -56,6 +90,12 @@ struct cs7542_fe_live {
+ #endif
+ #if CS_FE_NATIVE_AVAILABLE
+ 	struct cs_fe_native_state native;
++	struct cs_wfo_endpoint wfo[CS_WFO_ENDPOINTS];
++	struct cs_wfo_live_receipt __rcu *wfo_receipts[CS_WFO_RECEIPTS];
++	const struct cs_wfo_receipt_seed *wfo_pending;
++	/* Packet producer publication and pre-withdrawal/endpoint fence. */
++	spinlock_t wfo_tx_lock;
++	struct cs_wfo_label_state wfo_labels;
+ #endif
+ 	struct cs_fe_acl_guard guard[CS_FE_BACKEND_LEASES];
+ };
+@@ -90,6 +130,14 @@ static bool cs_fe_live_hot_guards_ready(
+ static int cs_fe_native_range(void *context, bool prepare, u8 range_bit,
+ 			      unsigned long long end);
+ static void cs_fe_native_prune(struct cs7542_fe_live *owner);
++static void cs_wfo_remove(struct cs7542_fe_live *owner,
++			  struct net_device *dev);
++static void cs_wfo_link(struct cs7542_fe_live *owner,
++			struct net_device *dev, bool up);
++static struct net_device *cs_wfo_path(struct cs7542_fe_live *owner,
++				      const struct cs7542_fe_native_request *request, u64 epoch);
++static int cs_wfo_arm(struct cs7542_fe_live *owner, unsigned int slot,
++		      const struct cs_wfo_receipt_seed *seed, u64 generation);
+ #else
+ static inline void cs_fe_native_prune(struct cs7542_fe_live *owner)
+ {
+@@ -129,10 +177,24 @@ void cs7542_fe_live_put(struct cs7542_fe
+ }
+ EXPORT_SYMBOL_GPL(cs7542_fe_live_put);
+ 
++#if IS_ENABLED(CONFIG_CS7542_FE_HOT_BACKEND)
++static int cs_fe_live_retire_quiet(void *context, unsigned long long end)
++{
++	struct cs7542_fe_live *owner = context;
++
++	lockdep_assert_held(&owner->lock);
++	if (!owner->online || owner->closing || !owner->retire_quiet)
++		return -EAGAIN;
++	return owner->retire_quiet(owner->quiet_context, end);
++}
++
++#endif
+ 
+ struct cs7542_fe_live *cs7542_fe_live_create(struct device *dev,
+ 					     void __iomem *base,
+-					     unsigned int extent)
++					     unsigned int extent,
++					     int (*retire_quiet)(void *context, u64 end_us),
++					     void *quiet_context)
+ {
+ 	struct cs7542_fe_live *owner;
+ 
+@@ -144,9 +206,14 @@ struct cs7542_fe_live *cs7542_fe_live_cr
+ 	INIT_LIST_HEAD(&owner->node);
+ 	kref_init(&owner->refs);
+ 	mutex_init(&owner->lock);
++#if CS_FE_NATIVE_AVAILABLE
++	spin_lock_init(&owner->wfo_tx_lock);
++#endif
+ 	owner->dev = get_device(dev);
+ 	owner->base = base;
+ 	owner->extent = extent;
++	owner->retire_quiet = retire_quiet;
++	owner->quiet_context = quiet_context;
+ 	owner->epoch = 1;
+ 	/* Routing hardware admission is closed, including in this live lab. */
+ 	cs_fe_backend_init(&owner->backend, 0);
+@@ -158,6 +225,7 @@ struct cs7542_fe_live *cs7542_fe_live_cr
+ #endif
+ 	owner->hot_state.guards_rebind = cs_fe_live_hot_guards_rebind;
+ 	owner->hot_state.guard_context = owner;
++	owner->hot_state.retire_quiet = cs_fe_live_retire_quiet;
+ #endif
+ 	owner->backend.guard_prepare = cs_fe_live_guard_prepare;
+ 	owner->backend.guard_withdraw = cs_fe_live_guard_withdraw;
+@@ -235,6 +303,10 @@ void cs7542_fe_live_unbind(struct cs7542
+ 	mutex_lock(&cs_fe_live_owners_lock);
+ 	mutex_lock(&owner->lock);
+ 	if (owner->ports[gmac] == conduit) {
++#if CS_FE_NATIVE_AVAILABLE
++		if (gmac == 1)
++			cs_wfo_remove(owner, NULL);
++#endif
+ 		held = owner->ports[gmac];
+ 		owner->ports[gmac] = NULL;
+ 	}
+@@ -310,6 +382,10 @@ static struct cs_fe_backend_io cs_fe_liv
+ 	return io;
+ }
+ 
++#if CS_FE_NATIVE_AVAILABLE
++#include "cs_wfo_receipt.inc"
++#endif
++
+ /*
+  * These callbacks run inside the SAME backend owner transaction/mutex.
+  *
+@@ -334,10 +410,21 @@ static int cs_fe_live_guard_prepare(void
+ 	bounded.limit_us =
+ 		io->limit_us && io->limit_us < end_us ? io->limit_us : end_us;
+ 	{
+-		int error = cs_fe_acl_prepare(&owner->guard[lease], &bounded,
+-					      lease, rows->class_row,
+-					      plan->class_invalid.expected);
++		int error;
++
++		if (owner->guard[lease].attempted)
++			error = cs_fe_acl_verify_retained(&owner->guard[lease],
++							  &bounded, lease, rows->class_row,
++							  plan->class_invalid.expected);
++		else
++			error = cs_fe_acl_prepare(&owner->guard[lease], &bounded,
++						  lease, rows->class_row,
++						  plan->class_invalid.expected);
+ 
++#if CS_FE_NATIVE_AVAILABLE
++		if (!error)
++			error = cs_wfo_receipt_publish(owner, lease, rows, plan);
++#endif
+ 		if (!error)
+ 			(void)cs_fe_hot_read(&bounded, plan->key.bucket,
+ 					     &owner->hot_before[lease]);
+@@ -402,6 +489,10 @@ cs_fe_live_guard_rearm(void *context, co
+ 	error = cs_fe_acl_verify_retained(&owner->guard[lease], &bounded, lease,
+ 					  rows->class_row,
+ 					  plan->class_invalid.expected);
++#if CS_FE_NATIVE_AVAILABLE
++	if (!error)
++		error = cs_wfo_receipt_publish(owner, lease, rows, plan);
++#endif
+ 	if (!error) {
+ 		memset(&owner->hot_after[lease], 0,
+ 		       sizeof(owner->hot_after[lease]));
+@@ -424,6 +515,12 @@ static void cs_fe_live_before_withdraw(v
+ 	struct cs7542_fe_live *owner = context;
+ 	struct cs_fe_backend_io bounded = cs_fe_live_io(owner);
+ 
++#if CS_FE_NATIVE_AVAILABLE
++	/* Revoke producers before the first HASH/CLASS invalidation. Retain
++	 * the receive identity for packets already queued by the old rule.
++	 */
++	cs_wfo_receipt_fence(owner, lease);
++#endif
+ 	bounded.limit_us =
+ 		io->limit_us && io->limit_us < end_us ? io->limit_us : end_us;
+ 	if (lease < CS_FE_BACKEND_LEASES)
+@@ -593,6 +690,9 @@ void cs7542_fe_live_stop(struct cs7542_f
+ #endif
+ 	owner->online = false;
+ 	owner->closing = true;
++#if CS_FE_NATIVE_AVAILABLE
++	cs_wfo_remove(owner, NULL);
++#endif
+ 	owner->base = NULL;
+ #if IS_ENABLED(CONFIG_CS7542_FE_HOT_BACKEND)
+ 	owner->hot_state.ledger.blocked = true;
+@@ -630,6 +730,15 @@ unlock:
+ 
+ #if CS_FE_NATIVE_AVAILABLE
+ #include "cs_fe_native.inc"
++#include "cs_wfo_native.inc"
++#else
++#include <linux/cs7542_wfo_native.h>
++bool cs7542_fe_live_wfo_receive(struct cs7542_fe_live *owner,
++				unsigned int cpu, struct sk_buff *skb,
++				const u32 cpu_header[4])
++{
++	return false;
++}
+ #endif
+ 
+ #if IS_ENABLED(CONFIG_CS7542_FE_HOT_BACKEND)
+--- a/drivers/net/ethernet/cortina/cs7542_ft_live.c
++++ b/drivers/net/ethernet/cortina/cs7542_ft_live.c
+@@ -27,6 +27,9 @@ struct cs_live_binding {
+ 	u64 identity;
+ 	u32 users;
+ 	bool opened, retired;
++	struct {
++		u32 ifindex, users;
++	} wireless[4];
+ };
+ 
+ /*
+@@ -266,18 +269,41 @@ struct cs7542_ft_live *cs7542_ft_live_cr
+ 	return live;
+ }
+ 
+-int cs7542_ft_live_setup(struct cs7542_ft_live *live, int type, void *data)
++static int cs_live_setup_member(struct cs7542_ft_live *live, int type,
++				void *data, u32 wireless)
+ {
+ 	struct flow_block_offload *block = data;
+ 	struct flow_block_cb *callback;
+ 	struct cs_live_binding *binding;
++	unsigned int member = 0, i;
+ 	int error = 0;
+ 
+-	if (!live || type != TC_SETUP_FT || !block ||
++	if (type != TC_SETUP_FT || !block || !block->block ||
+ 	    block->binder_type != FLOW_BLOCK_BINDER_TYPE_CLSACT_INGRESS)
+ 		return -EOPNOTSUPP;
+ 	mutex_lock(&live_lock);
+ 	block->driver_block_list = &live_callbacks;
++	/* Wireless UNBIND remains native-only after its NE conduit disappears.
++	 * Locate only the membership created by an earlier attested BIND in
++	 * this same flow block; no netdevice or provider pointer is retained.
++	 */
++	if (!live && wireless && block->command == FLOW_BLOCK_UNBIND) {
++		list_for_each_entry(binding, &live_bindings, list) {
++			callback = flow_block_cb_lookup(block->block, live_rule,
++							binding->live);
++			if (!callback || callback->cb_priv != binding)
++				continue;
++			for (i = 0; i < ARRAY_SIZE(binding->wireless); i++)
++				if (binding->wireless[i].ifindex == wireless)
++					live = binding->live;
++			if (live)
++				break;
++		}
++	}
++	if (!live) {
++		error = -ENOENT;
++		goto unlock;
++	}
+ 	switch (block->command) {
+ 	case FLOW_BLOCK_BIND:
+ 		if (live->closing || !block->net ||
+@@ -292,6 +318,28 @@ int cs7542_ft_live_setup(struct cs7542_f
+ 				error = -EOVERFLOW;
+ 				break;
+ 			}
++			if (wireless) {
++				member = ARRAY_SIZE(binding->wireless);
++				for (i = 0; i < ARRAY_SIZE(binding->wireless); i++) {
++					if (binding->wireless[i].ifindex == wireless) {
++						member = i;
++						break;
++					}
++					if (!binding->wireless[i].users &&
++					    member == ARRAY_SIZE(binding->wireless))
++						member = i;
++				}
++				if (member == ARRAY_SIZE(binding->wireless)) {
++					error = -ENOSPC;
++					break;
++				}
++				if (binding->wireless[member].users == U32_MAX) {
++					error = -EOVERFLOW;
++					break;
++				}
++				binding->wireless[member].ifindex = wireless;
++				binding->wireless[member].users++;
++			}
+ 			binding->users++;
+ 			break;
+ 		}
+@@ -315,6 +363,10 @@ int cs7542_ft_live_setup(struct cs7542_f
+ 		binding->live = live;
+ 		binding->identity = ++next_identity;
+ 		binding->users = 1;
++		if (wireless) {
++			binding->wireless[0].ifindex = wireless;
++			binding->wireless[0].users = 1;
++		}
+ 		kref_get(&live->refs);
+ 		list_add_tail(&binding->list, &live_bindings);
+ 		binding_count++;
+@@ -328,6 +380,18 @@ int cs7542_ft_live_setup(struct cs7542_f
+ 			break;
+ 		}
+ 		binding = callback->cb_priv;
++		if (wireless) {
++			for (i = 0; i < ARRAY_SIZE(binding->wireless); i++)
++				if (binding->wireless[i].ifindex == wireless)
++					break;
++			if (i == ARRAY_SIZE(binding->wireless) ||
++			    !binding->wireless[i].users) {
++				error = -ENOENT;
++				break;
++			}
++			if (!--binding->wireless[i].users)
++				binding->wireless[i].ifindex = 0;
++		}
+ 		if (--binding->users)
+ 			break;
+ 		flow_block_cb_remove(callback, block);
+@@ -336,10 +400,26 @@ int cs7542_ft_live_setup(struct cs7542_f
+ 	default:
+ 		error = -EOPNOTSUPP;
+ 	}
++unlock:
+ 	mutex_unlock(&live_lock);
+ 	return error;
+ }
+ 
++int cs7542_ft_live_setup(struct cs7542_ft_live *live, int type, void *data)
++{
++	if (!live)
++		return -EOPNOTSUPP;
++	return cs_live_setup_member(live, type, data, 0);
++}
++
++int cs7542_ft_live_setup_wireless(struct cs7542_ft_live *live, u32 ifindex,
++				  int type, void *data)
++{
++	if (!ifindex)
++		return -EINVAL;
++	return cs_live_setup_member(live, type, data, ifindex);
++}
++
+ int cs7542_ft_live_quiesce(struct cs7542_ft_live *live)
+ {
+ 	struct cs_live_binding *binding;
+--- a/drivers/net/ethernet/cortina/cs_fe_acl_encode.c
++++ b/drivers/net/ethernet/cortina/cs_fe_acl_encode.c
+@@ -63,9 +63,11 @@ int cs_fe_acl_encode(enum cs_fe_acl_kind
+ 		field(rule, 20 * 32 + 27, 1, 0); /* IP_OPTIONS_MASK */
+ 	}
+ 	/*
+-	 * Experimental narrowing beyond the broad vendor exception: exact
+-	 * CLASS/physical ingress1 only. The owning CLASS checks IP family,
+-	 * tag, DSCP0 and fragmentation; a CLASS result is NOT payload matching.
++	 * Scope exceptions to the owner's exact CLASS hit/index. The CLASS itself
++	 * checks physical ingress, IP family, framing and fragmentation. Keeping
++	 * its source out of the immutable ACL trap permits safe CLASS reuse
++	 * between wired ingress1 and native CPU3 without rewriting live traps.
++	 * A CLASS result is not payload matching.
+ 	 * SDK DA_MAC_NO_MATCH callers establish class-hit/index selectors.
+ 	 */
+ 	field(rule, 4 * 32 + 23, 1, 1); /* IP_VLD */
+@@ -75,8 +77,8 @@ int cs_fe_acl_encode(enum cs_fe_acl_kind
+ 	 */
+ 	field(rule, 4 * 32 + 24, 1, 0); /* IP_VER, ignored */
+ 	field(rule, 19 * 32 + 30, 1, 1); /* IP_VER_MASK: both families */
+-	field(rule, 16 * 32 + 8, 4, 1); /* LSPID */
+-	field(rule, 21 * 32 + 3, 1, 0); /* LSPID_MASK */
++	field(rule, 16 * 32 + 8, 4, 0); /* LSPID, ignored */
++	field(rule, 21 * 32 + 3, 1, 1); /* LSPID_MASK: exact CLASS owns source */
+ 	field(rule, 17 * 32 + 4, 1, 1); /* CLASS_HIT */
+ 	field(rule, 21 * 32 + 25, 1, 0); /* CLASS_HIT_MASK */
+ 	field(rule, 17 * 32 + 5, 6, class_id); /* CLASS_SVIDX */
+--- a/drivers/net/ethernet/cortina/cs_fe_backend.h
++++ b/drivers/net/ethernet/cortina/cs_fe_backend.h
+@@ -49,7 +49,7 @@ struct cs_fe_rule;
+ struct cs_fe_key_policy;
+ struct cs_fe_rows;
+ struct cs_fe_plan;
+-#define CS_FE_BACKEND_IO_ABI 3U
++#define CS_FE_BACKEND_IO_ABI 4U
+ struct cs_fe_backend_io {
+ 	unsigned int abi, size;
+ 	struct cs_fe_hot_selector selector;
+@@ -77,6 +77,8 @@ struct cs_fe_backend_io {
+ 			 bool *shared);
+ 	/* Cuts only a failed member of a shared result. Success is verified in FE. */
+ 	int (*isolate)(void *context, unsigned int selector);
++	/* Sole owner may reclaim a completely withdrawn native result graph. */
++	int (*reclaim)(void *context, unsigned long long end);
+ };
+ 
+ struct cs_fe_backend_diag {
+@@ -149,10 +151,9 @@ struct cs_fe_backend {
+ };
+ 
+ /*
+- * No live reset/reinit/free API: leases, including withdrawn/failed ones, stay
+- *
+- * owned until actual full NE reset and callback drain. These APIs do not prove
+- * a pipeline retirement fence. Serial is a PRIVATE desired-version guard,
++ * No arbitrary provider reset/free API. Only the builtin typed reclaim hook
++ * can release fully withdrawn native graphs after the owner's hardware fence.
++ * Failed or uncertain transactions retain ownership. Serial is a PRIVATE desired-version guard,
+  * never a generation supplied by upstream FLOW_CLS_DESTROY. The provider
+  * allocates versions from ONE monotonic counter before validating any cookie.
+  * Unknown rejections advance a conservative block-wide fence for pending
+@@ -166,6 +167,12 @@ int cs_fe_backend_replace_native(struct
+ 				 unsigned long long version,
+ 				 const struct cs_fe_rule *rule,
+ 				 const struct cs_fe_key_policy *policy);
++int cs_fe_backend_replace_wfo(struct cs_fe_backend *backend,
++			      const struct cs_fe_backend_io *io,
++			      unsigned long long block, unsigned long cookie,
++			      unsigned long long version,
++			      const struct cs_fe_rule *rule,
++			      const struct cs_fe_key_policy *policy);
+ int cs_fe_backend_block_open(struct cs_fe_backend *backend,
+ 			     unsigned long long *handle);
+ int cs_fe_backend_marker_encoded(struct cs_fe_backend *backend,
+--- a/drivers/net/ethernet/cortina/cs_fe_backend_algorithm.c
++++ b/drivers/net/ethernet/cortina/cs_fe_backend_algorithm.c
+@@ -15,6 +15,7 @@
+ #define cs_fe_backend_next_rows hot_cs_fe_backend_next_rows
+ #define cs_fe_backend_replace hot_cs_fe_backend_replace
+ #define cs_fe_backend_replace_scoped hot_cs_fe_backend_replace_scoped
++#define cs_fe_backend_replace_wfo hot_cs_fe_backend_replace_wfo
+ #define cs_fe_backend_replace_guarded hot_cs_fe_backend_replace_guarded
+ #define cs_fe_backend_marker hot_cs_fe_backend_marker
+ #define cs_fe_backend_marker_encoded hot_cs_fe_backend_marker_encoded
+@@ -638,7 +639,7 @@ cs_be_replace(struct cs_fe_backend *back
+ 	struct cs_fe_plan plan;
+ 	bool shared_result = false;
+ 	unsigned long long end;
+-	unsigned int index, block_index;
++	unsigned int index, block_index, selector;
+ 	int error;
+ 
+ 	if (!backend || cs_be_io(io) || !version)
+@@ -707,18 +708,43 @@ cs_be_replace(struct cs_fe_backend *back
+ 					   cs_be_rejected(backend, block_index,
+ 							  version, error);
+ 	}
++	/* Reclaimed holes retain the selector high-water and block-version fences. */
++	for (selector = 0; selector < backend->next_lease; selector++)
++		if (!backend->lease[selector].reserved)
++			break;
++	if (selector == CS_FE_BACKEND_LEASES && io->reclaim) {
++		error = io->reclaim(io->context, end);
++		if (error < 0 && error != -EAGAIN)
++			return cs_be_rejected(backend, block_index, version, error);
++		for (selector = 0; selector < backend->next_lease; selector++)
++			if (!backend->lease[selector].reserved)
++				break;
++	}
+ 	if (!rule || !policy)
+ 		error = -EINVAL;
+ 	else if (guarded &&
+ 		 (!backend->guard_prepare || !backend->guard_withdraw))
+ 		error = -EOPNOTSUPP;
+-	else if (backend->next_lease == CS_FE_BACKEND_LEASES)
++	else if (selector == CS_FE_BACKEND_LEASES)
+ 		error = -ENOSPC;
+ 	else {
+ 		error = io->placement ?
+-				io->placement(io->context, backend->next_lease,
++				io->placement(io->context, selector,
+ 					      &rows, &shared_result) :
+ 				-EPROTO;
++		if (error == -ENOSPC && io->reclaim) {
++			int reclaimed = io->reclaim(io->context, end);
++
++			if (reclaimed < 0 && reclaimed != -EAGAIN) {
++				error = reclaimed;
++			} else if (reclaimed > 0) {
++				for (selector = 0; selector < backend->next_lease; selector++)
++					if (!backend->lease[selector].reserved)
++						break;
++				error = io->placement(io->context, selector, &rows,
++						      &shared_result);
++			}
++		}
+ 		if (!error)
+ 			error = cs_fe_encode(rule, &rows, policy, &plan);
+ 		if (!error && marker) {
+@@ -735,7 +761,10 @@ cs_be_replace(struct cs_fe_backend *back
+ 			       sizeof(plan.hit.input));
+ 			plan.write_l3 = false;
+ 			plan.write_fvlan = false;
+-			plan.requirements = 0;
++			/* A diagnostic marker never authorizes an unregistered
++			 * CPU endpoint or its software fallback path.
++			 */
++			plan.requirements &= CS_FE_REQ_WFO_ENDPOINT;
+ 		}
+ 		if (!error && scope_grant && scope_exact)
+ 			cs_fe_exact_class(&plan, rule,
+@@ -794,6 +823,8 @@ cs_be_replace(struct cs_fe_backend *back
+ 			       cs_be_rejected(backend, block_index, version,
+ 					      error);
+ 	for (index = 0; index < backend->next_lease; index++) {
++		if (!backend->lease[index].reserved)
++			continue;
+ 		if (backend->lease[index].plan.key.bucket == plan.key.bucket) {
+ 			error = -ENOSPC;
+ 			break;
+@@ -814,13 +845,15 @@ cs_be_replace(struct cs_fe_backend *back
+ 		return cs_be_rejected(backend, block_index, version, -ENOSPC);
+ 	entry->version = version;
+ 	/* Claim is all-or-nothing. Rejections have no hardware or ledger effect. */
+-	error = io->claim(io->context, backend->next_lease, rule, policy, &rows,
++	error = io->claim(io->context, selector, rule, policy, &rows,
+ 			  &plan);
+ 	if (error) {
+ 		cs_be_retire_cookie(backend, entry, block_index);
+ 		return error;
+ 	}
+-	entry->lease = backend->next_lease++;
++	entry->lease = selector;
++	if (selector == backend->next_lease)
++		backend->next_lease++;
+ 	lease = &backend->lease[entry->lease];
+ 	lease->reserved = true;
+ 	lease->shared_result = shared_result;
+@@ -873,6 +906,27 @@ int cs_fe_backend_replace_scoped(struct
+ 			     exact_ingress);
+ }
+ 
++/* Only the typed WFO operation grants this per-transaction obligation. */
++int cs_fe_backend_replace_wfo(struct cs_fe_backend *backend,
++			      const struct cs_fe_backend_io *io,
++			      unsigned long long block, unsigned long cookie,
++			      unsigned long long version,
++			      const struct cs_fe_rule *rule,
++			      const struct cs_fe_key_policy *policy)
++{
++	if (!rule || cs_fe_link_cpu_nat(&rule->ingress) ==
++		     cs_fe_link_cpu_nat(&rule->egress))
++		return cs_fe_backend_reject(backend, io, block, cookie, version,
++					    -EOPNOTSUPP);
++	return cs_be_replace(backend, io, block, cookie, version, rule, policy,
++			     false, NULL, true,
++			     CS_FE_REQ_PACKET_EXCEPTIONS |
++				     CS_FE_REQ_COLLISION_CHECK |
++				     CS_FE_REQ_OWNER_LIFETIME |
++				     CS_FE_REQ_WFO_ENDPOINT,
++			     true);
++}
++
+ int cs_fe_backend_replace_guarded(struct cs_fe_backend *backend,
+ 				  const struct cs_fe_backend_io *io,
+ 				  unsigned long long block,
+--- a/drivers/net/ethernet/cortina/cs_fe_backend_dispatch.c
++++ b/drivers/net/ethernet/cortina/cs_fe_backend_dispatch.c
+@@ -345,6 +345,24 @@ int cs_fe_backend_replace_native(struct
+ 	return cs_hot_dispatch(CS_HOT_NATIVE, backend, io, request);
+ }
+ 
++int cs_fe_backend_replace_wfo(struct cs_fe_backend *backend,
++			      const struct cs_fe_backend_io *io,
++			      unsigned long long block, unsigned long cookie,
++			      unsigned long long version,
++			      const struct cs_fe_rule *rule,
++			      const struct cs_fe_key_policy *policy)
++{
++	struct cs_fe_hot_request request = {
++		.block = block,
++		.cookie = cookie,
++		.version = version,
++		.rule = rule,
++		.policy = policy,
++		.exact = true,
++	};
++	return cs_hot_dispatch(CS_HOT_WFO, backend, io, request);
++}
++
+ int cs_fe_backend_replace_scoped(struct cs_fe_backend *backend,
+ 				 const struct cs_fe_backend_io *io,
+ 				 unsigned long long block, unsigned long cookie,
+--- a/drivers/net/ethernet/cortina/cs_fe_backend_module.c
++++ b/drivers/net/ethernet/cortina/cs_fe_backend_module.c
+@@ -12,6 +12,7 @@
+ #define cs_fe_backend_next_rows hot_cs_fe_backend_next_rows
+ #define cs_fe_backend_replace hot_cs_fe_backend_replace
+ #define cs_fe_backend_replace_scoped hot_cs_fe_backend_replace_scoped
++#define cs_fe_backend_replace_wfo hot_cs_fe_backend_replace_wfo
+ #define cs_fe_backend_replace_guarded hot_cs_fe_backend_replace_guarded
+ #define cs_fe_backend_marker hot_cs_fe_backend_marker
+ #define cs_fe_backend_marker_encoded hot_cs_fe_backend_marker_encoded
+@@ -25,6 +26,7 @@
+ #undef cs_fe_backend_next_rows
+ #undef cs_fe_backend_replace
+ #undef cs_fe_backend_replace_scoped
++#undef cs_fe_backend_replace_wfo
+ #undef cs_fe_backend_replace_guarded
+ #undef cs_fe_backend_marker
+ #undef cs_fe_backend_marker_encoded
+@@ -37,14 +39,10 @@
+ #ifndef CS_FE_WIRED_TCP
+ #define CS_FE_WIRED_TCP 1
+ #endif
+-#if IS_ENABLED(CONFIG_CS7542_FE_WIRED) && CS_FE_WIRED_TCP
+-#define CS_FE_REVISION 8
+-#define CS_FE_VERSION "8"
+-#define CS_FE_NAME "native-wired-tcp-udp"
+-#elif IS_ENABLED(CONFIG_CS7542_FE_WIRED)
+-#define CS_FE_REVISION 7
+-#define CS_FE_VERSION "7"
+-#define CS_FE_NAME "native-wired-udp"
++#if IS_ENABLED(CONFIG_CS7542_FE_WIRED)
++#define CS_FE_REVISION 10
++#define CS_FE_VERSION "10"
++#define CS_FE_NAME "native-wired-wifi"
+ #elif CS_FE_HOT_REARM
+ #define CS_FE_REVISION 3
+ #define CS_FE_VERSION "3"
+@@ -61,8 +59,9 @@ static int algorithm_run(enum cs_fe_hot_
+ {
+ 	switch (command) {
+ 	case CS_HOT_NATIVE:
++	case CS_HOT_WFO:
+ 		/*
+-		 * Run supported wired flows through the replaceable backend.
++		 * Run topology-checked flows through the replaceable backend.
+ 		 * The owner supplies observed wire addresses, a route MTU and its strict
+ 		 * per-packet policy. Older revisions reject this operation.
+ 		 */
+@@ -77,8 +76,18 @@ static int algorithm_run(enum cs_fe_hot_
+ 		    !request->policy->require_mtu_range ||
+ 		    request->policy->exact_dscp)
+ 			return -EOPNOTSUPP;
+-		return hot_cs_fe_backend_replace_scoped(
+-			backend, io, request->block, request->cookie,
++		if (command == CS_HOT_WFO) {
++			if (cs_fe_link_cpu_nat(&request->rule->ingress) ==
++			    cs_fe_link_cpu_nat(&request->rule->egress))
++				return -EOPNOTSUPP;
++			return hot_cs_fe_backend_replace_wfo(backend, io, request->block,
++				request->cookie, request->version,
++				request->rule, request->policy);
++		}
++		if (request->rule->ingress.cpu_port || request->rule->egress.cpu_port)
++			return -EOPNOTSUPP;
++		return hot_cs_fe_backend_replace_scoped(backend, io, request->block,
++			request->cookie,
+ 			request->version, request->rule, request->policy, true);
+ #else
+ 		return -EOPNOTSUPP;
+--- a/drivers/net/ethernet/cortina/cs_fe_encode.c
++++ b/drivers/net/ethernet/cortina/cs_fe_encode.c
+@@ -25,6 +25,7 @@ enum lookup_key_offset {
+ 	KEY_IP_VALID = 452,
+ 	KEY_DESTINATION_PORT = 453,
+ 	KEY_SOURCE_PORT = 469,
++	KEY_TCP_CTRL = 485,
+ 	KEY_L4_VALID = 494,
+ 	KEY_LSPID = 501,
+ 	KEY_MASK_POINTER = 526,
+@@ -121,6 +122,9 @@ static void build_key(const struct cs_fe
+ 	lookup_key_bits(key->bytes, KEY_DESTINATION_PORT, 16,
+ 			rule->original.dport);
+ 	lookup_key_bits(key->bytes, KEY_SOURCE_PORT, 16, rule->original.sport);
++	if (cs_fe_l4proto(rule, policy) == CS_FE_L4_TCP &&
++	    (cs_fe_link_cpu_nat(&rule->ingress) || cs_fe_link_cpu_nat(&rule->egress)))
++		lookup_key_bits(key->bytes, KEY_TCP_CTRL, 6, 0x10); /* ACK */
+ 	lookup_key_bits(key->bytes, KEY_L4_VALID, 1, 1);
+ 	lookup_key_bits(key->bytes, KEY_LSPID, 4, rule->ingress.gmac);
+ 	lookup_key_bits(key->bytes, KEY_MASK_POINTER, 6, rows->mask_row);
+@@ -175,8 +179,14 @@ static void build_mask(const struct cs_f
+ 	 * TCP control key (bits 485..490) requires RST, SYN and FIN clear.
+ 	 * Otherwise this SDB returns the original frame to the CPU.
+ 	 */
+-	if (cs_fe_l4proto(rule, policy) == CS_FE_L4_TCP)
+-		INCLUDE_MASK(FE_HM_TCP_CTRL_MASK, 0x38);
++	if (cs_fe_l4proto(rule, policy) == CS_FE_L4_TCP) {
++		/* WFO requires ACK and clears URG/control flags; only PSH is ignored.
++		 * Preserve existing wired TCP plans byte for byte.
++		 */
++		INCLUDE_MASK(FE_HM_TCP_CTRL_MASK,
++			     cs_fe_link_cpu_nat(&rule->ingress) ||
++			     cs_fe_link_cpu_nat(&rule->egress) ? 0x08 : 0x38);
++	}
+ 	INCLUDE_MASK(FE_HM_DSCP_MASK, policy->exact_dscp ? 0 : 1);
+ 	if (!rule->ingress.tag_mode)
+ 		INCLUDE_MASK(FE_HM_ETHERTYPE_MASK, 0);
+@@ -435,6 +445,8 @@ static int cs_fe_link_valid(const struct
+ {
+ 	unsigned int reason = (link->rx_qca_meta >> 6) & 31;
+ 
++	if (cs_fe_link_cpu_nat(link))
++		return 0;
+ 	if (link->gmac != 1 || link->base_voq != 8 || link->cpu_port)
+ 		return -EOPNOTSUPP;
+ 
+@@ -472,7 +484,9 @@ int cs_fe_encode(const struct cs_fe_rule
+ 	if (!rule || !rows || !policy || !out)
+ 		return -EINVAL;
+ 
+-	if (cs_fe_link_valid(&rule->ingress) ||
++	if ((cs_fe_link_cpu_nat(&rule->ingress) &&
++	     cs_fe_link_cpu_nat(&rule->egress)) ||
++	    cs_fe_link_valid(&rule->ingress) ||
+ 	    cs_fe_link_valid(&rule->egress) ||
+ 	    rule->ingress.tag_mode != rule->egress.tag_mode ||
+ 	    (rule->ingress.tag_mode == 4 && !rule->ingress.rx_qca_meta) ||
+@@ -538,6 +552,9 @@ int cs_fe_encode(const struct cs_fe_rule
+ 	plan.requirements = CS_FE_REQ_PACKET_EXCEPTIONS |
+ 			    CS_FE_REQ_COLLISION_CHECK |
+ 			    CS_FE_REQ_OWNER_LIFETIME;
++	if (cs_fe_link_cpu_nat(&rule->ingress) ||
++	    cs_fe_link_cpu_nat(&rule->egress))
++		plan.requirements |= CS_FE_REQ_WFO_ENDPOINT;
+ 	build_key(rule, rows, policy, &plan.key);
+ 	build_mask(rule, policy, plan.mask.input);
+ 	CS_FE_FINISH_IMAGE(plan.mask, 5, 149);
+@@ -603,7 +620,9 @@ int cs_fe_encode(const struct cs_fe_rule
+ 	LOOKUP_FIELD(fwd, FWD_L2_IDX, rows->l2);
+ 	LOOKUP_FIELD(fwd, FWD_DECR_TTL_HOPLIMIT, 1);
+ 	if (plan.write_fvlan) {
+-		u16 vid = 0x80U | (1U << rule->egress.switch_port);
++		u16 vid = cs_fe_link_cpu_nat(&rule->egress) ?
++			  rule->egress.rx_qca_meta & 4095 :
++			  0x80U | (1U << rule->egress.switch_port);
+ 
+ 		/* FIRST_CMD SWAP_B=2, TPID0=8100, no second operation. */
+ 		plan.fvlan.input[0] = 2U | ((u32)vid << 5);
+--- a/drivers/net/ethernet/cortina/cs_fe_hot_access.h
++++ b/drivers/net/ethernet/cortina/cs_fe_hot_access.h
+@@ -21,7 +21,7 @@ struct cs_fe_hot_slot {
+ struct cs_fe_hot_ledger {
+ 	struct cs_fe_hot_slot slots[CS_FE_HOT_SLOTS];
+ 	/*
+-	 * The first successful claim pins an output image for this owner's epoch.
++	 * A claim pins an output image until owner-verified graph reclamation.
+ 	 * A selector keeps its member bit after withdrawal (in-flight packets).
+ 	 * Visible tracks only CLASS writes that completed hardware readback.
+ 	 */
+--- a/drivers/net/ethernet/cortina/cs_fe_hot_internal.h
++++ b/drivers/net/ethernet/cortina/cs_fe_hot_internal.h
+@@ -17,6 +17,9 @@ struct cs_fe_hot_state {
+ 	struct cs_fe_hot_lineage lineage;
+ 	struct cs_fe_hot_binding binding[CS_FE_HOT_SLOTS];
+ 	u64 block_highwater;
++	u64 reclaimed_graphs, retire_attempts, retire_deferred;
++	u32 reusable_guards;
++	int (*retire_quiet)(void *context, unsigned long long end);
+ 	bool (*guards_ready)(void *context, unsigned int slot);
+ 	int (*guards_rebind)(void *context, unsigned int slot, const u32 *old_invalid,
+ 			     const u32 *new_invalid,
+--- a/drivers/net/ethernet/cortina/cs_fe_hot_lineage.h
++++ b/drivers/net/ethernet/cortina/cs_fe_hot_lineage.h
+@@ -31,7 +31,7 @@ struct cs_fe_hot_transition {
+ };
+ 
+ struct cs_fe_hot_lineage {
+-	/* Permanent action-slot affinity, including withdrawn/failed attempts. */
++	/* Action-slot affinity, released only after verified graph retirement. */
+ 	u8 bucket_owner[CS_FE_HOT_BUCKETS];
+ 	struct cs_fe_hot_transition transition[CS_FE_HOT_SLOTS];
+ };
+--- a/drivers/net/ethernet/cortina/cs_fe_hot_tables.c
++++ b/drivers/net/ethernet/cortina/cs_fe_hot_tables.c
+@@ -224,12 +224,17 @@ static int hot_status(void *context, u32
+  * Its immutable encoder must include the range and error-status comparators.
+  * Unsupported commands and older module revisions cannot publish a rule.
+  */
++static bool hot_native_command(const struct cs_fe_hot_session *session)
++{
++	return session->command == CS_HOT_NATIVE || session->command == CS_HOT_WFO;
++}
++
+ static bool hot_routed(const struct cs_fe_hot_session *session)
+ {
+ 	if (!session->request.exact || !session->request.rule ||
+ 	    !session->request.policy || !session->request.selector.valid)
+ 		return false;
+-	if (session->command == CS_HOT_NATIVE)
++	if (hot_native_command(session))
+ 		return (session->request.policy->require_mtu_range ==
+ 				CS_FE_MTU_RANGE_SMALL ||
+ 			session->request.policy->require_mtu_range ==
+@@ -249,7 +254,7 @@ static int hot_native_range(struct cs_fe
+ {
+ 	struct cs_fe_hot_state *state = session->backend->hot_state;
+ 
+-	if (session->command != CS_HOT_NATIVE)
++	if (!hot_native_command(session))
+ 		return 0;
+ 	if (!state->native_range || !end)
+ 		return -EOPNOTSUPP;
+@@ -296,7 +301,7 @@ static int hot_placement(void *context,
+ 		return 0;
+ 	}
+ 	*shared = false;
+-	if (session->command != CS_HOT_NATIVE) {
++	if (!hot_native_command(session)) {
+ 		if (index >= CS_FE_BACKEND_ACTIONS ||
+ 		    state->ledger.actions[index].anchor_plus_one)
+ 			return -ENOSPC;
+@@ -485,7 +490,7 @@ static int hot_claim(void *context, unsi
+ 	slot->claimed = true; /* Before any physical scratch write. */
+ 	if (!shared) {
+ 		graph->anchor_plus_one = index + 1U;
+-		graph->native = session->command == CS_HOT_NATIVE;
++		graph->native = hot_native_command(session);
+ 	}
+ 	graph->members |= 1U << index;
+ 	if (shared) {
+@@ -669,7 +674,7 @@ static int hot_write(void *context, unsi
+ 	struct cs_fe_hot_access_result access;
+ 	struct cs_fe_hot_slot *slot;
+ 	struct cs_fe_hot_binding *binding;
+-	bool hash_zero, class_valid, transition_write = false;
++	bool hash_zero, class_valid, recycled_class, transition_write = false;
+ 	enum cs_fe_hot_phase phase = CS_FE_HOT_IDLE;
+ 	struct cs_fe_hot_transition *transition;
+ 	u32 zero[4] = {};
+@@ -733,6 +738,16 @@ static int hot_write(void *context, unsi
+ 				return -EUCLEAN;
+ 		}
+ 	}
++	recycled_class = table == CS_BE_CLASS && !class_valid &&
++		(state->reusable_guards & (1U << access.slot));
++	if (recycled_class) {
++		const u32 empty_class[20] = {};
++
++		error = state->guards_rebind(state->guard_context, access.slot,
++			empty_class, slot->plan.class_invalid.expected, end, false);
++		if (error)
++			return error;
++	}
+ 	transition = &state->lineage.transition[access.slot];
+ 	if (transition->phase >= CS_FE_HOT_NEW_INVALID &&
+ 	    transition->phase <= CS_FE_HOT_NEW_VALID) {
+@@ -759,6 +774,14 @@ static int hot_write(void *context, unsi
+ 	slot->dependency_written |= access.dependency_bit;
+ 	error = cs_be_write(backend, &session->native, table, row, input,
+ 			    expected, end);
++	if (!error && recycled_class) {
++		const u32 empty_class[20] = {};
++
++		error = state->guards_rebind(state->guard_context, access.slot,
++			empty_class, slot->plan.class_invalid.expected, end, true);
++		if (!error)
++			state->reusable_guards &= ~(1U << access.slot);
++	}
+ 	if (!error && transition_write && phase == CS_FE_HOT_NEW_INVALID)
+ 		error = state->guards_rebind(state->guard_context, access.slot,
+ 			transition->old_selector.invalid_expected,
+@@ -853,6 +876,205 @@ static int hot_isolate(void *context, un
+ 	return 0;
+ }
+ 
++/*
++ * The owner alone chooses a completely withdrawn native graph. A completed
++ * quiescence callback is mandatory before changing any dependent table image.
++ * ACL traps are class-ID scoped and stay immutable across selector reuse.
++ */
++static int hot_reclaim(void *context, unsigned long long end)
++{
++	struct cs_fe_hot_session *session = context;
++	struct cs_fe_backend *backend = session->backend;
++	struct cs_fe_hot_state *state = backend->hot_state;
++	const u32 zero[CS_FE_BACKEND_WORDS] = {};
++	struct cs_fe_hot_action *graph = NULL;
++	const struct cs_fe_hot_slot *anchor;
++	unsigned int g, i, bucket, way, members;
++	int error;
++
++	if (!state || !hot_native_command(session) || !hot_routed(session) ||
++	    !state->retire_quiet || !state->guards_rebind)
++		return 0;
++	if (state->ledger.blocked || state->ledger.pending || backend->pending ||
++	    backend->poisoned)
++		return -EUCLEAN;
++	for (g = 0; g < CS_FE_BACKEND_ACTIONS; g++) {
++		graph = &state->ledger.actions[g];
++		if (!graph->native || !graph->anchor_plus_one || !graph->members ||
++		    graph->visible || graph->members >> CS_FE_HOT_SLOTS)
++			continue;
++		for (i = 0; i < CS_FE_HOT_SLOTS; i++) {
++			const struct cs_fe_backend_lease *lease = &backend->lease[i];
++			const struct cs_fe_hot_transition *transition =
++				&state->lineage.transition[i];
++			unsigned int e;
++
++			if (!(graph->members & (1U << i)))
++				continue;
++			if (!state->ledger.slots[i].claimed ||
++			    state->ledger.slots[i].fenced || !lease->reserved ||
++			    !lease->submitted || lease->active || !lease->rearmable ||
++			    !lease->scoped || !lease->scope_exact || !lease->guarded ||
++			    lease->marker || state->binding[i].visible ||
++			    state->binding[i].hash_present || transition->pending ||
++			    transition->generation == ~0ULL ||
++			    (transition->phase != CS_FE_HOT_IDLE &&
++			     transition->phase != CS_FE_HOT_ACTIVE))
++				break;
++			for (e = 0; e < CS_FE_BACKEND_ENTRIES; e++)
++				if (backend->entry[e].occupied &&
++				    backend->entry[e].lease == i)
++					break;
++			if (e != CS_FE_BACKEND_ENTRIES)
++				break;
++		}
++		if (i == CS_FE_HOT_SLOTS)
++			break;
++	}
++	if (g == CS_FE_BACKEND_ACTIONS)
++		return 0;
++	members = graph->members;
++	error = cs_fe_hot_graph(&state->ledger, graph->anchor_plus_one - 1,
++				&anchor);
++	if (error)
++		goto fault;
++	error = hot_verify_output(session, &anchor->rows, &anchor->plan, end);
++	if (error)
++		goto fault;
++	for (i = 0; i < CS_FE_HOT_SLOTS; i++) {
++		const struct cs_fe_hot_slot *slot = &state->ledger.slots[i];
++		const struct cs_fe_hot_slot *parent;
++
++		if (!(members & (1U << i)))
++			continue;
++		error = cs_fe_hot_graph(&state->ledger, i, &parent);
++		if (!error && parent != anchor)
++			error = -EUCLEAN;
++#define GC_RETAIN(table, row, expected)                                  \
++	do {                                                            \
++		if (!error)                                             \
++			error = cs_be_compare(backend, &session->native, \
++					      table, row, expected, end); \
++	} while (0)
++		GC_RETAIN(CS_BE_CLASS, slot->rows.class_row,
++			  slot->plan.class_invalid.expected);
++		GC_RETAIN(CS_BE_SDB, slot->rows.sdb_row, slot->plan.sdb.expected);
++		GC_RETAIN(CS_BE_MASK, slot->rows.mask_row, slot->plan.mask.expected);
++		GC_RETAIN(CS_BE_FWD, slot->rows.miss_fwd, slot->plan.miss.expected);
++#undef GC_RETAIN
++		if (!error)
++			error = state->guards_rebind(state->guard_context, i,
++				slot->plan.class_invalid.expected, zero, end, false);
++		if (error)
++			goto fault;
++	}
++	/* Verify every historic affinity, not just each latest selector key. */
++	for (bucket = 0; bucket < CS_FE_HOT_BUCKETS; bucket++) {
++		unsigned int owner = state->lineage.bucket_owner[bucket];
++
++		if (owner > CS_FE_HOT_SLOTS) {
++			error = -EUCLEAN;
++			goto fault;
++		}
++		if (!owner || !(members & (1U << (owner - 1))))
++			continue;
++		for (way = 0; way < 3; way++) {
++			error = cs_be_compare(backend, &session->native, CS_BE_HASH,
++					      bucket + way * CS_FE_HOT_BUCKETS,
++					      zero, end);
++			if (error)
++				goto fault;
++		}
++	}
++	for (way = 0; way < 64; way++) {
++		error = cs_be_compare(backend, &session->native, CS_BE_OVERFLOW,
++				      way, zero, end);
++		if (error)
++			goto fault;
++	}
++	if (state->retire_attempts != ~0ULL)
++		state->retire_attempts++;
++	error = state->retire_quiet(state->guard_context, end);
++	if (error == -EAGAIN) {
++		if (state->retire_deferred != ~0ULL)
++			state->retire_deferred++;
++		return error; /* No retirement writes, admission has been restored. */
++	}
++	if (error)
++		goto fault;
++	/* Journal before the first DATA write; no failed transaction frees bits. */
++	state->ledger.pending = true;
++	state->ledger.pending_selector_plus_one = graph->anchor_plus_one;
++	for (i = 0; i < CS_FE_HOT_SLOTS; i++)
++		if (members & (1U << i))
++			state->ledger.slots[i].fenced = true;
++#define GC_CLEAR(table, row)                                             \
++	do {                                                            \
++		if (!error)                                             \
++			error = cs_be_write(backend, &session->native,   \
++					    table, row, zero, zero, end); \
++	} while (0)
++	/* All lookups are cut; remove parents before the shared child rows. */
++	for (i = 0; i < CS_FE_HOT_SLOTS; i++) {
++		struct cs_fe_hot_slot *slot = &state->ledger.slots[i];
++
++		if (!(members & (1U << i)))
++			continue;
++		GC_CLEAR(CS_BE_CLASS, slot->rows.class_row);
++		if (error)
++			goto fault;
++		error = state->guards_rebind(state->guard_context, i,
++			slot->plan.class_invalid.expected, zero, end, true);
++		if (error)
++			goto fault;
++		GC_CLEAR(CS_BE_SDB, slot->rows.sdb_row);
++		GC_CLEAR(CS_BE_MASK, slot->rows.mask_row);
++		GC_CLEAR(CS_BE_FWD, slot->rows.miss_fwd);
++		if (error)
++			goto fault;
++	}
++	GC_CLEAR(CS_BE_FWD, anchor->rows.hit_fwd);
++	GC_CLEAR(CS_BE_VOQ, anchor->rows.voq);
++	GC_CLEAR(CS_BE_L2, anchor->rows.l2);
++	GC_CLEAR(CS_BE_L3, anchor->rows.l3);
++	GC_CLEAR(CS_BE_FVLAN, anchor->rows.fvlan);
++	if (error)
++		goto fault;
++#undef GC_CLEAR
++	for (bucket = 0; bucket < CS_FE_HOT_BUCKETS; bucket++) {
++		unsigned int owner = state->lineage.bucket_owner[bucket];
++
++		if (owner && (members & (1U << (owner - 1))))
++			state->lineage.bucket_owner[bucket] = 0;
++	}
++	for (i = 0; i < CS_FE_HOT_SLOTS; i++) {
++		struct cs_fe_hot_transition *transition = &state->lineage.transition[i];
++		unsigned long long generation;
++
++		if (!(members & (1U << i)))
++			continue;
++		generation = transition->generation + 1;
++		memset(transition, 0, sizeof(*transition));
++		transition->generation = generation;
++		memset(&backend->lease[i], 0, sizeof(backend->lease[i]));
++		memset(&state->ledger.slots[i], 0, sizeof(state->ledger.slots[i]));
++		memset(&state->binding[i], 0, sizeof(state->binding[i]));
++	}
++	state->reusable_guards |= members;
++	memset(graph, 0, sizeof(*graph));
++	if (state->reclaimed_graphs != ~0ULL)
++		state->reclaimed_graphs++;
++	state->ledger.pending = false;
++	state->ledger.pending_selector_plus_one = 0;
++	return 1;
++fault:
++	state->ledger.blocked = true;
++	backend->poisoned = true;
++	if (!backend->first_error)
++		backend->first_error = error;
++	return error;
++}
++
+ void cs_fe_hot_typed_io(struct cs_fe_hot_session *session,
+ 			struct cs_fe_backend_io *typed)
+ {
+@@ -872,6 +1094,7 @@ void cs_fe_hot_typed_io(struct cs_fe_hot
+ 		.receipt = hot_receipt,
+ 		.placement = hot_placement,
+ 		.isolate = hot_isolate,
++		.reclaim = hot_reclaim,
+ 	};
+ 	/* raw read32/write32 remain NULL: no offset interface crosses into .ko. */
+ }
+--- a/drivers/net/ethernet/cortina/cs_fe_native.inc
++++ b/drivers/net/ethernet/cortina/cs_fe_native.inc
+@@ -353,7 +353,8 @@ static bool cs_native_tcp_match(const st
+ static int cs_native_replace(struct cs7542_fe_live *owner, u64 block,
+ 			     unsigned long cookie, u64 version,
+ 			     const struct cs7542_fe_native_request *input,
+-			     u8 proto, const struct flow_cls_offload *cls)
++			     u8 proto, const struct flow_cls_offload *cls,
++			     u64 wireless_epoch)
+ {
+ 	struct cs7542_fe_native_request path;
+ 	const struct cs7542_fe_native_request *r = &path;
+@@ -362,6 +363,8 @@ static int cs_native_replace(struct cs75
+ 	struct cs_fe_backend_entry *entry;
+ 	struct net_device *conduit;
+ 	struct cs_fe_backend_io io;
++	struct cs_wfo_receipt_seed seed = {};
++	bool held_conduit = false;
+ 	u64 gen;
+ 	int err;
+ 
+@@ -377,7 +380,18 @@ static int cs_native_replace(struct cs75
+ 	path.rule.native_l4proto = proto;
+ 	atomic_inc(&cs_native_programming);
+ 	gen = atomic64_read(&cs_native_generation);
+-	conduit = cs_native_path(r);
++	if (wireless_epoch) {
++		mutex_lock(&owner->lock);
++		conduit = cs_wfo_path(owner, r, wireless_epoch);
++		if (!IS_ERR(conduit)) {
++			dev_hold(conduit);
++			held_conduit = true;
++		}
++		mutex_unlock(&owner->lock);
++	} else {
++		conduit = cs_native_path(r);
++	}
++	/* QCA status is obtained without nesting its locks under owner->lock. */
+ 	err = IS_ERR(conduit) ? PTR_ERR(conduit) :
+ 				cs_native_format(conduit, r->format_epoch);
+ 	if (!err && ((proto == IPPROTO_TCP &&
+@@ -398,6 +412,9 @@ static int cs_native_replace(struct cs75
+ 	    (owner->ports[1] != conduit || !READ_ONCE(cs_native_watching) ||
+ 	     gen != atomic64_read(&cs_native_scanned)))
+ 		err = -EAGAIN;
++	if (!err && wireless_epoch &&
++	    cs_wfo_path(owner, r, wireless_epoch) != conduit)
++		err = -ESTALE;
+ 	if (!err) {
+ 		slot = cs_native_slot(owner, block, cookie);
+ 		if (!slot)
+@@ -429,8 +446,21 @@ static int cs_native_replace(struct cs75
+ 	slot->cookie = cookie;
+ 	slot->version = version;
+ 	slot->path = *r;
+-	err = cs_fe_backend_replace_native(&owner->backend, &io, block, cookie,
+-					   version, &r->rule, &policy);
++	slot->wireless_epoch = wireless_epoch;
++	if (wireless_epoch) {
++		seed.rule = r->rule;
++		seed.epoch = wireless_epoch;
++		seed.ingress_ifindex = r->ingress_ifindex;
++		seed.egress_ifindex = r->egress_ifindex;
++		ether_addr_copy(seed.ingress_smac, r->ingress_smac);
++		owner->wfo_pending = &seed;
++		err = cs_fe_backend_replace_wfo(&owner->backend, &io, block, cookie,
++					       version, &r->rule, &policy);
++		owner->wfo_pending = NULL;
++	} else {
++		err = cs_fe_backend_replace_native(&owner->backend, &io, block, cookie,
++						   version, &r->rule, &policy);
++	}
+ 	cs_fe_live_pin(owner);
+ 	entry = cs_native_hw_entry(owner, block, cookie);
+ 	if (err) {
+@@ -452,9 +482,16 @@ static int cs_native_replace(struct cs75
+ 		err = cs_native_cut(owner, slot) ?: -EUCLEAN;
+ 	else if (atomic64_read(&cs_native_generation) != gen)
+ 		err = cs_native_cut(owner, slot) ?: -ESTALE;
++	else if (wireless_epoch) {
++		err = cs_wfo_arm(owner, entry->lease, &seed, gen);
++		if (err)
++			err = cs_native_cut(owner, slot) ?: err;
++	}
+ out:
+ 	cs_fe_native_prune(owner);
+ 	mutex_unlock(&owner->lock);
++	if (held_conduit)
++		dev_put(conduit);
+ 	atomic_dec(&cs_native_programming);
+ 	return err;
+ }
+@@ -464,7 +501,7 @@ int cs7542_fe_live_replace_native(struct
+ 				  const struct cs7542_fe_native_request *r)
+ {
+ 	return cs_native_replace(owner, block, cookie, version, r, IPPROTO_UDP,
+-				 NULL);
++				 NULL, 0);
+ }
+ EXPORT_SYMBOL_GPL(cs7542_fe_live_replace_native);
+ 
+@@ -474,7 +511,7 @@ int cs7542_fe_live_replace_native_tcp(st
+ 				      const struct flow_cls_offload *cls)
+ {
+ 	return cs_native_replace(owner, block, cookie, version, r, IPPROTO_TCP,
+-				 cls);
++				 cls, 0);
+ }
+ EXPORT_SYMBOL_GPL(cs7542_fe_live_replace_native_tcp);
+ 
+@@ -496,7 +533,9 @@ static int cs_native_scan(bool revoke_al
+ 
+ 			if (!flow->block ||
+ 			    (!revoke_all &&
+-			     !IS_ERR(cs_native_path(&flow->path))))
++			     !IS_ERR(flow->wireless_epoch ?
++				cs_wfo_path(owner, &flow->path, flow->wireless_epoch) :
++				cs_native_path(&flow->path))))
+ 				continue;
+ 			err = cs_native_cut(owner, flow);
+ 			if (err && !first)
+@@ -550,6 +589,20 @@ static int cs_native_changed(enum cs_nat
+ 	return NOTIFY_DONE;
+ }
+ 
++static void cs_native_wireless_link(struct net_device *dev, bool up)
++{
++	struct cs7542_fe_live *owner;
++
++	ASSERT_RTNL();
++	mutex_lock(&cs_fe_live_owners_lock);
++	list_for_each_entry(owner, &cs_fe_live_owners, node) {
++		mutex_lock(&owner->lock);
++		cs_wfo_link(owner, dev, up);
++		mutex_unlock(&owner->lock);
++	}
++	mutex_unlock(&cs_fe_live_owners_lock);
++}
++
+ static int cs_native_device(struct notifier_block *nb, unsigned long event,
+ 			    void *info)
+ {
+@@ -558,17 +611,36 @@ static int cs_native_device(struct notif
+ 	if (!net_eq(dev_net(dev), &init_net))
+ 		return NOTIFY_DONE;
+ 	switch (event) {
++	case NETDEV_UP:
++		cs_native_wireless_link(dev, true);
++		return NOTIFY_DONE;
+ 	case NETDEV_PRECHANGEUPPER:
+ 	case NETDEV_PRE_CHANGEADDR:
+ 	case NETDEV_PRECHANGEMTU:
+ 		return cs_native_changed(CS_NATIVE_REVOKE, true);
+ 	case NETDEV_GOING_DOWN:
+ 	case NETDEV_UNREGISTER:
++		cs_native_wireless_link(dev, false);
+ 		/* Teardown cannot be vetoed; later notifiers must still run. */
+ 		if (cs_native_changed(CS_NATIVE_REVOKE, true) & NOTIFY_STOP_MASK)
+ 			pr_err_ratelimited("CS7542: hardware flow withdrawal failed during teardown\n");
++		if (event != NETDEV_UNREGISTER)
++			return NOTIFY_DONE;
++		{
++			struct cs7542_fe_live *owner;
++
++			mutex_lock(&cs_fe_live_owners_lock);
++			list_for_each_entry(owner, &cs_fe_live_owners, node) {
++				mutex_lock(&owner->lock);
++				cs_wfo_remove(owner, dev);
++				mutex_unlock(&owner->lock);
++			}
++			mutex_unlock(&cs_fe_live_owners_lock);
++		}
+ 		return NOTIFY_DONE;
+ 	case NETDEV_CHANGE:
++		cs_native_wireless_link(dev, true);
++		fallthrough;
+ 	case NETDEV_CHANGELOWERSTATE:
+ 	case NETDEV_CHANGEUPPER:
+ 	case NETDEV_CHANGEMTU:
+--- a/drivers/net/ethernet/cortina/cs_fe_native_activity.inc
++++ b/drivers/net/ethernet/cortina/cs_fe_native_activity.inc
+@@ -61,6 +61,39 @@ static const struct kernel_param_ops cs_
+ 
+ module_param_cb(native_actions, &cs_native_actions_ops, NULL, 0400);
+ 
++/* Owner counters, not packet statistics or a claim about table capacity. */
++static int cs_native_reclaim_get(char *buf, const struct kernel_param *kp)
++{
++	struct cs7542_fe_live *owner;
++	int len = 0;
++
++	mutex_lock(&cs_fe_live_owners_lock);
++	list_for_each_entry(owner, &cs_fe_live_owners, node) {
++		unsigned int used = 0, i;
++
++		mutex_lock(&owner->lock);
++		for (i = 0; i < CS_FE_HOT_SLOTS; i++)
++			used += owner->backend.lease[i].reserved;
++		len += sysfs_emit_at(buf, len,
++			"epoch=%llu reclaimed=%llu attempts=%llu deferred=%llu reserved=%u highwater=%u reusable_guards=0x%x\n",
++			owner->epoch, owner->hot_state.reclaimed_graphs,
++			owner->hot_state.retire_attempts,
++			owner->hot_state.retire_deferred, used,
++			owner->backend.next_lease,
++			owner->hot_state.reusable_guards);
++		mutex_unlock(&owner->lock);
++		if (len >= PAGE_SIZE - 256)
++			break;
++	}
++	mutex_unlock(&cs_fe_live_owners_lock);
++	return len;
++}
++
++static const struct kernel_param_ops cs_native_reclaim_ops = {
++	.get = cs_native_reclaim_get
++};
++module_param_cb(native_reclaim, &cs_native_reclaim_ops, NULL, 0400);
++
+ static bool cs_native_sample_for(const struct cs7542_fe_hot_sample *s,
+ 				 unsigned int bucket)
+ {
+--- a/drivers/net/ethernet/cortina/cs_fe_native_state.h
++++ b/drivers/net/ethernet/cortina/cs_fe_native_state.h
+@@ -7,6 +7,7 @@
+ 
+ struct cs_fe_native_flow {
+ 	u64 block, version;
++	u64 wireless_epoch;
+ 	unsigned long cookie;
+ 	struct cs7542_fe_native_request path;
+ };
+--- /dev/null
++++ b/drivers/net/ethernet/cortina/cs_fe_retire.h
+@@ -0,0 +1,41 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef CS_FE_RETIRE_H
++#define CS_FE_RETIRE_H
++#include "cs_fe_encode.h"
++
++/* Fixed external-DDR profile; no counter-only or elapsed-time-only fence. */
++struct cs_fe_retire_sample {
++	u32 ni_fifo, pp_state, pp_count, pe_debug;
++	u32 qm_status, tm_buffers, tm_global, tm_internal;
++	u32 cpu_free[4], cpu_total[4];
++};
++
++static inline bool cs_fe_retire_empty(const struct cs_fe_retire_sample *s,
++				      const u16 pools[8])
++{
++	u32 byte = s->pe_debug & 255;
++	unsigned int i;
++
++	/* NI packet FIFO empty, initialized, all 1024 FIFO credits free, no error. */
++	if ((s->ni_fifo & 0x7fffffffU) != 0x40040000 || s->pp_state ||
++	    s->pe_debug != byte * 0x01010101U ||
++	    s->pp_count != byte * 0x00010101U)
++		return false;
++	/* Compare both total and free fields; never learn an idle threshold
++	 * from the last observation, which could itself contain a live packet.
++	 */
++	if (((s->qm_status >> 16) & 4095) != 2047 ||
++	    s->tm_buffers != 0x07ff0800 || s->tm_global != 0x08000800 ||
++	    s->tm_internal != 0x04000400)
++		return false;
++	for (i = 0; i < 8; i++) {
++		unsigned int shift = (i & 1) * 16;
++		u32 total = (s->cpu_total[i / 2] >> shift) & 8191;
++		u32 free = (s->cpu_free[i / 2] >> shift) & 8191;
++
++		if (total != pools[i] || free != total)
++			return false;
++	}
++	return true;
++}
++#endif
+--- /dev/null
++++ b/drivers/net/ethernet/cortina/cs_wfo_input.inc
+@@ -0,0 +1,85 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* Strict CPU input uses a private copy; all failures preserve the original. */
++static bool cs_wfo_input_plain(struct sk_buff *skb)
++{
++	if (skb->pkt_type != PACKET_HOST || skb->sk || skb->mark || skb->priority ||
++	    skb->encapsulation || skb_get_nfct(skb) || skb_has_extensions(skb) ||
++	    skb_dst(skb) || skb_pfmemalloc(skb))
++		return false;
++#ifdef CONFIG_NETWORK_SECMARK
++	if (skb->secmark)
++		return false;
++#endif
++#ifdef CONFIG_NET_SWITCHDEV
++	if (skb->offload_fwd_mark || skb->offload_l3_fwd_mark)
++		return false;
++#endif
++	return true;
++}
++
++static bool cs_wfo_try_inject(struct cs_wfo_endpoint *ep, struct sk_buff *skb)
++{
++	struct cs7542_fe_live *owner = ep->owner;
++	struct net_device *dev = rcu_dereference(ep->dev), *conduit;
++	struct cs_wfo_live_receipt *live;
++	struct cs_wfo_packet packet;
++	struct sk_buff *copy;
++	unsigned int bytes, i;
++	bool sent = false;
++
++	if (!dev || !READ_ONCE(ep->injecting) || READ_ONCE(ep->paused) ||
++	    skb->dev != dev || !netif_running(dev) || !netif_carrier_ok(dev) ||
++	    !cs_wfo_plain_device(dev) || !cs_wfo_input_plain(skb) ||
++	    skb_vlan_tag_present(skb) || skb_is_gso(skb) ||
++	    skb->ip_summed == CHECKSUM_PARTIAL || skb->len > 1500 ||
++	    !skb_mac_header_was_set(skb) || skb_headroom(skb) < ETH_HLEN ||
++	    skb_mac_header(skb) != skb->data - ETH_HLEN)
++		return false;
++	bytes = skb->len + ETH_HLEN;
++	copy = alloc_skb(NET_SKB_PAD + NET_IP_ALIGN + bytes + 4, GFP_ATOMIC);
++	if (!copy)
++		return false;
++	skb_reserve(copy, NET_SKB_PAD + NET_IP_ALIGN);
++	skb_put(copy, bytes + 4);
++	if (skb_copy_bits(skb, -ETH_HLEN, copy->data, bytes) ||
++	    !cs_wfo_packet_decode(copy->data, bytes, bytes, true, &packet) ||
++	    packet.hop_limit <= 1 ||
++	    cs_wfo_frame_encode(copy->data, bytes + 4, copy->data, bytes,
++				 READ_ONCE(ep->label)) < 0)
++		goto free;
++	/* No owner mutex or RTNL in a packet callback. Owner removal unregisters
++	 * this hook and waits for network readers before dropping conduit refs.
++	 * Lock order: producer fence -> native shared TX lock, never the reverse.
++	 */
++	spin_lock_bh(&owner->wfo_tx_lock);
++	conduit = READ_ONCE(owner->ports[1]);
++	if (!READ_ONCE(ep->injecting) || READ_ONCE(ep->paused) ||
++	    READ_ONCE(owner->closing) || !READ_ONCE(owner->online) || !conduit ||
++	    !netif_running(conduit) || !netif_carrier_ok(conduit) ||
++	    !cs_wfo_plain_device(dev))
++		goto unlock;
++	for (i = 0; i < CS_WFO_RECEIPTS; i++) {
++		live = rcu_dereference(owner->wfo_receipts[i]);
++		if (!live || !live->admitting || !live->identity.wireless_input ||
++		    live->identity.label != ep->label ||
++		    live->identity.path.epoch != ep->epoch ||
++		    live->identity.path.ingress_ifindex != dev->ifindex ||
++		    !cs_wfo_packet_match(&packet, &live->identity.path.rule,
++				 live->identity.path.ingress_smac, false))
++			continue;
++		/* The native producer owns the copy only on success. DMA-map/ring
++		 * pressure errors leave it ours and leave the original untouched.
++		 */
++		sent = !cs7542_ne_wfo_xmit(conduit, copy, ep->label);
++		break;
++	}
++unlock:
++	spin_unlock_bh(&owner->wfo_tx_lock);
++	if (sent) {
++		consume_skb(skb);
++		return true;
++	}
++free:
++	dev_kfree_skb_any(copy);
++	return false;
++}
+--- /dev/null
++++ b/drivers/net/ethernet/cortina/cs_wfo_labels.h
+@@ -0,0 +1,58 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef CS_WFO_LABELS_H
++#define CS_WFO_LABELS_H
++
++#ifdef __KERNEL__
++#include <linux/errno.h>
++#else
++#include <errno.h>
++#endif
++
++#define CS_WFO_LABEL_MAX 4094
++
++struct cs_wfo_label_state {
++	unsigned long long epoch;
++	unsigned int highwater;
++};
++
++/* Caller serializes endpoint, lease and receipt changes with the owner lock.
++ * in_use covers retained hardware rules, not just registered interfaces.
++ * drain must fence old CPU readers and the engine before a VID is reused.
++ */
++static inline int
++cs_wfo_label_alloc(struct cs_wfo_label_state *state, void *context,
++		   int (*in_use)(void *context, unsigned int label),
++		   int (*drain)(void *context), unsigned int *label)
++{
++	unsigned int candidate;
++	int error;
++
++	if (state->highwater > CS_WFO_LABEL_MAX)
++		return -EUCLEAN;
++	if (state->epoch == ~0ULL)
++		return -EOVERFLOW;
++	for (candidate = 1; candidate <= state->highwater; candidate++) {
++		error = in_use(context, candidate);
++		if (error < 0)
++			return error;
++		if (error)
++			continue;
++		error = drain(context);
++		if (!error)
++			goto allocated;
++		if (error != -EAGAIN && error != -EOPNOTSUPP)
++			return error;
++		break;
++	}
++	/* A busy/unsupported drain cannot authorize reuse. A never-published
++	 * label is still safe and preserves admission on unsupported profiles.
++	 */
++	if (state->highwater == CS_WFO_LABEL_MAX)
++		return -ENOSPC;
++	candidate = ++state->highwater;
++allocated:
++	state->epoch++;
++	*label = candidate;
++	return 0;
++}
++#endif
+--- /dev/null
++++ b/drivers/net/ethernet/cortina/cs_wfo_native.inc
+@@ -0,0 +1,583 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* Built-in endpoint ownership; packet admission is added separately. */
++#include <linux/if_arp.h>
++#include <linux/pci.h>
++#include <linux/rcupdate.h>
++#include <linux/unaligned.h>
++#include <linux/cs7542_wfo_native.h>
++#include <linux/cs7542_ft_live.h>
++#include "cs_wfo_transport.h"
++#include "cs_wfo_packet.h"
++
++static bool cs_wfo_plain_device(const struct net_device *dev)
++{
++	if (rcu_access_pointer(dev->xdp_prog) ||
++	    rcu_access_pointer(dev->ingress_queue))
++		return false;
++#ifdef CONFIG_NET_XGRESS
++	if (rcu_access_pointer(dev->tcx_ingress))
++		return false;
++#endif
++	return true;
++}
++
++#include "cs_wfo_input.inc"
++#include "cs_wfo_observe.inc"
++
++/* Owner lock + RTNL; wireless identity is attested by the native PCI driver. */
++static struct net_device *cs_wfo_path(struct cs7542_fe_live *owner,
++				      const struct cs7542_fe_native_request *request, u64 epoch)
++{
++	const struct cs_fe_rule *rule = &request->rule;
++	bool input = cs_fe_link_cpu_nat(&rule->ingress);
++	const struct cs_fe_link *cpu = input ? &rule->ingress : &rule->egress;
++	const struct cs_fe_link *wired = input ? &rule->egress : &rule->ingress;
++	struct net_device *wireless, *l3dev, *conduit = owner->ports[1];
++	const u8 *peer = input ? request->ingress_smac : rule->dmac;
++	unsigned int wireless_ifindex = input ? request->ingress_ifindex :
++					       request->egress_ifindex;
++	struct cs_wfo_endpoint *ep = NULL;
++	struct dsa_port *port;
++	unsigned int i;
++
++	ASSERT_RTNL();
++	lockdep_assert_held(&owner->lock);
++	if (cs_fe_live_ready(owner) || !epoch || !conduit ||
++	    input == cs_fe_link_cpu_nat(&rule->egress) ||
++	    !is_valid_ether_addr(request->ingress_smac) ||
++	    !is_valid_ether_addr(rule->dmac) ||
++	    !ether_addr_equal(rule->egress.base_mac, rule->smac) ||
++	    !rule->decrement_ttl || request->route_mtu < CS_FE_NATIVE_SMALL_HIGH ||
++	    (rule->ipv6 && !IS_REACHABLE(CONFIG_IPV6)) ||
++	    (input && wired->rx_qca_meta) ||
++	    request->ingress_ifindex == request->egress_ifindex ||
++	    !netif_running(conduit) || !netif_carrier_ok(conduit))
++		return ERR_PTR(-EOPNOTSUPP);
++	wireless = __dev_get_by_index(&init_net, wireless_ifindex);
++	if (!wireless || !netif_running(wireless) || !netif_carrier_ok(wireless) ||
++	    !cs_wfo_plain_device(wireless))
++		return ERR_PTR(-EOPNOTSUPP);
++	for (i = 0; i < CS_WFO_ENDPOINTS; i++) {
++		struct cs_wfo_endpoint *candidate = &owner->wfo[i];
++
++		if (rcu_dereference_protected(candidate->dev,
++					      lockdep_is_held(&owner->lock)) == wireless &&
++		    !READ_ONCE(candidate->paused) && candidate->epoch == epoch &&
++		    cpu->rx_qca_meta == (0x8000 | candidate->label)) {
++			ep = candidate;
++			break;
++		}
++	}
++	if (!ep)
++		return ERR_PTR(-ESTALE);
++	l3dev = netdev_master_upper_dev_get(wireless);
++	if (l3dev) {
++		if (!netif_is_bridge_master(l3dev) || !netif_running(l3dev) ||
++		    br_vlan_enabled(l3dev) ||
++		    br_port_get_stp_state(wireless) != BR_STATE_FORWARDING ||
++		    br_port_flag_is_set(wireless, BR_ISOLATED | BR_PORT_LOCKED |
++						 BR_PORT_MAB | BR_VLAN_TUNNEL) ||
++		    br_fdb_find_port(l3dev, peer, 0) != wireless)
++			return ERR_PTR(-EOPNOTSUPP);
++	} else {
++		l3dev = wireless;
++	}
++	if (!ether_addr_equal(cpu->base_mac, l3dev->dev_addr) ||
++	    (!input && request->route_mtu >
++		min(READ_ONCE(wireless->mtu), READ_ONCE(l3dev->mtu))))
++		return ERR_PTR(-ESTALE);
++	port = cs_native_port(input ? request->egress_ifindex :
++				     request->ingress_ifindex,
++			      wired, input ? rule->dmac : request->ingress_smac,
++			      input ? request->route_mtu : 0);
++	if (IS_ERR(port) || port->cpu_dp->conduit != conduit)
++		return ERR_PTR(-EOPNOTSUPP);
++	return conduit;
++}
++
++static int cs_wfo_arm(struct cs7542_fe_live *owner, unsigned int slot,
++		      const struct cs_wfo_receipt_seed *seed, u64 generation)
++{
++	struct cs_wfo_endpoint *ep = NULL;
++	struct cs_wfo_live_receipt *live;
++	struct cs_fe_backend_lease *lease;
++	struct net_device *dev;
++	unsigned int i, ifindex;
++	int error;
++
++	lockdep_assert_held(&owner->lock);
++	if (slot >= CS_FE_BACKEND_LEASES)
++		return -ESTALE;
++	lease = &owner->backend.lease[slot];
++	if (!lease->active)
++		return -ESTALE;
++	/* Also refresh an identical active lease, whose backend fast path did not
++	 * invoke prepare/rearm. Initial publication already preceded CLASS valid.
++	 */
++	owner->wfo_pending = seed;
++	error = cs_wfo_receipt_publish(owner, slot, &lease->rows, &lease->plan);
++	owner->wfo_pending = NULL;
++	if (error)
++		return error;
++	live = rcu_dereference_protected(owner->wfo_receipts[slot],
++					 lockdep_is_held(&owner->lock));
++	if (!live)
++		return -EUCLEAN;
++	ifindex = live->identity.wireless_input ? seed->ingress_ifindex :
++						seed->egress_ifindex;
++	for (i = 0; i < CS_WFO_ENDPOINTS; i++) {
++		dev = rcu_dereference_protected(owner->wfo[i].dev,
++						lockdep_is_held(&owner->lock));
++		if (dev && dev->ifindex == ifindex && owner->wfo[i].epoch == seed->epoch) {
++			ep = &owner->wfo[i];
++			break;
++		}
++	}
++	if (!ep)
++		return -ESTALE;
++	/* Drain callbacks holding a pre-publication receipt or doing software
++	 * fallback before opening the new producer generation.
++	 */
++	synchronize_net();
++	spin_lock_bh(&owner->wfo_tx_lock);
++	if (READ_ONCE(ep->paused) || !netif_running(dev) || !netif_carrier_ok(dev) ||
++	    !cs_wfo_plain_device(dev) || generation != (u64)atomic64_read(&cs_native_generation)) {
++		error = -ESTALE;
++	} else {
++		live->admitting = true;
++		WRITE_ONCE(ep->injecting, true);
++	}
++	spin_unlock_bh(&owner->wfo_tx_lock);
++	return error;
++}
++
++int cs7542_fe_live_replace_wfo(struct cs7542_fe_live *owner, u64 block,
++			       unsigned long cookie, u64 version,
++			       const struct cs7542_wfo_native_request *request,
++			       const struct flow_cls_offload *cls)
++{
++	if (!request || request->abi != CS7542_WFO_NATIVE_ABI ||
++	    request->size != sizeof(*request) || !request->wireless_epoch ||
++	    request->path.abi != CS7542_FE_NATIVE_ABI ||
++	    (request->path.rule.native_l4proto != IPPROTO_TCP &&
++	     request->path.rule.native_l4proto != IPPROTO_UDP) ||
++	    !cls || cls->command != FLOW_CLS_REPLACE || cls->cookie != cookie ||
++	    cls->nf_route_mtu != request->path.route_mtu)
++		return -EINVAL;
++	return cs_native_replace(owner, block, cookie, version, &request->path,
++				 request->path.rule.native_l4proto, cls,
++				 request->wireless_epoch);
++}
++EXPORT_SYMBOL_GPL(cs7542_fe_live_replace_wfo);
++
++static void cs_wfo_remove(struct cs7542_fe_live *owner,
++			  struct net_device *dev)
++{
++	struct net_device *held[CS_WFO_ENDPOINTS] = {};
++	unsigned int i;
++	bool changed = false;
++
++	lockdep_assert_held(&owner->lock);
++	cs_wfo_receipt_remove(owner, dev);
++	for (i = 0; i < CS_WFO_ENDPOINTS; i++) {
++		struct cs_wfo_endpoint *ep = &owner->wfo[i];
++		struct net_device *registered = rcu_dereference_protected(ep->dev,
++						lockdep_is_held(&owner->lock));
++
++		if (!registered || (dev && registered != dev))
++			continue;
++		cs_wfo_endpoint_fence(ep);
++		rcu_assign_pointer(ep->dev, NULL);
++		cs_wfo_observe_stop(ep);
++		held[i] = registered;
++		changed = true;
++	}
++	/* Packet callbacks never acquire owner->lock or RTNL. Retire their
++	 * device references before unregister_netdevice waits for them.
++	 */
++	if (changed)
++		synchronize_net();
++	for (i = 0; i < CS_WFO_ENDPOINTS; i++)
++		if (held[i])
++			dev_put(held[i]);
++}
++
++static void cs_wfo_link(struct cs7542_fe_live *owner,
++			struct net_device *dev, bool up)
++{
++	unsigned int i;
++	bool drain = false;
++
++	lockdep_assert_held(&owner->lock);
++	for (i = 0; i < CS_WFO_ENDPOINTS; i++) {
++		struct cs_wfo_endpoint *ep = &owner->wfo[i];
++		struct net_device *registered = rcu_dereference_protected(ep->dev,
++						lockdep_is_held(&owner->lock));
++		bool paused;
++
++		if (!registered || (registered != dev && owner->ports[1] != dev))
++			continue;
++		paused = !up || !netif_running(registered) ||
++			 !netif_carrier_ok(registered) || !owner->ports[1] ||
++			 !netif_running(owner->ports[1]) ||
++			 !netif_carrier_ok(owner->ports[1]);
++		if (READ_ONCE(ep->paused) == paused)
++			continue;
++		cs_wfo_endpoint_fence(ep);
++		cs_wfo_observe_pause(ep, paused);
++		drain |= paused;
++	}
++	/* A callback that saw the old link cannot publish after a later UP. */
++	if (drain)
++		synchronize_net();
++}
++
++static int cs_wfo_label_in_use(void *context, unsigned int label)
++{
++	struct cs7542_fe_live *owner = context;
++	unsigned int i;
++
++	lockdep_assert_held(&owner->lock);
++	if (owner->backend.poisoned || owner->backend.pending ||
++	    owner->hot_state.ledger.blocked || owner->hot_state.ledger.pending)
++		return -EUCLEAN;
++	for (i = 0; i < CS_WFO_ENDPOINTS; i++) {
++		struct cs_wfo_endpoint *ep = &owner->wfo[i];
++
++		if (rcu_access_pointer(ep->dev) && ep->label == label)
++			return 1;
++	}
++	/* A withdrawn lease may still be rearmed with the same action. Keep
++	 * its label until graph reclamation has cleared and read back all rows.
++	 */
++	for (i = 0; i < CS_FE_BACKEND_LEASES; i++) {
++		const struct cs_fe_backend_lease *lease = &owner->backend.lease[i];
++		const struct cs_fe_rule *rule = &lease->rule;
++
++		if (lease->reserved &&
++		    ((cs_fe_link_cpu_nat(&rule->ingress) &&
++		      (rule->ingress.rx_qca_meta & 4095) == label) ||
++		     (cs_fe_link_cpu_nat(&rule->egress) &&
++		      (rule->egress.rx_qca_meta & 4095) == label)))
++			return 1;
++	}
++	for (i = 0; i < CS_WFO_RECEIPTS; i++) {
++		const struct cs_wfo_live_receipt *live =
++			rcu_dereference_protected(owner->wfo_receipts[i],
++						  lockdep_is_held(&owner->lock));
++
++		if (live && live->identity.label == label)
++			return 1;
++	}
++	return 0;
++}
++
++static int cs_wfo_label_drain(void *context)
++{
++	struct cs7542_fe_live *owner = context;
++	int error;
++
++	ASSERT_RTNL();
++	lockdep_assert_held(&owner->lock);
++	/* Removal fences injection before dropping the RCU device pointer.
++	 * Retire those CPU readers, then require the same fixed-profile engine
++	 * drain as action GC. No delay-only or generation-only shortcut.
++	 */
++	synchronize_net();
++	error = cs_fe_live_retire_quiet(owner, cs_fe_live_now(owner) + 2000);
++	if (error && error != -EAGAIN && error != -EOPNOTSUPP) {
++		owner->backend.poisoned = true;
++		owner->hot_state.ledger.blocked = true;
++		if (!owner->backend.first_error)
++			owner->backend.first_error = error;
++		/* An uncertain NI restoration must survive endpoint teardown too. */
++		if (!owner->quarantine_ref) {
++			kref_get(&owner->refs);
++			owner->quarantine_ref = true;
++		}
++	}
++	return error;
++}
++
++int cs7542_fe_live_wfo_register(struct cs7542_fe_live *owner,
++			      struct net_device *conduit,
++			      struct pci_dev *pci, struct net_device *wireless,
++			      enum cs7542_wfo_vif_kind kind,
++			      struct cs7542_wfo_endpoint_info *info)
++{
++	struct cs_wfo_endpoint *ep = NULL;
++	struct device *parent;
++	unsigned int i, label;
++	int error = -ENODEV;
++
++	ASSERT_RTNL();
++	if (!owner || !conduit || !pci || !wireless || !info ||
++	    (kind != CS7542_WFO_STATION && kind != CS7542_WFO_AP) ||
++	    pci->vendor != PCI_VENDOR_ID_ATHEROS ||
++	    (pci->device != 0x0033 && pci->device != 0x003c) ||
++	    wireless->type != ARPHRD_ETHER ||
++	    wireless->addr_len != ETH_ALEN ||
++	    !net_eq(dev_net(wireless), &init_net) ||
++	    wireless->reg_state != NETREG_REGISTERED)
++		return -EOPNOTSUPP;
++	for (parent = wireless->dev.parent; parent && parent != &pci->dev;
++	     parent = parent->parent)
++		;
++	if (!parent)
++		return -EXDEV;
++	mutex_lock(&owner->lock);
++	if (owner->ports[1] != conduit || cs_fe_live_ready(owner))
++		goto unlock;
++	if (owner->backend.pending || owner->hot_state.ledger.blocked ||
++	    owner->hot_state.ledger.pending) {
++		error = -EUCLEAN;
++		goto unlock;
++	}
++	for (i = 0; i < CS_WFO_ENDPOINTS; i++) {
++		struct cs_wfo_endpoint *candidate = &owner->wfo[i];
++		struct net_device *registered = rcu_dereference_protected(
++			candidate->dev, lockdep_is_held(&owner->lock));
++
++		if (registered == wireless) {
++			if (candidate->kind != kind) {
++				error = -ESTALE;
++				goto unlock;
++			}
++			ep = candidate;
++			goto found;
++		}
++		if (!registered && !ep)
++			ep = candidate;
++	}
++	error = -ENOSPC;
++	if (!ep)
++		goto unlock;
++	error = cs_wfo_label_alloc(&owner->wfo_labels, owner,
++				   cs_wfo_label_in_use, cs_wfo_label_drain, &label);
++	if (error)
++		goto unlock;
++	ep->label = label;
++	ep->epoch = owner->wfo_labels.epoch;
++	ep->kind = kind;
++	ep->injecting = false;
++	ep->paused = !netif_running(wireless) || !netif_carrier_ok(wireless);
++	ep->owner = owner;
++	dev_hold(wireless);
++	error = cs_wfo_observe_start(ep, wireless);
++	if (error) {
++		dev_put(wireless);
++		goto unlock;
++	}
++	rcu_assign_pointer(ep->dev, wireless);
++found:
++	*info = (struct cs7542_wfo_endpoint_info) {
++		.epoch = ep->epoch,
++		.ifindex = wireless->ifindex,
++		.label = ep->label,
++	};
++	error = 0;
++unlock:
++	mutex_unlock(&owner->lock);
++	return error;
++}
++EXPORT_SYMBOL_GPL(cs7542_fe_live_wfo_register);
++
++int cs7542_fe_live_wfo_endpoint(struct cs7542_fe_live *owner, u32 ifindex,
++			      struct cs7542_wfo_endpoint_info *out)
++{
++	unsigned int i;
++	int error = -ENOENT;
++
++	ASSERT_RTNL();
++	if (!owner || !ifindex || !out)
++		return -EINVAL;
++	mutex_lock(&owner->lock);
++	if (cs_fe_live_ready(owner)) {
++		error = -ESHUTDOWN;
++		goto unlock;
++	}
++	for (i = 0; i < CS_WFO_ENDPOINTS; i++) {
++		struct cs_wfo_endpoint *ep = &owner->wfo[i];
++		struct net_device *dev = rcu_dereference_protected(ep->dev,
++						lockdep_is_held(&owner->lock));
++
++		if (dev && !READ_ONCE(ep->paused) && dev->ifindex == ifindex &&
++		    netif_running(dev) &&
++		    netif_carrier_ok(dev) && cs_wfo_plain_device(dev)) {
++			*out = (struct cs7542_wfo_endpoint_info) {
++				.epoch = ep->epoch,
++				.ifindex = ifindex,
++				.label = ep->label,
++			};
++			error = 0;
++			break;
++		}
++	}
++unlock:
++	mutex_unlock(&owner->lock);
++	return error;
++}
++EXPORT_SYMBOL_GPL(cs7542_fe_live_wfo_endpoint);
++
++int cs7542_wfo_setup_tc(struct pci_dev *pci, struct net_device *wireless,
++		      enum cs7542_wfo_vif_kind kind, int type, void *data)
++{
++#if IS_ENABLED(CONFIG_CS7542_FT_LIVE_BRIDGE)
++	struct flow_block_offload *block = data;
++	struct cs7542_fe_live *owner, *found = NULL;
++	struct cs7542_wfo_endpoint_info info;
++	struct net_device *conduit = NULL;
++	int error = -ENODEV;
++
++	if (type != TC_SETUP_FT || !block || !wireless ||
++	    block->binder_type != FLOW_BLOCK_BINDER_TYPE_CLSACT_INGRESS ||
++	    !block->net || !net_eq(block->net, &init_net) ||
++	    !net_eq(dev_net(wireless), &init_net))
++		return -EOPNOTSUPP;
++	if (block->command == FLOW_BLOCK_UNBIND)
++		return cs7542_ft_live_setup_wireless(NULL, wireless->ifindex,
++						     type, data);
++	if (block->command != FLOW_BLOCK_BIND)
++		return -EOPNOTSUPP;
++	/* nft holds its flow-block writer, not RTNL. Never wait on RTNL
++	 * here: netdevice teardown takes those locks in the other order.
++	 * Retained UNBIND above only edits mutex-protected metadata.
++	 */
++	if (!rtnl_trylock())
++		return -EBUSY;
++	mutex_lock(&cs_fe_live_owners_lock);
++	list_for_each_entry(owner, &cs_fe_live_owners, node) {
++		mutex_lock(&owner->lock);
++		if (owner->ports[1] && !cs_fe_live_ready(owner)) {
++			if (found) {
++				mutex_unlock(&owner->lock);
++				error = -EXDEV;
++				goto owners_unlock;
++			}
++			found = owner;
++			conduit = owner->ports[1];
++			dev_hold(conduit);
++			kref_get(&found->refs);
++		}
++		mutex_unlock(&owner->lock);
++	}
++	if (found)
++		error = 0;
++owners_unlock:
++	mutex_unlock(&cs_fe_live_owners_lock);
++	if (!error)
++		error = cs7542_fe_live_wfo_register(found, conduit, pci,
++						 wireless, kind, &info);
++	/* Never acquire live_lock while holding an FE owner mutex. */
++	if (!error)
++		error = cs7542_ne_wfo_setup_tc(conduit, wireless->ifindex,
++					    type, data);
++	if (conduit)
++		dev_put(conduit);
++	if (found)
++		cs7542_fe_live_put(found);
++	rtnl_unlock();
++	return error;
++#else
++	return -EOPNOTSUPP;
++#endif
++}
++EXPORT_SYMBOL_GPL(cs7542_wfo_setup_tc);
++
++/* An edited CPU egress must never fall through to the ordinary QCA tagger. */
++static bool cs_wfo_edited_cpu(const struct cs_wfo_rx_meta *meta)
++{
++	return meta->source == 1 && meta->voq == 56 && meta->class_hit &&
++	       meta->class_index >= 5 &&
++	       meta->class_index < 5 + CS_WFO_RECEIPTS &&
++	       meta->forwarding == 1 && !meta->acl_forward;
++}
++
++bool cs7542_fe_live_wfo_receive(struct cs7542_fe_live *owner,
++			      unsigned int cpu, struct sk_buff *skb,
++			      const u32 cpu_header[4])
++{
++	struct cs_wfo_rx_meta meta = cs_wfo_rx_xram(cpu_header);
++	const struct cs_wfo_receipt *receipt = NULL;
++	struct cs_wfo_live_receipt *live;
++	enum cs_wfo_receipt_kind kind = CS_WFO_RECEIPT_OTHER;
++	struct cs_wfo_packet packet;
++	unsigned int label, i;
++	bool edited = cs_wfo_edited_cpu(&meta);
++
++	/* Wired original HASH/ACL exceptions still take the ordinary DSA path. */
++	if (meta.source != 3 && !edited)
++		return false;
++	if (!owner || cpu != 1 || meta.voq != 56 || !meta.class_hit ||
++	    meta.copy || meta.checksum_error || READ_ONCE(owner->closing) ||
++	    !READ_ONCE(owner->online) || skb_pfmemalloc(skb) ||
++	    skb_is_nonlinear(skb) || skb->len < 18)
++		goto drop;
++	label = get_unaligned_be16(skb->data + 14) & 4095;
++	if (!(edited ? cs_wfo_output_frame(skb->data, skb->len, label) :
++		       cs_wfo_frame(skb->data, skb->len, label)))
++		goto drop;
++	rcu_read_lock();
++	if (meta.class_index >= 5 &&
++	    meta.class_index < 5 + CS_WFO_RECEIPTS) {
++		live = rcu_dereference(owner->wfo_receipts[meta.class_index - 5]);
++		if (live) {
++			receipt = &live->identity;
++			kind = cs_wfo_receipt_metadata(receipt, &meta);
++		}
++	} else if (meta.source == 3 && meta.class_index == CS_WFO_MISS_CLASS &&
++		   !meta.forwarding && !meta.action && !meta.acl_forward) {
++		kind = CS_WFO_RECEIPT_ORIGINAL;
++	}
++	if ((edited && kind != CS_WFO_RECEIPT_TRANSLATED) ||
++	    (!edited && kind != CS_WFO_RECEIPT_ORIGINAL))
++		goto unlock_drop;
++	for (i = 0; i < CS_WFO_ENDPOINTS; i++) {
++		struct cs_wfo_endpoint *ep = &owner->wfo[i];
++		struct net_device *dev = rcu_dereference(ep->dev);
++
++		if (!dev || READ_ONCE(ep->paused) || READ_ONCE(ep->label) != label ||
++		    !netif_running(dev) || !netif_carrier_ok(dev) ||
++		    !cs_wfo_plain_device(dev))
++			continue;
++		if (receipt &&
++		    (receipt->label != label || receipt->path.epoch != READ_ONCE(ep->epoch) ||
++		     (edited ? receipt->path.egress_ifindex :
++			       receipt->path.ingress_ifindex) != dev->ifindex))
++			continue;
++		memmove(skb->data + 4, skb->data, 12);
++		skb_pull(skb, 4);
++		if (edited) {
++			if (!cs_wfo_packet_decode_output(skb->data, skb->len, &packet) ||
++			    !cs_wfo_receipt_output(receipt, &meta, &packet,
++					   READ_ONCE(ep->epoch), label, dev->ifindex))
++				goto unlock_drop;
++			skb->dev = dev;
++			skb_reset_mac_header(skb);
++			skb_set_network_header(skb, ETH_HLEN);
++			skb_set_transport_header(skb, ETH_HLEN +
++						 (packet.ipv6 ? 40 : 20));
++			skb_reset_mac_len(skb);
++			skb->protocol = eth_hdr(skb)->h_proto;
++			skb->ip_summed = CHECKSUM_NONE;
++			skb_clear_hash(skb);
++			/* mac80211 remains the only 802.11/key/PN/TX-status owner. */
++			dev_queue_xmit(skb);
++		} else {
++			/* Close admission before software ingress; its NF hook cannot
++			 * inject this same original packet again. Re-arm requires a
++			 * grace period and a new verified hardware transaction.
++			 */
++			cs_wfo_endpoint_fence(ep);
++			skb->protocol = eth_type_trans(skb, dev);
++			netif_receive_skb_core(skb);
++		}
++		rcu_read_unlock();
++		return true;
++	}
++unlock_drop:
++	rcu_read_unlock();
++drop:
++	dev_kfree_skb_any(skb);
++	return true;
++}
+--- /dev/null
++++ b/drivers/net/ethernet/cortina/cs_wfo_observe.inc
+@@ -0,0 +1,158 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* Per-endpoint ingress observations; no skb modification or DMA admission. */
++
++static unsigned int cs_wfo_cache_index(const struct cs_wfo_endpoint *ep,
++				       const struct cs_wfo_packet *p)
++{
++	u32 key[12] = { p->tuple.src, p->tuple.dst,
++		       ((u32)p->tuple.sport << 16) | p->tuple.dport,
++		       p->proto | (p->ipv6 << 8) };
++
++	if (p->ipv6) {
++		memcpy(key + 4, p->src6, sizeof(p->src6));
++		memcpy(key + 8, p->dst6, sizeof(p->dst6));
++	}
++	return jhash2(key, ARRAY_SIZE(key), ep->label) % ARRAY_SIZE(ep->cache);
++}
++
++static unsigned int cs_wfo_observe(void *private, struct sk_buff *skb,
++				  const struct nf_hook_state *state)
++{
++	struct cs_wfo_endpoint *ep = private;
++	struct net_device *dev = rcu_dereference(ep->dev);
++	struct cs_wfo_cached_input *entry;
++	struct cs_wfo_packet packet;
++	u8 header[114];
++	unsigned int bytes;
++
++	if (state->in == dev && cs_wfo_try_inject(ep, skb))
++		return NF_STOLEN;
++	if (!dev || READ_ONCE(ep->paused) || state->in != dev || skb->dev != dev ||
++	    !netif_running(dev) || !netif_carrier_ok(dev) ||
++	    !cs_wfo_plain_device(dev) ||
++	    skb_vlan_tag_present(skb) || skb_is_gso(skb) ||
++	    skb->ip_summed == CHECKSUM_PARTIAL ||
++	    skb->len > 1500 || !skb_mac_header_was_set(skb) ||
++	    skb_headroom(skb) < ETH_HLEN ||
++	    skb_mac_header(skb) != skb->data - ETH_HLEN)
++		return NF_ACCEPT;
++	bytes = min_t(unsigned int, sizeof(header), skb->len + ETH_HLEN);
++	if (skb_copy_bits(skb, -ETH_HLEN, header, bytes) ||
++	    !cs_wfo_packet_decode(header, bytes, skb->len + ETH_HLEN,
++				  false, &packet))
++		return NF_ACCEPT;
++	entry = &ep->cache[cs_wfo_cache_index(ep, &packet)];
++	spin_lock_bh(&ep->cache_lock);
++	if (READ_ONCE(ep->paused))
++		goto unlock;
++	if (!entry->valid || !time_before(jiffies, entry->expires)) {
++		entry->packet = packet;
++		entry->valid = true;
++		entry->ambiguous = false;
++	} else if (!cs_wfo_packet_same_key(&entry->packet, &packet)) {
++		/* A fresh colliding key cannot erase another flow's observation. */
++		goto unlock;
++	} else if (memcmp(entry->packet.source, packet.source, ETH_ALEN) ||
++		   memcmp(entry->packet.destination, packet.destination, ETH_ALEN)) {
++		entry->ambiguous = true;
++	}
++	entry->expires = jiffies + 2 * HZ;
++unlock:
++	spin_unlock_bh(&ep->cache_lock);
++	return NF_ACCEPT;
++}
++
++static void cs_wfo_observe_pause(struct cs_wfo_endpoint *ep, bool paused)
++{
++	spin_lock_bh(&ep->cache_lock);
++	WRITE_ONCE(ep->paused, paused);
++	memset(ep->cache, 0, sizeof(ep->cache));
++	spin_unlock_bh(&ep->cache_lock);
++}
++
++static int cs_wfo_observe_start(struct cs_wfo_endpoint *ep,
++			       struct net_device *dev)
++{
++	int error;
++
++	spin_lock_init(&ep->cache_lock);
++	memset(ep->cache, 0, sizeof(ep->cache));
++	ep->hook = (struct nf_hook_ops) {
++		.hook = cs_wfo_observe,
++		.dev = dev,
++		.priv = ep,
++		.pf = NFPROTO_NETDEV,
++		.hooknum = NF_NETDEV_INGRESS,
++		.priority = NF_IP_PRI_FIRST,
++	};
++	error = nf_register_net_hook(&init_net, &ep->hook);
++	if (!error)
++		ep->hook_registered = true;
++	return error;
++}
++
++static void cs_wfo_observe_stop(struct cs_wfo_endpoint *ep)
++{
++	if (ep->hook_registered) {
++		nf_unregister_net_hook(&init_net, &ep->hook);
++		ep->hook_registered = false;
++	}
++	/* Enclosing removal supplies synchronize_net before slot/dev release. */
++}
++
++int cs7542_fe_live_wfo_lookup(struct cs7542_fe_live *owner, u32 ifindex,
++			    const struct cs_fe_rule *rule,
++			    struct cs7542_wfo_observation *out)
++{
++	struct cs_wfo_packet key = {};
++	unsigned int i;
++	int error = -ENOENT;
++
++	ASSERT_RTNL();
++	if (!owner || !ifindex || !rule || !out)
++		return -EINVAL;
++	key.tuple = rule->original;
++	key.ipv6 = rule->ipv6;
++	key.proto = rule->native_l4proto ?: 17;
++	memcpy(key.src6, rule->src6, sizeof(key.src6));
++	memcpy(key.dst6, rule->dst6, sizeof(key.dst6));
++	mutex_lock(&owner->lock);
++	if (cs_fe_live_ready(owner)) {
++		error = -ESHUTDOWN;
++		goto unlock;
++	}
++	for (i = 0; i < CS_WFO_ENDPOINTS; i++) {
++		struct cs_wfo_endpoint *ep = &owner->wfo[i];
++		struct net_device *dev = rcu_dereference_protected(ep->dev,
++						lockdep_is_held(&owner->lock));
++		struct cs_wfo_cached_input *entry;
++
++		if (!dev || READ_ONCE(ep->paused) || dev->ifindex != ifindex ||
++		    !netif_running(dev) ||
++		    !netif_carrier_ok(dev) || !cs_wfo_plain_device(dev))
++			continue;
++		entry = &ep->cache[cs_wfo_cache_index(ep, &key)];
++		spin_lock_bh(&ep->cache_lock);
++		if (entry->valid && time_before(jiffies, entry->expires) &&
++		    cs_wfo_packet_same_key(&entry->packet, &key)) {
++			if (entry->ambiguous) {
++				error = -EUCLEAN;
++			} else {
++				*out = (struct cs7542_wfo_observation) {
++					.endpoint = { .epoch = ep->epoch,
++						      .label = ep->label,
++						      .ifindex = ifindex },
++				};
++				memcpy(out->source, entry->packet.source, ETH_ALEN);
++				memcpy(out->destination, entry->packet.destination, ETH_ALEN);
++				error = 0;
++			}
++		}
++		spin_unlock_bh(&ep->cache_lock);
++		break;
++	}
++unlock:
++	mutex_unlock(&owner->lock);
++	return error;
++}
++EXPORT_SYMBOL_GPL(cs7542_fe_live_wfo_lookup);
+--- /dev/null
++++ b/drivers/net/ethernet/cortina/cs_wfo_packet.h
+@@ -0,0 +1,202 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef CS_WFO_PACKET_H
++#define CS_WFO_PACKET_H
++
++#include <linux/cs7542_fe_codec.h>
++
++struct cs_wfo_packet {
++	struct cs_fe_tuple tuple;
++	u32 src6[4], dst6[4];
++	u16 bytes;
++	u8 source[6], destination[6], proto, hop_limit;
++	bool ipv6, checksum_valid, udp_zero_checksum;
++};
++
++static inline unsigned int cs_wfo_be16(const u8 *p)
++{
++	return (p[0] << 8) | p[1];
++}
++
++static inline u32 cs_wfo_be32(const u8 *p)
++{
++	return ((u32)p[0] << 24) | ((u32)p[1] << 16) |
++	       ((u32)p[2] << 8) | p[3];
++}
++
++static inline unsigned int cs_wfo_sum(unsigned int sum, const u8 *p,
++				      unsigned int bytes)
++{
++	while (bytes > 1) {
++		sum += cs_wfo_be16(p);
++		p += 2;
++		bytes -= 2;
++	}
++	if (bytes)
++		sum += p[0] << 8;
++	return sum;
++}
++
++static inline bool cs_wfo_sum_valid(unsigned int sum)
++{
++	while (sum >> 16)
++		sum = (sum & 65535) + (sum >> 16);
++	return sum == 65535;
++}
++
++static inline bool cs_wfo_mac_valid(const u8 *mac)
++{
++	return !(mac[0] & 1) &&
++	       (mac[0] | mac[1] | mac[2] | mac[3] | mac[4] | mac[5]);
++}
++
++/*
++ * A header-only observation may corroborate the NF-established flow later;
++ * it NEVER authorizes DMA. Before FE injection complete must be true, so
++ * both the full transport checksum and all bounds have been checked. VLAN,
++ * GSO/partial checksum SKBs, IPv4 fragments/options, IPv6 extensions and exceptional
++ * packets stay in Linux. TCP options fit in the bounded114-byte header view.
++ */
++static inline bool
++cs_wfo_packet_decode_mode(const u8 *p, unsigned int available,
++			  unsigned int wire_bytes, bool complete, bool output,
++			  struct cs_wfo_packet *out)
++{
++	struct cs_wfo_packet next = {};
++	unsigned int ether, offset, l4_bytes, sum, i, end;
++
++	if (wire_bytes < 14 || wire_bytes > 1514 || available < 14 ||
++	    !cs_wfo_mac_valid(p) || !cs_wfo_mac_valid(p + 6))
++		return false;
++	ether = cs_wfo_be16(p + 12);
++	if (ether == 0x0800) {
++		if (available < 34 || p[14] != 0x45 || !p[22] ||
++		    (cs_wfo_be16(p + 20) & 0xbfff) ||
++		    !cs_wfo_sum_valid(cs_wfo_sum(0, p + 14, 20)))
++			return false;
++		end = 14 + cs_wfo_be16(p + 16);
++		offset = 34;
++		next.proto = p[23];
++		next.hop_limit = p[22];
++		next.tuple.src = cs_wfo_be32(p + 26);
++		next.tuple.dst = cs_wfo_be32(p + 30);
++		sum = cs_wfo_sum(0, p + 26, 8);
++	} else if (ether == 0x86dd) {
++		if (available < 54 || (p[14] >> 4) != 6 || !p[21] ||
++		    !cs_wfo_be16(p + 18))
++			return false;
++		end = 54 + cs_wfo_be16(p + 18);
++		offset = 54;
++		next.ipv6 = true;
++		next.proto = p[20];
++		next.hop_limit = p[21];
++		for (i = 0; i < 4; i++) {
++			next.src6[i] = cs_wfo_be32(p + 22 + i * 4);
++			next.dst6[i] = cs_wfo_be32(p + 38 + i * 4);
++		}
++		sum = cs_wfo_sum(0, p + 22, 32);
++	} else {
++		return false;
++	}
++	if (end > wire_bytes || end < offset ||
++	    (complete && end > available))
++		return false;
++	l4_bytes = end - offset;
++	if (next.proto == 17) {
++		if (l4_bytes < 8 || available < offset + 8 ||
++		    cs_wfo_be16(p + offset + 4) != l4_bytes ||
++		    (!cs_wfo_be16(p + offset + 6) && (!output || next.ipv6)))
++			return false;
++	} else if (next.proto == 6) {
++		if (l4_bytes < 20 || available < offset + 20 ||
++		    (!output && (p[offset + 12] & 15)) ||
++		    (p[offset + 12] >> 4) < 5 ||
++		    (p[offset + 12] >> 4) * 4 > l4_bytes ||
++		    (p[offset + 12] >> 4) * 4 > available - offset ||
++		    (p[offset + 13] & ~0xd8) || !(p[offset + 13] & 0x10))
++			return false;
++	} else {
++		return false;
++	}
++	if (complete) {
++		/* IPv4 UDP may legitimately omit its checksum. This output-only
++		 * exception is never proof of a verified transport checksum.
++		 */
++		next.udp_zero_checksum = output && !next.ipv6 && next.proto == 17 &&
++					!cs_wfo_be16(p + offset + 6);
++		if (!next.udp_zero_checksum) {
++			sum = cs_wfo_sum(sum + next.proto + l4_bytes, p + offset, l4_bytes);
++			if (!cs_wfo_sum_valid(sum))
++				return false;
++		}
++	}
++	next.tuple.sport = cs_wfo_be16(p + offset);
++	next.tuple.dport = cs_wfo_be16(p + offset + 2);
++	next.bytes = end;
++	next.checksum_valid = complete && !next.udp_zero_checksum;
++	memcpy(next.source, p + 6, 6);
++	memcpy(next.destination, p, 6);
++	*out = next;
++	return true;
++}
++
++/* Strict admission/observation: unusual packets remain with Linux. */
++static inline bool cs_wfo_packet_decode(const u8 *p, unsigned int available,
++					unsigned int wire_bytes, bool complete,
++					struct cs_wfo_packet *out)
++{
++	return cs_wfo_packet_decode_mode(p, available, wire_bytes, complete,
++					false, out);
++}
++
++/* A wired HASH hit can carry TCP NS/reserved bits or IPv4 UDP checksum zero.
++ * Bounds, IP checksum, TCP control flags and every present L4 checksum still
++ * require validation. Neither exception enables stricter CPU input admission.
++ */
++static inline bool cs_wfo_packet_decode_output(const u8 *p, unsigned int bytes,
++					       struct cs_wfo_packet *out)
++{
++	return cs_wfo_packet_decode_mode(p, bytes, bytes, true, true, out);
++}
++
++static inline bool cs_wfo_packet_output_checked(const struct cs_wfo_packet *p)
++{
++	return p->checksum_valid ||
++	       (p->udp_zero_checksum && !p->ipv6 && p->proto == 17);
++}
++
++static inline bool cs_wfo_packet_match(const struct cs_wfo_packet *p,
++				       const struct cs_fe_rule *rule,
++				       const u8 input_smac[6], bool edited)
++{
++	const struct cs_fe_tuple *tuple = edited ? &rule->translated :
++						  &rule->original;
++	unsigned int i;
++
++	if (p->ipv6 != rule->ipv6 ||
++	    p->proto != (rule->native_l4proto ?: 17) ||
++	    p->tuple.src != tuple->src || p->tuple.dst != tuple->dst ||
++	    p->tuple.sport != tuple->sport || p->tuple.dport != tuple->dport ||
++	    memcmp(p->source, edited ? rule->smac : input_smac, 6) ||
++	    memcmp(p->destination,
++		   edited ? rule->dmac : rule->ingress.base_mac, 6))
++		return false;
++	if (p->ipv6)
++		for (i = 0; i < 4; i++)
++			if (p->src6[i] != rule->src6[i] ||
++			    p->dst6[i] != rule->dst6[i])
++				return false;
++	return true;
++}
++
++static inline bool cs_wfo_packet_same_key(const struct cs_wfo_packet *a,
++					  const struct cs_wfo_packet *b)
++{
++	return a->ipv6 == b->ipv6 && a->proto == b->proto &&
++	       a->tuple.src == b->tuple.src && a->tuple.dst == b->tuple.dst &&
++	       a->tuple.sport == b->tuple.sport &&
++	       a->tuple.dport == b->tuple.dport &&
++	       (!a->ipv6 || (!memcmp(a->src6, b->src6, sizeof(a->src6)) &&
++			    !memcmp(a->dst6, b->dst6, sizeof(a->dst6))));
++}
++
++#endif
+--- /dev/null
++++ b/drivers/net/ethernet/cortina/cs_wfo_receipt.h
+@@ -0,0 +1,132 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef CS_WFO_RECEIPT_H
++#define CS_WFO_RECEIPT_H
++
++#ifdef __KERNEL__
++#include <linux/errno.h>
++#include <linux/string.h>
++#else
++#include <errno.h>
++#include <string.h>
++#endif
++
++#include "cs_wfo_packet.h"
++#include "cs_wfo_transport.h"
++
++#define CS_WFO_RECEIPTS 16
++#define CS_WFO_RESULT_ROWS 8
++
++/* Owner-built immutable identity, never supplied as an external row handle. */
++struct cs_wfo_receipt_seed {
++	struct cs_fe_rule rule;
++	unsigned long long epoch;
++	u32 ingress_ifindex, egress_ifindex;
++	u8 ingress_smac[6];
++};
++
++struct cs_wfo_receipt {
++	struct cs_wfo_receipt_seed path;
++	u32 miss_marker;
++	u16 label, class_row, hit_fwd;
++	bool wireless_input;
++};
++
++enum cs_wfo_receipt_kind {
++	CS_WFO_RECEIPT_OTHER,
++	CS_WFO_RECEIPT_ORIGINAL,
++	CS_WFO_RECEIPT_TRANSLATED,
++	CS_WFO_RECEIPT_BAD,
++};
++
++/* Canonical typed lease rows/plan only. Construction does not arm admission. */
++static inline int cs_wfo_receipt_build(const struct cs_wfo_receipt_seed *seed,
++				       const struct cs_fe_rows *rows,
++				       const struct cs_fe_plan *plan,
++				       struct cs_wfo_receipt *out)
++{
++	struct cs_wfo_receipt next = {};
++	const struct cs_fe_link *cpu, *wired;
++	bool in, egress;
++
++	if (!seed || !rows || !plan || !out || !seed->epoch ||
++	    !seed->ingress_ifindex || !seed->egress_ifindex ||
++	    seed->ingress_ifindex == seed->egress_ifindex)
++		return -EINVAL;
++	in = cs_fe_link_cpu_nat(&seed->rule.ingress);
++	egress = cs_fe_link_cpu_nat(&seed->rule.egress);
++	if (in == egress || !seed->rule.decrement_ttl ||
++	    !cs_wfo_mac_valid(seed->ingress_smac) ||
++	    !cs_wfo_mac_valid(seed->rule.ingress.base_mac) ||
++	    !cs_wfo_mac_valid(seed->rule.smac) ||
++	    !cs_wfo_mac_valid(seed->rule.dmac) ||
++	    memcmp(seed->rule.smac, seed->rule.egress.base_mac, 6))
++		return -EOPNOTSUPP;
++	cpu = in ? &seed->rule.ingress : &seed->rule.egress;
++	wired = in ? &seed->rule.egress : &seed->rule.ingress;
++	if (wired->gmac != 1 || wired->cpu_port || wired->tag_mode != 4 ||
++	    wired->base_voq != 8 || wired->switch_port < 1 ||
++	    wired->switch_port > 5 || rows->class_row < 5 ||
++	    rows->class_row >= 5 + CS_WFO_RECEIPTS ||
++	    rows->sdb_row != rows->class_row ||
++	    rows->miss_fwd != 5 + (rows->class_row - 5) * 2 ||
++	    rows->hit_fwd < 6 ||
++	    rows->hit_fwd >= 6 + 2 * CS_WFO_RESULT_ROWS || rows->hit_fwd % 2 ||
++	    !rows->miss_marker || rows->miss_marker > 0xfffff ||
++	    !(plan->requirements & CS_FE_REQ_WFO_ENDPOINT) ||
++	    (plan->hash[1] & 8191) != rows->hit_fwd ||
++	    (plan->voq.expected[0] & 255) != seed->rule.egress.base_voq ||
++	    /* SWAP_B retains input priority/version above the endpoint VID. */
++	    plan->predicted_tx_qca != (in ?
++			(0x8080 | (1U << wired->switch_port)) :
++			((wired->rx_qca_meta & 0xf000) |
++			 (cpu->rx_qca_meta & 4095))))
++		return -EUCLEAN;
++	next.path = *seed;
++	next.label = cpu->rx_qca_meta & 4095;
++	next.class_row = rows->class_row;
++	/* A shared immutable action need not have this selector's index. */
++	next.hit_fwd = rows->hit_fwd;
++	next.miss_marker = rows->miss_marker;
++	next.wireless_input = in;
++	*out = next;
++	return 0;
++}
++
++static inline enum cs_wfo_receipt_kind
++cs_wfo_receipt_metadata(const struct cs_wfo_receipt *receipt,
++			const struct cs_wfo_rx_meta *meta)
++{
++	if (meta->source != (receipt->wireless_input ? 3 : 1) ||
++	    !meta->class_hit || meta->class_index != receipt->class_row)
++		return CS_WFO_RECEIPT_OTHER;
++	if (meta->voq != 56 || meta->copy || meta->checksum_error)
++		return CS_WFO_RECEIPT_BAD;
++	/* Hash-result indices have no authority when the hash did not hit. */
++	if (meta->acl_forward ||
++	    (!meta->forwarding && meta->action == receipt->miss_marker))
++		return CS_WFO_RECEIPT_ORIGINAL;
++	if (meta->forwarding == 1 && meta->result == receipt->hit_fwd &&
++	    !receipt->wireless_input)
++		return CS_WFO_RECEIPT_TRANSLATED;
++	return CS_WFO_RECEIPT_BAD;
++}
++
++/* The caller must first output-decode the complete untagged Ethernet frame. */
++static inline bool
++cs_wfo_receipt_output(const struct cs_wfo_receipt *receipt,
++		      const struct cs_wfo_rx_meta *meta,
++		      const struct cs_wfo_packet *packet,
++		      unsigned long long current_epoch, unsigned int label,
++		      unsigned int ifindex)
++{
++	return cs_wfo_packet_output_checked(packet) &&
++	       cs_wfo_receipt_metadata(receipt, meta) ==
++		       CS_WFO_RECEIPT_TRANSLATED &&
++	       receipt->path.epoch == current_epoch &&
++	       receipt->label == label &&
++	       receipt->path.egress_ifindex == ifindex &&
++	       cs_wfo_packet_match(packet, &receipt->path.rule,
++				   receipt->path.ingress_smac, true);
++}
++
++#endif
+--- /dev/null
++++ b/drivers/net/ethernet/cortina/cs_wfo_receipt.inc
+@@ -0,0 +1,82 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* The owner mutex serializes publication; RX keeps identities under RCU. */
++static void cs_wfo_receipt_fence(struct cs7542_fe_live *owner, unsigned int slot)
++{
++	struct cs_wfo_live_receipt *live;
++
++	lockdep_assert_held(&owner->lock);
++	if (slot >= CS_WFO_RECEIPTS)
++		return;
++	spin_lock_bh(&owner->wfo_tx_lock);
++	live = rcu_dereference_protected(owner->wfo_receipts[slot],
++					 lockdep_is_held(&owner->lock));
++	if (live)
++		live->admitting = false;
++	spin_unlock_bh(&owner->wfo_tx_lock);
++}
++
++static void cs_wfo_endpoint_fence(struct cs_wfo_endpoint *ep)
++{
++	/* The packet producer will hold this same lock through TX publication. */
++	spin_lock_bh(&ep->owner->wfo_tx_lock);
++	WRITE_ONCE(ep->injecting, false);
++	spin_unlock_bh(&ep->owner->wfo_tx_lock);
++}
++
++static int cs_wfo_receipt_publish(struct cs7542_fe_live *owner, unsigned int slot,
++				  const struct cs_fe_rows *rows,
++				  const struct cs_fe_plan *plan)
++{
++	struct cs_wfo_live_receipt *next = NULL, *old;
++	int error;
++
++	lockdep_assert_held(&owner->lock);
++	if (slot >= CS_WFO_RECEIPTS)
++		return -EINVAL;
++	if (plan->requirements & CS_FE_REQ_WFO_ENDPOINT) {
++		if (!owner->wfo_pending)
++			return -EOPNOTSUPP;
++		next = kzalloc(sizeof(*next), GFP_KERNEL);
++		if (!next)
++			return -ENOMEM;
++		error = cs_wfo_receipt_build(owner->wfo_pending, rows, plan,
++					     &next->identity);
++		if (error) {
++			kfree(next);
++			return error;
++		}
++	}
++	/* Publish before CLASS can become valid. No allocation/failure occurs
++	 * after replacing the old receive identity. New admission stays closed.
++	 */
++	spin_lock_bh(&owner->wfo_tx_lock);
++	old = rcu_replace_pointer(owner->wfo_receipts[slot], next,
++				  lockdep_is_held(&owner->lock));
++	if (old)
++		old->admitting = false;
++	spin_unlock_bh(&owner->wfo_tx_lock);
++	if (old)
++		kfree_rcu(old, rcu);
++	return 0;
++}
++
++static void cs_wfo_receipt_remove(struct cs7542_fe_live *owner,
++				  const struct net_device *dev)
++{
++	unsigned int i;
++
++	lockdep_assert_held(&owner->lock);
++	for (i = 0; i < CS_WFO_RECEIPTS; i++) {
++		struct cs_wfo_live_receipt *old = rcu_dereference_protected(
++			owner->wfo_receipts[i], lockdep_is_held(&owner->lock));
++
++		if (!old || (dev && old->identity.path.ingress_ifindex != dev->ifindex &&
++			     old->identity.path.egress_ifindex != dev->ifindex))
++			continue;
++		spin_lock_bh(&owner->wfo_tx_lock);
++		old->admitting = false;
++		RCU_INIT_POINTER(owner->wfo_receipts[i], NULL);
++		spin_unlock_bh(&owner->wfo_tx_lock);
++		kfree_rcu(old, rcu);
++	}
++}
+--- /dev/null
++++ b/drivers/net/ethernet/cortina/cs_wfo_transport.h
+@@ -0,0 +1,100 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef CS_WFO_TRANSPORT_H
++#define CS_WFO_TRANSPORT_H
++
++#define CS_WFO_MISS_CLASS 4
++
++/* No packed native bitfields: the SDK CPU headers are two LE64 words. */
++struct cs_wfo_rx_meta {
++	u32 action;
++	u16 result;
++	u8 source, voq, class_index;
++	u8 forwarding;
++	bool class_hit, copy, checksum_error, acl_forward;
++};
++
++static inline struct cs_wfo_rx_meta
++cs_wfo_rx_decode(const u32 words[4])
++{
++	return (struct cs_wfo_rx_meta) {
++		.source = (words[0] >> 21) & 15,
++		.acl_forward = !!(words[0] & (1U << 7)),
++		.result = ((words[0] >> 25) | (words[1] << 7)) & 8191,
++		.voq = (words[1] >> 6) & 255,
++		.action = words[2] & 0xfffff,
++		.class_index = (words[3] >> 17) & 63,
++		.class_hit = !!(words[3] & (1U << 23)),
++		.forwarding = words[1] >> 30,
++		.copy = !!(words[2] & (1U << 30)),
++		.checksum_error = !!(words[2] & (3U << 28)),
++	};
++}
++
++/* XRAM stores the high32 word first for each CPU64 header. */
++static inline struct cs_wfo_rx_meta
++cs_wfo_rx_xram(const u32 xram[4])
++{
++	u32 words[4] = { xram[1], xram[0], xram[3], xram[2] };
++
++	return cs_wfo_rx_decode(words);
++}
++
++/* Four-byte framing matches the owner's existing tag-mode4 FE plans. */
++static inline bool cs_wfo_label_valid(unsigned int label)
++{
++	return label && label < 4095;
++}
++
++static inline bool cs_wfo_output_frame(const u8 *frame, unsigned int bytes,
++				       unsigned int label)
++{
++	return cs_wfo_label_valid(label) && bytes >= 18 && bytes <= 1518 &&
++	       frame[12] == 0x81 && !frame[13] &&
++	       (frame[14] >> 6) == 2 && (frame[14] & 15) == (label >> 8) &&
++	       frame[15] == (label & 255) &&
++	       ((frame[16] == 8 && !frame[17]) ||
++		(frame[16] == 0x86 && frame[17] == 0xdd));
++}
++
++static inline bool cs_wfo_frame(const u8 *frame, unsigned int bytes,
++				unsigned int label)
++{
++	/* New CPU input uses canonical priority; FVLAN egress preserves the
++	 * incoming QCA header's upper priority bits, outside the epoch VID.
++	 */
++	return cs_wfo_output_frame(frame, bytes, label) &&
++	       (frame[14] & 0xf0) == 0x80;
++}
++
++/*
++ * Linux is still the checksum/crypto owner. This codec only inserts the
++ * internal endpoint tag in a separately allocated, linear Ethernet frame.
++ * A failed call leaves the destination unchanged. Source/destination must
++ * be disjoint or identical; the kernel wrapper supplies separate storage.
++ */
++static inline int cs_wfo_frame_encode(u8 *out, unsigned int capacity,
++				      const u8 *frame, unsigned int bytes,
++				      unsigned int label)
++{
++	if (!cs_wfo_label_valid(label) || bytes < 14 || bytes > 1514 ||
++	    capacity < bytes + 4 ||
++	    !((frame[12] == 8 && !frame[13]) ||
++	      (frame[12] == 0x86 && frame[13] == 0xdd)))
++		return -EINVAL;
++	/* memmove permits an in-place expansion after all validation. */
++	memmove(out + 16, frame + 12, bytes - 12);
++	memmove(out, frame, 12);
++	out[12] = 0x81;
++	out[13] = 0;
++	out[14] = 0x80 | (label >> 8);
++	out[15] = label;
++	return bytes + 4;
++}
++
++/* HEADER_A normal forwarding (not CPU bypass), physical source CPU3. */
++static inline u32 cs_wfo_tx_header(void)
++{
++	return 1U | (3U << 16);
++}
++
++#endif
+--- a/drivers/net/ethernet/cortina/flowtable/cs7542_fw4.c
++++ b/drivers/net/ethernet/cortina/flowtable/cs7542_fw4.c
+@@ -2,6 +2,7 @@
+ /* Standard nftables flowtable frontend for the CS7542/QCA8337 wired path. */
+ #include <linux/bitfield.h>
+ #include <linux/cs7542_ft_live.h>
++#include <linux/cs7542_wfo_native.h>
+ #include <linux/dsa/qca8k_persistent.h>
+ #include <linux/etherdevice.h>
+ #include <linux/if_bridge.h>
+@@ -39,6 +40,9 @@ static typeof(cs7542_fe_live_replace_nat
+ static typeof(qca8k_persistent_status) *persistent_status;
+ static typeof(cs7542_fe_live_native_lastused) *native_lastused;
+ static typeof(cs7542_fe_live_native_snapshot) *native_snapshot;
++static typeof(cs7542_fe_live_wfo_endpoint) *wfo_endpoint;
++static typeof(cs7542_fe_live_wfo_lookup) *wfo_lookup;
++static typeof(cs7542_fe_live_replace_wfo) *replace_wfo;
+ /*
+  * The private nf_flow_table module supplies the PMTU of this direction.
+  * This frontend can load before the flowtable module.
+@@ -85,22 +89,30 @@ free:
+ 	return err;
+ }
+ 
+-static struct dsa_port *get_endpoint(struct net_device *conduit, int ifindex,
++static struct dsa_port *get_endpoint(struct cs7542_fe_live *owner,
++				     struct net_device *conduit, int ifindex,
+ 				     struct native_endpoint *endpoint)
+ {
+ 	struct net_device *dev = __dev_get_by_index(dev_net(conduit), ifindex);
+ 	struct net_device *bridge;
+ 	struct dsa_port *port;
++	struct cs7542_wfo_endpoint_info info = {};
+ 
+ 	ASSERT_RTNL();
++	if (!dev || !netif_running(dev) || !netif_carrier_ok(dev))
++		return ERR_PTR(-EOPNOTSUPP);
+ 	port = dsa_port_from_netdev(dev);
+-	if (IS_ERR(port) || !port->ds || !port->ds->dev || !port->cpu_dp ||
+-	    port->cpu_dp->conduit != conduit || port->cpu_dp->index != 0 ||
+-	    !of_device_is_compatible(port->ds->dev->of_node, "qca,qca8337") ||
+-	    port->index < 1 || port->index > 5 || port->lag || port->hsr_dev ||
+-	    !netif_running(dev) || !netif_carrier_ok(dev) ||
+-	    dsa_port_is_vlan_filtering(port))
++	if (IS_ERR(port)) {
++		if (!wfo_endpoint || wfo_endpoint(owner, ifindex, &info))
++			return ERR_PTR(-EOPNOTSUPP);
++		port = NULL;
++	} else if (!port->ds || !port->ds->dev || !port->cpu_dp ||
++		   port->cpu_dp->conduit != conduit || port->cpu_dp->index != 0 ||
++		   !of_device_is_compatible(port->ds->dev->of_node, "qca,qca8337") ||
++		   port->index < 1 || port->index > 5 || port->lag || port->hsr_dev ||
++		   dsa_port_is_vlan_filtering(port)) {
+ 		return ERR_PTR(-EOPNOTSUPP);
++	}
+ 	bridge = netdev_master_upper_dev_get(dev);
+ 	if (bridge &&
+ 	    (!netif_is_bridge_master(bridge) || !netif_running(bridge) ||
+@@ -109,18 +121,67 @@ static struct dsa_port *get_endpoint(str
+ 	     br_port_flag_is_set(dev, BR_PORT_LOCKED | BR_PORT_MAB |
+ 					      BR_ISOLATED | BR_VLAN_TUNNEL)))
+ 		return ERR_PTR(-EOPNOTSUPP);
+-	endpoint->ifindex = ifindex;
+-	endpoint->port = port->index;
++	*endpoint = (struct native_endpoint) {
++		.ifindex = ifindex,
++		.port = port ? port->index : 0,
++		.wireless = !port,
++		.wireless_epoch = info.epoch,
++		.wireless_label = info.label,
++	};
+ 	ether_addr_copy(endpoint->mac,
+ 			bridge ? bridge->dev_addr : dev->dev_addr);
+ 	return port;
+ }
+ 
+-static bool fdb_matches(const struct dsa_port *port, const u8 addr[ETH_ALEN])
++static bool fdb_matches(unsigned int ifindex, const u8 addr[ETH_ALEN])
+ {
+-	struct net_device *bridge = netdev_master_upper_dev_get(port->user);
++	struct net_device *dev = __dev_get_by_index(&init_net, ifindex);
++	struct net_device *bridge;
++
++	if (!dev)
++		return false;
++	bridge = netdev_master_upper_dev_get(dev);
++	return !bridge || br_fdb_find_port(bridge, addr, 0) == dev;
++}
++
++static int wireless_input(struct native_binding *binding,
++			  const struct cs_ft_nf_facts *facts,
++			  const struct native_endpoint *input,
++			  struct cs7542_rx_path *wire)
++{
++	struct cs_fe_rule key = {
++		.original = {
++			.src = be32_to_cpu(facts->rewrite.before.src),
++			.dst = be32_to_cpu(facts->rewrite.before.dst),
++			.sport = be16_to_cpu(facts->rewrite.before.sport),
++			.dport = be16_to_cpu(facts->rewrite.before.dport),
++		},
++		.ipv6 = facts->ipv6,
++		.native_l4proto = facts->ip_proto,
++	};
++	struct cs7542_wfo_observation observation;
++	unsigned int i;
++	int error;
+ 
+-	return !bridge || br_fdb_find_port(bridge, addr, 0) == port->user;
++	if (!wfo_lookup)
++		return -EOPNOTSUPP;
++	if (facts->ipv6)
++		for (i = 0; i < 4; i++) {
++			key.src6[i] = be32_to_cpu(facts->src6[i]);
++			key.dst6[i] = be32_to_cpu(facts->dst6[i]);
++		}
++	error = wfo_lookup(binding->owner, input->ifindex, &key, &observation);
++	if (error)
++		return error;
++	if (observation.endpoint.ifindex != input->ifindex ||
++	    observation.endpoint.epoch != input->wireless_epoch ||
++	    observation.endpoint.label != input->wireless_label)
++		return -ESTALE;
++	ether_addr_copy(wire->source, observation.source);
++	ether_addr_copy(wire->destination, observation.destination);
++	wire->tag = 0x8000 | input->wireless_label;
++	wire->tag_len = 4;
++	return 0;
+ }
+ 
+ /*
+@@ -248,7 +309,7 @@ static int native_check_neighbour(const
+ 
+ static enum native_reason
+ prepare_request(struct native_binding *b, struct flow_cls_offload *cls,
+-		struct cs7542_fe_native_request *request)
++		struct cs7542_fe_native_request *request, u64 *wireless_epoch)
+ {
+ 	struct qca8k_persistent_status format = {
+ 		.size = sizeof(format),
+@@ -276,9 +337,10 @@ prepare_request(struct native_binding *b
+ 	if (!net_eq(dev_net(b->conduit), &init_net) ||
+ 	    !netif_running(b->conduit) || !netif_carrier_ok(b->conduit))
+ 		return NATIVE_PATH;
+-	ip = get_endpoint(b->conduit, facts.ingress_ifindex, &in);
+-	op = get_endpoint(b->conduit, facts.egress_ifindex, &out);
+-	if (IS_ERR(ip) || IS_ERR(op) || ip->ds != op->ds)
++	ip = get_endpoint(b->owner, b->conduit, facts.ingress_ifindex, &in);
++	op = get_endpoint(b->owner, b->conduit, facts.egress_ifindex, &out);
++	if (IS_ERR(ip) || IS_ERR(op) || (!ip && !op) ||
++	    (ip && op && ip->ds != op->ds))
+ 		return NATIVE_PATH;
+ 	tuple = (struct cs7542_l4_tuple){
+ 		.src = facts.rewrite.before.src,
+@@ -292,7 +354,8 @@ prepare_request(struct native_binding *b
+ 		memcpy(tuple.src6, facts.src6, sizeof(tuple.src6));
+ 		memcpy(tuple.dst6, facts.dst6, sizeof(tuple.dst6));
+ 	}
+-	wire_error = cs7542_rx_path_lookup(b->conduit, in.port, &tuple, &wire);
++	wire_error = in.wireless ? wireless_input(b, &facts, &in, &wire) :
++		cs7542_rx_path_lookup(b->conduit, in.port, &tuple, &wire);
+ 	if (wire_error) {
+ 		/* Never hide an observed ambiguity or invent input for a new flow. */
+ 		if (wire_error != -ENOENT || !native_snapshot ||
+@@ -302,10 +365,11 @@ prepare_request(struct native_binding *b
+ 			return NATIVE_WIRE;
+ 		retained = true;
+ 	}
+-	if (!fdb_matches(ip, wire.source) ||
+-	    !fdb_matches(op, facts.rewrite.dmac))
++	if (!fdb_matches(in.ifindex, wire.source) ||
++	    !fdb_matches(out.ifindex, facts.rewrite.dmac))
+ 		return NATIVE_PATH;
+-	reason = native_rule_build(&facts, &in, &out, &wire, request);
++	reason = native_rule_build_wfo(&facts, &in, &out, &wire, request,
++				       wireless_epoch);
+ 	if (reason != NATIVE_OWNER)
+ 		return reason;
+ 	if (!persistent_status || persistent_status(b->conduit, &format) ||
+@@ -331,7 +395,7 @@ prepare_request(struct native_binding *b
+ static int
+ native_replace_checked(struct native_binding *b, struct flow_cls_offload *cls,
+ 		       const struct cs7542_fe_native_request *request,
+-		       enum native_reason *reason)
++		       u64 wireless_epoch, enum native_reason *reason)
+ {
+ 	int err;
+ 
+@@ -341,7 +405,21 @@ native_replace_checked(struct native_bin
+ 		return cs7542_fe_live_reject(b->owner, b->handle, cls->cookie,
+ 					     b->version, err);
+ 	}
+-	if (request->rule.native_l4proto == IPPROTO_TCP)
++	if (wireless_epoch) {
++		struct cs7542_wfo_native_request wireless = {
++			.abi = CS7542_WFO_NATIVE_ABI,
++			.size = sizeof(wireless),
++			.wireless_epoch = wireless_epoch,
++			.path = *request,
++		};
++
++		if (!replace_wfo)
++			return cs7542_fe_live_reject(b->owner, b->handle,
++						     cls->cookie, b->version,
++						     -EOPNOTSUPP);
++		err = replace_wfo(b->owner, b->handle, cls->cookie, b->version,
++				  &wireless, cls);
++	} else if (request->rule.native_l4proto == IPPROTO_TCP)
+ 		err = replace_native_tcp(b->owner, b->handle, cls->cookie,
+ 					 b->version, request, cls);
+ 	else
+@@ -367,6 +445,7 @@ static int native_rule(void *ctx, u64 id
+ {
+ 	struct native_binding *b = find_binding(id);
+ 	struct cs7542_fe_native_request request;
++	u64 wireless_epoch = 0;
+ 	enum native_reason reason;
+ 	int result;
+ 
+@@ -404,11 +483,11 @@ static int native_rule(void *ctx, u64 id
+ 		result = cs7542_fe_live_reject(b->owner, b->handle, cls->cookie,
+ 					       b->version, -EBUSY);
+ 	} else {
+-		reason = prepare_request(b, cls, &request);
++		reason = prepare_request(b, cls, &request, &wireless_epoch);
+ 		if (reason == NATIVE_OWNER && request.route_mtu &&
+ 		    replace_native) {
+ 			result = native_replace_checked(b, cls, &request,
+-							&reason);
++							wireless_epoch, &reason);
+ 		} else {
+ 			result = cs7542_fe_live_reject(b->owner, b->handle,
+ 						       cls->cookie, b->version,
+@@ -488,8 +567,17 @@ static int __init native_init(void)
+ 	persistent_status = symbol_get(qca8k_persistent_status);
+ 	native_lastused = symbol_get(cs7542_fe_live_native_lastused);
+ 	native_snapshot = symbol_get(cs7542_fe_live_native_snapshot);
++	wfo_endpoint = symbol_get(cs7542_fe_live_wfo_endpoint);
++	wfo_lookup = symbol_get(cs7542_fe_live_wfo_lookup);
++	replace_wfo = symbol_get(cs7542_fe_live_replace_wfo);
+ 	err = cs7542_ft_live_register(&native_ops, NULL);
+ 	if (err) {
++		if (replace_wfo)
++			symbol_put(cs7542_fe_live_replace_wfo);
++		if (wfo_lookup)
++			symbol_put(cs7542_fe_live_wfo_lookup);
++		if (wfo_endpoint)
++			symbol_put(cs7542_fe_live_wfo_endpoint);
+ 		if (native_snapshot)
+ 			symbol_put(cs7542_fe_live_native_snapshot);
+ 		if (native_lastused)
+@@ -509,6 +597,12 @@ static void __exit native_exit(void)
+ {
+ 	/* The bridge's reference pins this module until its callbacks quiesce. */
+ 	cs7542_rx_path_exit();
++	if (replace_wfo)
++		symbol_put(cs7542_fe_live_replace_wfo);
++	if (wfo_lookup)
++		symbol_put(cs7542_fe_live_wfo_lookup);
++	if (wfo_endpoint)
++		symbol_put(cs7542_fe_live_wfo_endpoint);
+ 	if (native_snapshot)
+ 		symbol_put(cs7542_fe_live_native_snapshot);
+ 	if (native_lastused)
+--- a/drivers/net/ethernet/cortina/flowtable/nf_native.c
++++ b/drivers/net/ethernet/cortina/flowtable/nf_native.c
+@@ -23,17 +23,28 @@ static struct cs_fe_tuple to_tuple(const
+ static struct cs_fe_link to_link(const struct native_endpoint *endpoint)
+ {
+ 	struct cs_fe_link link = {
+-		.gmac = 1,
+-		.cpu_port = 0,
++		.gmac = endpoint->wireless ? 3 : 1,
++		.cpu_port = endpoint->wireless ? 1 : 0,
+ 		.switch_port = endpoint->port,
+-		.base_voq = 8,
++		.base_voq = endpoint->wireless ? 56 : 8,
+ 		.tag_mode = 4,
++		.rx_qca_meta = endpoint->wireless ?
++			       0x8000 | endpoint->wireless_label : 0,
+ 	};
+ 
+ 	ether_addr_copy(link.base_mac, endpoint->mac);
+ 	return link;
+ }
+ 
++static bool endpoint_valid(const struct native_endpoint *endpoint)
++{
++	if (endpoint->wireless)
++		return !endpoint->port && endpoint->wireless_epoch &&
++		       endpoint->wireless_label && endpoint->wireless_label < 4095;
++	return endpoint->port >= 1 && endpoint->port <= 5 &&
++	       !endpoint->wireless_epoch && !endpoint->wireless_label;
++}
++
+ bool native_refresh_path(const struct cs_ft_nf_facts *facts,
+ 			 const struct cs7542_fe_native_request *previous,
+ 			 struct cs7542_rx_path *wire)
+@@ -62,11 +73,12 @@ bool native_refresh_path(const struct cs
+ 	return true;
+ }
+ 
+-enum native_reason native_rule_build(const struct cs_ft_nf_facts *facts,
++static enum native_reason rule_build(const struct cs_ft_nf_facts *facts,
+ 				     const struct native_endpoint *ingress,
+ 				     const struct native_endpoint *egress,
+ 				     const struct cs7542_rx_path *wire,
+-				     struct cs7542_fe_native_request *request)
++				     struct cs7542_fe_native_request *request,
++				     u64 *wireless_epoch)
+ {
+ 	const struct cs_ft_rewrite *rw = &facts->rewrite;
+ 	struct cs7542_fe_native_request next = {
+@@ -88,8 +100,9 @@ enum native_reason native_rule_build(con
+ 	if (facts->ingress_ifindex <= 0 || facts->egress_ifindex <= 0 ||
+ 	    ingress->ifindex != (unsigned int)facts->ingress_ifindex ||
+ 	    egress->ifindex != (unsigned int)facts->egress_ifindex ||
+-	    ingress->port < 1 || ingress->port > 5 || egress->port < 1 ||
+-	    egress->port > 5)
++	    !endpoint_valid(ingress) || !endpoint_valid(egress) ||
++	    (ingress->wireless && egress->wireless) ||
++	    ((ingress->wireless || egress->wireless) && !wireless_epoch))
+ 		return NATIVE_PATH;
+ 	if (!wire || !is_valid_ether_addr(wire->source) ||
+ 	    !is_valid_ether_addr(wire->destination))
+@@ -98,9 +111,11 @@ enum native_reason native_rule_build(con
+ 	    !ether_addr_equal(rw->smac, egress->mac))
+ 		return NATIVE_MAC;
+ 	reason = (wire->tag >> 6) & 31;
+-	if (wire->tag_len != 4 || (wire->tag >> 14) != 2 ||
+-	    (wire->tag & 7) != ingress->port || (wire->tag & 8) ||
+-	    reason == 1 || reason == 2)
++	if (wire->tag_len != 4 ||
++	    (ingress->wireless ?
++	     wire->tag != (0x8000 | ingress->wireless_label) :
++	     ((wire->tag >> 14) != 2 || (wire->tag & 7) != ingress->port ||
++	      (wire->tag & 8) || reason == 1 || reason == 2)))
+ 		return NATIVE_TAG;
+ 
+ 	next.ingress_ifindex = ingress->ifindex;
+@@ -123,7 +138,31 @@ enum native_reason native_rule_build(con
+ 	ether_addr_copy(next.rule.smac, rw->smac);
+ 	ether_addr_copy(next.rule.dmac, rw->dmac);
+ 	next.rule.decrement_ttl = true;
++	if (ingress->wireless || egress->wireless)
++		next.abi = CS7542_FE_NATIVE_ABI;
+ 	*request = next;
++	if (wireless_epoch)
++		*wireless_epoch = ingress->wireless ? ingress->wireless_epoch :
++			 egress->wireless ? egress->wireless_epoch : 0;
+ 	/* Owner confirmation is the next step. There is no installed entry yet. */
+ 	return NATIVE_OWNER;
+ }
++
++enum native_reason native_rule_build(const struct cs_ft_nf_facts *facts,
++				     const struct native_endpoint *ingress,
++				     const struct native_endpoint *egress,
++				     const struct cs7542_rx_path *wire,
++				     struct cs7542_fe_native_request *request)
++{
++	return rule_build(facts, ingress, egress, wire, request, NULL);
++}
++
++enum native_reason native_rule_build_wfo(const struct cs_ft_nf_facts *facts,
++					 const struct native_endpoint *ingress,
++					 const struct native_endpoint *egress,
++					 const struct cs7542_rx_path *wire,
++					 struct cs7542_fe_native_request *request,
++					 u64 *wireless_epoch)
++{
++	return rule_build(facts, ingress, egress, wire, request, wireless_epoch);
++}
+--- a/drivers/net/ethernet/cortina/flowtable/nf_native.h
++++ b/drivers/net/ethernet/cortina/flowtable/nf_native.h
+@@ -20,6 +20,9 @@ enum native_reason {
+ struct native_endpoint {
+ 	unsigned int ifindex, port;
+ 	u8 mac[6];
++	u64 wireless_epoch;
++	u16 wireless_label;
++	bool wireless;
+ };
+ 
+ bool native_refresh_path(const struct cs_ft_nf_facts *facts,
+@@ -32,4 +35,11 @@ enum native_reason native_rule_build(con
+ 				     const struct cs7542_rx_path *wire,
+ 				     struct cs7542_fe_native_request *request);
+ 
++enum native_reason native_rule_build_wfo(const struct cs_ft_nf_facts *facts,
++					 const struct native_endpoint *ingress,
++					 const struct native_endpoint *egress,
++					 const struct cs7542_rx_path *wire,
++					 struct cs7542_fe_native_request *request,
++					 u64 *wireless_epoch);
++
+ #endif
+--- a/include/linux/cs7542_fe_backend.h
++++ b/include/linux/cs7542_fe_backend.h
+@@ -21,6 +21,7 @@ enum cs_fe_hot_command {
+ 	CS_HOT_DESTROY,
+ 	CS_HOT_UNBIND,
+ 	CS_HOT_NATIVE,
++	CS_HOT_WFO,
+ };
+ 
+ /* Every pointer is borrowed synchronously under the NIC owner mutex. */
+--- a/include/linux/cs7542_fe_codec.h
++++ b/include/linux/cs7542_fe_codec.h
+@@ -30,6 +30,22 @@ struct cs_fe_link {
+ 	u8 base_mac[6];
+ };
+ 
++/* Internal post-mac80211 transport: logical CPU ingress3 and the serviced NI CPU1.
++ * Its QCA-shaped four-byte shim is local transport metadata, not an
++ * observation from a physical switch port. rx_qca_meta carries the positive
++ * endpoint token in BOTH directions, including the rewritten egress shim.
++ * Owner admission is separate.
++ */
++static inline bool cs_fe_link_cpu_nat(const struct cs_fe_link *link)
++{
++	return link->gmac == 3 && link->cpu_port == 1 &&
++	       link->base_voq == 56 && link->tag_mode == 4 &&
++	       !link->switch_port &&
++	       (link->rx_qca_meta & 0xf000) == 0x8000 &&
++	       (link->rx_qca_meta & 0x0fff) &&
++	       (link->rx_qca_meta & 0x0fff) < 4095;
++}
++
+ struct cs_fe_rule {
+ 	struct cs_fe_tuple original;
+ 	struct cs_fe_tuple translated;
+@@ -103,6 +119,10 @@ struct cs_fe_key {
+ #define CS_FE_REQ_PACKET_EXCEPTIONS (1U << 0)
+ #define CS_FE_REQ_COLLISION_CHECK (1U << 1)
+ #define CS_FE_REQ_OWNER_LIFETIME (1U << 2)
++/* Never granted by the wired owner. Requires a live Wi-Fi endpoint,
++ * CPU-origin fallback dispatch and matching packet-exception ownership.
++ */
++#define CS_FE_REQ_WFO_ENDPOINT (1U << 3)
+ 
+ struct cs_fe_plan {
+ 	struct cs_fe_key key;
+--- a/include/linux/cs7542_fe_live.h
++++ b/include/linux/cs7542_fe_live.h
+@@ -44,7 +44,9 @@ int cs7542_fe_live_status(struct cs7542_
+  */
+ struct cs7542_fe_live *cs7542_fe_live_create(struct device *dev,
+ 					     void __iomem *base,
+-					     unsigned int extent);
++					     unsigned int extent,
++					     int (*retire_quiet)(void *context, u64 end_us),
++					     void *quiet_context);
+ int cs7542_fe_live_init(struct cs7542_fe_live *owner,
+ 			int (*initialize)(struct device *dev,
+ 					  void __iomem *base));
+--- a/include/linux/cs7542_ft_live.h
++++ b/include/linux/cs7542_ft_live.h
+@@ -53,6 +53,9 @@ int cs7542_ft_live_unregister(const stru
+ struct cs7542_ft_live *cs7542_ft_live_create(struct net_device *conduit,
+ 					     u32 gmac);
+ int cs7542_ft_live_setup(struct cs7542_ft_live *live, int type, void *data);
++/* Built-in wireless bridge only. NULL live is valid for a retained UNBIND. */
++int cs7542_ft_live_setup_wireless(struct cs7542_ft_live *live, u32 ifindex,
++				  int type, void *data);
+ /*
+  * Stop all CPU callback access before freeing the conduit. No owner MMIO
+  * lifetime promise: backend FE owner stop/reset is a separate ordered step.
+--- /dev/null
++++ b/include/linux/cs7542_wfo_native.h
+@@ -0,0 +1,86 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef CS7542_WFO_NATIVE_H
++#define CS7542_WFO_NATIVE_H
++
++#include <linux/types.h>
++#include <linux/cs7542_fe_native.h>
++
++struct net_device;
++struct sk_buff;
++struct pci_dev;
++struct cs7542_fe_live;
++struct cs_fe_rule;
++
++enum cs7542_wfo_vif_kind {
++	CS7542_WFO_STATION = 1,
++	CS7542_WFO_AP,
++};
++
++struct cs7542_wfo_endpoint_info {
++	u64 epoch;
++	u32 ifindex;
++	u16 label;
++};
++
++struct cs7542_wfo_observation {
++	struct cs7542_wfo_endpoint_info endpoint;
++	u8 source[6], destination[6];
++};
++
++/* Keep the existing wired request/snapshot layout and symbols unchanged. */
++#define CS7542_WFO_NATIVE_ABI 1
++struct cs7542_wfo_native_request {
++	u32 abi, size;
++	u64 wireless_epoch;
++	struct cs7542_fe_native_request path;
++};
++
++struct flow_cls_offload;
++int cs7542_fe_live_replace_wfo(struct cs7542_fe_live *owner, u64 block,
++			       unsigned long cookie, u64 version,
++			       const struct cs7542_wfo_native_request *request,
++			       const struct flow_cls_offload *cls);
++
++/* RTNL held; current native-driver-attested endpoint, without packet evidence. */
++int cs7542_fe_live_wfo_endpoint(struct cs7542_fe_live *owner, u32 ifindex,
++				struct cs7542_wfo_endpoint_info *out);
++
++/* RTNL held; exact original tuple observed before any software NAT. */
++int cs7542_fe_live_wfo_lookup(struct cs7542_fe_live *owner, u32 ifindex,
++			      const struct cs_fe_rule *rule,
++			      struct cs7542_wfo_observation *out);
++
++/*
++ * RTNL held, ordinary kernel objects only. The native wireless driver attests
++ * its vif kind; the built-in owner checks PCI ancestry and issues a label.
++ * No backports cfg80211/wiphy layout crosses this boundary. Registration
++ * does not grant packet admission or the WFO FE capability.
++ */
++int cs7542_fe_live_wfo_register(struct cs7542_fe_live *owner,
++				struct net_device *conduit,
++				struct pci_dev *pci, struct net_device *wireless,
++				enum cs7542_wfo_vif_kind kind,
++				struct cs7542_wfo_endpoint_info *info);
++
++/* Native NE NAPI only, skb still contains its full Ethernet header. */
++bool cs7542_fe_live_wfo_receive(struct cs7542_fe_live *owner,
++				unsigned int cpu, struct sk_buff *skb,
++				const u32 cpu_header[4]);
++
++/*
++ * Built-in FE-owner transport, not a loadable provider interface. The skb
++ * already contains the owner's four-byte transport tag. Success transfers
++ * ownership to native TX queue0; every error leaves ownership with caller.
++ * The caller must hold a conduit netdevice reference through the call.
++ */
++int cs7542_ne_wfo_xmit(struct net_device *conduit, struct sk_buff *skb,
++		       unsigned int label);
++
++/* Native driver module entry; type/data are standard ndo_setup_tc arguments. */
++int cs7542_wfo_setup_tc(struct pci_dev *pci, struct net_device *wireless,
++			enum cs7542_wfo_vif_kind kind, int type, void *data);
++/* Built-in NE adapter, validates the conduit before accessing private data. */
++int cs7542_ne_wfo_setup_tc(struct net_device *conduit, u32 wireless_ifindex,
++			   int type, void *data);
++
++#endif

@@ -1,0 +1,27 @@
+From 9d667653bf4d160591a3858a6ebaa136162745ad Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Fri, 27 Nov 2026 01:47:30 +0300
+Subject: [PATCH] dt-bindings: gpio: cs7542: allow optional pinctrl ranges
+
+Describe the standard optional mapping from GPIO lines to pinctrl pins.
+
+This is a local follow-up; physical validation of the new consumer is
+pending. Personal LCD UI/modem sources are outside the target patch.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+ .../devicetree/bindings/gpio/cortina,cs7542-gpio.yaml          | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/Documentation/devicetree/bindings/gpio/cortina,cs7542-gpio.yaml
++++ b/Documentation/devicetree/bindings/gpio/cortina,cs7542-gpio.yaml
+@@ -35,6 +35,9 @@ properties:
+ 
+   gpio-reserved-ranges: true
+ 
++  gpio-ranges:
++    maxItems: 1
++
+   interrupt-controller: true
+ 
+   "#interrupt-cells":

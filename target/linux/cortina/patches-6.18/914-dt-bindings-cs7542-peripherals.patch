@@ -1,0 +1,667 @@
+From ce5b2a0a5f11b0dc89c4fa890f047202e372e970 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Mon, 23 Nov 2026 22:09:26 +0300
+Subject: [PATCH] dt-bindings: add prepared CS7542 peripheral bindings
+
+Carry the prepared RTC, TRNG, NAND, MDIO, PCIe and Ethernet schemas. PCIe clocks and resets are provided by the global syscon itself, without a resource-less child node.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+
+The common provider binding comes from 013. Ethernet owns seven parent
+reset lines exclusively, without a virtual reset child.
+
+PCIe latest posted: https://lore.kernel.org/all/20261123-b4-cs7542-pcie-v2-0-f589a9cd0bef@gmail.com/
+Ethernet latest posted: https://lore.kernel.org/all/20261123-b4-cs7542-ethernet-v1-0-fdb5e8c2d508@gmail.com/
+The Root Port and Ethernet example corrections are prepared follow-up,
+not a claim of posted PCIev3/Ethernetv2 messages.
+TRNG v2: https://lore.kernel.org/all/20261124-b4-cs7542-trng-v2-0-0192937b44be@gmail.com/
+MDIO latest posted: https://lore.kernel.org/all/20261123-b4-cs7542-mdio-v2-0-30465e831853@gmail.com/
+MDIO hardware-only prescaler description is a prepared follow-up.
+Other schemas unchanged.
+
+Unposted downstream review adaptation: replace the unmerged composite NE
+reset with exclusive NI/FE/TM/SCH/QM/DMA/NI-XRAM lines (IDs 4..10).
+Reserve old ID3; the old single-engine DTB requires coordinated update.
+This is an ownership/teardown design; no atomic hardware requirement claimed.
+Link: https://lore.kernel.org/all/9facd8eabb9d0c2bbe816117481dd624aa8c1f04.camel@pengutronix.de/
+---
+--- /dev/null
++++ b/Documentation/devicetree/bindings/mtd/cortina,cs7542-nand.yaml
+@@ -0,0 +1,90 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/mtd/cortina,cs7542-nand.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Cortina Systems CS7542 NAND controller
++
++maintainers:
++  - Fil Dunsky <filipp.dunsky@gmail.com>
++
++description:
++  The flash controller has two NAND chip selects and supports 8-bit and
++  16-bit devices, programmed I/O, hardware Hamming ECC with 256-byte or
++  512-byte steps, and hardware BCH ECC. It is on the AXI peripheral bus.
++  The data aperture selects a bank through the controller registers.
++  The flash controller also has access to the shared SSP DMA engine;
++  the programmed-I/O interface does not require that DMA resource.
++  Firmware initializes the NAND bus timing.
++
++allOf:
++  - $ref: nand-controller.yaml#
++
++properties:
++  compatible:
++    const: cortina,cs7542-nand
++
++  reg:
++    minItems: 1
++    items:
++      - description: Flash controller registers
++      - description: Banked NAND data aperture
++
++  reg-names:
++    minItems: 1
++    items:
++      - const: regs
++      - const: data
++
++  clocks:
++    maxItems: 1
++    description: AXI bus clock
++
++  interrupts:
++    maxItems: 1
++    description: Flash controller interrupt
++
++  resets:
++    maxItems: 1
++    description: Shared flash controller reset
++
++patternProperties:
++  "^nand@[01]$":
++    type: object
++    $ref: raw-nand-chip.yaml#
++    properties:
++      reg:
++        minimum: 0
++        maximum: 1
++    unevaluatedProperties: false
++
++required:
++  - compatible
++  - reg
++  - clocks
++  - interrupts
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++
++    nand-controller@f0050000 {
++        compatible = "cortina,cs7542-nand";
++        reg = <0xf0050000 0x300>, <0xe0000000 0x08000000>;
++        reg-names = "regs", "data";
++        clocks = <&axi_clk>;
++        interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        nand@0 {
++            reg = <0>;
++            nand-ecc-mode = "hw";
++            nand-ecc-algo = "hamming";
++            nand-ecc-step-size = <256>;
++            nand-ecc-strength = <1>;
++        };
++    };
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/cortina,cs7542-ethernet.yaml
+@@ -0,0 +1,162 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/cortina,cs7542-ethernet.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Cortina Systems CS7542 network engine
++
++maintainers:
++  - Fil Dunsky <filipp.dunsky@gmail.com>
++
++description: |
++  The CS7542 network engine contains three GMACs, the network interface (NI),
++  forwarding engine (FE), queue manager (QM), traffic manager (TM), scheduler,
++  CPU XRAM interface and packet DMA. The CPU datapath uses the DMA-LSO TX
++  queue and QM-managed RX buffers. The complete DMA-LSO/SSP register block
++  and the combined reset domain must be exclusively owned by this device;
++  a separate SSP DMA consumer cannot operate concurrently. A NAND controller
++  using PIO does not consume that DMA block.
++  The three GMAC station addresses share their first five bytes in NI
++  registers; only the last byte is independent for each port.
++
++properties:
++  compatible:
++    const: cortina,cs7542-ethernet
++
++  reg:
++    items:
++      - description: NI registers
++      - description: Complete DMA-LSO and DMA-SSP registers
++      - description: FE registers and indirect table interfaces
++      - description: QM registers
++      - description: TM registers
++      - description: Scheduler registers
++      - description: CPU XRAM
++
++  reg-names:
++    items:
++      - const: ni
++      - const: dma
++      - const: fe
++      - const: qm
++      - const: tm
++      - const: sch
++      - const: xram
++
++  interrupts:
++    items:
++      - description: GMAC0 CPU receive queue interrupt
++      - description: GMAC1 CPU receive queue interrupt
++      - description: GMAC2 CPU receive queue interrupt
++
++  interrupt-names:
++    items:
++      - const: eth0
++      - const: eth1
++      - const: eth2
++
++  cortina,global-syscon:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: Global control syscon for network drive strength and status.
++
++  resets:
++    items:
++      - description: Network interface reset.
++      - description: Forwarding engine reset.
++      - description: Traffic manager reset.
++      - description: Scheduler reset.
++      - description: Queue manager reset.
++      - description: Shared DMA-LSO/SSP reset, exclusively owned by this consumer.
++      - description: Network interface XRAM reset.
++
++  reset-names:
++    items:
++      - const: ni
++      - const: fe
++      - const: tm
++      - const: sch
++      - const: qm
++      - const: dma
++      - const: xram
++
++  memory-region:
++    maxItems: 1
++    description: |
++      Reserved no-map DDR region used by the packet queue manager. Initial
++      support uses the upper 64 MiB of the 512 MiB DDR layout at 0x1c000000.
++
++  "#address-cells":
++    const: 1
++
++  "#size-cells":
++    const: 0
++
++patternProperties:
++  "^ethernet-port@[0-2]$":
++    type: object
++    $ref: ethernet-controller.yaml#
++    unevaluatedProperties: false
++    properties:
++      reg:
++        maxItems: 1
++      phy-mode:
++        enum: [rgmii, rgmii-id, rgmii-rxid, rgmii-txid]
++    required:
++      - reg
++      - phy-mode
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - interrupts
++  - interrupt-names
++  - cortina,global-syscon
++  - resets
++  - reset-names
++  - memory-region
++  - "#address-cells"
++  - "#size-cells"
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    #include <dt-bindings/reset/cortina,cs7542-reset.h>
++
++    ethernet@f0010000 {
++        compatible = "cortina,cs7542-ethernet";
++        reg = <0xf0010000 0x500>, <0xf0090000 0x800>,
++              <0xf0020000 0x4000>, <0xf0030000 0x400>,
++              <0xf0040000 0x800>, <0xf0060000 0x100>,
++              <0xf0400000 0x100000>;
++        reg-names = "ni", "dma", "fe", "qm", "tm", "sch", "xram";
++        interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>,
++                     <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>,
++                     <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
++        interrupt-names = "eth0", "eth1", "eth2";
++        cortina,global-syscon = <&global>;
++        resets = <&global CS7542_RESET_NI>,
++                 <&global CS7542_RESET_FE>,
++                 <&global CS7542_RESET_TM>,
++                 <&global CS7542_RESET_SCH>,
++                 <&global CS7542_RESET_QM>,
++                 <&global CS7542_RESET_DMA>,
++                 <&global CS7542_RESET_NI_XRAM>;
++        reset-names = "ni", "fe", "tm", "sch", "qm", "dma", "xram";
++        memory-region = <&qm_reserved>;
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        ethernet-port@1 {
++            reg = <1>;
++            /* Fixed MAC-to-switch link; peer inserts RX/TX clock delays. */
++            phy-mode = "rgmii-id";
++            fixed-link {
++                speed = <1000>;
++                full-duplex;
++            };
++        };
++    };
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/cortina,cs7542-mdio.yaml
+@@ -0,0 +1,52 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/cortina,cs7542-mdio.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Cortina Systems CS7542 MDIO controller
++
++maintainers:
++  - Fil Dunsky <filipp.dunsky@gmail.com>
++
++description:
++  Clause 22 MDIO controller with a programmable 16-bit MDC prescaler.
++
++allOf:
++  - $ref: mdio.yaml#
++
++properties:
++  compatible:
++    const: cortina,cs7542-mdio
++
++  reg:
++    maxItems: 1
++
++  clocks:
++    maxItems: 1
++    description: APB input clock
++
++  suppress-preamble: false
++
++required:
++  - compatible
++  - reg
++  - clocks
++  - "#address-cells"
++  - "#size-cells"
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    mdio@f00700a0 {
++        compatible = "cortina,cs7542-mdio";
++        reg = <0xf00700a0 0x14>;
++        clocks = <&apb_clk>;
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        ethernet-phy@0 {
++            reg = <0>;
++        };
++    };
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/cortina,cs7542-pcie.yaml
+@@ -0,0 +1,157 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/pci/cortina,cs7542-pcie.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Cortina Systems CS7542 PCIe host controller
++
++maintainers:
++  - Fil Dunsky <filipp.dunsky@gmail.com>
++
++description: |
++  DesignWare host with a Cortina application wrapper. A single interrupt
++  multiplexes four INTx lines, the internal MSI receiver and link errors.
++  Root-port configuration is accessible only below offset 0x200; the
++  DesignWare private register bank starts at offset 0x700.
++
++allOf:
++  - $ref: /schemas/pci/snps,dw-pcie.yaml#
++
++properties:
++  compatible:
++    const: cortina,cs7542-pcie
++
++  reg:
++    items:
++      - description: DBI registers including the viewport iATU
++      - description: Downstream configuration window
++      - description: Application wrapper registers
++
++  reg-names:
++    items:
++      - const: dbi
++      - const: config
++      - const: app
++
++  clocks:
++    maxItems: 1
++
++  interrupts:
++    maxItems: 1
++
++  interrupt-names:
++    const: msi
++
++  resets:
++    maxItems: 1
++
++  phys:
++    maxItems: 1
++
++  phy-names:
++    const: pcie
++
++  num-lanes:
++    const: 1
++
++  reset-gpios: false
++
++  interrupt-controller:
++    type: object
++    additionalProperties: false
++    properties:
++      "#address-cells":
++        const: 0
++      "#interrupt-cells":
++        const: 1
++      interrupt-controller: true
++    required:
++      - "#address-cells"
++      - "#interrupt-cells"
++      - interrupt-controller
++
++patternProperties:
++  "^pcie@[0-9a-f]+,[0-7]$":
++    type: object
++    $ref: /schemas/pci/pci-pci-bridge.yaml#
++    additionalProperties: true
++    description: |
++      The single Root Port of this controller. Endpoint PERST# belongs to
++      this port, rather than the host bridge.
++    properties:
++      reset-gpios:
++        maxItems: 1
++        description: Optional active-low endpoint PERST#
++    required:
++      - compatible
++      - reg
++      - device_type
++      - '#address-cells'
++      - '#size-cells'
++      - ranges
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - clocks
++  - interrupts
++  - interrupt-names
++  - resets
++  - phys
++  - phy-names
++  - num-lanes
++  - pcie@0,0
++  - interrupt-controller
++  - interrupt-map
++  - interrupt-map-mask
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/clock/cortina,cs7542-clock.h>
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++    #include <dt-bindings/reset/cortina,cs7542-reset.h>
++
++    pcie@80000000 {
++        compatible = "cortina,cs7542-pcie";
++        reg = <0x80000000 0x1000>, <0x80001000 0x1000>,
++              <0xf00a0000 0x100>;
++        reg-names = "dbi", "config", "app";
++        #address-cells = <3>;
++        #size-cells = <2>;
++        device_type = "pci";
++        bus-range = <0 0xff>;
++        num-lanes = <1>;
++        ranges = <0x82000000 0 0x80200000 0x80200000 0 0x1fe00000>;
++        clocks = <&global CS7542_CLK_PCIE0>;
++        interrupt-parent = <&gic>;
++        interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
++        interrupt-names = "msi";
++        resets = <&global CS7542_RESET_PCIE0>;
++        phys = <&serdes 0>;
++        phy-names = "pcie";
++        #interrupt-cells = <1>;
++        interrupt-map-mask = <0 0 0 7>;
++        interrupt-map = <0 0 0 1 &pcie_intc 1>,
++                        <0 0 0 2 &pcie_intc 2>,
++                        <0 0 0 3 &pcie_intc 3>,
++                        <0 0 0 4 &pcie_intc 4>;
++
++        pcie@0,0 {
++            compatible = "pciclass,0604";
++            reg = <0 0 0 0 0>;
++            device_type = "pci";
++            #address-cells = <3>;
++            #size-cells = <2>;
++            ranges;
++        };
++
++        pcie_intc: interrupt-controller {
++            #address-cells = <0>;
++            #interrupt-cells = <1>;
++            interrupt-controller;
++        };
++    };
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/cortina,cs7542-pcie-phy.yaml
+@@ -0,0 +1,67 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/cortina,cs7542-pcie-phy.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Cortina Systems CS7542 PCIe SerDes
++
++maintainers:
++  - Fil Dunsky <filipp.dunsky@gmail.com>
++
++description: |
++  Three Snow Bush SerDes lanes shared by PCIe and SATA. Only PCIe mode
++  with a 24 MHz reference is described. The PHY specifier is the lane
++  number, 0 through 2. The status resource contains the shared PHY
++  status registers, with a stride of 0x80 bytes per lane.
++
++properties:
++  compatible:
++    const: cortina,cs7542-pcie-phy
++
++  reg:
++    items:
++      - description: Lane 0 programming registers
++      - description: Lane 1 programming registers
++      - description: Lane 2 programming registers
++      - description: Shared PHY status registers
++
++  reg-names:
++    items:
++      - const: phy0
++      - const: phy1
++      - const: phy2
++      - const: status
++
++  clocks:
++    maxItems: 1
++    description: 24 MHz SerDes reference clock
++
++  cortina,global-syscon:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: Global control syscon providing lane reset and mode selection
++
++  "#phy-cells":
++    const: 1
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - clocks
++  - cortina,global-syscon
++  - "#phy-cells"
++
++additionalProperties: false
++
++examples:
++  - |
++    phy@f00a1000 {
++        compatible = "cortina,cs7542-pcie-phy";
++        reg = <0xf00a1000 0x400>, <0xf00a5000 0x400>,
++              <0xf00a9000 0x400>, <0xf00a0e00 0x180>;
++        reg-names = "phy0", "phy1", "phy2", "status";
++        clocks = <&ref24>;
++        cortina,global-syscon = <&global>;
++        #phy-cells = <1>;
++    };
+--- /dev/null
++++ b/Documentation/devicetree/bindings/rng/cortina,cs7542-trng.yaml
+@@ -0,0 +1,43 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/rng/cortina,cs7542-trng.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Cortina Systems CS7542 true random number generator
++
++description: |
++  The CS7542 A0 revision is affected by reseeding erratum 28891.
++  Hardware entropy reseeding requires the CS7542 A1 revision.
++
++maintainers:
++  - Fil Dunsky <filipp.dunsky@gmail.com>
++
++properties:
++  compatible:
++    const: cortina,cs7542-trng
++
++  reg:
++    maxItems: 1
++
++  cortina,syscon:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description:
++      Global control syscon containing the SoC identification register at
++      offset 0x00 and the scratch register at offset 0xc0.
++      Bit 5 is set before initializing the random number generator.
++
++required:
++  - compatible
++  - reg
++  - cortina,syscon
++
++additionalProperties: false
++
++examples:
++  - |
++    rng@f0600000 {
++        compatible = "cortina,cs7542-trng";
++        reg = <0xf0600000 0x20>;
++        cortina,syscon = <&global_control>;
++    };
+--- /dev/null
++++ b/Documentation/devicetree/bindings/rtc/cortina,cs7542-rtc.yaml
+@@ -0,0 +1,48 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/rtc/cortina,cs7542-rtc.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Cortina Systems CS7542 real-time clock
++
++maintainers:
++  - Fil Dunsky <filipp.dunsky@gmail.com>
++
++allOf:
++  - $ref: rtc.yaml#
++
++properties:
++  compatible:
++    const: cortina,cs7542-rtc
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    items:
++      - description: Alarm interrupt
++      - description: Periodic interrupt
++
++  interrupt-names:
++    items:
++      - const: alarm
++      - const: periodic
++
++required:
++  - compatible
++  - reg
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++
++    rtc@f4920000 {
++        compatible = "cortina,cs7542-rtc";
++        reg = <0xf4920000 0x50>;
++        interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>,
++                     <GIC_SPI 11 IRQ_TYPE_LEVEL_HIGH>;
++        interrupt-names = "alarm", "periodic";
++    };

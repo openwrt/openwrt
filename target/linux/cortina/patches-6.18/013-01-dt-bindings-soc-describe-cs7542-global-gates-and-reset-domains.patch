@@ -1,0 +1,93 @@
+From f5e4c52fc37b1a852fc75c82a8aa914bab435aae Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Mon, 23 Nov 2026 23:49:22 +0300
+Subject: [PATCH] dt-bindings: soc: Describe CS7542 global gates and reset
+ domains
+
+Expose PCIe gates and individual exclusive network-engine resets on the
+existing global syscon node. Preserve clock indices 0..2, PCIe clock
+indices 3..5 and PCIe reset indices 0..2. Reserve legacy reset ID3 and
+assign individual engine lines IDs 4..10. The optional reset-cells
+property preserves compatibility with clock-only users.
+
+AI assistance: Codex prepared this draft from the posted CS7542 series.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+Link: https://lore.kernel.org/all/20261124-b4-cs7542-global-controls-v1-1-12548785df2c@gmail.com/
+
+Unposted downstream review adaptation: replace the unmerged composite NE
+reset with exclusive NI/FE/TM/SCH/QM/DMA/NI-XRAM lines (IDs 4..10).
+Reserve old ID3; the old single-engine DTB requires coordinated update.
+This is an ownership/teardown design; no atomic hardware requirement claimed.
+Link: https://lore.kernel.org/all/9facd8eabb9d0c2bbe816117481dd624aa8c1f04.camel@pengutronix.de/
+---
+--- a/Documentation/devicetree/bindings/soc/cortina/cortina,cs7542-syscon.yaml
++++ b/Documentation/devicetree/bindings/soc/cortina/cortina,cs7542-syscon.yaml
+@@ -12,8 +12,15 @@ maintainers:
+ description:
+   The global control block contains the boot strap status, GPIO/peripheral
+   mux registers, reset controls and the secondary CPU release register.
+-  It provides the APB, CPU and AXI clock rates selected by the boot straps.
+-  The clock specifiers are defined in dt-bindings/clock/cortina,cs7542-clock.h.
++  It provides the APB, CPU and AXI clock rates selected by the boot straps,
++  and the three PCIe clock gates and controller reset lines. Individual
++  reset lines control NI, FE, TM, scheduler, QM, NI XRAM and the entire DMA
++  block (LSO and SSP). The network engine consumer must acquire all seven
++  lines exclusively; it cannot run concurrently with a separate SSP DMA
++  user. The flash controller has a separate reset. SDRAM is excluded.
++  Reset identifier 3 is reserved.
++  Clock specifiers are defined in dt-bindings/clock/cortina,cs7542-clock.h;
++  reset specifiers are defined in dt-bindings/reset/cortina,cs7542-reset.h.
+   The pin controller uses the same register map through its parent syscon.
+ 
+ properties:
+@@ -29,6 +36,9 @@ properties:
+   "#clock-cells":
+     const: 1
+ 
++  "#reset-cells":
++    const: 1
++
+   pinctrl:
+     type: object
+     $ref: /schemas/pinctrl/cortina,cs7542-pinctrl.yaml#
+@@ -46,4 +56,5 @@ examples:
+         compatible = "cortina,cs7542-syscon", "syscon", "simple-mfd";
+         reg = <0xf0000000 0x100>;
+         #clock-cells = <1>;
++        #reset-cells = <1>;
+     };
+--- a/include/dt-bindings/clock/cortina,cs7542-clock.h
++++ b/include/dt-bindings/clock/cortina,cs7542-clock.h
+@@ -6,4 +6,8 @@
+ #define CS7542_CLK_CPU	1
+ #define CS7542_CLK_AXI	2
+ 
++#define CS7542_CLK_PCIE0	3
++#define CS7542_CLK_PCIE1	4
++#define CS7542_CLK_PCIE2	5
++
+ #endif
+--- /dev/null
++++ b/include/dt-bindings/reset/cortina,cs7542-reset.h
+@@ -0,0 +1,20 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++#ifndef _DT_BINDINGS_RESET_CORTINA_CS7542_H
++#define _DT_BINDINGS_RESET_CORTINA_CS7542_H
++
++#define CS7542_RESET_PCIE0	0
++#define CS7542_RESET_PCIE1	1
++#define CS7542_RESET_PCIE2	2
++
++/* Reserved legacy composite ID; never reinterpret it as an individual line. */
++#define CS7542_RESET_NE		3
++#define CS7542_RESET_NI		4
++#define CS7542_RESET_FE		5
++#define CS7542_RESET_TM		6
++#define CS7542_RESET_SCH		7
++#define CS7542_RESET_QM		8
++#define CS7542_RESET_DMA		9
++#define CS7542_RESET_NI_XRAM	10
++#define CS7542_RESET_FLASH	11
++
++#endif
