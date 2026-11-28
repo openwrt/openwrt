@@ -78,16 +78,30 @@ struct rtl8214fc_priv {
 	atomic_t link_down_latched;
 };
 
-static int rtl821x_package_join(struct phy_device *phydev, int ports)
+static int rtl821x_package_join(struct phy_device *phydev, unsigned int ports)
 {
+	struct device *dev = &phydev->mdio.dev;
+	struct device_node *parent __free(device_node) = of_get_parent(dev->of_node);
 	struct rtl821x_shared_priv *shared_priv;
-	int base_addr = phydev->mdio.addr & ~(ports - 1);
+	u32 addr = phydev->mdio.addr;
+	u32 base_addr = addr & ~(ports - 1);
 	int ret;
 
-	ret = devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr,
-				    sizeof(struct rtl821x_shared_priv));
+	if (of_node_name_eq(parent, "ethernet-phy-package")) {
+		ret = of_property_read_u32(parent, "reg", &base_addr);
+		if (ret)
+			return dev_err_probe(dev, ret, "Missing or invalid PHY package reg\n");
+
+		if (base_addr > PHY_MAX_ADDR - ports ||
+		    addr < base_addr || addr - base_addr >= ports)
+			return dev_err_probe(dev, -EINVAL,
+					     "Invalid %u-port PHY package base %u for PHY %u\n",
+					     ports, base_addr, addr);
+	}
+
+	ret = devm_phy_package_join(dev, phydev, base_addr, sizeof(*shared_priv));
 	if (ret)
-		return ret;
+		return dev_err_probe(dev, ret, "Failed to join PHY package\n");
 
 	shared_priv = phy_package_get_priv(phydev);
 	shared_priv->base_addr = base_addr;
@@ -865,43 +879,55 @@ static int rtl821x_config_init(struct phy_device *phydev)
 
 static int rtl8218e_config_init(struct phy_device *phydev)
 {
-	int oldpage, oldxpage;
+	int oldpage, oldxpage, val;
 	bool is_xsgmii;
 
 	rtl821x_config_init(phydev);
 
-	if (phydev->mdio.addr % 8)
-		return 0;
+	phy_lock_mdio_bus(phydev);
+	if (!phy_package_init_once(phydev))
+		goto unlock;
 
-	oldpage = phy_read(phydev, RTL821x_PAGE_SELECT);
-	oldxpage = phy_read(phydev, RTL821x_EXT_PAGE_SELECT);
+	oldpage = __phy_package_read(phydev, 0, RTL821x_PAGE_SELECT);
+	oldxpage = __phy_package_read(phydev, 0, RTL821x_EXT_PAGE_SELECT);
 
-	phy_write(phydev, RTL821x_EXT_PAGE_SELECT, 0x8);
-	is_xsgmii = (phy_read_paged(phydev, 0x260, 0x12) & 0xf0) == 0xb0;
+	__phy_package_write(phydev, 0, RTL821x_EXT_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x260);
+	is_xsgmii = (__phy_package_read(phydev, 0, 0x12) & 0xf0) == 0xb0;
 
-	/* QSGMII configuration is not currently supported. */
+	/* QSGMII configuration is currently not supported. */
 	if (!is_xsgmii)
 		goto restore;
 
 	/* Apply the minimal vendor XSGMII configuration, undocumented magic. */
-	phy_write_paged(phydev, 0x4b8, 0x10, 0x8714);
-	phy_write_paged(phydev, 0x4b8, 0x12, 0x7230);
-	phy_write_paged(phydev, 0x4be, 0x16, 0x1000);
-	phy_write_paged(phydev, 0x4bf, 0x11, 0x7000);
-	phy_write_paged(phydev, 0x4bf, 0x16, 0x0042);
-	phy_write_paged(phydev, 0x4ba, 0x14, 0x9d04);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x4b8);
+	__phy_package_write(phydev, 0, 0x10, 0x8714);
+	__phy_package_write(phydev, 0, 0x12, 0x7230);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x4be);
+	__phy_package_write(phydev, 0, 0x16, 0x1000);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x4bf);
+	__phy_package_write(phydev, 0, 0x11, 0x7000);
+	__phy_package_write(phydev, 0, 0x16, 0x0042);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x4ba);
+	__phy_package_write(phydev, 0, 0x14, 0x9d04);
 
 	/* Reset SerDes 0. */
-	phy_write_paged(phydev, 0x400, 0x10, 0x1700);
-	phy_write_paged(phydev, 0x400, 0x10, 0x1703);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x400);
+	__phy_package_write(phydev, 0, 0x10, 0x1700);
+	__phy_package_write(phydev, 0, 0x10, 0x1703);
 
 	/* Disable XSGMII autonegotiation on both MAC-side channel groups. */
-	phy_modify_paged(phydev, 0x400, 0x12, GENMASK(9, 8), BIT(8));
-	phy_modify_paged(phydev, 0x500, 0x12, GENMASK(9, 8), BIT(8));
+	val = __phy_package_read(phydev, 0, 0x12);
+	__phy_package_write(phydev, 0, 0x12, (val & ~GENMASK(9, 8)) | BIT(8));
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, 0x500);
+	val = __phy_package_read(phydev, 0, 0x12);
+	__phy_package_write(phydev, 0, 0x12, (val & ~GENMASK(9, 8)) | BIT(8));
 
 restore:
-	phy_write(phydev, RTL821x_EXT_PAGE_SELECT, oldxpage);
-	phy_write(phydev, RTL821x_PAGE_SELECT, oldpage);
+	__phy_package_write(phydev, 0, RTL821x_EXT_PAGE_SELECT, oldxpage);
+	__phy_package_write(phydev, 0, RTL821x_PAGE_SELECT, oldpage);
+unlock:
+	phy_unlock_mdio_bus(phydev);
 
 	return 0;
 }
