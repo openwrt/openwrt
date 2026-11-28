@@ -1,0 +1,73 @@
+From 57e33c33c2a29d95309eccc9daf1d9db4928d28d Mon Sep 17 00:00:00 2001
+From: Anders Kaseorg <andersk@mit.edu>
+Date: Sat, 10 Oct 2026 01:23:08 +0000
+Subject: 88W8964: let mac80211 build CCMP header of protected mgmt frames
+
+On the 88W8964, CCMP keys are installed without
+IEEE80211_KEY_FLAG_GENERATE_IV, and pcie_tx_encapsulate_frame() leaves
+an 8-byte gap after the 802.11 header that the firmware fills in with
+the CCMP header. That works for data frames, but for protected (robust)
+management frames the gap is never filled: it still holds leftover
+bytes of the original 802.11 header (the end of addr3 and the sequence
+control field), which the firmware then reads as the PN, ExtIV bit and
+key ID. For example, an SA Query response was handed to the firmware
+with "24 f5 a2 2e 30 19 70 05" in place of the CCMP header, where
+24:f5:a2:2e:30:19 was the BSSID.
+
+Sending such a frame wedges the firmware, and the next commands time
+out ("cmd 0x9122=UpdateEncryption timed out", "cmd 0x9111=SetNewStation
+timed out", ...). This is the hang seen with 802.11w or WPA3 on the
+WRT3200ACM and WRT32X (kaloz/mwlwifi#389).
+
+The vendor driver for this chip builds the CCMP header of these frames
+on the host. Do the same by setting IEEE80211_KEY_FLAG_GENERATE_IV_MGMT,
+and don't reserve a second gap for frames that already carry the
+header.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Anders Kaseorg <andersk@mit.edu>
+---
+ hif/pcie/dev.h | 8 +++++++-
+ mac80211.c     | 7 +++++++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+
+--- a/hif/pcie/dev.h
++++ b/hif/pcie/dev.h
+@@ -790,6 +790,7 @@ static inline void pcie_tx_encapsulate_f
+ 					     struct sk_buff *skb,
+ 					     struct ieee80211_key_conf *k_conf)
+ {
++	struct ieee80211_hdr *wh = (struct ieee80211_hdr *)skb->data;
+ 	int head_pad = 0;
+ 	int data_pad = 0;
+ 
+@@ -803,7 +804,12 @@ static inline void pcie_tx_encapsulate_f
+ 	 */
+ 
+ 	if (k_conf) {
+-		head_pad = k_conf->iv_len;
++		/* With IEEE80211_KEY_FLAG_GENERATE_IV_MGMT, mac80211 has
++		 * already inserted the CCMP header.
++		 */
++		if (!(ieee80211_is_mgmt(wh->frame_control) &&
++		      (k_conf->flags & IEEE80211_KEY_FLAG_GENERATE_IV_MGMT)))
++			head_pad = k_conf->iv_len;
+ 
+ 		switch (k_conf->cipher) {
+ 		case WLAN_CIPHER_SUITE_WEP40:
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -530,6 +530,13 @@ static int mwl_mac80211_set_key(struct i
+ 			encr_type = ENCR_TYPE_AES;
+ 			if (priv->chip_type != MWL8964)
+ 				key->flags |= IEEE80211_KEY_FLAG_GENERATE_IV;
++			else
++				/* The 88W8964 firmware fills in the CCMP
++				 * header of data frames, but not of
++				 * protected management frames.
++				 */
++				key->flags |=
++					IEEE80211_KEY_FLAG_GENERATE_IV_MGMT;
+ 		} else if (key->cipher == WLAN_CIPHER_SUITE_TKIP) {
+ 			if (priv->chip_type != MWL8964)
+ 				key->flags |= IEEE80211_KEY_FLAG_GENERATE_MMIC | IEEE80211_KEY_FLAG_GENERATE_IV;
