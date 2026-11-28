@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "alpine-checkpoint-l71-common.dtsi"
+
+/ {
+	model = "Check Point L-71W";
+	compatible = "checkpoint,l-71w", "annapurna-labs,alpine";
+
+	leds {
+		led_wifi_green: wifi-green {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&expander_u2 7 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};
+
+&pcie_external0 {
+	status = "okay";
+};
