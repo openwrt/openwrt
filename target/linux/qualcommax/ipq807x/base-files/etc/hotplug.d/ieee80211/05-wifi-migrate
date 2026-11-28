@@ -56,7 +56,7 @@ WIRELESS_CHANGED=false
 case "$(board_name)" in
 *)
 	migrate_radio
-    ;;
+	;;
 esac
 
 $WIRELESS_CHANGED && uci commit wireless
