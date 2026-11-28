@@ -245,6 +245,28 @@ define Device/kobol_helios4
 endef
 TARGET_DEVICES += kobol_helios4
 
+define Device/lenovo_ix4-300d
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Lenovo
+  DEVICE_MODEL := Iomega ix4-300d
+  SOC := armada-xp-mv78230
+  DEVICE_DTS := armada-xp-lenovo-ix4-300d
+  UBOOT_PATH := $(STAGING_DIR_IMAGE)/ix4-300d-u-boot-with-spl.kwb
+  KERNEL_LOADADDR := 0x02000000
+  KERNEL_SIZE := 16384k
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  IMAGES := factory.img sysupgrade.bin
+  IMAGE/factory.img := append-uboot | pad-to 1152k | append-kernel | pad-to 17536k | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := \
+	kmod-ata-core kmod-ata-marvell-sata \
+	kmod-usb2 kmod-usb3 kmod-usb-storage \
+	kmod-hwmon-adt7475 kmod-rtc-pcf8563 kmod-spi-gpio kmod-gpio-nxp-74hc164 \
+	kmod-gpio-button-hotplug kmod-eeprom-at24 uboot-envtools
+endef
+TARGET_DEVICES += lenovo_ix4-300d
+
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_VENDOR := Linksys

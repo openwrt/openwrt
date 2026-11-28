@@ -18,6 +18,16 @@ ctera,c200-v2)
 kobol,helios4)
 	ucidef_set_led_usbport "USB" "USB" "helios4:green:usb" "usb1-port1" "usb2-port1" "usb3-port1" "usb4-port1" "usb5-port1"
 	;;
+lenovo,ix4-300d)
+	ucidef_set_led_brightness "power" "POWER" "ix4-300d:power:white" "1"
+	ucidef_set_led_default "sys" "SYS" "ix4-300d:sys:blue" "1"
+	ucidef_set_led_default "sysfail" "SYSFAIL" "ix4-300d:sysfail:red" "0"
+	ucidef_set_led_default "hddfail" "HDDFAIL" "ix4-300d:hddfail:red" "0"
+	ucidef_set_led_ide "hdd" "HDD" "ix4-300d:hdd:blue"
+	# Dual GbE RJ45 link/activity LEDs are hardware-driven by the
+	# Marvell 88E1318S PHYs (MII_88E1121_PHY_LED_DEF) and not exposed
+	# under /sys/class/leds.
+	;;
 linksys,wrt1200ac)
 	ucidef_set_led_netdev "wan" "WAN" "pca963x:caiman:white:wan" "wan"
 	ucidef_set_led_usbport "usb1" "USB 1" "pca963x:caiman:white:usb2" "usb1-port1"

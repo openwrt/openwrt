@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bob Sponge <myandroidiptvbox@gmail.com>
+Subject: [PATCH] mtd: nand: raw: pxa3xx_nand: add Samsung (0xd3ec/0xdcec) and Micron (0x382c) IDs
+
+Add Samsung 8Gb/4Gb x8 (0xd3ec, 0xdcec) and Micron 8Gb x8 (0x382c)
+entries to builtin_flash_types so pxa3xx_nand configures timings on
+boards such as the Lenovo Iomega ix4-300d.
+
+Signed-off-by: Bob Sponge <myandroidiptvbox@gmail.com>
+---
+--- a/drivers/mtd/nand/raw/pxa3xx_nand.c
++++ b/drivers/mtd/nand/raw/pxa3xx_nand.c
+@@ -297,10 +297,13 @@
+ 	{ 0x46ec, 16, 16, &timing[1] },
+ 	{ 0xdaec,  8,  8, &timing[1] },
+ 	{ 0xd7ec,  8,  8, &timing[1] },
++	{ 0xd3ec,  8,  8, &timing[4] },
++	{ 0xdcec,  8,  8, &timing[4] },
+ 	{ 0xa12c,  8,  8, &timing[2] },
+ 	{ 0xb12c, 16, 16, &timing[2] },
+ 	{ 0xdc2c,  8,  8, &timing[2] },
+ 	{ 0xcc2c, 16, 16, &timing[2] },
++	{ 0x382c,  8,  8, &timing[4] },
+ 	{ 0xba20, 16, 16, &timing[3] },
+ 	{ 0xda98,  8,  8, &timing[4] },
+ };
