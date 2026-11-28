@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 PKG_NAME:=toolchain
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-3.0-with-GCC-exception
@@ -251,6 +251,21 @@ define Package/libubsan/config
 		default "./lib/libubsan.so.*"
 
 	endmenu
+endef
+
+# Needs CONFIG_ARM64_TAGGED_ADDR_ABI (default y); a userspace package cannot
+# select a kernel symbol, so nothing here enforces it.
+define Package/libhwasan
+$(call Package/gcc/Default)
+  NAME:=libhwasan
+  TITLE:=Runtime library for HWAddressSanitizer in GCC
+  DEPENDS:=+libstdcpp @aarch64 @(USE_GLIBC||GCC_BUILD_SANITIZERS)
+  ABI_VERSION:=0
+endef
+
+define Package/libhwasan/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(TOOLCHAIN_DIR)/lib/libhwasan.so.* $(1)/usr/lib/
 endef
 
 
@@ -791,6 +806,7 @@ $(eval $(call BuildPackage,libasan))
 $(eval $(call BuildPackage,libtsan))
 $(eval $(call BuildPackage,liblsan))
 $(eval $(call BuildPackage,libubsan))
+$(eval $(call BuildPackage,libhwasan))
 $(eval $(call BuildPackage,libpthread))
 $(eval $(call BuildPackage,libthread-db))
 $(eval $(call BuildPackage,librt))

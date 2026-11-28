@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Matthew Cather <mattbob4@gmail.com>
+Date: Tue, 15 Sep 2026 14:00:26 -0700
+Subject: [PATCH] libsanitizer: no glibc malloc extensions in HWASan on musl
+
+HWASan aliases the glibc malloc extensions pvalloc, cfree, mallinfo,
+mallopt and malloc_stats on every Linux target. ASan gates them on
+glibc or Android. On musl none of the five exist in libc, so
+libhwasan becomes their only provider and autoconf link tests report
+them as present. Packages then compile their glibc code path and
+fail, because the musl malloc.h declares neither mallopt nor
+M_TRIM_THRESHOLD.
+
+Gate the aliases the way ASan does. glibc and Android keep every
+alias they have today. memalign stays outside the new guard: musl
+provides it, so the tagged allocator has to keep serving those
+allocations.
+
+Signed-off-by: Matthew Cather <mattbob4@gmail.com>
+---
+ libsanitizer/hwasan/hwasan_allocation_functions.cpp |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/libsanitizer/hwasan/hwasan_allocation_functions.cpp
++++ b/libsanitizer/hwasan/hwasan_allocation_functions.cpp
+@@ -182,10 +182,14 @@ INTERCEPTOR_ALIAS(void *, malloc, SIZE_T
+ 
+ #  if !SANITIZER_FREEBSD && !SANITIZER_NETBSD
+ INTERCEPTOR_ALIAS(void *, memalign, SIZE_T alignment, SIZE_T size);
++#  endif
++
++// Absent from musl libc; ASan gates these on SI_GLIBC || SI_ANDROID.
++#  if SANITIZER_GLIBC || SANITIZER_ANDROID
+ INTERCEPTOR_ALIAS(void *, pvalloc, SIZE_T size);
+ INTERCEPTOR_ALIAS(void, cfree, void *ptr);
+ INTERCEPTOR_ALIAS(__sanitizer_struct_mallinfo, mallinfo);
+ INTERCEPTOR_ALIAS(int, mallopt, int cmd, int value);
+ INTERCEPTOR_ALIAS(void, malloc_stats, void);
+ #  endif
+ #endif  // #if HWASAN_WITH_INTERCEPTORS

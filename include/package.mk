@@ -28,7 +28,7 @@ PKG_JOBS?=$(if $(PKG_BUILD_PARALLEL),$(MAKE_J),-j1)
 endif
 
 PKG_BUILD_FLAGS?=
-__unknown_flags=$(filter-out no-iremap no-mips16 gc-sections no-gc-sections lto no-lto no-mold,$(PKG_BUILD_FLAGS))
+__unknown_flags=$(filter-out no-iremap no-mips16 gc-sections no-gc-sections lto no-lto no-mold hwasan no-hwasan,$(PKG_BUILD_FLAGS))
 ifneq ($(__unknown_flags),)
   $(error unknown PKG_BUILD_FLAGS: $(__unknown_flags))
 endif
@@ -62,6 +62,21 @@ endif
 ifdef CONFIG_USE_MOLD
   ifeq ($(call pkg_build_flag,mold,1),1)
     TARGET_LINKER:=mold
+  endif
+endif
+
+# Always -g: there is no symbolizer on the device, reports are decoded off it.
+HWASAN_CFLAGS:= -fsanitize=hwaddress -fsanitize-recover=hwaddress -fno-omit-frame-pointer $(if $(CONFIG_DEBUG),,-g)
+ifeq ($(call pkg_build_flag,hwasan,0),1)
+  # Keep in step with libhwasan's DEPENDS.
+  PKG_HWASAN_DEPENDS:=+(aarch64&&(USE_GLIBC||GCC_BUILD_SANITIZERS)):libhwasan
+  PKG_CONFIG_DEPENDS+= CONFIG_aarch64 CONFIG_USE_GLIBC CONFIG_GCC_BUILD_SANITIZERS
+  ifneq ($(CONFIG_aarch64),)
+  ifneq ($(CONFIG_USE_GLIBC)$(CONFIG_GCC_BUILD_SANITIZERS),)
+    TARGET_CFLAGS+= $(HWASAN_CFLAGS)
+    TARGET_CXXFLAGS+= $(HWASAN_CFLAGS)
+    TARGET_LDFLAGS+= -fsanitize=hwaddress
+  endif
   endif
 endif
 
