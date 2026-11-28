@@ -321,13 +321,13 @@ config DROPBEAR_SCP
 
 config DROPBEAR_SFTPSERVER
 	bool "Support external SFTP server"
-	default y if !SMALL_FLASH
+	default y
 	help
 		Enable running a SFTP server (such as the one included with OpenSSH).
 		The SFTP server program is not provided by Dropbear itself.
 		SFTP server must be installed as /usr/libexec/sftp-server
 
-		Default: enabled, except devices with very small flash.
+		Default: enabled.
 
 ## </FEATURES>
 
