@@ -14,7 +14,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
-@@ -278,6 +278,8 @@ static void sparx5_fdma_rx_init(struct s
+@@ -279,6 +279,8 @@ static void sparx5_fdma_rx_init(struct s
  	struct fdma *fdma = &rx->fdma;
  	int idx;
  
@@ -23,7 +23,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  	fdma->channel_id = channel;
  	fdma->n_dcbs = FDMA_DCB_MAX;
  	fdma->n_dbs = FDMA_RX_DCB_MAX_DBS;
-@@ -403,6 +405,8 @@ int sparx5_fdma_init(struct sparx5 *spar
+@@ -404,6 +406,8 @@ int sparx5_fdma_init(struct sparx5 *spar
  {
  	int err;
  
@@ -32,7 +32,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  	/* Reset FDMA state */
  	spx5_wr(FDMA_CTRL_NRESET_SET(0), sparx5, FDMA_CTRL);
  	spx5_wr(FDMA_CTRL_NRESET_SET(1), sparx5, FDMA_CTRL);
-@@ -504,3 +508,51 @@ int sparx5_fdma_stop(struct sparx5 *spar
+@@ -505,3 +509,51 @@ int sparx5_fdma_stop(struct sparx5 *spar
  
  	return 0;
  }

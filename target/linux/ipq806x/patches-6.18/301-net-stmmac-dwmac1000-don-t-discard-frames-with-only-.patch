@@ -47,7 +47,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/stmicro/stmmac/enh_desc.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/enh_desc.c
-@@ -200,9 +200,6 @@ static int enh_desc_get_rx_status(struct
+@@ -221,9 +221,6 @@ static int enh_desc_get_rx_status(struct
  		if (unlikely(rdes0 & RDES0_OVERFLOW_ERROR))
  			x->rx_gmac_overflow++;
  
@@ -57,7 +57,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		if (unlikely(rdes0 & RDES0_COLLISION))
  			x->rx_collision++;
  		if (unlikely(rdes0 & RDES0_RECEIVE_WATCHDOG))
-@@ -214,7 +211,10 @@ static int enh_desc_get_rx_status(struct
+@@ -235,7 +232,10 @@ static int enh_desc_get_rx_status(struct
  		if (unlikely(rdes0 & RDES0_CRC_ERROR)) {
  			x->rx_crc_errors++;
  		}

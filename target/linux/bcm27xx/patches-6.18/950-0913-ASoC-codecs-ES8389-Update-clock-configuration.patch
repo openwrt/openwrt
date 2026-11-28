@@ -17,7 +17,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
 
 --- a/sound/soc/codecs/es8389.c
 +++ b/sound/soc/codecs/es8389.c
-@@ -376,95 +376,110 @@ struct _coeff_div {
+@@ -395,95 +395,110 @@ struct _coeff_div {
  	u8 Reg0x16;
  	u8 Reg0x18;
  	u8 Reg0x19;
@@ -206,7 +206,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	return -EINVAL;
  }
  
-@@ -546,8 +561,9 @@ static int es8389_pcm_hw_params(struct s
+@@ -565,8 +580,9 @@ static int es8389_pcm_hw_params(struct s
  {
  	struct snd_soc_component *component = dai->component;
  	struct es8389_private *es8389 = snd_soc_component_get_drvdata(component);
@@ -218,7 +218,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  
  	switch (params_format(params)) {
  	case SNDRV_PCM_FORMAT_S16_LE:
-@@ -578,7 +594,23 @@ static int es8389_pcm_hw_params(struct s
+@@ -597,7 +613,23 @@ static int es8389_pcm_hw_params(struct s
  		es8389->sysclk = params_channels(params) * params_width(params) * params_rate(params);
  	}
  

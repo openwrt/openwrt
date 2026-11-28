@@ -53,7 +53,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -409,30 +409,53 @@ static int vc4_hvs_debugfs_lbm_allocs(st
+@@ -410,30 +410,53 @@ static int vc4_hvs_debugfs_lbm_allocs(st
  	 (((c1) & 0x1ff) << 9) |				\
  	 (((c2) & 0x1ff) << 18))
  
@@ -118,7 +118,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  static const u32 nearest_neighbour_kernel[] =
  	VC4_LINEAR_PHASE_KERNEL(0, 0, 0, 0, 0, 0, 0, 0,
  				1, 1, 1, 1, 255, 255, 255, 255);
-@@ -458,14 +481,8 @@ static int vc4_hvs_upload_linear_kernel(
+@@ -459,14 +482,8 @@ static int vc4_hvs_upload_linear_kernel(
  
  	dst_kernel = hvs->dlist + space->start;
  

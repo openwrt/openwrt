@@ -207,9 +207,9 @@ Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
  
  	clk = of_clk_get(np, 0);
  	if (IS_ERR(clk)) {
-@@ -182,11 +260,12 @@ static int __init timer_init(struct devi
- 
+@@ -183,11 +261,12 @@ static int __init timer_init(struct devi
  	econet_timer.freq_hz = clk_get_rate(clk);
+ 	clk_put(clk);
  
 -	for (int i = 0; i < num_blocks; i++) {
 +	for (i = 0; i < num_blocks; i++) {
@@ -222,7 +222,7 @@ Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
  		}
  	}
  
-@@ -196,21 +275,34 @@ static int __init timer_init(struct devi
+@@ -197,21 +276,34 @@ static int __init timer_init(struct devi
  				    clocksource_mmio_readl_up);
  	if (ret) {
  		pr_err("%pOFn: clocksource_mmio_init failed: %d", np, ret);

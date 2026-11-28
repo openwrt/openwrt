@@ -29,7 +29,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -412,6 +412,9 @@ static int vc4_hvs_debugfs_dlist_allocs(
+@@ -413,6 +413,9 @@ static int vc4_hvs_debugfs_dlist_allocs(
  static const u32 mitchell_netravali_1_3_1_3_kernel[] =
  	VC4_LINEAR_PHASE_KERNEL(0, -2, -6, -8, -10, -8, -3, 2, 18,
  				50, 82, 119, 155, 187, 213, 227);
@@ -39,7 +39,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  static int vc4_hvs_upload_linear_kernel(struct vc4_hvs *hvs,
  					struct drm_mm_node *space,
-@@ -2067,14 +2070,19 @@ static int vc4_hvs_bind(struct device *d
+@@ -2077,14 +2080,19 @@ static int vc4_hvs_bind(struct device *d
  	if (ret)
  		return ret;
  
@@ -61,7 +61,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	ret = vc4_hvs_cob_init(hvs);
  	if (ret)
-@@ -2127,6 +2135,8 @@ static void vc4_hvs_unbind(struct device
+@@ -2137,6 +2145,8 @@ static void vc4_hvs_unbind(struct device
  
  	if (drm_mm_node_allocated(&vc4->hvs->mitchell_netravali_filter))
  		drm_mm_remove_node(&vc4->hvs->mitchell_netravali_filter);

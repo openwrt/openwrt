@@ -127,8 +127,8 @@ board_bcm2835: Remove coherent dma pool increase - API has gone
 +	ret = devm_request_irq(dev, platform_get_irq(pdev, 0),
  			       bcm2835_mbox_irq, IRQF_NO_SUSPEND, dev_name(dev),
  			       mbox);
- 	if (ret) {
-@@ -193,7 +196,18 @@ static struct platform_driver bcm2835_mb
+ 	if (ret)
+@@ -190,7 +193,18 @@ static struct platform_driver bcm2835_mb
  	},
  	.probe		= bcm2835_mbox_probe,
  };

@@ -96,7 +96,7 @@ Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
  		pinctrl-names = "default";
  		pinctrl-0 = <&sd_s0_pwr>;
 -		regulator-name = "vcc_3v3_sd_s0";
--		regulator-boot-on;
+ 		regulator-boot-on;
 -		regulator-max-microvolt = <3000000>;
 -		regulator-min-microvolt = <3000000>;
 -		vin-supply = <&vcc_3v3_s3>;
@@ -106,7 +106,7 @@ Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
 -		compatible = "regulator-fixed";
 -		regulator-name = "vcc_3v3_pcie20";
 -		regulator-always-on;
- 		regulator-boot-on;
+-		regulator-boot-on;
 -		regulator-min-microvolt = <3300000>;
  		regulator-max-microvolt = <3300000>;
 +		regulator-min-microvolt = <3300000>;
@@ -241,7 +241,7 @@ Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
  		wakeup-source;
  	};
  };
-@@ -343,27 +329,35 @@
+@@ -343,31 +329,35 @@
  	status = "okay";
  };
  
@@ -262,8 +262,8 @@ Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
  
 +/* RTL8125BG Ethernet */
  &pcie2x1l1 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&pcie20x1_1_perstn_m2>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie20x1_1_perstn_m2>;
  	reset-gpios = <&gpio1 RK_PA7 GPIO_ACTIVE_HIGH>;
 -	vpcie3v3-supply = <&vcc_3v3_pcie20>;
 +	vpcie3v3-supply = <&vcc_3v3_s3>;
@@ -273,28 +273,17 @@ Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
 +/* R6C: M.2 M-Key socket */
 +/* R6S: RTL8125BG Ethernet */
  &pcie2x1l2 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&pcie20x1_2_perstn_m0>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie20x1_2_perstn_m0>;
  	reset-gpios = <&gpio3 RK_PD1 GPIO_ACTIVE_HIGH>;
 -	vpcie3v3-supply = <&vcc_3v3_pcie20>;
  	status = "okay";
  };
  
-@@ -410,24 +404,34 @@
+@@ -429,23 +419,23 @@
+ 			rockchip,pins = <0 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>;
  		};
- 	};
  
-+	pcie {
-+		pcie20x1_1_perstn_m2: pcie2x1-1-rst {
-+			rockchip,pins = <1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+
-+		pcie20x1_2_perstn_m0: pcie2x1-2-rst {
-+			rockchip,pins = <3 RK_PD1 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
-+	};
-+
- 	sdmmc {
 -		sd_s0_pwr: sd-s0-pwr {
 +		sd_s0_pwr: sd-pwr {
  			rockchip,pins = <4 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>;
@@ -319,7 +308,7 @@ Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
  			rockchip,pins = <3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
  		};
  	};
-@@ -468,15 +472,19 @@
+@@ -486,15 +476,19 @@
  	status = "okay";
  };
  
@@ -341,7 +330,7 @@ Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
  &sdmmc {
  	bus-width = <4>;
  	cap-sd-highspeed;
-@@ -492,16 +500,15 @@
+@@ -512,16 +506,15 @@
  };
  
  &spi2 {
@@ -361,7 +350,7 @@ Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
  		reg = <0x0>;
  
  		interrupt-parent = <&gpio0>;
-@@ -511,23 +518,24 @@
+@@ -531,23 +524,24 @@
  		pinctrl-0 = <&pmic_pins>, <&rk806_dvs1_null>,
  			    <&rk806_dvs2_null>, <&rk806_dvs3_null>;
  
@@ -398,7 +387,7 @@ Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
  
  		gpio-controller;
  		#gpio-cells = <2>;
-@@ -835,10 +843,11 @@
+@@ -855,10 +849,11 @@
  };
  
  &u2phy2_host {

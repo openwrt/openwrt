@@ -441,7 +441,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, ak4619_i2c_id);
 --- a/sound/soc/codecs/ak4642.c
 +++ b/sound/soc/codecs/ak4642.c
-@@ -672,10 +672,10 @@ static const struct of_device_id ak4642_
+@@ -671,10 +671,10 @@ static const struct of_device_id ak4642_
  MODULE_DEVICE_TABLE(of, ak4642_of_match);
  
  static const struct i2c_device_id ak4642_i2c_id[] = {
@@ -523,7 +523,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, aw88081_i2c_id);
 --- a/sound/soc/codecs/aw88166.c
 +++ b/sound/soc/codecs/aw88166.c
-@@ -1910,7 +1910,7 @@ static int aw88166_i2c_probe(struct i2c_
+@@ -1797,7 +1797,7 @@ static int aw88166_i2c_probe(struct i2c_
  }
  
  static const struct i2c_device_id aw88166_i2c_id[] = {
@@ -556,7 +556,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, aw88395_i2c_id);
 --- a/sound/soc/codecs/aw88399.c
 +++ b/sound/soc/codecs/aw88399.c
-@@ -2323,7 +2323,7 @@ static int aw88399_i2c_probe(struct i2c_
+@@ -797,7 +797,7 @@ static int aw88399_i2c_probe(struct i2c_
  }
  
  static const struct i2c_device_id aw88399_i2c_id[] = {
@@ -749,7 +749,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, cs42l52_id);
 --- a/sound/soc/codecs/cs42l56.c
 +++ b/sound/soc/codecs/cs42l56.c
-@@ -1352,7 +1352,7 @@ MODULE_DEVICE_TABLE(of, cs42l56_of_match
+@@ -1351,7 +1351,7 @@ MODULE_DEVICE_TABLE(of, cs42l56_of_match
  
  
  static const struct i2c_device_id cs42l56_id[] = {
@@ -966,7 +966,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, es8311_id);
 --- a/sound/soc/codecs/es8316.c
 +++ b/sound/soc/codecs/es8316.c
-@@ -895,8 +895,8 @@ static int es8316_i2c_probe(struct i2c_c
+@@ -893,8 +893,8 @@ static int es8316_i2c_probe(struct i2c_c
  }
  
  static const struct i2c_device_id es8316_i2c_id[] = {
@@ -979,7 +979,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  
 --- a/sound/soc/codecs/es8323.c
 +++ b/sound/soc/codecs/es8323.c
-@@ -757,7 +757,7 @@ static int es8323_i2c_probe(struct i2c_c
+@@ -755,7 +755,7 @@ static int es8323_i2c_probe(struct i2c_c
  }
  
  static const struct i2c_device_id es8323_i2c_id[] = {
@@ -990,7 +990,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, es8323_i2c_id);
 --- a/sound/soc/codecs/es8326.c
 +++ b/sound/soc/codecs/es8326.c
-@@ -1335,8 +1335,8 @@ static void es8326_i2c_remove(struct i2c
+@@ -1345,8 +1345,8 @@ static void es8326_i2c_remove(struct i2c
  }
  
  static const struct i2c_device_id es8326_i2c_id[] = {
@@ -1016,7 +1016,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, es8328_id);
 --- a/sound/soc/codecs/es8375.c
 +++ b/sound/soc/codecs/es8375.c
-@@ -754,7 +754,7 @@ static void es8375_i2c_shutdown(struct i
+@@ -758,7 +758,7 @@ static void es8375_i2c_shutdown(struct i
  }
  
  static const struct i2c_device_id es8375_id[] = {
@@ -1027,7 +1027,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, es8375_id);
 --- a/sound/soc/codecs/es8389.c
 +++ b/sound/soc/codecs/es8389.c
-@@ -1015,7 +1015,7 @@ MODULE_DEVICE_TABLE(of, es8389_if_dt_ids
+@@ -1042,7 +1042,7 @@ MODULE_DEVICE_TABLE(of, es8389_if_dt_ids
  #endif
  
  static const struct i2c_device_id es8389_i2c_id[] = {
@@ -1038,7 +1038,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, es8389_i2c_id);
 --- a/sound/soc/codecs/fs210x.c
 +++ b/sound/soc/codecs/fs210x.c
-@@ -1557,9 +1557,9 @@ static void fs210x_i2c_remove(struct i2c
+@@ -1558,9 +1558,9 @@ static void fs210x_i2c_remove(struct i2c
  }
  
  static const struct i2c_device_id fs210x_i2c_id[] = {
@@ -1337,7 +1337,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, nau8325_i2c_ids);
 --- a/sound/soc/codecs/nau8540.c
 +++ b/sound/soc/codecs/nau8540.c
-@@ -965,7 +965,7 @@ static int nau8540_i2c_probe(struct i2c_
+@@ -963,7 +963,7 @@ static int nau8540_i2c_probe(struct i2c_
  }
  
  static const struct i2c_device_id nau8540_i2c_ids[] = {
@@ -1374,7 +1374,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, nau8821_i2c_ids);
 --- a/sound/soc/codecs/nau8822.c
 +++ b/sound/soc/codecs/nau8822.c
-@@ -1193,7 +1193,7 @@ static int nau8822_i2c_probe(struct i2c_
+@@ -1243,7 +1243,7 @@ static void nau8822_i2c_remove(struct i2
  }
  
  static const struct i2c_device_id nau8822_i2c_id[] = {
@@ -1572,7 +1572,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  
 --- a/sound/soc/codecs/rt1011.c
 +++ b/sound/soc/codecs/rt1011.c
-@@ -2206,7 +2206,7 @@ MODULE_DEVICE_TABLE(acpi, rt1011_acpi_ma
+@@ -2204,7 +2204,7 @@ MODULE_DEVICE_TABLE(acpi, rt1011_acpi_ma
  #endif
  
  static const struct i2c_device_id rt1011_i2c_id[] = {
@@ -1583,7 +1583,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, rt1011_i2c_id);
 --- a/sound/soc/codecs/rt1015.c
 +++ b/sound/soc/codecs/rt1015.c
-@@ -1097,7 +1097,7 @@ static const struct regmap_config rt1015
+@@ -1147,7 +1147,7 @@ static const struct regmap_config rt1015
  };
  
  static const struct i2c_device_id rt1015_i2c_id[] = {
@@ -1594,7 +1594,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, rt1015_i2c_id);
 --- a/sound/soc/codecs/rt1016.c
 +++ b/sound/soc/codecs/rt1016.c
-@@ -608,7 +608,7 @@ static const struct regmap_config rt1016
+@@ -606,7 +606,7 @@ static const struct regmap_config rt1016
  };
  
  static const struct i2c_device_id rt1016_i2c_id[] = {
@@ -1616,7 +1616,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, rt1019_i2c_id);
 --- a/sound/soc/codecs/rt1305.c
 +++ b/sound/soc/codecs/rt1305.c
-@@ -981,8 +981,8 @@ MODULE_DEVICE_TABLE(acpi, rt1305_acpi_ma
+@@ -979,8 +979,8 @@ MODULE_DEVICE_TABLE(acpi, rt1305_acpi_ma
  #endif
  
  static const struct i2c_device_id rt1305_i2c_id[] = {
@@ -1629,7 +1629,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, rt1305_i2c_id);
 --- a/sound/soc/codecs/rt1308.c
 +++ b/sound/soc/codecs/rt1308.c
-@@ -795,7 +795,7 @@ MODULE_DEVICE_TABLE(acpi, rt1308_acpi_ma
+@@ -793,7 +793,7 @@ MODULE_DEVICE_TABLE(acpi, rt1308_acpi_ma
  #endif
  
  static const struct i2c_device_id rt1308_i2c_id[] = {
@@ -1640,7 +1640,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, rt1308_i2c_id);
 --- a/sound/soc/codecs/rt1318.c
 +++ b/sound/soc/codecs/rt1318.c
-@@ -1140,7 +1140,7 @@ static const struct regmap_config rt1318
+@@ -1139,7 +1139,7 @@ static const struct regmap_config rt1318
  };
  
  static const struct i2c_device_id rt1318_i2c_id[] = {
@@ -1703,7 +1703,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, rt5514_i2c_id);
 --- a/sound/soc/codecs/rt5616.c
 +++ b/sound/soc/codecs/rt5616.c
-@@ -1320,7 +1320,7 @@ static const struct regmap_config rt5616
+@@ -1319,7 +1319,7 @@ static const struct regmap_config rt5616
  };
  
  static const struct i2c_device_id rt5616_i2c_id[] = {
@@ -1742,7 +1742,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, rt5640_i2c_id);
 --- a/sound/soc/codecs/rt5645.c
 +++ b/sound/soc/codecs/rt5645.c
-@@ -3649,8 +3649,8 @@ static const struct regmap_config temp_r
+@@ -3650,8 +3650,8 @@ static const struct regmap_config temp_r
  };
  
  static const struct i2c_device_id rt5645_i2c_id[] = {
@@ -1766,7 +1766,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, rt5651_i2c_id);
 --- a/sound/soc/codecs/rt5659.c
 +++ b/sound/soc/codecs/rt5659.c
-@@ -3815,8 +3815,8 @@ static const struct regmap_config rt5659
+@@ -3813,8 +3813,8 @@ static const struct regmap_config rt5659
  };
  
  static const struct i2c_device_id rt5659_i2c_id[] = {
@@ -1779,7 +1779,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, rt5659_i2c_id);
 --- a/sound/soc/codecs/rt5660.c
 +++ b/sound/soc/codecs/rt5660.c
-@@ -1224,7 +1224,7 @@ static const struct regmap_config rt5660
+@@ -1222,7 +1222,7 @@ static const struct regmap_config rt5660
  };
  
  static const struct i2c_device_id rt5660_i2c_id[] = {
@@ -1803,7 +1803,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  
 --- a/sound/soc/codecs/rt5665.c
 +++ b/sound/soc/codecs/rt5665.c
-@@ -4534,8 +4534,8 @@ static const struct regmap_config rt5665
+@@ -4532,8 +4532,8 @@ static const struct regmap_config rt5665
  };
  
  static const struct i2c_device_id rt5665_i2c_id[] = {
@@ -1896,7 +1896,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  
 --- a/sound/soc/codecs/sma1307.c
 +++ b/sound/soc/codecs/sma1307.c
-@@ -2036,8 +2036,8 @@ static void sma1307_i2c_remove(struct i2
+@@ -2046,8 +2046,8 @@ static void sma1307_i2c_remove(struct i2
  }
  
  static const struct i2c_device_id sma1307_i2c_id[] = {
@@ -1957,7 +1957,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, ssm4567_i2c_ids);
 --- a/sound/soc/codecs/sta32x.c
 +++ b/sound/soc/codecs/sta32x.c
-@@ -1152,9 +1152,9 @@ static int sta32x_i2c_probe(struct i2c_c
+@@ -1207,9 +1207,9 @@ static int sta32x_i2c_probe(struct i2c_c
  }
  
  static const struct i2c_device_id sta32x_i2c_id[] = {
@@ -2251,7 +2251,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  MODULE_DEVICE_TABLE(i2c, aic31xx_i2c_id);
 --- a/sound/soc/codecs/tlv320aic32x4-i2c.c
 +++ b/sound/soc/codecs/tlv320aic32x4-i2c.c
-@@ -38,9 +38,9 @@ static void aic32x4_i2c_remove(struct i2
+@@ -43,9 +43,9 @@ static void aic32x4_i2c_remove(struct i2
  }
  
  static const struct i2c_device_id aic32x4_i2c_id[] = {

@@ -1,0 +1,41 @@
+From 0e728fcf0c1e569acaae0242b44687a762280f67 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 23 Nov 2026 11:47:47 +0000
+Subject: [PATCH] arm64: dts: bcm2712: Drop the upstream v3d node
+
+Stable added a v3d node to bcm2712.dtsi, but bcm2712-ds.dtsi already
+defines the v3d label, giving a duplicate label. Remove the upstream
+node, as the other downstream branches do.
+---
+ arch/arm64/boot/dts/broadcom/bcm2712.dtsi | 14 --------------
+ 1 file changed, 14 deletions(-)
+
+--- a/arch/arm64/boot/dts/broadcom/bcm2712.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcm2712.dtsi
+@@ -1,6 +1,5 @@
+ // SPDX-License-Identifier: (GPL-2.0 OR MIT)
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+-#include <dt-bindings/soc/bcm2835-pm.h>
+ 
+ / {
+ 	compatible = "brcm,bcm2712";
+@@ -582,19 +581,6 @@
+ 			msi-ranges = <&gicv2 GIC_SPI 247 IRQ_TYPE_EDGE_RISING 8>;
+ 			brcm,msi-offset = <8>;
+ 		};
+-
+-		v3d: gpu@1002000000 {
+-			compatible = "brcm,2712-v3d";
+-			reg = <0x10 0x02000000 0x00 0x4000>,
+-			      <0x10 0x02008000 0x00 0x6000>,
+-			      <0x10 0x02030800 0x00 0x0700>;
+-			reg-names = "hub", "core0", "sms";
+-
+-			power-domains = <&pm BCM2835_POWER_DOMAIN_GRAFX_V3D>;
+-			resets = <&pm BCM2835_RESET_V3D>;
+-			interrupts = <GIC_SPI 250 IRQ_TYPE_LEVEL_HIGH>,
+-				     <GIC_SPI 249 IRQ_TYPE_LEVEL_HIGH>;
+-		};
+ 	};
+ 
+ 	vc4: gpu {

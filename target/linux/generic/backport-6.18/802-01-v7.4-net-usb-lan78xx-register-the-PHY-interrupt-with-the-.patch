@@ -30,7 +30,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -2897,6 +2897,7 @@ static int lan78xx_phy_init(struct lan78
+@@ -2909,6 +2909,7 @@ static int lan78xx_phy_init(struct lan78
  		phydev->irq = dev->domain_data.phyirq;
  	else
  		phydev->irq = PHY_POLL;

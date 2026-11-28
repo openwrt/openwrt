@@ -1,0 +1,22 @@
+From 41c8a7b85698ab353d4b3e50e680f29201d37030 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 23 Nov 2026 13:02:19 +0000
+Subject: [PATCH] ARM: dts: bcm270x: Drop the brcm,vc4-v3d compatible
+
+"drm/vc4: Drop the undocumented brcm,vc4-v3d compatible" removed it from
+the V3D driver, so the Pi 0-3 V3D node no longer bound. Drop the
+override so the node keeps brcm,bcm2835-v3d from bcm2835-common.dtsi.
+---
+ arch/arm/boot/dts/broadcom/bcm270x.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm270x.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm270x.dtsi
+@@ -108,7 +108,6 @@
+ 
+ #ifndef BCM2711
+ 		v3d@7ec00000 { /* vd3 */
+-			compatible = "brcm,vc4-v3d";
+ 			power-domains = <&power RPI_POWER_DOMAIN_V3D>;
+ 			status = "disabled";
+ 		};

@@ -158,7 +158,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -1995,6 +1995,19 @@ struct nf_br_ops {
+@@ -1998,6 +1998,19 @@ struct nf_br_ops {
  };
  extern const struct nf_br_ops __rcu *nf_br_ops;
  
@@ -180,7 +180,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  int br_nf_core_init(void);
 --- a/net/netfilter/core.c
 +++ b/net/netfilter/core.c
-@@ -802,6 +802,9 @@ static struct pernet_operations netfilte
+@@ -818,6 +818,9 @@ static struct pernet_operations netfilte
  	.exit = netfilter_net_exit,
  };
  

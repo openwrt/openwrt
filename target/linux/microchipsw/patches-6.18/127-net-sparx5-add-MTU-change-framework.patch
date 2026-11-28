@@ -31,7 +31,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  sparx5-switch-$(CONFIG_DEBUG_FS) += sparx5_vcap_debugfs.o
 --- a/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
 +++ b/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
-@@ -462,6 +462,15 @@ int sparx5_fdma_start(struct sparx5 *spa
+@@ -463,6 +463,15 @@ int sparx5_fdma_start(struct sparx5 *spa
  	sparx5_fdma_rx_activate(sparx5, rx);
  	sparx5_fdma_tx_activate(sparx5, tx);
  
@@ -47,7 +47,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  	return 0;
  }
  
-@@ -471,6 +480,7 @@ int sparx5_fdma_stop(struct sparx5 *spar
+@@ -472,6 +481,7 @@ int sparx5_fdma_stop(struct sparx5 *spar
  	struct sparx5_tx *tx = &sparx5->tx;
  	u32 val;
  
@@ -55,7 +55,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  	napi_disable(&rx->napi);
  
  	/* Stop the fdma and channel interrupts */
-@@ -482,5 +492,15 @@ int sparx5_fdma_stop(struct sparx5 *spar
+@@ -483,5 +493,15 @@ int sparx5_fdma_stop(struct sparx5 *spar
  			  FDMA_PORT_CTRL_XTR_BUF_IS_EMPTY_GET(val) == 0,
  			  500, 10000, 0, sparx5);
  
