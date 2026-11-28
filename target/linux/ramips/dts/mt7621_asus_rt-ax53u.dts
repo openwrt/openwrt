@@ -56,6 +56,22 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
+
+	ubi-concat {
+		compatible = "mtd-concat";
+		devices = <&ubiconcat0 &ubiconcat1 &ubiconcat2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0x6c20000>;
+			};
+		};
+	};
 };
 
 &nand {
@@ -64,7 +80,7 @@
 	mediatek,nmbm;
 	mediatek,bmt-remap-range =
 		<0x000000 0x7e0000>,
-		<0x35e0000 0x7800000>;
+		<0x35e0000 0x39e0000>;
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -135,8 +151,8 @@
 				reg = <0x0 0x400000>;
 			};
 
-			partition@400000 {
-				label = "ubi";
+			ubiconcat0: partition@400000 {
+				label = "ubipart1";
 				reg = <0x400000 0x2e00000>;
 			};
 		};
@@ -144,9 +160,23 @@
 		partition@35e0000 {
 			label = "firmware2";
 			reg = <0x35e0000 0x3200000>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel2";
+				reg = <0x0 0x400000>;
+			};
+
+			ubiconcat1: partition@400000 {
+				label = "ubipart2";
+				reg = <0x400000 0x2e00000>;
+			};
 		};
 
-		partition@67e0000 {
+		ubiconcat2: partition@67e0000 {
 			label = "jffs2";
 			reg = <0x67e0000 0x1020000>;
 		};

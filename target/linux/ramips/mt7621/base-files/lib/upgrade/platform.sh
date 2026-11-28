@@ -65,6 +65,13 @@ platform_do_upgrade() {
 		dd if=/dev/mtd5 bs=1024 count=52224 >> /tmp/backup_firmware.bin
 		mtd -e firmware2 write /tmp/backup_firmware.bin firmware2
 		;;
+	asus,rt-ax53u)
+		echo "Flashing the additional kernel partition"
+		local board_dir
+		board_dir="$(tar tf "$1" | grep -m 1 '^sysupgrade-.*/$')"
+		board_dir="${board_dir%/}"
+		tar xOf "$1" "$board_dir/kernel" | mtd write - kernel2
+		;;
 	esac
 
 	case "$board" in
