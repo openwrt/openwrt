@@ -1,0 +1,104 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 7 Nov 2026 16:52:07 -0800
+Subject: [PATCH] MIPS: ath79: register a SoC device
+
+The wireless MAC built into the AR934x, QCA953x and QCA956x needs the
+revision of the SoC: ath9k selects the initvals of the QCA953x v1.0, v1.1
+and v2.0 from it, and works around bugs of the AR934x before v1.3. Before
+the board code went away, the platform data carried a callback for that.
+ath9k can no longer use it, and the revision is only kept in the arch
+variable ath79_soc_rev.
+
+Register a SoC device with the family, the SoC name and its revision, as
+the Ralink SoCs do, so that drivers can match on it with
+soc_device_match().
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Assisted-by: LLM
+---
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -238,6 +238,7 @@ config ATH79
+ 	select COMMON_CLK
+ 	select IRQ_MIPS_CPU
+ 	select PCI_DRIVERS_GENERIC
++	select SOC_BUS
+ 	select SYS_HAS_CPU_MIPS32_R2
+ 	select SYS_HAS_EARLY_PRINTK
+ 	select SYS_SUPPORTS_32BIT_KERNEL
+--- a/arch/mips/ath79/setup.c
++++ b/arch/mips/ath79/setup.c
+@@ -21,6 +21,8 @@
+ #include <linux/of_clk.h>
+ #include <linux/of_fdt.h>
+ #include <linux/irqchip.h>
++#include <linux/slab.h>
++#include <linux/sys_soc.h>
+ 
+ #include <asm/bootinfo.h>
+ #include <asm/idle.h>
+@@ -36,6 +38,7 @@
+ #define ATH79_SYS_TYPE_LEN	64
+ 
+ static char ath79_sys_type[ATH79_SYS_TYPE_LEN];
++static char ath79_soc_id[16];
+ 
+ static void ath79_halt(void)
+ {
+@@ -190,17 +193,53 @@ static void __init ath79_detect_sys_type
+ 	if (ver == 1)
+ 		ath79_soc_rev = rev;
+ 
+-	if (soc_is_qca953x() || soc_is_qca955x() || soc_is_qca956x())
++	if (soc_is_qca953x() || soc_is_qca955x() || soc_is_qca956x()) {
+ 		sprintf(ath79_sys_type, "Qualcomm Atheros QCA%s ver %u rev %u",
+ 			chip, ver, rev);
+-	else if (soc_is_tp9343())
++		snprintf(ath79_soc_id, sizeof(ath79_soc_id), "QCA%s", chip);
++	} else if (soc_is_tp9343()) {
+ 		sprintf(ath79_sys_type, "Qualcomm Atheros TP%s rev %u",
+ 			chip, rev);
+-	else
++		snprintf(ath79_soc_id, sizeof(ath79_soc_id), "TP%s", chip);
++	} else {
+ 		sprintf(ath79_sys_type, "Atheros AR%s rev %u", chip, rev);
++		snprintf(ath79_soc_id, sizeof(ath79_soc_id), "AR%s", chip);
++	}
+ 	pr_info("SoC: %s\n", ath79_sys_type);
+ }
+ 
++/*
++ * Drivers of the SoC's built-in blocks, the wireless MAC among them, need
++ * the revision of the SoC. Export it through the SoC bus.
++ */
++static int __init ath79_soc_dev_init(void)
++{
++	struct soc_device_attribute *attr;
++	struct soc_device *soc_dev;
++
++	attr = kzalloc(sizeof(*attr), GFP_KERNEL);
++	if (!attr)
++		return -ENOMEM;
++
++	attr->family = "Atheros";
++	attr->soc_id = ath79_soc_id;
++	attr->revision = kasprintf(GFP_KERNEL, "%u", ath79_soc_rev);
++	if (!attr->revision) {
++		kfree(attr);
++		return -ENOMEM;
++	}
++
++	soc_dev = soc_device_register(attr);
++	if (IS_ERR(soc_dev)) {
++		kfree(attr->revision);
++		kfree(attr);
++		return PTR_ERR(soc_dev);
++	}
++
++	return 0;
++}
++arch_initcall(ath79_soc_dev_init);
++
+ const char *get_system_type(void)
+ {
+ 	return ath79_sys_type;
