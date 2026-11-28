@@ -25,7 +25,7 @@
  # Only available since automake 1.12
  m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
  AC_CHECK_TOOL([READELF], [readelf])
-@@ -727,6 +731,8 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],
+@@ -729,6 +733,8 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],
  CFLAGS="$old_CFLAGS"])
  AS_IF([test "x$ac_cv_fno_addrsig" = "xyes"], CFLAGS="$CFLAGS -fno-addrsig")
  
