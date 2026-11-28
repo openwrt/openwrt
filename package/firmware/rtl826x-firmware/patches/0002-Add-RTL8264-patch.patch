@@ -1,0 +1,160 @@
+From 291e169f1f552853048241c053a9898848da40a0 Mon Sep 17 00:00:00 2001
+From: John-Michael Mulesa <jmulesa@gmail.com>
+Date: Sun, 22 Nov 2026 17:30:00 -0500
+Subject: [PATCH] Add RTL8264 patch
+
+Build rtl8264.bin from conf_rtl8264.c: the RTL8264 patch tables applied by
+the Realtek SDK in the Hasivo S1100WP-8XGT-SE bootloader. The main table
+carries its own patch key, RAM code and key release, so it only needs the
+patch request in front (flow 7) and the request release after it (flow 8),
+followed by the usual lock, TOP, SDS and unlock steps.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: John-Michael Mulesa <jmulesa@gmail.com>
+---
+ phy_patch.c         | 16 ++++++++++
+ phy_patch.h         |  1 +
+ rtl8261n_rtl8264b.c | 74 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 91 insertions(+)
+
+--- a/phy_patch.c
++++ b/phy_patch.c
+@@ -150,11 +150,27 @@ void rtl8264b()
+ 	free(phydev);
+ }
+ 
++void rtl8264()
++{
++	printf("rtl8264\n");
++	struct phy_device *phydev = malloc(sizeof(struct phy_device));
++	phydev->f = fopen("rtl8264.bin", "wb");
++
++	phy_patch_rtl8264_db_init(phydev, &phydev->patch);
++
++	phy_patch(phydev);
++
++	fclose(phydev->f);
++	free(phydev->patch);
++	free(phydev);
++}
++
+ int main()
+ {
+ 	rtl8261n();
+ 	rtl8261n_lp();
+ 	rtl8264b();
++	rtl8264();
+ 
+ 	return 0;
+ }
+--- a/phy_patch.h
++++ b/phy_patch.h
+@@ -142,5 +142,6 @@ int phy_patch_op(rt_phy_patch_db_t *pPhy
+ int phy_patch_rtl8261n_db_init(struct phy_device *phydev, rt_phy_patch_db_t **pPhy_patchDb);
+ int phy_patch_rtl8261n_lp_db_init(struct phy_device *phydev, rt_phy_patch_db_t **pPhy_patchDb);
+ int phy_patch_rtl8264b_db_init(struct phy_device *phydev, rt_phy_patch_db_t **pPhy_patchDb);
++int phy_patch_rtl8264_db_init(struct phy_device *phydev, rt_phy_patch_db_t **pPhy_patchDb);
+ 
+ #endif
+--- a/rtl8261n_rtl8264b.c
++++ b/rtl8261n_rtl8264b.c
+@@ -9,6 +9,7 @@
+ #include "conf_rtl8264b.c"
+ #include "conf_rtl8261n_c.c"
+ #include "conf_rtl8261n_c_lp.c"
++#include "conf_rtl8264.c"
+ 
+ static int phy_patch_rtl826x_op(struct phy_device *phydev, rtk_hwpatch_mainline_t *pPatch_data)
+ {
+@@ -117,6 +118,45 @@ static int _phy_rtl826x_flow_r2(struct p
+ 	return 0;
+ }
+ 
++/* RTL8264: patch request only. rtl8264_patch_conf writes its own patch key. */
++static int _phy_rtl826x_flow_r13(struct phy_device *phydev)
++{
++	int ret = 0;
++	rt_phy_patch_db_t *pPatchDb = NULL;
++
++	PHYPATCH_DB_GET(phydev, pPatchDb);
++
++	// PHYReg_bit w $PHYID 0xb82 16 4 4 0x1
++	if ((ret = phy_patch_op(pPatchDb, phydev, RTK_PATCH_OP_PHY, 0xFF, 0xb82, 16, 4, 4, 0x1)) < 0)
++		return ret;
++	// PHYReg_bit w $PHYID 0xb82 16 4 4 0x1
++	if ((ret = phy_patch_op(pPatchDb, phydev, RTK_PATCH_OP_PHY, 0xFF, 0xb82, 16, 4, 4, 0x1)) < 0)
++		return ret;
++	// set patch_rdy [PHYReg_bit r $PHYID 0xb80 16 6 6] ; Wait for patch ready = 1
++	if ((ret = phy_patch_op(pPatchDb, phydev, RTK_PATCH_OP_PHY_WAIT, 0xFF, 0xb80, 16, 6, 6, 1)) < 0)
++		return ret;
++
++	return 0;
++}
++
++/* RTL8264: release the patch request. rtl8264_patch_conf already clears the key. */
++static int _phy_rtl826x_flow_r22(struct phy_device *phydev)
++{
++	int ret = 0;
++	rt_phy_patch_db_t *pPatchDb = NULL;
++
++	PHYPATCH_DB_GET(phydev, pPatchDb);
++
++	// PHYReg_bit w $PHYID 0xb82 16 4 4 0x0
++	if ((ret = phy_patch_op(pPatchDb, phydev, RTK_PATCH_OP_PHY, 0xFF, 0xb82, 16, 4, 4, 0x0)) < 0)
++		return ret;
++	// set patch_rdy [PHYReg_bit r $PHYID 0xb80 16 6 6] ; Wait for patch ready != 1
++	if ((ret = phy_patch_op(pPatchDb, phydev, RTK_PATCH_OP_PHY_WAIT_NOT, 0xFF, 0xb80, 16, 6, 6, 1)) < 0)
++		return ret;
++
++	return 0;
++}
++
+ static int _phy_rtl826x_flow_l1(struct phy_device *phydev)
+ {
+ 	int ret = 0;
+@@ -234,6 +274,14 @@ static int phy_patch_rtl826x_flow(struct
+             if ((ret = _phy_rtl826x_flow_r12(phydev)) < 0)
+                 return ret;
+             break;
++        case RTK_PATCH_TYPE_FLOW(7):
++            if ((ret = _phy_rtl826x_flow_r13(phydev)) < 0)
++                return ret;
++            break;
++        case RTK_PATCH_TYPE_FLOW(8):
++            if ((ret = _phy_rtl826x_flow_r22(phydev)) < 0)
++                return ret;
++            break;
+         case RTK_PATCH_TYPE_FLOW(1):
+             if ((ret = _phy_rtl826x_flow_r2(phydev)) < 0)
+                 return ret;
+@@ -374,4 +422,30 @@ int phy_patch_rtl8264b_db_init(struct ph
+ 
+     *pPhy_patchDb = patch_db;
+     return ret;
++}
++
++int phy_patch_rtl8264_db_init(struct phy_device *phydev, rt_phy_patch_db_t **pPhy_patchDb)
++{
++    int ret = 0;
++    rt_phy_patch_db_t *patch_db = NULL;
++
++	patch_db = malloc(sizeof(rt_phy_patch_db_t));
++	if (!patch_db)
++        return -ENOMEM;
++
++    memset(patch_db, 0x0, sizeof(rt_phy_patch_db_t));
++
++    patch_db->fPatch_op = phy_patch_rtl826x_op;
++    patch_db->fPatch_flow = phy_patch_rtl826x_flow;
++
++    PHYPATCH_TABLE_ASSIGN(patch_db,  0, RTK_PATCH_TYPE_FLOW(7), NULL);
++    PHYPATCH_TABLE_ASSIGN(patch_db,  1, PHY_PATCH_TYPE_UC, rtl8264_patch_conf);
++    PHYPATCH_TABLE_ASSIGN(patch_db,  2, RTK_PATCH_TYPE_FLOW(8), NULL);
++    PHYPATCH_TABLE_ASSIGN(patch_db,  3, RTK_PATCH_TYPE_FLOW(2), NULL);
++    PHYPATCH_TABLE_ASSIGN(patch_db,  4, PHY_PATCH_TYPE_TOP, rtl8264_top_conf);
++    PHYPATCH_TABLE_ASSIGN(patch_db,  5, PHY_PATCH_TYPE_SDS, rtl8264_sds_conf);
++    PHYPATCH_TABLE_ASSIGN(patch_db,  6, RTK_PATCH_TYPE_FLOW(3), NULL);
++
++    *pPhy_patchDb = patch_db;
++    return ret;
+ }

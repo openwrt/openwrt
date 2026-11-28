@@ -1,0 +1,48 @@
+From 0f6d110925954d292b0ddccaeee6e17bc67d191e Mon Sep 17 00:00:00 2001
+From: John-Michael Mulesa <jmulesa@gmail.com>
+Date: Sun, 22 Nov 2026 17:30:00 -0500
+Subject: [PATCH] net: phy: realtek: rtl826x: report the actual speed
+
+rtl826x_read_status() takes the speed from the resolved advertisements.
+When a 10GBASE-T link does not train at the highest common speed, the
+PHY downshifts on its own (e.g. 10G -> 5G -> 2.5G) and the resolved
+speed no longer matches the line: the link is reported as 10000 while
+the PHY runs at 5000 or 2500.
+
+Seen on a Hasivo S1100WP-8XGT-SE (RTL9303 + 2x RTL8264). The switch MAC
+polls the PHY itself, so traffic kept flowing and the port LEDs showed
+the real (lower) speed, but ethtool, sysfs and the "Link is Up" message
+reported 10G, e.g. "resolved 10000, PHYSR 5000" and "resolved 5000,
+PHYSR 2500".
+
+Read the actual speed from PHYSR, as rtl822x_c45_read_status() already
+does.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: John-Michael Mulesa <jmulesa@gmail.com>
+---
+ drivers/net/phy/realtek/realtek_main.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -3574,6 +3574,19 @@ static int rtl826x_read_status(struct ph
+ 			return ret;
+ 	}
+ 
++	/* The PHY may downshift (e.g. from 10G to 5G or 2.5G) when the link
++	 * does not train at the highest common speed, so the resolved
++	 * speed can be wrong. Read the actual speed from the vendor register.
++	 */
++	if (phydev->link) {
++		ret = phy_read_mmd(phydev, MDIO_MMD_VEND2,
++				   RTL822X_VND2_C22_REG(RTL_PHYSR));
++		if (ret < 0)
++			return ret;
++
++		rtlgen_decode_physr(phydev, ret);
++	}
++
+ 	return genphy_c45_read_mdix(phydev);
+ }
+ 
