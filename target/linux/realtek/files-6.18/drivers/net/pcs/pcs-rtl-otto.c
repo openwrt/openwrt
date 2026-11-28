@@ -643,6 +643,8 @@ struct rtpcs_sds_ops {
 				 enum rtpcs_sds_mode hw_mode);
 	/* optional: finalization that must follow power-up, e.g. RX calibration */
 	int (*post_config)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
+	/* optional: power off an idle SerDes until the next configuration */
+	int (*power_off)(struct rtpcs_serdes *sds);
 };
 
 struct rtpcs_serdes {
@@ -1973,6 +1975,24 @@ pll_setup:
 	dev_dbg(sds->ctrl->dev, "SerDes %d using %s PLL for mode %d\n", sds->id,
 		pll == RTPCS_SDS_PLL_TYPE_LC ? "LC" : "ring", hw_mode);
 	return ret;
+}
+
+static int rtpcs_93xx_sds_power_off(struct rtpcs_serdes *sds)
+{
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	struct rtpcs_serdes *nb_sds = rtpcs_sds_get_neighbor(sds);
+	int ret;
+
+	ret = sds->ops->deactivate(sds);
+	if (ret)
+		return ret;
+
+	/* Release the shared CMU if both lanes of the pair are off. */
+	if (nb_sds->hw_mode == RTPCS_SDS_MODE_OFF)
+		return rtpcs_sds_write_mask(even_sds, PAGE_ANA_MISC, ANA_MISC_REG18,
+					    RTL93XX_FRC_CMU_EN_LC | RTL93XX_FRC_CMU_EN_RING, 0);
+
+	return 0;
 }
 
 static const s16 rtpcs_93xx_sds_usxgmii_submodes[RTPCS_SDS_USXGMII_SM_MAX] = {
@@ -4937,12 +4957,46 @@ static int rtpcs_pcs_enable(struct phylink_pcs *pcs)
 	return 0;
 }
 
+static bool rtpcs_sds_has_enabled_links(struct rtpcs_serdes *sds)
+{
+	lockdep_assert_held(&sds->ctrl->lock);
+
+	for (int i = 0; i < RTPCS_MAX_LINKS_PER_SDS; i++)
+		if (sds->link[i] && sds->link[i]->enabled)
+			return true;
+
+	return false;
+}
+
 static void rtpcs_pcs_disable(struct phylink_pcs *pcs)
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	struct rtpcs_ctrl *ctrl = link->ctrl;
+	struct rtpcs_serdes *sds = link->sds;
+	bool power_off;
+	int ret;
 
-	scoped_guard(mutex, &link->ctrl->lock)
+	scoped_guard(mutex, &ctrl->lock) {
 		link->enabled = false;
+		power_off = sds->ops->power_off && !rtpcs_sds_has_enabled_links(sds);
+	}
+	if (!power_off)
+		return;
+
+	rtpcs_sds_cancel_rx_work(sds);
+
+	scoped_guard(mutex, &ctrl->lock) {
+		if (rtpcs_sds_has_enabled_links(sds))
+			return;
+
+		ret = sds->ops->power_off(sds);
+		sds->hw_mode = RTPCS_SDS_MODE_OFF;
+		sds->usxgmii_submode = RTPCS_SDS_USXGMII_SM_NONE;
+		if (ret < 0)
+			dev_err(ctrl->dev, "SerDes %u: failed to power off: %d\n", sds->id, ret);
+		else
+			dev_info(ctrl->dev, "SerDes %u powered down\n", sds->id);
+	}
 }
 
 static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
@@ -5447,6 +5501,7 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.set_hw_mode		= rtpcs_930x_sds_set_mode,
 	.config_attachment	= rtpcs_930x_sds_config_attachment,
 	.post_config		= rtpcs_930x_sds_post_config,
+	.power_off		= rtpcs_93xx_sds_power_off,
 };
 
 static const struct rtpcs_config rtpcs_930x_cfg = {
@@ -5485,6 +5540,7 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.set_hw_mode		= rtpcs_931x_sds_set_mode,
 	.config_attachment	= rtpcs_931x_sds_config_attachment,
 	.post_config		= rtpcs_931x_sds_post_config,
+	.power_off		= rtpcs_93xx_sds_power_off,
 };
 
 static const struct rtpcs_config rtpcs_931x_cfg = {
