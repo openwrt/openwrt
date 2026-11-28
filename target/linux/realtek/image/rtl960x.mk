@@ -35,3 +35,17 @@ define Device/eltex_rg-5520
 endef
 TARGET_DEVICES += eltex_rg-5520
 
+
+define Device/tcl_t20-pro
+  SOC := rtl8198d
+  DEVICE_VENDOR := TCL
+  DEVICE_MODEL := T20 Pro
+  DEVICE_PACKAGES := kmod-rtw89-8852ae wpad-basic-mbedtls t20pro-calibration
+  KERNEL_SIZE := 6144k
+  IMAGE_SIZE := 15872k
+  $(Device/kernel-lzma)
+  KERNEL := $$(KERNEL) | check-size $$(KERNEL_SIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | check-size | \
+	sysupgrade-tar rootfs=$$$$@ | append-metadata
+endef
+TARGET_DEVICES += tcl_t20-pro

@@ -2,6 +2,7 @@ PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
 RAMFS_COPY_BIN='ubicrc32'
+[ "$(board_name)" = "tcl,t20-pro" ] && RAMFS_COPY_BIN="$RAMFS_COPY_BIN mktemp"
 
 # The TP-Link bootloader gets its flash layout from "bootargs".
 # Use this to our advantage, and:
@@ -72,12 +73,109 @@ buffalo_wsr1500ax2s_do_upgrade() {
 	nand_do_upgrade_failed
 }
 
+t20pro_extract_upgrade() {
+	local image="$1" dir="$2" kernel_size root_size
+	local archive=sysupgrade-tcl_t20-pro
+
+	[ "$(tar -xOf "$image" "$archive/CONTROL")" = "BOARD=tcl_t20-pro" ] || return 1
+	tar -xOf "$image" "$archive/kernel" > "$dir/kernel" || return 1
+	tar -xOf "$image" "$archive/root" > "$dir/root" || return 1
+	[ "$(get_magic_long "$dir/kernel")" = 27051956 ] || return 1
+	[ "$(identify "$dir/root" cat)" = squashfs ] || return 1
+	kernel_size=$(wc -c < "$dir/kernel")
+	root_size=$(wc -c < "$dir/root")
+	# U-Boot reads 6 MiB of kernel; reserve 128 x 124 KiB for SquashFS.
+	[ "$kernel_size" -gt 64 ] && [ "$kernel_size" -le $((6 * 1024 * 1024)) ] &&
+		[ "$root_size" -ge 96 ] && [ "$root_size" -le $((128 * 124 * 1024)) ]
+}
+
+t20pro_check_volumes() {
+	local dir="$1" ubi="$2" kernel="$3" root="$4" data="$5"
+	local sys="/sys/class/ubi/$ubi" mtd volume root_lebs data_lebs available
+
+	[ -n "$ubi" ] || return 1
+	mtd=$(cat "$sys/mtd_num") || return 1
+	[ "$(cat "/sys/class/mtd/mtd$mtd/offset")" = "$((0x100000))" ] || return 1
+	[ "$(cat "/sys/class/mtd/mtd$mtd/size")" = "$((0x7c80000))" ] || return 1
+	[ "$(cat "$sys/ro_mode")" = 0 ] || return 1
+	[ "$kernel" = "${ubi}_3" ] && [ "$root" = "${ubi}_4" ] || return 1
+	for volume in "$kernel" "$root" ${data:+"$data"}; do
+		[ "$(cat "/sys/class/ubi/$volume/type")" = dynamic ] || return 1
+		[ "$(cat "/sys/class/ubi/$volume/usable_eb_size")" = "$((124 * 1024))" ] || return 1
+	done
+	[ "$(wc -c < "$dir/kernel")" -le "$(cat "/sys/class/ubi/$kernel/data_bytes")" ] || return 1
+	[ "$(wc -c < "$dir/root")" -le "$(cat "/sys/class/ubi/$root/data_bytes")" ] || return 1
+
+	# Make sure a UBIFS overlay will fit before touching either boot volume.
+	if [ -n "$data" ]; then
+		data_lebs=$(cat "/sys/class/ubi/$data/reserved_ebs") || return 1
+	else
+		root_lebs=$(cat "/sys/class/ubi/$root/reserved_ebs") || return 1
+		available=$(cat "$sys/avail_eraseblocks") || return 1
+		[ "$root_lebs" -le 128 ] || available=$((available + root_lebs - 128))
+		data_lebs=$available
+	fi
+	[ "$data_lebs" -ge 17 ]
+}
+
+t20pro_flash_upgrade() {
+	local dir="$1" ubi kernel root data
+
+	CI_UBIPART=ubi_device
+	ubi=$(nand_find_ubi "$CI_UBIPART")
+	kernel=$(nand_find_volume "$ubi" ubi_k1)
+	root=$(nand_find_volume "$ubi" ubi_r1)
+	data=$(nand_find_volume "$ubi" rootfs_data)
+	t20pro_check_volumes "$dir" "$ubi" "$kernel" "$root" "$data" || {
+		echo "Invalid TCL T20 Pro UBI layout or insufficient space for the upgrade" >&2
+		return 1
+	}
+
+	# Keep the OEM boot volume IDs unchanged. Never run UBI auto-format.
+	nand_remove_ubiblock "$root" || return 1
+	ubiupdatevol "/dev/$root" "$dir/root" || return 1
+	if [ "$(cat "/sys/class/ubi/$root/reserved_ebs")" -gt 128 ]; then
+		ubirsvol "/dev/$ubi" -N ubi_r1 -s $((128 * 124 * 1024)) || return 1
+	fi
+	if [ -n "$data" ]; then
+		ubiupdatevol -t "/dev/$data" || return 1
+	else
+		ubimkvol "/dev/$ubi" -N rootfs_data -m || return 1
+	fi
+	ubiupdatevol "/dev/$kernel" "$dir/kernel"
+}
+
+t20pro_do_upgrade() {
+	local dir
+
+	dir=$(mktemp -d /tmp/t20pro-upgrade.XXXXXX) || {
+		nand_do_upgrade_failed
+		return 1
+	}
+	if t20pro_extract_upgrade "$1" "$dir" && t20pro_flash_upgrade "$dir"; then
+		rm -r "$dir"
+		nand_do_upgrade_success
+	else
+		rm -r "$dir"
+		nand_do_upgrade_failed
+	fi
+}
+
 platform_check_image() {
-	local board=$(board_name)
+	local board=$(board_name) dir status=0
 
 	case "$board" in
 	draytek,g2282x)
 		draytek_g2282x_set_part_name || return 1
+		;;
+	tcl,t20-pro)
+		dir=$(mktemp -d /tmp/t20pro-upgrade.XXXXXX) || return 74
+		t20pro_extract_upgrade "$1" "$dir" || {
+			echo "Invalid TCL T20 Pro sysupgrade archive" >&2
+			status=74
+		}
+		rm -r "$dir"
+		return "$status"
 		;;
 	esac
 
@@ -105,6 +203,9 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	tcl,t20-pro)
+		t20pro_do_upgrade "$1"
+		;;
 	buffalo,wsr-1500ax2s)
 		buffalo_wsr1500ax2s_do_upgrade "$1"
 		;;

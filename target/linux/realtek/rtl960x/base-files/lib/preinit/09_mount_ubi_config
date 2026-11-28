@@ -2,6 +2,17 @@
 
 preinit_mount_ubi_config() {
 	case $(board_name) in
+	tcl,t20-pro)
+		mkdir -p /tmp/ubi_factory
+		if mount -r -t ubifs ubi0:ubi_factory /tmp/ubi_factory; then
+			mkdir -p /tmp/t20pro-firmware
+			/usr/bin/t20pro-calibration /tmp/ubi_factory/config_hs.xml \
+				/tmp/t20pro-firmware || \
+				logger -t t20pro 'Unable to load factory wireless calibration'
+		else
+			logger -t t20pro 'Unable to mount the factory volume'
+		fi
+		;;
 	buffalo,wsr-1500ax2s)
 		mkdir -p /tmp/ubi_Config
 		mount -r -t ubifs ubi0:ubi_Config /tmp/ubi_Config
