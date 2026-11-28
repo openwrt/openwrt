@@ -1,0 +1,22 @@
+--- a/drivers/net/dsa/realtek/Kconfig
++++ b/drivers/net/dsa/realtek/Kconfig
+@@ -56,4 +56,11 @@ config NET_DSA_REALTEK_RTL8366RB_LEDS
+ 	depends on NET_DSA_REALTEK_RTL8366RB
+ 	default NET_DSA_REALTEK_RTL8366RB
+ 
++config NET_DSA_REALTEK_RTL9607C
++	tristate "Realtek RTL9607C embedded switch driver"
++	depends on RTL960X || NET_DSA_REALTEK_MMIO
++	select NET_DSA_TAG_RTL8_4AP
++	help
++	  Select to enable support for Realtek RTL9607C embedded switch.
++
+ endif
+--- a/drivers/net/dsa/realtek/Makefile
++++ b/drivers/net/dsa/realtek/Makefile
+@@ -14,3 +14,5 @@ rtl8365mb-y				:= rtl8365mb_main.o \
+ 					   rtl8365mb_table.o \
+ 					   rtl8365mb_vlan.o \
+ 					   rtl8365mb_l2.o
++obj-$(CONFIG_NET_DSA_REALTEK_RTL9607C)	+= rtl9607c.o
++rtl9607c-y				:= rtl9607c_main.o

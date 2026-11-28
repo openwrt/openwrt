@@ -1,0 +1,103 @@
+--- a/drivers/net/dsa/realtek/Kconfig
++++ b/drivers/net/dsa/realtek/Kconfig
+@@ -29,6 +29,13 @@ config NET_DSA_REALTEK_SMI
+ 	  Select to enable support for registering switches connected
+ 	  through SMI.
+ 
++config NET_DSA_REALTEK_MMIO
++	bool "Realtek MMIO interface support"
++	depends on MFD_SYSCON
++	help
++	  Select to enable support for registering switches connected
++	  through MMIO.
++
+ config NET_DSA_REALTEK_RTL8365MB
+ 	tristate "Realtek RTL8365MB switch driver"
+ 	depends on NET_DSA_REALTEK_SMI || NET_DSA_REALTEK_MDIO
+--- a/drivers/net/dsa/realtek/rtl83xx.c
++++ b/drivers/net/dsa/realtek/rtl83xx.c
+@@ -133,18 +133,7 @@ rtl83xx_probe(struct device *dev,
+ {
+ 	const struct realtek_variant *var;
+ 	struct realtek_priv *priv;
+-	struct regmap_config rc = {
+-		.reg_bits = 10, /* A4..A0 R4..R0 */
+-		.val_bits = 16,
+-		.reg_stride = 1,
+-		.max_register = 0xffff,
+-		.reg_format_endian = REGMAP_ENDIAN_BIG,
+-		.reg_read = interface_info->reg_read,
+-		.reg_write = interface_info->reg_write,
+-		.cache_type = REGCACHE_NONE,
+-		.lock = rtl83xx_lock,
+-		.unlock = rtl83xx_unlock,
+-	};
++	struct regmap_config rc;
+ 	int ret;
+ 
+ 	var = of_device_get_match_data(dev);
+@@ -168,20 +157,40 @@ rtl83xx_probe(struct device *dev,
+ 	if (ret)
+ 		return ERR_PTR(ret);
+ 
+-	rc.lock_arg = priv;
+-	priv->map = devm_regmap_init(dev, NULL, priv, &rc);
+-	if (IS_ERR(priv->map)) {
+-		ret = PTR_ERR(priv->map);
+-		dev_err(dev, "regmap init failed: %d\n", ret);
+-		return ERR_PTR(ret);
+-	}
+-
+-	rc.disable_locking = true;
+-	priv->map_nolock = devm_regmap_init(dev, NULL, priv, &rc);
+-	if (IS_ERR(priv->map_nolock)) {
+-		ret = PTR_ERR(priv->map_nolock);
+-		dev_err(dev, "regmap init failed: %d\n", ret);
+-		return ERR_PTR(ret);
++	if (interface_info->syscon) {
++		priv->map = syscon_node_to_regmap(dev->of_node);
++		if (IS_ERR(priv->map))
++			return dev_err_probe(dev, PTR_ERR(priv->map),
++					     "regmap init failed\n");
++	} else {
++		rc = {
++			.reg_bits = 10, /* A4..A0 R4..R0 */
++			.val_bits = 16,
++			.reg_stride = 1,
++			.max_register = 0xffff,
++			.reg_format_endian = REGMAP_ENDIAN_BIG,
++			.reg_read = interface_info->reg_read,
++			.reg_write = interface_info->reg_write,
++			.cache_type = REGCACHE_NONE,
++			.lock = rtl83xx_lock,
++			.unlock = rtl83xx_unlock,
++			.lock_arg = priv,
++		};
++
++		priv->map = devm_regmap_init(dev, NULL, priv, &rc);
++		if (IS_ERR(priv->map)) {
++			ret = PTR_ERR(priv->map);
++			dev_err(dev, "regmap init failed: %d\n", ret);
++			return ERR_PTR(ret);
++		}
++
++		rc.disable_locking = true;
++		priv->map_nolock = devm_regmap_init(dev, NULL, priv, &rc);
++		if (IS_ERR(priv->map_nolock)) {
++			ret = PTR_ERR(priv->map_nolock);
++			dev_err(dev, "regmap init failed: %d\n", ret);
++			return ERR_PTR(ret);
++		}
+ 	}
+ 
+ 	/* Link forward and backward */
+--- a/drivers/net/dsa/realtek/Makefile
++++ b/drivers/net/dsa/realtek/Makefile
+@@ -3,6 +3,7 @@ obj-$(CONFIG_NET_DSA_REALTEK)		+= realte
+ realtek_dsa-y				:= rtl83xx.o
+ realtek_dsa-$(CONFIG_NET_DSA_REALTEK_MDIO)	+= realtek-mdio.o
+ realtek_dsa-$(CONFIG_NET_DSA_REALTEK_SMI)	+= realtek-smi.o
++realtek_dsa-$(CONFIG_NET_DSA_REALTEK_MMIO)	+= realtek-mmio.o
+ 
+ obj-$(CONFIG_NET_DSA_REALTEK_RTL8366RB) += rtl8366.o
+ rtl8366-y				:= rtl8366-core.o rtl8366rb.o
