@@ -21,6 +21,7 @@
 		"disconnect": "AT^NDISDUP=${profile},0"
 	},
 	"samsung": {
+		"attachwait": "0",
 		"initialize": [
 			"AT",
 			"AT+CGREG=2",
@@ -131,6 +132,7 @@
 		"disconnect": "AT+ZGACT=0,${profile}"
 	},
 	"\"mikrotik\"": {
+		"attachwait": "0",
 		"configure": [
 			"AT+CFUN=4",
 			"AT+ZGDCONT=${profile},\\\"${pdptype}\\\",\\\"${apn}\\\",0",
