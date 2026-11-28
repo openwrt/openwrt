@@ -137,19 +137,19 @@
 };
 
 &pinctrl {
-    ephy-digital;
+	ephy-digital;
 
-    sdxc_iot_mode: sdxc_iot_mode {
-        esd {
-            groups = "esd";
-            function = "iot";
-        };
+	sdxc_iot_mode: sdxc_iot_mode {
+		esd {
+			groups = "esd";
+			function = "iot";
+		};
 
-        sdxc {
-            groups = "sdmode";
-            function = "sdxc";
-        };
-    };
+		sdxc {
+			groups = "sdmode";
+			function = "sdxc";
+		};
+	};
 };
 
 &sdhci {

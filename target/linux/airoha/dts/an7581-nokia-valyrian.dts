@@ -155,31 +155,31 @@
 	};
 
 	spi-0 {
-                compatible = "spi-gpio";
+		compatible = "spi-gpio";
 
-                sck-gpios = <&en7581_pinctrl 4 GPIO_ACTIVE_HIGH>;
-                mosi-gpios = <&en7581_pinctrl 3 GPIO_ACTIVE_HIGH>;
-                cs-gpios = <&en7581_pinctrl 30 GPIO_ACTIVE_LOW>;
+		sck-gpios = <&en7581_pinctrl 4 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&en7581_pinctrl 3 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&en7581_pinctrl 30 GPIO_ACTIVE_LOW>;
 
-                num-chipselects = <1>;
+		num-chipselects = <1>;
 
-                #address-cells = <1>;
-                #size-cells = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-                leds_shift_reg: gpio-expander@0 {
-                        compatible = "fairchild,74hc595";
-                        reg = <0>;
+		leds_shift_reg: gpio-expander@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
 
 			enable-gpios = <&en7581_pinctrl 14 GPIO_ACTIVE_LOW>;
 
-                        gpio-controller;
+			gpio-controller;
 
-                        registers-number = <2>;
-                        spi-max-frequency = <100000>;
+			registers-number = <2>;
+			spi-max-frequency = <100000>;
 
-                        #gpio-cells = <2>;
-                };
-        };
+			#gpio-cells = <2>;
+		};
+	};
 };
 
 &en7581_pinctrl {
