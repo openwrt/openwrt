@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sat, 25 Jul 2026 00:00:00 +0000
+Subject: [PATCH] dt-bindings: soc: qcom: smem: add target-info register
+
+Some Qualcomm platforms do not keep the primary SMEM region at the
+legacy address described by memory-region. Firmware instead publishes a
+pointer to a small target-information structure containing the runtime
+SMEM base and size.
+
+Allow a target-info register resource while retaining memory-region as
+the reservation and fallback description.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ .../bindings/soc/qcom/qcom,smem.yaml           | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/soc/qcom/qcom,smem.yaml
++++ b/Documentation/devicetree/bindings/soc/qcom/qcom,smem.yaml
+@@ -21,6 +21,15 @@ properties:
+ 
+   reg:
+     maxItems: 1
++    description:
++      When the node is a child of reserved-memory, this is the main SMEM
++      region. When reg-names is "target-info", this is a two-word register
++      containing the physical address of a firmware target-information
++      structure. The structure contains the runtime SMEM base and size.
++
++  reg-names:
++    items:
++      - const: target-info
+ 
+   memory-region:
+     maxItems: 1
+@@ -35,6 +44,10 @@ properties:
+ 
+   no-map: true
+ 
++dependencies:
++  reg-names:
++    - memory-region
++
+ required:
+   - compatible
+   - hwlocks
+@@ -75,8 +88,10 @@ examples:
+         };
+     };
+ 
+-    smem {
++    smem@193d000 {
+         compatible = "qcom,smem";
++        reg = <0x0193d000 0x8>;
++        reg-names = "target-info";
+ 
+         memory-region = <&smem_region>;
+         qcom,rpm-msg-ram = <&rpm_msg_ram>;

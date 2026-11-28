@@ -40,8 +40,39 @@ const mesh_params = {
 	mesh_nolearn: "nolearn"
 };
 
+function phy_persistent_wdev(phyidx)
+{
+	let name = readfile(`/sys/class/ieee80211/phy${phyidx}/persistent_primary_wdev`);
+
+	return name ? trim(name) : null;
+}
+
+function phy_reusable_persistent_wdev(phyidx)
+{
+	let name = phy_persistent_wdev(phyidx);
+	let state = name ? readfile(`/sys/class/net/${name}/operstate`) : null;
+
+	return state && trim(state) == "down" ? name : null;
+}
+
+function wdev_is_persistent(name)
+{
+	let persistent = readfile(`/sys/class/net/${name}/phy80211/persistent_primary_wdev`);
+
+	return persistent && trim(persistent) == name;
+}
+
 function wdev_remove(name)
 {
+	if (wdev_is_persistent(name)) {
+		rtnl.request(rtnl.const.RTM_SETLINK, 0, {
+			dev: name,
+			change: 1,
+			flags: 0
+		});
+		return;
+	}
+
 	nl80211.request(nl80211.const.NL80211_CMD_DEL_INTERFACE, 0, { dev: name });
 }
 
@@ -61,6 +92,10 @@ function phy_is_fullmac(phy)
 
 function find_reusable_wdev(phyidx)
 {
+	let persistent = phy_reusable_persistent_wdev(phyidx);
+	if (persistent)
+		return persistent;
+
 	if (!__phy_is_fullmac(phyidx))
 		return null;
 
@@ -128,6 +163,10 @@ function wdev_create(phy, name, data)
 	if (reuse_ifname &&
 	    (reuse_ifname == name ||
 	     rtnl.request(rtnl.const.RTM_SETLINK, 0, { dev: reuse_ifname, ifname: name}) != false)) {
+		/* The persistent primary netdev already owns its permanent address. */
+		if (wdev_is_persistent(name))
+			delete req.mac;
+
 		req.dev = req.ifname;
 		delete req.ifname;
 		nl80211.request(nl80211.const.NL80211_CMD_SET_INTERFACE, 0, req);
@@ -144,7 +183,7 @@ function wdev_create(phy, name, data)
 		return error;
 
 	// nl80211_set_interface() ignores NL80211_ATTR_MAC
-	if (reused && data.macaddr)
+	if (reused && data.macaddr && !wdev_is_persistent(name))
 		netdev_macaddr_set(name, data.macaddr);
 
 	if (data.powersave != null) {
@@ -311,8 +350,12 @@ function mld_prev_match(news, prevs)
 
 const phy_proto = {
 	macaddr_get: function(ubus, owner, name, data) {
+		let persistent = phy_reusable_persistent_wdev(this.idx);
+
+		/* netifd may allocate the address of the netdev being reused. */
 		let args = macaddr_args({
 			...data,
+			ifname: persistent ?? data.ifname,
 			phy: this.phy,
 			radio: this.radio ?? -1,
 			owner, name,

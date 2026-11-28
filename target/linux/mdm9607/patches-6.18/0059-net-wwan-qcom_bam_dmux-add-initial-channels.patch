@@ -1,0 +1,135 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Mon, 17 Aug 2026 09:45:00 +0200
+Subject: [PATCH] net: wwan: qcom_bam_dmux: support AP-initiated channels
+
+The BAM-DMUX protocol normally relies on the modem firmware announcing
+each available data channel with an OPEN command.  Some firmware instead
+waits for the application processor to open a known channel first, leaving
+no network device through which the AP can initiate the exchange.
+
+Add an optional firmware-description property listing channels which
+should be registered before an OPEN command arrives.  Opening such a
+network device uses the existing BAM-DMUX OPEN command and otherwise
+follows the normal data path.  Firmware which announces its channels
+remains unchanged.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ .../bindings/net/qcom,bam-dmux.yaml           | 14 +++++++++
+ drivers/net/wwan/qcom_bam_dmux.c              | 40 ++++++++++++++++++++-
+ 2 files changed, 53 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/net/qcom,bam-dmux.yaml
++++ b/Documentation/devicetree/bindings/net/qcom,bam-dmux.yaml
+@@ -60,6 +60,19 @@ properties:
+       - const: tx
+       - const: rx
+ 
++  qcom,initial-channels:
++    $ref: /schemas/types.yaml#/definitions/uint32-array
++    minItems: 1
++    maxItems: 8
++    uniqueItems: true
++    items:
++      minimum: 0
++      maximum: 7
++    description:
++      Data channels which the application processor may open before the modem
++      firmware announces them. Omit this property when the firmware announces
++      all available channels with BAM-DMUX OPEN commands.
++
+ required:
+   - compatible
+   - interrupts
+@@ -88,5 +101,6 @@ examples:
+ 
+             dmas = <&bam_dmux_dma 4>, <&bam_dmux_dma 5>;
+             dma-names = "tx", "rx";
++            qcom,initial-channels = <0>;
+         };
+     };
+--- a/drivers/net/wwan/qcom_bam_dmux.c
++++ b/drivers/net/wwan/qcom_bam_dmux.c
+@@ -16,6 +16,7 @@
+ #include <linux/netdevice.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
++#include <linux/property.h>
+ #include <linux/soc/qcom/smem_state.h>
+ #include <linux/spinlock.h>
+ #include <linux/wait.h>
+@@ -84,6 +85,7 @@ struct bam_dmux {
+ 	struct work_struct tx_wakeup_work;
+ 
+ 	DECLARE_BITMAP(remote_channels, BAM_DMUX_NUM_CH);
++	DECLARE_BITMAP(initial_channels, BAM_DMUX_NUM_CH);
+ 	struct work_struct register_netdev_work;
+ 	struct net_device *netdevs[BAM_DMUX_NUM_CH];
+ };
+@@ -437,7 +439,11 @@ static void bam_dmux_register_netdev_wor
+ 	struct net_device *netdev;
+ 	int ch, ret;
+ 
+-	for_each_set_bit(ch, dmux->remote_channels, BAM_DMUX_NUM_CH) {
++	for (ch = 0; ch < BAM_DMUX_NUM_CH; ch++) {
++		if (!test_bit(ch, dmux->remote_channels) &&
++		    !test_bit(ch, dmux->initial_channels))
++			continue;
++
+ 		if (dmux->netdevs[ch])
+ 			continue;
+ 
+@@ -769,6 +775,8 @@ static int bam_dmux_probe(struct platfor
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct bam_dmux *dmux;
++	u32 initial_channels[BAM_DMUX_NUM_CH];
++	int num_initial_channels;
+ 	int ret, pc_ack_irq, i;
+ 	unsigned int bit;
+ 
+@@ -779,6 +787,30 @@ static int bam_dmux_probe(struct platfor
+ 	dmux->dev = dev;
+ 	platform_set_drvdata(pdev, dmux);
+ 
++	num_initial_channels = 0;
++	if (device_property_present(dev, "qcom,initial-channels")) {
++		num_initial_channels =
++			device_property_count_u32(dev, "qcom,initial-channels");
++		if (num_initial_channels < 1 ||
++		    num_initial_channels > BAM_DMUX_NUM_CH)
++			return dev_err_probe(dev, -EINVAL,
++					     "Invalid initial channels\n");
++
++		ret = device_property_read_u32_array(dev, "qcom,initial-channels",
++						     initial_channels,
++						     num_initial_channels);
++		if (ret)
++			return dev_err_probe(dev, ret,
++					     "Failed to read initial channels\n");
++
++		for (i = 0; i < num_initial_channels; i++) {
++			if (initial_channels[i] >= BAM_DMUX_NUM_CH)
++				return dev_err_probe(dev, -EINVAL,
++						     "Invalid initial channel %u\n",
++						     initial_channels[i]);
++		}
++	}
++
+ 	dmux->pc_irq = platform_get_irq_byname(pdev, "pc");
+ 	if (dmux->pc_irq < 0)
+ 		return dmux->pc_irq;
+@@ -843,6 +875,12 @@ static int bam_dmux_probe(struct platfor
+ 			bam_dmux_power_off(dmux);
+ 	}
+ 
++	for (i = 0; i < num_initial_channels; i++)
++		set_bit(initial_channels[i], dmux->initial_channels);
++
++	if (num_initial_channels)
++		schedule_work(&dmux->register_netdev_work);
++
+ 	return 0;
+ 
+ err_disable_pm:
