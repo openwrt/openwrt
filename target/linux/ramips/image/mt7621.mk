@@ -1776,6 +1776,15 @@ define Device/huasifei_ws1208v2
 endef
 TARGET_DEVICES += huasifei_ws1208v2
 
+define Device/ineauto_yod1800
+  IMAGE_SIZE := 15808k
+  UIMAGE_NAME := C8343R-9999
+  DEVICE_VENDOR := INEAUTO
+  DEVICE_MODEL := YOD1800
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+endef
+TARGET_DEVICES += ineauto_yod1800
+
 define Device/iodata_wn-ax1167gr
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
