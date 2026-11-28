@@ -11,6 +11,7 @@ do_sysinfo_octeon() {
 	case "$of_machine" in
 	"cisco,vedge1000"*)
 		return 0
+		;;
 	esac
 
 	case "$machine" in
@@ -20,19 +21,15 @@ do_sysinfo_octeon() {
 		# let generic 02_sysinfo handle it since device has its own device tree
 		return 0
 		;;
-
 	"UBNT_E200"*)
 		name="er"
 		;;
-
 	"UBNT_E220"*)
 		name="erpro"
 		;;
-
 	"ITUS_SHIELD"*)
 		name="itus,shield-router"
 		;;
-
 	*)
 		name="generic"
 		;;

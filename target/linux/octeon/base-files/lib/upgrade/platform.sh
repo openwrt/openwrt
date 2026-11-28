@@ -3,7 +3,7 @@
 #
 
 if [ -x /usr/sbin/blkid ]; then
-  RAMFS_COPY_BIN="/usr/sbin/blkid"
+	RAMFS_COPY_BIN="/usr/sbin/blkid"
 fi
 
 platform_get_rootfs() {
@@ -12,14 +12,14 @@ platform_get_rootfs() {
 
 	if read cmdline < /proc/cmdline; then
 		case "$cmdline" in
-			*root=PARTUUID=*)
-				rootpartuuid="${cmdline##*root=PARTUUID=}"
-				rootpartuuid="${rootpartuuid%% *}"
-				rootfsdev="$(blkid -o device -t PARTUUID="${rootpartuuid}")"
+		*root=PARTUUID=*)
+			rootpartuuid="${cmdline##*root=PARTUUID=}"
+			rootpartuuid="${rootpartuuid%% *}"
+			rootfsdev="$(blkid -o device -t PARTUUID="${rootpartuuid}")"
 			;;
-			*root=*)
-				rootfsdev="${cmdline##*root=}"
-				rootfsdev="${rootfsdev%% *}"
+		*root=*)
+			rootfsdev="${cmdline##*root=}"
+			rootfsdev="${rootfsdev%% *}"
 			;;
 		esac
 
@@ -47,20 +47,20 @@ platform_copy_config_helper() {
 
 platform_copy_config() {
 	case "$(board_name)" in
-	ubnt,erlite|\
-	ubnt,usg)
-		platform_copy_config_helper /dev/sda1 vfat
-		;;
-	itus,shield-router)
-		platform_copy_config_helper /dev/mmcblk1p1 vfat
+	cisco,vedge1000)
+		platform_copy_config_helper "$(platform_get_n821_disk 1)" ext2
 		;;
 	er|\
 	ubnt,edgerouter-4|\
 	ubnt,edgerouter-6p)
 		platform_copy_config_helper /dev/mmcblk0p1 vfat
 		;;
-	cisco,vedge1000)
-		platform_copy_config_helper "$(platform_get_n821_disk 1)" ext2
+	itus,shield-router)
+		platform_copy_config_helper /dev/mmcblk1p1 vfat
+		;;
+	ubnt,erlite|\
+	ubnt,usg)
+		platform_copy_config_helper /dev/sda1 vfat
 		;;
 	esac
 }
@@ -127,23 +127,24 @@ platform_do_upgrade() {
 	fi
 	[ -b "${rootfs}" ] || return 1
 	case "$board" in
-	er | \
-	ubnt,edgerouter-4 | \
+	cisco,vedge1000)
+		kernel="$(platform_get_n821_disk 1)"
+		;;
+	er|\
+	ubnt,edgerouter-4|\
 	ubnt,edgerouter-6p)
 		kernel=/dev/mmcblk0p1
+		;;
+	itus,shield-router)
+		kernel=ItusrouterImage
 		;;
 	ubnt,erlite|\
 	ubnt,usg)
 		kernel=/dev/sda1
 		;;
-	itus,shield-router)
-		kernel=ItusrouterImage
-		;;
-	cisco,vedge1000)
-		kernel="$(platform_get_n821_disk 1)"
-		;;
 	*)
 		return 1
+		;;
 	esac
 
 	platform_do_flash $tar_file $board $kernel $rootfs
@@ -160,13 +161,13 @@ platform_check_image() {
 	[ -n "$board_dir" ] || return 1
 
 	case "$board" in
-	er | \
-	itus,shield-router | \
-	ubnt,edgerouter-4 | \
-	ubnt,edgerouter-6p | \
-	ubnt,erlite | \
-	ubnt,usg | \
-	cisco,vedge1000)
+	cisco,vedge1000|\
+	er|\
+	itus,shield-router|\
+	ubnt,edgerouter-4|\
+	ubnt,edgerouter-6p|\
+	ubnt,erlite|\
+	ubnt,usg)
 		local kernel_length=$(tar xf $tar_file $board_dir/kernel -O | wc -c 2> /dev/null)
 		local rootfs_length=$(tar xf $tar_file $board_dir/root -O | wc -c 2> /dev/null)
 		[ "$kernel_length" = 0 -o "$rootfs_length" = 0 ] && {
