@@ -4,9 +4,9 @@ START=99
 
 boot() {
 	case $(board_name) in
-	methode,udpu|\
-	methode,edpu)
+	methode,edpu|\
+	methode,udpu)
 		fw_setenv bootcount 0
-	;;
+		;;
 	esac
 }

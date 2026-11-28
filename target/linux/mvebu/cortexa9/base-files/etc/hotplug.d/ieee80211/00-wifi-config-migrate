@@ -18,7 +18,7 @@ rename_wifi_path() {
 	local path_new=$(echo ${path_old} | sed "${2}")
 
 	if [ -e "/sys/devices/platform/${path_new}" ] && [ ${path_old} != ${path_new} ]
-	then 
+	then
 		uci set wireless.${1}.path=${path_new}
 		PATH_CHANGED=1
 	fi
