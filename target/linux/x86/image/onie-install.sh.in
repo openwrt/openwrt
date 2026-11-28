@@ -5,6 +5,7 @@
 # Wrapped around a tar payload that contains:
 #     rootfs.tar.gz   -- OpenWrt root tree
 #     vmlinuz         -- OpenWrt kernel
+#     *-ucode.img     -- early load microcode, if installed in the image
 # Appended at PAYLOAD_OFFSET (filled in by image.mk at build time).
 #
 # Follows the ONIE demo installer pattern:
@@ -123,6 +124,9 @@ tar -xzf "$payload_dir/rootfs.tar.gz" -C "$openwrt_mnt"
 echo "Installing kernel..."
 mkdir -p "$openwrt_mnt/boot"
 cp "$payload_dir/vmlinuz" "$openwrt_mnt/boot/vmlinuz"
+for f in intel-ucode.img amd-ucode.img; do
+    [ ! -f "$payload_dir/$f" ] || cp "$payload_dir/$f" "$openwrt_mnt/boot/$f"
+done
 
 # Stash preserved config at rootfs root; OpenWrt's preinit
 # (80_mount_root) extracts it on first boot and /etc/init.d/done
@@ -197,7 +201,19 @@ fi
 set timeout="$GRUB_TIMEOUT"
 
 menuentry "$GRUB_TITLE" {
-    linux /boot/vmlinuz root=PARTUUID=$rootpart_partuuid rootwait $GRUB_CMDLINE noinitrd
+    set ucode=
+    if [ -s /boot/intel-ucode.img ]; then
+        set ucode=/boot/intel-ucode.img
+    fi
+    if [ -s /boot/amd-ucode.img ]; then
+        set ucode="\$ucode /boot/amd-ucode.img"
+    fi
+    if [ -z "\$ucode" ]; then
+        linux /boot/vmlinuz root=PARTUUID=$rootpart_partuuid rootwait $GRUB_CMDLINE noinitrd
+    else
+        linux /boot/vmlinuz root=PARTUUID=$rootpart_partuuid rootwait $GRUB_CMDLINE
+        initrd \$ucode
+    fi
 }
 menuentry "$GRUB_TITLE (failsafe mode)" {
     linux /boot/vmlinuz failsafe=true root=PARTUUID=$rootpart_partuuid rootwait $GRUB_CMDLINE noinitrd

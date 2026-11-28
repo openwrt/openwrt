@@ -92,6 +92,9 @@ define Build/onie-installer
 		-C $(TARGET_DIR)/ -cf - . | $(STAGING_DIR_HOST)/bin/libdeflate-gzip \
 		-12 -c > $@.onie/payload/rootfs.tar.gz
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.onie/payload/vmlinuz
+	for f in $(TARGET_DIR_ORIG)/boot/intel-ucode.img $(TARGET_DIR_ORIG)/boot/amd-ucode.img; do \
+		[ ! -f "$$f" ] || $(CP) "$$f" $@.onie/payload/; \
+	done
 	$(TAR) --numeric-owner --owner=0 --group=0 --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime=@$(SOURCE_DATE_EPOCH)) \
 		-C $@.onie/payload -cf $@.onie/payload.tar .
