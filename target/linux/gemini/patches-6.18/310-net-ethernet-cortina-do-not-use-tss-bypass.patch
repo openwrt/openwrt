@@ -1,0 +1,49 @@
+From: Dragos Cosmin <zahariadragoscosmin@hotmail.com>
+Subject: net: ethernet: cortina: don't use the TSS bypass for full-size frames
+
+On a Raidsonic IB-4210-B (SL3512, RTL8211B, 1 Gbps) the TX DMA stops
+permanently within seconds of sending full-size (1514 byte) non-TCP
+frames, e.g. "ping -s 1472": the hardware read pointer freezes on a
+descriptor with TSS_BYPASS_BIT set, the queue fills up and only a reboot
+recovers. With 1400 byte frames the same load (plus TCP in both
+directions) runs clean.
+
+The bypass was meant for frames *bigger* than 1514 bytes, but the test
+used >= ETH_FRAME_LEN. Use > so ordinary full-size frames take the normal
+checksum path again (as the old sl351x driver always did), and for really
+oversized frames keep the software checksum but don't set the bypass bit.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Dragos Cosmin <zahariadragoscosmin@hotmail.com>
+---
+--- a/drivers/net/ethernet/cortina/gemini.c
++++ b/drivers/net/ethernet/cortina/gemini.c
+@@ -1193,21 +1193,25 @@ static int gmac_map_tx_bufs(struct net_d
+ 			   skb->len, netdev->mtu, mss);
+ 		word1 |= TSS_MTU_ENABLE_BIT;
+ 		word3 |= mss;
+-	} else if (skb->len >= ETH_FRAME_LEN) {
++	} else if (skb->len > ETH_FRAME_LEN) {
+ 		/* Hardware offloaded checksumming isn't working on non-TCP frames
+ 		 * bigger than 1514 bytes. A hypothesis about this is that the
+ 		 * checksum buffer is only 1518 bytes, so when the frames get
+ 		 * bigger they get truncated, or the last few bytes get
+ 		 * overwritten by the FCS.
+ 		 *
+-		 * Just use software checksumming and bypass on bigger frames.
++		 * Just use software checksumming on bigger frames. Do not set
++		 * TSS_BYPASS_BIT: on the SL3512 (Raidsonic IB-4210-B) a
++		 * full-size frame with the bypass bit set stops the TX DMA
++		 * for good (read pointer frozen, only a reboot recovers).
++		 * A plain 1514 byte frame is handled fine by the checksum
++		 * engine, as the old OpenWrt sl351x driver always did.
+ 		 */
+ 		if (skb->ip_summed == CHECKSUM_PARTIAL) {
+ 			ret = skb_checksum_help(skb);
+ 			if (ret)
+ 				return ret;
+ 		}
+-		word1 |= TSS_BYPASS_BIT;
+ 	}
+ 
+ 	if (skb->ip_summed == CHECKSUM_PARTIAL) {
