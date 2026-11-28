@@ -6,17 +6,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=secilc
-PKG_VERSION:=3.10
+PKG_VERSION:=3.11
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
-PKG_HASH:=6658071d6f1044184d3973062a798187537ae1c3ddb4c31afd417df333316c10
+PKG_HASH:=1fb7de005d35ae0ac6ff8f8fc955d08a15b5c1a67e961b97ef987576af0db11a
 HOST_BUILD_DEPENDS:=libsepol/host
 
 PKG_MAINTAINER:=Dominick Grift <dominick.grift@defensec.nl>
 PKG_LICENSE:=BSD-2-Clause
-PKG_LICENSE_FILES:=COPYING
+PKG_LICENSE_FILES:=LICENSE
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/nls.mk
@@ -31,7 +31,7 @@ define Package/secilc
 	SECTION:=utils
 	CATEGORY:=Utilities
 	TITLE:=SELinux Common Intermediate Language (CIL) Compiler
-	URL:=https://github.com/selinuxproject
+	URL:=https://selinuxproject.github.io/
 	DEPENDS:=+libsepol
 endef
 
@@ -39,7 +39,7 @@ define Package/secilc/description
 	The SELinux CIL Compiler is a compiler that converts the CIL language as
 	described on the CIL design wiki into a kernel binary policy file.
 	Please see the CIL Design Wiki at:
-	http://github.com/SELinuxProject/cil/wiki/
+	https://github.com/SELinuxProject/cil/wiki/
 	for more information about the goals and features on the CIL language.
 endef
 
