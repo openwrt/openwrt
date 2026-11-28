@@ -201,12 +201,12 @@
 
 			partition@0 {
 				label = "LOADER";
-				reg = <0x000000 0x0E0000>;
+				reg = <0x000000 0x0e0000>;
 				read-only;
 			};
 			partition@e0000 {
 				label = "BDINFO";
-				reg = <0x0E0000 0x010000>;
+				reg = <0x0e0000 0x010000>;
 				read-only;
 
 				nvmem-layout {
@@ -219,7 +219,7 @@
 			};
 			partition@f0000 {
 				label = "SYSINFO";
-				reg = <0x0F0000 0x010000>;
+				reg = <0x0f0000 0x010000>;
 				read-only;
 			};
 			partition@100000 {
@@ -233,12 +233,12 @@
 			partition@300000 {
 				label = "Kernel";
 				compatible = "openwrt,uimage", "denx,uimage";
-				reg = <0x300000 0x1E80000>;
+				reg = <0x300000 0x1e80000>;
 			};
 			partition@2180000 {
 				label = "Kernel2";
 				compatible = "openwrt,uimage", "denx,uimage";
-				reg = <0x2180000 0x1E80000>;
+				reg = <0x2180000 0x1e80000>;
 			};
 		};
 	};

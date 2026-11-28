@@ -128,7 +128,7 @@
 			// and the "ConfigA" (3 MiB) partitions here.
 			fwconcat0: partition@100000 {
 				label = "fwconcat0";
-				reg = <0x100000 0xF00000>;
+				reg = <0x100000 0xf00000>;
 			};
 
 			partition@1000000 {
@@ -153,7 +153,7 @@
 			// and the "ConfigB" (3 MiB) partitions here.
 			fwconcat1: partition@10c0000 {
 				label = "fwconcat1";
-				reg = <0x10c0000 0xF00000>;
+				reg = <0x10c0000 0xf00000>;
 			};
 
 			art: partition@1fc0000 {
@@ -249,7 +249,7 @@
 
 &pinmux {
 	wdt_gpio15: pinmux_wdt_gpio15 {
-		pinctrl-single,bits = <0xc 0x0 0xFF000000>;
+		pinctrl-single,bits = <0xc 0x0 0xff000000>;
 	};
 };
 

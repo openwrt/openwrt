@@ -310,7 +310,7 @@
 		spi-cal-enable;
 		spi-cal-mode = "read-data";
 		spi-cal-datalen = <7>;
-		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4e 0x41 0x4e 0x44>;
 		spi-cal-addrlen = <5>;
 		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
 
@@ -327,7 +327,7 @@
 
 			partition@580000 {
 				label = "ubi";
-				reg = <0x100000 0xFF00000>;
+				reg = <0x100000 0xff00000>;
 				compatible = "linux,ubi";
 
 				volumes {
