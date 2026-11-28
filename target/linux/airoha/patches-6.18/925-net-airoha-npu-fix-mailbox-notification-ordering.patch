@@ -1,0 +1,30 @@
+From 6631329dda4937cf85778ccde3eb59dc479b2b0c Mon Sep 17 00:00:00 2001
+From: Faliang Wang <faliang.wang@airoha.com>
+Date: Wed, 25 Nov 2026 15:02:39 +0000
+Subject: [PATCH net 1/2] net: airoha: fix NPU mailbox notification ordering
+
+During automated reboot testing, NPU mailbox communication can fail
+intermittently and prevent Wi-Fi from coming up.
+
+The message counter in CTRL(2) notifies the NPU that a new message is
+ready. Write the function information to CTRL(3) before updating that
+counter, so the NPU receives the function information before the
+notification.
+
+Fixes: 23290c7bc190 ("net: airoha: Introduce Airoha NPU support")
+Signed-off-by: Faliang Wang <faliang.wang@airoha.com>
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -195,10 +195,10 @@ static int __airoha_npu_send_msg(struct
+ 
+ 	regmap_write(npu->regmap, REG_CR_MBQ0_CTRL(0) + offset, core->addr);
+ 	regmap_write(npu->regmap, REG_CR_MBQ0_CTRL(1) + offset, len);
+-	regmap_read(npu->regmap, REG_CR_MBQ0_CTRL(2) + offset, &val);
+-	regmap_write(npu->regmap, REG_CR_MBQ0_CTRL(2) + offset, val + 1);
+ 	val = FIELD_PREP(MBOX_MSG_FUNC_ID, func_id) | MBOX_MSG_WAIT_RSP;
+ 	regmap_write(npu->regmap, REG_CR_MBQ0_CTRL(3) + offset, val);
++	regmap_read(npu->regmap, REG_CR_MBQ0_CTRL(2) + offset, &val);
++	regmap_write(npu->regmap, REG_CR_MBQ0_CTRL(2) + offset, val + 1);
+ 
+ 	ret = regmap_read_poll_timeout_atomic(npu->regmap,
+ 					      REG_CR_MBQ0_CTRL(3) + offset,
