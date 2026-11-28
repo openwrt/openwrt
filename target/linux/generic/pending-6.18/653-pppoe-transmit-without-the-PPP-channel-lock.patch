@@ -1,0 +1,52 @@
+From 184ee432bc6a4fe63b059e52e91bf86a6624d6f1 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 25 Oct 2026 01:10:05 +0200
+Subject: [PATCH] pppoe: transmit without the PPP channel lock
+
+pppoe_xmit() reads the session's device, session ID and peer address,
+which are set before the channel is registered and stay valid until
+pppox_unbind_sock() has unregistered it, and hands the frame to
+dev_queue_xmit(). It never refuses a frame. Set lockless_xmit, so that
+ppp_generic calls it from several CPUs at once without the channel lock.
+
+pppoe_release() clears pppoe_dev before it unbinds the socket, while
+frames may still be sent, so annotate that store and load the pointer
+once with READ_ONCE().
+
+With one iperf3 TCP stream per CPU over PPPoE on a veth, in a 4-CPU
+QEMU guest (TCG) with lock_stat, ppp->wlock saw 400181 contentions in
+1290349 acquisitions over three 10 s runs before this series, and
+neither ppp->wlock nor the channel's downl is taken for data frames
+after it. Throughput in those runs went from 434, 493 and 477 Mbit/s
+to 560, 556 and 528 Mbit/s.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/drivers/net/ppp/pppoe.c
++++ b/drivers/net/ppp/pppoe.c
+@@ -588,7 +588,7 @@ static int pppoe_release(struct socket *
+ 
+ 	if (po->pppoe_dev) {
+ 		dev_put(po->pppoe_dev);
+-		po->pppoe_dev = NULL;
++		WRITE_ONCE(po->pppoe_dev, NULL);
+ 	}
+ 
+ 	pppox_unbind_sock(sk);
+@@ -703,6 +703,7 @@ static int pppoe_connect(struct socket *
+ 		po->chan.private = sk;
+ 		po->chan.ops = &pppoe_chan_ops;
+ 		po->chan.direct_xmit = true;
++		po->chan.lockless_xmit = true;
+ 
+ 		error = ppp_register_net_channel(dev_net(dev), &po->chan);
+ 		if (error) {
+@@ -924,7 +925,7 @@ end:
+ static int __pppoe_xmit(struct sock *sk, struct sk_buff *skb)
+ {
+ 	struct pppox_sock *po = pppox_sk(sk);
+-	struct net_device *dev = po->pppoe_dev;
++	struct net_device *dev = READ_ONCE(po->pppoe_dev);
+ 	struct pppoe_hdr *ph;
+ 	int data_len = skb->len;
+ 
