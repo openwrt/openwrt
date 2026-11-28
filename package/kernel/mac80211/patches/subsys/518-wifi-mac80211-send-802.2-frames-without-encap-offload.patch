@@ -1,0 +1,27 @@
+From 7f558fdd66fc91dee5c3ce1bc61265bd0c8d212a Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 03:17:32 +0100
+Subject: [PATCH] wifi: mac80211: send 802.2 frames without encap offload
+
+A frame with a length where the type goes, such as an STP BPDU, carries
+its LLC header in the payload. The native path builds its 802.11 frame
+without a SNAP header, and the encap offload cannot be told to do the
+same, so send these frames through the native path.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -5107,6 +5107,13 @@ static void __ieee80211_subif_start_xmit
+ 		goto out;
+ 	}
+ 
++	/* A frame with a length in place of the type, such as a BPDU, has its
++	 * LLC header in the payload, which the offload cannot be told about:
++	 * the normal path sends it as it is.
++	 */
++	if (unlikely(ntohs(ehdr->h_proto) < ETH_P_802_3_MIN))
++		goto skip_offload;
++
+ 	/*
+ 	 * If STA is invalid, use the multicast offload path when applicable.
+ 	 * In AP mode, drop the frame if there are no associated stations;

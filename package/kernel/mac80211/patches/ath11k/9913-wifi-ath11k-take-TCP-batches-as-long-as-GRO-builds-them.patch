@@ -1,0 +1,42 @@
+From 406727257ae3e643371996da6c5c6c42f6241ed7 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 03:34:39 +0100
+Subject: [PATCH] wifi: ath11k: take TCP batches as long as GRO builds them
+
+The netdevs offer ATH11K_DP_TX_TSO_MAX_SEGS (16) as their gso_max_segs,
+but a bridge or router hands them what GRO built on the ingress port: up
+to 64 KB (the default gro_max_size), and for a frame list up to 64
+segments, where tcp_gro_receive() ends it. At an MSS of 1448 that is 45
+segments. gso_features_check() clears the GSO features of every frame
+with more segments than gso_max_segs, so validate_xmit_skb() cut each
+such batch into one frame per segment before mac80211, and forwarded TCP
+downlink reached the TCL one segment at a time under load, when GRO
+batches are longest.
+
+The 16 is no limit of the TCL: each segment of a batch is a ring entry and
+an MSDU extension descriptor of its own, and a ring has 2048 descriptors.
+Raise the bound to 64. The transmit loop then takes a frame while 64 of
+the 512 TCL ring entries are free, and a batch keeps 256 bytes of ids and
+descriptor slots on the stack. A batch whose airtime does not fit the
+estimate is still cut by mac80211 before it is queued.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -89,10 +89,13 @@ struct dp_rxdma_ring {
+ 
+ #define ATH11K_TX_COMPL_NEXT(x)	(((x) + 1) % DP_TX_COMP_RING_SIZE)
+ 
+-/* The most segments of a TCP batch the TCL takes whole, and the payload
+- * pieces of one segment past the headers
++/* The most segments of a TCP batch the TCL takes whole: each segment is a
++ * ring entry and an extension descriptor of its own, so the bound is what the
++ * stack builds, the 64 segments at which TCP GRO ends a frame list aggregate
++ * and more than the 64 KB of any other GRO aggregate hold at an MSS of 1024
++ * or more.
+  */
+-#define ATH11K_DP_TX_TSO_MAX_SEGS	16
++#define ATH11K_DP_TX_TSO_MAX_SEGS	64
+ #define ATH11K_DP_TX_NO_EXT		0xffff
+ 
+ struct ath11k_dp_tx_ext_map {

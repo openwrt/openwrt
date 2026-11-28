@@ -266,11 +266,22 @@ wifi_devs() {
 	done
 }
 
+# The stamp is the driver's own rule for the frames it sends to a Wi-Fi netdev
+# from the PPE path (ppe_flow_wifi_prio): the L3 length at most the threshold,
+# and not a TCP segment with PSH. Those frames reach the netdev with
+# skb->priority already 256 + prio, so the first filter passes any frame whose
+# priority is above 255 and none of the rest runs for them; what is left are
+# frames that came by the host, which the rest classify the same way.
+#
 # u32 takes its offsets from the network header, which puts the length field
-# at 2 for IPv4 and at 4 for IPv6. The egress block is shared, so these carry
+# at 2 for IPv4 and at 4 for IPv6, and cannot compare, so the length is a
+# compare ematch: the IPv4 total length is below len + 1, the IPv6 payload
+# length, which leaves out the 40 bytes of header the C test counts, below
+# len - 39. No frame has an IPv6 payload under len - 39 when len is 40 or less,
+# so there is then no IPv6 filter. The egress block is shared, so these carry
 # the same prefs the ingress half owns.
 wifi_small_pkt() {
-	local dev="$1" prio="$2"
+	local dev="$1" prio="$2" len="$3"
 
 	tc qdisc add dev "$dev" clsact 2>/dev/null
 
@@ -278,6 +289,9 @@ wifi_small_pkt() {
 	# than standing in for the first; the pref is cleared to keep a reload
 	# from growing the block.
 	wifi_clear "$dev"
+
+	tc filter add dev "$dev" egress pref $((PREF_BASE - 3)) protocol all \
+		basic match 'meta(priority gt 255)' action ok 2>/dev/null
 
 	# A short TCP segment with PSH ends a write of a flow whose other
 	# segments are full size; in a higher access category it would overtake
@@ -289,15 +303,20 @@ wifi_small_pkt() {
 	tc filter add dev "$dev" egress pref $((PREF_BASE - 1)) \
 		protocol ipv6 u32 match u8 0x06 0xff at 6 \
 		match u8 0x08 0x08 at 53 action ok 2>/dev/null
-	tc filter add dev "$dev" egress pref $PREF_BASE protocol ip u32 \
-		match u16 0x0000 0xff00 at 2 \
+	tc filter add dev "$dev" egress pref $PREF_BASE protocol ip basic \
+		match "cmp(u16 at 2 layer network lt $((len + 1)))" \
 		action skbedit priority $(printf '%x' $((256 + prio))) 2>/dev/null
-	tc filter add dev "$dev" egress pref $((PREF_BASE + 1)) \
-		protocol ipv6 u32 match u16 0x0000 0xff00 at 4 \
-		action skbedit priority $(printf '%x' $((256 + prio))) 2>/dev/null
+	if [ "$len" -gt 40 ]; then
+		tc filter add dev "$dev" egress pref $((PREF_BASE + 1)) \
+			protocol ipv6 basic \
+			match "cmp(u16 at 4 layer network lt $((len - 39)))" \
+			action skbedit priority $(printf '%x' $((256 + prio))) \
+			2>/dev/null
+	fi
 }
 
 wifi_clear() {
+	tc filter del dev "$1" egress pref $((PREF_BASE - 3)) >/dev/null 2>&1
 	tc filter del dev "$1" egress pref $((PREF_BASE - 2)) >/dev/null 2>&1
 	tc filter del dev "$1" egress pref $((PREF_BASE - 1)) >/dev/null 2>&1
 	tc filter del dev "$1" egress pref $PREF_BASE >/dev/null 2>&1
@@ -330,12 +349,10 @@ apply() {
 	#
 	# cfg80211_classify8021d() takes skb->priority in 256..263 as a direct
 	# 802.1d tag, and sch_handle_egress() runs before the queue is picked, so
-	# a clsact filter on the AP netdev is enough. Matching the high byte of
-	# the length field for zero is the cheapest "small" test u32 can do; the
-	# exact threshold matters far less than the frame not being best effort.
+	# a clsact filter on the AP netdev is enough.
 	for dev in $(wifi_devs); do
 		if [ "$len" -gt 0 ]; then
-			wifi_small_pkt "$dev" "$prio"
+			wifi_small_pkt "$dev" "$prio" "$len"
 		else
 			wifi_clear "$dev"
 		fi
@@ -435,7 +452,7 @@ wifi_dev() {
 	config_get len global small_pkt_len 1000
 	config_get prio global small_pkt_prio 5
 	[ "$len" -gt 0 ] || return 0
-	wifi_small_pkt "$dev" "$prio"
+	wifi_small_pkt "$dev" "$prio" "$len"
 }
 
 reload_service() {

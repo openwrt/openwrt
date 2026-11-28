@@ -1,0 +1,62 @@
+From 14db3d948135161f53d503390c940cd0d7066fb8 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 06:38:45 +0100
+Subject: [PATCH] wifi: mac80211: tell a driver the netdev a station's 802.3 frames reach
+
+A driver that merges the received frames of a station as GRO on the
+netdev would has to know that netdev: whether GRO is on there, whether
+it builds frame lists, and which host sockets it looks up. The netdev is
+not the vif's for a station on an AP_VLAN interface, and only mac80211
+knows which one the frames reach: the device of the station's fast_rx,
+which __ieee80211_rx_handle_8023() delivers them to and drops them
+without.
+
+Add ieee80211_sta_rx_netdev(), which returns that device under RCU, or
+NULL while the station has no fast_rx.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -5559,6 +5559,24 @@ void ieee80211_rx_napi(struct ieee80211_
+ 		       struct sk_buff *skb, struct napi_struct *napi);
+ 
+ /**
++ * ieee80211_sta_rx_netdev - the netdev the 802.3 frames of a station reach
++ *
++ * A frame the driver hands over with %RX_FLAG_8023 for @sta enters the stack
++ * on this netdev: the station's AP_VLAN interface if it is on one, else the
++ * interface of its vif. A driver that prepares such frames for the receive
++ * path of the netdev, as merging them the way its GRO would, reads the
++ * netdev's settings from it.
++ *
++ * Must be called under RCU; the netdev may be used until the read side
++ * critical section ends.
++ *
++ * @sta: the station
++ *
++ * Return: the netdev, or %NULL while frames of @sta take no 802.3 path.
++ */
++struct net_device *ieee80211_sta_rx_netdev(struct ieee80211_sta *sta);
++
++/**
+  * ieee80211_rx - receive frame
+  *
+  * Use this function to hand received frames to mac80211. The receive
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -5427,6 +5427,15 @@ static bool ieee80211_prepare_and_rx_han
+ 	return true;
+ }
+ 
++struct net_device *ieee80211_sta_rx_netdev(struct ieee80211_sta *pubsta)
++{
++	struct sta_info *sta = container_of(pubsta, struct sta_info, sta);
++	struct ieee80211_fast_rx *fast_rx = rcu_dereference(sta->fast_rx);
++
++	return fast_rx ? fast_rx->dev : NULL;
++}
++EXPORT_SYMBOL(ieee80211_sta_rx_netdev);
++
+ static void __ieee80211_rx_handle_8023(struct ieee80211_hw *hw,
+ 				       struct ieee80211_sta *pubsta,
+ 				       struct sk_buff *skb,

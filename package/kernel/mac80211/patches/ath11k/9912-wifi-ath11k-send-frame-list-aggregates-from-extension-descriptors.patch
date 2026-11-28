@@ -1,0 +1,212 @@
+From cfa8d43689180720156b6812a7da81a58fe1fdb3 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 03:34:39 +0100
+Subject: [PATCH] wifi: ath11k: send frame list aggregates from extension descriptors
+
+GRO builds a TCP aggregate with a frame list in two cases: with
+rx-gro-list on the ingress port, as an SKB_GSO_FRAGLIST frame, and with it
+off, once the head has MAX_SKB_FRAGS fragments, when skb_gro_receive()
+chains the further segments on the frag_list of an SKB_GSO_TCPV4 or
+SKB_GSO_TCPV6 frame. Either way the payload is the TCP byte stream cut at
+gso_size, as for any TSO batch: tcp_gro_receive() takes a segment only
+with the next sequence number and with the length of the first one, and
+inet_gro_flush() only with an IP ID that goes up by one or stays fixed.
+
+ath11k_dp_tx_ext() refused any frame with a frag_list, so such a batch
+went to skb_gso_segment() in ath11k_dp_tx_gso(), which cuts it into one
+frame per segment (skb_segment_list() for the frame list type), each with
+its own allocation, mapping and TCL entry.
+
+Let the payload of a batch go on in the skbs of its frag_list: the
+mapping walks the linear part and the fragments of each of them in turn.
+A frame list type batch is first made the frame the stack makes of a TSO
+batch: the pseudo-header sum of the whole length in the TCP checksum,
+CHECKSUM_PARTIAL, and SKB_GSO_TCP_FIXEDID when its first two segments
+carry the same IP ID, which tcp4_gro_complete() does not record for a
+frame list; a batch the TCL then cannot take is cut by skb_segment() as
+any other one. A frame that is not GSO and has a frag_list is still not
+sent from an extension descriptor.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include <net/gso.h>
++#include <net/ip6_checksum.h>
+ #include <net/tcp.h>
+ 
+ #include "core.h"
+@@ -476,29 +477,40 @@ fail_remove_idr:
+ 	return ret;
+ }
+ 
+-/* Maps the payload of one segment, @len bytes from *@piece at *@off, where
+- * piece 0 is the linear part past the headers and piece n is fragment n - 1.
++/* Maps the payload of one segment, @len bytes from *@piece of *@seg at *@off,
++ * where piece 0 is the linear part, past the headers in @skb, and piece n is
++ * fragment n - 1. The payload goes on in the skbs of the frag_list of @skb,
++ * each from its linear part on.
+  */
+ static int ath11k_dp_tx_tso_map(struct device *dev, struct sk_buff *skb,
+ 				struct ath11k_dp_tx_ext_map *map,
+ 				struct hal_tx_msdu_ext *ext,
+-				unsigned int *piece, unsigned int *off,
+-				unsigned int len)
++				struct sk_buff **seg, unsigned int *piece,
++				unsigned int *off, unsigned int len)
+ {
+-	struct skb_shared_info *shinfo = skb_shinfo(skb);
++	struct skb_shared_info *shinfo = skb_shinfo(*seg);
+ 	unsigned int avail, take;
+ 	dma_addr_t dma;
+ 
+ 	map->num = 0;
+ 	while (len) {
+ 		if (!*piece)
+-			avail = skb_headlen(skb) - *off;
++			avail = skb_headlen(*seg) - *off;
+ 		else
+ 			avail = skb_frag_size(&shinfo->frags[*piece - 1]) - *off;
+ 		if (!avail) {
+-			if (*piece == shinfo->nr_frags)
+-				return -EINVAL;
+-			(*piece)++;
++			if (*piece == shinfo->nr_frags) {
++				struct sk_buff *next = *seg == skb ?
++					skb_shinfo(skb)->frag_list : (*seg)->next;
++
++				if (!next)
++					return -EINVAL;
++				*seg = next;
++				shinfo = skb_shinfo(next);
++				*piece = 0;
++			} else {
++				(*piece)++;
++			}
+ 			*off = 0;
+ 			continue;
+ 		}
+@@ -508,8 +520,8 @@ static int ath11k_dp_tx_tso_map(struct d
+ 		take = min(avail, len);
+ 		/* mapped as pages, as ath11k_dp_tx_tso_unmap() unmaps them */
+ 		if (!*piece)
+-			dma = dma_map_page(dev, virt_to_page(skb->data + *off),
+-					   offset_in_page(skb->data + *off),
++			dma = dma_map_page(dev, virt_to_page((*seg)->data + *off),
++					   offset_in_page((*seg)->data + *off),
+ 					   take, DMA_TO_DEVICE);
+ 		else
+ 			dma = skb_frag_dma_map(dev, &shinfo->frags[*piece - 1],
+@@ -607,14 +619,64 @@ static void ath11k_dp_tx_ext_unpad(struc
+ 		skb->transport_header += pad;
+ }
+ 
++/* A frame list aggregate of GRO is a TCP byte stream cut at gso_size, as a
++ * TSO batch is: the head holds the headers and the first segment, and each
++ * skb on its frag_list the payload of one more, behind which GRO left that
++ * segment's own headers. GRO verified the segments whole, so the head
++ * carries the first one's checksum and CHECKSUM_UNNECESSARY. Give it what
++ * the stack gives a TSO batch: the pseudo-header sum of the whole length
++ * and CHECKSUM_PARTIAL, and the fixed-ID type when its segments share their
++ * IP ID, which GRO accepts as it accepts an ID that goes up by one.
++ */
++static int ath11k_dp_tx_fraglist_tso(struct sk_buff *skb)
++{
++	unsigned int thoff = skb_transport_offset(skb);
++	struct skb_shared_info *shinfo;
++	struct tcphdr *th;
++	int ret;
++
++	/* the checksum field is written: a head shared with a clone is
++	 * copied first
++	 */
++	ret = skb_ensure_writable(skb, thoff + sizeof(*th));
++	if (ret)
++		return ret;
++
++	shinfo = skb_shinfo(skb);
++	th = tcp_hdr(skb);
++	if (shinfo->gso_type & SKB_GSO_TCPV4) {
++		const struct iphdr *iph = ip_hdr(skb);
++
++		th->check = ~tcp_v4_check(skb->len - thoff, iph->saddr,
++					  iph->daddr, 0);
++		if (shinfo->frag_list &&
++		    ip_hdr(shinfo->frag_list)->id == iph->id)
++			shinfo->gso_type |= SKB_GSO_TCP_FIXEDID;
++	} else {
++		const struct ipv6hdr *ip6h = ipv6_hdr(skb);
++
++		th->check = ~tcp_v6_check(skb->len - thoff, &ip6h->saddr,
++					  &ip6h->daddr, 0);
++	}
++
++	skb->ip_summed = CHECKSUM_PARTIAL;
++	skb->csum_level = 0;
++	skb->csum_start = skb_transport_header(skb) - skb->head;
++	skb->csum_offset = offsetof(struct tcphdr, check);
++	shinfo->gso_type &= ~SKB_GSO_FRAGLIST;
++
++	return 0;
++}
++
+ /* A TCP batch, or a frame with fragments, that the TCL takes from MSDU
+  * extension descriptors. Each descriptor lists the buffers of one frame: the
+  * linear part of the skb, which for a batch holds the headers shared by all
+  * its segments, and the payload in the fragments. A TCP batch has one
+  * descriptor for each of its segments, which also gives the segment's IP
+  * length, IP ID, TCP sequence number and flags for the TCL to write into the
+- * headers; every segment holds a reference on the batch, and the completion
+- * of the last one reports the batch to mac80211. A frame with fragments has
++ * headers, and the payload goes on in the skbs of its frag_list, if it has
++ * any; every segment holds a reference on the batch, and the completion of
++ * the last one reports the batch to mac80211. A frame with fragments has
+  * one descriptor, and is a batch of one segment.
+  *
+  * Returns -EAGAIN for one the TCL cannot take whole, with the frame as it
+@@ -631,6 +693,7 @@ static int ath11k_dp_tx_ext(struct ath11
+ 	bool tso = skb_is_gso(skb);
+ 	unsigned int n = tso ? shinfo->gso_segs : 1, mss = shinfo->gso_size;
+ 	unsigned int hdr_len, l2_len = 0, ip_off = 0, left, piece = 0, off;
++	struct sk_buff *seg = skb;
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct hal_tx_info ti = {};
+ 	struct dp_tx_ring *tx_ring;
+@@ -649,14 +712,20 @@ static int ath11k_dp_tx_ext(struct ath11
+ 	if (!ab->hw_params.tx_tso ||
+ 	    !(info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) ||
+ 	    ath11k_dp_tx_get_encap_type(arvif, skb) != HAL_TCL_ENCAP_TYPE_ETHERNET ||
+-	    skb_has_frag_list(skb) || refcount_read(&skb->users) != 1 ||
++	    (!tso && skb_has_frag_list(skb)) ||
++	    refcount_read(&skb->users) != 1 ||
+ 	    n > ATH11K_DP_TX_TSO_MAX_SEGS)
+ 		return -EAGAIN;
+ 
+ 	if (tso) {
+-		if (!(shinfo->gso_type & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6)) ||
+-		    shinfo->gso_type & SKB_GSO_FRAGLIST ||
+-		    skb->ip_summed != CHECKSUM_PARTIAL)
++		if (!(shinfo->gso_type & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6)))
++			return -EAGAIN;
++		if (shinfo->gso_type & SKB_GSO_FRAGLIST) {
++			if (ath11k_dp_tx_fraglist_tso(skb))
++				return -EAGAIN;
++			shinfo = skb_shinfo(skb);
++		}
++		if (skb->ip_summed != CHECKSUM_PARTIAL)
+ 			return -EAGAIN;
+ 
+ 		hdr_len = skb_tcp_all_headers(skb);
+@@ -751,8 +820,8 @@ static int ath11k_dp_tx_ext(struct ath11
+ 			seg_flags &= ~(TCPHDR_FIN | TCPHDR_PSH);
+ 
+ 		memset(ext, 0, sizeof(*ext));
+-		if (ath11k_dp_tx_tso_map(ab->dev, skb, map, ext, &piece, &off,
+-					 len)) {
++		if (ath11k_dp_tx_tso_map(ab->dev, skb, map, ext, &seg, &piece,
++					 &off, len)) {
+ 			ath11k_dp_tx_tso_unmap(ab->dev, map);
+ 			goto fail_unmap;
+ 		}

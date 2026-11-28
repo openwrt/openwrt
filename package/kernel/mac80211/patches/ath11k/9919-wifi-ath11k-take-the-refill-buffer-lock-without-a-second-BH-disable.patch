@@ -1,0 +1,68 @@
+From 85d2d3ace9f6118fa86ce80e3a1fdb5ec85c3b3d Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 05:16:10 +0100
+Subject: [PATCH] wifi: ath11k: take the refill buffer lock without a second BH disable
+
+The REO reap and the refill take the buffer table lock of the refill ring
+once per frame with spin_lock_bh(), inside their hold of the ring lock,
+which they take with spin_lock_bh() and which keeps bottom halves off for
+the whole loop. Each unlock then goes through __local_bh_enable_ip() for
+nothing: in a profile of bridged uplink at 900 Mbit/s (IPQ8074, one run)
+the instruction after that call in ath11k_dp_rxbufs_replenish() takes
+0.43 % of all samples and the one in ath11k_dp_process_rx() 0.13 %, and
+__local_bh_enable_ip() itself 1.23 % from all its callers.
+
+Take the table lock with spin_lock() in these two loops and in the
+refill's error path, which all run under the ring lock. The other holders
+of the table lock still disable bottom halves themselves.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -523,9 +523,10 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 				goto fail_free_skb;
+ 		}
+ 
+-		spin_lock_bh(&rx_ring->bufs_lock);
++		/* bottom halves are off with the ring lock */
++		spin_lock(&rx_ring->bufs_lock);
+ 		buf_id = ath11k_dp_rx_buf_get_id(rx_ring, skb);
+-		spin_unlock_bh(&rx_ring->bufs_lock);
++		spin_unlock(&rx_ring->bufs_lock);
+ 		if (buf_id <= 0)
+ 			goto fail_dma_unmap;
+ 
+@@ -553,9 +554,9 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 	return req_entries - num_remain;
+ 
+ fail_idr_remove:
+-	spin_lock_bh(&rx_ring->bufs_lock);
++	spin_lock(&rx_ring->bufs_lock);
+ 	ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
+-	spin_unlock_bh(&rx_ring->bufs_lock);
++	spin_unlock(&rx_ring->bufs_lock);
+ fail_dma_unmap:
+ 	if (!rx_ring->page_pool)
+ 		dma_unmap_single(ab->dev, paddr, skb->len + skb_tailroom(skb),
+@@ -3084,17 +3085,18 @@ try_again:
+ 
+ 		ar = ab->pdevs[mac_id].ar;
+ 		rx_ring = &ar->dp.rx_refill_buf_ring;
+-		spin_lock_bh(&rx_ring->bufs_lock);
++		/* bottom halves are off with the ring lock */
++		spin_lock(&rx_ring->bufs_lock);
+ 		msdu = ath11k_dp_rx_buf_lookup(rx_ring, buf_id);
+ 		if (unlikely(!msdu)) {
+ 			ath11k_warn(ab, "frame rx with invalid buf_id %d\n",
+ 				    buf_id);
+-			spin_unlock_bh(&rx_ring->bufs_lock);
++			spin_unlock(&rx_ring->bufs_lock);
+ 			continue;
+ 		}
+ 
+ 		ath11k_dp_rx_buf_put_id(rx_ring, buf_id);
+-		spin_unlock_bh(&rx_ring->bufs_lock);
++		spin_unlock(&rx_ring->bufs_lock);
+ 
+ 		rxcb = ATH11K_SKB_RXCB(msdu);
+ 		ath11k_dp_rx_unmap_buf(ab, msdu, DMA_FROM_DEVICE);

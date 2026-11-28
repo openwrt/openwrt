@@ -1,0 +1,226 @@
+From 4693d95d69dcd5f6ffea04f66dd46be57ccdbd39 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 11:04:58 +0100
+Subject: [PATCH] wifi: ath11k: set the skb hash of a received frame from the hardware
+
+mac80211 picks the TXQ of a forwarded frame by skb_get_hash() in
+ieee80211_select_queue() and ieee80211_txq_enqueue() and the queueing
+disciplines on the conduit do the same, and ath11k never sets the hash,
+so every frame that is received on a radio and forwarded is dissected
+again, though the receive engine has already hashed its 5-tuple
+(flow_id_toeplitz in the MSDU start descriptor).
+
+Use that hash, through skb_set_hash() as an L4 hash, for a frame whose
+descriptor says it is TCP or UDP, not an IP fragment and with the IP and
+the TCP/UDP header parsed. A zero hash is not used. Mix a boot random value into the hash, so that
+it is not a function of the packet alone and a station cannot choose the
+queue that a flow of another station shares.
+
+The hash is the descriptor word of every chip family, read through a new
+hw_ops accessor. Count the frames that got a hash and the TCP and UDP
+frames whose hash was zero in the soc_dp_stats debugfs file.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -927,6 +927,11 @@ struct ath11k_soc_dp_stats {
+ 	 * consumed every buffer the host had given it
+ 	 */
+ 	u32 rx_refill_empty[MAX_RADIOS];
++	/* TCP and UDP frames that got the hardware flow hash as their skb
++	 * hash, and those whose hash was zero
++	 */
++	u32 rx_hash_set;
++	u32 rx_hash_zero;
+ 	/* TCP batches the TCL segments, their segments, and batches that
+ 	 * were segmented in software instead
+ 	 */
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -721,6 +721,10 @@ static ssize_t ath11k_debugfs_dump_soc_d
+ 			 soc_stats->rx_refill_empty[2]);
+ 
+ 	len += scnprintf(buf + len, size - len,
++			 "\nRX flow hash set: %u, zero: %u\n",
++			 soc_stats->rx_hash_set, soc_stats->rx_hash_zero);
++
++	len += scnprintf(buf + len, size - len,
+ 			 "TCP batches segmented by the TCL: %d, their segments: %d, segmented in software: %d, frames with fragments sent as scatter-gather: %d\n",
+ 			 atomic_read(&soc_stats->tx_tso_batch),
+ 			 atomic_read(&soc_stats->tx_tso_seg),
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -6,7 +6,9 @@
+ 
+ #include <linux/fips.h>
+ #include <linux/ieee80211.h>
++#include <linux/jhash.h>
+ #include <linux/kernel.h>
++#include <linux/net.h>
+ #include <linux/skbuff.h>
+ #include <net/page_pool/helpers.h>
+ #include "core.h"
+@@ -2068,6 +2070,27 @@ static struct sk_buff *ath11k_dp_rx_get_
+  * Only a TCP or UDP frame whose IP and L4 headers the engine parsed, and that
+  * is not a fragment, has a verified L4 checksum.
+  */
++static u32 ath11k_rx_hash_seed __read_mostly;
++
++static void ath11k_dp_rx_h_hash(struct ath11k *ar, struct sk_buff *msdu, u32 info2)
++{
++	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(msdu);
++	u32 hash;
++
++	hash = ar->ab->hw_params.hw_ops->rx_desc_get_flow_id_toeplitz(rxcb->rx_desc);
++	if (!hash) {
++		ar->ab->soc_stats.rx_hash_zero++;
++		return;
++	}
++
++	/* Make the hash differ per boot, so that a station cannot aim
++	 * collisions at the queues of the others.
++	 */
++	net_get_random_once(&ath11k_rx_hash_seed, sizeof(ath11k_rx_hash_seed));
++	skb_set_hash(msdu, jhash_1word(hash, ath11k_rx_hash_seed), PKT_HASH_TYPE_L4);
++	ar->ab->soc_stats.rx_hash_set++;
++}
++
+ static void ath11k_dp_rx_h_csum_offload(struct ath11k *ar, struct sk_buff *msdu)
+ {
+ 	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(msdu);
+@@ -2082,15 +2105,20 @@ static void ath11k_dp_rx_h_csum_offload(
+ 
+ 	msdu->ip_summed = CHECKSUM_NONE;
+ 
+-	if (ip_csum_fail || l4_csum_fail)
+-		return;
+-
+ 	if (!(info2 & (RX_MSDU_START_INFO2_TCP | RX_MSDU_START_INFO2_UDP)) ||
+ 	    (info2 & RX_MSDU_START_INFO2_IP_FRAG) ||
+ 	    !(info2 & RX_MSDU_START_INFO2_IP_FIXED_HDR_VALID) ||
+ 	    !(info2 & RX_MSDU_START_INFO2_IP_TCP_UDP_HDR_VALID))
+ 		return;
+ 
++	/* The hardware hashed the 5-tuple of a frame it parsed, which mac80211's
++	 * queue selection and the queueing disciplines would dissect again
++	 */
++	ath11k_dp_rx_h_hash(ar, msdu, info2);
++
++	if (ip_csum_fail || l4_csum_fail)
++		return;
++
+ 	msdu->ip_summed = CHECKSUM_UNNECESSARY;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/hw.c
++++ b/drivers/net/wireless/ath/ath11k/hw.c
+@@ -283,6 +283,11 @@ static u8 ath11k_hw_ipq8074_rx_desc_get_
+ 			 __le32_to_cpu(desc->u.ipq8074.msdu_start.info2));
+ }
+ 
++static u32 ath11k_hw_ipq8074_rx_desc_get_flow_id_toeplitz(struct hal_rx_desc *desc)
++{
++	return __le32_to_cpu(desc->u.ipq8074.msdu_start.flow_id_toeplitz);
++}
++
+ static u32 ath11k_hw_ipq8074_rx_desc_get_msdu_start_info2(struct hal_rx_desc *desc)
+ {
+ 	return __le32_to_cpu(desc->u.ipq8074.msdu_start.info2);
+@@ -465,6 +470,11 @@ static u8 ath11k_hw_qcn9074_rx_desc_get_
+ 			 __le32_to_cpu(desc->u.qcn9074.msdu_start.info2));
+ }
+ 
++static u32 ath11k_hw_qcn9074_rx_desc_get_flow_id_toeplitz(struct hal_rx_desc *desc)
++{
++	return __le32_to_cpu(desc->u.qcn9074.msdu_start.flow_id_toeplitz);
++}
++
+ static u32 ath11k_hw_qcn9074_rx_desc_get_msdu_start_info2(struct hal_rx_desc *desc)
+ {
+ 	return __le32_to_cpu(desc->u.qcn9074.msdu_start.info2);
+@@ -647,6 +657,11 @@ static u8 ath11k_hw_wcn6855_rx_desc_get_
+ 			 __le32_to_cpu(desc->u.wcn6855.msdu_start.info2));
+ }
+ 
++static u32 ath11k_hw_wcn6855_rx_desc_get_flow_id_toeplitz(struct hal_rx_desc *desc)
++{
++	return __le32_to_cpu(desc->u.wcn6855.msdu_start.flow_id_toeplitz);
++}
++
+ static u32 ath11k_hw_wcn6855_rx_desc_get_msdu_start_info2(struct hal_rx_desc *desc)
+ {
+ 	return __le32_to_cpu(desc->u.wcn6855.msdu_start.info2);
+@@ -927,6 +942,7 @@ const struct ath11k_hw_ops ipq9574_ops =
+ 	.rx_desc_get_decap_type = ath11k_hw_ipq8074_rx_desc_get_decap_type,
+ 	.rx_desc_get_mesh_ctl = ath11k_hw_ipq8074_rx_desc_get_mesh_ctl,
+ 	.rx_desc_get_msdu_start_info2 = ath11k_hw_ipq8074_rx_desc_get_msdu_start_info2,
++	.rx_desc_get_flow_id_toeplitz = ath11k_hw_ipq8074_rx_desc_get_flow_id_toeplitz,
+ 	.rx_desc_get_ldpc_support = ath11k_hw_ipq8074_rx_desc_get_ldpc_support,
+ 	.rx_desc_get_mpdu_seq_ctl_vld = ath11k_hw_ipq8074_rx_desc_get_mpdu_seq_ctl_vld,
+ 	.rx_desc_get_mpdu_fc_valid = ath11k_hw_ipq8074_rx_desc_get_mpdu_fc_valid,
+@@ -968,6 +984,7 @@ const struct ath11k_hw_ops ipq8074_ops =
+ 	.rx_desc_get_decap_type = ath11k_hw_ipq8074_rx_desc_get_decap_type,
+ 	.rx_desc_get_mesh_ctl = ath11k_hw_ipq8074_rx_desc_get_mesh_ctl,
+ 	.rx_desc_get_msdu_start_info2 = ath11k_hw_ipq8074_rx_desc_get_msdu_start_info2,
++	.rx_desc_get_flow_id_toeplitz = ath11k_hw_ipq8074_rx_desc_get_flow_id_toeplitz,
+ 	.rx_desc_get_ldpc_support = ath11k_hw_ipq8074_rx_desc_get_ldpc_support,
+ 	.rx_desc_get_mpdu_seq_ctl_vld = ath11k_hw_ipq8074_rx_desc_get_mpdu_seq_ctl_vld,
+ 	.rx_desc_get_mpdu_fc_valid = ath11k_hw_ipq8074_rx_desc_get_mpdu_fc_valid,
+@@ -1009,6 +1026,7 @@ const struct ath11k_hw_ops ipq6018_ops =
+ 	.rx_desc_get_decap_type = ath11k_hw_ipq8074_rx_desc_get_decap_type,
+ 	.rx_desc_get_mesh_ctl = ath11k_hw_ipq8074_rx_desc_get_mesh_ctl,
+ 	.rx_desc_get_msdu_start_info2 = ath11k_hw_ipq8074_rx_desc_get_msdu_start_info2,
++	.rx_desc_get_flow_id_toeplitz = ath11k_hw_ipq8074_rx_desc_get_flow_id_toeplitz,
+ 	.rx_desc_get_ldpc_support = ath11k_hw_ipq8074_rx_desc_get_ldpc_support,
+ 	.rx_desc_get_mpdu_seq_ctl_vld = ath11k_hw_ipq8074_rx_desc_get_mpdu_seq_ctl_vld,
+ 	.rx_desc_get_mpdu_fc_valid = ath11k_hw_ipq8074_rx_desc_get_mpdu_fc_valid,
+@@ -1050,6 +1068,7 @@ const struct ath11k_hw_ops qca6390_ops =
+ 	.rx_desc_get_decap_type = ath11k_hw_ipq8074_rx_desc_get_decap_type,
+ 	.rx_desc_get_mesh_ctl = ath11k_hw_ipq8074_rx_desc_get_mesh_ctl,
+ 	.rx_desc_get_msdu_start_info2 = ath11k_hw_ipq8074_rx_desc_get_msdu_start_info2,
++	.rx_desc_get_flow_id_toeplitz = ath11k_hw_ipq8074_rx_desc_get_flow_id_toeplitz,
+ 	.rx_desc_get_ldpc_support = ath11k_hw_ipq8074_rx_desc_get_ldpc_support,
+ 	.rx_desc_get_mpdu_seq_ctl_vld = ath11k_hw_ipq8074_rx_desc_get_mpdu_seq_ctl_vld,
+ 	.rx_desc_get_mpdu_fc_valid = ath11k_hw_ipq8074_rx_desc_get_mpdu_fc_valid,
+@@ -1091,6 +1110,7 @@ const struct ath11k_hw_ops qcn9074_ops =
+ 	.rx_desc_get_decap_type = ath11k_hw_qcn9074_rx_desc_get_decap_type,
+ 	.rx_desc_get_mesh_ctl = ath11k_hw_qcn9074_rx_desc_get_mesh_ctl,
+ 	.rx_desc_get_msdu_start_info2 = ath11k_hw_qcn9074_rx_desc_get_msdu_start_info2,
++	.rx_desc_get_flow_id_toeplitz = ath11k_hw_qcn9074_rx_desc_get_flow_id_toeplitz,
+ 	.rx_desc_get_ldpc_support = ath11k_hw_qcn9074_rx_desc_get_ldpc_support,
+ 	.rx_desc_get_mpdu_seq_ctl_vld = ath11k_hw_qcn9074_rx_desc_get_mpdu_seq_ctl_vld,
+ 	.rx_desc_get_mpdu_fc_valid = ath11k_hw_qcn9074_rx_desc_get_mpdu_fc_valid,
+@@ -1132,6 +1152,7 @@ const struct ath11k_hw_ops wcn6855_ops =
+ 	.rx_desc_get_decap_type = ath11k_hw_wcn6855_rx_desc_get_decap_type,
+ 	.rx_desc_get_mesh_ctl = ath11k_hw_wcn6855_rx_desc_get_mesh_ctl,
+ 	.rx_desc_get_msdu_start_info2 = ath11k_hw_wcn6855_rx_desc_get_msdu_start_info2,
++	.rx_desc_get_flow_id_toeplitz = ath11k_hw_wcn6855_rx_desc_get_flow_id_toeplitz,
+ 	.rx_desc_get_ldpc_support = ath11k_hw_wcn6855_rx_desc_get_ldpc_support,
+ 	.rx_desc_get_mpdu_seq_ctl_vld = ath11k_hw_wcn6855_rx_desc_get_mpdu_seq_ctl_vld,
+ 	.rx_desc_get_mpdu_fc_valid = ath11k_hw_wcn6855_rx_desc_get_mpdu_fc_valid,
+@@ -1173,6 +1194,7 @@ const struct ath11k_hw_ops wcn6750_ops =
+ 	.rx_desc_get_decap_type = ath11k_hw_qcn9074_rx_desc_get_decap_type,
+ 	.rx_desc_get_mesh_ctl = ath11k_hw_qcn9074_rx_desc_get_mesh_ctl,
+ 	.rx_desc_get_msdu_start_info2 = ath11k_hw_qcn9074_rx_desc_get_msdu_start_info2,
++	.rx_desc_get_flow_id_toeplitz = ath11k_hw_qcn9074_rx_desc_get_flow_id_toeplitz,
+ 	.rx_desc_get_ldpc_support = ath11k_hw_qcn9074_rx_desc_get_ldpc_support,
+ 	.rx_desc_get_mpdu_seq_ctl_vld = ath11k_hw_qcn9074_rx_desc_get_mpdu_seq_ctl_vld,
+ 	.rx_desc_get_mpdu_fc_valid = ath11k_hw_qcn9074_rx_desc_get_mpdu_fc_valid,
+@@ -1215,6 +1237,7 @@ const struct ath11k_hw_ops ipq5018_ops =
+ 	.rx_desc_get_decap_type = ath11k_hw_qcn9074_rx_desc_get_decap_type,
+ 	.rx_desc_get_mesh_ctl = ath11k_hw_qcn9074_rx_desc_get_mesh_ctl,
+ 	.rx_desc_get_msdu_start_info2 = ath11k_hw_qcn9074_rx_desc_get_msdu_start_info2,
++	.rx_desc_get_flow_id_toeplitz = ath11k_hw_qcn9074_rx_desc_get_flow_id_toeplitz,
+ 	.rx_desc_get_ldpc_support = ath11k_hw_qcn9074_rx_desc_get_ldpc_support,
+ 	.rx_desc_get_mpdu_seq_ctl_vld = ath11k_hw_qcn9074_rx_desc_get_mpdu_seq_ctl_vld,
+ 	.rx_desc_get_mpdu_fc_valid = ath11k_hw_qcn9074_rx_desc_get_mpdu_fc_valid,
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -256,6 +256,7 @@ struct ath11k_hw_ops {
+ 	u8 (*rx_desc_get_decap_type)(struct hal_rx_desc *desc);
+ 	u8 (*rx_desc_get_mesh_ctl)(struct hal_rx_desc *desc);
+ 	u32 (*rx_desc_get_msdu_start_info2)(struct hal_rx_desc *desc);
++	u32 (*rx_desc_get_flow_id_toeplitz)(struct hal_rx_desc *desc);
+ 	bool (*rx_desc_get_ldpc_support)(struct hal_rx_desc *desc);
+ 	bool (*rx_desc_get_mpdu_seq_ctl_vld)(struct hal_rx_desc *desc);
+ 	bool (*rx_desc_get_mpdu_fc_valid)(struct hal_rx_desc *desc);

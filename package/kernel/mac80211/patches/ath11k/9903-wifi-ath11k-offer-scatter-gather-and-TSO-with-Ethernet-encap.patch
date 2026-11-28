@@ -1,0 +1,57 @@
+From 1bacc80b7204a1f36b10fd2c22a706df205f696e Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 02:43:01 +0100
+Subject: [PATCH] wifi: ath11k: offer scatter-gather and TSO with Ethernet encap
+
+Tell mac80211 that the AP, AP VLAN and station netdevs may pass TCP
+batches with fragments (NETIF_F_SG, TSO and TSO6, up to 16 segments)
+when frames go out with Ethernet encap on a device whose TCL takes them
+(IPQ8074). mac80211 segments them in software on every other path, and
+when the airtime of the whole batch would not fit AQL's estimate.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -15,6 +15,12 @@
+ #include "peer.h"
+ #include "mac.h"
+ 
++/* Whether the netdevs of this device offer TSO and scatter-gather */
++bool ath11k_dp_tx_tso_wanted(struct ath11k_base *ab)
++{
++	return ab->hw_params.tx_tso;
++}
++
+ static enum hal_tcl_encap_type
+ ath11k_dp_tx_get_encap_type(struct ath11k_vif *arvif, struct sk_buff *skb)
+ {
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.h
+@@ -21,6 +21,7 @@ void ath11k_dp_tx_update_txcompl(struct
+ int ath11k_dp_tx_htt_h2t_ver_req_msg(struct ath11k_base *ab);
+ int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
+ 		 struct ath11k_sta *arsta, struct sk_buff *skb, int held_ring);
++bool ath11k_dp_tx_tso_wanted(struct ath11k_base *ab);
+ int ath11k_dp_tx_gso(struct ath11k *ar, struct ath11k_vif *arvif,
+ 		     struct ath11k_sta *arsta, struct sk_buff *skb,
+ 		     int held_ring);
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10762,6 +10762,17 @@ static int __ath11k_mac_register(struct
+ 	if (ath11k_mac_eth_mode(ab)) {
+ 		ieee80211_hw_set(ar->hw, SUPPORTS_TX_ENCAP_OFFLOAD);
+ 		ieee80211_hw_set(ar->hw, SUPPORTS_RX_DECAP_OFFLOAD);
++
++		/* The TCL takes a TCP batch whole, with its payload in
++		 * fragments, when the frame goes out with Ethernet encap.
++		 */
++		if (ath11k_dp_tx_tso_wanted(ab)) {
++			ar->hw->encap_netdev_features = NETIF_F_SG |
++							NETIF_F_TSO |
++							NETIF_F_TSO6;
++			ar->hw->encap_gso_max_segs =
++				ATH11K_DP_TX_TSO_MAX_SEGS;
++		}
+ 	}
+ 
+ 	if (cap->nss_ratio_enabled)

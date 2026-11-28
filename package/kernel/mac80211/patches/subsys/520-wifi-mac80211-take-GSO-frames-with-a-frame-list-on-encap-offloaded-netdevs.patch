@@ -1,0 +1,67 @@
+From 311bed4a7b63d0ba03c9476de34d72f620f08ebb Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 11:24:50 +0100
+Subject: [PATCH] wifi: mac80211: take GSO frames with a frame list on encap offloaded netdevs
+
+A driver can set NETIF_F_GSO_FRAGLIST and NETIF_F_FRAGLIST in
+encap_netdev_features, but the check in ieee80211_register_hw() that
+rejects features mac80211 cannot honour does not list them, so such a
+driver cannot take the aggregates that GRO builds with a frame list (a
+bridge or router with rx-gro-list on the port the traffic comes from):
+the stack splits each of them into its member frames in
+validate_xmit_skb() before mac80211, and every member pays the whole
+TX path.
+
+List the two features as supported. ieee80211_tx_skb_fixup() hands every
+GSO frame to skb_gso_segment(), which leaves a TSO frame whole when the
+features take it (tcp_gso_segment() checks skb_gso_ok()), but cuts a
+frame list type one into its members whatever the features are
+(tcp4_gso_segment() and tcp6_gso_segment() call skb_segment_list()
+directly). Send such a frame on unsegmented when the features take it,
+as validate_xmit_skb() does. A fraglist aggregate then takes the path of
+any other GSO frame: ieee80211_8023_xmit() sends it to the TXQ as one
+frame, the airtime estimate of ieee80211_tx_dequeue() charges AQL once,
+for skb->len, the length of the whole aggregate, and the driver's status
+for the frame refunds it once. A frame whose airtime estimate does not
+fit the field is split in software before it is queued, as a TSO one is,
+with the frame list features removed as well.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -2265,7 +2265,8 @@ void ieee80211_link_crit_update_done(str
+ #define MAC80211_SUPPORTED_FEATURES_TX	(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM | \
+ 					 NETIF_F_HW_CSUM | NETIF_F_SG | \
+ 					 NETIF_F_HIGHDMA | NETIF_F_GSO_SOFTWARE | \
+-					 NETIF_F_HW_TC)
++					 NETIF_F_GSO_FRAGLIST | \
++					 NETIF_F_FRAGLIST | NETIF_F_HW_TC)
+ #define MAC80211_SUPPORTED_FEATURES_RX	(NETIF_F_RXCSUM)
+ #define MAC80211_SUPPORTED_FEATURES	(MAC80211_SUPPORTED_FEATURES_TX | \
+ 					 MAC80211_SUPPORTED_FEATURES_RX)
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -3843,6 +3843,13 @@ ieee80211_tx_skb_fixup(struct sk_buff *s
+ 	if (skb_is_gso(skb)) {
+ 		struct sk_buff *segs;
+ 
++		/* The segmentation of a frame list cuts it whatever the
++		 * features take, unlike that of a TSO frame.
++		 */
++		if ((skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) &&
++		    skb_gso_ok(skb, features))
++			return skb;
++
+ 		segs = skb_gso_segment(skb, features);
+ 		if (!segs)
+ 			return skb;
+@@ -4992,7 +4999,8 @@ static void ieee80211_8023_xmit(struct i
+ 	features = ieee80211_sdata_netdev_features(sdata) |
+ 		   local->hw.encap_netdev_features;
+ 	if (skb_is_gso(skb) && !ieee80211_8023_gso_fits(sdata, sta, skb, queue))
+-		features &= ~(NETIF_F_ALL_TSO | NETIF_F_SG);
++		features &= ~(NETIF_F_ALL_TSO | NETIF_F_SG |
++			      NETIF_F_GSO_FRAGLIST | NETIF_F_FRAGLIST);
+ 
+ 	skb = ieee80211_tx_skb_fixup(skb, features);
+ 	if (!skb)

@@ -1,0 +1,288 @@
+From 697da49a37d097387de91afdaf232909351088dc Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 14:54:36 +0100
+Subject: [PATCH] wifi: ath11k: read the device ring pointers only when they are needed
+
+The ring pointers the device writes live in coherent DMA memory, which
+is uncached here, so each read of one is a round trip to DDR.
+ath11k_hal_srng_access_begin() read the tail pointer of a source ring
+on every call, and ath11k_hal_srng_access_end() read the tail pointer
+of a source ring or the head pointer of a destination ring on every
+call, only to keep a copy for the ring dump. The dump prints the live
+pointer next to the cached one already.
+
+Do not read the pointer in access_end() and drop the copy. For a source
+ring, read the tail pointer into cached_tp when the cached value leaves
+no room instead of in access_begin(): in src_get_next_entry(),
+src_reap_next(), src_next_peek() and src_peek() before they report a
+full or empty ring, and in the callers of src_num_free(false) before
+they report fewer free entries than they need: the CE send paths, the
+TX descriptor check of the TSO path and the TXQ push, which reads again
+when the free count drops below its reserve, so a push is not cut short
+by a lagging pointer. Destination rings still read the head pointer in
+access_begin().
+
+A cached tail pointer that lags behind the device only makes the ring
+look fuller than it is. The ring is never used past the real tail,
+because the tail only moves forward and every decision that the ring
+is full is made after a read of the pointer. Shadow registers and LMAC
+rings are not affected: ath11k_hal_srng_shadow_update_hp_tp() already
+reads tp_addr itself, and no other code used the copy.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/ce.c
++++ b/drivers/net/wireless/ath/ath11k/ce.c
+@@ -290,7 +290,8 @@ static int ath11k_ce_rx_buf_enqueue_pipe
+ 
+ 	ath11k_hal_srng_access_begin(ab, srng);
+ 
+-	if (unlikely(ath11k_hal_srng_src_num_free(ab, srng, false) < 1)) {
++	if (unlikely(ath11k_hal_srng_src_num_free(ab, srng, false) < 1 &&
++		     ath11k_hal_srng_src_num_free(ab, srng, true) < 1)) {
+ 		ret = -ENOSPC;
+ 		goto exit;
+ 	}
+@@ -762,7 +763,8 @@ int ath11k_ce_send(struct ath11k_base *a
+ 
+ 	ath11k_hal_srng_access_begin(ab, srng);
+ 
+-	if (unlikely(ath11k_hal_srng_src_num_free(ab, srng, false) < 1)) {
++	if (unlikely(ath11k_hal_srng_src_num_free(ab, srng, false) < 1 &&
++		     ath11k_hal_srng_src_num_free(ab, srng, true) < 1)) {
+ 		ath11k_hal_srng_access_end(ab, srng);
+ 		ret = -ENOBUFS;
+ 		goto err_unlock;
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -789,7 +789,8 @@ static int ath11k_dp_tx_ext(struct ath11
+ 		spin_lock_bh(&tcl_ring->lock);
+ 		ath11k_hal_srng_access_begin(ab, tcl_ring);
+ 	}
+-	if (ath11k_hal_srng_src_num_free(ab, tcl_ring, held_ring < 0) < n) {
++	if (ath11k_hal_srng_src_num_free(ab, tcl_ring, false) < n &&
++	    ath11k_hal_srng_src_num_free(ab, tcl_ring, true) < n) {
+ 		if (held_ring < 0) {
+ 			ath11k_hal_srng_access_end(ab, tcl_ring);
+ 			spin_unlock_bh(&tcl_ring->lock);
+--- a/drivers/net/wireless/ath/ath11k/hal.c
++++ b/drivers/net/wireless/ath/ath11k/hal.c
+@@ -704,6 +704,17 @@ int ath11k_hal_srng_dst_num_free(struct
+ 		return (srng->ring_size - tp + hp) / srng->entry_size;
+ }
+ 
++/* The device writes the tail pointer to uncached memory. Source rings read
++ * it only when the cached copy leaves no room: a stale tail only reports
++ * fewer free entries than there are, never more.
++ */
++static u32 ath11k_hal_srng_src_sync_tp(struct hal_srng *srng)
++{
++	srng->u.src_ring.cached_tp = READ_ONCE(*srng->u.src_ring.tp_addr);
++
++	return srng->u.src_ring.cached_tp;
++}
++
+ /* Returns number of available entries in src ring */
+ int ath11k_hal_srng_src_num_free(struct ath11k_base *ab, struct hal_srng *srng,
+ 				 bool sync_hw_ptr)
+@@ -715,8 +726,7 @@ int ath11k_hal_srng_src_num_free(struct
+ 	hp = srng->u.src_ring.hp;
+ 
+ 	if (sync_hw_ptr) {
+-		tp = *srng->u.src_ring.tp_addr;
+-		srng->u.src_ring.cached_tp = tp;
++		tp = ath11k_hal_srng_src_sync_tp(srng);
+ 	} else {
+ 		tp = srng->u.src_ring.cached_tp;
+ 	}
+@@ -743,7 +753,8 @@ u32 *ath11k_hal_srng_src_get_next_entry(
+ 	 */
+ 	next_hp = (srng->u.src_ring.hp + srng->entry_size) % srng->ring_size;
+ 
+-	if (next_hp == srng->u.src_ring.cached_tp)
++	if (next_hp == srng->u.src_ring.cached_tp &&
++	    next_hp == ath11k_hal_srng_src_sync_tp(srng))
+ 		return NULL;
+ 
+ 	desc = srng->ring_base_vaddr + srng->u.src_ring.hp;
+@@ -771,7 +782,8 @@ u32 *ath11k_hal_srng_src_reap_next(struc
+ 	next_reap_hp = (srng->u.src_ring.reap_hp + srng->entry_size) %
+ 		       srng->ring_size;
+ 
+-	if (next_reap_hp == srng->u.src_ring.cached_tp)
++	if (next_reap_hp == srng->u.src_ring.cached_tp &&
++	    next_reap_hp == ath11k_hal_srng_src_sync_tp(srng))
+ 		return NULL;
+ 
+ 	desc = srng->ring_base_vaddr + next_reap_hp;
+@@ -805,7 +817,8 @@ u32 *ath11k_hal_srng_src_next_peek(struc
+ 
+ 	next_hp = (srng->u.src_ring.hp + srng->entry_size) % srng->ring_size;
+ 
+-	if (next_hp != srng->u.src_ring.cached_tp)
++	if (next_hp != srng->u.src_ring.cached_tp ||
++	    next_hp != ath11k_hal_srng_src_sync_tp(srng))
+ 		return srng->ring_base_vaddr + next_hp;
+ 
+ 	return NULL;
+@@ -813,10 +826,14 @@ u32 *ath11k_hal_srng_src_next_peek(struc
+ 
+ u32 *ath11k_hal_srng_src_peek(struct ath11k_base *ab, struct hal_srng *srng)
+ {
++	u32 next_hp;
++
+ 	lockdep_assert_held(&srng->lock);
+ 
+-	if (((srng->u.src_ring.hp + srng->entry_size) % srng->ring_size) ==
+-	    srng->u.src_ring.cached_tp)
++	next_hp = (srng->u.src_ring.hp + srng->entry_size) % srng->ring_size;
++
++	if (next_hp == srng->u.src_ring.cached_tp &&
++	    next_hp == ath11k_hal_srng_src_sync_tp(srng))
+ 		return NULL;
+ 
+ 	return srng->ring_base_vaddr + srng->u.src_ring.hp;
+@@ -828,10 +845,10 @@ void ath11k_hal_srng_access_begin(struct
+ 
+ 	lockdep_assert_held(&srng->lock);
+ 
+-	if (srng->ring_dir == HAL_SRNG_DIR_SRC) {
+-		srng->u.src_ring.cached_tp =
+-			*(volatile u32 *)srng->u.src_ring.tp_addr;
+-	} else {
++	/* A source ring reads its tail pointer when it needs it, see
++	 * ath11k_hal_srng_src_sync_tp().
++	 */
++	if (srng->ring_dir == HAL_SRNG_DIR_DST) {
+ 		hp = READ_ONCE(*srng->u.dst_ring.hp_addr);
+ 
+ 		if (hp != srng->u.dst_ring.cached_hp) {
+@@ -860,15 +877,12 @@ void ath11k_hal_srng_access_end(struct a
+ 		 * hence written to a shared memory location that is read by FW
+ 		 */
+ 		if (srng->ring_dir == HAL_SRNG_DIR_SRC) {
+-			srng->u.src_ring.last_tp =
+-				*(volatile u32 *)srng->u.src_ring.tp_addr;
+ 			/* Make sure descriptor is written before updating the
+ 			 * head pointer.
+ 			 */
+ 			dma_wmb();
+ 			WRITE_ONCE(*srng->u.src_ring.hp_addr, srng->u.src_ring.hp);
+ 		} else {
+-			srng->u.dst_ring.last_hp = *srng->u.dst_ring.hp_addr;
+ 			/* Make sure descriptor is read before updating the
+ 			 * tail pointer.
+ 			 */
+@@ -877,8 +891,6 @@ void ath11k_hal_srng_access_end(struct a
+ 		}
+ 	} else {
+ 		if (srng->ring_dir == HAL_SRNG_DIR_SRC) {
+-			srng->u.src_ring.last_tp =
+-				*(volatile u32 *)srng->u.src_ring.tp_addr;
+ 			/* Assume implementation use an MMIO write accessor
+ 			 * which has the required wmb() so that the descriptor
+ 			 * is written before the updating the head pointer.
+@@ -888,7 +900,6 @@ void ath11k_hal_srng_access_end(struct a
+ 					   (unsigned long)ab->mem,
+ 					   srng->u.src_ring.hp);
+ 		} else {
+-			srng->u.dst_ring.last_hp = *srng->u.dst_ring.hp_addr;
+ 			/* Make sure descriptor is read before updating the
+ 			 * tail pointer.
+ 			 */
+@@ -1439,19 +1450,17 @@ void ath11k_hal_dump_srng_stats(struct a
+ 
+ 		if (srng->ring_dir == HAL_SRNG_DIR_SRC)
+ 			ath11k_err(ab,
+-				   "src srng id %u hp %u, reap_hp %u, cur tp %u, cached tp %u last tp %u napi processed before %ums\n",
++				   "src srng id %u hp %u, reap_hp %u, cur tp %u, cached tp %u napi processed before %ums\n",
+ 				   srng->ring_id, srng->u.src_ring.hp,
+ 				   srng->u.src_ring.reap_hp,
+ 				   *srng->u.src_ring.tp_addr, srng->u.src_ring.cached_tp,
+-				   srng->u.src_ring.last_tp,
+ 				   jiffies_to_msecs(jiffies - srng->timestamp));
+ 		else if (srng->ring_dir == HAL_SRNG_DIR_DST)
+ 			ath11k_err(ab,
+-				   "dst srng id %u tp %u, cur hp %u, cached hp %u last hp %u napi processed before %ums\n",
++				   "dst srng id %u tp %u, cur hp %u, cached hp %u napi processed before %ums\n",
+ 				   srng->ring_id, srng->u.dst_ring.tp,
+ 				   *srng->u.dst_ring.hp_addr,
+ 				   srng->u.dst_ring.cached_hp,
+-				   srng->u.dst_ring.last_hp,
+ 				   jiffies_to_msecs(jiffies - srng->timestamp));
+ 	}
+ }
+--- a/drivers/net/wireless/ath/ath11k/hal.h
++++ b/drivers/net/wireless/ath/ath11k/hal.h
+@@ -608,9 +608,6 @@ struct hal_srng {
+ 
+ 			/* max transfer size */
+ 			u16 max_buffer_length;
+-
+-			/* head pointer at access end */
+-			u32 last_hp;
+ 		} dst_ring;
+ 
+ 		struct {
+@@ -634,9 +631,6 @@ struct hal_srng {
+ 
+ 			/* Low threshold - in number of ring entries */
+ 			u32 low_threshold;
+-
+-			/* tail pointer at access end */
+-			u32 last_tp;
+ 		} src_ring;
+ 	} u;
+ };
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10196,7 +10196,8 @@ static int ath11k_mac_tx_push_txq(struct
+ 	struct hal_srng *tcl_ring;
+ 	struct sk_buff *skb;
+ 	u32 ring_selector;
+-	int num_free, avail, reserve;
++	int num_free, reserve;
++	bool queued, synced;
+ 	int ret;
+ 	u8 ring_id;
+ 
+@@ -10233,12 +10234,26 @@ again:
+ 	spin_lock_bh(&tcl_ring->lock);
+ 	ath11k_hal_srng_access_begin(ar->ab, tcl_ring);
+ 	num_free = ath11k_hal_srng_src_num_free(ar->ab, tcl_ring, false);
+-	avail = num_free;
+ 
++	queued = false;
++	synced = false;
+ 	ret = 0;
+-	while (num_free >= reserve) {
++	for (;;) {
+ 		int used;
+ 
++		/* The cached tail pointer can lag the hardware: read it once
++		 * before the ring counts as full.
++		 */
++		if (num_free < reserve) {
++			if (synced)
++				break;
++			synced = true;
++			num_free = ath11k_hal_srng_src_num_free(ar->ab, tcl_ring,
++								true);
++			continue;
++		}
++		synced = false;
++
+ 		if (unlikely(test_bit(ATH11K_FLAG_CRASH_FLUSH,
+ 				      &ar->ab->dev_flags)))
+ 			break;
+@@ -10253,9 +10268,10 @@ again:
+ 			break;
+ 		ret = 0;
+ 		num_free -= min(used, num_free);
++		queued = true;
+ 	}
+ 
+-	if (num_free != avail &&
++	if (queued &&
+ 	    likely(!test_bit(ATH11K_FLAG_CRASH_FLUSH, &ar->ab->dev_flags))) {
+ 		ath11k_hal_srng_access_end(ar->ab, tcl_ring);
+ 		ath11k_dp_shadow_start_timer(ar->ab, tcl_ring,

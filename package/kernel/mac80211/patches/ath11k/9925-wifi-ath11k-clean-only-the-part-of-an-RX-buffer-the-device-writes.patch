@@ -1,0 +1,67 @@
+From 00fbe0b3c942ce1d64f25ad6b6075b0da7843cef Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 08:14:37 +0100
+Subject: [PATCH] wifi: ath11k: clean only the part of an RX buffer the device writes
+
+The page pool of the refill ring syncs a page for the device when it is
+recycled, with PP_FLAG_DMA_SYNC_DEV and a max_len of the whole order-1
+page: 8 KB of cache maintenance (dcache_clean_poc() on arm64) for the
+three buffers of 2432 bytes it holds, whose device ranges are 2 KB each.
+The rest is the space of each buffer's shared info and the unused tail of
+the page, which the device never writes. In a profile of bridged uplink at
+850 Mbit/s (IPQ8074, one run) dcache_clean_poc() takes 3.3 % of all
+samples; by the cache lines each frame takes, about 60 % of that is these
+pages, the rest the switch port's map of the frame.
+
+Drop PP_FLAG_DMA_SYNC_DEV and sync each buffer for the device as the
+refill hands it out, over the DP_RX_BUFFER_SIZE bytes the device writes,
+as the coalescing of an MSDU over several buffers takes them to be. A
+line written back after the device wrote it would overwrite the frame, so
+none of those lines may be dirty when the device gets the buffer: every
+CPU write to the buffer came before its last user gave it back to the
+pool, the refill's own write of the buffer's receive state goes past
+DP_RX_BUFFER_SIZE, and nothing writes it until the reap syncs it for the
+CPU. The shared info and the tail of the page may stay dirty, as the
+device does not write them. That is 32 cache lines per buffer instead of
+about 43. The defragmented frame the driver reinjects syncs itself, as
+before.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -659,6 +659,16 @@ static void *ath11k_dp_rx_refill_alloc(s
+ 		memset(&meta->cb, 0, sizeof(meta->cb));
+ 		meta->cb.paddr = *paddr;
+ 
++		/* The device writes the first DP_RX_BUFFER_SIZE bytes of the
++		 * buffer and nothing else of the page, so only those lines may
++		 * not be dirty when it does: a line written back later would
++		 * overwrite what it wrote. Every write of the CPU to them came
++		 * before the buffer went back to the pool, and none comes
++		 * before the reap hands it back.
++		 */
++		dma_sync_single_for_device(ab->dev, *paddr, DP_RX_BUFFER_SIZE,
++					   DMA_BIDIRECTIONAL);
++
+ 		return va;
+ 	}
+ 
+@@ -877,14 +887,16 @@ static int ath11k_dp_rxdma_ring_buf_setu
+ 		ath11k_hal_srng_get_entrysize(ar->ab, ringtype);
+ 
+ 	if (ringtype == HAL_RXDMA_BUF) {
++		/* The refill syncs each buffer for the device itself, see
++		 * ath11k_dp_rx_refill_alloc().
++		 */
+ 		struct page_pool_params pp_params = {
+ 			.order = DP_RX_PP_ORDER,
+-			.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
++			.flags = PP_FLAG_DMA_MAP,
+ 			.pool_size = num_entries,
+ 			.nid = NUMA_NO_NODE,
+ 			.dev = ar->ab->dev,
+ 			.dma_dir = DMA_BIDIRECTIONAL,
+-			.max_len = PAGE_SIZE << DP_RX_PP_ORDER,
+ 		};
+ 		struct page_pool *pp;
+ 

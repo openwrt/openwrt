@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jose Ignacio Tornos Martinez <jtornosm@redhat.com>
+Date: Thu, 17 Sep 2026 08:48:22 +0200
+Subject: [PATCH v7 1/4] wifi: ath11k: use queue mapping for WCN6750 ring selection
+
+WCN6750 selects the TCL ring using skb_get_hash() to distribute
+flows across its 3 TX rings, as introduced in commit 7636c9a6e7d7
+("wifi: ath11k: Add multi TX ring support for WCN6750"). The goal
+was to prevent out-of-order packet delivery that could occur with
+smp_processor_id()-based selection, where packets of the same flow
+could end up on different rings depending on CPU scheduling.
+
+Switch to skb_get_queue_mapping() instead, which returns the AC
+(access category) assigned by mac80211 in ieee80211_select_queue().
+This provides the same ordering guarantee: packets of the same TID
+always map to the same AC and therefore always land on the same
+ring, preventing reordering.
+
+Using queue mapping for ring selection also provides QoS-aware
+distribution, where each traffic class gets a deterministic ring
+assignment, rather than the random distribution that flow hashing
+produces. With 3 rings and 4 ACs (VO=0, VI=1, BE=2, BK=3), the
+mapping becomes: VO and BK share ring 0, VI uses ring 1, and BE
+uses ring 2.
+
+This matches the approach already used by ath12k for WCN7850, which
+has the same ring count and uses skb_get_queue_mapping() for its
+ring selector.
+
+This change also removes the dependency on skb_get_hash(), which
+is relevant for a subsequent patch that removes the skb parameter
+from the get_ring_selector hw_ops callback entirely, enabling
+TX flow control in wake_tx_queue without requiring a complex peek
+to inspect frames before dequeue.
+
+Link: https://lore.kernel.org/all/20260917064825.12747-1-jtornosm@redhat.com/
+Signed-off-by: Jose Ignacio Tornos Martinez <jtornosm@redhat.com>
+---
+v7: no modification
+v6: https://lore.kernel.org/all/20260811172435.616200-2-jtornosm@redhat.com/
+
+ drivers/net/wireless/ath/ath11k/hw.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/hw.c
++++ b/drivers/net/wireless/ath/ath11k/hw.c
+@@ -902,13 +902,7 @@ static u32 ath11k_hw_ipq8074_get_tcl_rin
+ 
+ static u32 ath11k_hw_wcn6750_get_tcl_ring_selector(struct sk_buff *skb)
+ {
+-	/* Select the TCL ring based on the flow hash of the SKB instead
+-	 * of CPU ID. Since applications pumping the traffic can be scheduled
+-	 * on multiple CPUs, there is a chance that packets of the same flow
+-	 * could end on different TCL rings, this could sometimes results in
+-	 * an out of order arrival of the packets at the receiver.
+-	 */
+-	return skb_get_hash(skb);
++	return skb_get_queue_mapping(skb);
+ }
+ 
+ const struct ath11k_hw_ops ipq9574_ops = {

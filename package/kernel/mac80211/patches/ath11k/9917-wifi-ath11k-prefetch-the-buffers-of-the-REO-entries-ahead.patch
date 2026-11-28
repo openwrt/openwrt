@@ -1,0 +1,185 @@
+From e9be32ac92e58a9f711c1c7a47a3646ae63ed9c0 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 05:16:09 +0100
+Subject: [PATCH] wifi: ath11k: prefetch the buffers of the REO entries ahead of their reap
+
+The REO reap loads, for each frame, the refill table entry its cookie
+names, then the sk_buff the entry holds, and after the reap the processing
+of the frame loads the descriptor TLVs and headers the device wrote. Each
+is a miss, taken one after the other: the table entry and the sk_buff were
+written when the buffer was queued and are cold when the frame comes back,
+and the frame's lines were just invalidated. In a profile of bridged
+uplink at 900 Mbit/s (IPQ8074, one run), the instruction after the table
+load in ath11k_dp_process_rx() takes 0.72 % of all samples, the ones after
+the first sk_buff loads in ath11k_dp_rx_unmap_buf() 2.26 %, after the
+attention load in ath11k_dp_rx_h_attn_mpdu_err() 1.10 %, after the source
+address load in ath11k_dp_rx_h_mpdu() 1.01 % and after the load of the
+data pointer in ath11k_dp_rx_process_msdu() 1.05 %.
+
+The cached REO ring holds the cookies of the entries ahead, so start these
+loads early: as each entry is reaped, prefetch the table entry of the one
+after the next and the four lines of the next one's sk_buff, whose table
+entry the entry before prefetched; once a frame is handed to the CPU,
+prefetch the first three lines of its descriptor, which hold the end,
+attention and start TLVs, and the first two lines of the frame behind it.
+The processing that follows the reap then finds them in the cache.
+ath11k_hal_srng_dst_peek_ahead() returns an entry below the head pointer
+read last. The table is read for an address only, without its lock: a
+buffer the table no longer holds costs a prefetch to nothing.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -2940,6 +2940,89 @@ static void ath11k_dp_rx_process_receive
+ 	}
+ }
+ 
++/* The refill buffer table entry a REO entry names, or NULL for a cookie that
++ * names none.
++ */
++static struct sk_buff **
++ath11k_dp_rx_reo_buf_slot(struct ath11k_base *ab,
++			  const struct hal_reo_dest_ring *desc)
++{
++	u32 cookie = FIELD_GET(BUFFER_ADDR_INFO1_SW_COOKIE,
++			       desc->buf_addr_info.info1);
++	u32 buf_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_BUF_ID, cookie);
++	u32 mac_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_PDEV_ID, cookie);
++	struct dp_rxdma_ring *rx_ring;
++	struct ath11k *ar;
++
++	if (!buf_id || mac_id >= ab->num_radios)
++		return NULL;
++
++	ar = ab->pdevs[mac_id].ar;
++	if (!ar)
++		return NULL;
++
++	rx_ring = &ar->dp.rx_refill_buf_ring;
++	if (buf_id >= rx_ring->num_ids)
++		return NULL;
++
++	return &rx_ring->bufs[buf_id];
++}
++
++/* Starts the loads of the reap of the next REO entries, which are cold by
++ * the time the frames come back: the buffer table entry of the entry after
++ * the next one, and the sk_buff of the next one, whose table entry the reap
++ * before prefetched. Only an address is read from the table, without its
++ * lock: a buffer it no longer holds costs a prefetch to nothing.
++ */
++static void ath11k_dp_rx_reo_prefetch(struct ath11k_base *ab,
++				      struct hal_srng *srng)
++{
++	struct sk_buff **slot;
++	struct sk_buff *skb;
++	void *desc;
++
++	desc = ath11k_hal_srng_dst_peek_ahead(srng, 1);
++	if (desc) {
++		slot = ath11k_dp_rx_reo_buf_slot(ab, desc);
++		if (slot)
++			prefetch(slot);
++	}
++
++	desc = ath11k_hal_srng_dst_peek_ahead(srng, 0);
++	if (!desc)
++		return;
++
++	slot = ath11k_dp_rx_reo_buf_slot(ab, desc);
++	if (!slot)
++		return;
++
++	skb = READ_ONCE(*slot);
++	if (skb) {
++		prefetchw(skb);
++		prefetchw((u8 *)skb + L1_CACHE_BYTES);
++		prefetchw((u8 *)skb + 2 * L1_CACHE_BYTES);
++		prefetchw((u8 *)skb + 3 * L1_CACHE_BYTES);
++	}
++}
++
++/* Starts the loads of the descriptor TLVs and the headers of a frame the
++ * device has handed back, which its processing reads once the reap is done:
++ * the end, attention and start TLVs in the first three lines of the
++ * descriptor and the first two lines past it. A line past what the device
++ * wrote is not read.
++ */
++static void ath11k_dp_rx_prefetch_frame(struct ath11k_base *ab,
++					struct sk_buff *msdu)
++{
++	u8 *data = msdu->data, *hdr = data + ab->hw_params.hal_desc_sz;
++
++	prefetch(data);
++	prefetch(data + L1_CACHE_BYTES);
++	prefetch(data + 2 * L1_CACHE_BYTES);
++	prefetch(hdr);
++	prefetch(hdr + L1_CACHE_BYTES);
++}
++
+ int ath11k_dp_process_rx(struct ath11k_base *ab, int ring_id,
+ 			 struct napi_struct *napi, int budget)
+ {
+@@ -2972,6 +3055,8 @@ try_again:
+ 	while (likely(desc =
+ 	      (struct hal_reo_dest_ring *)ath11k_hal_srng_dst_get_next_entry(ab,
+ 									     srng))) {
++		ath11k_dp_rx_reo_prefetch(ab, srng);
++
+ 		cookie = FIELD_GET(BUFFER_ADDR_INFO1_SW_COOKIE,
+ 				   desc->buf_addr_info.info1);
+ 		buf_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_BUF_ID,
+@@ -2997,6 +3082,7 @@ try_again:
+ 
+ 		rxcb = ATH11K_SKB_RXCB(msdu);
+ 		ath11k_dp_rx_unmap_buf(ab, msdu, DMA_FROM_DEVICE);
++		ath11k_dp_rx_prefetch_frame(ab, msdu);
+ 
+ 		num_buffs_reaped[mac_id]++;
+ 
+--- a/drivers/net/wireless/ath/ath11k/hal.c
++++ b/drivers/net/wireless/ath/ath11k/hal.c
+@@ -627,6 +627,33 @@ u32 *ath11k_hal_srng_dst_peek(struct ath
+ 	return NULL;
+ }
+ 
++/**
++ * ath11k_hal_srng_dst_peek_ahead() - an entry of a destination ring past the next
++ * @srng: the ring, whose lock the caller holds
++ * @n: how many entries past the one ath11k_hal_srng_dst_get_next_entry()
++ *	returns next
++ *
++ * Return: the entry, or NULL when the head pointer read last does not
++ * reach it.
++ */
++u32 *ath11k_hal_srng_dst_peek_ahead(struct hal_srng *srng, u32 n)
++{
++	u32 tp = srng->u.dst_ring.tp, hp = srng->u.dst_ring.cached_hp;
++	u32 avail, off = n * srng->entry_size;
++
++	lockdep_assert_held(&srng->lock);
++
++	avail = hp >= tp ? hp - tp : srng->ring_size - tp + hp;
++	if (off >= avail)
++		return NULL;
++
++	tp += off;
++	if (tp >= srng->ring_size)
++		tp -= srng->ring_size;
++
++	return srng->ring_base_vaddr + tp;
++}
++
+ /* Hands the CPU the entries of a cached destination ring from word @from up
+  * to word @to, which the head pointer the caller just read shows the device
+  * has written. Every entry the ring hands out passes through here once, after
+--- a/drivers/net/wireless/ath/ath11k/hal.h
++++ b/drivers/net/wireless/ath/ath11k/hal.h
+@@ -938,6 +938,7 @@ void ath11k_hal_srng_get_params(struct a
+ u32 *ath11k_hal_srng_dst_get_next_entry(struct ath11k_base *ab,
+ 					struct hal_srng *srng);
+ u32 *ath11k_hal_srng_dst_peek(struct ath11k_base *ab, struct hal_srng *srng);
++u32 *ath11k_hal_srng_dst_peek_ahead(struct hal_srng *srng, u32 n);
+ int ath11k_hal_srng_dst_num_free(struct ath11k_base *ab, struct hal_srng *srng,
+ 				 bool sync_hw_ptr);
+ u32 *ath11k_hal_srng_src_peek(struct ath11k_base *ab, struct hal_srng *srng);

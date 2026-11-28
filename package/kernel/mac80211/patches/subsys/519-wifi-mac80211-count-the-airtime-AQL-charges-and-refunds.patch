@@ -1,0 +1,209 @@
+From 7aecef2e3ffd2b8f62ef50d52abb0f7a90d94671 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 11:21:32 +0100
+Subject: [PATCH] wifi: mac80211: count the airtime AQL charges and refunds
+
+AQL charges the estimated airtime of a frame when it leaves the TXQ and
+refunds it when the driver reports the frame done, and every path that
+frees a frame without a status has to refund it too: a lost refund keeps
+the station's or the radio's pending airtime up until its AQL limit
+throttles it, and a refund that is too large is clamped silently. Nothing
+shows today whether the two sides match.
+
+Count in ieee80211_sta_update_pending_airtime() the airtime that is
+charged and refunded for each station and access category and for the
+whole radio (including group-addressed frames and stations that have
+been removed), and the amount a refund exceeded the pending airtime by
+before it was clamped to 0. The new aql_audit debugfs file of a station
+and of the phy print them with the pending airtime and the difference
+charged - refunded + clamped - pending, which is 0 whenever no frame is
+in flight: a positive value is a charge that was never refunded, a
+non-zero clamped count a refund that was never charged.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/net/mac80211/debugfs.c
++++ b/net/mac80211/debugfs.c
+@@ -225,6 +225,35 @@ static ssize_t aql_pending_read(struct f
+ 				       buf, len);
+ }
+ 
++/* All airtime charged and refunded since the interface was added, including
++ * group-addressed frames and stations that are gone, and
++ * charged - refunded + clamped - pending, which is 0 when no frame is in
++ * flight.
++ */
++static ssize_t aql_audit_read(struct file *file, char __user *user_buf,
++			      size_t count, loff_t *ppos)
++{
++	struct ieee80211_local *local = file->private_data;
++	char buf[200];
++	s64 c = atomic64_read(&local->aql_audit_charged);
++	s64 r = atomic64_read(&local->aql_audit_refunded);
++	s64 k = atomic64_read(&local->aql_audit_clamped);
++	int pend = atomic_read(&local->aql_total_pending_airtime) +
++		   atomic_read(&local->aql_bc_pending_airtime);
++	int len;
++
++	len = scnprintf(buf, sizeof(buf),
++			"charged %lld us\nrefunded %lld us\nclamped %lld us\npending %d us\ndrift %lld us\n",
++			c, r, k, pend, c - r + k - pend);
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static const struct file_operations aql_audit_ops = {
++	.read = aql_audit_read,
++	.open = simple_open,
++	.llseek = default_llseek,
++};
++
+ static const struct file_operations aql_pending_ops = {
+ 	.read = aql_pending_read,
+ 	.open = simple_open,
+@@ -691,6 +720,7 @@ void debugfs_hw_add(struct ieee80211_loc
+ 	DEBUGFS_ADD_MODE(force_tx_status, 0600);
+ 	DEBUGFS_ADD_MODE(aql_enable, 0600);
+ 	DEBUGFS_ADD(aql_pending);
++	DEBUGFS_ADD(aql_audit);
+ 	DEBUGFS_ADD_MODE(aqm, 0600);
+ 
+ 	DEBUGFS_ADD_MODE(airtime_flags, 0600);
+--- a/net/mac80211/debugfs_sta.c
++++ b/net/mac80211/debugfs_sta.c
+@@ -467,6 +467,34 @@ static ssize_t sta_aql_read(struct file
+ 	return rv;
+ }
+ 
++/* Per access category: the airtime charged and refunded since the station
++ * was added, what a refund took beyond the pending airtime, the pending
++ * airtime, and charged - refunded + clamped - pending, which is 0 when no
++ * frame is in flight.
++ */
++static ssize_t sta_aql_audit_read(struct file *file, char __user *userbuf,
++				  size_t count, loff_t *ppos)
++{
++	struct sta_info *sta = file->private_data;
++	char buf[400], *p = buf;
++	int ac;
++
++	p += scnprintf(p, sizeof(buf), "AC charged refunded clamped pending drift (us)\n");
++	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
++		s64 c = atomic64_read(&sta->airtime[ac].aql_charged);
++		s64 r = atomic64_read(&sta->airtime[ac].aql_refunded);
++		s64 k = atomic64_read(&sta->airtime[ac].aql_clamped);
++		int pend = atomic_read(&sta->airtime[ac].aql_tx_pending);
++
++		p += scnprintf(p, buf + sizeof(buf) - p,
++			       "%d %lld %lld %lld %d %lld\n", ac, c, r, k,
++			       pend, c - r + k - pend);
++	}
++
++	return simple_read_from_buffer(userbuf, count, ppos, buf, p - buf);
++}
++STA_OPS(aql_audit);
++
+ static ssize_t sta_aql_write(struct file *file, const char __user *userbuf,
+ 				 size_t count, loff_t *ppos)
+ {
+@@ -1460,8 +1488,10 @@ void ieee80211_sta_debugfs_add(struct st
+ 	DEBUGFS_ADD(airtime);
+ 
+ 	if (wiphy_ext_feature_isset(local->hw.wiphy,
+-				    NL80211_EXT_FEATURE_AQL))
++				    NL80211_EXT_FEATURE_AQL)) {
+ 		DEBUGFS_ADD(aql);
++		DEBUGFS_ADD(aql_audit);
++	}
+ 
+ 	debugfs_create_xul("driver_buffered_tids", 0400, sta->debugfs_dir,
+ 			   &sta->driver_buffered_tids);
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1546,6 +1546,12 @@ struct ieee80211_local {
+ 	atomic_t aql_total_pending_airtime;
+ 	atomic_t aql_bc_pending_airtime;
+ 	atomic_t aql_ac_pending_airtime[IEEE80211_NUM_ACS];
++	/* All AQL charges and refunds, with and without a station and for
++	 * group-addressed frames, for the aql_audit debugfs file
++	 */
++	atomic64_t aql_audit_charged;
++	atomic64_t aql_audit_refunded;
++	atomic64_t aql_audit_clamped;
+ 
+ 	const struct ieee80211_ops *ops;
+ 
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -2560,21 +2560,29 @@ void ieee80211_sta_update_pending_airtim
+ 	if (mcast) {
+ 		if (!tx_completed) {
+ 			atomic_add(tx_airtime, &local->aql_bc_pending_airtime);
++			atomic64_add(tx_airtime, &local->aql_audit_charged);
+ 			return;
+ 		}
+ 
++		atomic64_add(tx_airtime, &local->aql_audit_refunded);
+ 		tx_pending = atomic_sub_return(tx_airtime,
+ 					       &local->aql_bc_pending_airtime);
+-		if (tx_pending < 0)
++		if (tx_pending < 0) {
++			atomic64_add(-tx_pending, &local->aql_audit_clamped);
+ 			atomic_cmpxchg(&local->aql_bc_pending_airtime,
+ 				       tx_pending, 0);
++		}
+ 		return;
+ 	}
+ 
+ 	if (!tx_completed) {
+-		if (sta)
++		if (sta) {
+ 			atomic_add(tx_airtime,
+ 				   &sta->airtime[ac].aql_tx_pending);
++			atomic64_add(tx_airtime, &sta->airtime[ac].aql_charged);
++		}
++
++		atomic64_add(tx_airtime, &local->aql_audit_charged);
+ 
+ 		atomic_add(tx_airtime, &local->aql_total_pending_airtime);
+ 		atomic_add(tx_airtime, &local->aql_ac_pending_airtime[ac]);
+@@ -2584,18 +2592,25 @@ void ieee80211_sta_update_pending_airtim
+ 	if (sta) {
+ 		tx_pending = atomic_sub_return(tx_airtime,
+ 					       &sta->airtime[ac].aql_tx_pending);
+-		if (tx_pending < 0)
++		atomic64_add(tx_airtime, &sta->airtime[ac].aql_refunded);
++		if (tx_pending < 0) {
++			atomic64_add(-tx_pending,
++				     &sta->airtime[ac].aql_clamped);
+ 			atomic_cmpxchg(&sta->airtime[ac].aql_tx_pending,
+ 				       tx_pending, 0);
++		}
+ 
+ 		if (ieee80211_hw_check(&local->hw, DEFERRED_AIRTIME_REPORT))
+ 			atomic_add(tx_airtime,
+ 				   &sta->airtime[ac].aql_tx_completed);
+ 	}
+ 
++	atomic64_add(tx_airtime, &local->aql_audit_refunded);
+ 	atomic_sub(tx_airtime, &local->aql_total_pending_airtime);
+ 	tx_pending = atomic_sub_return(tx_airtime,
+ 				       &local->aql_ac_pending_airtime[ac]);
++	if (tx_pending < 0)
++		atomic64_add(-tx_pending, &local->aql_audit_clamped);
+ 	if (WARN_ONCE(tx_pending < 0,
+ 		      "Device %s AC %d pending airtime underflow: %u, %u",
+ 		      wiphy_name(local->hw.wiphy), ac, tx_pending,
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -142,6 +142,12 @@ struct airtime_info {
+ 	s32 deficit;
+ 	atomic_t aql_tx_pending; /* Estimated airtime for frames pending */
+ 	atomic_t aql_tx_completed; /* Estimated airtime of completed frames */
++	/* Airtime charged, refunded, and refunded beyond what was pending
++	 * (and so clamped), for the aql_audit debugfs file
++	 */
++	atomic64_t aql_charged;
++	atomic64_t aql_refunded;
++	atomic64_t aql_clamped;
+ 	u32 aql_limit_low;
+ 	u32 aql_limit_high;
+ };

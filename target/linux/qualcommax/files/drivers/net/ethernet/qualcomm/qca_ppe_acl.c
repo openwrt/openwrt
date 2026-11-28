@@ -1455,8 +1455,8 @@ int qca_ppe_cls_flower_stats(struct dsa_switch *ds, int port,
  * The priority is capped at 7: the slots above sit on the port's second SP
  * beside the multicast queues.
  */
-static ushort ppe_small_pkt_len = 1000;
-static ushort ppe_small_pkt_prio = 5;
+ushort ppe_small_pkt_len = 1000;
+ushort ppe_small_pkt_prio = 5;
 
 /* One PPE per SoC; the parameter store needs the instance back. */
 static struct qca_ppe_priv *ppe_acl_priv;

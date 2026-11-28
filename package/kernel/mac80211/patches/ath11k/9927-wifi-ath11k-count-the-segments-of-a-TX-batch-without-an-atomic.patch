@@ -1,0 +1,84 @@
+From f633dc855f9df17ca468cf9205c0f7b306c155fe Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 09:35:29 +0100
+Subject: [PATCH] wifi: ath11k: count the segments of a TX batch without an atomic
+
+A batch the TCL segments from extension descriptors holds one reference of
+its skb per segment, taken with refcount_add() when it is sent, and each
+segment's completion drops one with skb_unref() in
+ath11k_dp_tx_buf_put_id(). That is an atomic on the skb's reference count
+line, which nothing else of the completion reads: in a profile of routed
+downlink at 900 Mbit/s (IPQ8074, one run) the instruction after it takes
+0.44 % of all samples.
+
+Count the outstanding segments in the frame's control block instead, whose
+line the completion of the segment reads anyway. The send sets the count
+before the first descriptor is on the ring, with the frame held only by
+the driver (its reference count is 1 there), and every release of an id of
+the batch decrements it: the completion handler and the firmware release
+paths under the id lock, and the teardown, which runs alone. The send's
+failure path gives its ids back before any count exists, as it gave them
+back before any reference was taken. The release that takes the count to
+zero returns the frame, as skb_unref() did for the last reference, so the
+frames of a batch complete and are freed in the same order as before.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -130,6 +130,10 @@ struct ath11k_skb_cb {
+ 	 */
+ 	u8 tso_try;
+ 	u8 tso_bad;
++	/* Of a batch whose segments are counted here instead of in the skb's
++	 * reference count: the segments whose completion is still to come
++	 */
++	u8 tso_left;
+ } __packed;
+ 
+ struct ath11k_skb_rxcb {
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -247,7 +247,7 @@ struct sk_buff *ath11k_dp_tx_buf_put_id(
+ 		ath11k_dp_tx_tso_unmap(ab->dev, map);
+ 		tx_ring->ext_free[tx_ring->ext_num_free++] = id;
+ 
+-		if (!skb_unref(skb)) {
++		if (--ATH11K_SKB_CB(skb)->tso_left) {
+ 			*more = true;
+ 			return NULL;
+ 		}
+@@ -676,9 +676,9 @@ static int ath11k_dp_tx_fraglist_tso(str
+  * descriptor for each of its segments, which also gives the segment's IP
+  * length, IP ID, TCP sequence number and flags for the TCL to write into the
+  * headers, and the payload goes on in the skbs of its frag_list, if it has
+- * any; every segment holds a reference on the batch, and the completion of
+- * the last one reports the batch to mac80211. A frame with fragments has
+- * one descriptor, and is a batch of one segment.
++ * any; every segment holds a share of the batch's segment count, and the
++ * completion of the last one reports the batch to mac80211. A frame with
++ * fragments has one descriptor, and is a batch of one segment.
+  *
+  * Returns -EAGAIN for one the TCL cannot take whole, with the frame as it
+  * came or, for a frame list, converted into the equal TCP batch, which
+@@ -874,7 +874,11 @@ static int ath11k_dp_tx_ext(struct ath11
+ 	skb_cb->ar = ar;
+ 	skb_cb->tso_try = 0;
+ 	skb_cb->tso_bad = 0;
+-	refcount_add(n - 1, &skb->users);
++	/* Each segment's completion gives back one share of the frame,
++	 * counted in the control block under the id lock every release of an
++	 * id holds.
++	 */
++	skb_cb->tso_left = n;
+ 
+ 	ti.encap_type = HAL_TCL_ENCAP_TYPE_ETHERNET;
+ 	ti.meta_data_flags = arvif->tcl_metadata;
+@@ -943,7 +947,7 @@ fail_put:
+ 		ath11k_dp_tx_ext_unpad(skb, hdr_len, pad);
+ 	spin_lock_bh(&tx_ring->tx_idr_lock);
+ 	for (j = n; j--;) {
+-		/* no reference was taken yet: release the id only */
++		/* no segment was counted yet: release the id only */
+ 		tx_ring->bufs[ids[j]] = NULL;
+ 		tx_ring->ext_free[tx_ring->ext_num_free++] = ids[j];
+ 	}

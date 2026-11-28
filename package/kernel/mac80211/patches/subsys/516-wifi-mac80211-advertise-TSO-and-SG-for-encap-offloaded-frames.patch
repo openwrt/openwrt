@@ -1,0 +1,169 @@
+From de887ab57b0d036631b64fec45239f8a296eb56a Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 15 Nov 2026 02:29:39 +0100
+Subject: [PATCH] wifi: mac80211: advertise TSO and SG for encap offloaded frames
+
+Let a driver advertise NETIF_F_TSO, TSO6 and SG for encap offload vifs
+through encap_netdev_features and encap_gso_max_segs. A GSO frame is
+charged to AQL for its whole airtime; one whose estimate would not fit
+the 10-bit tx_time_est is segmented in software, and the per-station
+counters count the segments.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -3263,6 +3263,19 @@ enum ieee80211_hw_flags {
+  * @netdev_features: netdev features to be set in each netdev created
+  *	from this HW. Note that not all features are usable with mac80211,
+  *	other features will be rejected during HW registration.
++ * @encap_netdev_features: netdev features, in addition to @netdev_features,
++ *	set in each AP, AP VLAN and station netdev created from this HW, for
++ *	the frames that are sent with 802.3 encapsulation offload (see
++ *	%IEEE80211_OFFLOAD_ENCAP_ENABLED). A driver sets scatter-gather and
++ *	segmentation offload here when the hardware takes such frames whole.
++ *	mac80211 hands a driver a frame with these features only with
++ *	%IEEE80211_TX_CTL_HW_80211_ENCAP, and segments or linearizes it in
++ *	software on every other path, and for a station when the airtime
++ *	estimate of the whole frame is more than AQL can account to one frame.
++ *	Such a frame starts with its 802.3 header; a GSO frame has at most
++ *	@encap_gso_max_segs segments.
++ * @encap_gso_max_segs: the most segments of a GSO frame the driver takes
++ *	whole, when @encap_netdev_features has a segmentation offload.
+  *
+  * @uapsd_queues: This bitmap is included in (re)association frame to indicate
+  *	for each access category if it is uAPSD trigger-enabled and delivery-
+@@ -3322,6 +3335,8 @@ struct ieee80211_hw {
+ 		s16 accuracy;
+ 	} radiotap_timestamp;
+ 	netdev_features_t netdev_features;
++	netdev_features_t encap_netdev_features;
++	u16 encap_gso_max_segs;
+ 	u8 uapsd_queues;
+ 	u8 uapsd_max_sp_len;
+ 	u8 max_nan_de_entries;
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -2475,6 +2475,20 @@ int ieee80211_if_add(struct ieee80211_lo
+ 			sdata->u.mgd.use_4addr = params->use_4addr;
+ 
+ 		ndev->features |= local->hw.netdev_features;
++		/* Only the netdevs that can use the encap offload offer its
++		 * features: every other path segments in software, with the
++		 * features of the vif.
++		 */
++		if (ieee80211_hw_check(&local->hw, SUPPORTS_TX_ENCAP_OFFLOAD) &&
++		    local->hw.encap_netdev_features &&
++		    (type == NL80211_IFTYPE_AP ||
++		     type == NL80211_IFTYPE_AP_VLAN ||
++		     type == NL80211_IFTYPE_STATION)) {
++			ndev->features |= local->hw.encap_netdev_features;
++			if (local->hw.encap_gso_max_segs)
++				netif_set_tso_max_segs(ndev,
++						       local->hw.encap_gso_max_segs);
++		}
+ 		ndev->priv_flags |= IFF_LIVE_ADDR_CHANGE;
+ 		ndev->hw_features |= ndev->features &
+ 					MAC80211_SUPPORTED_FEATURES_TX;
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -1238,7 +1238,8 @@ int ieee80211_register_hw(struct ieee802
+ 	}
+ 
+ 	/* Only HW csum features are currently compatible with mac80211 */
+-	if (WARN_ON(hw->netdev_features & ~MAC80211_SUPPORTED_FEATURES))
++	if (WARN_ON((hw->netdev_features | hw->encap_netdev_features) &
++		    ~MAC80211_SUPPORTED_FEATURES))
+ 		return -EINVAL;
+ 
+ 	if (hw->max_report_rates == 0)
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -14,6 +14,7 @@
+ #include <linux/slab.h>
+ #include <linux/skbuff.h>
+ #include <linux/if_vlan.h>
++#include <linux/tcp.h>
+ #include <linux/etherdevice.h>
+ #include <linux/bitmap.h>
+ #include <linux/rcupdate.h>
+@@ -4909,6 +4910,35 @@ static bool ieee80211_tx_8023(struct iee
+ 	return ret;
+ }
+ 
++/* A frame's airtime estimate has 10 bits, in units of 4 us. A GSO frame whose
++ * estimate would not fit is charged less than it takes and stays in the AQL
++ * limits for as long as it takes, so it is segmented in software instead.
++ */
++#define IEEE80211_TX_GSO_AIRTIME_MAX	4092
++
++static bool ieee80211_8023_gso_fits(struct ieee80211_sub_if_data *sdata,
++				    struct sta_info *sta, struct sk_buff *skb,
++				    u16 queue)
++{
++	struct ieee80211_local *local = sdata->local;
++	u32 airtime;
++
++	if (!sta || !wiphy_ext_feature_isset(local->hw.wiphy,
++					     NL80211_EXT_FEATURE_AQL))
++		return true;
++
++	/* AQL charges the vif of the AP, as ieee80211_tx_dequeue() does */
++	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++		sdata = container_of(sdata->bss, struct ieee80211_sub_if_data,
++				     u.ap);
++
++	airtime = ieee80211_calc_expected_tx_airtime(&local->hw, &sdata->vif,
++						     &sta->sta, skb->len,
++						     queue != IEEE80211_AC_VO);
++
++	return airtime <= IEEE80211_TX_GSO_AIRTIME_MAX;
++}
++
+ static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
+ 				struct net_device *dev, struct sta_info *sta,
+ 				struct ieee80211_key *key, struct sk_buff *skb)
+@@ -4919,6 +4949,7 @@ static void ieee80211_8023_xmit(struct i
+ 	struct tid_ampdu_tx *tid_tx = NULL;
+ 	struct sk_buff *seg, *next;
+ 	unsigned int skbs = 0, len = 0;
++	netdev_features_t features;
+ 	u32 priority = skb->priority;
+ 	u32 ctrl_flags = 0;
+ 	u16 queue;
+@@ -4958,7 +4989,12 @@ static void ieee80211_8023_xmit(struct i
+ 			tid_tx->last_tx = jiffies;
+ 	}
+ 
+-	skb = ieee80211_tx_skb_fixup(skb, ieee80211_sdata_netdev_features(sdata));
++	features = ieee80211_sdata_netdev_features(sdata) |
++		   local->hw.encap_netdev_features;
++	if (skb_is_gso(skb) && !ieee80211_8023_gso_fits(sdata, sta, skb, queue))
++		features &= ~(NETIF_F_ALL_TSO | NETIF_F_SG);
++
++	skb = ieee80211_tx_skb_fixup(skb, features);
+ 	if (!skb)
+ 		return;
+ 
+@@ -4989,8 +5025,21 @@ static void ieee80211_8023_xmit(struct i
+ 		info->control.hw_key = &key->conf;
+ 
+ 	skb_list_walk_safe(skb, seg, next) {
+-		skbs++;
++		unsigned int segs = 1;
++
+ 		len += seg->len;
++		/* a GSO frame is one frame of the queues and of the airtime
++		 * estimate, and as many packets of the counters as it has
++		 * segments
++		 */
++		if (skb_is_gso(seg) &&
++		    (skb_shinfo(seg)->gso_type &
++		     (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))) {
++			segs = max_t(unsigned int, skb_shinfo(seg)->gso_segs, 1);
++			len += (segs - 1) * (skb_transport_offset(seg) +
++					     tcp_hdrlen(seg));
++		}
++		skbs += segs;
+ 		if (seg != skb)
+ 			memcpy(IEEE80211_SKB_CB(seg), info, sizeof(*info));
+ 	}

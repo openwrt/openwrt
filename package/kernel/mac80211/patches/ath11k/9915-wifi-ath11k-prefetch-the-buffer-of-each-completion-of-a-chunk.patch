@@ -1,0 +1,63 @@
+From 8196334f363d3c0f3e3acaa41f89cc9b954a022f Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 05:16:08 +0100
+Subject: [PATCH] wifi: ath11k: prefetch the buffer of each completion of a chunk
+
+The completion handler reads a chunk of up to 16 completions, then
+releases their ids under one hold of the id lock. Each release reads the
+id's table entry and, for a segment, the payload map of its extension
+descriptor, both cold by then: in a profile of bridged downlink at
+900 Mbit/s (IPQ8074, one run) the instruction after the table load in
+ath11k_dp_tx_buf_put_id() takes 0.63 % of all samples and the one after
+the map load 1.05 %. The id gives both addresses without another load, so
+prefetch them for writing as each completion of the chunk is read; the
+release then finds them arriving, 16 misses overlapped instead of taken
+one after the other.
+
+The prefetch of the frames two ahead covered the first two lines of the
+sk_buff, while the prefetch of the shared info one ahead reads its address
+from the third and fourth (end at offset 188, head at 192 on arm64): the
+load after it takes 0.37 % of all samples. Prefetch those two lines with
+the first two.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -1652,6 +1652,15 @@ int ath11k_dp_tx_completion_handler(stru
+ 					    it->tx_status->buf_addr_info.info1);
+ 			it->mac_id = FIELD_GET(DP_TX_DESC_ID_MAC_ID, desc_id);
+ 			it->msdu_id = FIELD_GET(DP_TX_DESC_ID_MSDU_ID, desc_id);
++			/* The id alone gives the addresses of its table entry
++			 * and payload map, which the release below writes:
++			 * start their loads for the whole chunk at once.
++			 */
++			if (it->msdu_id < DP_TX_IDR_SIZE - 1) {
++				prefetchw(&tx_ring->bufs[it->msdu_id]);
++				if (it->msdu_id < tx_ring->ext_ids)
++					prefetchw(&tx_ring->ext_map[it->msdu_id]);
++			}
+ 			it->msdu = NULL;
+ 			it->more = false;
+ 			it->seg.skb = NULL;
+@@ -1685,12 +1694,17 @@ int ath11k_dp_tx_completion_handler(stru
+ 			struct ath11k_dp_tx_compl_item *it = &items[k];
+ 
+ 			/* the next frames' buffers and shared infos are cold:
+-			 * the id table held only their pointers
++			 * the id table held only their pointers. The shared
++			 * info's address is in the buffer's third and fourth
++			 * line, read for k + 1 below.
+ 			 */
+ 			if (k + 2 < n && items[k + 2].msdu) {
+-				prefetch(items[k + 2].msdu);
+-				prefetch((u8 *)items[k + 2].msdu +
+-					 L1_CACHE_BYTES);
++				u8 *p = (u8 *)items[k + 2].msdu;
++
++				prefetch(p);
++				prefetch(p + L1_CACHE_BYTES);
++				prefetch(p + 2 * L1_CACHE_BYTES);
++				prefetch(p + 3 * L1_CACHE_BYTES);
+ 			}
+ 			if (k + 1 < n && items[k + 1].msdu)
+ 				prefetch(skb_shinfo(items[k + 1].msdu));

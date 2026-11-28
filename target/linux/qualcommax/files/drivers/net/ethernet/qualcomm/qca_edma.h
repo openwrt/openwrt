@@ -6,12 +6,16 @@
 #ifndef __QCA_EDMA_H__
 #define __QCA_EDMA_H__
 
+#include <linux/dim.h>
 #include <linux/dsa/tag_qca.h>
 #include <linux/qca_edma.h>
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
+#include <linux/ip.h>
+#include <linux/ipv6.h>
 #include <linux/netdevice.h>
 #include <linux/platform_device.h>
+#include <linux/tcp.h>
 #include <net/dsa.h>
 #include <net/page_pool/helpers.h>
 
@@ -143,6 +147,13 @@
 #define EDMA_RX_COAL_US			100
 #define EDMA_COAL_FRAMES		16
 
+/* The profiles net DIM steps through scale the configured timer and frame
+ * count: the values above, or what ethtool -C sets, are the middle profile a
+ * ring starts on. Each step to the right waits longer and gathers more frames
+ * per interrupt, each step to the left less.
+ */
+#define EDMA_DIM_BASE_IX		2
+
 /* A moderation timer counts 128 cycles of the EDMA clock. */
 #define EDMA_MOD_TIMER_CYCLES		128
 #define EDMA_MOD_TIMER_MAX		0xffff
@@ -206,7 +217,11 @@
 		      (2 * VLAN_HLEN))
 #define EDMA_TX_PREHDR_SIZE	(sizeof(struct edma_tx_preheader))
 #define EDMA_TX_RING_SIZE	128
-#define EDMA_RX_RING_SIZE	2048
+#define EDMA_RX_RING_SIZE	512
+/* A receive buffer that fits in this much is half a page, the other half of
+ * which is the next buffer.
+ */
+#define EDMA_RX_FRAG_SIZE	2048
 /* The bounds a frame is described to the engine within: at most this many
  * buffers, and no buffer below this size before the last. The queue stops
  * with room for a frame that takes every descriptor, or it would restart on
@@ -215,6 +230,11 @@
 #define EDMA_TX_MAX_SEGS	32
 #define EDMA_TX_MIN_SEG		16
 #define EDMA_TX_RING_THRESH	(EDMA_TX_MAX_SEGS + 1)
+/* The shortest segment the engine cuts a TSO frame into. Below it the
+ * engine flags the frame's completion with an error, and for a segment size
+ * of 108 its segments carried 256 bytes each.
+ */
+#define EDMA_TX_MIN_MSS		256
 
 /* A ring index wraps by masking, so a ring is a power of two. The size
  * registers are sixteen bits wide, but a fill ring pins a page per entry and
@@ -222,6 +242,12 @@
  */
 #define EDMA_MIN_RING_SIZE	64
 #define EDMA_MAX_RING_SIZE	8192
+
+/* Every ring's descriptor is two words; the cached rings are synced by lines
+ * of these.
+ */
+#define EDMA_DESC_SIZE		8
+#define EDMA_DESCS_PER_LINE	(L1_CACHE_BYTES / EDMA_DESC_SIZE)
 
 /* Descriptor accessors */
 #define EDMA_GET_DESC(R, i, type) (&(((type *)((R)->desc))[i]))
@@ -304,15 +330,82 @@ struct edma_rx_preheader {
 	u32 rx_pre7;
 };
 
+/* The headers of a TCP segment, as found in a frame that starts at its
+ * Ethernet header.
+ */
+struct edma_tcp {
+	struct ethhdr *eth;
+	union {
+		struct iphdr *ip4;
+		struct ipv6hdr *ip6;
+	};
+	struct tcphdr *th;
+	u16 hdr_len;
+	u16 payload;
+	bool v6;
+};
+
+/* The key of a run in place of a flow index: a stream the switch forwarded
+ * to the CPU port from the port in the low bits, which no 21-bit flow index
+ * reaches, or no key at all.
+ */
+#define EDMA_GRO_FWD		BIT(30)
+#define EDMA_GRO_NONE		U32_MAX
+
+/* A run of segments of one flow, merged into the first one's skb as its
+ * fragments, or chained on its frag_list with their headers when @flist,
+ * and what the next segment has to be to join it. @last is the skb the next
+ * one is chained behind.
+ */
+struct edma_gro {
+	struct sk_buff *head;
+	struct sk_buff *last;
+	const struct edma_rx_preheader *rxph;
+	struct qca_edma_gso gso;
+	struct edma_tcp t;
+	u32 flow;
+	u32 desc_status;
+	u32 bytes;
+	u32 next_seq;
+	u16 last_id;
+	u16 mss;
+	u16 segs;
+	u16 max_segs;
+	u8 src_port;
+	bool fixedid;
+	bool flist;
+};
+
 struct edma_stats {
 	u64 rx_untracked_page;
+	u64 rx_fifo_miss;
 	u64 rx_bad_src_info;
 	u64 rx_no_skb;
 	u64 rx_no_tag;
+	u64 rx_vp_unclaimed;
 	u64 rx_split_frame;
 	u64 rx_fill_starved;
+	u64 rx_flow_single;
+	u64 rx_flow_merged;
+	u64 rx_flow_aggs;
+	u64 rx_fwd_merged;
+	u64 rx_fwd_aggs;
+	u64 rx_gro_buf;
 	u64 tx_desc_error;
 	u64 tx_unnamed_frame;
+	u64 tx_gso_frames;
+	u64 tx_gso_segs;
+	u64 tx_fraglist_split;
+	u64 tx_fraglist_parts;
+	u64 tx_src_parked;
+	u64 tx_src_drained;
+	u64 tx_src_dropped;
+	u64 tx_src_park_drv;
+	u64 tx_src_park_stack;
+	u64 tx_src_park_ring;
+	u64 tx_src_park_order;
+	u64 tx_src_split;
+	u64 tx_src_split_segs;
 };
 
 struct edma_soc_data {
@@ -328,12 +421,32 @@ struct edma_soc_data {
 	bool axiw_enable;
 };
 
+/* A receive buffer the fill ring holds: its page and the address the page
+ * pool mapped it at, kept here so that taking it back needs nothing from the
+ * page's own, cold, struct.
+ */
+struct edma_rx_buf {
+	struct page *page;
+	dma_addr_t dma;
+	u32 off;
+};
+
+/* The address and length a transmit descriptor was mapped with, kept in
+ * cached memory for its release: the descriptor ring itself is not cached.
+ */
+struct edma_tx_map {
+	u32 dma;
+	u32 len;
+};
+
 struct edma_ring {
 	void *desc;
 	dma_addr_t dma;
 	u16 count;
+	bool cached;
 	struct sk_buff **skb_store;
-	struct page **page_store;
+	struct edma_tx_map *tx_map;
+	struct edma_rx_buf *rx_store;
 };
 
 /* The rings a transmit and a receive queue each run on, the hardware numbers
@@ -366,15 +479,49 @@ struct edma_queue {
 	u16 tx_cons;
 	u16 txcmpl_cons;
 	u16 rxfill_prod;
+	/* The slot of the fill ring whose buffer the engine returns next. */
+	u16 rx_slot;
 	u16 rxdesc_cons;
+	/* The descriptors being read are the rest of a frame longer than a
+	 * buffer, which is dropped.
+	 */
+	bool rx_more;
 	bool tx_kick;
 
 	spinlock_t tx_lock;
+
+	/* Source-port frames the ring had no room for, in the order they came,
+	 * and the descriptors they will take. Only the queue's transmit lock
+	 * guards them, and src_up says the queue takes frames: it is set by
+	 * open and cleared, with the backlog purged, by stop.
+	 */
+	struct sk_buff_head src_backlog;
+	u16 src_backlog_desc;
+	bool src_up;
 
 	/* Counted here rather than in netdev->stats, which cannot say which of
 	 * the reasons a frame went missing for.
 	 */
 	struct edma_stats stats;
+
+	/* The aggregate of consecutive segments of one flow the poll holds
+	 * open, and the flow the switch last said takes none. Both are only
+	 * the poll's, and the aggregate is always sent before the poll ends.
+	 */
+	struct edma_gro gro;
+	u32 gro_skip;
+
+	/* What net DIM samples: the interrupts this set took and what its
+	 * receive and transmit completion rings moved. Only the poll writes
+	 * them, and the workers apply the profile DIM chose.
+	 */
+	struct dim rx_dim;
+	struct dim tx_dim;
+	u16 dim_events;
+	u64 rx_pkts;
+	u64 rx_bytes;
+	u64 tx_pkts;
+	u64 tx_bytes;
 
 	u8 idx;
 	u8 txdesc;
@@ -399,7 +546,7 @@ struct edma_priv {
 	struct reset_control *rst;
 	u32 rx_buffer_size;
 	u32 rx_frame_len;
-	u8 rx_page_order;
+	u32 rx_truesize;
 	u16 tx_ring_size;
 	u16 rx_ring_size;
 	unsigned long clk_rate;
@@ -407,6 +554,8 @@ struct edma_priv {
 	u16 rx_mod_timer;
 	u16 tx_ugt_thre;
 	u16 rx_ugt_thre;
+	bool rx_adaptive;
+	bool tx_adaptive;
 
 	u64 misc_error;
 

@@ -1,0 +1,95 @@
+From 8f9dd50ba57832ed0c6bbbd86c9487106a2804df Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 22 Nov 2026 09:35:28 +0100
+Subject: [PATCH] wifi: ath11k: merge a routed stream into fragments when the PPE forwards it
+
+A routed TCP stream of a station is addressed to the bridge, so the
+bridge's address table names no egress port for it, and with rx-gro-list
+on the receive merge builds a frame list for it, as GRO would for a
+forwarded stream. On qualcommax the PPE driver takes such a frame at the
+station's bridge port when it forwards the flow (ppe_vp_hook()) and the
+engine cuts it into its segments itself, adding the VLAN or PPPoE of the
+egress; the frame list only keeps an skb per segment for the engine's
+transmit to walk, convert and free.
+
+Ask the PPE driver, when it is there, whether it takes the stream's frames
+whole now (qca_ppe_vp_flow_tso(), looked up once with symbol_get(), so
+ath11k does not depend on it), and merge such a stream into a frame with
+fragments. The lookup is done once and not retried: the PPE driver is
+built into the kernel where there is one (CONFIG_QCOM_80211AX_PPE=y in the
+ipq807x and ipq60xx config-default), so the symbol is there from boot or
+not at all. The prototype is declared here, as the PPE driver's header
+exists only in the qualcommax kernel tree and ath11k builds for every
+target. A frame the PPE no longer takes when the flow leaves takes the
+host's path, where a frame with fragments is segmented as one with frame
+lists is, PPPoE and VLAN included (pppoe_gso_segment(), the VLAN tags
+skb_mac_gso_segment() skips). IPv4 and IPv6 alike.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -3621,10 +3621,54 @@ static struct net_device *ath11k_dp_rx_m
+ #endif
+ }
+ 
++/* Provided by the qualcommax PPE driver, built into the kernel where there is
++ * one; looked up at run time, so ath11k does not depend on it.
++ */
++bool qca_ppe_vp_flow_tso(const struct net_device *dev, const u8 *dest, bool v6,
++			 const void *saddr, const void *daddr, __be16 sport,
++			 __be16 dport);
++
++static typeof(&qca_ppe_vp_flow_tso) ath11k_rx_fwd_tso;
++static bool ath11k_rx_fwd_tso_looked_up;
++
++/* Whether a switch that forwards the routed stream of @t received on @dev
++ * takes its frames whole and cuts them into segments itself, as the PPE does
++ * for a flow it offloads from a bridge port; then a frame list would only
++ * keep an skb per segment for the switch's transmit to walk. The lookup is
++ * done once; its reference is never dropped, as the driver is built in.
++ */
++static bool ath11k_dp_rx_merge_fwd(struct net_device *dev,
++				   const struct ath11k_dp_rx_tcp *t)
++{
++#if IS_ENABLED(CONFIG_MODULES)
++	typeof(&qca_ppe_vp_flow_tso) fn = READ_ONCE(ath11k_rx_fwd_tso);
++
++	if (!fn && !READ_ONCE(ath11k_rx_fwd_tso_looked_up)) {
++		fn = symbol_get(qca_ppe_vp_flow_tso);
++		if (fn && cmpxchg(&ath11k_rx_fwd_tso, NULL, fn))
++			symbol_put(qca_ppe_vp_flow_tso);
++		WRITE_ONCE(ath11k_rx_fwd_tso_looked_up, true);
++		fn = READ_ONCE(ath11k_rx_fwd_tso);
++	}
++	if (!fn)
++		return false;
++
++	if (t->v6)
++		return fn(dev, t->eth->h_dest, true, &t->ip6->saddr,
++			  &t->ip6->daddr, t->th->source, t->th->dest);
++
++	return fn(dev, t->eth->h_dest, false, &t->ip4->saddr, &t->ip4->daddr,
++		  t->th->source, t->th->dest);
++#else
++	return false;
++#endif
++}
++
+ /* Starts a run with @msdu, unless GRO on the netdev its frames reach is off
+  * or has an XDP program there, which see every frame alone. A run the bridge
+  * sends to a port that segments TCP of its family in hardware is a frame
+- * with fragments, up to that port's GSO size, which the port sends whole.
++ * with fragments, up to that port's GSO size, which the port sends whole, and
++ * so is a routed one the switch forwards whole, see ath11k_dp_rx_merge_fwd().
+  * Otherwise the run takes the form GRO on the netdev would give it: with
+  * frame lists on a frame list, unless a socket of the host takes the stream,
+  * as tcp4_check_fraglist_gro() and tcp6_check_fraglist_gro() decide, else a
+@@ -3662,6 +3706,8 @@ static bool ath11k_dp_rx_merge_open(stru
+ 				    READ_ONCE(egress->gso_max_size));
+ 		egress_segs = READ_ONCE(egress->gso_max_segs);
+ 		flist = false;
++	} else if (flist && ath11k_dp_rx_merge_fwd(dev, t)) {
++		flist = false;
+ 	} else if (flist) {
+ 		iif = dev->ifindex;
+ #if IS_ENABLED(CONFIG_NET_L3_MASTER_DEV)
