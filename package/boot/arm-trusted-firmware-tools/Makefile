@@ -8,9 +8,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=arm-trusted-firmware-tools
-PKG_VERSION:=2.12
+PKG_VERSION:=2.15.0
 PKG_RELEASE:=1
-PKG_HASH:=b4c047493cac1152203e1ba121ae57267e4899b7bf56eb365e22a933342d31c9
+PKG_HASH:=67b772aaa58218712c062ccd103f1d53cf74d9543e251f20ac037a6dbf821a10
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 PKG_HOST_ONLY:=1
