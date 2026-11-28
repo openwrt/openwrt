@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Sat, 15 Aug 2026 15:38:30 +0300
+Subject: [PATCH] mips: smp-mt: skip stray Compare arm when mips_hpt_frequency is uncalibrated
+
+vsmp_smp_finish() unconditionally arms CP0 Compare on every secondary CPU
+bring-up using mips_hpt_frequency, with no guard for platforms that never
+calibrate it -- econet doesn't (a separate external HPT peripheral is the
+real clockevent source here; nothing in arch/mips/econet/ ever sets
+mips_hpt_frequency). With mips_hpt_frequency=0, the arithmetic silently
+degenerates to write_c0_compare(read_c0_count()), arming an immediate/
+spurious Compare-elapsed condition on every secondary CPU the moment it
+comes online, instead of the intended no-op. Every other user of
+mips_hpt_frequency in this tree already guards against exactly this
+(cevt-r4k.c, csrc-r4k.c) -- this call site was simply missed. No behavior
+change on any platform that does calibrate the frequency.
+
+Found while chasing a reproducible CPU0/CPU1 timer-IRQ rate imbalance on
+EN751221; whether that's the same bug is not established, but this call
+site is wrong on an uncalibrated platform either way.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/arch/mips/kernel/smp-mt.c
++++ b/arch/mips/kernel/smp-mt.c
+@@ -120,8 +120,21 @@ static void vsmp_init_secondary(void)
+ 
+ static void vsmp_smp_finish(void)
+ {
+-	/* CDFIXME: remove this? */
+-	write_c0_compare(read_c0_count() + (8* mips_hpt_frequency/HZ));
++	/*
++	 * CDFIXME: remove this?
++	 * Skip when mips_hpt_frequency is uncalibrated (0): not every MIPS-MT
++	 * platform uses CP0's own Count/Compare pair as its clockevent source
++	 * (e.g. econet: a separate external HPT peripheral is used instead,
++	 * and nothing ever calibrates this variable), and the arithmetic
++	 * below silently degenerates to write_c0_compare(read_c0_count()),
++	 * arming an immediate/spurious Compare-elapsed condition on every
++	 * secondary CPU bring-up instead of doing nothing useful. Matches the
++	 * defensive !mips_hpt_frequency check every other user of this
++	 * variable already has (cevt-r4k.c, csrc-r4k.c) -- a no-op for any
++	 * platform that does calibrate it, so no behavior change there.
++	 */
++	if (mips_hpt_frequency)
++		write_c0_compare(read_c0_count() + (8 * mips_hpt_frequency / HZ));
+ 
+ #ifdef CONFIG_MIPS_MT_FPAFF
+ 	/* If we have an FPU, enroll ourselves in the FPU-full mask */

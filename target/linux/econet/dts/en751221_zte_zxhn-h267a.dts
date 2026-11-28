@@ -1,0 +1,771 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * ZTE ZXHN H267A -- EcoNet EN751221 (MIPS 34Kc), 128 MB RAM, 128 MiB parallel
+ * NAND, four LAN jacks and one WAN jack behind two cascaded switch chips, two
+ * PCIe WiFi radios (MT7592N 2.4 GHz, MT7612EN 5 GHz), nine front-panel LEDs,
+ * three buttons and a single USB 2.0 host jack.
+ *
+ * Two facts differ from the stock en751221_generic image: 128 MB of RAM and a
+ * 266.667 MHz high-precision timer.
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/phy/phy.h>
+
+#include "en751221.dtsi"
+
+/ {
+	model = "ZTE ZXHN H267A";
+	compatible = "zte,zxhn-h267a", "econet,en751221";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x08000000>;	/* Memory size 128MB */
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		/*
+		 * Inert on this platform (an arm64 kexec/crashkernel mechanism;
+		 * MIPS never consults it), kept only to document actual RAM size.
+		 */
+		linux,usable-memory-range = <0x00020000 0x07fe0000>;
+		/*
+		 * root    -> read-only squashfs on "rootfs_ro" (mtdblock3), named
+		 *            explicitly since no partition is called "rootfs"
+		 *            (avoids OpenWrt's MTD_ROOTFS_ROOT_DEV/mtdsplit).
+		 * overlay -> ubifs on the "rootfs_data" volume of ubi.mtd=ubi,
+		 *            used instead of jffs2 because jffs2's OOB-only
+		 *            cleanmarker doesn't fit this controller's ECC layout
+		 *            (logged harmless "UnCorrectable" every boot).
+		 * Ignored by the RAM-boot initramfs image.
+		 */
+		bootargs = "console=ttyS0,115200 root=/dev/mtdblock3 rootfstype=squashfs ro ubi.mtd=ubi";
+	};
+};
+
+/* Measured HPT = 266.667 MHz; the shared dtsi declares 200 MHz. Without this
+ * override timekeeping/delays run 4/3 fast. */
+&hpt_clock {
+	clock-frequency = <266666667>;
+};
+
+/* Explicit #address-cells so dtc doesn't warn on the PCIe interrupt-maps
+ * below referencing &intc.
+ *
+ * econet,cpu-interrupt-map routes the two software-interrupt lines (7, 8)
+ * to each VPE's IPI dispatcher (0 = VPE0, 1 = VPE1), needed by the dual-VPE
+ * SMVP support (irq-econet-en751221.c's econet_cpu_init()). Not yet in the
+ * shared en751221.dtsi.
+ */
+&intc {
+	#address-cells = <0>;
+	econet,cpu-interrupt-map = <7 0>, <8 1>;
+};
+
+&gmac0 {
+	status = "okay";
+	/* Real MAC from the ZTE TAGH pool in the tag partition, offset 0x14.
+	 * Requires the parallel-NAND driver; without it the airoha driver
+	 * falls back to eth_hw_addr_random(). */
+	nvmem-cells = <&macaddr_base 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+/*
+ * The shared dtsi's `switch0` node models an MDIO-attached switch (wrong
+ * binding here: econet_eth.c has no MDIO bus master, so nothing ever scans
+ * it). The real switch is MMIO-mapped at 0x1fb58000, reached by mainline's
+ * mt7530-mmio driver via `compatible = "airoha,en7581-switch"` (node
+ * below). Disable the broken node; `&ethernet`'s reg shrink below is what
+ * lets the real one attach (en75_probe()'s runtime `has_switch_regs` check
+ * reads that resource size).
+ */
+&switch0 {
+	status = "disabled";
+};
+
+/*
+ * `ethernet`'s dtsi `reg` (0x1fb50000, 0x10000) overlaps the switch
+ * register window the new `switch` node below also needs, and both
+ * drivers reserve their `reg` on probe, so the second prober would get
+ * -EBUSY. Shrink to just the fe/qdma range. Also drop "gsw" from the
+ * resets this node deasserts -- the switch node claims it instead, and
+ * reset_control_get_exclusive() would -EBUSY on a double claim.
+ */
+ &ethernet {
+	reg = <0x1fb50000 0x8000>;
+	/* Exclude FE_RST (wipes the bootloader's FE/MAC config) and GSW_RST
+	 * (claimed by the switch node) from the dtsi's reset list.
+	 * FE_QDMA1_RST is kept: the driver pulses it at probe. */
+	resets = <&scuclk EN751221_FE_QDMA1_RST>,
+		 <&scuclk EN751221_FE_QDMA2_RST>,
+		 <&scuclk EN751221_XPON_MAC_RST>,
+		 <&scuclk EN751221_XPON_PHY_RST>;
+	reset-names = "qdma0", "qdma1", "xpon-mac", "xpon-phy";
+ };
+
+/*
+ * Real switch node: MMIO-mapped MT7530-family switch at 0x1fb58000, freed
+ * up by the `ethernet` shrink above.
+ */
+/ {
+ 	switch: switch@1fb58000 {
+ 		compatible = "airoha,en7581-switch";
+ 		reg = <0x1fb58000 0x8000>;
+ 		resets = <&scuclk EN751221_GSW_RST>;
+ 		/* Claim the GSW clock so clk_disable_unused() doesn't gate it
+ 		 * during boot -- the TRGMII PLL depends on it, and it would
+ 		 * otherwise be gated before econet_eth/mt7530 even probe. */
+ 		clocks = <&scuclk EN751221_CLK_GSW>;
+ 		clock-names = "gsw";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/*
+			 * Two user ports.
+			 *
+			 * port@4 "wan": the WAN jack, bypassing the external
+			 * MT7530BU -- wires to the MCM's own port 4, behind its
+			 * own GE PHY at MDIO address 12. Confirmed with a live
+			 * port sweep: a cable in WAN brings up only phy12.
+			 *
+			 * port@5 "lan": the MCM's TRGMII uplink to the external
+			 * MT7530BU the four LAN jacks are wired to. Ports 0-3 of
+			 * this MCM switch are unwired, so frames from the EXT
+			 * chip must be attributed to source port 5 here, not
+			 * treated as individual MCM ports (confirmed live: frames
+			 * cross EXT -> MCM P5 and count at P5's RX MIB).
+			 *
+			 * The EXT chip is a dumb port extender from the host's
+			 * view -- its fabric floods everything over the TRGMII,
+			 * so one netdev covers LAN1-4. Per-jack netdevs would
+			 * need driving the EXT as its own DSA switch, not done.
+			 */
+			port@4 {
+				reg = <4>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&swphy12>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan";
+				phy-mode = "trgmii";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac0>;
+				phy-mode = "trgmii";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/* The MT7530BU's internal PHYs are at MDIO addresses 0-4
+			 * (GE-capable, BMSR=0x7949), not 8-12 (FE-only). Confirmed
+			 * via the bootloader's own miir. */
+			swphy0: ethernet-phy@0 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <0>;
+				phy-mode = "internal";
+			};
+
+			swphy1: ethernet-phy@1 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <1>;
+				phy-mode = "internal";
+			};
+
+			swphy2: ethernet-phy@2 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <2>;
+				phy-mode = "internal";
+			};
+
+			swphy3: ethernet-phy@3 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <3>;
+				phy-mode = "internal";
+			};
+
+			swphy4: ethernet-phy@4 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <4>;
+				phy-mode = "internal";
+			};
+
+			/* The WAN jack's own PHY, MII-wired to MCM port 4
+			 * (referenced by port@4 above): GE-capable, a different
+			 * model (ID2 0x9421) from the EXT block's 0x9412. */
+			swphy12: ethernet-phy@c {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <12>;
+				phy-mode = "internal";
+			};
+		};
+	};
+};
+
+/*
+ * GPIO controller. en751221.dtsi ships no GPIO node, so Linux can't reach
+ * any SoC GPIO without one -- needed for the front-panel LEDs and buttons.
+ * Register layout copied from the sibling en7528.dtsi/en751627.dtsi (same
+ * airoha,en7523-gpio block, same offsets). Two nodes because the driver's
+ * AIROHA_GPIO_MAX=32 caps each instance to one 32-pin bank. Belongs in the
+ * shared dtsi eventually, kept here for now like &pcie0/&pcie1 below.
+ */
+/ {
+	gpio0: gpio@1fbf0200 {
+		compatible = "airoha,en7523-gpio";
+		reg = <0x1fbf0204 0x4>, /* CR_GPIO_DATA, gpios 0-31 */
+		      <0x1fbf0200 0x4>, /* CR_GPIO_CTRL, gpios 0-15 */
+		      <0x1fbf0220 0x4>, /* CR_GPIO_CTRL1, gpios 16-31 */
+		      <0x1fbf0214 0x4>; /* CR_GPIO_ODRAIN, gpios 0-31 */
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	gpio1: gpio@1fbf0270 {
+		compatible = "airoha,en7523-gpio";
+		reg = <0x1fbf0270 0x4>, /* CR_GPIO_DATA1, gpios 32-63 */
+		      <0x1fbf0260 0x4>, /* CR_GPIO_CTRL2, gpios 32-47 */
+		      <0x1fbf0264 0x4>, /* CR_GPIO_CTRL3, gpios 48-63 */
+		      <0x1fbf0278 0x4>; /* CR_GPIO_ODRAIN1, gpios 32-63 */
+		gpio-controller;
+		#gpio-cells = <2>;
+
+		/*
+		 * GPIO 33 (bank-1 line 1): stock drives this pin as an output
+		 * HIGH; OpenWrt otherwise leaves it a floating input. Function
+		 * unestablished (toggling it live showed no RX effect), but
+		 * hogged to match stock's known-good state as a safe default.
+		 * GPIO 47 hard-wedges the SoC when driven as an output -- do
+		 * not hog the adjacent 46 without deliberate testing.
+		 */
+		wifi_fe_enable_hog {
+			gpio-hog;
+			gpios = <1 GPIO_ACTIVE_HIGH>;
+			output-high;
+			line-name = "gpio33-stock-driven-high";
+		};
+	};
+
+	/*
+	 * Front-panel LEDs, pin-mapped empirically by sweeping every SoC GPIO
+	 * 0-63 and watching the panel (the EcoNet wiki's per-pin table doesn't
+	 * match this board). Internet/Power are bicolour; all active-high
+	 * except internet-red (see its node).
+	 *
+	 * The Internet pair is driven from userspace by
+	 * /sbin/h267a-internet-led: steady green = reachable, steady red =
+	 * WAN carrier but unreachable, off = no carrier.
+	 *
+	 * Not on SoC GPIO, need nothing here: Broadband/WAN jack LEDs are
+	 * hardware-autonomous on the switch/PHY side; WiFi 2.4G/5G LEDs are
+	 * the radio chips' own controllers (`led` child nodes on
+	 * &slot0/&slot1, needs CONFIG_MT76_LEDS).
+	 *
+	 * GPIO 47 is excluded deliberately: driving it as an output
+	 * hard-hangs the SoC (reproduced twice, recovers only via power
+	 * cycle). Never drive it live without new instrumentation.
+	 */
+	leds {
+		compatible = "gpio-leds";
+
+		led_internet_green: internet-green {
+			function = LED_FUNCTION_WAN_ONLINE;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_internet_red: internet-red {
+			function = LED_FUNCTION_WAN_ONLINE;
+			color = <LED_COLOR_ID_RED>;
+			/* ACTIVE_LOW, unlike every other LED here -- verified
+			 * live: brightness=0 under ACTIVE_HIGH left it visibly
+			 * lit. No other polarity mismatch observed. */
+			gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_phone: phone {
+			function = "phone";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_red: power-red {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_green: power-green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			default-state = "on";
+			gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_wps: wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_usb: usb {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+			/*
+			 * Wired to the kernel's own "usbport" trigger (matching
+			 * sibling boards) rather than a custom script: on as long
+			 * as any device is attached. Sources are the EHCI and
+			 * OHCI port nodes (not the unused xHCI, see below); OHCI
+			 * matters since EHCI hands Full-/Low-Speed devices off to
+			 * it. Both controllers' root hubs have two ports, but only
+			 * one is wired to the physical jack -- listing all four
+			 * costs nothing and avoids depending on which one it is.
+			 */
+			linux,default-trigger = "usbport";
+			trigger-sources = <&ehci_port1 &ehci_port2
+					   &ohci_port1 &ohci_port2>;
+		};
+	};
+
+	/*
+	 * Three physical buttons (reset/WPS/WLAN), all on the main SoC GPIO
+	 * and active-low -- not on the WiFi-chip GPIO block an old
+	 * third-party wiki claimed (disproven live). gpio-keys-polled
+	 * matches sibling boards: this GPIO controller has no interrupt
+	 * support. kmod-gpio-button-hotplug (already in the image) then
+	 * wires these to /etc/rc.button/{reset,wps,wifi}.
+	 */
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		key-reset {
+			label = "reset";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		key-wps {
+			label = "wps";
+			gpios = <&gpio1 16 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		key-wlan {
+			label = "wlan";
+			gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
+};
+
+/*
+ * USB: use the vendor-proven legacy EHCI/OHCI host blocks (0x1fbb0000 /
+ * 0x1fba0000, vendor IRQ 18 = INTC hwirq 17), not the SSUSB xHCI the shared
+ * dtsi describes at usb@1fb90000.
+ *
+ * The xHCI is dead silicon on this DSL-variant chip (EN7512/MT7510
+ * family): its MAC reads 0x00000000, the MediaTek IPPC power-on region it
+ * needs doesn't respond, no clock/reset gate is missing, and replaying the
+ * vendor's own PHY bring-up sequence via devmem changed nothing. So it's
+ * disabled here and the board uses generic-ehci/generic-ohci below, fed by
+ * a real USB PHY provider -- matching what stock runs. All USB-facing
+ * packages (storage/modem/LED trigger) are host-driver-agnostic.
+ */
+&usb {
+	status = "disabled";
+};
+
+/ {
+	/*
+	 * USB 2.0 PHY "top" bank (MT7510 layout), driven by the shared
+	 * EcoNet USB PHY driver ("econet,en751221-usb-phy") running the
+	 * vendor's usb_mt751020_phy_init() bring-up sequence.
+	 *
+	 * Must be a real PHY provider, not bring-up inlined into EHCI probe:
+	 * the vendor runs this sequence once, before any host controller
+	 * (usb_init()), and the OHCI companion below wedges the SoC if
+	 * touched before the PHY is up. A PHY provider brings the PHY up
+	 * before either controller's first register access, refcounted so
+	 * it only runs once for both.
+	 */
+	usb_phy: usb-phy@1faf1800 {
+		compatible = "econet,en751221-usb-phy";
+		reg = <0x1faf1800 0x800>;
+		#phy-cells = <1>;
+	};
+
+	/*
+	 * Port child nodes exist so the ledtrig-usbport trigger can match
+	 * ports (it only finds ports with DT children; without them the USB
+	 * LED never lights).
+	 */
+	ehci: usb@1fbb0000 {
+		compatible = "generic-ehci";
+		reg = <0x1fbb0000 0x10000>;
+		interrupt-parent = <&intc>;
+		interrupts = <17>;
+		phys = <&usb_phy PHY_TYPE_USB2>;
+		phy-names = "usb";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* #trigger-source-cells = <0> is required on any node a
+		 * ledtrig-usbport trigger-sources list references, or the LED
+		 * stays dark with no error. */
+		ehci_port1: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
+
+		ehci_port2: port@2 {
+			reg = <2>;
+			#trigger-source-cells = <0>;
+		};
+	};
+
+	/*
+	 * OHCI: the USB 1.1 companion the EHCI above hands Full-/Low-Speed
+	 * devices off to (printers, USB-serial, keyboards).
+	 *
+	 * WARNING: enabling this node before the PHY bring-up above exists
+	 * wedges the SoC -- an uninitialised PHY leaves this block unclocked
+	 * and its first register read stalls the bus forever, with no
+	 * mainline IRQ to recover through. With the PHY provider bringing
+	 * the PHY up first, it reads back normal OHCI 1.1 reset defaults.
+	 * Stock runs this controller too.
+	 */
+	ohci: usb@1fba0000 {
+		compatible = "generic-ohci";
+		reg = <0x1fba0000 0x10000>;
+		interrupt-parent = <&intc>;
+		interrupts = <17>;
+		phys = <&usb_phy PHY_TYPE_USB2>;
+		phy-names = "usb";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ohci_port1: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
+
+		ohci_port2: port@2 {
+			reg = <2>;
+			#trigger-source-cells = <0>;
+		};
+	};
+};
+
+/*
+ * PCIe: two root complexes, each carrying one WiFi radio (MT7592N 2.4G on
+ * RC0, MT7612EN 5G on RC1). The shared dtsi ships both disabled, defaulting
+ * to the newer "V2" register model (econet,en7528-pcie); this chip uses
+ * the older "V1" model, so override compatible to econet,en751221-pcie
+ * (matching driver patch required). Also corrects pcie0's base: the dtsi's
+ * 0x1fb81000 is a config-window-only block, RC0's real per-port block is
+ * at 0x1fb82000. Both overrides belong in the shared dtsi eventually.
+ */
+&pcie0 {
+	compatible = "econet,en751221-pcie";
+	reg = <0x1fb82000 0x1000>;
+	status = "okay";
+
+	/* Radio interrupts: this chip has no per-RC INTx status/mask/ack
+	 * registers -- each root complex forwards its endpoint's INTx
+	 * straight to a dedicated SoC INTC line, so point the interrupt-map
+	 * directly at &intc rather than the dtsi's en7528-style chained
+	 * handler (dead on this chip).
+	 *
+	 * RC0 -> INTC 24, measured on hardware: acking MT7592's
+	 * MT_INT_SOURCE_CSR cleared this bit at the same instant as RC0's
+	 * own status bit. (RC1/MT7612 maps to INTC 23, never 24 or 25 --
+	 * the vendor kernel alone suggests 25, which is wrong.) */
+	interrupt-map = <0 0 0 1 &intc 24>,
+			<0 0 0 2 &intc 24>,
+			<0 0 0 3 &intc 24>,
+			<0 0 0 4 &intc 24>;
+};
+
+&pcie1 {
+	compatible = "econet,en751221-pcie";
+	/* Root its bus at 1 so its secondary becomes 2, matching the
+	 * physical bus the RC1 endpoint (MT7612) is wired to -- the config
+	 * window forwards through the root port's bus-number register, so
+	 * logical must equal physical. pcie0 stays <0x00 0xff>. */
+	bus-range = <0x01 0xff>;
+	status = "okay";
+
+	/* RC1's endpoint INTx -> INTC 23, measured (see &pcie0 note above). */
+	interrupt-map = <0 0 0 1 &intc 23>,
+			<0 0 0 2 &intc 23>,
+			<0 0 0 3 &intc 23>,
+			<0 0 0 4 &intc 23>;
+};
+
+/*
+ * WiFi radios: mediatek,mt76 binding, EEPROM and real MAC from the
+ * tag-partition nvmem cells above. MT7592N (2.4 GHz) on RC0 binds to
+ * mainline's mt7603e as-is; MT7612EN (5 GHz) on RC1 binds to mt76x2e.
+ * Both use INTx (see the &pcie0/&pcie1 interrupt-maps above); neither
+ * uses MSI, so the SoC's MTK_PCIE_NO_MSI quirk is harmless.
+ */
+&slot0 {
+	wifi@0,0 {
+		/* MT7592N (2.4G) */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		/* base+0 -- the same MAC as gmac0/LAN, not a dedicated pool
+		 * slot. Verified against real stock. */
+		nvmem-cells = <&eeprom_mt7592>, <&macaddr_base 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
+
+		/*
+		 * Front-panel 2.4 GHz WiFi LED, mapped on real hardware:
+		 * this chip's own LED controller, lane 0, active-low (without
+		 * the polarity bit it sits lit under mt76's own brightness-0
+		 * encoding). mt76_led_init() reads this as a child node named
+		 * "led"; CONFIG_MT76_LEDS is already compiled in.
+		 */
+		led {
+			led-sources = <0>;
+			led-active-low;
+		};
+	};
+};
+
+&slot1 {
+	/*
+	 * Override the dtsi's `reg = <0x0800 0 0 0 0>` (devfn 8), which
+	 * assumes the en7528 model where both root ports share one root bus
+	 * at devfn 0 and 8. Here each root complex is its own PCI domain,
+	 * and RC1's root port enumerates at devfn 0 of bus 1 -- so the dtsi
+	 * node never matched and its subtree (wifi@0,0 + nvmem-cells) was
+	 * never attached to any device. Proven on hardware: mt76x2e got no
+	 * EEPROM/MAC from nvmem until this was fixed, falling back to
+	 * on-chip efuse and a random MAC.
+	 *
+	 * phys.hi encodes bus 1 to agree with this port's
+	 * `bus-range = <0x01 0xff>`. The remaining "unit address format
+	 * error" warning is cosmetic (an overlay reference can't rename the
+	 * dtsi's `pcie@1,0` node name).
+	 */
+	reg = <0x00010000 0 0 0 0>;
+
+	wifi@0,0 {
+		/* MT7612EN (5G) */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		/* base+1, verified against real stock. */
+		nvmem-cells = <&eeprom_mt7612>, <&macaddr_base 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
+
+		/* Front-panel 5G WiFi LED -- same story as the 2.4G one above,
+		 * but lane 2, not lane 0. Also active-low. */
+		led {
+			led-sources = <2>;
+			led-active-low;
+		};
+	};
+};
+
+/* Our flash is PARALLEL NAND (Macronix MX30LF1G18AC), not SPI-NAND. The shared
+ * dtsi enables the SPI-NAND controller by default; on our board there's no
+ * SPI-NAND chip, so spinand_probe() blocks init forever in a SPI transfer
+ * (RCU stall at ~60s). Disable it — the parallel NFI below drives our flash. */
+&spi_ctrl {
+	status = "disabled";
+};
+
+/*
+ * Parallel NAND on the MediaTek NFI controller at 0x1fbe0000 (ECC block
+ * +0x1000), reverse-engineered from the vendor's dump_nfi() -- every
+ * offset matches mainline mtk_nand.c/ecc-mtk.c.
+ *
+ * Macronix MX30LF1G18AC: page 2048 / OOB 64, HW-ECC strength 4 over
+ * 512-byte sectors, BCH m=13 (recovered from the ECC_Config disasm). Uses
+ * mt2701-nfc caps plus a custom econet,en751221-ecc caps (parity_bits 13,
+ * where mt2701 itself uses 14).
+ *
+ * IRQ 26 (vendor enable_irq(26) + mt6573_nand_irq_handler reading
+ * NFI_INTR_STA). The vendor polls the ECC engine rather than using a
+ * second IRQ, so the ecc node is left interrupt-less; ecc-mtk polls
+ * ECC_DECDONE instead.
+ *
+ * No dedicated NFI clock on this SCU; nfi_clk/pad_clk point at the SCU bus
+ * clock (already enabled by the bootloader) for ACCCON timing calc only.
+ */
+/ {
+	nfiecc: ecc@1fbe1000 {
+		compatible = "econet,en751221-ecc";
+		reg = <0x1fbe1000 0x1000>;
+		clocks = <&scuclk EN751221_CLK_BUS>;
+		clock-names = "nfiecc_clk";
+		/* no "interrupts": ecc-mtk falls back to polling */
+	};
+
+	nfi: nand-controller@1fbe0000 {
+		compatible = "mediatek,mt2701-nfc";
+		reg = <0x1fbe0000 0x1000>;
+		interrupt-parent = <&intc>;
+		interrupts = <26>;
+		clocks = <&scuclk EN751221_CLK_BUS>,
+			 <&scuclk EN751221_CLK_BUS>;
+		clock-names = "nfi_clk", "pad_clk";
+		ecc-engine = <&nfiecc>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		nand@0 {
+			reg = <0>;
+			nand-ecc-engine = <&nfiecc>;
+			nand-ecc-mode = "hw";
+			nand-ecc-strength = <4>;
+			nand-ecc-step-size = <512>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "Bootloader";
+					reg = <0x0000000 0x0040000>;
+					read-only;
+				};
+				partition@40000 {
+					label = "tag";
+					reg = <0x0040000 0x0040000>;
+					read-only;
+
+					/* ZTE TAGH MAC pool and WiFi calibration EEPROMs.
+					 * MAC pool: 4 consecutive MACs from 0x14 --
+					 * verified against a root shell on real stock:
+					 * gmac0 (LAN+WAN) and WiFi 2.4 GHz both use
+					 * base+0, WiFi 5 GHz uses base+1; base+2/3
+					 * unused. EEPROM blobs: 0x3c000 (MT7592) and
+					 * 0x3e000 (MT7612); their template MAC fields
+					 * are NOT the real MACs. */
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						macaddr_base: macaddr@14 {
+							compatible = "mac-base";
+							reg = <0x14 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
+
+						eeprom_mt7592: eeprom@3c000 {
+							/* 0x400, not 0x200: mt7603 requests
+							 * MT7603_EEPROM_SIZE (1024 B) and hard-rejects
+							 * a shorter nvmem cell (-EINVAL, no partial
+							 * copy), silently discarding the real EEPROM.
+							 * Bytes 0x200-0x400 are erased/0xff in flash --
+							 * this only satisfies the length check. */
+							reg = <0x3c000 0x400>;
+						};
+
+						eeprom_mt7612: eeprom@3e000 {
+							reg = <0x3e000 0x200>;
+						};
+					};
+				};
+				/*
+				 * config is read-only on purpose: OpenWrt never writes
+				 * it, and marking it so guards against a stock-era
+				 * mtd-erase command landing here (mtd numbering differs
+				 * between stock and OpenWrt). Doesn't stop the
+				 * bootloader itself: the recovery page's CSP writer
+				 * erases from this partition's offset on every upload.
+				 */
+				partition@80000 {
+					label = "config";
+					reg = <0x0080000 0x0200000>;
+					read-only;
+				};
+				/*
+				 * The vendor's full 20 MiB "rootfs1" slot. UBI lives
+				 * past kernel1 in its own partition instead of sharing
+				 * this one.
+				 *
+				 * THE BOOTLOADER CRC-CHECKS THIS SLOT ON EVERY BOOT, not
+				 * just at flash time (recovered by disassembly): it
+				 * CRC32s hdr+0x7c bytes from the rootfs address against
+				 * hdr+0x84, and refuses to boot on a mismatch
+				 * ("-------------jffs crc error!"). A whole-partition
+				 * UBI image here boots exactly once: UBI's own
+				 * first-boot volume-table rewrite changes bytes inside
+				 * the CRC'd range, and the next cold boot is dead.
+				 *
+				 * Deliberately no `read-only` here: the only writer is
+				 * platform_do_upgrade() (base-files/lib/upgrade/
+				 * platform.sh), which rewrites the kernel header's
+				 * fslen/fscrc atomically with the new squashfs so the
+				 * next boot's check passes. Protection past that is
+				 * structural: the label is deliberately NOT "rootfs"
+				 * (below), so nothing else in the tree writes here, and
+				 * mtdpart.c's mtdsplit ROOTFS parser -- which would
+				 * carve a jffs2 child out of the free tail -- never
+				 * fires on it either.
+				 */
+				partition@280000 {
+					label = "rootfs_ro";	/* squashfs; bootloader-CRC'd; platform_do_upgrade is the only writer */
+					reg = <0x0280000 0x1400000>;
+				};
+				partition@1680000 {
+					label = "kernel1";
+					reg = <0x1680000 0x0400000>;
+				};
+				/*
+				 * UBI, holding the single "rootfs_data" volume the
+				 * overlay lives in. Sits past kernel1, absorbing what
+				 * stock used for kernel2/rootfs2/scratch (91.25 MiB
+				 * total).
+				 *
+				 * Only partially blank after a recovery-page flash: the
+				 * CSP writer's erase covers just this partition's first
+				 * 24 MiB, leaving the tail stale, which can make a
+				 * plain attach fail instead of UBI's normal
+				 * empty-device auto-format. /lib/preinit/
+				 * 79_h267a_ubi_volume's ubiformat fallback handles
+				 * that. No way to ship a pre-made UBI image here: the
+				 * CSP upload path can only write the kernel and rootfs
+				 * slots.
+				 */
+				partition@1a80000 {
+					label = "ubi";
+					reg = <0x1A80000 0x5B40000>;
+				};
+			};
+		};
+	};
+};

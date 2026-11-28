@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+# WAN-online status LED driver — procd wrapper for /sbin/wan-online-led.
+# Starts late: needs the wan netdev and LED class devices to exist.
+START=99
+USE_PROCD=1
+
+start_service() {
+	# Gated on both LEDs existing, not on board identity: any board whose
+	# DTS declares a bicolour LED_FUNCTION_WAN_ONLINE LED ends up with
+	# these same green:wan-online/red:wan-online sysfs names via the
+	# standard LED naming convention, and gets this behavior for free.
+	[ -d /sys/class/leds/green:wan-online ] || return 0
+	[ -d /sys/class/leds/red:wan-online ] || return 0
+
+	procd_open_instance
+	procd_set_param command /sbin/wan-online-led
+	procd_set_param respawn 3600 5 5
+	procd_close_instance
+}
