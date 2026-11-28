@@ -22,9 +22,9 @@ opt_dryrun = False
 def parseVer_1234(match, filepath):
     progname = match.group(1)
     progversion = (
-        (int(match.group(2)) << 64)
-        | (int(match.group(3)) << 48)
-        | (int(match.group(4)) << 32)
+        (int(match.group(2)) << 192)
+        | (int(match.group(3)) << 128)
+        | (int(match.group(4)) << 64)
         | (int(match.group(5)) << 16)
     )
     return (progname, progversion)
@@ -41,9 +41,9 @@ def parseVer_123(match, filepath):
     else:
         patchlevel = 0
     progversion = (
-        (int(match.group(2)) << 64)
-        | (int(match.group(3)) << 48)
-        | (int(match.group(4)) << 32)
+        (int(match.group(2)) << 192)
+        | (int(match.group(3)) << 128)
+        | (int(match.group(4)) << 64)
         | patchlevel
     )
     return (progname, progversion)
@@ -59,22 +59,24 @@ def parseVer_12(match, filepath):
         patchlevel = ord(patchlevel[0])
     else:
         patchlevel = 0
-    progversion = (int(match.group(2)) << 64) | (int(match.group(3)) << 48) | patchlevel
+    progversion = (
+        (int(match.group(2)) << 192) | (int(match.group(3)) << 128) | patchlevel
+    )
     return (progname, progversion)
 
 
 def parseVer_r(match, filepath):
     progname = match.group(1)
-    progversion = int(match.group(2)) << 64
+    progversion = int(match.group(2)) << 192
     return (progname, progversion)
 
 
 def parseVer_ymd_GIT_SHASUM(match, filepath):
     progname = match.group(1)
     progversion = (
-        (int(match.group(2)) << 64)
-        | (int(match.group(3)) << 48)
-        | (int(match.group(4)) << 32)
+        (int(match.group(2)) << 192)
+        | (int(match.group(3)) << 128)
+        | (int(match.group(4)) << 64)
     )
     return (progname, progversion)
 
@@ -82,9 +84,9 @@ def parseVer_ymd_GIT_SHASUM(match, filepath):
 def parseVer_ymd(match, filepath):
     progname = match.group(1)
     progversion = (
-        (int(match.group(2)) << 64)
-        | (int(match.group(3)) << 48)
-        | (int(match.group(4)) << 32)
+        (int(match.group(2)) << 192)
+        | (int(match.group(3)) << 128)
+        | (int(match.group(4)) << 64)
     )
     return (progname, progversion)
 
@@ -92,7 +94,7 @@ def parseVer_ymd(match, filepath):
 def parseVer_GIT(match, filepath):
     progname = match.group(1)
     st = os.stat(filepath)
-    progversion = int(st.st_mtime) << 64
+    progversion = int(st.st_mtime) << 192
     return (progname, progversion)
 
 
