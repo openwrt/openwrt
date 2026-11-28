@@ -1,0 +1,63 @@
+From e7b01bc0202a57f1b7dcdf19b2ffab6b781d47f8 Mon Sep 17 00:00:00 2001
+From: Qingfang Deng <qingfang.deng@linux.dev>
+Date: Mon, 26 Oct 2026 14:12:58 +0800
+Subject: [PATCH] pppoe: wait for RCU readers before reusing a socket
+
+When pppoe_connect() disconnects or reuses a socket, it removes the old
+session from the hash table and resets the socket's fields. An RCU
+reader that reached the entry before it was unlinked can still be using
+its address, ifindex or next pointer.
+
+If sockets A and B share a hash bucket with A preceding B, a concurrent
+__get_item() looking for B can be traversing A when it is removed.
+Clearing A->next then makes the lookup miss B and drop the packet.
+Reinserting A can similarly redirect the reader into another hash chain.
+
+Call synchronize_net() after unlinking the old session and before
+clearing its fields. This allows existing receive-path and
+/proc/net/pppoe readers to finish before the socket is cleared or reused.
+
+This was found by Sashiko's static analysis, and reproduced on a VM
+stress test with KCSAN.
+
+ BUG: KCSAN: data-race in hash_item+0x1c/0x60
+
+ race at unknown origin, with read to 0xffff888000a1c566 of 2 bytes by task 147 on cpu 2:
+  hash_item+0x1c/0x60
+  pppoe_seq_next+0x112/0x1b0
+  seq_read_iter+0x595/0x700
+  seq_read+0xb0/0xe0
+  proc_reg_read+0xd0/0xf0
+  vfs_read+0xbd/0x220
+  ksys_read+0xa9/0x100
+  __x64_sys_read+0x47/0x60
+  x64_sys_call+0x98/0x1fd0
+  do_syscall_64+0x5b/0x260
+  entry_SYSCALL_64_after_hwframe+0x4b/0x53
+
+ value changed: 0x0002 -> 0x0000
+
+Fixes: 72cdc67e7fa7 ("pppoe: remove rwlock usage")
+Reported-by: Sashiko <sashiko-bot@kernel.org>
+Closes: https://netdev-ai.bots.linux.dev/sashiko/#/patchset/20261020092118.47416-1-qingfang.deng@linux.dev
+Signed-off-by: Qingfang Deng <qingfang.deng@linux.dev>
+Reviewed-by: Eric Dumazet <edumazet@kernel.org>
+Link: https://patch.msgid.link/20261026061300.256009-1-qingfang.deng@linux.dev
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ppp/pppoe.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/net/ppp/pppoe.c
++++ b/drivers/net/ppp/pppoe.c
+@@ -650,6 +650,10 @@ static int pppoe_connect(struct socket *
+ 		pppox_unbind_sock(sk);
+ 		pn = pppoe_pernet(sock_net(sk));
+ 		delete_item(pn, po);
++
++		/* wait for concurrent readers before clearing the fields */
++		synchronize_net();
++
+ 		if (po->pppoe_dev) {
+ 			dev_put(po->pppoe_dev);
+ 			po->pppoe_dev = NULL;
