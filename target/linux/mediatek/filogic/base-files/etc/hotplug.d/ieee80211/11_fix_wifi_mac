@@ -336,4 +336,8 @@ case "$board" in
 		addr=$(mtd_get_mac_binary factory 0x04)
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr -0x300000) > /sys${DEVPATH}/macaddress
 		;;
+	zbtlink,zbt-z8102ax-v2-emmc)
+		addr=$(mmc_get_mac_binary factory 0x4)
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		;;
 esac
