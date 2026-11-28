@@ -20,7 +20,7 @@
  /******************/
  /* Chip Revisions */
  /******************/
-@@ -1455,6 +1468,9 @@ static bool ath9k_hw_set_reset(struct at
+@@ -1464,6 +1477,9 @@ static bool ath9k_hw_set_reset(struct at
  		udelay(50);
  	}
  
@@ -30,7 +30,7 @@
  	return true;
  }
  
-@@ -1554,6 +1570,9 @@ static bool ath9k_hw_chip_reset(struct a
+@@ -1563,6 +1579,9 @@ static bool ath9k_hw_chip_reset(struct a
  		ar9003_hw_internal_regulator_apply(ah);
  	ath9k_hw_init_pll(ah, chan);
  
@@ -40,7 +40,7 @@
  	return true;
  }
  
-@@ -1860,8 +1879,14 @@ static int ath9k_hw_do_fastcc(struct ath
+@@ -1869,8 +1888,14 @@ static int ath9k_hw_do_fastcc(struct ath
  	if (AR_SREV_9271(ah))
  		ar9002_hw_load_ani_reg(ah, chan);
  
@@ -55,7 +55,7 @@
  	return -EINVAL;
  }
  
-@@ -2106,6 +2131,9 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -2115,6 +2140,9 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  		ath9k_hw_set_radar_params(ah);
  	}
  
