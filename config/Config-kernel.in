@@ -570,7 +570,8 @@ config KERNEL_DEBUG_INFO_BTF
 	  Required to run BPF CO-RE applications.
 
 config KERNEL_DEBUG_INFO_BTF_MODULES
-	def_bool y
+	bool "Generate BTF type information for kernel modules"
+	default y
 	depends on KERNEL_DEBUG_INFO_BTF
 
 config KERNEL_MODULE_ALLOW_BTF_MISMATCH
