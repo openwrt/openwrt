@@ -1,0 +1,128 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aleksei Sviridkin <f@lex.la>
+Date: Sat, 17 Oct 2026 17:12:16 +0300
+Subject: [PATCH] board: mediatek: keenetic kn-1012: load the EN8811H
+ firmware at boot
+
+Linux on this board probes the switch before the root filesystem is
+mounted, so the EN8811H driver cannot fetch its firmware from there.
+Extract the firmware from the chainloader FIT in flash from preboot,
+on every boot, without any networking command.
+
+Assisted-by: LLM
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+---
+ arch/arm/mach-mediatek/Kconfig            |  8 ++++
+ board/mediatek/mt7981/Makefile            |  1 +
+ board/mediatek/mt7981/keenetic_kn-1012.c  | 48 +++++++++++++++++++++++
+ configs/mt7981_keenetic_kn-1012_defconfig |  4 ++
+ defenvs/keenetic_kn-1012_env              |  4 ++
+ 5 files changed, 65 insertions(+)
+ create mode 100644 board/mediatek/mt7981/keenetic_kn-1012.c
+
+--- a/arch/arm/mach-mediatek/Kconfig
++++ b/arch/arm/mach-mediatek/Kconfig
+@@ -239,4 +239,12 @@ config RESET_BUTTON_LABEL
+ config RESET_BUTTON_SETTLE_DELAY
+ 	int "Delay to wait for button to settle"
+ 	default 0
++
++config MT7981_KEENETIC_KN1012
++	bool "Keenetic KN-1012 phy_fw command"
++	depends on TARGET_MT7981 && PHYLIB && CMDLINE
++	help
++	  Add the phy_fw command, which probes and configures the PHY at
++	  a given MDIO address so that its driver loads the PHY firmware
++	  at boot, without any networking command.
+ endif
+--- a/board/mediatek/mt7981/Makefile
++++ b/board/mediatek/mt7981/Makefile
+@@ -1,3 +1,4 @@
+ # SPDX-License-Identifier:	GPL-2.0
+ 
+ obj-y	+= mt7981_rfb.o
++obj-$(CONFIG_MT7981_KEENETIC_KN1012) += keenetic_kn-1012.o
+--- /dev/null
++++ b/board/mediatek/mt7981/keenetic_kn-1012.c
+@@ -0,0 +1,48 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#include <command.h>
++#include <dm.h>
++#include <miiphy.h>
++#include <net.h>
++#include <phy.h>
++#include <vsprintf.h>
++#include <linux/bitops.h>
++
++/*
++ * Probe and configure the PHY at <addr> on the MAC's MDIO bus, so its
++ * driver runs (and loads firmware) without any networking command.
++ * phy_connect() would return the MAC's fixed-link instead.
++ */
++static int do_phy_fw(struct cmd_tbl *cmdtp, int flag, int argc,
++		     char *const argv[])
++{
++	struct phy_device *phydev;
++	struct udevice *dev;
++	struct mii_dev *bus;
++	unsigned long addr;
++	int ret;
++
++	if (argc != 2 || strict_strtoul(argv[1], 10, &addr) ||
++	    addr >= PHY_MAX_ADDR)
++		return CMD_RET_USAGE;
++
++	ret = uclass_first_device_err(UCLASS_ETH, &dev);
++	if (ret)
++		return CMD_RET_FAILURE;
++
++	bus = miiphy_get_dev_by_name(dev->name);
++	if (!bus)
++		return CMD_RET_FAILURE;
++
++	phydev = phy_find_by_mask(bus, BIT(addr));
++	if (!phydev)
++		return CMD_RET_FAILURE;
++
++	phydev->dev = dev;
++	phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
++	return phy_config(phydev) ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
++}
++
++U_BOOT_CMD(phy_fw, 2, 0, do_phy_fw,
++	   "probe a PHY and load its firmware",
++	   "<addr> - decimal MDIO address");
+--- a/configs/mt7981_keenetic_kn-1012_defconfig
++++ b/configs/mt7981_keenetic_kn-1012_defconfig
+@@ -17,6 +17,7 @@ CONFIG_DEBUG_UART_CLOCK=40000000
+ CONFIG_DEBUG_UART=y
+ CONFIG_FIT=y
+ CONFIG_BOOTDELAY=3
++CONFIG_USE_PREBOOT=y
+ CONFIG_AUTOBOOT_KEYED=y
+ CONFIG_AUTOBOOT_MENU_SHOW=y
+ CONFIG_DEFAULT_FDT_FILE="mediatek/mt7981_keenetic_kn-1012.dtb"
+@@ -85,6 +86,9 @@ CONFIG_NMBM_MAX_BLOCKS=256
+ CONFIG_MTD_UBI_FASTMAP=y
+ CONFIG_MEDIATEK_ETH=y
+ CONFIG_PHY_FIXED=y
++CONFIG_PHY_AIROHA=y
++CONFIG_PHY_AIROHA_EN8811=y
++CONFIG_MT7981_KEENETIC_KN1012=y
+ CONFIG_PHY=y
+ CONFIG_PINCTRL=y
+ CONFIG_PINCONF=y
+--- a/defenvs/keenetic_kn-1012_env
++++ b/defenvs/keenetic_kn-1012_env
+@@ -9,6 +9,10 @@ bootfile=openwrt-mediatek-filogic-keenet
+ altbootfile=openwrt-mediatek-filogic-netcraze_nc-1012-initramfs-kernel.bin
+ bootled=green:power
+ bootcmd=run boot_kn1012
++preboot=run en8811h_init
++en8811h_fit_off=0x500000
++en8811h_load_firmware=mtd read nmbm0 $loadaddr $en8811h_fit_off 0x800 && fdt addr $loadaddr && fdt header get fitsize totalsize && mtd read nmbm0 $loadaddr $en8811h_fit_off $fitsize && imxtract $loadaddr firmware@1 0x47000000 && setenv en8811h_load_firmware_addr 0x47000000 && setenv en8811h_load_firmware_size $filesize
++en8811h_init=if gpio input 3 ; then gpio set 3 ; sleep 0.1 ; fi ; phy_fw 13
+ boot_kn1012=run sfp_detect ; run boot_flash ; run boot_tftp_forever
+ sfp_detect=if gpio input 23 ; then run media_sfp ; else run media_copper ; fi
+ media_sfp=gpio clear 27 ; setenv bootconf config-1#mt7981b-keenetic-kn-1012-sfp

@@ -1,0 +1,84 @@
+From 89f0fb60afdb35cf2a94e6279c8960feb1c4d1d4 Mon Sep 17 00:00:00 2001
+From: Aleksei Sviridkin <f@lex.la>
+Date: Thu, 12 Nov 2026 16:43:00 +0300
+Subject: [PATCH] net: phy: air_en8811h: use firmware loaded by the bootloader
+
+On a Keenetic KN-1012 (MT7981) the EN8811H sits behind a port of an
+MT7531 switch. The driver has to be built in there: as a module it loads
+after DSA has validated the port against the generic PHY driver and
+failed to set it up. Built in, it probes when the Ethernet MDIO bus is
+registered, before the root filesystem is mounted, so
+request_firmware_direct() fails with -ENOENT, the PHY stays without a
+driver and the port never comes up, although the bootloader has already
+loaded and started the MD32 firmware.
+
+When the firmware files cannot be read and the MCU reports ready, keep
+the running firmware and let the first .config_init() restart it, so the
+PHY starts from a freshly started MCU as after a download rather than
+from whatever state the bootloader left. Nothing changes when the files
+are there. A board that relies on this must not give phylib a
+reset-gpios line, as the pulse at registration stops the MCU. The
+AN8811HB path is unchanged.
+
+Tested on the KN-1012: with the bootloader load the PHY binds and links;
+without it 0x8009 reads 0x0 and the probe fails as before; a rebind with
+the files present downloads them as before.
+
+Suggested-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+Link: https://patch.msgid.link/20261112134300.4188612-1-f@lex.la
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+--- a/drivers/net/phy/air_en8811h.c
++++ b/drivers/net/phy/air_en8811h.c
+@@ -461,6 +461,23 @@ static int en8811h_wait_mcu_ready(struct
+ 	return 0;
+ }
+ 
++/* No firmware files, but the bootloader may have started the MCU */
++static int en8811h_use_running_fw(struct phy_device *phydev, int err)
++{
++	struct en8811h_priv *priv = phydev->priv;
++	int status;
++
++	status = phy_read_mmd(phydev, MDIO_MMD_VEND1, EN8811H_PHY_FW_STATUS);
++	if (status != EN8811H_PHY_READY)
++		return err;
++
++	air_buckpbus_reg_read(phydev, EN8811H_FW_VERSION,
++			      &priv->firmware_version);
++	phydev_info(phydev, "MD32 firmware version: %08x\n",
++		    priv->firmware_version);
++	return 1;
++}
++
+ static int en8811h_load_firmware(struct phy_device *phydev)
+ {
+ 	struct en8811h_priv *priv = phydev->priv;
+@@ -470,11 +487,13 @@ static int en8811h_load_firmware(struct
+ 
+ 	ret = request_firmware_direct(&fw1, EN8811H_MD32_DM, dev);
+ 	if (ret < 0)
+-		return ret;
++		return en8811h_use_running_fw(phydev, ret);
+ 
+ 	ret = request_firmware_direct(&fw2, EN8811H_MD32_DSP, dev);
+-	if (ret < 0)
++	if (ret < 0) {
++		ret = en8811h_use_running_fw(phydev, ret);
+ 		goto en8811h_load_firmware_rel1;
++	}
+ 
+ 	ret = air_buckpbus_reg_write(phydev, EN8811H_FW_CTRL_1,
+ 				     EN8811H_FW_CTRL_1_START);
+@@ -934,8 +953,8 @@ static int en8811h_probe(struct phy_devi
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	/* mcu has just restarted after firmware load */
+-	priv->mcu_needs_restart = false;
++	/* drop whatever state the bootloader left in a running mcu */
++	priv->mcu_needs_restart = ret > 0;
+ 
+ 	priv->led[0].rules = AIR_DEFAULT_TRIGGER_LED0;
+ 	priv->led[1].rules = AIR_DEFAULT_TRIGGER_LED1;

@@ -5,13 +5,6 @@ define Package/airoha-en8811h-firmware/install
 		$(PKG_BUILD_DIR)/airoha/EthMD32.dm.bin \
 		$(PKG_BUILD_DIR)/airoha/EthMD32.DSP.bin \
 		$(1)/lib/firmware/airoha
-ifneq ($(CONFIG_TARGET_mediatek_filogic),)
-	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	cat \
-		$(PKG_BUILD_DIR)/airoha/EthMD32.dm.bin \
-		$(PKG_BUILD_DIR)/airoha/EthMD32.DSP.bin \
-		> $(STAGING_DIR_IMAGE)/EthMD32.bin
-endif
 endef
 
 $(eval $(call BuildPackage,airoha-en8811h-firmware))

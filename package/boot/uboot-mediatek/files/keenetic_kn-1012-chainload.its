@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+/* The stock loader boots only this vendor shape, fdt node included. */
+/ {
+	description = "FIT";
+	#address-cells = <1>;
+
+	images {
+		kernel@1 {
+			description = "Linux 4.9";
+			data = /incbin/("u-boot.bin.lzma");
+			type = "kernel";
+			arch = "arm64";
+			os = "linux";
+			compression = "lzma";
+			load = <0x48080000>;
+			entry = <0x48080000>;
+			hash@1 { algo = "crc32"; };
+			hash@2 { algo = "sha1"; };
+		};
+		fdt@1 {
+			description = "KN-1012 DTB";
+			data = /incbin/("dts/dt.dtb");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash@1 { algo = "crc32"; };
+			hash@2 { algo = "sha1"; };
+		};
+		firmware@1 {
+			description = "EN8811H firmware";
+			data = /incbin/("EthMD32.bin.gz");
+			type = "firmware";
+			arch = "arm64";
+			compression = "gzip";
+			hash@1 { algo = "crc32"; };
+		};
+	};
+
+	configurations {
+		default = "config@1";
+		config@1 {
+			description = "NDMS";
+			kernel = "kernel@1";
+			fdt = "fdt@1";
+		};
+	};
+};

@@ -2,13 +2,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2026.07
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 PKG_PARALLEL_VARIANTS:=1
 # Boards that drive the MT7987 built-in 2.5G PHY link its firmware into U-Boot,
 # so the blobs linux-firmware stages have to exist before this package builds.
 PKG_BUILD_DEPENDS+= PACKAGE_mt7987-2p5g-phy-firmware:linux-firmware
+# The KN-1012 chainloader FIT carries the EN8811H firmware
+PKG_BUILD_DEPENDS+= PACKAGE_u-boot-mt7981_keenetic_kn-1012:linux-firmware
 
 ifdef CONFIG_TARGET_ramips
 UBOOT_USE_INTREE_DTC:=1
@@ -1665,6 +1667,27 @@ endif
 
 FIP_BL31=$(STAGING_DIR_IMAGE)/$(if $(BL2_SOC),$(BL2_SOC),$(BUILD_SUBTARGET))-$(BL2_BOOTDEV)-$(if $(BL2_DDRTYPE),$(BL2_DDRTYPE)-)$(if $(BL2_DDRBLOB),$(BL2_DDRBLOB)ddr-)bl31.bin
 
+# The stock loader requires an empty squashfs after the FIT
+define Build/kn1012-chainload
+	[ "$$$$(wc -c < $(STAGING_DIR_IMAGE)/EthMD32.bin)" -eq $$$$(( 0x24000 )) ] || { \
+		echo "EthMD32.bin is not the 0x24000 bytes U-Boot loads" >&2; \
+		false; \
+	}
+	$(STAGING_DIR_HOST)/bin/libdeflate-gzip -12 -c \
+		$(STAGING_DIR_IMAGE)/EthMD32.bin > $(PKG_BUILD_DIR)/EthMD32.bin.gz
+	$(STAGING_DIR_HOST)/bin/lzma e \
+		$(PKG_BUILD_DIR)/u-boot.bin $(PKG_BUILD_DIR)/u-boot.bin.lzma
+	$(CP) ./files/keenetic_kn-1012-chainload.its $(PKG_BUILD_DIR)/
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage \
+		-f $(PKG_BUILD_DIR)/keenetic_kn-1012-chainload.its \
+		$(PKG_BUILD_DIR)/u-boot-chainload.bin
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/chainload-rootfs
+	$(STAGING_DIR_HOST)/bin/mksquashfs4 \
+		$(PKG_BUILD_DIR)/chainload-rootfs $(PKG_BUILD_DIR)/chainload-rootfs.sqfs \
+		-nopad -noappend -root-owned
+	cat $(PKG_BUILD_DIR)/chainload-rootfs.sqfs >> $(PKG_BUILD_DIR)/u-boot-chainload.bin
+endef
+
 define Build/fip-image
 	$(if $(FIP_COMPRESS),\
 		xz -e -9 -C crc32 -c $(FIP_BL31) > $(PKG_BUILD_DIR)/bl31.bin.xz ;\
@@ -1710,6 +1733,9 @@ define Build/Compile
 ifeq ($(UBOOT_IMAGE),u-boot.fip)
 	$(call Build/fip-image)
 endif
+ifeq ($(BUILD_VARIANT),mt7981_keenetic_kn-1012)
+	$(call Build/kn1012-chainload)
+endif
 endef
 
 # don't stage files to bindir, let target/linux/mediatek/image/*.mk do that
@@ -1721,6 +1747,9 @@ endif
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(UBOOT_IMAGE)
+ifeq ($(BUILD_VARIANT),mt7981_keenetic_kn-1012)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/u-boot-chainload.bin $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-u-boot-chainload.bin
+endif
 endef
 
 $(eval $(call BuildPackage/U-Boot))
