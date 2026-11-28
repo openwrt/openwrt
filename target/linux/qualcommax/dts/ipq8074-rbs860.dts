@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2026 Maximilian Brandt <me@brandtm.de>
+ */
+
+/dts-v1/;
+
+#include "ipq8074-rbx860.dtsi"
+
+/ {
+	model = "Netgear RBS860";
+	compatible = "netgear,rbs860", "qcom,ipq8074";
+};
+
+&wifi {
+	qcom,calibration-variant = "Netgear-RBS860";
+};
