@@ -476,7 +476,7 @@ function iface_vlan(interface, config, vlans) {
 	set_default(config, 'vlan_file', path);
 	append_vars(config, [ 'vlan_file' ]);
 
-	if (!config.vlan_possible || !config.dynamic_vlan)
+	if (!config.vlan_possible)
 		return;
 
 	set_default(config, 'vlan_no_bridge', !config.vlan_bridge);
