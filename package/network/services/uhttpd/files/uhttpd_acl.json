@@ -1,0 +1,65 @@
+{
+	"user": "uhttpd",
+	"access": {
+		"session": {
+			"methods": [
+				"access",
+				"call",
+				"destroy",
+				"get",
+				"login",
+				"set"
+			]
+		},
+		"file": {
+			"methods": [
+				"*"
+			]
+		},
+		"iwinfo": {
+			"methods": [
+				"*"
+			]
+		},
+		"luci": {
+			"methods": [
+				"*"
+			]
+		},
+		"luci-rpc": {
+			"methods": [
+				"*"
+			]
+		},
+		"luci.*": {
+			"methods": [
+				"*"
+			]
+		},
+		"rc": {
+			"methods": [
+				"*"
+			]
+		},
+		"rpc-sys": {
+			"methods": [
+				"*"
+			]
+		},
+		"uci": {
+			"methods": [
+				"*"
+			]
+		},
+		"network.rrdns": {
+			"methods": [
+				"lookup"
+			]
+		},
+		"system": {
+			"methods": [
+				"board"
+			]
+		}
+	}
+}
