@@ -1,0 +1,315 @@
+From 700c7da46ccb767cd80308c95402720e801d6cc3 Mon Sep 17 00:00:00 2001
+From: Gabriel Rodriguez <lifehacksback@gmail.com>
+Date: Thu, 10 Sep 2026 19:07:25 -0700
+Subject: [PATCH] ARM: mvebu: add Armada 38x shared DFS support
+
+Add coordinated DFS support for Armada 38x, where both Cortex-A9 CPUs
+share a single CPU frequency domain.
+
+Both CPUs rendezvous before the hardware transition. Use bounded waits
+for the rendezvous so a missing participant cannot leave the clock path
+blocked indefinitely, and abort the transition cleanly on timeout.
+
+After WFI returns, explicitly poll the PMSU DFS_DONE status before
+reporting success. Propagate timeout and hardware failures back through
+the clock set-rate path so the clock framework cannot cache a rate that
+was not actually applied.
+
+Initialize the per-CPU DFS workers before cpufreq consumers can request
+a transition.
+
+Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
+---
+ arch/arm/mach-mvebu/pmsu.c | 253 +++++++++++++++++++++++++++++++++++++
+ include/linux/mvebu-pmsu.h |   2 +
+ 2 files changed, 255 insertions(+)
+
+--- a/arch/arm/mach-mvebu/pmsu.c
++++ b/arch/arm/mach-mvebu/pmsu.c
+@@ -16,13 +16,18 @@
+ #define pr_fmt(fmt) "mvebu-pmsu: " fmt
+ 
+ #include <linux/clk.h>
++#include <linux/completion.h>
++#include <linux/cpu.h>
+ #include <linux/cpu_pm.h>
+ #include <linux/delay.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
++#include <linux/iopoll.h>
+ #include <linux/kernel.h>
++#include <linux/kthread.h>
+ #include <linux/mbus.h>
+ #include <linux/mvebu-pmsu.h>
++#include <linux/mutex.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
+ #include <linux/platform_device.h>
+@@ -566,6 +571,254 @@ static void mvebu_pmsu_dfs_request_local
+ 	local_irq_restore(flags);
+ }
+ 
++/*
++ * Armada 38x has a shared CPU frequency domain. Both CPUs must
++ * participate in the same DFS/WFI transaction.
++ */
++#define MVEBU_PMSU_DFS_CPUS	2
++
++enum mvebu_pmsu_dfs_state {
++	MVEBU_PMSU_DFS_WAIT,
++	MVEBU_PMSU_DFS_GO,
++	MVEBU_PMSU_DFS_ABORT,
++};
++
++struct mvebu_pmsu_dfs_cpu {
++	struct kthread_worker *worker;
++	struct kthread_work work;
++	unsigned int cpu;
++};
++
++static DEFINE_PER_CPU(struct mvebu_pmsu_dfs_cpu, dfs_cpu);
++static DEFINE_MUTEX(dfs_lock);
++static DECLARE_COMPLETION(dfs_ready);
++static DECLARE_COMPLETION(dfs_done);
++static unsigned int dfs_go;
++static bool dfs_failed;
++
++static void mvebu_pmsu_dfs_prepare(u32 hwcpu)
++{
++	u32 reg;
++
++	reg = readl(pmsu_mp_base + PMSU_EVENT_STATUS_AND_MASK(hwcpu));
++	reg &= ~PMSU_EVENT_STATUS_AND_MASK_DFS_DONE;
++	reg |= PMSU_EVENT_STATUS_AND_MASK_DFS_DONE_MASK;
++	writel(reg, pmsu_mp_base + PMSU_EVENT_STATUS_AND_MASK(hwcpu));
++
++	reg = readl(pmsu_mp_base + PMSU_STATUS_AND_MASK(hwcpu));
++	reg |= PMSU_STATUS_AND_MASK_CPU_IDLE_WAIT |
++	       PMSU_STATUS_AND_MASK_IRQ_MASK |
++	       PMSU_STATUS_AND_MASK_FIQ_MASK;
++	writel(reg, pmsu_mp_base + PMSU_STATUS_AND_MASK(hwcpu));
++
++	reg = readl(pmsu_mp_base + PMSU_CONTROL_AND_CONFIG(hwcpu));
++	reg |= PMSU_CONTROL_AND_CONFIG_DFS_REQ;
++	writel(reg, pmsu_mp_base + PMSU_CONTROL_AND_CONFIG(hwcpu));
++}
++
++static void mvebu_pmsu_dfs_finish(u32 hwcpu)
++{
++	u32 reg;
++
++	reg = readl(pmsu_mp_base + PMSU_STATUS_AND_MASK(hwcpu));
++	reg &= ~PMSU_STATUS_AND_MASK_CPU_IDLE_WAIT;
++	writel(reg, pmsu_mp_base + PMSU_STATUS_AND_MASK(hwcpu));
++
++	reg = readl(pmsu_mp_base + PMSU_EVENT_STATUS_AND_MASK(hwcpu));
++	reg &= ~PMSU_EVENT_STATUS_AND_MASK_DFS_DONE_MASK;
++	writel(reg, pmsu_mp_base + PMSU_EVENT_STATUS_AND_MASK(hwcpu));
++}
++
++static void mvebu_pmsu_dfs_work(struct kthread_work *work)
++{
++	struct mvebu_pmsu_dfs_cpu *ctx =
++		container_of(work, struct mvebu_pmsu_dfs_cpu, work);
++	u32 hwcpu = cpu_logical_map(ctx->cpu);
++	unsigned long flags;
++	unsigned int state;
++
++	local_irq_save(flags);
++
++	complete(&dfs_ready);
++
++	/*
++	 * Pair with the release below so the caller completes its PMSU
++	 * setup before the remote CPU proceeds to WFI.
++	 */
++	while ((state = smp_load_acquire(&dfs_go)) == MVEBU_PMSU_DFS_WAIT)
++		cpu_relax();
++
++	/* A late worker must not program PMSU or enter WFI after a timeout. */
++	if (state == MVEBU_PMSU_DFS_ABORT)
++		goto out_irq;
++
++	mvebu_pmsu_dfs_prepare(hwcpu);
++	wfi();
++
++	mvebu_pmsu_dfs_finish(hwcpu);
++
++out_irq:
++	local_irq_restore(flags);
++
++	complete(&dfs_done);
++}
++
++int mvebu_pmsu_dfs_request_38x(void)
++{
++	struct mvebu_pmsu_dfs_cpu *ctx;
++	unsigned int caller;
++	unsigned int remote;
++	u32 hwcaller, reg;
++	unsigned long flags;
++	int ret = 0;
++
++	if (!pmsu_mp_base)
++		return -ENODEV;
++
++	mutex_lock(&dfs_lock);
++	if (READ_ONCE(dfs_failed)) {
++		ret = -EIO;
++		goto out_unlock;
++	}
++
++	/*
++	 * Keep both CPUs online without waiting for hotplug while the clock
++	 * prepare lock is held.
++	 */
++	if (!cpus_read_trylock()) {
++		ret = -EBUSY;
++		goto out_unlock;
++	}
++	if (num_online_cpus() != MVEBU_PMSU_DFS_CPUS) {
++		ret = -EBUSY;
++		goto out_cpus;
++	}
++
++	migrate_disable();
++
++	caller = smp_processor_id();
++	remote = cpumask_any_but(cpu_online_mask, caller);
++	hwcaller = cpu_logical_map(caller);
++
++	if (remote >= nr_cpu_ids) {
++		ret = -EBUSY;
++		goto out_migrate;
++	}
++
++	ctx = per_cpu_ptr(&dfs_cpu, remote);
++
++	if (!ctx->worker) {
++		ret = -ENODEV;
++		goto out_migrate;
++	}
++
++	reinit_completion(&dfs_ready);
++	reinit_completion(&dfs_done);
++	WRITE_ONCE(dfs_go, MVEBU_PMSU_DFS_WAIT);
++
++	if (!kthread_queue_work(ctx->worker, &ctx->work)) {
++		ret = -EBUSY;
++		goto out_migrate;
++	}
++
++	if (!wait_for_completion_timeout(&dfs_ready, HZ)) {
++		WRITE_ONCE(dfs_failed, true);
++		smp_store_release(&dfs_go, MVEBU_PMSU_DFS_ABORT);
++		ret = -ETIME;
++		goto out_migrate;
++	}
++
++	local_irq_save(flags);
++
++	mvebu_pmsu_dfs_prepare(hwcaller);
++
++	/*
++	 * Publish completion of the caller's PMSU setup before allowing
++	 * the remote CPU to proceed to WFI.
++	 */
++	smp_store_release(&dfs_go, MVEBU_PMSU_DFS_GO);
++
++	wfi();
++
++	local_irq_restore(flags);
++
++	/*
++	 * WFI can return for an unrelated interrupt. Like the XP path, poll
++	 * DFS_DONE for up to one second before restoring the event mask.
++	 */
++	ret = readl_poll_timeout(pmsu_mp_base +
++				 PMSU_EVENT_STATUS_AND_MASK(hwcaller), reg,
++				 reg & PMSU_EVENT_STATUS_AND_MASK_DFS_DONE,
++				 10, USEC_PER_SEC);
++	if (ret) {
++		WRITE_ONCE(dfs_failed, true);
++		ret = -ETIME;
++	}
++
++	mvebu_pmsu_dfs_finish(hwcaller);
++
++	if (!wait_for_completion_timeout(&dfs_done, HZ)) {
++		WRITE_ONCE(dfs_failed, true);
++		ret = -ETIME;
++	}
++
++out_migrate:
++	migrate_enable();
++out_cpus:
++	cpus_read_unlock();
++out_unlock:
++	mutex_unlock(&dfs_lock);
++	return ret;
++}
++
++static int __init mvebu_pmsu_dfs_init(void)
++{
++	unsigned int cpu;
++
++	if (!of_machine_is_compatible("marvell,armada380"))
++		return 0;
++
++	for_each_possible_cpu(cpu) {
++		struct mvebu_pmsu_dfs_cpu *ctx;
++		struct kthread_worker *worker;
++
++		if (cpu >= MVEBU_PMSU_DFS_CPUS)
++			break;
++
++		ctx = per_cpu_ptr(&dfs_cpu, cpu);
++		ctx->cpu = cpu;
++
++		kthread_init_work(&ctx->work, mvebu_pmsu_dfs_work);
++
++		worker = kthread_create_worker_on_cpu(cpu, 0, "mvebu-dfs/%u");
++		if (IS_ERR(worker)) {
++			int ret = PTR_ERR(worker);
++			unsigned int n;
++
++			for_each_possible_cpu(n) {
++				struct mvebu_pmsu_dfs_cpu *tmp;
++
++				if (n == cpu)
++					break;
++
++				tmp = per_cpu_ptr(&dfs_cpu, n);
++				if (tmp->worker) {
++					kthread_destroy_worker(tmp->worker);
++					tmp->worker = NULL;
++				}
++			}
++
++			return ret;
++		}
++
++		ctx->worker = worker;
++	}
++
++	return 0;
++}
++/* Before the device_initcall that registers the cpufreq-dt consumer. */
++subsys_initcall(mvebu_pmsu_dfs_init);
++
+ int mvebu_pmsu_dfs_request(int cpu)
+ {
+ 	unsigned long timeout;
+--- a/include/linux/mvebu-pmsu.h
++++ b/include/linux/mvebu-pmsu.h
+@@ -13,8 +13,10 @@
+ 
+ #ifdef CONFIG_MACH_MVEBU_V7
+ int mvebu_pmsu_dfs_request(int cpu);
++int mvebu_pmsu_dfs_request_38x(void);
+ #else
+ static inline int mvebu_pmsu_dfs_request(int cpu) { return -ENODEV; }
++static inline int mvebu_pmsu_dfs_request_38x(void) { return -ENODEV; }
+ #endif
+ 
+ #endif /* __MVEBU_PMSU_H__ */

@@ -1,0 +1,100 @@
+From ed1ab41742f28ffd5daaa01879652287806c0d5e Mon Sep 17 00:00:00 2001
+From: Gabriel Rodriguez <lifehacksback@gmail.com>
+Date: Thu, 10 Sep 2026 19:07:37 -0700
+Subject: [PATCH] cpufreq: mvebu: add Armada 385/388 cpufreq support
+
+Register runtime operating points for dual-core Armada 385 and Armada 388 systems.
+
+Derive the operating points from the actual boot CPU clock and expose the nominal rate and half-rate through cpufreq-dt. Mark the CPU OPP table as shared across the two-CPU frequency domain.
+
+Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
+---
+ arch/arm/boot/dts/marvell/armada-385.dtsi |  2 +
+ drivers/cpufreq/mvebu-cpufreq.c           | 63 +++++++++++++++++++++++
+ 2 files changed, 65 insertions(+)
+
+--- a/arch/arm/boot/dts/marvell/armada-385.dtsi
++++ b/arch/arm/boot/dts/marvell/armada-385.dtsi
+@@ -24,11 +24,13 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <0>;
++			clocks = <&cpuclk 0>;
+ 		};
+ 		cpu@1 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <1>;
++			clocks = <&cpuclk 0>;
+ 		};
+ 	};
+ 
+--- a/drivers/cpufreq/mvebu-cpufreq.c
++++ b/drivers/cpufreq/mvebu-cpufreq.c
+@@ -99,3 +99,66 @@ static int __init armada_xp_pmsu_cpufreq
+ 	return 0;
+ }
+ device_initcall(armada_xp_pmsu_cpufreq_init);
++
++static int __init armada_38x_pmsu_cpufreq_init(void)
++{
++	struct platform_device *pdev;
++	struct device *cpu_dev;
++	struct clk *clk;
++	unsigned long rate;
++	cpumask_t cpus;
++	int ret;
++
++	if (!of_machine_is_compatible("marvell,armada385") &&
++	    !of_machine_is_compatible("marvell,armada388"))
++		return 0;
++
++	cpu_dev = get_cpu_device(0);
++	if (!cpu_dev)
++		return -ENODEV;
++
++	clk = clk_get(cpu_dev, NULL);
++	if (IS_ERR(clk))
++		return PTR_ERR(clk);
++
++	rate = clk_get_rate(clk);
++	if (!rate) {
++		ret = -EINVAL;
++		goto out_clk;
++	}
++
++	ret = dev_pm_opp_add(cpu_dev, rate, 0);
++	if (ret)
++		goto out_clk;
++
++	ret = dev_pm_opp_add(cpu_dev, rate / 2, 0);
++	if (ret)
++		goto remove_high;
++
++	cpumask_copy(&cpus, cpu_possible_mask);
++	if (cpumask_weight(&cpus) != 2) {
++		ret = -ENODEV;
++		goto remove_low;
++	}
++
++	ret = dev_pm_opp_set_sharing_cpus(cpu_dev, &cpus);
++	if (ret)
++		goto remove_low;
++
++	pdev = platform_device_register_simple("cpufreq-dt", -1, NULL, 0);
++	ret = PTR_ERR_OR_ZERO(pdev);
++	if (ret)
++		goto remove_low;
++
++	clk_put(clk);
++	return 0;
++
++remove_low:
++	dev_pm_opp_remove(cpu_dev, rate / 2);
++remove_high:
++	dev_pm_opp_remove(cpu_dev, rate);
++out_clk:
++	clk_put(clk);
++	return ret;
++}
++device_initcall(armada_38x_pmsu_cpufreq_init);
