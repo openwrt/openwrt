@@ -43,8 +43,8 @@ ath79_setup_interfaces()
 	ubnt,bullet-m-ar7240|\
 	ubnt,bullet-m-ar7241|\
 	ubnt,nanobridge-m|\
-	ubnt,picostation-m|\
-	ubnt,nanostation-loco-m)
+	ubnt,nanostation-loco-m|\
+	ubnt,picostation-m)
 		ucidef_set_interface_lan "eth0"
 		;;
 	dlink,dir-615-e4|\
@@ -98,7 +98,8 @@ ath79_setup_interfaces()
 	tplink,tl-wr940n-v3|\
 	tplink,tl-wr940n-v4|\
 	tplink,tl-wr940n-v6|\
-	tplink,tl-wr941nd-v6)
+	tplink,tl-wr941nd-v6|\
+	ubnt,airrouter)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
@@ -122,11 +123,6 @@ ath79_setup_interfaces()
 		;;
 	tplink,tl-wr941-v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
-		;;
-	ubnt,airrouter)
-		ucidef_set_interface_wan "eth1"
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
 	ubnt,nanostation-m)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
