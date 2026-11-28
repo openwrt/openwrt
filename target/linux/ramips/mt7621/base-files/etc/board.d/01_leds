@@ -62,6 +62,13 @@ wifire,s1500-nbn)
 belkin,rt1800)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
+buffalo,wsr-1800ax4s)
+	ucidef_set_led_default "power" "Power" "green:status" "1"
+	ucidef_set_led_default "router" "Router" "green:router" "1"
+	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "green:wlan-2ghz" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "amber:wlan-5ghz" "phy1tpt"
+	ucidef_set_led_netdev "wan" "Internet" "green:wan" "wan" "link tx rx"
+	;;
 cudy,ap1300-outdoor-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
 	;;
