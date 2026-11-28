@@ -27,7 +27,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 ---
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
-@@ -185,6 +185,7 @@ struct flow_offload {
+@@ -187,6 +187,7 @@ struct flow_offload {
  	unsigned long				flags;
  	u16					type;
  	u32					timeout;
@@ -57,7 +57,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	for (i = 0; i < tuple->encap_num; i++) {
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
-@@ -46,6 +46,23 @@ static void flow_offload_ct_tcp(struct n
+@@ -47,6 +47,23 @@ static void flow_offload_ct_tcp(struct n
  	spin_unlock_bh(&ct->lock);
  }
  
@@ -81,7 +81,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  static void nft_flow_offload_eval(const struct nft_expr *expr,
  				  struct nft_regs *regs,
  				  const struct nft_pktinfo *pkt)
-@@ -116,6 +133,8 @@ static void nft_flow_offload_eval(const
+@@ -127,6 +144,8 @@ static void nft_flow_offload_eval(const
  	if (tcph)
  		flow_offload_ct_tcp(ct);
  
