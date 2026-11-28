@@ -1,0 +1,40 @@
+From a1e60ce2cabe05aaa5931c8c7359ab24f14028f6 Mon Sep 17 00:00:00 2001
+From: Alexey Immoreev <github@luixo.me>
+Date: Thu, 19 Nov 2026 12:44:46 +0000
+Subject: [PATCH] soc: qcom: mdt_loader: encode user PD DMA staging as little-endian
+
+The SCM staging descriptor uses little-endian 64-bit fields and points
+to an array of little-endian 64-bit DMA addresses. Using dma_addr_t for
+the array gives the wrong entry size on 32-bit DMA configurations.
+
+Use __le64 for the array and convert the descriptor fields and its single
+entry explicitly. Keep the native dma_addr_t handles for the DMA API and
+leave the SCM operation and block count unchanged.
+
+Signed-off-by: Alexey Immoreev <github@luixo.me>
+---
+--- a/drivers/soc/qcom/mdt_loader.c
++++ b/drivers/soc/qcom/mdt_loader.c
+@@ -117,7 +117,7 @@ static int mdt_load_split_segment_dma(in
+ {
+ 	const struct elf32_phdr *phdr = &phdrs[segment];
+ 	struct segment_load_args *args;
+-	dma_addr_t *addrs;
++	__le64 *addrs;
+ 	void *ptr;
+ 	dma_addr_t dma_args, dma_addrs, dma_ptr;
+ 	int ret;
+@@ -139,10 +139,10 @@ static int mdt_load_split_segment_dma(in
+ 		return -ENOMEM;
+ 	}
+ 
+-	args->addr = dma_addrs;
+-	args->blk_size = phdr->p_filesz;
++	args->addr = cpu_to_le64(dma_addrs);
++	args->blk_size = cpu_to_le64(phdr->p_filesz);
+ 
+-	addrs[0] = dma_ptr;
++	addrs[0] = cpu_to_le64(dma_ptr);
+ 
+ 	ret = mdt_load_split_segment(ptr, phdrs, segment, fw_name, dev);
+ 	if (ret < 0) {
