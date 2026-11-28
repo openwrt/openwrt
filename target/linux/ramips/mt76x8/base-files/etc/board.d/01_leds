@@ -24,10 +24,6 @@ yuncore,m300)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0xf"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
 	;;
-yuncore,1200f)
-	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x10"
-	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x08"
-	;;
 creality,wb-01)
 	ucidef_set_led_switch "lan" "lan" "blue:lan" "switch0" "0x1"
 	;;
@@ -41,6 +37,20 @@ cudy,lt400e-v1)
 	ucidef_set_led_switch "lan4" "lan4" "blue:lan-4" "switch0" "0x01"
 	ucidef_set_led_netdev "wifi" "wifi" "blue:wlan" "phy0-ap0"
 	ucidef_set_led_netdev "internet" "internet" "blue:internet" "usb0"
+	;;
+cudy,lt500-outdoor-v1)
+	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x01"
+	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "usb0"
+	;;
+cudy,re1200-outdoor-v1|\
+mercusys,mb130-4g-v1|\
+tplink,re200-v2|\
+tplink,re200-v3|\
+tplink,re200-v4|\
+tplink,re220-v2|\
+tplink,tl-mr3020-v3|\
+tplink,tl-wa801nd-v5)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
 cudy,wr1000)
 	ucidef_set_led_switch "wan" "wan" "blue:wan" "switch0" "0x10"
@@ -133,20 +143,6 @@ tplink,archer-mr200-v6)
 	ucidef_set_led_netdev "lan" "lan" "white:lan" "eth0"
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wwan0"
 	;;
-cudy,lt500-outdoor-v1)
-	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x01"
-	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "usb0"
-	;;
-cudy,re1200-outdoor-v1|\
-mercusys,mb130-4g-v1|\
-tplink,re200-v2|\
-tplink,re200-v3|\
-tplink,re200-v4|\
-tplink,re220-v2|\
-tplink,tl-mr3020-v3|\
-tplink,tl-wa801nd-v5)
-	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
-	;;
 tplink,re205-v3)
 	ucidef_set_led_netdev "lan" "lan" "blue:signal" "eth0"
 	;;
@@ -234,6 +230,10 @@ xiaomi,mi-router-4a-100m-intl-v2)
 	;;
 xiaomi,mi-router-4c)
 	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x02"
+	;;
+yuncore,1200f)
+	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x10"
+	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x08"
 	;;
 zbtlink,zbt-we1226)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan" "wlan0"
