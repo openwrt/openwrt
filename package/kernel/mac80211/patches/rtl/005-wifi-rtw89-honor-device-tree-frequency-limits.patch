@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pengji Li <wjjsn@qq.com>
+Subject: [PATCH] wifi: rtw89: honor device tree frequency limits
+
+Embedded rtw89 devices may only be wired for one of the bands supported
+by the chip. Apply the standard ieee80211-freq-limit property before
+registration and omit bands with no usable channels so userspace can
+select the correct band by default.
+
+---
+--- a/drivers/net/wireless/realtek/rtw89/core.c
++++ b/drivers/net/wireless/realtek/rtw89/core.c
+@@ -2,6 +2,7 @@
+ /* Copyright(c) 2019-2020  Realtek Corporation
+  */
+ #include <linux/ip.h>
++#include <linux/of.h>
+ #include <linux/sort.h>
+ #include <linux/udp.h>
+ 
+@@ -6367,6 +6368,30 @@
+ 	return 0;
+ }
+ 
++static void rtw89_core_apply_freq_limits(struct rtw89_dev *rtwdev)
++{
++	struct wiphy *wiphy = rtwdev->hw->wiphy;
++	struct ieee80211_supported_band *sband;
++	int band, chan;
++
++	if (!of_property_present(rtwdev->dev->of_node, "ieee80211-freq-limit"))
++		return;
++
++	wiphy_read_of_freq_limits(wiphy);
++	for (band = 0; band < NUM_NL80211_BANDS; band++) {
++		sband = wiphy->bands[band];
++		if (!sband)
++			continue;
++
++		for (chan = 0; chan < sband->n_channels; chan++) {
++			if (!(sband->channels[chan].flags & IEEE80211_CHAN_DISABLED))
++				break;
++		}
++		if (chan == sband->n_channels)
++			wiphy->bands[band] = NULL;
++	}
++}
++
+ static void rtw89_core_ppdu_sts_init(struct rtw89_dev *rtwdev)
+ {
+ 	int i;
+@@ -7467,6 +7492,8 @@
+ 		return ret;
+ 	}
+ 
++	rtw89_core_apply_freq_limits(rtwdev);
++
+ 	ret = rtw89_regd_setup(rtwdev);
+ 	if (ret) {
+ 		rtw89_err(rtwdev, "failed to set up regd\n");
