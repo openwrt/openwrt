@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/wireless/realtek,rtl8852ae.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTL8852AE PCIe wireless controller
+
+maintainers:
+  - wjjsn <wjjsn@qq.com>
+
+allOf:
+  - $ref: /schemas/net/wireless/ieee80211.yaml#
+
+properties:
+  compatible:
+    const: pci10ec,8852
+
+  reg:
+    maxItems: 1
+
+  ieee80211-freq-limit: true
+
+  realtek,efuse-file:
+    $ref: /schemas/types.yaml#/definitions/string
+    description:
+      Firmware-relative path to a 1536-byte logical eFuse map containing
+      board calibration. The map is used when the on-chip eFuse does not
+      provide a valid MAC address or RF front-end type.
+
+required:
+  - compatible
+  - reg
+
+additionalProperties: false
+
+examples:
+  - |
+    pcie {
+        #address-cells = <3>;
+        #size-cells = <2>;
+
+        wifi@1,0 {
+            compatible = "pci10ec,8852";
+            reg = <0x800 0 0 0 0>;
+            ieee80211-freq-limit = <4900000 5925000>;
+            realtek,efuse-file = "rtw89/tcl-t20-pro-5g-efuse.bin";
+        };
+    };
