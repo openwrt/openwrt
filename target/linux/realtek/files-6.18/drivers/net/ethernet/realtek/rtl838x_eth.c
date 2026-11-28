@@ -640,6 +640,7 @@ static int rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 
 		ctrl->rx_info[r].slot = 0;
 		ctrl->rx_info[r].skb = NULL;
+		ctrl->rx_info[r].more = false;
 		ctrl->rx_data[r].ring[RTETH_RX_RING_SIZE - 1] |= RTETH_RING_WRAP;
 	}
 
@@ -1135,28 +1136,61 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	return NETDEV_TX_OK;
 }
 
-static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int slot)
+static struct sk_buff *rteth_create_skb_unaligned(struct rteth_rx_info *rx,
+						  struct page *page, unsigned int offset,
+						  unsigned int frag_len)
 {
-	struct rteth_frag *frag = &ctrl->rx_data[ring].frag[slot];
-	unsigned int offset = ctrl->rx_info[ring].offset[slot];
-	struct page *page = ctrl->rx_info[ring].page[slot];
-	struct page_pool *pool = ctrl->rx_info[ring].pool;
+	unsigned int len = min(frag_len, 96U);
+	struct sk_buff *skb;
+
+	skb = napi_alloc_skb(&rx->napi, len);
+	if (unlikely(!skb))
+		return NULL;
+
+	offset += rx->ctrl->cfg->skb_headroom;
+	skb_put_data(skb, page_address(page) + offset, len);
+	if (len < frag_len)
+		skb_add_rx_frag(skb, 0, page, offset + len, frag_len - len,
+				RTETH_PPOOL_FRAG_SIZE);
+	else
+		page_pool_put_full_page(rx->pool, page, true);
+
+	return skb;
+}
+
+static struct sk_buff *rteth_create_skb_aligned(struct rteth_rx_info *rx,
+						struct page *page, unsigned int offset,
+						unsigned int frag_len)
+{
+	struct sk_buff *skb;
+
+	skb = napi_build_skb(page_address(page) + offset, RTETH_PPOOL_FRAG_SIZE);
+	if (unlikely(!skb))
+		return NULL;
+
+	skb_reserve(skb, rx->ctrl->cfg->skb_headroom);
+	skb_put(skb, frag_len);
+
+	return skb;
+}
+
+static struct sk_buff *rteth_create_skb(struct rteth_rx_info *rx, struct rteth_frag *frag)
+{
+	unsigned int offset = rx->offset[rx->slot];
+	struct page *page = rx->page[rx->slot];
+	struct rteth_ctrl *ctrl = rx->ctrl;
 	struct net_device *dev = ctrl->dev;
-	unsigned int len = frag->len;
 	struct metadata_dst *md_dst;
 	struct rteth_dsa_tag tag;
 	struct sk_buff *skb;
 
-	page_pool_dma_sync_for_cpu(pool, page, offset + ctrl->cfg->skb_headroom, len);
-	skb = napi_build_skb(page_address(page) + offset, RTETH_PPOOL_FRAG_SIZE);
+	page_pool_dma_sync_for_cpu(rx->pool, page, offset + ctrl->cfg->skb_headroom, frag->len);
+	skb = ctrl->cfg->create_skb(rx, page, offset, frag->len);
 	if (unlikely(!skb)) {
-		page_pool_put_full_page(pool, page, true);
+		page_pool_put_full_page(rx->pool, page, true);
 		return NULL;
 	}
-
-	skb_reserve(skb, ctrl->cfg->skb_headroom);
 	skb_mark_for_recycle(skb);
-	skb_put(skb, len);
 
 	ctrl->cfg->decode_tag(frag, &tag);
 	if (netdev_uses_dsa(dev) && tag.port < ctrl->cfg->cpu_port) {
@@ -1174,57 +1208,50 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int s
 	return skb;
 }
 
-static int rteth_append_skb(struct sk_buff *skb, struct rteth_ctrl *ctrl, int ring, int slot)
+static int rteth_append_skb(struct sk_buff *skb, struct rteth_rx_info *rx, unsigned int len)
 {
-	struct rteth_frag *frag = &ctrl->rx_data[ring].frag[slot];
-	unsigned int offset = ctrl->rx_info[ring].offset[slot];
-	struct page *page = ctrl->rx_info[ring].page[slot];
+	unsigned int data_offset = rx->offset[rx->slot] + rx->ctrl->cfg->skb_headroom;
 	unsigned int nr_frags = skb_shinfo(skb)->nr_frags;
-	struct page_pool *pool = ctrl->rx_info[ring].pool;
-	unsigned int len = frag->len;
+	struct page *page = rx->page[rx->slot];
 
 	if (nr_frags >= MAX_SKB_FRAGS) {
-		page_pool_put_full_page(pool, page, true);
+		page_pool_put_full_page(rx->pool, page, true);
 		return -ENOMEM;
 	}
 
-	page_pool_dma_sync_for_cpu(pool, page, offset + ctrl->cfg->skb_headroom, len);
-	skb_add_rx_frag(skb, nr_frags, page, offset + ctrl->cfg->skb_headroom,
-			len, RTETH_PPOOL_FRAG_SIZE);
+	page_pool_dma_sync_for_cpu(rx->pool, page, data_offset, len);
+	skb_add_rx_frag(skb, nr_frags, page, data_offset, len, RTETH_PPOOL_FRAG_SIZE);
 
 	return 0;
 }
 
-static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
+static int rteth_hw_receive(struct rteth_rx_info *rx_info, int budget)
 {
+	struct rteth_ctrl *ctrl = rx_info->ctrl;
 	int slot, work_done = 0, rx_packets = 0, rx_bytes = 0, rx_dropped = 0, rx_errors = 0;
-	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	struct rteth_rx_info *rx_info = &ctrl->rx_info[ring];
+	struct rteth_rx_data *rx_data = &ctrl->rx_data[rx_info->id];
+	struct page_pool *pool = rx_info->pool;
+	struct net_device *dev = ctrl->dev;
+	struct sk_buff *skb = rx_info->skb;
+	bool is_head, more = rx_info->more;
 	unsigned int len, new_offset;
 	struct rteth_frag *frag;
-	struct page_pool *pool;
 	struct page *new_page;
 	dma_addr_t packet_dma;
-	bool is_head, is_tail;
-	struct sk_buff *skb;
-
-	pool = rx_info->pool;
-	skb = rx_info->skb;
-	is_tail = !skb;
 
 	while (work_done < budget) {
 		slot = rx_info->slot;
-		packet_dma = ctrl->rx_data[ring].ring[slot];
+		packet_dma = rx_data->ring[slot];
 		rmb();
 
 		if (packet_dma & RTETH_RING_OWN_HW)
 			break;
 
-		frag = &ctrl->rx_data[ring].frag[slot];
+		frag = &rx_data->frag[slot];
 		len = frag->len;
-		is_head = is_tail;
-		is_tail = !frag->more;
-		if (is_tail)
+		is_head = !more;
+		more = frag->more;
+		if (!more)
 			work_done++;
 
 		if (unlikely(len > RTETH_SKB_FRAG_SIZE)) {
@@ -1248,23 +1275,23 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		}
 
 		if (is_head) {
-			skb = rteth_create_skb(ctrl, ring, slot);
+			skb = rteth_create_skb(rx_info, frag);
 			if (unlikely(!skb)) {
 				netdev_err(dev, "skb creation failed\n");
 				rx_dropped++;
 			}
-		} else {
-			if (unlikely(rteth_append_skb(skb, ctrl, ring, slot))) {
-				netdev_err(dev, "skb append failed\n");
-				rx_dropped += rteth_free_skb(&skb);
-			}
+		} else if (unlikely(rteth_append_skb(skb, rx_info, len))) {
+			netdev_err(dev, "skb append failed\n");
+			rx_dropped += rteth_free_skb(&skb);
 		}
 
-		if (is_tail && skb) {
+		if (!more && skb) {
 			if (unlikely(skb->len < ETH_HLEN + ETH_FCS_LEN)) {
 				rx_errors += rteth_free_skb(&skb);
+			} else if (unlikely(pskb_trim(skb, skb->len - ETH_FCS_LEN) ||
+					    !pskb_may_pull(skb, ETH_HLEN))) {
+				rx_dropped += rteth_free_skb(&skb);
 			} else {
-				pskb_trim(skb, skb->len - ETH_FCS_LEN);
 				rx_bytes += skb->len;
 				rx_packets++;
 				skb->protocol = eth_type_trans(skb, dev);
@@ -1279,12 +1306,12 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 			    new_offset + ctrl->cfg->skb_headroom;
 recycle:
 		dma_wmb();
-		ctrl->rx_data[ring].ring[slot] = packet_dma | RTETH_RING_OWN_HW;
+		rx_data->ring[slot] = packet_dma | RTETH_RING_OWN_HW;
 		rx_info->slot = (slot + 1) % RTETH_RX_RING_SIZE;
 	}
 
 	spin_lock(&ctrl->rx_lock);
-	ctrl->cfg->update_counter(ctrl, ring, work_done);
+	ctrl->cfg->update_counter(ctrl, rx_info->id, work_done);
 	dev->stats.rx_packets += rx_packets;
 	dev->stats.rx_dropped += rx_dropped;
 	dev->stats.rx_errors += rx_errors;
@@ -1292,6 +1319,7 @@ recycle:
 	spin_unlock(&ctrl->rx_lock);
 
 	rx_info->skb = skb;
+	rx_info->more = more;
 
 	return work_done;
 }
@@ -1304,7 +1332,7 @@ static int rteth_poll_rx(struct napi_struct *napi, int budget)
 
 	rteth_reclaim_tx_rings(ctrl);
 
-	work_done = rteth_hw_receive(ctrl->dev, ring, budget);
+	work_done = rteth_hw_receive(rx_q, budget);
 	if (work_done < budget && napi_complete_done(napi, work_done))
 		ctrl->cfg->enable_rx_irq(ctrl, ring);
 
@@ -1535,6 +1563,7 @@ static const struct rteth_cfg rteth_838x_cfg = {
 	.confirm_disable_irqs	= rteth_83xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_83xx_enable_rx_irq,
 	.update_counter		= rteth_83xx_update_counter,
+	.create_skb		= rteth_create_skb_unaligned,
 	.create_tx_header	= rteth_838x_create_tx_header,
 	.decode_tag		= rteth_838x_decode_tag,
 	.hw_en_rxtx		= rteth_838x_hw_en_rxtx,
@@ -1572,6 +1601,7 @@ static const struct rteth_cfg rteth_839x_cfg = {
 	.confirm_disable_irqs	= rteth_83xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_83xx_enable_rx_irq,
 	.update_counter		= rteth_83xx_update_counter,
+	.create_skb		= rteth_create_skb_aligned,
 	.create_tx_header	= rteth_839x_create_tx_header,
 	.decode_tag		= rteth_839x_decode_tag,
 	.hw_en_rxtx		= rteth_839x_hw_en_rxtx,
@@ -1611,6 +1641,7 @@ static const struct rteth_cfg rteth_930x_cfg = {
 	.confirm_disable_irqs	= rteth_93xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_93xx_enable_rx_irq,
 	.update_counter		= rteth_93xx_update_counter,
+	.create_skb		= rteth_create_skb_aligned,
 	.create_tx_header	= rteth_93xx_create_tx_header,
 	.decode_tag		= rteth_93xx_decode_tag,
 	.hw_en_rxtx		= rteth_930x_hw_en_rxtx,
@@ -1649,6 +1680,7 @@ static const struct rteth_cfg rteth_931x_cfg = {
 	.confirm_disable_irqs	= rteth_93xx_confirm_disable_irqs,
 	.enable_rx_irq		= rteth_93xx_enable_rx_irq,
 	.update_counter		= rteth_93xx_update_counter,
+	.create_skb		= rteth_create_skb_aligned,
 	.create_tx_header	= rteth_93xx_create_tx_header,
 	.decode_tag		= rteth_93xx_decode_tag,
 	.hw_en_rxtx		= rteth_931x_hw_en_rxtx,
