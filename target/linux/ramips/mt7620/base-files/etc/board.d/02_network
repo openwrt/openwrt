@@ -99,6 +99,15 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
+	asus,rt-ac52u-b1|\
+	edimax,br-6478ac-v2|\
+	lb-link,bl-w1200|\
+	tplink,archer-c2-v1)
+		ucidef_add_switch "switch0"
+		ucidef_add_switch_attr "switch0" "enable" "false"
+		ucidef_add_switch "switch1" \
+			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
+		;;
 	buffalo,whr-1166d)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "5:wan" "6@eth0"
@@ -152,14 +161,6 @@ ramips_setup_interfaces()
 	edimax,br-6208ac-v2)
 		ucidef_add_switch "switch0" \
 			"1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
-		;;
-	edimax,br-6478ac-v2|\
-	lb-link,bl-w1200|\
-	tplink,archer-c2-v1)
-		ucidef_add_switch "switch0"
-		ucidef_add_switch_attr "switch0" "enable" "false"
-		ucidef_add_switch "switch1" \
-			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
 	engenius,epg600|\
 	engenius,esr600|\
