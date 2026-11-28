@@ -487,7 +487,7 @@ define Device/traverse_ten64-mtd
   DEVICE_PACKAGES += \
     uboot-envtools \
     kmod-rtc-rx8025 \
-    kmod-sfp \
+    $(SFP_PACKAGES_10G) \
     kmod-i2c-mux-pca954x \
     restool
   DEVICE_DESCRIPTION = \

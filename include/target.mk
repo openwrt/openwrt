@@ -59,6 +59,28 @@ DEFAULT_PACKAGES.router:=\
 	ppp \
 	ppp-mod-pppoe
 
+##@
+# @brief Packages for devices with an SFP cage.
+#
+# Add the tier matching the fastest cage to DEVICE_PACKAGES. Copper
+# modules carry a PHY that the kernel probes over I2C, and the port does
+# not link until its driver is loaded.
+##
+# 1G cages: 1000BASE-T modules (Marvell 88E1111)
+SFP_PACKAGES:=\
+	kmod-sfp \
+	kmod-phy-marvell
+# 2.5G cages: RollBall 2.5GBASE-T modules (Realtek RTL8221B)
+SFP_PACKAGES_2G5:=\
+	$(SFP_PACKAGES) \
+	kmod-phy-realtek
+# 10G cages: RollBall and 10GBASE-T SFP+ modules (Aquantia AQR113C,
+# Realtek RTL8261, Marvell 88X3310)
+SFP_PACKAGES_10G:=\
+	$(SFP_PACKAGES_2G5) \
+	kmod-phy-aquantia \
+	kmod-phy-marvell-10g
+
 ifneq ($(DUMP),)
   all: dumpinfo
 endif

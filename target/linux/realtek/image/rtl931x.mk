@@ -7,7 +7,8 @@ define Device/hasivo_f5800w-12s-plus
   DEVICE_VENDOR := Hasivo
   DEVICE_MODEL := F5800W-12S+
   IMAGE_SIZE := 29696k
-  DEVICE_PACKAGES := kmod-hasivo-mcu-wdt kmod-hasivo-mcu-sensor kmod-rtc-pcf8563
+  DEVICE_PACKAGES := kmod-hasivo-mcu-wdt kmod-hasivo-mcu-sensor kmod-rtc-pcf8563 \
+		     $(SFP_PACKAGES_10G)
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += hasivo_f5800w-12s-plus
@@ -19,7 +20,7 @@ define Device/hasivo_s1300wp-8xgt-4s-plus
   IMAGE_SIZE := 29696k
   DEVICE_PACKAGES := kmod-phy-realtek kmod-rtc-pcf8563 rtl826x-firmware \
 		     kmod-hasivo-mcu-wdt kmod-hasivo-mcu-sensor kmod-pse-hasivo-hs104 \
-		     kmod-mfd-hasivo-stc8
+		     kmod-mfd-hasivo-stc8 $(SFP_PACKAGES_10G)
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += hasivo_s1300wp-8xgt-4s-plus
@@ -29,6 +30,7 @@ define Device/hasivo_s5800w-24gt-6s-plus
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := Hasivo
   DEVICE_MODEL := S5800W-24GT-6S+
+  DEVICE_PACKAGES := $(SFP_PACKAGES_10G)
   IMAGE_SIZE := 14848k
   $(Device/kernel-lzma)
   IMAGES += factory.bin
@@ -44,7 +46,7 @@ define Device/horaco_zx-swtgw2c48ns
   DEVICE_ALT0_MODEL := HR-SWTGW2C48NS
   DEVICE_ALT1_VENDOR := SODOLA
   DEVICE_ALT1_MODEL := SL-SWTGW2C48NS
-  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475
+  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475 $(SFP_PACKAGES_10G)
   IMAGE_SIZE := 28672k
   UIMAGE_MAGIC := 0x83800000
   $(Device/kernel-lzma)
@@ -63,7 +65,7 @@ define Device/mokerlink_10gt080m
   DEVICE_VENDOR := MokerLink
   DEVICE_MODEL := 10GT080M
   IMAGE_SIZE := 14336k
-  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
+  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware $(SFP_PACKAGES_10G)
   UIMAGE_MAGIC := 0x83800000
   $(Device/kernel-lzma)
 endef
@@ -75,7 +77,7 @@ define Device/plasmacloud-common
   DEVICE_VENDOR := Plasma Cloud
   IMAGE_SIZE := 13376k
   BLOCKSIZE := 64k
-  DEVICE_PACKAGES := kmod-hwmon-adt7475
+  DEVICE_PACKAGES := kmod-hwmon-adt7475 $(SFP_PACKAGES_10G)
   KERNEL_INITRAMFS := \
     kernel-bin | \
     append-dtb | \
@@ -105,6 +107,7 @@ define Device/sirivision_sr-st31212f
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := Sirivision
   DEVICE_MODEL := SR-ST31212F
+  DEVICE_PACKAGES := $(SFP_PACKAGES_10G)
   IMAGE_SIZE := 13312k
   $(Device/kernel-lzma)
 endef
@@ -115,7 +118,8 @@ define Device/ubnt_usw-pro-xg-10-poe
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi USW Pro XG 10 PoE
   IMAGE_SIZE := 30272k
-  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475 kmod-pse-realtek-mcu-i2c
+  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475 kmod-pse-realtek-mcu-i2c \
+		     $(SFP_PACKAGES_10G)
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += ubnt_usw-pro-xg-10-poe
@@ -125,7 +129,8 @@ define Device/ubnt_usw-pro-xg-8-poe
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi USW Pro XG 8 PoE
   IMAGE_SIZE := 30272k
-  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475 kmod-pse-realtek-mcu-i2c
+  DEVICE_PACKAGES := rtl826x-firmware kmod-hwmon-adt7475 kmod-pse-realtek-mcu-i2c \
+		     $(SFP_PACKAGES_10G)
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += ubnt_usw-pro-xg-8-poe
@@ -135,6 +140,7 @@ define Device/xikestor_sks8300-12x-v1
   DEVICE_VENDOR := XikeStor
   DEVICE_MODEL := SKS8300-12X
   DEVICE_VARIANT := V1
+  DEVICE_PACKAGES := $(SFP_PACKAGES_10G)
   BLOCKSIZE := 64k
   KERNEL_SIZE := 8192k
   IMAGE_SIZE := 30720k
@@ -150,7 +156,7 @@ define Device/xikestor_sks8300-12x-v2
   DEVICE_MODEL := SKS8300-12X
   DEVICE_VARIANT := V2
   IMAGE_SIZE := 13312k
-  DEVICE_PACKAGES := kmod-hwmon-max6650 kmod-hwmon-lm75 kmod-thermal
+  DEVICE_PACKAGES := kmod-hwmon-max6650 kmod-hwmon-lm75 kmod-thermal $(SFP_PACKAGES_10G)
   IMAGE/sysupgrade.bin := pad-extra 16 | append-kernel | pad-to 64k | \
 	append-rootfs | pad-rootfs | append-metadata | check-size
   $(Device/kernel-lzma)
@@ -162,7 +168,7 @@ define Device/zyxel_xgs2220-30hp
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := XGS2220-30HP
   DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-hwmon-gpiofan kmod-i2c-mux-pca954x \
-	kmod-pse-realtek-mcu-uart kmod-seg-led-gpio
+	kmod-pse-realtek-mcu-uart kmod-seg-led-gpio $(SFP_PACKAGES_10G)
   FLASH_ADDR := 0xb4290000
   IMAGE_SIZE := 30208k
   ZYNFW_ALIGN := 0x10000
@@ -172,7 +178,7 @@ TARGET_DEVICES += zyxel_xgs2220-30hp
 
 define Device/zyxel_xs1930
   SOC := rtl9313
-  DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-hwmon-gpiofan
+  DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-hwmon-gpiofan $(SFP_PACKAGES_10G)
   FLASH_ADDR := 0xb4280000
   IMAGE_SIZE := 31808k
   ZYNFW_ALIGN := 0x10000
