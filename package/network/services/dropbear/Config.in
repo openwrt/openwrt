@@ -1016,24 +1016,25 @@ menu "Encryption options"
 
 	config DROPBEAR_MLKEM768
 		bool "mlkem768 [POST-QUANTUM]"
+		default y if !SMALL_FLASH
 		help
 			This enables the following key exchange algorithm:
 			 * mlkem768x25519-sha256
 
 			Post-quantum KEM can avoid harvest-now-decrypt-later style attacks.
 
-			Default: disabled.
+			Default: enabled, except devices with very small flash.
 
 	config DROPBEAR_SNTRUP761
 		bool "sntrup761 [POST-QUANTUM]"
-		default y if !SMALL_FLASH
 		help
 			This enables the following key exchange algorithm:
 			 * sntrup761x25519-sha512
 
 			Post-quantum KEM can avoid harvest-now-decrypt-later style attacks.
+			Note: Deprecated upstream in OpenSSH 9.8+ in favor of mlkem768.
 
-			Default: enabled, except devices with very small flash.
+			Default: disabled.
 
 	comment "WARNING! At least one key exchange algorithm must be enabled."
 		depends on !DROPBEAR_DH_GROUP1 && !DROPBEAR_DH_GROUP14_SHA1 && ! DROPBEAR_DH_GROUP14_SHA256 && !DROPBEAR_DH_GROUP16 && !DROPBEAR_ECDH && !DROPBEAR_CURVE25519 && !DROPBEAR_MLKEM768 && !DROPBEAR_SNTRUP761
