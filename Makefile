@@ -106,7 +106,7 @@ prereq: $(target/stamp-prereq) tmp/.prereq_packages
 $(BIN_DIR)/profiles.json: FORCE
 	$(if $(CONFIG_JSON_OVERVIEW_IMAGE_INFO), \
 		mkdir -p $(BIN_DIR) $(TMP_DIR); \
-		WORK_DIR=$(BUILD_DIR)/json_info_files \
+		WORK_DIR=$(BUILD_DIR)/json_info_files BIN_DIR=$(BIN_DIR) \
 			$(SCRIPT_DIR)/json_overview_image_info.py $(TMP_DIR)/.profiles.json && \
 		$(call cp_if_changed,$(TMP_DIR)/.profiles.json,$@) \
 	)
