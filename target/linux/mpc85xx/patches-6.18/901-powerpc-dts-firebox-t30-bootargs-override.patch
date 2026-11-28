@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Damien Mascord <tusker@tusker.org>
+Subject: [PATCH] powerpc: dts: firebox-t30: add bootargs-override
+
+U-Boot on the WatchGuard Firebox T30 passes root=/dev/mmcblk0p3 on the
+kernel command line, which points to the ext2 boot partition rather than
+the squashfs rootfs on mmcblk0p2. Add bootargs-override in the chosen
+node so the kernel mounts the correct root partition.
+
+Signed-off-by: Damien Mascord <tusker@tusker.org>
+Signed-off-by: Lefteris Koutrakis <lefteris.koutrakis@gmail.com>
+---
+--- a/arch/powerpc/boot/dts/fsl/firebox-t30.dts
++++ b/arch/powerpc/boot/dts/fsl/firebox-t30.dts
+@@ -14,6 +14,10 @@
+ 	model = "Watchguard Firebox T30";
+ 	compatible = "watchguard,firebox-t30", "fsl,P1020RDB";
+ 
++	chosen {
++		bootargs-override = "root=/dev/mmcblk0p2 rootfstype=squashfs,ext4 rootwait console=ttyS0,115200";
++	};
++
+ 	memory {
+ 		device_type = "memory";
+ 	};
