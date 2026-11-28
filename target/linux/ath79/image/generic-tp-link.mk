@@ -71,6 +71,35 @@ define Device/tplink_archer-c58-v1
 endef
 TARGET_DEVICES += tplink_archer-c58-v1
 
+define Device/tplink_archer-c58hp-v1
+  SOC := qca9561
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Archer C58HP
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := qca9561_tplink_archer-c58hp-v1 qca9561_tplink_archer-c58hp-v1-ram
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct -uboot-envtools
+  IMAGE_SIZE := 7936k
+  SUPPORTED_DEVICES := tplink,archer-c58hp-v1
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  # Stock U-Boot needs a single-component Multi image for RAM boot.
+  # The RAM DTB keeps every physical and logical MTD region read-only.
+  KERNEL_INITRAMFS := kernel-bin | c58hp-append-ram-dtb | lzma | uImage lzma -T multi
+  IMAGES := sysupgrade.bin initial-install.bin
+  # Raw firmware-area image for the bounded RAM installer, not the OEM UI.
+  IMAGE/initial-install.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | c58hp-initial
+endef
+TARGET_DEVICES += tplink_archer-c58hp-v1
+
+define Device/tplink_archer-c58hp-v1-installer
+  $(Device/tplink_archer-c58hp-v1)
+  DEVICE_VARIANT := v1 (RAM installer)
+  DEVICE_DTS := qca9561_tplink_archer-c58hp-v1-installer
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma -T multi
+  IMAGES :=
+endef
+TARGET_DEVICES += tplink_archer-c58hp-v1-installer
+
 define Device/tplink_archer-c59-v1
   $(Device/tplink-safeloader-uimage)
   SOC := qca9561
