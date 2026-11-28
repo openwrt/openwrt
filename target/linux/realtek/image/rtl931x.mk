@@ -6,8 +6,9 @@ define Device/d-link_dgs-1250-52xmp
   SOC := rtl9311
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DGS-1250-52XMP
-  # Same cap as the 28X. The 0x3e00000 node is that board's map
-  # and has not been read back here.
+  # /proc/mtd on a 52XMP is 0x3e00000 at 0x200000. Keep the
+  # 28X cap. The stock bootcmd loads a UBIFS uImage, and the
+  # 28X flash recipe copies 12 MiB from 0xb4200000.
   IMAGE_SIZE := 24576k
   $(Device/kernel-lzma)
 endef

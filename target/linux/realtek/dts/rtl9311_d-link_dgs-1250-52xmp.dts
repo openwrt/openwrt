@@ -6,15 +6,25 @@
 #include "rtl931x.dtsi"
 
 /*
- * D-Link DGS-1250-52XMP (A1 and A2), RTL9311.
+ * D-Link DGS-1250-52XMP, RTL9311.
  *
- * Port map from RTL9311_6x8218D_6XGE: SMI 0 is MAC 0-23, SMI 2 is
- * MAC 24-47, SFP+ is MAC 48/50/52/53 on SerDes 8-11. SerDes 12
- * and 13 are not fitted. The profile names RTL8218D. That part
- * is not confirmed on this PCB. Cage I2C and the PSE were not in
- * the profile. GPIO pins probed on the RTL9301 28X are not copied.
- * The NOR map is the 28X layout and has not been read back here.
- * There is no EEPROM cell, so ethernet0 has no mac-address yet.
+ * Measured on a board whose stock runtime was 2.02.030. The U-Boot
+ * image on that board contains boardmodel=52 and
+ * mtdparts=nor0:1M(uboot),512K(env),512K(sys),-(fs). /proc/mtd
+ * matches that map. The NOR JEDEC ID is c2 20 1a, Macronix, which
+ * the kernel names MX66L51235F.
+ *
+ * The same U-Boot image contains the profile RTL9311_6x8218D_6XGE.
+ * SMI 0 is MAC 0-23, SMI 2 is MAC 24-47, and the SFP+ cages are
+ * MAC 48/50/52/53 on SerDes 8-11. SerDes 12 and 13 are not fitted.
+ * All 48 copper PHYs answered as RTL8218D, ID 0x001cc983 rev 1,
+ * in XSGMII. lan1 linked at 1 Gbit/s. Cage I2C, the PSE, the fans
+ * and the front-panel GPIO were not in that profile. Pins probed
+ * on the RTL9301 28X are not copied.
+ *
+ * Both environment partitions read back as 0xff. The ethaddr built
+ * into U-Boot is 00:e0:4c:00:00:00, and the ethernet driver kept
+ * that address. This NOR image has no label-MAC cell.
  */
 / {
 	compatible = "d-link,dgs-1250-52xmp", "realtek,rtl9311-soc";
@@ -22,15 +32,17 @@
 
 	aliases {
 		/*
-		 * No nvmem cell. The driver keeps U-Boot's MAC
-		 * registers when they hold a valid address.
+		 * No nvmem cell. On the board measured above the
+		 * switch MAC registers hold 00:e0:4c:00:00:00, the
+		 * ethaddr built into U-Boot, because both environment
+		 * partitions are erased.
 		 */
 		label-mac-device = &ethernet0;
 	};
 
 	memory@0 {
 		device_type = "memory";
-		/* Series datasheet: 256 MB DDR3 on every model. */
+		/* MemTotal 248456 kB on the measured board. */
 		reg = <0x00000000 0x10000000>;
 	};
 
@@ -62,6 +74,7 @@
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
+		/* JEDEC c2 20 1a, Macronix. */
 		reg = <0>;
 		spi-max-frequency = <10000000>;
 
@@ -255,10 +268,11 @@
 		SWITCH_PORT_LED(47, 48, 7, 7, 0, usxgmii)
 
 		/*
-		 * Cage detect, LOS and TX disable are not in the
-		 * profile, so these ports have no sfp node yet.
-		 * phy-mode matches the other RTL931x SFP+ ports;
-		 * the profile programs the SerDes as 10GBASE-R.
+		 * The four SFP+ cages are mapped to front-panel 49-52 by
+		 * EEPROM probe. Each port reads its module over the
+		 * i2c@1024 channel named by its sfp node. LOS, mod-def0 and
+		 * tx-disable GPIOs are not known, so the sfp nodes carry
+		 * only i2c-bus. Phylink takes the link mode from the module.
 		 */
 		port@48 {
 			reg = <48>;
@@ -266,6 +280,7 @@
 			led-set = <1>;
 			pcs-handle = <&serdes8 0>;
 			phy-mode = "1000base-x";
+			sfp = <&sfp_p50>;
 			managed = "in-band-status";
 		};
 
@@ -275,6 +290,7 @@
 			led-set = <1>;
 			pcs-handle = <&serdes9 0>;
 			phy-mode = "1000base-x";
+			sfp = <&sfp_p49>;
 			managed = "in-band-status";
 		};
 
@@ -284,6 +300,7 @@
 			led-set = <1>;
 			pcs-handle = <&serdes10 0>;
 			phy-mode = "1000base-x";
+			sfp = <&sfp_p52>;
 			managed = "in-band-status";
 		};
 
@@ -293,6 +310,7 @@
 			led-set = <1>;
 			pcs-handle = <&serdes11 0>;
 			phy-mode = "1000base-x";
+			sfp = <&sfp_p51>;
 			managed = "in-band-status";
 		};
 
@@ -308,11 +326,38 @@
 	};
 };
 
-&serdes8 {
-	tx-polarity = <PHY_POL_INVERT>;
+/ {
+	sfp_p49: sfp-p49 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp49>;
+	};
+
+	sfp_p50: sfp-p50 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp50>;
+	};
+
+	sfp_p51: sfp-p51 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp51>;
+	};
+
+	sfp_p52: sfp-p52 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp52>;
+	};
 };
 
-&serdes9 {
+&i2c_mst2 {
+	status = "okay";
+
+	i2c_sfp49: i2c@2 { reg = <2>; };
+	i2c_sfp50: i2c@3 { reg = <3>; };
+	i2c_sfp51: i2c@4 { reg = <4>; };
+	i2c_sfp52: i2c@5 { reg = <5>; };
+};
+
+&serdes8 {
 	tx-polarity = <PHY_POL_INVERT>;
 };
 
@@ -322,4 +367,13 @@
 
 &serdes11 {
 	tx-polarity = <PHY_POL_INVERT>;
+};
+
+/*
+ * Clear MAC_L2_GLOBAL_CTRL2 JTAG_SEL (bit 15, 0x1b001358) so GPIO 3-7 are
+ * GPIO lines rather than the JTAG controller.
+ */
+&gpio0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinmux_disable_jtag>;
 };
