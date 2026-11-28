@@ -12,6 +12,9 @@ ubnt,erlite|\
 ubnt,usg)
 	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
 	;;
+paloaltonetworks,pa-220)
+	ucidef_set_interface_lan "mgt eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8"
+	;;
 ubnt,edgerouter-4)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "lan0"
 	;;

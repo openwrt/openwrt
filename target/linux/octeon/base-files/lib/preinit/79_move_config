@@ -25,6 +25,9 @@ octeon_move_config() {
 	. /lib/functions.sh
 
 	case "$(board_name)" in
+		paloaltonetworks,pa-220)
+			[ -b /dev/mmcblk0p3 ] || move_config "/dev/mmcblk0p1" "ext3"
+			;;
 		ubnt,erlite|\
 		ubnt,usg)
 			move_config "/dev/sda1" "vfat"
