@@ -1,0 +1,108 @@
+From 4b60e959013f5cc14311653a52a72bdeca2796e2 Mon Sep 17 00:00:00 2001
+From: Sven Ulland <sven.ulland@gmail.com>
+Date: Thu, 19 Nov 2026 17:48:41 +0100
+Subject: [PATCH] watchdog: gpio: Keep GPIO level when taking over a running
+ watchdog
+
+For a watchdog with the always-running property, the driver takes over
+at probe: it requests a toggle GPIO as input, and gpio_wdt_start()
+then drives it low and toggles it. These level changes happen within
+microseconds, and a watchdog that needs hw-min-interval-ms resets the
+system when pinged that fast, so taking over from the bootloader can
+trigger a reset.
+
+The Aruba AP-305 access point (Qualcomm IPQ4029) has an external
+watchdog that resets the board when its GPIO is toggled every 6 ms or
+faster. Even with hw-min-interval-ms set to 100 ms, 7 of 10 boots
+started from the bootloader still reset within two seconds of the kernel
+starting.
+
+If the watchdog has both always-running and hw-min-interval-ms, request
+the GPIO as is and keep its current level. The watchdog core then sends
+the first ping once the minimum interval has passed. Other watchdogs are
+unaffected.
+
+Tested on the Aruba AP-305 with this change backported to Linux 6.18,
+and 10 of 10 boots survived.
+
+Signed-off-by: Sven Ulland <sven.ulland@gmail.com>
+Link: https://patch.msgid.link/20261119164841.1847870-1-sven.ulland@gmail.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/watchdog/gpio_wdt.c | 31 +++++++++++++++++++++++++++----
+ 1 file changed, 27 insertions(+), 4 deletions(-)
+
+--- a/drivers/watchdog/gpio_wdt.c
++++ b/drivers/watchdog/gpio_wdt.c
+@@ -78,6 +78,20 @@ static int gpio_wdt_start(struct watchdo
+ 	return gpio_wdt_ping(wdd);
+ }
+ 
++/* Take over a running watchdog without changing the GPIO level */
++static int gpio_wdt_adopt(struct gpio_wdt_priv *priv)
++{
++	int level = gpiod_get_value_cansleep(priv->gpiod);
++
++	if (level < 0)
++		return level;
++
++	priv->state = level;
++	set_bit(WDOG_HW_RUNNING, &priv->wdd.status);
++
++	return gpiod_direction_output(priv->gpiod, priv->state);
++}
++
+ static int gpio_wdt_stop(struct watchdog_device *wdd)
+ {
+ 	struct gpio_wdt_priv *priv = watchdog_get_drvdata(wdd);
+@@ -111,6 +125,7 @@ static int gpio_wdt_probe(struct platfor
+ 	enum gpiod_flags gflags;
+ 	unsigned int hw_margin;
+ 	const char *algo;
++	bool adopt = false;
+ 	int ret;
+ 
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+@@ -119,12 +134,17 @@ static int gpio_wdt_probe(struct platfor
+ 
+ 	platform_set_drvdata(pdev, priv);
+ 
++	priv->always_running = device_property_read_bool(dev, "always-running");
++
+ 	ret = device_property_read_string(dev, "hw_algo", &algo);
+ 	if (ret)
+ 		return ret;
+ 	if (!strcmp(algo, "toggle")) {
+ 		priv->hw_algo = HW_ALGO_TOGGLE;
+-		gflags = GPIOD_IN;
++		/* Switching the GPIO to input could cause an edge */
++		adopt = priv->always_running &&
++			device_property_present(dev, "hw-min-interval-ms");
++		gflags = adopt ? GPIOD_ASIS : GPIOD_IN;
+ 	} else if (!strcmp(algo, "level")) {
+ 		priv->hw_algo = HW_ALGO_LEVEL;
+ 		gflags = GPIOD_OUT_LOW;
+@@ -153,8 +173,6 @@ static int gpio_wdt_probe(struct platfor
+ 			return -EINVAL;
+ 	}
+ 
+-	priv->always_running = device_property_read_bool(dev, "always-running");
+-
+ 	watchdog_set_drvdata(&priv->wdd, priv);
+ 
+ 	priv->wdd.info		= &gpio_wdt_ident;
+@@ -169,8 +187,13 @@ static int gpio_wdt_probe(struct platfor
+ 
+ 	watchdog_stop_on_reboot(&priv->wdd);
+ 
+-	if (priv->always_running)
++	if (adopt) {
++		ret = gpio_wdt_adopt(priv);
++		if (ret)
++			return ret;
++	} else if (priv->always_running) {
+ 		gpio_wdt_start(&priv->wdd);
++	}
+ 
+ 	return devm_watchdog_register_device(dev, &priv->wdd);
+ }

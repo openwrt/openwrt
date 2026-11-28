@@ -1,0 +1,49 @@
+From 8458645b282adb2754ef440767d1adef4a7b1fbb Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Fri, 16 Oct 2026 15:16:14 -0700
+Subject: [PATCH] dt-bindings: watchdog: gpio: Describe minimum heartbeat
+ intervals
+
+Some GPIO-controlled watchdogs require a minimum interval between input
+transitions. Add an optional hw-min-interval-ms property to describe this
+constraint, allowing the watchdog core to defer early keepalives.
+
+Also remove the 16-bit limit on hw_margin_ms. The generic GPIO driver has
+no hardware register imposing this limit, and its heartbeat interval is
+stored in an unsigned int. The MTX-1 watchdog has a nominal 100-second
+hardware timeout and requires at least 1.6 seconds between transitions.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+Link: https://patch.msgid.link/20261016221617.2223004-3-f.fainelli@gmail.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ .../devicetree/bindings/watchdog/linux,wdt-gpio.yaml  | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+--- a/Documentation/devicetree/bindings/watchdog/linux,wdt-gpio.yaml
++++ b/Documentation/devicetree/bindings/watchdog/linux,wdt-gpio.yaml
+@@ -36,7 +36,12 @@ properties:
+     description: Maximum time to reset watchdog circuit (milliseconds).
+     $ref: /schemas/types.yaml#/definitions/uint32
+     minimum: 2
+-    maximum: 65535
++
++  hw-min-interval-ms:
++    description:
++      Minimum time between watchdog resets in milliseconds. If omitted, the
++      watchdog can be reset at any time. Must be less than hw_margin_ms.
++    minimum: 1
+ 
+   always-running:
+     type: boolean
+@@ -64,5 +69,7 @@ examples:
+         compatible = "linux,wdt-gpio";
+         gpios = <&gpio3 9 GPIO_ACTIVE_LOW>;
+         hw_algo = "toggle";
+-        hw_margin_ms = <1600>;
++        hw_margin_ms = <100000>;
++        hw-min-interval-ms = <1600>;
++        always-running;
+     };
