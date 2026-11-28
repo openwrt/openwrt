@@ -1,0 +1,297 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+
+/dts-v1/;
+
+#include "en7528.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "D-Link R18";
+	compatible = "dlink,r18", "econet,en7528";
+
+	aliases {
+		serial0 = &uart;
+		label-mac-device = &gsw_port4;
+		led-boot = &led_power_orange;
+		led-failsafe = &led_power_orange;
+		led-running = &led_power_white;
+		led-upgrade = &led_power_orange;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key-reset {
+			label = "reset";
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		key-wps {
+			label = "wps";
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_white: led-0 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_orange: led-1 {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&pinctrl 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
+	};
+};
+
+/* pcie0: 14c3:7916, second host interface (hif2) of the MT7915 on pcie1 */
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&slot1 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		/*
+		 * Board EEPROM (from the stock rootfs file
+		 * /etc/Wireless/RT2860AP_AC/RT30xxEEPROM.bin), copied to
+		 * reservearea+0 at install time - see "wifi-cal".
+		 */
+		nvmem-cells = <&eeprom_wifi_cal_0>;
+		nvmem-cell-names = "eeprom";
+
+		band@0 {
+			/* 2.4 GHz; stock "MainSsid" MAC = base + 9 */
+			reg = <0>;
+			nvmem-cells = <&macaddr_odm 9>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			/* 5 GHz; stock BSSID = base + 6 */
+			reg = <1>;
+			nvmem-cells = <&macaddr_odm 6>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&gmac0 {
+	status = "okay";
+	nvmem-cells = <&macaddr_odm 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+};
+
+/* Socket labels verified on hardware; WAN = port 4 as in stock */
+&gsw_port1 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port4 {
+	label = "wan";
+	/* rating label MAC = base+1 (default SSID R18-BF81 uses it too) */
+	nvmem-cells = <&macaddr_odm 1>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&nand {
+	status = "okay";
+
+	/*
+	 * Bootloader BBT/BMT: reserve = 8% = 81 blocks (BBT "RAWB" @0x75e0000,
+	 * BMT @0x7fe0000), BBT checksum over 250 entries (bootram 0x83fdb72c).
+	 */
+	econet,bmt;
+	econet,bbt-table-size = <250>;
+	econet,assert-reserve-size = <81>;
+
+	/*
+	 * OpenWrt lives in slot A (tclinux); stock firmware stays untouched in
+	 * slot B (tclinux_slave) as fallback. Everything except slot A and the
+	 * benv boot flags is read-only.
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "romfile";
+			reg = <0x40000 0x40000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "tclinux";
+			reg = <0x80000 0x2d00000>;
+		};
+
+		/*
+		 * Nested inside of tclinux: HDR2 trx (kernel) padded to 8 MiB. The
+		 * bootloader reads both slots with a size derived from slot A's
+		 * kernel length, and stock kernels in slot B exceed 4 MiB.
+		 */
+		partition1@80000 {
+			label = "tclinux_kernel";
+			reg = <0x80000 0x800000>;
+		};
+
+		partition1@880000 {
+			label = "ubi";
+			reg = <0x880000 0x2500000>;
+		};
+
+		partition@2d80000 {
+			label = "tclinux_slave";
+			reg = <0x2d80000 0x2d00000>;
+			read-only;
+		};
+
+		partition@5a80000 {
+			label = "Config0";
+			reg = <0x5a80000 0x100000>;
+			read-only;
+		};
+
+		partition@5b80000 {
+			label = "Config1";
+			reg = <0x5b80000 0x100000>;
+			read-only;
+		};
+
+		partition@5c80000 {
+			label = "ODM";
+			reg = <0x5c80000 0x100000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* CSID TLV store; base MAC record value at 0x82 */
+				macaddr_odm: macaddr@82 {
+					compatible = "mac-base";
+					reg = <0x82 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		/* boot flags (CSID store), see en75_chboot */
+		partition@5d80000 {
+			label = "benv";
+			reg = <0x5d80000 0x100000>;
+		};
+
+		partition@5e80000 {
+			label = "mydlink";
+			reg = <0x5e80000 0x200000>;
+			read-only;
+		};
+
+		partition@6080000 {
+			label = "storage";
+			reg = <0x6080000 0x900000>;
+			read-only;
+		};
+
+		partition@6980000 {
+			label = "unused";
+			reg = <0x6980000 0x440000>;
+			read-only;
+		};
+
+		partition@6dc0000 {
+			label = "reservearea";
+			reg = <0x6dc0000 0x240000>;
+			read-only;
+		};
+
+		/*
+		 * Nested inside of reservearea: the stock Wi-Fi driver first
+		 * looks for its EEPROM at reservearea+0 (32 KiB), which is
+		 * blank on stock units. The EEPROM file from the stock rootfs
+		 * is written here once during installation.
+		 */
+		partition1@6dc0000 {
+			label = "wifi-cal";
+			reg = <0x6dc0000 0x20000>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_wifi_cal_0: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+			};
+		};
+	};
+};
