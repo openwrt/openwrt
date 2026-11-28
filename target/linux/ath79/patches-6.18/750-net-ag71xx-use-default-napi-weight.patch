@@ -1,0 +1,60 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Fri, 15 May 2026 19:04:57 -0700
+Subject: [PATCH] net: ag71xx: Use default NAPI weight
+
+Drop the custom NAPI weight and let netif_napi_add() use the core
+default.
+
+The old comment claimed larger weights wasted cycles and cache, but
+recent RX and TX path changes altered those tradeoffs. Keep the driver
+on the standard default unless measurements show a device-specific value
+is needed.
+
+iperf3:
+
+Before:
+
+[ ID][Role] Interval           Transfer     Bitrate         Retr
+[  5][TX-C]   0.00-10.00  sec   327 MBytes   274 Mbits/sec   31            sender
+[  5][TX-C]   0.00-10.00  sec   325 MBytes   273 Mbits/sec                  receiver
+[  7][RX-C]   0.00-10.00  sec   170 MBytes   143 Mbits/sec    0            sender
+[  7][RX-C]   0.00-10.00  sec   170 MBytes   143 Mbits/sec                  receiver
+
+After:
+
+[ ID][Role] Interval           Transfer     Bitrate         Retr
+[  5][TX-C]   0.00-10.00  sec   341 MBytes   286 Mbits/sec   30            sender
+[  5][TX-C]   0.00-10.00  sec   338 MBytes   284 Mbits/sec                  receiver
+[  7][RX-C]   0.00-10.00  sec   184 MBytes   154 Mbits/sec    0            sender
+[  7][RX-C]   0.00-10.00  sec   184 MBytes   154 Mbits/sec                  receiver
+
+Assisted-by: Codex:GPT-5.5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/ethernet/atheros/ag71xx.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -40,11 +40,6 @@
+ #include <linux/io.h>
+ #include <net/selftests.h>
+ 
+-/* For our NAPI weight bigger does *NOT* mean better - it means more
+- * D-cache misses and lots more wasted cycles than we'll ever
+- * possibly gain from saving instructions.
+- */
+-#define AG71XX_NAPI_WEIGHT	32
+ #define AG71XX_OOM_REFILL	(1 + HZ / 10)
+ 
+ #define AG71XX_INT_ERR	(AG71XX_INT_RX_BE | AG71XX_INT_TX_BE)
+@@ -1914,8 +1909,7 @@ static int ag71xx_probe(struct platform_
+ 		return err;
+ 	}
+ 
+-	netif_napi_add_weight(ndev, &ag->napi, ag71xx_poll,
+-			      AG71XX_NAPI_WEIGHT);
++	netif_napi_add(ndev, &ag->napi, ag71xx_poll);
+ 
+ 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, 0);
+ 
