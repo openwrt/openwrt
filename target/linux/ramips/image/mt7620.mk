@@ -993,7 +993,9 @@ define Device/phicomm_k2-v22.4
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := K2
   DEVICE_VARIANT:= v22.4 or older
-  DEVICE_PACKAGES := kmod-mt76x2
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-dsa-mt7620 -swconfig
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
   SUPPORTED_DEVICES += psg1218 psg1218a phicomm,psg1218a
 endef
 TARGET_DEVICES += phicomm_k2-v22.4
