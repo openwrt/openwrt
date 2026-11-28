@@ -18,9 +18,9 @@ Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
 
 --- a/arch/arm/mach-sunxi/Kconfig
 +++ b/arch/arm/mach-sunxi/Kconfig
-@@ -899,6 +899,12 @@ config UART0_PORT_F
- 	at the same time, the system can be only booted in the FEL mode.
- 	Only enable this if you really know what you are doing.
+@@ -912,6 +912,12 @@ config UART0_PORT_F
+ 	  at the same time, the system can be only booted in the FEL mode.
+ 	  Only enable this if you really know what you are doing.
  
 +config UART3_PINS_PE
 +	bool "Pins for uart3 are on Port E"
@@ -30,7 +30,7 @@ Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
 +
  config OLD_SUNXI_KERNEL_COMPAT
  	bool "Enable workarounds for booting old kernels"
- 	---help---
+ 	help
 --- a/arch/arm/mach-sunxi/board.c
 +++ b/arch/arm/mach-sunxi/board.c
 @@ -178,16 +178,22 @@ static int gpio_init(void)
@@ -75,7 +75,7 @@ Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
  				function = "uart0";
 --- a/drivers/pinctrl/sunxi/pinctrl-sunxi.c
 +++ b/drivers/pinctrl/sunxi/pinctrl-sunxi.c
-@@ -614,7 +614,11 @@ static const struct sunxi_pinctrl_functi
+@@ -615,7 +615,11 @@ static const struct sunxi_pinctrl_functi
  #endif
  	{ "uart1",	2 },	/* PG6-PG7 */
  	{ "uart2",	7 },	/* PB0-PB1 */
