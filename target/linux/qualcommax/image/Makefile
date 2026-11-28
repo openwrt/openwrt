@@ -1,6 +1,11 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+ifeq ($(SUBTARGET),ipq50xx32)
+# Reuse the IPQ50xx SoC includes from the arm64 DTS directory.
+DTS_CPPFLAGS += -I$(LINUX_DIR)/arch/arm64/boot/dts/qcom
+endif
+
 define Device/Default
 	PROFILES := Default
 	KERNEL_LOADADDR := 0x41000000
