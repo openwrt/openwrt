@@ -65,8 +65,20 @@ start_relay() {
 		procd_append_param command -I "$ifn"
 		procd_append_param netdev "$ifn"
 	done
+
 	local ipaddr
 	config_get ipaddr "$cfg" ipaddr
+	if [ -z "$ipaddr" ]; then
+		. /lib/functions/network.sh
+		network_flush_cache
+		for net in $networks; do
+			config_get proto "$net" proto
+			if [ "$proto" = "dhcp" ]; then
+				network_get_ipaddr ipaddr "$net"
+				[ -n "$ipaddr" ] && break
+			fi
+		done
+	fi
 	[ -n "$ipaddr" ] && procd_append_param command -L "$ipaddr"
 
 	local gateway
