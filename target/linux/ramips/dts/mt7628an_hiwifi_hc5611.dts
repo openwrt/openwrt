@@ -32,6 +32,16 @@
 	};
 };
 
+/*
+ * All MAC addresses are derived from the label MAC. label + 1 is reserved
+ * for the wan address, derive label + 2 for the radio so that it does not
+ * share its MAC with the single ethernet port.
+ */
+&wmac {
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_bdinfo_18a 2>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
 &state_default {
 	gpio {
 		groups = "gpio", "spi cs1", "wdt";
