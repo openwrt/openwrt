@@ -51,6 +51,15 @@ apk = \
 	--no-logfile \
 	--preserve-env
 
+ifneq ($(CONFIG_USE_APK),)
+  package_manifest = \
+	$(call apk,$(1)) query --no-network --repositories-file /dev/null \
+		--format json --fields name,version,$(if $(2),tags) --installed '*' | \
+	$(SCRIPT_DIR)/make-index-json.py -a $(ARCH_PACKAGES) -f apk --manifest -
+else
+  package_manifest = $(call opkg,$(1)) list-installed $(if $(2),--strip-abi)
+endif
+
 TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
 
 ifdef CONFIG_CLEAN_IPKG
