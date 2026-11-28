@@ -1,0 +1,504 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "mikrotik,routerboard-953gs-5hnt", "qca,qca9558";
+	model = "MikroTik RouterBOARD 953GS-5HnT";
+
+	aliases {
+		led-boot = &led_user;
+		led-failsafe = &led_user;
+		led-upgrade = &led_user;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_user: user {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "user";
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+
+		led1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "led1";
+			gpios = <&ssr 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "led2";
+			gpios = <&ssr 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "led3";
+			gpios = <&ssr 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "led4";
+			gpios = <&ssr 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "led5";
+			gpios = <&ssr 8 GPIO_ACTIVE_LOW>;
+		};
+
+		sfp2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sfp2";
+			gpios = <&ssr 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	reg_usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&ssr 12 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	/* 74HC595 that only shifts while the SPI flash is selected */
+	ssr: gpio-ssr {
+		compatible = "mikrotik,gpio-ssr";
+		gpio-controller;
+		#gpio-cells = <2>;
+		mikrotik,spi-flash = <&spi_flash>;
+		strobe-gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		registers-number = <2>;
+		/* Vendor default 0x0c00: both miniPCIe slots powered */
+		registers-default = /bits/ 8 <0x0c 0x00>;
+	};
+
+	/* Passive piezo buzzer */
+	beeper {
+		compatible = "openwrt,gpio-tone-beeper";
+		gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+	};
+
+	/*
+	 * Input voltage and PCB temperature, measured by a 555 timer. The
+	 * tables map the low time fraction (x100000) to mV and m°C; they
+	 * are the ones RouterOS uses for this board.
+	 */
+	health {
+		compatible = "mikrotik,555-health-monitor";
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		mux-gpios = <&ssr 13 GPIO_ACTIVE_HIGH>;
+		nvmem-cells = <&hc_voltage_calibration>;
+		nvmem-cell-names = "calibration";
+		mikrotik,voltage-table =
+			<36215 8000>, <32789 12000>, <27880 18000>,
+			<23009 24000>, <19749 28000>, <16487 32000>,
+			<13226 36000>;
+		mikrotik,temperature-table =
+			<86772 (-20000)>, <85407 (-10000)>, <84158 (-5000)>,
+			<81250 0>, <74780 5000>, <69446 10000>,
+			<63640 20000>, <56921 30000>, <49313 40000>,
+			<43017 50000>, <37599 60000>, <34900 66000>,
+			<32960 72000>, <30844 80000>, <29210 90000>,
+			<25632 102000>;
+	};
+
+	i2c: i2c {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&gpio 18 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 19 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <5>;
+		i2c-gpio,timeout-ms = <1>;
+	};
+
+	/* Both SFP cages share the i2c bus through a mux on SSR bit 2 */
+	i2c-mux {
+		compatible = "i2c-mux-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		i2c-parent = <&i2c>;
+		mux-gpios = <&ssr 2 GPIO_ACTIVE_HIGH>;
+
+		i2c_sfp2: i2c@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c_sfp1: i2c@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+
+	/* SFP1 cage (left), on switch port 6 */
+	sfp1: sfp1 {
+		compatible = "sff,sfp";
+
+		i2c-bus = <&i2c_sfp1>;
+		maximum-power-milliwatt = <1000>;
+		mod-def0-gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+	};
+
+	/* SFP2 cage (right), on the SoC GMAC1 */
+	sfp2: sfp2 {
+		compatible = "sff,sfp";
+
+		i2c-bus = <&i2c_sfp2>;
+		maximum-power-milliwatt = <1000>;
+		mod-def0-gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&gpio {
+	/* NAND chip enable, also shared with the RouterOS reset pin hole */
+	nand-nce-hog {
+		gpio-hog;
+		gpios = <23 GPIO_ACTIVE_LOW>;
+		output-high;
+		line-name = "nand-nce";
+	};
+};
+
+&spi {
+	status = "okay";
+
+	spi_flash: flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "mikrotik,routerboot-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "routerboot";
+				reg = <0x0 0x0>;
+				read-only;
+			};
+
+			hard_config {
+				read-only;
+
+				nvmem-layout {
+					compatible = "mikrotik,routerboot-nvmem";
+
+					hc_voltage_calibration: voltage-calibration {
+					};
+				};
+			};
+
+			bios {
+				size = <0x1000>;
+				read-only;
+			};
+
+			soft_config {
+			};
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	nand-ecc-mode = "soft";
+	nand-ecc-step-size = <2048>;
+	qca,nand-swap-dma;
+	qca,nand-scan-fixup;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "booter";
+			reg = <0x0000000 0x0040000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "kernel";
+			reg = <0x0040000 0x03c0000>;
+		};
+
+		partition@400000 {
+			label = "ubi";
+			reg = <0x0400000 0x7c00000>;
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy_port1: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	phy_port2: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	phy_port3: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	phy_port4: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	phy_port5: ethernet-phy@4 {
+		reg = <4>;
+	};
+
+	ethernet-switch@10 {
+		compatible = "qca,qca8327";
+		reg = <0x10>;
+
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-port@0 {
+				reg = <0>;
+				ethernet = <&eth0>;
+				phy-mode = "rgmii-id";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			ethernet-port@1 {
+				reg = <1>;
+				label = "ether1";
+				phy-handle = <&phy_port1>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = "ether1";
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_ORANGE>;
+						function = "ether1";
+						default-state = "keep";
+					};
+				};
+			};
+
+			ethernet-port@2 {
+				reg = <2>;
+				label = "ether2";
+				phy-handle = <&phy_port2>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = "ether2";
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_ORANGE>;
+						function = "ether2";
+						default-state = "keep";
+					};
+				};
+			};
+
+			ethernet-port@3 {
+				reg = <3>;
+				label = "ether3";
+				phy-handle = <&phy_port3>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = "ether3";
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_ORANGE>;
+						function = "ether3";
+						default-state = "keep";
+					};
+				};
+			};
+
+			/* PHY3 and PHY4 have no connector, but their LED pins
+			 * power the SFP1 cage and drive an SFP LED. The ports
+			 * must be enabled for qca8k to register the LEDs.
+			 */
+			ethernet-port@4 {
+				reg = <4>;
+				label = "unused1";
+				phy-handle = <&phy_port4>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@2 {
+						reg = <2>;
+						function = "sfp1-power";
+						default-state = "on";
+					};
+				};
+			};
+
+			ethernet-port@5 {
+				reg = <5>;
+				label = "unused2";
+				phy-handle = <&phy_port5>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@2 {
+						reg = <2>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = "sfp1";
+					};
+				};
+			};
+
+			ethernet-port@6 {
+				reg = <6>;
+				label = "sfp1";
+				phy-mode = "1000base-x";
+				managed = "in-band-status";
+				sfp = <&sfp1>;
+			};
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-mode = "rgmii";
+	/* gigabit pll-data as set by RouterBOOT
+	 * TX_INVERT, RX_DELAY=3, TX_DELAY=3, GIGE
+	 */
+	pll-data = <0xbe000000 0x00000101 0x00001616>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-enabled = <1>;
+	};
+};
+
+&mdio1 {
+	status = "okay";
+
+	phy_sfp: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "sgmii";
+		sfp = <&sfp2>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+
+	openwrt,netdev-name = "sfp2";
+
+	phy-handle = <&phy_sfp>;
+	pll-data = <0x03000000 0x00000101 0x00001616>;
+	qca955x-sgmii-fixup;
+
+	gmac-config {
+		device = <&gmac>;
+	};
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	qca,no-eeprom;
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb_phy0 {
+	status = "okay";
+
+	phy-supply = <&reg_usb_vbus>;
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&usb_phy1 {
+	status = "okay";
+};

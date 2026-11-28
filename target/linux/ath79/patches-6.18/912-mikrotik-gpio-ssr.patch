@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Santiago Hormazabal <santiagohssl@gmail.com>
+Date: Tue, 20 Oct 2026 00:00:00 +0000
+Subject: [PATCH] ath79: add MikroTik SPI shift register GPIO driver
+
+Some RouterBOARDs, such as the RB953GS, drive their LEDs and the USB and
+miniPCIe power switches from a 74HC595 that shares the SPI bus with the
+boot flash and only shifts while the flash is selected.
+
+Signed-off-by: Santiago Hormazabal <santiagohssl@gmail.com>
+---
+ drivers/gpio/Kconfig  | 8 ++++++++
+ drivers/gpio/Makefile | 1 +
+ 2 files changed, 9 insertions(+)
+
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -593,6 +593,14 @@ config GPIO_RB91X_KEY
+ 	tristate "MikroTik RB91x board series reset key support"
+ 	depends on ATH79
+ 
++config GPIO_SSR_MIKROTIK
++	tristate "MikroTik RouterBOARD SPI shift register support"
++	depends on ATH79 && SPI
++	help
++	  GPIO driver for the 74HC595 shift register that shares the SPI
++	  bus with the boot flash on some MikroTik RouterBOARDs, such as
++	  the RB953GS.
++
+ config GPIO_RCAR
+ 	tristate "Renesas R-Car and RZ/G GPIO support"
+ 	depends on ARCH_RENESAS || COMPILE_TEST
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -151,6 +151,7 @@ obj-$(CONFIG_GPIO_PXA)			+= gpio-pxa.o
+ obj-$(CONFIG_GPIO_RASPBERRYPI_EXP)	+= gpio-raspberrypi-exp.o
+ obj-$(CONFIG_GPIO_RB4XX)		+= gpio-rb4xx.o
+ obj-$(CONFIG_GPIO_RB91X_KEY)		+= gpio-rb91x-key.o
++obj-$(CONFIG_GPIO_SSR_MIKROTIK)		+= gpio-ssr-mikrotik.o
+ obj-$(CONFIG_GPIO_RC5T583)		+= gpio-rc5t583.o
+ obj-$(CONFIG_GPIO_RCAR)			+= gpio-rcar.o
+ obj-$(CONFIG_GPIO_RDA)			+= gpio-rda.o

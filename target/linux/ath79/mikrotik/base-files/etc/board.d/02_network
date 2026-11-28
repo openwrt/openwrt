@@ -47,6 +47,9 @@ ath79_setup_interfaces()
 	mikrotik,routerboard-map-2nd)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
+	mikrotik,routerboard-953gs-5hnt)
+		ucidef_set_interfaces_lan_wan "ether2 ether3 sfp1 sfp2" "ether1"
+		;;
 	mikrotik,routerboard-960pgs)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "eth1 lan1"
 		;;
@@ -91,6 +94,14 @@ ath79_setup_macs()
 		label_mac="$mac_base"
 		lan_mac="$mac_base"
 		wan_mac=$(macaddr_add $mac_base 1)
+		;;
+	mikrotik,routerboard-953gs-5hnt)
+		label_mac="$mac_base"
+		ucidef_set_network_device_mac "ether1" "$mac_base"
+		ucidef_set_network_device_mac "ether2" "$(macaddr_add $mac_base 1)"
+		ucidef_set_network_device_mac "ether3" "$(macaddr_add $mac_base 2)"
+		ucidef_set_network_device_mac "sfp1" "$(macaddr_add $mac_base 3)"
+		ucidef_set_network_device_mac "sfp2" "$(macaddr_add $mac_base 4)"
 		;;
 	mikrotik,routerboard-960pgs)
 		label_mac=$mac_base
