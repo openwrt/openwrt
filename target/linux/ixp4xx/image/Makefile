@@ -48,7 +48,7 @@ define Device/Default
 	FILESYSTEMS/rootfs.bin := squashfs
 	# The ext4 root file system goes on an external hard drive
 	FILESYSTEMS/rootfs.bin.gz := ext4
-	IMAGE/rootfs.bin.gz := append-rootfs | pad-rootfs | pad-to 128k | gzip
+	IMAGE/rootfs.bin.gz := append-rootfs | pad-rootfs | pad-to 128k | libdeflate-gzip
 endef
 
 define Device/actiontec_mi424wr_ac

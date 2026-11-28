@@ -33,7 +33,7 @@ define Device/Default
   KERNEL_NAME := Image
   KERNEL = kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := riscv-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := riscv-sdcard | append-metadata | libdeflate-gzip
 endef
 
 define Device/sifive_unleashed

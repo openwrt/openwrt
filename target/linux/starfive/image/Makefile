@@ -42,7 +42,7 @@ define Device/Default
   KERNEL_INITRAMFS_SUFFIX := .itb
   KERNEL_INITRAMFS = kernel-bin | fit none $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr-jh7110 | riscv-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := boot-scr-jh7110 | riscv-sdcard | append-metadata | libdeflate-gzip
 endef
 
 define Device/JH7100
@@ -54,7 +54,7 @@ define Device/JH7100
   KERNEL_INITRAMFS_SUFFIX := .itb
   KERNEL_INITRAMFS = kernel-bin | fit none $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr-jh7100 | riscv-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := boot-scr-jh7100 | riscv-sdcard | append-metadata | libdeflate-gzip
 endef
 
 define Device/visionfive2-v1.2a

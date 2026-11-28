@@ -47,13 +47,13 @@ define Device/microchip_ev23x71a
 	IMAGE/emmc-atf-gpt.gz := lan969x-gpt-emmc |\
 		pad-to 1M | lan969x-fip ev23x71a |\
 		pad-to 9M | lan969x-fip ev23x71a |\
-		gzip
+		libdeflate-gzip
 	IMAGE/emmc-gpt.img.gz := lan969x-gpt-emmc flash |\
 		pad-to 1M | lan969x-fip ev23x71a |\
 		pad-to 9M | lan969x-fip ev23x71a |\
 		pad-to 19M | append-kernel-part |\
 		append-rootfs |\
-		gzip
+		libdeflate-gzip
 endef
 TARGET_DEVICES += microchip_ev23x71a
 
@@ -66,17 +66,17 @@ define Device/novarq_tactical-1000
 		kmod-gpio-pwm kmod-hwmon-pwmfan kmod-hwmon-gpiofan \
 		kmod-rtc-ds1307 kmod-hwmon-lm75
 	IMAGES += emmc-gpt-table.gz emmc-atf-gpt.gz emmc-gpt.img.gz
-	IMAGE/emmc-gpt-table.gz := tactical-1000-gpt-emmc | gzip
+	IMAGE/emmc-gpt-table.gz := tactical-1000-gpt-emmc | libdeflate-gzip
 	IMAGE/emmc-atf-gpt.gz := tactical-1000-gpt-emmc |\
 		pad-to 1M | lan969x-fip tactical-1000 |\
 		pad-to 129M | lan969x-fip tactical-1000 |\
-		gzip
+		libdeflate-gzip
 	IMAGE/emmc-gpt.img.gz := tactical-1000-gpt-emmc flash |\
 		pad-to 1M | lan969x-fip tactical-1000 |\
 		pad-to 129M | lan969x-fip tactical-1000 |\
 		pad-to 259M | append-kernel-part |\
 		append-rootfs |\
-		gzip
+		libdeflate-gzip
 	SUPPORTED_DEVICES += novarq,tactical-1000-v3
 endef
 TARGET_DEVICES += novarq_tactical-1000
