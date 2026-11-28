@@ -228,6 +228,17 @@ platform_do_upgrade() {
 	netgear,srs60)
 		platform_do_upgrade_netgear_orbi_upgrade "$1"
 		;;
+	netgear,rbs40v)
+		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
+		if [ "$part" = "rootfs" ]; then
+			fw_setenv mode_flag 2 || exit 1
+			CI_UBIPART="rootfs_ALT"
+		else
+			fw_setenv mode_flag 1 || exit 1
+			CI_UBIPART="rootfs"
+		fi
+		nand_do_upgrade "$1"
+		;;
 	openmesh,a42|\
 	openmesh,a62|\
 	plasmacloud,pa1200|\
