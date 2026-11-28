@@ -1,0 +1,40 @@
+From af5cc1ff74d861578e466a6e8efeb2a8f6b07b3f Mon Sep 17 00:00:00 2001
+From: Bruno Banelli <bbanelli@gmail.com>
+Date: Tue, 25 Aug 2026 08:50:06 +0200
+Subject: [PATCH] phy: spacemit: fix K1 USB 2.0 PHY Kconfig dependencies
+
+phy-k1-usb2.c maps its registers with devm_platform_ioremap_resource()
+and wraps them with devm_regmap_init_mmio(), but PHY_SPACEMIT_K1_USB2
+neither depends on HAS_IOMEM nor selects REGMAP_MMIO.
+
+REGMAP_MMIO has no prompt and can only be enabled by select, so a
+configuration that leaves it off fails to link.  In practice the symbol
+is usually pulled in indirectly, which is why this has gone unnoticed.
+
+PHY_SPACEMIT_K1_PCIE, directly above it in the same file, already has
+the HAS_IOMEM dependency; without it PHY_SPACEMIT_K1_USB2 can be built
+under COMPILE_TEST on architectures that provide no I/O memory.
+
+Fixes: fe4bc1a08638 ("phy: spacemit: support K1 USB2.0 PHY controller")
+Signed-off-by: Bruno Banelli <bbanelli@gmail.com>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260825065007.69353-2-bbanelli@gmail.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+(cherry picked from commit 882af55e42a4cd5bd61db0244c0b78941884518a)
+---
+ drivers/phy/spacemit/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/phy/spacemit/Kconfig
++++ b/drivers/phy/spacemit/Kconfig
+@@ -6,8 +6,10 @@ config PHY_SPACEMIT_K1_USB2
+ 	tristate "SpacemiT K1 USB 2.0 PHY support"
+ 	depends on (ARCH_SPACEMIT || COMPILE_TEST) && OF
+ 	depends on COMMON_CLK
++	depends on HAS_IOMEM
+ 	depends on USB_COMMON
+ 	select GENERIC_PHY
++	select REGMAP_MMIO
+ 	help
+ 	  Enable this to support K1 USB 2.0 PHY driver. This driver takes care of
+ 	  enabling and clock setup and will be used by K1 udc/ehci/otg/xhci driver.
