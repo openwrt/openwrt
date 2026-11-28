@@ -53,8 +53,11 @@
  * For now it should be sufficient.
  */
 
+#include <linux/bitfield.h>
+#include <linux/delay.h>
 #include <linux/fwnode.h>
 #include <linux/fwnode_mdio.h>
+#include <linux/iopoll.h>
 #include <linux/mfd/syscon.h>
 #include <linux/of.h>
 #include <linux/of_mdio.h>
@@ -95,6 +98,23 @@
 #define RTMD_PHY_RTL8261			0x001ccaf3
 #define RTMD_PHY_RTL8264			0x001ccaf2
 #define RTMD_PHY_RTL8264B			0x001cc813
+
+/*
+ * RTL8214QF pairs share one XSGMII SerDes: only the master connects to the switch, the slave
+ * reaches it through the master (slave SerDes S0 to master S1). Register 21 in page 7 of a SerDes
+ * (S0 pages 0x1xx, S1 0x3xx) reports which XSGMII channels are in sync.
+ */
+#define RTMD_RTL8214QF_CHIP_MODE		17
+#define   RTMD_RTL8214QF_CHIP_MODE_MASK		GENMASK(3, 0)
+#define   RTMD_RTL8214QF_CHIP_MODE_SLAVE	0xb
+#define RTMD_RTL8214QF_S0_STATUS_PAGE		0x107
+#define RTMD_RTL8214QF_S1_STATUS_PAGE		0x307
+#define RTMD_RTL8214QF_SDS_STATUS		21
+#define   RTMD_RTL8214QF_SDS_STATUS_SYNC	GENMASK(8, 0)
+
+#define RTMD_EXT_PHY_RESET_TRIES		5
+#define RTMD_EXT_PHY_READY_TIMEOUT_MS		2000
+#define RTMD_EXT_PHY_READY_POLL_MS		50
 
 #define RTMD_PHY_MAC_1G				3
 #define RTMD_PHY_MAC_2G_PLUS			1
@@ -169,6 +189,11 @@
 #define RTMD_930X_SMI_10G_POLLING_REG10_CFG	0xcbbc
 #define RTMD_930X_SMI_PORT0_5_ADDR_CTRL	0xcb80
 
+/* External PHY reset as done by the vendor SDK, which also gives the bit names */
+#define RTMD_930X_RST_GLB_CTRL_0		0x000c
+#define   RTMD_930X_EXT_PHY_RST_CTRL		BIT(9)
+#define   RTMD_930X_EXT_PHY_RST			BIT(10)
+
 #define RTMD_931X_SMI_PORT_POLLING_CTRL		0x0ccc
 #define RTMD_931X_SMI_INDRT_ACCESS_BC		0x0c14
 #define   RTMD_931X_SMI_INDRT_PORT(pn)		((pn) << 5)
@@ -221,6 +246,7 @@ struct rtmd_bus {
 };
 
 struct rtmd_ctrl {
+	struct device *dev;
 	struct mutex lock; /* protect HW access */
 	struct regmap *map;
 	const struct rtmd_config *cfg;
@@ -256,12 +282,13 @@ struct rtmd_config {
 	u16 num_ports;
 	u32 poll_ctrl;
 	int port_map_base;
-	int (*read_c22)(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val);
-	int (*read_c45)(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 *val);
+	int (*read_c22)(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val);
+	int (*read_c45)(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 *val);
+	int (*reset_ext_phys)(struct rtmd_ctrl *ctrl);
 	int (*setup_ctrl)(struct rtmd_ctrl *ctrl);
 	int (*setup_polling)(struct rtmd_ctrl *ctrl);
-	int (*write_c22)(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val);
-	int (*write_c45)(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 val);
+	int (*write_c22)(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 val);
+	int (*write_c45)(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 val);
 };
 
 struct rtmd_phy_info {
@@ -286,10 +313,9 @@ static int rtmd_phy_to_port(struct mii_bus *bus, int phy)
 	return chan->port[phy];
 }
 
-static int rtmd_run_cmd(struct mii_bus *bus, u32 cmd,
+static int rtmd_run_cmd(struct rtmd_ctrl *ctrl, u32 cmd,
 			struct rtmd_command_data *cmd_data, u32 *val)
 {
-	struct rtmd_ctrl *ctrl = rtmd_bus_to_ctrl(bus);
 	u32 cmdstate;
 	int ret;
 
@@ -331,12 +357,12 @@ static int rtmd_run_cmd(struct mii_bus *bus, u32 cmd,
 	ret = regmap_read_poll_timeout(ctrl->map, ctrl->cfg->cmd_regs.c22_adr,
 				       cmdstate, !(cmdstate & RTMD_RUN), 20, 500000);
 	if (ret) {
-		dev_warn_once(&bus->dev, "access timed out\n");
+		dev_warn_once(ctrl->dev, "access timed out\n");
 		return ret;
 	}
 
 	if (cmdstate & ctrl->cfg->cmd_fail) {
-		dev_warn_once(&bus->dev, "access failed\n");
+		dev_warn_once(ctrl->dev, "access failed\n");
 		return -EIO;
 	}
 
@@ -351,17 +377,17 @@ static int rtmd_run_cmd(struct mii_bus *bus, u32 cmd,
 	return ret;
 }
 
-static int rtmd_838x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val)
+static int rtmd_838x_read_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_838X_C22_DATA(page, reg),
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_838X_CMD_READ_C22, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_838X_CMD_READ_C22, &cmd_data, val);
 }
 
-static int rtmd_838x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val)
+static int rtmd_838x_write_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_838X_C22_DATA(page, reg),
@@ -369,20 +395,20 @@ static int rtmd_838x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u
 		.mask_lo = BIT(pn),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_838X_CMD_WRITE_C22, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_838X_CMD_WRITE_C22, &cmd_data, NULL);
 }
 
-static int rtmd_838x_read_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 *val)
+static int rtmd_838x_read_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_838X_CMD_READ_C45, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_838X_CMD_READ_C45, &cmd_data, val);
 }
 
-static int rtmd_838x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 val)
+static int rtmd_838x_write_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
@@ -390,10 +416,10 @@ static int rtmd_838x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 		.mask_lo = BIT(pn),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_838X_CMD_WRITE_C45, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_838X_CMD_WRITE_C45, &cmd_data, NULL);
 }
 
-static int rtmd_839x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val)
+static int rtmd_839x_read_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_839X_C22_DATA(page, reg),
@@ -401,10 +427,10 @@ static int rtmd_839x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u3
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_839X_CMD_READ_C22, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_839X_CMD_READ_C22, &cmd_data, val);
 }
 
-static int rtmd_839x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val)
+static int rtmd_839x_write_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_839X_C22_DATA(page, reg),
@@ -414,20 +440,20 @@ static int rtmd_839x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u
 		.mask_hi = (u32)(BIT_ULL(pn) >> 32),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_839X_CMD_WRITE_C22, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_839X_CMD_WRITE_C22, &cmd_data, NULL);
 }
 
-static int rtmd_839x_read_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 *val)
+static int rtmd_839x_read_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_839X_CMD_READ_C45, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_839X_CMD_READ_C45, &cmd_data, val);
 }
 
-static int rtmd_839x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 val)
+static int rtmd_839x_write_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
@@ -436,20 +462,20 @@ static int rtmd_839x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 		.mask_hi = (u32)(BIT_ULL(pn) >> 32),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_839X_CMD_WRITE_C45, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_839X_CMD_WRITE_C45, &cmd_data, NULL);
 }
 
-static int rtmd_930x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val)
+static int rtmd_930x_read_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_930X_C22_DATA(page, reg),
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_930X_CMD_READ_C22, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_930X_CMD_READ_C22, &cmd_data, val);
 }
 
-static int rtmd_930x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val)
+static int rtmd_930x_write_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_930X_C22_DATA(page, reg),
@@ -457,20 +483,20 @@ static int rtmd_930x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u
 		.mask_lo = BIT(pn),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_930X_CMD_WRITE_C22, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_930X_CMD_WRITE_C22, &cmd_data, NULL);
 }
 
-static int rtmd_930x_read_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 *val)
+static int rtmd_930x_read_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
 		.io_data = pn,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_930X_CMD_READ_C45, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_930X_CMD_READ_C45, &cmd_data, val);
 }
 
-static int rtmd_930x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 val)
+static int rtmd_930x_write_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
@@ -478,10 +504,10 @@ static int rtmd_930x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 		.mask_lo = BIT(pn),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_930X_CMD_WRITE_C45, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_930X_CMD_WRITE_C45, &cmd_data, NULL);
 }
 
-static int rtmd_931x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 *val)
+static int rtmd_931x_read_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.brdcast = RTMD_931X_SMI_INDRT_PORT(pn),
@@ -489,10 +515,10 @@ static int rtmd_931x_read_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u3
 		.ex_page = RTMD_931X_SMI_INDRT_SKIP_EXT_PAGE,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_931X_CMD_READ_C22, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_931X_CMD_READ_C22, &cmd_data, val);
 }
 
-static int rtmd_931x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u32 val)
+static int rtmd_931x_write_c22(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c22_adr = RTMD_931X_C22_DATA(page, reg),
@@ -502,20 +528,20 @@ static int rtmd_931x_write_c22(struct mii_bus *bus, u32 pn, u32 page, u32 reg, u
 		.io_data = val,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_931X_CMD_WRITE_C22, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_931X_CMD_WRITE_C22, &cmd_data, NULL);
 }
 
-static int rtmd_931x_read_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 *val)
+static int rtmd_931x_read_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 *val)
 {
 	struct rtmd_command_data cmd_data = {
 		.brdcast = RTMD_931X_SMI_INDRT_PORT(pn),
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
 	};
 
-	return rtmd_run_cmd(bus, RTMD_931X_CMD_READ_C45, &cmd_data, val);
+	return rtmd_run_cmd(ctrl, RTMD_931X_CMD_READ_C45, &cmd_data, val);
 }
 
-static int rtmd_931x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regnum, u32 val)
+static int rtmd_931x_write_c45(struct rtmd_ctrl *ctrl, u32 pn, u32 devnum, u32 regnum, u32 val)
 {
 	struct rtmd_command_data cmd_data = {
 		.c45_adr = RTMD_C45_DATA(devnum, regnum),
@@ -524,7 +550,7 @@ static int rtmd_931x_write_c45(struct mii_bus *bus, u32 pn, u32 devnum, u32 regn
 		.io_data = val,
 	};
 
-	return rtmd_run_cmd(bus, RTMD_931X_CMD_WRITE_C45, &cmd_data, NULL);
+	return rtmd_run_cmd(ctrl, RTMD_931X_CMD_WRITE_C45, &cmd_data, NULL);
 }
 
 static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
@@ -537,7 +563,7 @@ static int rtmd_read_c45(struct mii_bus *bus, int phy, int devnum, int regnum)
 		return -ENOENT;
 
 	scoped_guard(mutex, &ctrl->lock)
-		ret = (*ctrl->cfg->read_c45)(bus, pn, devnum, regnum, &val);
+		ret = (*ctrl->cfg->read_c45)(ctrl, pn, devnum, regnum, &val);
 
 	dev_dbg(&bus->dev, "rd_MMD(phy=0x%02x, dev=0x%04x, reg=0x%04x) = 0x%04x, ret = %d\n",
 		phy, devnum, regnum, val, ret);
@@ -561,7 +587,7 @@ static int rtmd_read_c22(struct mii_bus *bus, int phy, int regnum)
 			return page;
 
 		ctrl->port[pn].raw = (page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
-		ret = (*ctrl->cfg->read_c22)(bus, pn, page, regnum, &val);
+		ret = (*ctrl->cfg->read_c22)(ctrl, pn, page, regnum, &val);
 	}
 
 	dev_dbg(&bus->dev, "rd_PHY(phy=0x%02x, pag=0x%04x, reg=0x%04x) = 0x%04x, ret = %d\n",
@@ -580,7 +606,7 @@ static int rtmd_write_c45(struct mii_bus *bus, int phy, int devnum, int regnum, 
 		return -ENOENT;
 
 	scoped_guard(mutex, &ctrl->lock)
-		ret = (*ctrl->cfg->write_c45)(bus, pn, devnum, regnum, val);
+		ret = (*ctrl->cfg->write_c45)(ctrl, pn, devnum, regnum, val);
 	dev_dbg(&bus->dev, "wr_MMD(phy=0x%02x, dev=0x%04x, reg=0x%04x, val=0x%04x), ret = %d\n",
 		phy, devnum, regnum, val, ret);
 
@@ -608,7 +634,7 @@ static int rtmd_write_c22(struct mii_bus *bus, int phy, int regnum, u16 val)
 
 		if (do_write) {
 			ctrl->port[pn].raw = (page == RTMD_RAW_PAGE(ctrl->cfg->num_pages));
-			ret = (*ctrl->cfg->write_c22)(bus, pn, page, regnum, val);
+			ret = (*ctrl->cfg->write_c22)(ctrl, pn, page, regnum, val);
 		} else {
 			ctrl->port[pn].raw = false;
 		}
@@ -802,6 +828,27 @@ static int rtmd_839x_setup_polling(struct rtmd_ctrl *ctrl)
 	/* This is the only device that has a global polling enable bit */
 	return regmap_set_bits(ctrl->map, RTMD_839X_SMI_GLB_CTRL,
 			       RTMD_839X_SMI_GLB_MDX_POLLING_EN);
+}
+
+static int rtmd_930x_reset_ext_phys(struct rtmd_ctrl *ctrl)
+{
+	int ret;
+
+	ret = regmap_set_bits(ctrl->map, RTMD_930X_RST_GLB_CTRL_0, RTMD_930X_EXT_PHY_RST_CTRL);
+	if (ret)
+		return ret;
+
+	ret = regmap_set_bits(ctrl->map, RTMD_930X_RST_GLB_CTRL_0, RTMD_930X_EXT_PHY_RST);
+	if (ret)
+		return ret;
+
+	msleep(20);
+	ret = regmap_clear_bits(ctrl->map, RTMD_930X_RST_GLB_CTRL_0, RTMD_930X_EXT_PHY_RST);
+	if (ret)
+		return ret;
+
+	msleep(20);
+	return regmap_clear_bits(ctrl->map, RTMD_930X_RST_GLB_CTRL_0, RTMD_930X_EXT_PHY_RST_CTRL);
 }
 
 static int rtmd_930x_setup_ctrl(struct rtmd_ctrl *ctrl)
@@ -1099,6 +1146,130 @@ static int rtmd_probe_one(struct device *dev, struct rtmd_ctrl *ctrl,
 	return 0;
 }
 
+/* Register access to the external PHYs before their buses are registered */
+static int rtmd_ext_phy_read(struct rtmd_ctrl *ctrl, u32 pn, u32 page, u32 reg, u32 *val)
+{
+	guard(mutex)(&ctrl->lock);
+
+	return ctrl->cfg->read_c22(ctrl, pn, page, reg, val);
+}
+
+static int rtmd_ext_phy_id(struct rtmd_ctrl *ctrl, u32 pn, u32 *id)
+{
+	u32 id1, id2;
+	int ret;
+
+	ret = rtmd_ext_phy_read(ctrl, pn, 0, MII_PHYSID1, &id1);
+	if (!ret)
+		ret = rtmd_ext_phy_read(ctrl, pn, 0, MII_PHYSID2, &id2);
+	if (ret)
+		return ret;
+
+	*id = id1 << 16 | id2;
+	return 0;
+}
+
+static int rtmd_ext_phy_port(struct rtmd_ctrl *ctrl, u8 smi_bus, u8 smi_addr)
+{
+	u32 pn;
+
+	for_each_phy_port(ctrl, pn)
+		if (ctrl->port[pn].smi_bus == smi_bus && ctrl->port[pn].smi_addr == smi_addr)
+			return pn;
+
+	return -ENOENT;
+}
+
+static bool rtmd_is_qf_slave(struct rtmd_ctrl *ctrl, u32 pn)
+{
+	u32 mode;
+
+	return !(ctrl->port[pn].smi_addr % 4) &&
+	       !rtmd_ext_phy_read(ctrl, pn, 0, RTMD_RTL8214QF_CHIP_MODE, &mode) &&
+	       FIELD_GET(RTMD_RTL8214QF_CHIP_MODE_MASK, mode) == RTMD_RTL8214QF_CHIP_MODE_SLAVE;
+}
+
+static bool rtmd_qf_sds_synced(struct rtmd_ctrl *ctrl, u32 pn, u32 page)
+{
+	u32 val;
+
+	if (rtmd_ext_phy_read(ctrl, pn, page, RTMD_RTL8214QF_SDS_STATUS, &val))
+		return false;
+
+	return (val & RTMD_RTL8214QF_SDS_STATUS_SYNC) == RTMD_RTL8214QF_SDS_STATUS_SYNC;
+}
+
+static bool rtmd_is_c45_port(struct rtmd_ctrl *ctrl, u32 pn)
+{
+	return ctrl->bus[ctrl->port[pn].smi_bus].is_c45;
+}
+
+/*
+ * All clause 22 PHYs answer and every RTL8214QF pair is in sync. A pair is a quad aligned slave
+ * with its master on the next quad address; other layouts are not waited for.
+ */
+static bool rtmd_ext_phys_ready(struct rtmd_ctrl *ctrl)
+{
+	u32 id[RTMD_MAX_PORTS];
+	int master;
+	u32 pn;
+
+	for_each_phy_port(ctrl, pn) {
+		if (rtmd_is_c45_port(ctrl, pn))
+			continue;
+		if (rtmd_ext_phy_id(ctrl, pn, &id[pn]) || !id[pn] || id[pn] == U32_MAX)
+			return false;
+	}
+
+	for_each_phy_port(ctrl, pn) {
+		if (rtmd_is_c45_port(ctrl, pn) || id[pn] != RTMD_PHY_RTL8214QF ||
+		    !rtmd_is_qf_slave(ctrl, pn))
+			continue;
+
+		master = rtmd_ext_phy_port(ctrl, ctrl->port[pn].smi_bus,
+					   ctrl->port[pn].smi_addr + 4);
+		if (master < 0 || rtmd_is_c45_port(ctrl, master) ||
+		    id[master] != RTMD_PHY_RTL8214QF)
+			continue;
+
+		if (!rtmd_qf_sds_synced(ctrl, pn, RTMD_RTL8214QF_S0_STATUS_PAGE) ||
+		    !rtmd_qf_sds_synced(ctrl, master, RTMD_RTL8214QF_S1_STATUS_PAGE))
+			return false;
+	}
+
+	return true;
+}
+
+/*
+ * The link between the chips of an RTL8214QF pair only trains when they leave reset, and after a
+ * cold power-on it often stays down. Reset the PHYs from the SoC until all pairs are in sync; PHYs
+ * still not ready are reported and left to their drivers.
+ */
+static int rtmd_reset_ext_phys(struct rtmd_ctrl *ctrl)
+{
+	bool ready;
+	int ret;
+
+	for (int try = 1; try <= RTMD_EXT_PHY_RESET_TRIES; try++) {
+		ret = ctrl->cfg->reset_ext_phys(ctrl);
+		if (ret)
+			return ret;
+
+		ret = read_poll_timeout(rtmd_ext_phys_ready, ready, ready,
+					RTMD_EXT_PHY_READY_POLL_MS * USEC_PER_MSEC,
+					RTMD_EXT_PHY_READY_TIMEOUT_MS * USEC_PER_MSEC, true,
+					ctrl);
+		if (!ret) {
+			if (try > 1)
+				dev_info(ctrl->dev, "external PHYs ready after %d resets\n", try);
+			return 0;
+		}
+	}
+
+	dev_err(ctrl->dev, "external PHYs not ready after %d resets\n", RTMD_EXT_PHY_RESET_TRIES);
+	return 0;
+}
+
 static int rtmd_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -1113,6 +1284,7 @@ static int rtmd_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	ctrl->dev = dev;
 	platform_set_drvdata(pdev, ctrl);
 	ctrl->cfg = (const struct rtmd_config *)device_get_match_data(dev);
 	ctrl->map = syscon_node_to_regmap(pdev->dev.of_node->parent);
@@ -1135,6 +1307,16 @@ static int rtmd_probe(struct platform_device *pdev)
 		ret = ctrl->cfg->setup_ctrl(ctrl);
 		if (ret)
 			return ret;
+	}
+
+	if (device_property_read_bool(dev, "realtek,reset-external-phys")) {
+		if (ctrl->cfg->reset_ext_phys) {
+			ret = rtmd_reset_ext_phys(ctrl);
+			if (ret)
+				return dev_err_probe(dev, ret, "external PHY reset failed\n");
+		} else {
+			dev_warn(dev, "external PHY reset not supported on this SoC\n");
+		}
 	}
 
 	device_for_each_child_node_scoped(dev, child) {
@@ -1218,6 +1400,7 @@ static const struct rtmd_config rtmd_930x_cfg = {
 	.port_map_base	= RTMD_930X_SMI_PORT0_5_ADDR_CTRL,
 	.read_c22	= rtmd_930x_read_c22,
 	.read_c45	= rtmd_930x_read_c45,
+	.reset_ext_phys	= rtmd_930x_reset_ext_phys,
 	.setup_ctrl	= rtmd_930x_setup_ctrl,
 	.setup_polling	= rtmd_930x_setup_polling,
 	.write_c22	= rtmd_930x_write_c22,
