@@ -333,6 +333,42 @@ endef
 $(eval $(call KernelPackage,sound-soc-wm8960))
 
 
+define KernelPackage/sound-soc-odroid
+  TITLE:=Hardkernel ODROID sound support
+  KCONFIG:= \
+	CONFIG_SND_SOC_SAMSUNG \
+	CONFIG_SND_SAMSUNG_I2S \
+	CONFIG_SND_SOC_ODROID \
+	CONFIG_SND_SOC_MAX98090 \
+	CONFIG_SND_SAMSUNG_PCM=n \
+	CONFIG_SND_SAMSUNG_SPDIF=n \
+	CONFIG_SND_SOC_SAMSUNG_SMDK_WM8994=n \
+	CONFIG_SND_SOC_SAMSUNG_SMDK_SPDIF=n \
+	CONFIG_SND_SOC_SMDK_WM8994_PCM=n \
+	CONFIG_SND_SOC_SNOW=n \
+	CONFIG_SND_SOC_ARNDALE=n \
+	CONFIG_SND_SOC_SAMSUNG_TM2_WM5110=n \
+	CONFIG_SND_SOC_SAMSUNG_ARIES_WM8994=n \
+	CONFIG_SND_SOC_SAMSUNG_MIDAS_WM1811=n
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/samsung/snd-soc-s3c-dma.ko \
+	$(LINUX_DIR)/sound/soc/samsung/snd-soc-i2s.ko \
+	$(LINUX_DIR)/sound/soc/samsung/snd-soc-idma.ko \
+	$(LINUX_DIR)/sound/soc/samsung/snd-soc-odroid.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-max98090.ko
+  AUTOLOAD:=$(call AutoLoad,56,snd-soc-s3c-dma snd-soc-idma snd-soc-i2s snd-soc-max98090 snd-soc-odroid)
+  DEPENDS:=@TARGET_exynos +kmod-sound-soc-core +kmod-sound-soc-hdmi-codec +kmod-drm-exynos
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-odroid/description
+  Support for the headphone output, the microphone and the HDMI audio
+  of the Hardkernel ODROID-U2, ODROID-U3 and ODROID-X2
+endef
+
+$(eval $(call KernelPackage,sound-soc-odroid))
+
+
 define KernelPackage/sound-soc-spdif
   TITLE:=SoC S/PDIF codec support
   KCONFIG:=CONFIG_SND_SOC_SPDIF

@@ -1,0 +1,58 @@
+From 62aad1e3e2dd641e227749340a44c05cb7ac8942 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Thu, 26 Nov 2026 12:05:19 +0100
+Subject: [PATCH] ARM: dts: samsung: exynos4412-odroid: add status LED aliases
+
+OpenWrt finds the LED for the boot, failsafe and upgrade states through
+these aliases. There is no running alias, so the LED returns to its
+heartbeat trigger after boot. The ODROID-U2 and ODROID-X2 device trees
+include these files.
+
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ arch/arm/boot/dts/samsung/exynos4412-odroidu3.dts | 5 ++++-
+ arch/arm/boot/dts/samsung/exynos4412-odroidx.dts  | 5 ++++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/samsung/exynos4412-odroidu3.dts
++++ b/arch/arm/boot/dts/samsung/exynos4412-odroidu3.dts
+@@ -19,6 +19,9 @@
+ 
+ 	aliases {
+ 		ethernet = &ethernet;
++		led-boot = &led_status;
++		led-failsafe = &led_status;
++		led-upgrade = &led_status;
+ 	};
+ 
+ 	memory@40000000 {
+@@ -37,7 +40,7 @@
+ 
+ 	leds {
+ 		compatible = "gpio-leds";
+-		led1 {
++		led_status: led1 {
+ 			function = LED_FUNCTION_HEARTBEAT;
+ 			color = <LED_COLOR_ID_BLUE>;
+ 			gpios = <&gpc1 0 GPIO_ACTIVE_LOW>;
+--- a/arch/arm/boot/dts/samsung/exynos4412-odroidx.dts
++++ b/arch/arm/boot/dts/samsung/exynos4412-odroidx.dts
+@@ -18,6 +18,9 @@
+ 
+ 	aliases {
+ 		ethernet = &ethernet;
++		led-boot = &led_status;
++		led-failsafe = &led_status;
++		led-upgrade = &led_status;
+ 	};
+ 
+ 	memory@40000000 {
+@@ -27,7 +30,7 @@
+ 
+ 	leds {
+ 		compatible = "gpio-leds";
+-		led1 {
++		led_status: led1 {
+ 			function = LED_FUNCTION_HEARTBEAT;
+ 			color = <LED_COLOR_ID_BLUE>;
+ 			gpios = <&gpc1 0 GPIO_ACTIVE_LOW>;
