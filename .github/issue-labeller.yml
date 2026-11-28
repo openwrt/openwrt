@@ -25,7 +25,7 @@ _invalid_comment: "Invalid {field} reported. `{value}`"
 # Tag target (e.g. target/x86, target/ath79, target/ramips)
 "target/{segment0}":
   - field: "target"
-    format: '^[a-zA-Z0-9]+/[a-zA-Z0-9]+$'
+    format: '^[a-zA-Z0-9]+/[a-zA-Z0-9_]+$'
     exists: "path:target/linux/{segment0}/{segment1}"
 
 # Tag image source
