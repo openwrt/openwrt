@@ -1,0 +1,102 @@
+# The flow accelerator in front of switch port 8 works only with the
+# prepended Broadcom tag, and the tag can change only while no port of
+# the switch is up. The switch boots with the regular tag; switch it
+# here, before the network starts, when hardware flow offloading is on.
+
+flow_accel_log() {
+	echo "flow accelerator tag: $*" > /dev/kmsg
+}
+
+# The values firewall4 takes as true
+flow_accel_option() {
+	case "$(uci -q get "firewall.@defaults[0].$1")" in
+	1|on|true|yes) return 0 ;;
+	esac
+	return 1
+}
+
+# Take the conduits down and the switch to tagger $1; $err says why not
+flow_accel_retag() {
+	for c in $conduits; do
+		ip link set dev "$c" down
+	done
+	for c in $conduits; do
+		t=/sys/class/net/$c/dsa/tagging
+		[ "$(cat "$t")" = "$1" ] && continue
+		err=$({ echo "$1" > "$t"; } 2>&1) || return 1
+	done
+}
+
+flow_accel_restore() {
+	for c in $conduits; do
+		case " $up " in
+		*" $c "*) ip link set dev "$c" up ;;
+		*) ip link set dev "$c" down ;;
+		esac
+	done
+}
+
+flow_accel_tag() (
+	flow_accel_option flow_offloading || exit 0
+	flow_accel_option flow_offloading_hw || exit 0
+
+	conduits=
+	up=
+	n=0
+	for t in /sys/class/net/*/dsa/tagging; do
+		[ -e "$t" ] || continue
+		c=${t%/dsa/tagging}
+		c=${c##*/}
+		case "$(cat "$t")" in
+		brcm-prepend)
+			flow_accel_log "$c uses brcm-prepend already"
+			exit 0
+			;;
+		brcm)
+			conduits="$conduits $c"
+			n=$((n + 1))
+			[ $(($(cat "/sys/class/net/$c/flags") & 1)) = 1 ] &&
+				up="$up $c"
+			;;
+		esac
+	done
+
+	case $n in
+	0)
+		flow_accel_log "no switch with the brcm tag"
+		exit 0
+		;;
+	1)
+		flow_accel_log "${conduits# } is the only CPU port," \
+			"the traps need a second one; keeping brcm"
+		exit 0
+		;;
+	esac
+
+	if ! flow_accel_retag brcm-prepend; then
+		flow_accel_log "the switch refused brcm-prepend" \
+			"(${err##*: }); keeping brcm"
+		flow_accel_retag brcm
+		flow_accel_restore
+		exit 0
+	fi
+
+	# Opening the conduit on port 8 starts the accelerator, and fails
+	# if it does not start
+	for c in $conduits; do
+		err=$(ip link set dev "$c" up 2>&1) && continue
+		flow_accel_log "$c did not open with brcm-prepend" \
+			"(${err##*: }); back to brcm"
+		flow_accel_retag brcm ||
+			flow_accel_log "brcm refused too (${err##*: }); turn" \
+				"hardware flow offloading off in failsafe mode"
+		flow_accel_restore
+		exit 0
+	done
+
+	flow_accel_restore
+	flow_accel_log "switched$conduits to brcm-prepend" \
+		"for hardware flow offloading"
+)
+
+boot_hook_add preinit_main flow_accel_tag

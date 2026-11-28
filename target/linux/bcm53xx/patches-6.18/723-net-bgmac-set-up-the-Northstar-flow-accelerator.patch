@@ -1,0 +1,341 @@
+From ec8a9c67d2faa8d4a52c6a2d978d925eea1af420 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 11:38:47 +0100
+Subject: [PATCH] net: bgmac: set up the Northstar flow accelerator
+
+The Northstar SoCs (BCM4708/4709/47094) have a flow accelerator between
+GMAC2 and switch port 8. Its registers are in the core space of GMAC3,
+which bgmac does not drive. Under OpenWrt nothing has set it up so far:
+it parses the traffic with tables that were never initialised and
+leaves the regular Broadcom tag alone.
+
+When the conduit on GMAC2 uses the prepended tag, put the accelerator in
+normal mode with its tables initialised and its header conversion on,
+on every open: DSA only changes the tagger while the conduit is down.
+With another tagger, put it back in bypass if an earlier open had put
+it in the path. The sequences follow Broadcom's et driver (fa_setmode(),
+fa_up(), fa_down() in et/sys/etc_fa.c, ISC licensed), whose copyright
+and permission notice the new file keeps.
+
+No flows are offloaded yet: every frame is a lookup miss and goes to the
+CPU as before.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/ethernet/broadcom/Makefile     |   2 +-
+ drivers/net/ethernet/broadcom/bgmac-bcma.c |   4 +
+ drivers/net/ethernet/broadcom/bgmac-fa.c   | 237 +++++++++++++++++++++
+ drivers/net/ethernet/broadcom/bgmac.c      |   6 +
+ drivers/net/ethernet/broadcom/bgmac.h      |   6 +
+ 5 files changed, 254 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/net/ethernet/broadcom/bgmac-fa.c
+
+--- a/drivers/net/ethernet/broadcom/Makefile
++++ b/drivers/net/ethernet/broadcom/Makefile
+@@ -13,7 +13,7 @@ obj-$(CONFIG_BNX2X) += bnx2x/
+ obj-$(CONFIG_SB1250_MAC) += sb1250-mac.o
+ obj-$(CONFIG_TIGON3) += tg3.o
+ obj-$(CONFIG_BGMAC) += bgmac.o
+-obj-$(CONFIG_BGMAC_BCMA) += bgmac-bcma.o bgmac-bcma-mdio.o
++obj-$(CONFIG_BGMAC_BCMA) += bgmac-bcma.o bgmac-bcma-mdio.o bgmac-fa.o
+ obj-$(CONFIG_BGMAC_PLATFORM) += bgmac-platform.o
+ obj-$(CONFIG_SYSTEMPORT) += bcmsysport.o
+ obj-$(CONFIG_BNXT) += bnxt/
+--- a/drivers/net/ethernet/broadcom/bgmac-bcma.c
++++ b/drivers/net/ethernet/broadcom/bgmac-bcma.c
+@@ -311,6 +311,10 @@ static int bgmac_probe(struct bcma_devic
+ 	bgmac->cmn_maskset32 = bcma_bgmac_cmn_maskset32;
+ 	bgmac->phy_connect = bcma_phy_connect;
+ 
++	/* Northstar: the flow accelerator is between GMAC2 and switch port 8 */
++	if (bgmac_is_bcm4707_family(core) && core->core_unit == 2)
++		bgmac_fa_probe(bgmac);
++
+ 	err = bgmac_enet_probe(bgmac);
+ 	if (err)
+ 		goto err1;
+--- /dev/null
++++ b/drivers/net/ethernet/broadcom/bgmac-fa.c
+@@ -0,0 +1,237 @@
++// SPDX-License-Identifier: ISC
++/*
++ * Flow accelerator (FA) of the Broadcom Northstar SoCs (BCM4708, BCM4709,
++ * BCM47094)
++ *
++ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
++ * Copyright (C) 2026 Erik Conijn <egc112@msn.com>
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
++ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
++ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ *
++ * The register map and the mode sequences follow Broadcom's et driver
++ * (et/sys/etc_fa.c and et/include/fa_core.h: fa_setmode(), fa_up() and
++ * fa_down()), as published under the ISC license in router GPL source
++ * releases.
++ *
++ * The FA sits between switch port 8 and GMAC2; its registers are in the
++ * core space of GMAC3, which is otherwise unused. With its header
++ * conversion on, it turns the switch's regular Broadcom tag into a
++ * prepended one, opcode 2, on the way to the CPU, and takes the prepended
++ * tag from the CPU. So it must be in the path exactly while the DSA
++ * conduit on GMAC2 uses the "brcm-prepend" tagger, which can only change
++ * while the conduit is down: set the mode on every open.
++ */
++
++#include <linux/bcma/bcma.h>
++#include <linux/iopoll.h>
++#include <linux/module.h>
++#include <net/dsa.h>
++
++#include "bgmac.h"
++
++#define FA_BASE				0xc00	/* in the GMAC3 core */
++
++#define FA_CONTROL			0x00
++#define  FA_CTL_SW_ACC_MODE		BIT(0)
++#define  FA_CTL_BYPASS			BIT(1)
++#define  FA_CTL_CRC_OWRT		BIT(3)
++#define  FA_CTL_NAPT_FLOW_INIT		BIT(13)
++#define  FA_CTL_NEXT_HOP_INIT		BIT(14)
++#define  FA_CTL_HWQ_INIT		BIT(15)
++#define  FA_CTL_LAB_INIT		BIT(16)
++#define  FA_CTL_HB_INIT			BIT(17)
++#define  FA_CTL_DSBL_MAC_DA_CHECK	BIT(18)
++#define FA_BCM_HDR_CTL			0x08
++#define  FA_BCM_HDR_HW_EN		BIT(0)
++#define  FA_BCM_HDR_SW_RX_EN		BIT(1)
++#define  FA_BCM_HDR_SW_TX_EN		BIT(2)
++#define  FA_BCM_HDR_PARSE_IGN_EN	BIT(3)
++#define FA_L2_SKIP_CTL			0x0c
++#define  FA_L2_SKIP_ET_TO_SNAP_CONV	BIT(20)
++#define FA_L3_IPV4_TYPE			0x28
++#define  FA_L3_IPV4_UDP_TCP		0x1106	/* reset value: 17, 6 */
++#define  FA_L3_IPV4_CKSUM_EN		BIT(16)
++#define FA_L3_NAPT_CTL			0x2c
++#define  FA_L3_NAPT_DEC_TTL		BIT(21)
++#define FA_STATUS			0x30
++#define  FA_STATUS_INIT_DONE		GENMASK(9, 5)
++#define FA_STATUS_MASK			0x34
++#define FA_RCV_STATUS_EN		0x38
++#define FA_ERROR			0x64
++#define FA_ERROR_MASK			0x68
++
++#define FA_CTL_INIT_ALL	(FA_CTL_NAPT_FLOW_INIT | FA_CTL_NEXT_HOP_INIT | \
++			 FA_CTL_HWQ_INIT | FA_CTL_LAB_INIT | FA_CTL_HB_INIT)
++
++struct bgmac_fa {
++	struct bcma_device *core;	/* GMAC3, holding the FA registers */
++	bool normal;			/* in the path since the last open */
++};
++
++static u32 fa_read(struct bgmac *bgmac, u16 reg)
++{
++	return bcma_read32(bgmac->fa->core, FA_BASE + reg);
++}
++
++static void fa_write(struct bgmac *bgmac, u16 reg, u32 val)
++{
++	bcma_write32(bgmac->fa->core, FA_BASE + reg, val);
++}
++
++static u32 fa_read_status(struct bgmac *bgmac)
++{
++	return fa_read(bgmac, FA_STATUS);
++}
++
++/* fa_setmode(): select the mode and initialise all tables; the init bits
++ * clear themselves and the status reports when the tables are done.
++ */
++static int bgmac_fa_setmode(struct bgmac *bgmac, bool bypass)
++{
++	u32 val, status;
++	int err;
++
++	val = fa_read(bgmac, FA_CONTROL);
++	val &= ~(FA_CTL_SW_ACC_MODE | FA_CTL_BYPASS);
++	if (bypass)
++		val |= FA_CTL_BYPASS;
++	val |= FA_CTL_DSBL_MAC_DA_CHECK | FA_CTL_INIT_ALL | FA_CTL_CRC_OWRT;
++	fa_write(bgmac, FA_CONTROL, val);
++
++	err = readx_poll_timeout(fa_read_status, bgmac, status,
++				 (status & FA_STATUS_INIT_DONE) ==
++				 FA_STATUS_INIT_DONE, 10, 50000);
++	if (err)
++		dev_err(bgmac->dev, "flow accelerator: no table init (status 0x%08x)\n",
++			status);
++	return err;
++}
++
++/* fa_up() in normal mode, with the header conversion that makes the FA
++ * produce and take the prepended tag (Broadcom only enables it with the
++ * hardware hash; the conversion itself does not depend on the hash).
++ */
++static int bgmac_fa_normal(struct bgmac *bgmac)
++{
++	int err;
++
++	err = bgmac_fa_setmode(bgmac, false);
++	if (err)
++		return err;
++
++	/* no interrupts, no frames held back for parse errors */
++	fa_write(bgmac, FA_STATUS_MASK, 0);
++	fa_write(bgmac, FA_RCV_STATUS_EN, 0);
++	fa_write(bgmac, FA_ERROR_MASK, 0);
++
++	fa_write(bgmac, FA_BCM_HDR_CTL, FA_BCM_HDR_HW_EN | FA_BCM_HDR_SW_RX_EN |
++		 FA_BCM_HDR_SW_TX_EN | FA_BCM_HDR_PARSE_IGN_EN);
++	fa_write(bgmac, FA_L2_SKIP_CTL, FA_L2_SKIP_ET_TO_SNAP_CONV);
++
++	/* Full values rather than fa_up()'s read-modify-write: bypass
++	 * clears both registers, and the reset values (TTL decrement, the
++	 * TCP and UDP protocol numbers) must come back after it. Software
++	 * hash, seed 0, hit counters not cleared on read.
++	 */
++	fa_write(bgmac, FA_L3_NAPT_CTL, FA_L3_NAPT_DEC_TTL);
++	fa_write(bgmac, FA_L3_IPV4_TYPE, FA_L3_IPV4_UDP_TCP | FA_L3_IPV4_CKSUM_EN);
++
++	/* the error register is write-1-to-clear */
++	fa_write(bgmac, FA_ERROR, fa_read(bgmac, FA_ERROR));
++
++	return 0;
++}
++
++/* fa_down(), FA side: bypass, empty tables, no header conversion */
++static int bgmac_fa_bypass(struct bgmac *bgmac)
++{
++	int err;
++
++	err = bgmac_fa_setmode(bgmac, true);
++	if (err)
++		return err;
++
++	fa_write(bgmac, FA_BCM_HDR_CTL, 0);
++	fa_write(bgmac, FA_L2_SKIP_CTL, 0);
++	fa_write(bgmac, FA_L3_NAPT_CTL, 0);
++	fa_write(bgmac, FA_L3_IPV4_TYPE, 0);
++
++	return 0;
++}
++
++static bool bgmac_fa_wanted(struct bgmac *bgmac)
++{
++#if IS_ENABLED(CONFIG_NET_DSA)
++	struct net_device *dev = bgmac->net_dev;
++
++	return netdev_uses_dsa(dev) && dev->dsa_ptr->index == 8 &&
++	       dev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_BRCM_PREPEND;
++#else
++	return false;
++#endif
++}
++
++static int bgmac_fa_open(struct bgmac *bgmac)
++{
++	int err;
++
++	if (!bgmac_fa_wanted(bgmac)) {
++		/* back out of the path if an earlier open put it there */
++		if (!bgmac->fa->normal)
++			return 0;
++		err = bgmac_fa_bypass(bgmac);
++		if (!err)
++			bgmac->fa->normal = false;
++		return err;
++	}
++
++	if (!bcma_core_is_enabled(bgmac->fa->core)) {
++		dev_err(bgmac->dev, "flow accelerator: GMAC3 core is not enabled\n");
++		return -ENODEV;
++	}
++
++	err = bgmac_fa_normal(bgmac);
++	if (err)
++		return err;
++
++	if (!bgmac->fa->normal)
++		dev_info(bgmac->dev, "flow accelerator in the path (prepended tag)\n");
++	bgmac->fa->normal = true;
++
++	return 0;
++}
++
++/* Called for GMAC2 of a Northstar SoC; the FA is in its path to port 8 */
++void bgmac_fa_probe(struct bgmac *bgmac)
++{
++	struct bcma_device *core = bgmac->bcma.core;
++	struct bcma_device *gmac3;
++	struct bgmac_fa *fa;
++
++	gmac3 = bcma_find_core_unit(core->bus, BCMA_CORE_MAC_GBIT, 3);
++	if (!gmac3)
++		return;
++
++	fa = devm_kzalloc(bgmac->dev, sizeof(*fa), GFP_KERNEL);
++	if (!fa)
++		return;
++
++	fa->core = gmac3;
++	bgmac->fa = fa;
++	bgmac->fa_open = bgmac_fa_open;
++}
++EXPORT_SYMBOL_GPL(bgmac_fa_probe);
++
++MODULE_AUTHOR("Erik Conijn");
++MODULE_DESCRIPTION("Broadcom Northstar flow accelerator");
++MODULE_LICENSE("Dual BSD/GPL");
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -1177,6 +1177,12 @@ static int bgmac_open(struct net_device
+ 	struct bgmac *bgmac = netdev_priv(net_dev);
+ 	int err = 0;
+ 
++	if (bgmac->fa_open) {
++		err = bgmac->fa_open(bgmac);
++		if (err)
++			return err;
++	}
++
+ 	bgmac_chip_reset(bgmac);
+ 
+ 	err = bgmac_dma_init(bgmac);
+--- a/drivers/net/ethernet/broadcom/bgmac.h
++++ b/drivers/net/ethernet/broadcom/bgmac.h
+@@ -436,6 +436,8 @@ struct bgmac_rx_header {
+ 	__le16 pad[12];
+ };
+ 
++struct bgmac_fa;
++
+ struct bgmac {
+ 	union {
+ 		struct {
+@@ -494,6 +496,9 @@ struct bgmac {
+ 	void (*cmn_maskset32)(struct bgmac *bgmac, u16 offset, u32 mask,
+ 			      u32 set);
+ 	int (*phy_connect)(struct bgmac *bgmac);
++	/* optional: the flow accelerator in front of this MAC (bgmac-fa.c) */
++	struct bgmac_fa *fa;
++	int (*fa_open)(struct bgmac *bgmac);
+ };
+ 
+ struct bgmac *bgmac_alloc(struct device *dev);
+@@ -506,6 +511,7 @@ int bgmac_enet_resume(struct bgmac *bgma
+ 
+ struct mii_bus *bcma_mdio_mii_register(struct bgmac *bgmac);
+ void bcma_mdio_mii_unregister(struct mii_bus *mii_bus);
++void bgmac_fa_probe(struct bgmac *bgmac);
+ 
+ static inline u32 bgmac_read(struct bgmac *bgmac, u16 offset)
+ {

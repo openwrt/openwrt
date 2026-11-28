@@ -1,0 +1,108 @@
+From 2109e2353140727d858007a61a902b6ac5b36d83 Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Sat, 21 Nov 2026 14:57:46 +0000
+Subject: [PATCH] net: bgmac: offload IPv4 TCP only while the FIN/RST trap is
+ active
+
+The flow accelerator also forwards the FIN and RST of a TCP connection
+it holds, so conntrack sees the connection end only through the switch
+rule that redirects them to the second CPU port. Without that port, or
+with its conduit down, the rule is off (b53_fa_trap_active()), and
+closed connections stay ESTABLISHED in conntrack. IPv6 already requires
+the trap. Require it for IPv4 TCP as well when a flow is parsed. For
+flows already in the accelerator, bgmac_fa_flow_allowed() checks again
+from the stats poll and when the flowtable asks to offload a flow that
+is already offloaded, which it does every second while the other
+direction runs in software. A flow that fails the check leaves the
+accelerator and carries on in software, though conntrack still marks it
+[HW_OFFLOAD]. IPv4 UDP is still offloaded without the trap, so a TTL 1
+packet inside an offloaded UDP flow still gets no ICMP time exceeded.
+
+Measured on an RT-N18U with the trap port's conduit down: of 33 TCP
+connections, 8 were still ESTABLISHED in conntrack 15 s after the last
+one closed, against none with the conduit up, and a TTL 1 segment inside
+an offloaded TCP flow got no ICMP time exceeded back.
+
+With this change and the conduit down, IPv4 TCP runs in software at
+597 Mbit/s and leaves no ESTABLISHED entries, while IPv4 UDP is still
+offloaded at 949 Mbit/s. A TCP flow offloaded before its trap went away
+carries on in software within seconds.
+
+On an upload whose data ran in software while its acknowledgements ran
+in the accelerator, the acknowledgements came through the CPU as well
+about a second after the conduit went down, and the upload went on at
+about 550 Mbit/s.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ drivers/net/ethernet/broadcom/bgmac-fa.c | 33 +++++++++++++++++++-----
+ 1 file changed, 26 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac-fa.c
++++ b/drivers/net/ethernet/broadcom/bgmac-fa.c
+@@ -801,9 +801,11 @@ static int bgmac_fa_parse(struct bgmac *
+ 		return -EOPNOTSUPP;
+ 
+ 	/* IPv6 is routed only (its NAT mangles were refused above), and
+-	 * needs the switch to trap hop limit 1 in front of the FA
++	 * needs the switch to trap hop limit 1 in front of the FA; TCP
++	 * needs it to trap FIN and RST
+ 	 */
+-	if (r->t.v6 && !b53_fa_trap_active(r->in->ds, r->in->index))
++	if ((r->t.v6 || r->t.proto == IPPROTO_TCP) &&
++	    !b53_fa_trap_active(r->in->ds, r->in->index))
+ 		return -EOPNOTSUPP;
+ 
+ 	/* The entry with the addresses of an IPv6 flow has the source
+@@ -951,6 +953,19 @@ static bool bgmac_fa_reply_fits(struct b
+ 	return bgmac_fa_room(fa, rbase, rt.v6) >= (rbase == base ? 2 : 1);
+ }
+ 
++static void bgmac_fa_flow_remove(struct bgmac *bgmac,
++				 struct bgmac_fa_flow *flow);
++
++static bool bgmac_fa_flow_allowed(struct bgmac *bgmac,
++				  struct bgmac_fa_flow *flow)
++{
++	if ((flow->t.v6 || flow->t.proto == IPPROTO_TCP) &&
++	    !b53_fa_trap_active(flow->in->ds, flow->in->index))
++		return false;
++
++	return true;
++}
++
+ static int bgmac_fa_flow_add(struct bgmac *bgmac, struct flow_cls_offload *f,
+ 			     struct bgmac_fa_block *block)
+ {
+@@ -963,8 +978,13 @@ static int bgmac_fa_flow_add(struct bgma
+ 
+ 	if (!fa->active)
+ 		return -EOPNOTSUPP;
+-	if (bgmac_fa_flow_find(fa, f->cookie))
+-		return -EEXIST;
++	flow = bgmac_fa_flow_find(fa, f->cookie);
++	if (flow) {
++		if (bgmac_fa_flow_allowed(bgmac, flow))
++			return -EEXIST;
++		bgmac_fa_flow_remove(bgmac, flow);
++		return -EOPNOTSUPP;
++	}
+ 
+ 	err = bgmac_fa_parse(bgmac, f, &r);
+ 	if (err)
+@@ -1105,13 +1125,12 @@ static int bgmac_fa_flow_stats(struct bg
+ 	if (!flow)
+ 		return -ENOENT;
+ 
+-	/* The hop limit trap goes when its conduit goes down, without a
++	/* The traps go when their conduit goes down, without a
+ 	 * word to this driver. The flowtable asks for the counters of a
+ 	 * flow every few seconds: take the flow out here, it goes on in
+ 	 * software.
+ 	 */
+-	if (flow->t.v6 &&
+-	    !b53_fa_trap_active(flow->in->ds, flow->in->index)) {
++	if (!bgmac_fa_flow_allowed(bgmac, flow)) {
+ 		bgmac_fa_flow_remove(bgmac, flow);
+ 		return -ENOENT;
+ 	}

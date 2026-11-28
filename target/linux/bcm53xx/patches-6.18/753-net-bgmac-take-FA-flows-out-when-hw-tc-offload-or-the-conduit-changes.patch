@@ -1,0 +1,116 @@
+From 76e1e2ad56bd42856e1d33817cbd27f992464a1b Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Sat, 21 Nov 2026 14:57:47 +0000
+Subject: [PATCH] net: bgmac: take FA flows out when hw-tc-offload or the
+ conduit changes
+
+Turning hw-tc-offload off on the conduit, or moving a user port to
+another conduit, leaves the flows already in the accelerator there;
+only new flows are refused. Take a flow out in
+bgmac_fa_flow_allowed() as well when hw-tc-offload is off on the
+conduit, and when its ingress port or the port of its next hop is no
+longer served by this conduit. Both are refused for a new flow,
+hw-tc-offload by a tc_can_offload() test before the flow is parsed and
+the conduit by bgmac_fa_user_port(), so such a flow is not offloaded
+again while the condition lasts.
+
+bgmac_fa_block_cb() refuses every FLOW_CLS_REPLACE while hw-tc-offload
+is off, so the re-check of a flow already in the accelerator only runs
+at its stats poll. The flowtable sends no stats poll for a flow whose
+other direction runs in software, as that direction keeps it fresh; it
+asks to offload the flow again about once a second instead. Move the
+test into bgmac_fa_flow_add(), after that re-check, so that such a flow
+leaves as well.
+
+Measured on an RT-N18U. With hw-tc-offload turned off on the conduit
+under an offloaded download at 949 Mbit/s, the flow left the accelerator
+within 2 s and went on in software at about 465 Mbit/s. It was back in
+the accelerator within a second of hw-tc-offload going on again. Without
+this change it stayed in the accelerator at 949 Mbit/s throughout. On
+an upload whose data ran in software while its acknowledgements ran in
+the accelerator, the acknowledgements went to software within about a
+second of hw-tc-offload going off and were back in the accelerator
+within 2 s of it going on.
+
+When a port moved to the other conduit under a UDP stream towards it,
+the flow left the accelerator within 3 s and the stream went on through
+the other conduit at about 557 Mbit/s. It came back within a second of
+the port moving back. Without this change the accelerator went on
+sending the stream to the port at 900 Mbit/s while the port was on the
+other conduit. A TCP download through the port stalled at the move even
+with hw-tc-offload off, so the move was measured with UDP.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ drivers/net/ethernet/broadcom/bgmac-fa.c | 32 ++++++++++++++++++------
+ 1 file changed, 24 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac-fa.c
++++ b/drivers/net/ethernet/broadcom/bgmac-fa.c
+@@ -590,6 +590,17 @@ static struct dsa_port *bgmac_fa_user_po
+ 	return NULL;
+ }
+ 
++static bool bgmac_fa_conduit_of(struct bgmac *bgmac, const struct dsa_port *dp)
++{
++#if IS_ENABLED(CONFIG_NET_DSA)
++	const struct dsa_port *cpu_dp = READ_ONCE(bgmac->net_dev->dsa_ptr);
++
++	return cpu_dp && READ_ONCE(dp->cpu_dp) == cpu_dp;
++#else
++	return false;
++#endif
++}
++
+ static int bgmac_fa_pvid(const struct dsa_port *in, const struct dsa_port *out)
+ {
+ 	int vid = b53_fa_pvid(out->ds, out->index);
+@@ -950,6 +961,11 @@ static bool bgmac_fa_flow_allowed(struct
+ {
+ 	struct bgmac_fa_next_hop *nh = &bgmac->fa->next_hop[flow->next_hop];
+ 
++	if (!tc_can_offload(bgmac->net_dev) ||
++	    !bgmac_fa_conduit_of(bgmac, flow->in) ||
++	    !bgmac_fa_conduit_of(bgmac, nh->dp))
++		return false;
++
+ 	if ((flow->t.v6 || flow->t.proto == IPPROTO_TCP) &&
+ 	    !b53_fa_trap_active(flow->in->ds, flow->in->index))
+ 		return false;
+@@ -986,6 +1002,9 @@ static int bgmac_fa_flow_add(struct bgma
+ 		return -EOPNOTSUPP;
+ 	}
+ 
++	if (!tc_can_offload(bgmac->net_dev))
++		return -EOPNOTSUPP;
++
+ 	err = bgmac_fa_parse(bgmac, f, &r);
+ 	if (err)
+ 		return err;
+@@ -1132,10 +1151,10 @@ static int bgmac_fa_flow_stats(struct bg
+ 	if (!flow)
+ 		return -ENOENT;
+ 
+-	/* The traps go when their conduit goes down, without a
+-	 * word to this driver. The flowtable asks for the counters of a
+-	 * flow every few seconds: take the flow out here, it goes on in
+-	 * software.
++	/* The traps go when their conduit goes down, and hw-tc-offload or a
++	 * port's VLANs, bridge or conduit can change, without a word to
++	 * this driver. The flowtable asks for the counters of a flow every
++	 * few seconds: take the flow out here, it goes on in software.
+ 	 */
+ 	if (!bgmac_fa_flow_allowed(bgmac, flow)) {
+ 		bgmac_fa_flow_remove(bgmac, flow);
+@@ -1185,10 +1204,7 @@ static int bgmac_fa_block_cb(enum tc_set
+ 	bgmac_fa_lock(bgmac);
+ 	switch (f->command) {
+ 	case FLOW_CLS_REPLACE:
+-		if (tc_can_offload(bgmac->net_dev))
+-			err = bgmac_fa_flow_add(bgmac, f, block);
+-		else
+-			err = -EOPNOTSUPP;
++		err = bgmac_fa_flow_add(bgmac, f, block);
+ 		break;
+ 	case FLOW_CLS_DESTROY:
+ 		err = bgmac_fa_flow_del(bgmac, f);

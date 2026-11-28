@@ -1,0 +1,42 @@
+From 5f14bf1210958c0af39fa30930484164503e0022 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 13:51:39 +0100
+Subject: [PATCH] net: dsa: tag_brcm: leave frames from another CPU port to the
+ bridge
+
+A b53 switch forwards the frames of a user port only to that port's own
+CPU port: with several CPU ports, the port based VLAN of a user port
+holds just that one. A frame that arrives through another CPU port was
+sent there by a rule that replaced its destination, such as the CFP
+redirect that b53 uses for the Northstar flow accelerator. The switch
+has not forwarded it to the other ports, so do not set
+offload_fwd_mark: the bridge forwards it in software.
+
+Linksys EA6900, with the traps to port 5 of the following b53 patches,
+between hosts on lan1 and lan2 of the same bridge: 5 of 5 pings with
+TTL 1 answered, and 10 TCP connections closed without a retransmission,
+their FIN and RST frames arriving through port 5.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ net/dsa/tag_brcm.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/net/dsa/tag_brcm.c
++++ b/net/dsa/tag_brcm.c
+@@ -187,7 +187,13 @@ static struct sk_buff *brcm_tag_rcv_ll(s
+ 	/* Remove Broadcom tag and update checksum */
+ 	skb_pull_rcsum(skb, BRCM_TAG_LEN);
+ 
+-	if (likely(!is_link_local_ether_addr(eth_hdr(skb)->h_dest)))
++	/* The switch forwards a user port's frames to its own CPU port only.
++	 * One that arrives through another CPU port was redirected there by
++	 * a classification rule instead of being forwarded, so leave it to
++	 * the bridge.
++	 */
++	if (likely(!is_link_local_ether_addr(eth_hdr(skb)->h_dest)) &&
++	    likely(dsa_user_to_port(skb->dev)->cpu_dp == dev->dsa_ptr))
+ 		dsa_default_offload_fwd_mark(skb);
+ 
+ 	return skb;

@@ -4,9 +4,27 @@ packet_steering="$(uci -q get network.@globals[0].packet_steering)"
 flow_offloading="$(uci -q get firewall.@defaults[0].flow_offloading)"
 flow_offloading_hw="$(uci -q get firewall.@defaults[0].flow_offloading_hw)"
 
+# DSA puts its sysfs group on each conduit. With the flow accelerator the
+# switch has two, the traps' and the traffic's: take the one that the user
+# ports hang off, the conduit with the most interfaces linked to it
+conduit=eth0
+users=0
+for d in /sys/class/net/*/dsa; do
+	[ -d "$d" ] || continue
+	dev="${d%/dsa}"
+	dev="${dev##*/}"
+	ifindex="$(cat /sys/class/net/$dev/ifindex)"
+	n=0
+	for l in /sys/class/net/*/iflink; do
+		[ "${l%/iflink}" = "/sys/class/net/$dev" ] && continue
+		[ "$(cat "$l")" = "$ifindex" ] && n=$((n + 1))
+	done
+	[ $n -gt $users ] && conduit="$dev" users=$n
+done
+
 [ "$packet_steering" != 1 ] && {
 	echo 0 > /sys/class/net/br-lan/queues/rx-0/rps_cpus
-	echo 0 > /sys/class/net/eth0/queues/rx-0/rps_cpus
+	echo 0 > /sys/class/net/$conduit/queues/rx-0/rps_cpus
 	exit 0
 }
 
@@ -29,13 +47,13 @@ esac
 if [ ${flow_offloading_hw:-0} -gt 0 ]; then
 	# HW offloading
 	echo 0 > /sys/class/net/br-lan/queues/rx-0/rps_cpus
-	echo 0 > /sys/class/net/eth0/queues/rx-0/rps_cpus
+	echo 0 > /sys/class/net/$conduit/queues/rx-0/rps_cpus
 elif [ ${flow_offloading:-0} -gt 0 ]; then
 	# SW offloading
 	# br-lan setup doesn't seem to matter for offloading case
-	echo 2 > /sys/class/net/eth0/queues/rx-0/rps_cpus
+	echo 2 > /sys/class/net/$conduit/queues/rx-0/rps_cpus
 else
 	# Default
 	echo 2 > /sys/class/net/br-lan/queues/rx-0/rps_cpus
-	echo 0 > /sys/class/net/eth0/queues/rx-0/rps_cpus
+	echo 0 > /sys/class/net/$conduit/queues/rx-0/rps_cpus
 fi

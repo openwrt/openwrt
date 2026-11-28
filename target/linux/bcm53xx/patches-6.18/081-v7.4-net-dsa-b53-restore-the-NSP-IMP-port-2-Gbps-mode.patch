@@ -1,0 +1,45 @@
+From 41af38324341df9d769641d6485abb67fd5209ed Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian.fainelli@broadcom.com>
+Date: Thu, 29 Oct 2026 14:15:40 -0700
+Subject: [PATCH] net: dsa: b53: restore the NSP IMP port 2 Gbps mode
+
+The Northstar Plus IMP port uses the switch's proprietary 2 Gbps mode for
+its internal link to the AMAC.  Its fixed-link description reports 1 Gbps,
+so applying that speed clears PORT_OVERRIDE_SPEED_2000M and leaves the two
+ends of the internal link configured at different speeds.
+
+Force the 2 Gbps mode and flow control for BCM5301x and NSP CPU ports.  The
+mismatch caused switch output queue discards on both copper and SerDes
+ports, with one discard for every TCP retransmission.  With both ends
+restored to their high-speed modes, iperf3 reports no retransmissions.
+
+Fixes: b6a8a5477fe9 ("net: dsa: b53: fix resetting speed and pause on forced link")
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20261029211540.4123250-3-florian.fainelli@broadcom.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1642,9 +1642,15 @@ static void b53_phylink_mac_link_up(stru
+ 	}
+ 
+ 	if (mode == MLO_AN_FIXED) {
+-		/* Force flow control on BCM5301x's CPU port */
+-		if (is5301x(dev) && dsa_is_cpu_port(ds, port))
+-			tx_pause = rx_pause = true;
++		/* Force flow control and 2Gbits/sec on BCM5301x and NSP CPU
++		 * ports
++		 */
++		if ((is5301x(dev) || dev->chip_id == BCM58XX_DEVICE_ID) &&
++		    dsa_is_cpu_port(ds, port)) {
++			tx_pause = true;
++			rx_pause = true;
++			speed = 2000;
++		}
+ 
+ 		b53_force_port_config(dev, port, speed, duplex,
+ 				      tx_pause, rx_pause);

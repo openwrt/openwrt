@@ -1,0 +1,39 @@
+From dfaebe5eddaea225a247334f3e56212bf476f69c Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Mon, 16 Nov 2026 09:16:04 +0000
+Subject: [PATCH] ARM: dts: BCM5301X: RT-N18U: add port 5 for the flow
+ accelerator traps
+
+Describe switch port 5, connected to gmac0, as a second CPU port with a
+fixed link. b53 redirects the frames that the flow accelerator in front
+of port 8 cannot handle (TTL 0 and 1, TCP FIN and RST) to it. The switch
+boots with the regular tag; the bcm53xx preinit hook moves it to the
+prepended tag when flow offloading and hardware flow offloading are both
+on. User ports keep port 8 as their CPU port. This RT-N18U's switch
+reports revision 5 at boot ("found switch: BCM53011, rev 5"), which has
+the accelerator.
+
+Measured on an RT-N18U: with hardware flow offloading off the switch
+kept the regular tag and the accelerator stayed out of the path; with
+both options on the hook moved it to the prepended tag at boot and a
+TCP stream ran through the accelerator at 949 Mbit/s.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ arch/arm/boot/dts/broadcom/bcm47081-asus-rt-n18u.dts | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm47081-asus-rt-n18u.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47081-asus-rt-n18u.dts
+@@ -134,7 +134,10 @@
+ 		};
+ 
+ 		port@5 {
+-			status = "disabled";
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
+ 		};
+ 
+ 		port@7 {

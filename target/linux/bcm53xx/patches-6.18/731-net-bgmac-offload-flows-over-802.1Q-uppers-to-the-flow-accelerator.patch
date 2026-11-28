@@ -1,0 +1,287 @@
+From b0ad87931a15789e7c55fba586316ef983602325 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Sat, 14 Nov 2026 16:51:38 +0100
+Subject: [PATCH] net: bgmac: offload flows over 802.1Q uppers to the flow
+ accelerator
+
+The flowtable describes a flow towards an 802.1Q upper of a user port
+with a VLAN_PUSH action, and a flow from one with a match on the VLAN
+key and a VLAN_POP action. The accelerator can do both: a next hop adds
+an 802.1Q tag (tag operation 1, with the TCI at bit 3 of the entry) or
+removes one (operation 2, the same as for an untagged next hop), and the
+accelerator finds a flow in a tagged frame as it does in an untagged
+one; it does not look at the tag.
+
+So offload flows with one 802.1Q tag: the VLAN ID becomes part of the
+next hop and of its static FDB entry, and the switch keeps the egress
+port and port 8 in the VLAN through b53_fa_vlan() while a next hop adds
+the tag. A flow that comes with a tag must have it removed, and a flow
+may not have its tag replaced: the accelerator was not measured doing
+that. 802.1ad and a second tag stay in software. The priority bits of
+the pushed tag are 0, as they are on the software path.
+
+EA6900, WAN on wan.10 behind a switch port tagged with VLAN 10, iperf3
+TCP between a LAN host and a host on the WAN side, in Mbit/s, with the
+idle time of the router's two cores:
+
+                          up    down
+  IPv4                    939   935    99 %
+  IPv6                    925   920    99-100 %
+
+- The switch traps also catch the tagged frames from the WAN, and these
+  reach Linux through wan.10. A UDP flow in the accelerator, 12 packets
+  with TTL 1 among 24 with TTL 64 sent from the WAN side: the LAN host
+  got the 24, the sender 12 ICMPv6 time exceeded for IPv6 and 8 ICMP
+  time exceeded for IPv4 (the rest held back by the ICMP rate limit).
+  A ping with TTL 1 to the router's WAN address is answered. From the
+  LAN, TCP segments with TTL 1 in a flow in the accelerator get their
+  time exceeded (4 of 4, IPv4 and IPv6), and a FIN or an RST takes
+  the flow out of the accelerator within 1 s.
+- A firewall reload 8 s into a test: IPv4 937 on average, IPv6 with 4
+  connections 924, with its 8 flows back in the accelerator within 2 s.
+- Untagged traffic between two LAN ports is not affected.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+ drivers/net/ethernet/broadcom/bgmac-fa.c | 107 +++++++++++++++++++----
+ 1 file changed, 92 insertions(+), 15 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac-fa.c
++++ b/drivers/net/ethernet/broadcom/bgmac-fa.c
+@@ -38,7 +38,9 @@
+  * Each direction is one entry of the flow table, in one of the four slots
+  * that its hash selects. The FA decrements the TTL, rewrites the MAC
+  * addresses and, for NAT, the address and port, and sends the frame back
+- * to the switch. It counts hits per entry, not bytes.
++ * to the switch. It counts hits per entry, not bytes. Towards an 802.1Q
++ * upper of a user port it adds the VLAN tag, and it takes the tag off a
++ * frame that comes from one.
+  *
+  * It forwards routed IPv6 TCP and UDP as well, which Broadcom's driver
+  * does not use: the hash over the wider addresses, the format of the two
+@@ -53,6 +55,7 @@
+ #include <linux/crc-itu-t.h>
+ #include <linux/etherdevice.h>
+ #include <linux/hashtable.h>
++#include <linux/if_vlan.h>
+ #include <linux/iopoll.h>
+ #include <linux/dsa/b53.h>
+ #include <linux/ip.h>
+@@ -149,7 +152,9 @@
+ 
+ /* next hop entry */
+ #define FA_NH_TAG_OP			1	/* 2 bits */
+-#define  FA_NH_TAG_NONE			2
++#define  FA_NH_TAG_CTAG			1	/* 802.1Q tag with the TCI */
++#define  FA_NH_TAG_NONE			2	/* untagged, also removes one */
++#define FA_NH_VLAN_TCI			3	/* 16 bits */
+ #define FA_NH_DA			19	/* 48 bits */
+ 
+ /* pool entry */
+@@ -167,6 +172,7 @@ struct bgmac_fa_tuple {
+ struct bgmac_fa_next_hop {
+ 	u8 mac[ETH_ALEN];
+ 	struct dsa_port *dp;		/* egress port */
++	u16 vid;			/* VLAN tag to add, or 0 */
+ 	int refs;
+ 	bool fdb;			/* static switch FDB entry added for it */
+ };
+@@ -442,8 +448,22 @@ static int bgmac_fa_bucket(const struct
+ 
+ /* ---------- next hops and pools, shared and refcounted ---------- */
+ 
++/* another next hop that adds this VLAN tag towards this port */
++static bool bgmac_fa_vlan_in_use(struct bgmac_fa *fa,
++				 const struct bgmac_fa_next_hop *nh)
++{
++	int i;
++
++	for (i = 0; i < FA_NEXT_HOPS; i++)
++		if (&fa->next_hop[i] != nh && fa->next_hop[i].refs &&
++		    fa->next_hop[i].dp == nh->dp &&
++		    fa->next_hop[i].vid == nh->vid)
++			return true;
++	return false;
++}
++
+ static int bgmac_fa_next_hop_get(struct bgmac *bgmac, const u8 *mac,
+-				 struct dsa_port *dp)
++				 struct dsa_port *dp, u16 vid)
+ {
+ 	struct bgmac_fa *fa = bgmac->fa;
+ 	struct bgmac_fa_next_hop *nh;
+@@ -452,7 +472,8 @@ static int bgmac_fa_next_hop_get(struct
+ 
+ 	for (i = 0; i < FA_NEXT_HOPS; i++) {
+ 		nh = &fa->next_hop[i];
+-		if (nh->refs && nh->dp == dp && ether_addr_equal(nh->mac, mac)) {
++		if (nh->refs && nh->dp == dp && nh->vid == vid &&
++		    ether_addr_equal(nh->mac, mac)) {
+ 			nh->refs++;
+ 			return i;
+ 		}
+@@ -462,17 +483,29 @@ static int bgmac_fa_next_hop_get(struct
+ 	if (free < 0)
+ 		return -ENOSPC;
+ 
+-	/* Ethernet, no tag, destination address */
+-	fa_put_bits(d, FA_NH_TAG_OP, 2, FA_NH_TAG_NONE);
++	nh = &fa->next_hop[free];
++	nh->dp = dp;
++	nh->vid = vid;
++
++	/* The switch drops the FA's tagged output unless the egress port
++	 * and the FA's own port are members of the VLAN.
++	 */
++	if (vid && !bgmac_fa_vlan_in_use(fa, nh)) {
++		err = b53_fa_vlan(dp->ds, dp->index, vid, true);
++		if (err)
++			goto clear;
++	}
++
++	/* Ethernet, the VLAN tag or none, destination address */
++	fa_put_bits(d, FA_NH_TAG_OP, 2, vid ? FA_NH_TAG_CTAG : FA_NH_TAG_NONE);
++	fa_put_bits(d, FA_NH_VLAN_TCI, 16, vid);
+ 	fa_put_mac(d, FA_NH_DA, mac);
+ 	err = bgmac_fa_tbl_write(bgmac, FA_TBL_NEXT_HOP, free, d,
+ 				 FA_NEXT_HOP_WORDS);
+ 	if (err)
+-		return err;
++		goto vlan;
+ 
+-	nh = &fa->next_hop[free];
+ 	ether_addr_copy(nh->mac, mac);
+-	nh->dp = dp;
+ 	nh->refs = 1;
+ 	nh->fdb = false;
+ 
+@@ -484,7 +517,7 @@ static int bgmac_fa_next_hop_get(struct
+ 	if (!dsa_port_bridge_dev_get(dp) && dp->ds->ops->port_fdb_add) {
+ 		struct dsa_db db = { .type = DSA_DB_PORT, .dp = dp };
+ 
+-		err = dp->ds->ops->port_fdb_add(dp->ds, dp->index, mac, 0, db);
++		err = dp->ds->ops->port_fdb_add(dp->ds, dp->index, mac, vid, db);
+ 		if (err)
+ 			netdev_warn(bgmac->net_dev,
+ 				    "flow accelerator: no switch FDB entry for %pM on port %d: %d\n",
+@@ -494,25 +527,37 @@ static int bgmac_fa_next_hop_get(struct
+ 	}
+ 
+ 	return free;
++
++vlan:
++	if (vid && !bgmac_fa_vlan_in_use(fa, nh))
++		b53_fa_vlan(dp->ds, dp->index, vid, false);
++clear:
++	nh->dp = NULL;
++	nh->vid = 0;
++	return err;
+ }
+ 
+ static void bgmac_fa_next_hop_put(struct bgmac *bgmac, int i)
+ {
+ 	struct bgmac_fa_next_hop *nh = &bgmac->fa->next_hop[i];
+ 	u32 d[FA_NEXT_HOP_WORDS] = {};
++	struct dsa_port *dp = nh->dp;
+ 
+ 	if (--nh->refs)
+ 		return;
+ 
+ 	bgmac_fa_tbl_write(bgmac, FA_TBL_NEXT_HOP, i, d, FA_NEXT_HOP_WORDS);
+ 	if (nh->fdb) {
+-		struct dsa_port *dp = nh->dp;
+ 		struct dsa_db db = { .type = DSA_DB_PORT, .dp = dp };
+ 
+-		dp->ds->ops->port_fdb_del(dp->ds, dp->index, nh->mac, 0, db);
++		dp->ds->ops->port_fdb_del(dp->ds, dp->index, nh->mac, nh->vid,
++					  db);
+ 		nh->fdb = false;
+ 	}
++	if (nh->vid && !bgmac_fa_vlan_in_use(bgmac->fa, nh))
++		b53_fa_vlan(dp->ds, dp->index, nh->vid, false);
+ 	nh->dp = NULL;
++	nh->vid = 0;
+ }
+ 
+ static int bgmac_fa_pool_get(struct bgmac *bgmac, const u8 *mac, bool external)
+@@ -567,6 +612,7 @@ struct bgmac_fa_rule {
+ 	__be32 nat_ip;
+ 	__be16 nat_port;
+ 	bool snat, dnat;		/* neither: routing only */
++	u16 push_vid;			/* VLAN tag to add */
+ 	struct dsa_port *in, *out;
+ };
+ 
+@@ -611,6 +657,7 @@ static int bgmac_fa_parse(struct bgmac *
+ 	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
+ 	struct flow_action_entry *act;
+ 	bool snat_port = false, dnat_port = false;
++	bool vlan = false, pop = false;
+ 	struct net_device *out = NULL;
+ 	int i;
+ 
+@@ -620,10 +667,21 @@ static int bgmac_fa_parse(struct bgmac *
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CONTROL) ||
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC) ||
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS) ||
+-	    flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN) ||
+ 	    flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CVLAN))
+ 		return -EOPNOTSUPP;
+ 
++	/* From an 802.1Q upper of the ingress port. The FA finds the flow
++	 * in a tagged frame too; it does not look at the tag.
++	 */
++	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN)) {
++		struct flow_match_vlan m;
++
++		flow_rule_match_vlan(rule, &m);
++		if (m.key->vlan_tpid != htons(ETH_P_8021Q) || !m.key->vlan_id)
++			return -EOPNOTSUPP;
++		vlan = true;
++	}
++
+ 	{
+ 		struct flow_match_meta m;
+ 		struct net_device *in;
+@@ -719,11 +777,29 @@ static int bgmac_fa_parse(struct bgmac *
+ 		case FLOW_ACTION_CSUM:
+ 		case FLOW_ACTION_PRIORITY:
+ 			break;
+-		default:	/* VLAN, PPPoE: not supported */
++		case FLOW_ACTION_VLAN_PUSH:
++			if (r->push_vid || !act->vlan.vid ||
++			    act->vlan.vid >= VLAN_N_VID ||
++			    act->vlan.proto != htons(ETH_P_8021Q))
++				return -EOPNOTSUPP;
++			r->push_vid = act->vlan.vid;
++			break;
++		case FLOW_ACTION_VLAN_POP:
++			if (pop)
++				return -EOPNOTSUPP;
++			pop = true;
++			break;
++		default:	/* a second tag, PPPoE: not supported */
+ 			return -EOPNOTSUPP;
+ 		}
+ 	}
+ 
++	/* The next hop removes a tag or adds one, not both: a tag that the
++	 * flow comes with must go, and no other may come.
++	 */
++	if (vlan != pop || (pop && r->push_vid))
++		return -EOPNOTSUPP;
++
+ 	/* IPv6 is routed only (its NAT mangles were refused above), and
+ 	 * needs the switch to trap hop limit 1 in front of the FA
+ 	 */
+@@ -910,7 +986,8 @@ static int bgmac_fa_flow_add(struct bgma
+ 	flow->idx = base + i;
+ 	flow->lastused = jiffies;
+ 
+-	flow->next_hop = bgmac_fa_next_hop_get(bgmac, r.eth, r.out);
++	flow->next_hop = bgmac_fa_next_hop_get(bgmac, r.eth, r.out,
++					       r.push_vid);
+ 	if (flow->next_hop < 0) {
+ 		err = flow->next_hop;
+ 		goto free;
