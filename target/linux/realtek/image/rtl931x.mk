@@ -2,6 +2,18 @@
 
 include ./common.mk
 
+define Device/d-link_dgs-1250-52xmp
+  SOC := rtl9311
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DGS-1250-52XMP
+  # /proc/mtd on a 52XMP is 0x3e00000 at 0x200000. Keep the
+  # 28X cap. The stock bootcmd loads a UBIFS uImage, and the
+  # 28X flash recipe copies 12 MiB from 0xb4200000.
+  IMAGE_SIZE := 24576k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += d-link_dgs-1250-52xmp
+
 define Device/hasivo_f5800w-12s-plus
   SOC := rtl9313
   DEVICE_VENDOR := Hasivo
