@@ -2,6 +2,16 @@
 
 include ./common.mk
 
+define Device/draytek_g2540xs
+  SOC := rtl9310
+  DEVICE_VENDOR := DrayTek
+  DEVICE_MODEL := VigorSwitch G2540xs
+  IMAGE_SIZE := 31232k
+  DEVICE_PACKAGES += kmod-hwmon-adt7475
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += draytek_g2540xs
+
 define Device/hasivo_f5800w-12s-plus
   SOC := rtl9313
   DEVICE_VENDOR := Hasivo
