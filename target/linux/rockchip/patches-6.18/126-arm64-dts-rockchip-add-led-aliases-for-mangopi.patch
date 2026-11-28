@@ -1,0 +1,23 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3528-mangopi-m28k.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-mangopi-m28k.dts
+@@ -20,6 +20,11 @@
+ 		serial0 = &uart0;
+ 		serial2 = &uart2;
+ 		serial3 = &uart3;
++
++		led-boot = &led_work;
++		led-failsafe = &led_work;
++		led-running = &led_work;
++		led-upgrade = &led_work;
+ 	};
+ 
+ 	chosen {
+@@ -80,7 +85,7 @@
+ 			linux,default-trigger = "netdev";
+ 		};
+ 
+-		led-2 {
++		led_work: led-2 {
+ 			color = <LED_COLOR_ID_GREEN>;
+ 			function = LED_FUNCTION_STATUS;
+ 			gpios = <&gpio4 RK_PB7 GPIO_ACTIVE_LOW>;
