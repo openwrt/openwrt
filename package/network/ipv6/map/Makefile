@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=map
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
@@ -35,6 +35,8 @@ define Package/map/install
 	$(INSTALL_BIN) ./files/map.sh $(1)/lib/netifd/proto/map.sh
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mapcalc $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/share/nftables.d/chain-pre/srcnat
+	$(INSTALL_DATA) ./files/map.nft $(1)/usr/share/nftables.d/chain-pre/srcnat/map.nft
 endef
 
 $(eval $(call BuildPackage,map))
