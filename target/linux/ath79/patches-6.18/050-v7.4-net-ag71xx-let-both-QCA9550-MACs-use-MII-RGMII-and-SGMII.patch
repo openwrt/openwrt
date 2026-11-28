@@ -1,0 +1,53 @@
+From 7cb4cf087038cbfe689212f28654abc22154db74 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Fri, 6 Nov 2026 14:16:07 -0800
+Subject: [PATCH] net: ag71xx: let both QCA9550 MACs use MII, RGMII and SGMII
+
+The GE0_SGMII bit of the QCA955x ETH_CFG register selects which GMAC
+gets the SerDes (QCA9558 datasheet, 10.8.1): when it is clear, GMAC0
+connects as RGMII/MII and GMAC1 as SGMII, and when it is set, the other
+way around. The driver only allows the second layout, with SGMII on
+GMAC0 and RGMII/MII on GMAC1, but boards like the TP-Link Archer C7
+use the first one, with GMAC0 on RGMII.
+
+Allow MII, RGMII and SGMII on both MACs.
+
+Tested on Archer C7 v2. RGMII on port 0 of the switch works.
+
+Fixes: 0767ec042897 ("net: ag71xx: extend link validation to support other SoCs")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Link: https://patch.msgid.link/20261106221607.16215-1-rosenp@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/atheros/ag71xx.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -1083,7 +1083,7 @@ static int ag71xx_phylink_setup(struct a
+ 	if ((ag71xx_is(ag, AR9330) && ag->mac_idx == 0) ||
+ 	    ag71xx_is(ag, AR9340) ||
+ 	    ag71xx_is(ag, QCA9530) ||
+-	    (ag71xx_is(ag, QCA9550) && ag->mac_idx == 1))
++	    ag71xx_is(ag, QCA9550))
+ 		__set_bit(PHY_INTERFACE_MODE_MII,
+ 			  ag->phylink_config.supported_interfaces);
+ 
+@@ -1093,7 +1093,7 @@ static int ag71xx_phylink_setup(struct a
+ 		__set_bit(PHY_INTERFACE_MODE_GMII,
+ 			  ag->phylink_config.supported_interfaces);
+ 
+-	if (ag71xx_is(ag, QCA9550) && ag->mac_idx == 0)
++	if (ag71xx_is(ag, QCA9550))
+ 		__set_bit(PHY_INTERFACE_MODE_SGMII,
+ 			  ag->phylink_config.supported_interfaces);
+ 
+@@ -1102,7 +1102,7 @@ static int ag71xx_phylink_setup(struct a
+ 			  ag->phylink_config.supported_interfaces);
+ 
+ 	if ((ag71xx_is(ag, AR9340) && ag->mac_idx == 0) ||
+-	    (ag71xx_is(ag, QCA9550) && ag->mac_idx == 1))
++	    ag71xx_is(ag, QCA9550))
+ 		__set_bit(PHY_INTERFACE_MODE_RGMII,
+ 			  ag->phylink_config.supported_interfaces);
+ 

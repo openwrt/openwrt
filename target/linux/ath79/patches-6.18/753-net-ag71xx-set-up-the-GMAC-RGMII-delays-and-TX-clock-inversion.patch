@@ -1,0 +1,125 @@
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 12 Nov 2026 15:47:56 -0800
+Subject: [PATCH] net: ag71xx: set up the GMAC RGMII delays and TX clock inversion
+
+On AR934x and QCA955x, ETH_CFG in the GMAC block has 2 bit delays for
+the RGMII receive data (RXD), receive control (RXDV), transmit data
+(TXD) and transmit control (TXEN) lines, and bit 31 of
+ETH_XMII_CONTROL inverts the transmit clock. Boards rely on the
+bootloader to set them up, or on the downstream OpenWrt driver, which
+took them from the device tree.
+
+Take the ETH_CFG delays from qca,rxd-delay, qca,rxdv-delay,
+qca,txd-delay and qca,txen-delay on the RGMII MAC when it has the GMAC
+block, and the inversion from qca,tx-clk-invert when it has the PLL
+block. The inversion applies at all speeds, like the clock delays.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/ethernet/atheros/ag71xx.c | 45 +++++++++++++++++++++++++--
+ 1 file changed, 42 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -74,6 +74,12 @@
+ #define AR934X_ETH_CFG_GMII_GMAC0	BIT(2)
+ #define QCA955X_ETH_CFG_RGMII_EN	BIT(0)
+ #define QCA955X_ETH_CFG_GE0_SGMII	BIT(6)
++/* RGMII delays of AR934x and QCA955x */
++#define AG71XX_ETH_CFG_RXD_DELAY	GENMASK(15, 14)
++#define AG71XX_ETH_CFG_RDV_DELAY	GENMASK(17, 16)
++#define AG71XX_ETH_CFG_TXD_DELAY	GENMASK(19, 18)
++#define AG71XX_ETH_CFG_TXE_DELAY	GENMASK(21, 20)
++#define AG71XX_ETH_CFG_DELAY_MAX	3
+ /* AR933x and QCA953x, the AR934x has no address swap */
+ #define AR933X_ETH_CFG_SW_PHY_SWAP	BIT(7)
+ #define AR933X_ETH_CFG_SW_PHY_ADDR_SWAP	BIT(8)
+@@ -81,6 +87,7 @@
+ #define QCA956X_ETH_CFG_SW_PHY_ADDR_SWAP	BIT(9)
+ 
+ /* ETH_XMII_CONTROL in the PLL block of AR934x and QCA955x */
++#define ETH_XMII_TX_INVERT		BIT(31)
+ #define ETH_XMII_GIGE_QUAD		BIT(30)
+ #define ETH_XMII_RX_DELAY		GENMASK(29, 28)
+ #define ETH_XMII_TX_DELAY		GENMASK(27, 26)
+@@ -414,7 +421,7 @@ struct ag71xx {
+ 
+ 	struct regmap *gmac;
+ 	struct regmap *pll;
+-	u32 xmii_delay;
++	u32 xmii_cfg;
+ 	bool xmii_gige_quad;
+ };
+ 
+@@ -1024,7 +1031,7 @@ static void ag71xx_hw_start(struct ag71x
+ 
+ static void ag71xx_xmii_set_speed(struct ag71xx *ag, int speed)
+ {
+-	u32 val = ag->xmii_delay;
++	u32 val = ag->xmii_cfg;
+ 
+ 	switch (speed) {
+ 	case SPEED_1000:
+@@ -1892,11 +1899,24 @@ static void ag71xx_gmac_if_cfg(struct ag
+ 	}
+ }
+ 
++static int ag71xx_gmac_delay(struct ag71xx *ag, const char *prop, u32 *delay)
++{
++	*delay = 0;
++	of_property_read_u32(ag->pdev->dev.of_node, prop, delay);
++	if (*delay > AG71XX_ETH_CFG_DELAY_MAX)
++		return dev_err_probe(&ag->pdev->dev, -EINVAL, "invalid %s %u\n",
++				     prop, *delay);
++
++	return 0;
++}
++
+ static int ag71xx_gmac_init(struct ag71xx *ag)
+ {
+ 	const struct ag71xx_dcfg *dcfg = ag->dcfg;
+ 	struct device_node *np = ag->pdev->dev.of_node;
++	u32 rxd, rxdv, txd, txen;
+ 	u32 mask = 0, val = 0;
++	int err;
+ 
+ 	if (!dcfg->xmii_reg && !dcfg->phy_swap)
+ 		return 0;
+@@ -1920,6 +1940,23 @@ static int ag71xx_gmac_init(struct ag71x
+ 	if (dcfg->xmii_reg)
+ 		ag71xx_gmac_if_cfg(ag, &mask, &val);
+ 
++	/* Only one MAC can use RGMII, and it owns the delays */
++	if (dcfg->xmii_reg && phy_interface_mode_is_rgmii(ag->phy_if_mode)) {
++		err = ag71xx_gmac_delay(ag, "qca,rxd-delay", &rxd) ?:
++		      ag71xx_gmac_delay(ag, "qca,rxdv-delay", &rxdv) ?:
++		      ag71xx_gmac_delay(ag, "qca,txd-delay", &txd) ?:
++		      ag71xx_gmac_delay(ag, "qca,txen-delay", &txen);
++		if (err)
++			return err;
++
++		mask |= AG71XX_ETH_CFG_RXD_DELAY | AG71XX_ETH_CFG_RDV_DELAY |
++			AG71XX_ETH_CFG_TXD_DELAY | AG71XX_ETH_CFG_TXE_DELAY;
++		val |= FIELD_PREP(AG71XX_ETH_CFG_RXD_DELAY, rxd) |
++		       FIELD_PREP(AG71XX_ETH_CFG_RDV_DELAY, rxdv) |
++		       FIELD_PREP(AG71XX_ETH_CFG_TXD_DELAY, txd) |
++		       FIELD_PREP(AG71XX_ETH_CFG_TXE_DELAY, txen);
++	}
++
+ 	if (!mask)
+ 		return 0;
+ 
+@@ -1965,9 +2002,11 @@ static int ag71xx_xmii_init(struct ag71x
+ 		return dev_err_probe(dev, -EINVAL,
+ 				     "invalid tx-internal-delay-ps %u\n", tx_ps);
+ 
+-	ag->xmii_delay =
++	ag->xmii_cfg =
+ 		FIELD_PREP(ETH_XMII_RX_DELAY, rx / ETH_XMII_RX_DELAY_STEP_PS) |
+ 		FIELD_PREP(ETH_XMII_TX_DELAY, tx / ETH_XMII_TX_DELAY_STEP_PS);
++	if (of_property_read_bool(np, "qca,tx-clk-invert"))
++		ag->xmii_cfg |= ETH_XMII_TX_INVERT;
+ 
+ 	return 0;
+ }
