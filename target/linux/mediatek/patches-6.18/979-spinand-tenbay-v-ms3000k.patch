@@ -1,0 +1,485 @@
+From 3ab7dc9725d3eda3e198d3aa129595b1c7901ea0 Mon Sep 17 00:00:00 2001
+From: Avi Carmeli <avi_ca@012.net.il>
+Date: Tue, 24 Nov 2026 11:41:03 +0200
+Subject: [PATCH] mtd: spinand: identify V-MS3000K NAND with a verified
+ parameter page
+
+Use the vendor WPS3NS01W definitions and a board-scoped ONFI
+fallback after verifying the parameter-page identity and CRC.
+Retain the qualified transport and storage behavior.
+
+Link: https://github.com/openwrt/openwrt/pull/26913
+
+Signed-off-by: Avi Carmeli <avi_ca@012.net.il>
+---
+ drivers/mtd/nand/spi/Makefile   |   2 +-
+ drivers/mtd/nand/spi/core.c     | 130 ++++++++++++++++++---------
+ drivers/mtd/nand/spi/vms-onfi.h | 154 ++++++++++++++++++++++++++++++++
+ drivers/mtd/nand/spi/wodposit.c |  77 ++++++++++++++++
+ 4 files changed, 321 insertions(+), 42 deletions(-)
+ create mode 100644 drivers/mtd/nand/spi/vms-onfi.h
+ create mode 100644 drivers/mtd/nand/spi/wodposit.c
+
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -15,6 +15,8 @@
+ #include <linux/module.h>
+ #include <linux/mtd/spinand.h>
+ #include <linux/of.h>
++#include <linux/delay.h>
++#include <linux/unaligned.h>
+ #include <linux/slab.h>
+ #include <linux/string.h>
+ #include <linux/spi/spi.h>
+@@ -1243,6 +1245,8 @@ static const struct nand_ops spinand_ops
+ 	.isbad = spinand_isbad,
+ };
+ 
++extern const struct spinand_manufacturer wodposit_spinand_manufacturer;
++
+ static const struct spinand_manufacturer *spinand_manufacturers[] = {
+ 	&alliancememory_spinand_manufacturer,
+ 	&ato_spinand_manufacturer,
+@@ -1260,6 +1264,7 @@ static const struct spinand_manufacturer
+ 	&skyhigh_spinand_manufacturer,
+ 	&toshiba_spinand_manufacturer,
+ 	&winbond_spinand_manufacturer,
++	&wodposit_spinand_manufacturer,
+ 	&xtx_spinand_manufacturer,
+ };
+ 
+@@ -1452,6 +1457,49 @@ spinand_select_op_variant(struct spinand
+ 	return best_variant;
+ }
+ 
++static int spinand_init_chip(struct spinand_device *spinand,
++			     const struct spinand_info *info)
++{
++	struct nand_device *nand = spinand_to_nand(spinand);
++	const struct spi_mem_op *op;
++
++	nand->memorg = info->memorg;
++	nanddev_set_ecc_requirements(nand, &info->eccreq);
++	spinand->eccinfo = info->eccinfo;
++	spinand->flags = info->flags;
++	spinand->select_target = info->select_target;
++	spinand->configure_chip = info->configure_chip;
++	spinand->set_cont_read = info->set_cont_read;
++	spinand->fact_otp = &info->fact_otp;
++	spinand->user_otp = &info->user_otp;
++	spinand->read_retries = info->read_retries;
++	spinand->set_read_retry = info->set_read_retry;
++
++	op = spinand_select_op_variant(spinand,
++				       info->op_variants.read_cache);
++	if (!op)
++		return -ENOTSUPP;
++
++	spinand->ssdr_op_templates.read_cache = op;
++
++	op = spinand_select_op_variant(spinand,
++				       info->op_variants.write_cache);
++	if (!op)
++		return -ENOTSUPP;
++
++	spinand->ssdr_op_templates.write_cache = op;
++
++	op = spinand_select_op_variant(spinand,
++				       info->op_variants.update_cache);
++	if (!op)
++		return -ENOTSUPP;
++
++	spinand->ssdr_op_templates.update_cache = op;
++
++
++	return 0;
++}
++
+ /**
+  * spinand_match_and_init() - Try to find a match between a device ID and an
+  *			      entry in a spinand_info table
+@@ -1473,12 +1521,11 @@ int spinand_match_and_init(struct spinan
+ 			   enum spinand_readid_method rdid_method)
+ {
+ 	u8 *id = spinand->id.data;
+-	struct nand_device *nand = spinand_to_nand(spinand);
++	int ret;
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < table_size; i++) {
+ 		const struct spinand_info *info = &table[i];
+-		const struct spi_mem_op *op;
+ 
+ 		if (rdid_method != info->devid.method)
+ 			continue;
+@@ -1486,46 +1533,24 @@ int spinand_match_and_init(struct spinan
+ 		if (memcmp(id + 1, info->devid.id, info->devid.len))
+ 			continue;
+ 
+-		nand->memorg = table[i].memorg;
+-		nanddev_set_ecc_requirements(nand, &table[i].eccreq);
+-		spinand->eccinfo = table[i].eccinfo;
+-		spinand->flags = table[i].flags;
+-		spinand->id.len = 1 + table[i].devid.len;
+-		spinand->select_target = table[i].select_target;
+-		spinand->configure_chip = table[i].configure_chip;
+-		spinand->set_cont_read = table[i].set_cont_read;
+-		spinand->fact_otp = &table[i].fact_otp;
+-		spinand->user_otp = &table[i].user_otp;
+-		spinand->read_retries = table[i].read_retries;
+-		spinand->set_read_retry = table[i].set_read_retry;
+-
+-		op = spinand_select_op_variant(spinand,
+-					       info->op_variants.read_cache);
+-		if (!op)
+-			return -ENOTSUPP;
+-
+-		spinand->ssdr_op_templates.read_cache = op;
+-
+-		op = spinand_select_op_variant(spinand,
+-					       info->op_variants.write_cache);
+-		if (!op)
+-			return -ENOTSUPP;
+-
+-		spinand->ssdr_op_templates.write_cache = op;
+-
+-		op = spinand_select_op_variant(spinand,
+-					       info->op_variants.update_cache);
+-		if (!op)
+-			return -ENOTSUPP;
+-
+-		spinand->ssdr_op_templates.update_cache = op;
+-
+-		return 0;
++		ret = spinand_init_chip(spinand, info);
++		if (!ret)
++			spinand->id.len = 1 + info->devid.len;
++		return ret;
+ 	}
+ 
+ 	return -ENOTSUPP;
+ }
+ 
++#include "vms-onfi.h"
++
++static bool vms_verified_probe(struct spinand_device *spinand)
++{
++	return of_machine_is_compatible("tenbay,v-ms3000k") &&
++	       of_property_read_bool(spinand->spimem->spi->dev.of_node,
++				     "tenbay,verified-onfi-probe");
++}
++
+ static int spinand_detect(struct spinand_device *spinand)
+ {
+ 	struct device *dev = &spinand->spimem->spi->dev;
+@@ -1537,12 +1562,28 @@ static int spinand_detect(struct spinand
+ 		return ret;
+ 
+ 	ret = spinand_id_detect(spinand);
++	if ((ret == -ENODEV || ret == -EOPNOTSUPP) && vms_verified_probe(spinand) &&
++	    !memchr_inv(spinand->id.data, 0, SPINAND_MAX_ID_LEN)) {
++		ret = vms_onfi_identify(spinand);
++		if (!ret)
++			ret = spinand_init_chip(spinand,
++					wodposit_spinand_manufacturer.chips);
++		if (!ret) {
++			spinand->manufacturer = &wodposit_spinand_manufacturer;
++			/* No raw ID was observed. Leave the ID buffer untouched. */
++			spinand->id.len = 0;
++		}
++	}
+ 	if (ret) {
+ 		dev_err(dev, "unknown raw ID %*phN\n", SPINAND_MAX_ID_LEN,
+ 			spinand->id.data);
+ 		return ret;
+ 	}
+ 
++	if (vms_verified_probe(spinand) &&
++	    spinand->manufacturer != &wodposit_spinand_manufacturer)
++		return -ENODEV;
++
+ 	if (nand->memorg.ntargets > 1 && !spinand->select_target) {
+ 		dev_err(dev,
+ 			"SPI NANDs with more than one die must implement ->select_target()\n");
+@@ -1662,9 +1703,11 @@ static int spinand_init(struct spinand_d
+ 
+ 	spinand_init_ssdr_templates(spinand);
+ 
+-	ret = spi_mem_do_calibration(spinand->spimem, spinand_cal_read, spinand);
+-	if (ret)
+-		dev_err(dev, "Failed to calibrate SPI-NAND (err = %d)\n", ret);
++	if (!vms_verified_probe(spinand)) {
++		ret = spi_mem_do_calibration(spinand->spimem, spinand_cal_read, spinand);
++		if (ret)
++			dev_err(dev, "Failed to calibrate SPI-NAND (err = %d)\n", ret);
++	}
+ 
+ 	ret = spinand_detect(spinand);
+ 	if (ret)
+@@ -1692,6 +1735,9 @@ static int spinand_init(struct spinand_d
+ 	if (ret)
+ 		goto err_free_bufs;
+ 
++	if (vms_verified_probe(spinand))
++		spinand->flags |= SPINAND_NO_RAW_ACCESS;
++
+ 	ret = nanddev_init(nand, &spinand_ops, THIS_MODULE);
+ 	if (ret)
+ 		goto err_manuf_cleanup;
+@@ -1802,7 +1848,9 @@ static int spinand_probe(struct spi_mem
+ 	if (ret)
+ 		return ret;
+ 
+-	mtk_bmt_attach(mtd);
++	ret = mtk_bmt_attach(mtd);
++	if (ret && vms_verified_probe(spinand))
++		goto err_spinand_cleanup;
+ 	ret = mtd_device_register(mtd, NULL, 0);
+ 	if (ret)
+ 		goto err_spinand_cleanup;
+--- a/drivers/mtd/nand/spi/Makefile
++++ b/drivers/mtd/nand/spi/Makefile
+@@ -1,5 +1,5 @@
+ # SPDX-License-Identifier: GPL-2.0
+ spinand-objs := core.o otp.o
+ spinand-objs += alliancememory.o ato.o dosilicon.o esmt.o etron.o fmsh.o foresee.o gigadevice.o heyangtek.o
+-spinand-objs += macronix.o micron.o paragon.o skyhigh.o toshiba.o winbond.o xtx.o
++spinand-objs += macronix.o micron.o paragon.o skyhigh.o toshiba.o winbond.o wodposit.o xtx.o
+ obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
+--- /dev/null
++++ b/drivers/mtd/nand/spi/wodposit.c
+@@ -0,0 +1,77 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Wodposit WPS3NS01W (A5 A0 81), using the working vendor definitions. */
++
++#include <linux/errno.h>
++#include <linux/kernel.h>
++#include <linux/mtd/spinand.h>
++
++#define SPINAND_MFR_WODPOSIT	0xa5
++
++/* Vendor framing: 0x03, two column bytes, eight dummy clocks, single I/O. */
++static SPINAND_OP_VARIANTS(read_cache_variants,
++		SPINAND_PAGE_READ_FROM_CACHE_1S_1S_1S_OP(0, 1, NULL, 0, 0));
++
++/* Vendor program-load and random-load operations. */
++static SPINAND_OP_VARIANTS(write_cache_variants,
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(true, 0, NULL, 0));
++
++static SPINAND_OP_VARIANTS(update_cache_variants,
++		SPINAND_PROG_LOAD_1S_1S_1S_OP(false, 0, NULL, 0));
++
++static int wps3ns01w_ecc_get_status(struct spinand_device *spinand, u8 status)
++{
++	switch (status & STATUS_ECC_MASK) {
++	case STATUS_ECC_NO_BITFLIPS:
++		return 0;
++	case STATUS_ECC_HAS_BITFLIPS:
++		return 4;
++	default:
++		/* Both 0x20 and 0x30 are uncorrectable in the vendor policy. */
++		return -EBADMSG;
++	}
++}
++
++static int wps3ns01w_ooblayout_ecc(struct mtd_info *mtd, int section,
++				 struct mtd_oob_region *region)
++{
++	/* On-die ECC placement is not exported by the vendor. */
++	return -ERANGE;
++}
++
++static int wps3ns01w_ooblayout_free(struct mtd_info *mtd, int section,
++				  struct mtd_oob_region *region)
++{
++	if (section)
++		return -ERANGE;
++	region->offset = 2;
++	region->length = 62;
++	return 0;
++}
++
++static const struct mtd_ooblayout_ops wps3ns01w_ooblayout = {
++	.ecc = wps3ns01w_ooblayout_ecc,
++	.free = wps3ns01w_ooblayout_free,
++};
++
++static const struct spinand_info wodposit_spinand_table[] = {
++	SPINAND_INFO("WPS3NS01W",
++		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xa0, 0x81),
++		     NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
++		     NAND_ECCREQ(4, 512),
++		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
++					      &write_cache_variants,
++					      &update_cache_variants),
++		     0,
++		     SPINAND_ECCINFO(&wps3ns01w_ooblayout,
++				     wps3ns01w_ecc_get_status)),
++};
++
++static const struct spinand_manufacturer_ops wodposit_spinand_manuf_ops = {};
++
++const struct spinand_manufacturer wodposit_spinand_manufacturer = {
++	.id = SPINAND_MFR_WODPOSIT,
++	.name = "Wodposit",
++	.chips = wodposit_spinand_table,
++	.nchips = ARRAY_SIZE(wodposit_spinand_table),
++	.ops = &wodposit_spinand_manuf_ops,
++};
+--- /dev/null
++++ b/drivers/mtd/nand/spi/vms-onfi.h
+@@ -0,0 +1,154 @@
++/* Board-specific ONFI identification. No NAND program or erase operations. */
++static u16 vms_onfi_crc(const u8 *page)
++{
++	u16 crc = 0x4f4e;
++	unsigned int i, bit;
++
++	for (i = 0; i < 254; i++) {
++		crc ^= (u16)page[i] << 8;
++		for (bit = 0; bit < 8; bit++)
++			crc = (crc << 1) ^ ((crc & 0x8000) ? 0x8005 : 0);
++	}
++	return crc;
++}
++
++static int vms_onfi_ready(struct spinand_device *spinand)
++{
++	unsigned long deadline = jiffies + msecs_to_jiffies(1000);
++	u8 status;
++	int ret;
++
++	do {
++		ret = spinand_read_reg_op(spinand, REG_STATUS, &status);
++		if (ret)
++			return ret;
++		if (status & ~0x31)
++			return -EPROTO;
++		if (!(status & STATUS_BUSY))
++			return 0;
++		usleep_range(1000, 1100);
++	} while (time_before(jiffies, deadline));
++
++	return -ETIMEDOUT;
++}
++
++/* The only exception to the normal read-only command filter is local to
++ * this probe: volatile B0 selection/restoration and the parameter cache.
++ */
++static int vms_onfi_cfg(struct spinand_device *spinand, u8 value)
++{
++	struct spi_mem_op op = SPINAND_SET_FEATURE_1S_1S_1S_OP(REG_CFG,
++							     spinand->scratchbuf);
++
++	if (value != 0x18 && value != 0x58)
++		return -EINVAL;
++	*spinand->scratchbuf = value;
++	op.max_freq = 1000000;
++	return spi_mem_exec_op(spinand->spimem, &op);
++}
++
++static int vms_onfi_restore(struct spinand_device *spinand)
++{
++	u8 cfg;
++	int ret;
++
++	ret = vms_onfi_ready(spinand);
++	if (ret)
++		return ret;
++	ret = spinand_read_reg_op(spinand, REG_CFG, &cfg);
++	if (ret)
++		return ret;
++	if (cfg == 0x58) {
++		ret = vms_onfi_cfg(spinand, 0x18);
++		if (ret)
++			return ret;
++	} else if (cfg != 0x18) {
++		return -EPROTO;
++	}
++	ret = spinand_read_reg_op(spinand, REG_CFG, &cfg);
++	return ret ?: (cfg == 0x18 ? 0 : -EPROTO);
++}
++
++static int vms_onfi_identify(struct spinand_device *spinand)
++{
++	struct spi_mem_op row = SPI_MEM_OP(SPI_MEM_OP_CMD(0x13, 1),
++		SPI_MEM_OP_ADDR(3, 1, 1), SPI_MEM_OP_NO_DUMMY, SPI_MEM_OP_NO_DATA);
++	struct spi_mem_op cache = SPI_MEM_OP(SPI_MEM_OP_CMD(0x03, 1),
++		SPI_MEM_OP_ADDR(3, 0x300, 1), SPI_MEM_OP_NO_DUMMY, SPI_MEM_OP_NO_DATA);
++	struct device *dev = &spinand->spimem->spi->dev;
++	u8 *raw, *page, cfg, status;
++	u32 blocks;
++	int ret, restore;
++
++	if (spinand->spimem->spi->max_speed_hz != 1000000)
++		return -EINVAL;
++	raw = kmalloc(512, GFP_KERNEL);
++	if (!raw)
++		return -ENOMEM;
++	page = raw + 256;
++	row.max_freq = cache.max_freq = 1000000;
++	cache.data = (typeof(cache.data))SPI_MEM_OP_DATA_IN(256, raw, 1);
++	ret = spinand_read_reg_op(spinand, REG_CFG, &cfg);
++	if (ret)
++		goto out;
++	if (cfg != 0x18) {
++		dev_err(dev, "ONFI probe expected B0=18, got %02x\n", cfg);
++		ret = -EPROTO;
++		goto out;
++	}
++	ret = vms_onfi_cfg(spinand, 0x58);
++	if (ret)
++		goto transport_fault;
++	ret = spinand_read_reg_op(spinand, REG_CFG, &cfg);
++	if (ret)
++		goto transport_fault;
++	if (cfg != 0x58) {
++		ret = -EPROTO;
++		goto restore_cfg;
++	}
++	ret = spi_mem_exec_op(spinand->spimem, &row);
++	if (ret)
++		goto transport_fault;
++	ret = vms_onfi_ready(spinand);
++	if (ret)
++		goto transport_fault;
++	ret = spinand_read_reg_op(spinand, REG_STATUS, &status);
++	if (ret)
++		goto transport_fault;
++	if ((status & ~0x31) || (status & STATUS_BUSY) || (status & 0x30) >= 0x20) {
++		ret = -EBADMSG;
++		goto restore_cfg;
++	}
++	memset(raw, 0xa7, 256);
++	ret = spi_mem_exec_op(spinand->spimem, &cache);
++	if (ret)
++		goto transport_fault;
++	memcpy(page, raw + 253, 3);
++	memcpy(page + 3, raw, 253);
++	blocks = get_unaligned_le32(page + 96);
++	if (memcmp(page, "ONFI", 4) ||
++	    get_unaligned_le16(page + 254) != vms_onfi_crc(page) ||
++	    memcmp(page + 32, "Wooposit", 8) ||
++	    memcmp(page + 44, "SGM7000I-S24W4GH", 16) || page[64] != 0xea ||
++	    get_unaligned_le32(page + 80) != 2048 ||
++	    get_unaligned_le16(page + 84) != 64 ||
++	    get_unaligned_le32(page + 92) != 64 || page[100] != 1 ||
++	    (blocks != 1024 && blocks != 4096))
++		ret = -EBADMSG;
++
++restore_cfg:
++	restore = vms_onfi_restore(spinand);
++	if (restore) {
++		dev_err(dev, "ONFI B0 restoration unverified: %d\n", restore);
++		ret = restore;
++	}
++	if (!ret)
++		dev_info(dev, "ONFI identity and CRC verified; B0 restored; using vendor 128 MiB geometry\n");
++	goto out;
++
++transport_fault:
++	dev_err(dev, "ONFI transport/status failure %d; B0 restoration unverified, halting probe\n", ret);
++out:
++	kfree(raw);
++	return ret;
++}

@@ -1,0 +1,39 @@
+#!/bin/sh
+
+vms_overlay_ready() {
+	local u=/sys/class/ubi/ubi0 m=/sys/class/mtd/mtd5 v=/sys/class/ubi/ubi0_2
+	local p=/tmp/vms-overlay-check d=/dev/ubi0_2 ready=1
+	[ "$(cat /tmp/sysinfo/board_name)" = tenbay,v-ms3000k ] &&
+	grep -q 'ubi.mtd=ubi1 root=/dev/ubiblock0_1' /proc/cmdline &&
+	[ "$(cat "$u/mtd_num")$(cat "$u/ro_mode")" = 50 ] &&
+	[ "$(cat "$m/name")" = ubi1 ] && [ "$(cat "$m/offset")" = 56098816 ] &&
+	[ "$(cat /sys/class/mtd/mtd4/flags)" = 0x0 ] && [ ! -e /sys/class/ubi/ubi1 ] &&
+	[ "$(cat "${u}_0/reserved_ebs")$(cat "${u}_1/reserved_ebs")" = 6472 ] &&
+	[ "$(cat "$v/name")" = rootfs_data ] && [ "$(cat "$v/type")" = dynamic ] &&
+	[ "$(cat "$v/reserved_ebs")" = 225 ] && [ "$(cat "$v/usable_eb_size")" = 126976 ] &&
+	[ "$(cat "$v/upd_marker")$(cat "$v/corrupted")$(cat "$m/ecc_failures")" = 000 ] &&
+	[ -c "$d" ] && mkdir -p "$p" || return 1
+
+	if mount -t ubifs -o ro "$d" "$p"; then
+		if [ "$(cat "$p/.vms-openwrt-overlay" 2>/dev/null)" = 'tenbay,v-ms3000k:ubi1:v2' ] &&
+		   [ "$(readlink "$p/.fs_state")" = 2 ]; then
+			ready=0
+		fi
+	else
+		# UBIFS creates its default filesystem only on an entirely empty volume.
+		echo "e6fca2d6a54ba13cb158f5dcae6cbad285d2c5456032ae3182dba92f63ffe94b  $d" |
+			sha256sum -c >/dev/null && [ "$(cat "$m/ecc_failures")" = 0 ] &&
+			mount -t ubifs -o rw "$d" "$p" || return 1
+		if mkdir -m 0755 "$p/upper" "$p/work" && ln -s 2 "$p/.fs_state" &&
+		   echo 'tenbay,v-ms3000k:ubi1:v2' >"$p/.vms-openwrt-overlay" && sync; then
+			ready=0
+		fi
+	fi
+	umount "$p" && return "$ready"
+	return 1
+}
+
+platform_prepare_overlay() {
+	[ "$(cat /tmp/sysinfo/board_name)" = tenbay,v-ms3000k ] || return 0
+	vms_overlay_ready
+}
