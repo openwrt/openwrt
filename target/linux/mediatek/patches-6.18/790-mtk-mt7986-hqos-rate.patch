@@ -18,10 +18,10 @@ Signed-off-by: Alexander A <st7105@gmail.com>
  	}
  }
  
-+/* MT7986 uses the NETSYS v2 fields, not MT7987's V3 encoding. */
++/* MT7981 and MT7986 share the NETSYS v2 QDMA register layout. */
 +bool mtk_hqos_supported(struct mtk_eth *eth)
 +{
-+	return eth->soc->caps == MT7986_CAPS &&
++	return eth->soc->version == 2 && MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA) &&
 +	       eth->soc->num_tx_queues == MTK_HQOS_QUEUES;
 +}
 +

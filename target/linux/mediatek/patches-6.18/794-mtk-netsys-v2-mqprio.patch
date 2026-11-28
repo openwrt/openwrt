@@ -1,0 +1,108 @@
+From 4473532489036611bc7e0d6836517784c59b9a93 Mon Sep 17 00:00:00 2001
+From: Alexander A <st7105@gmail.com>
+Date: Sat, 28 Nov 2026 12:18:50 +0000
+Subject: net: ethernet: mtk_eth_soc: offload mqprio queue selection on NETSYS
+ v2
+
+Map each traffic class to one distinct TX queue on a non-DSA GMAC. Use the same priority map in host TX queue selection and when binding a new Ethernet PPE entry. Reject unsupported shaping and preemption.
+
+Signed-off-by: Alexander A <st7105@gmail.com>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c   |  7 ++-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h   |  2 +
+ .../net/ethernet/mediatek/mtk_ppe_offload.c   | 53 +++++++++++++++++++
+ 3 files changed, 61 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -803,7 +803,12 @@
+ 	int cls = mtk_hqos_priority_queue(eth, priority);
+ 	u8 mapped;
+ 
+-	if (cls < 0 || port < 0 || port >= MTK_MAX_DEVS)
++	if (port < 0 || port >= MTK_MAX_DEVS)
++		return -1;
++	mapped = READ_ONCE(eth->mac[port]->mqprio_queue[priority & TC_BITMASK]);
++	if (mapped)
++		return mapped - 1;
++	if (cls < 0)
+ 		return cls;
+ 	mapped = READ_ONCE(eth->hqos.port_queue[port][cls]);
+ 	return mapped ? mapped - 1 : cls;
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -1468,6 +1468,8 @@
+  * @hw_stats:		Packet statistics counter
+  */
+ struct mtk_mac {
++	/* Zero inherits the native queue; other values encode QID + 1. */
++	u8 mqprio_queue[TC_BITMASK + 1];
+ 	int				id;
+ 	phy_interface_t			interface;
+ 	u8				ppe_idx;
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -834,10 +834,63 @@
+ 	}
+ }
+ 
++static int mtk_setup_mqprio(struct net_device *dev,
++			    struct tc_mqprio_qopt_offload *mqprio)
++{
++	struct mtk_mac *mac = netdev_priv(dev);
++	struct tc_mqprio_qopt *qopt = &mqprio->qopt;
++	unsigned long queues = 0;
++	int i, err;
++
++	if (!mtk_hqos_supported(mac->hw))
++		return -EOPNOTSUPP;
++	if (!qopt->num_tc) {
++		for (i = 0; i <= TC_BITMASK; i++)
++			WRITE_ONCE(mac->mqprio_queue[i], 0);
++		netdev_reset_tc(dev);
++		return 0;
++	}
++
++	/* The native conduit queue also depends on the DSA destination port. */
++	if (netdev_uses_dsa(dev)) {
++		NL_SET_ERR_MSG_MOD(mqprio->extack, "DSA conduit uses per-port TX queues");
++		return -EOPNOTSUPP;
++	}
++	if (READ_ONCE(mac->mqprio_queue[0])) {
++		NL_SET_ERR_MSG_MOD(mqprio->extack, "Remove the active mqprio before replacing it");
++		return -EBUSY;
++	}
++
++	if (mqprio->mode != TC_MQPRIO_MODE_CHANNEL ||
++	    mqprio->shaper != TC_MQPRIO_SHAPER_DCB || mqprio->preemptible_tcs) {
++		NL_SET_ERR_MSG_MOD(mqprio->extack, "Only channel mode without rate shaping or preemption is supported");
++		return -EOPNOTSUPP;
++	}
++	for (i = 0; i < qopt->num_tc; i++) {
++		u16 q = qopt->offset[i];
++
++		if (qopt->count[i] != 1 || q >= dev->real_num_tx_queues ||
++		    test_and_set_bit(q, &queues)) {
++			NL_SET_ERR_MSG_MOD(mqprio->extack, "Each class needs one distinct hardware TX queue");
++			return -EINVAL;
++		}
++	}
++	err = netdev_set_num_tc(dev, qopt->num_tc);
++	if (err)
++		return err;
++	for (i = 0; i < qopt->num_tc; i++)
++		netdev_set_tc_queue(dev, i, 1, qopt->offset[i]);
++	for (i = 0; i <= TC_BITMASK; i++)
++		WRITE_ONCE(mac->mqprio_queue[i], qopt->offset[qopt->prio_tc_map[i]] + 1);
++	return 0;
++}
++
+ int mtk_eth_setup_tc(struct net_device *dev, enum tc_setup_type type,
+ 		     void *type_data)
+ {
+ 	switch (type) {
++	case TC_SETUP_QDISC_MQPRIO:
++		return mtk_setup_mqprio(dev, type_data);
+ 	case TC_SETUP_BLOCK:
+ 	case TC_SETUP_FT:
+ 		return mtk_eth_setup_tc_block(dev, type_data);
