@@ -36,7 +36,7 @@ BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 
 define Build/combined
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
-	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
+	-$(CP) $(TARGET_DIR_ORIG)/boot/. $@.boot/boot/
 	$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.boot/boot/grub/
 	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img \
 		$@.boot/boot/grub/core.img
@@ -49,7 +49,12 @@ define Build/combined
 		$@ \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
-		256
+		256 || { \
+		echo "ERROR: generating $(notdir $@) failed. Boot partition contents:" \
+			"$$(du -sk $@.boot | cut -f1) KiB, CONFIG_TARGET_KERNEL_PARTSIZE:" \
+			"$(CONFIG_TARGET_KERNEL_PARTSIZE) MiB" >&2; \
+		false; \
+	}
 endef
 
 define Build/grub-config
@@ -112,7 +117,7 @@ define Build/iso
 		$(STAGING_DIR_IMAGE)/grub2/cdboot.img \
 		$(STAGING_DIR_IMAGE)/grub2/eltorito.img \
 		> $@.boot/boot/grub/eltorito.img
-	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
+	-$(CP) $(TARGET_DIR_ORIG)/boot/. $@.boot/boot/
 	$(if $(filter $(1),efi),
 		mkfs.fat -C $@.boot/boot/grub/isoboot.img -S 512 1440
 		mmd -i $@.boot/boot/grub/isoboot.img ::/efi ::/efi/boot
