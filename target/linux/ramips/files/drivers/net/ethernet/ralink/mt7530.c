@@ -330,6 +330,27 @@ mt7530_w32(struct mt7530_priv *priv, u32 reg, u32 val)
 	iowrite32(val, priv->base + reg);
 }
 
+/*
+ * Put the switch into transparent mode: forward every non-CPU port only to
+ * the CPU port and preserve both tagged and untagged frames.  Needed both by
+ * the swconfig path when no global VLAN is configured and by boards that do
+ * not run swconfig at all, so it has to live outside the CONFIG_SWCONFIG
+ * block.
+ */
+static void
+mt7530_set_transparent(struct mt7530_priv *priv)
+{
+	int i;
+
+	for (i = 0; i < MT7530_NUM_PORTS; i++)
+		mt7530_w32(priv, REG_ESW_PORT_PCR(i), 0x00400000);
+
+	mt7530_w32(priv, REG_ESW_PORT_PCR(MT7530_CPU_PORT), 0x00ff0000);
+
+	for (i = 0; i < MT7530_NUM_PORTS; i++)
+		mt7530_w32(priv, REG_ESW_PORT_PVC(i), 0x810000c0);
+}
+
 #if IS_REACHABLE(CONFIG_SWCONFIG)
 static void
 mt7530_vtcr(struct mt7530_priv *priv, u32 cmd, u32 val)
@@ -608,14 +629,7 @@ mt7530_apply_config(struct switch_dev *dev)
 	bool is_mirror = false;
 
 	if (!priv->global_vlan_enable) {
-		for (i = 0; i < MT7530_NUM_PORTS; i++)
-			mt7530_w32(priv, REG_ESW_PORT_PCR(i), 0x00400000);
-
-		mt7530_w32(priv, REG_ESW_PORT_PCR(MT7530_CPU_PORT), 0x00ff0000);
-
-		for (i = 0; i < MT7530_NUM_PORTS; i++)
-			mt7530_w32(priv, REG_ESW_PORT_PVC(i), 0x810000c0);
-
+		mt7530_set_transparent(priv);
 		return 0;
 	}
 
@@ -1054,18 +1068,17 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 			mt7530_apply_mapping(mt7530, map);
 		mt7530_apply_config(swdev);
 		swconfig_active = true;
-	} else {
-		dev_info(dev, "swconfig disabled, MAC learning disabled on all ports\n");
 	}
-#else
-	dev_info(dev, "swconfig support not reachable, MAC learning disabled on all ports\n");
 #endif /* CONFIG_SWCONFIG */
 
 	if (!swconfig_active) {
+		dev_info(dev, "using transparent mode (MAC learning disabled)\n");
 		for (i = 0; i < MT7530_NUM_PORTS; i++) {
 			mt7530_w32(mt7530, REG_ESW_PORT_PSC(i),
 				mt7530_r32(mt7530, REG_ESW_PORT_PSC(i)) | REG_ESW_PORT_PSC_SA_DIS);
 		}
+
+		mt7530_set_transparent(mt7530);
 	}
 
 	/* magic vodoo */

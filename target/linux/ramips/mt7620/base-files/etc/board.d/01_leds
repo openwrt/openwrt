@@ -117,6 +117,9 @@ edimax,br-6478ac-v2|\
 edimax,ew-7478apc)
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wlan" "wlan0"
 	;;
+edimax,cap300)
+	ucidef_set_led_netdev "wifi_led" "wifi" "amber:status" "phy0-ap0"
+	;;
 ampedwireless,b1200ex|\
 edimax,ew-7476rpc|\
 edimax,ew-7478ac)
