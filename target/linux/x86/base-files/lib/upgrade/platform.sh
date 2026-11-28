@@ -95,6 +95,17 @@ platform_check_image() {
 		return 0
 	fi
 
+	if is_gpt_dualboot; then
+		local esppart bootpart partdev partdevalt slot slotdev suffix ret
+
+		platform_dualboot_devices || return 1
+		platform_dualboot_partitions "$1" || return 1
+		platform_dualboot_check_sizes
+		ret=$?
+		rm -f /tmp/partmap.image
+		return $ret
+	fi
+
 	case "$(get_magic_word "$1")" in
 		eb48|eb63) ;;
 		*)
@@ -106,17 +117,128 @@ platform_check_image() {
 	legacy_sdcard_check_image "$1"
 }
 
+# Sets esppart, bootpart, partdev and partdevalt, and for the slot that is
+# not running: slot (its grubenv target_slot), slotdev and suffix (of its
+# vmlinuz).
+platform_dualboot_devices() {
+	export_partdevice_esp esppart && \
+		export_partdevice_label bootpart openwrt_boot && \
+		export_partdevice_label partdev openwrt_rootfs && \
+		export_partdevice_label partdevalt openwrt_rootfs_alt || {
+			v "Unable to determine upgrade device"
+			return 1
+		}
+
+	if grep -q 'root=PARTLABEL=openwrt_rootfs_alt' /proc/cmdline; then
+		slot=0 slotdev="$partdev" suffix=
+	else
+		slot=1 slotdev="$partdevalt" suffix=_alt
+	fi
+}
+
+platform_dualboot_partitions() { # <image>
+	get_image_dd "$1" of=/tmp/image.bs count=1 bs=512b
+
+	part_magic_efi /tmp/image.bs || {
+		v "Invalid image type"
+		rm -f /tmp/image.bs
+		return 1
+	}
+
+	get_partitions /tmp/image.bs image
+	rm -f /tmp/image.bs
+
+	[ "$(awk '$1 >= 1 && $1 <= 3' /tmp/partmap.image | wc -l)" -eq 3 ] || {
+		v "Invalid image: expected an ESP, openwrt_boot and openwrt_rootfs"
+		rm -f /tmp/partmap.image
+		return 1
+	}
+}
+
+# Checked before writing: dd would only fail at the end of the slot, after
+# overwriting all of it
+platform_dualboot_check_sizes() {
+	local part start size have
+
+	while read part start size; do
+		[ "$part" = 3 ] || continue
+		have="$(cat "/sys/class/block/$slotdev/size")"
+		[ "$size" -le "$have" ] && return 0
+		v "Image rootfs ($size sectors) does not fit /dev/$slotdev ($have sectors)"
+		return 1
+	done < /tmp/partmap.image
+
+	return 1
+}
+
+# get_image_dd returns the status of its message filter, not that of dd
+platform_dualboot_dd() { # <image> <dd arguments>
+	local image="$1"; shift
+
+	get_image "$image" 2>/dev/null | dd "$@" 2>/dev/null
+}
+
+# The slot becomes the boot target only after everything else was written
+platform_dualboot_write() { # <image>
+	local part start size
+
+	while read part start size; do
+		case "$part" in
+		1)
+			v "Extracting bootloader from image..."
+			platform_dualboot_dd "$1" of=/tmp/.grub.img ibs=512 obs=1M skip="$start" count="$size" || return 1
+			;;
+		2)
+			platform_dualboot_dd "$1" of=/tmp/.bootkernel.img ibs=512 obs=1M skip="$start" count="$size" || return 1
+			;;
+		3)
+			v "Writing new rootfs to /dev/$slotdev..."
+			platform_dualboot_dd "$1" of="/dev/$slotdev" ibs=512 obs=1M skip="$start" count="$size" conv=fsync || return 1
+			;;
+		esac
+	done < /tmp/partmap.image
+
+	v "Writing new kernel to /boot/vmlinuz$suffix..."
+	mkdir -p /tmp/boot /tmp/.bootkernel
+	mount -o ro,loop /tmp/.bootkernel.img /tmp/.bootkernel && \
+		mount -o rw,noatime "/dev/$bootpart" /tmp/boot && \
+		cp -af /tmp/.bootkernel/boot/vmlinuz "/tmp/boot/boot/vmlinuz$suffix" || {
+			v "Unable to write the new kernel"
+			return 1
+		}
+
+	platform_do_bootloader_upgrade /tmp/.grub.img || return 1
+
+	grub-editenv /tmp/boot/boot/grub/grubenv set attempt=0 target_slot=$slot
+}
+
+platform_do_upgrade_dualboot() { # <image>
+	local esppart bootpart partdev partdevalt slot slotdev suffix ret
+
+	platform_dualboot_devices || return 1
+	platform_dualboot_partitions "$1" || return 1
+	platform_dualboot_check_sizes && platform_dualboot_write "$1"
+	ret=$?
+
+	umount /tmp/boot /tmp/.bootkernel 2>/dev/null
+	rm -f /tmp/.grub.img /tmp/.bootkernel.img /tmp/partmap.image
+	sync
+
+	return $ret
+}
+
 platform_copy_config() {
 	local partdev parttype=ext4
 
 	# ONIE upgrade bundles sysupgrade.tgz into the installer itself.
 	is_onie_install && return 0
 
-	if export_partdevice partdev 1; then
+	if { is_gpt_dualboot && export_partdevice_label partdev openwrt_boot; } || export_partdevice partdev 1; then
+		mkdir -p /tmp/boot
 		part_magic_fat "/dev/$partdev" && parttype=vfat
-		mount -t $parttype -o rw,noatime "/dev/$partdev" /mnt
-		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
-		umount /mnt
+		mount -t $parttype -o rw,noatime "/dev/$partdev" /tmp/boot
+		cp -af "$UPGRADE_BACKUP" "/tmp/boot/$BACKUP_FILE"
+		umount /tmp/boot
 	fi
 }
 
@@ -124,7 +246,41 @@ platform_do_bootloader_upgrade() {
 	local bootpart parttable=msdos
 	local diskdev="$1"
 
-	if export_partdevice bootpart 1; then
+	if is_gpt_dualboot; then
+		local esppart new old ret=0
+
+		export_partdevice_esp esppart || {
+			v "Unable to find the EFI system partition"
+			return 1
+		}
+
+		mkdir -p /tmp/.esp /tmp/.tmp
+		mount -o ro,loop "$diskdev" /tmp/.tmp || return 1
+		mount -o rw,noatime "/dev/$esppart" /tmp/.esp || {
+			umount /tmp/.tmp
+			return 1
+		}
+
+		set -- /tmp/.tmp/efi/boot/boot???.efi
+		new=$1; old="${new/\/tmp\/.tmp//tmp/.esp}"
+		[ -f "$new" ] || v "Unable to find EFI bootloader in the update image"
+		[ -f "$old" ] || v "Unable to find EFI bootloader on /dev/$esppart"
+
+		if [ ! -f "$new" ] || [ ! -f "$old" ]; then
+			ret=1
+		elif ! cmp -s "$old" "$new"; then
+			v "Bootloader on /dev/$esppart needs to be updated"
+			ask_bool 0 "Skip" || {
+				v "Upgrading bootloader on /dev/$esppart..."
+				cp -a "$new" "$old" || ret=1
+			}
+		else
+			v "Bootloader on /dev/$esppart does not need to be updated"
+		fi
+
+		umount /tmp/.esp /tmp/.tmp
+		return $ret
+	elif export_partdevice bootpart 1; then
 		mkdir -p /tmp/boot
 		mount -o rw,noatime "/dev/$bootpart" /tmp/boot
 		echo "(hd0) /dev/$diskdev" > /tmp/device.map
@@ -158,6 +314,11 @@ platform_legacy_sdcard_post_upgrade() {
 }
 
 platform_do_upgrade() {
+	if is_gpt_dualboot; then
+		platform_do_upgrade_dualboot "$1"
+		return $?
+	fi
+
 	if is_onie_install; then
 		platform_do_upgrade_onie "$1"
 		return $?
