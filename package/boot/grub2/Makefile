@@ -7,7 +7,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=grub
 PKG_VERSION:=2.12
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/grub
@@ -150,7 +150,7 @@ define Package/grub2/install
 		-O i386-pc \
 		-c ./files/grub-early.cfg \
 		-o $(STAGING_DIR_IMAGE)/grub2/legacy-core.img \
-		biosdisk boot chain configfile ext2 linux ls part_msdos reboot search serial vga
+		biosdisk boot chain configfile ext2 linux ls part_msdos reboot search serial test vga
 endef
 
 define Package/grub2-efi/install
