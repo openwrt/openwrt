@@ -10,6 +10,9 @@ flow_offloading_hw="$(uci -q get firewall.@defaults[0].flow_offloading_hw)"
 	exit 0
 }
 
+# The settings below are for two CPUs; with one there is nothing to steer to
+[ -d /sys/devices/system/cpu/cpu1 ] || exit 0
+
 . /lib/functions.sh
 
 case "$(board_name)" in
