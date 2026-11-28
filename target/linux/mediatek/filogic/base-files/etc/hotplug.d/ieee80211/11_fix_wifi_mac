@@ -148,16 +148,17 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $base_mac 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $base_mac 3 > /sys${DEVPATH}/macaddress
 		;;
-	iptime,ax3000q)
-		addr=$(mtd_get_mac_binary "Factory" 0x4)
-		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $addr > /sys${DEVPATH}/macaddress
-		;;
 	iptime,ax3000m|\
 	iptime,ax3000se|\
 	iptime,ax3000sm)
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_unsetbit $(macaddr_unsetbit $(macaddr_unsetbit $(macaddr_setbit $addr 26) 25) 27) 28) > \
 			/sys${DEVPATH}/macaddress
+		;;
+	iptime,ax3000p|\
+	iptime,ax3000q)
+		addr=$(mtd_get_mac_binary "Factory" 0x4)
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $addr > /sys${DEVPATH}/macaddress
 		;;
 	iptime,ax7800m-6e)
 		addr1=$(mtd_get_mac_binary "Factory" 0xa0004)
