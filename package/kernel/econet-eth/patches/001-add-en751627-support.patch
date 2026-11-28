@@ -1,0 +1,45 @@
+From 125c8b6d7e0f78407f5bbbd25da81e61b35795b6 Mon Sep 17 00:00:00 2001
+From: John Rowe <opensource@rowe.lol>
+Date: Fri, 20 Nov 2026 09:53:17 +0000
+Subject: [PATCH] econet-eth: add EN751627 support
+
+Add the econet,en751627-eth compatible with its own soc_data.
+The FE/GDM/QDMA register layout matches EN751221 (same struct
+en751221_regs) and dscp_byte_swap is true, as in the known-good
+vendor module's soc_data (the same value as EN751221).
+
+Without the native compatible, EN7516 boards have to force the
+EN7528 binding, which dereferences a NULL MAC address in
+en75_set_macaddr via ndo_init and then RCU-stalls under traffic.
+Tested as the DSA conduit on a Zyxel WX3100-T0 (EN7516GT), where
+the register window stops short of the switch (0x8000) and the
+driver already leaves switch registers alone.
+
+Based on the Zyxel VMG8825-T50 port by koenieee:
+https://github.com/koenieee/VMG8825-T50-Openwrt-support
+
+Signed-off-by: John Rowe <opensource@rowe.lol>
+---
+--- a/econet_eth.c
++++ b/econet_eth.c
+@@ -431,9 +431,20 @@ static const struct en75_soc_data en7528
+ 	.dscp_byte_swap = false,
+ };
+ 
++/*
++ * EN751627 (EN7516/EN7527 family, e.g. Zyxel VMG8825-T50 and
++ * WX3100-T0). The FE/GDM/QDMA register layout matches EN751221
++ * (same struct en751221_regs) and dscp_byte_swap matches the
++ * known-good vendor module's soc_data (true, as on EN751221).
++ */
++static const struct en75_soc_data en751627_soc_data = {
++	.dscp_byte_swap = true,
++};
++
+ static const struct of_device_id of_en75_match[] = {
+ 	{ .compatible = "econet,en751221-eth", .data = &en751221_soc_data },
+ 	{ .compatible = "econet,en7528-eth", .data = &en7528_soc_data },
++	{ .compatible = "econet,en751627-eth", .data = &en751627_soc_data },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, of_en75_match);
