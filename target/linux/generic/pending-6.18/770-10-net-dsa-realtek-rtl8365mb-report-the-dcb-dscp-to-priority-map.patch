@@ -1,0 +1,115 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oleksij Rempel <o.rempel@pengutronix.de>
+Date: Mon, 16 Nov 2026 20:10:21 +0100
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: report the DCB
+ DSCP-to-priority map
+
+Report the DSCP-to-priority map through dcbnl, so that "dcb app show"
+lists, on every port, the priority a DSCP value gets once the port
+trusts DSCP.
+
+The switch has one DSCP-to-priority table for all its ports, with
+exactly one priority per DSCP value. dcbnl, in contrast, configures DSCP
+priorities per port and allows several priorities for one DSCP value.
+DSA could mirror a change to every port (dscp_prio_mapping_is_global),
+but a request on one port would still change the classification of all
+ports. Keep the map read-only. The QoS baseline seeds it with the
+default mapping from ietf_dscp_to_ieee8021q_tt(). Requests to change a
+DSCP entry fail with -EOPNOTSUPP.
+
+Signed-off-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Reviewed-by: Alvin Šipraga <alvin.sipraga@analog.com>
+Reviewed-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+--- a/drivers/net/dsa/realtek/realtek.h
++++ b/drivers/net/dsa/realtek/realtek.h
+@@ -179,6 +179,7 @@ struct realtek_ops {
+ 				     u8 iprio, u8 untag_pcp);
+ 	int	(*qos_set_pcp_prio)(struct realtek_priv *priv, u8 pcp,
+ 				    u8 iprio);
++	int	(*qos_get_dscp_prio)(struct realtek_priv *priv, u8 dscp);
+ 	int	(*qos_set_dscp_prio)(struct realtek_priv *priv, u8 dscp,
+ 				     u8 iprio);
+ 	/* @trust is indexed by enum rtl83xx_apptrust_slot and has @n entries.
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -3351,6 +3351,7 @@ static const struct dsa_switch_ops rtl83
+ 	.port_set_default_prio = rtl83xx_port_set_default_prio,
+ 	.port_get_apptrust = rtl83xx_port_get_apptrust,
+ 	.port_set_apptrust = rtl83xx_port_set_apptrust,
++	.port_get_dscp_prio = rtl83xx_port_get_dscp_prio,
+ 	.port_stp_state_set = rtl8365mb_port_stp_state_set,
+ 	.port_fast_age = rtl83xx_port_fast_age,
+ 	.port_fdb_add = rtl83xx_port_fdb_add,
+@@ -3392,6 +3393,7 @@ static const struct realtek_ops rtl8365m
+ 	.qos_get_port_prio = rtl8365mb_qos_get_port_prio,
+ 	.qos_set_port_prio = rtl8365mb_qos_set_port_prio,
+ 	.qos_set_pcp_prio = rtl8365mb_qos_set_pcp_prio,
++	.qos_get_dscp_prio = rtl8365mb_qos_get_dscp_prio,
+ 	.qos_set_dscp_prio = rtl8365mb_qos_set_dscp_prio,
+ 	.qos_set_apptrust = rtl8365mb_qos_set_apptrust,
+ 	.qos_get_apptrust = rtl8365mb_qos_get_apptrust,
+--- a/drivers/net/dsa/realtek/rtl8365mb_qos.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_qos.c
+@@ -253,6 +253,13 @@ int rtl8365mb_qos_set_pcp_prio(struct re
+ 	return rtl8365mb_qos_regmap_update_field(priv, reg, mask, iprio);
+ }
+ 
++int rtl8365mb_qos_get_dscp_prio(struct realtek_priv *priv, u8 dscp)
++{
++	return rtl8365mb_qos_regmap_read_field(priv,
++					       RTL8365MB_QOS_DSCP_PRI_REG(dscp),
++					       rtl8365mb_qos_sel_mask(dscp));
++}
++
+ int rtl8365mb_qos_set_dscp_prio(struct realtek_priv *priv, u8 dscp, u8 iprio)
+ {
+ 	u32 reg = RTL8365MB_QOS_DSCP_PRI_REG(dscp);
+--- a/drivers/net/dsa/realtek/rtl8365mb_qos.h
++++ b/drivers/net/dsa/realtek/rtl8365mb_qos.h
+@@ -23,6 +23,7 @@ int rtl8365mb_qos_get_port_prio(struct r
+ int rtl8365mb_qos_set_port_prio(struct realtek_priv *priv, int port, u8 iprio,
+ 				u8 untag_pcp);
+ int rtl8365mb_qos_set_pcp_prio(struct realtek_priv *priv, u8 pcp, u8 iprio);
++int rtl8365mb_qos_get_dscp_prio(struct realtek_priv *priv, u8 dscp);
+ int rtl8365mb_qos_set_dscp_prio(struct realtek_priv *priv, u8 dscp, u8 iprio);
+ int rtl8365mb_qos_set_apptrust(struct realtek_priv *priv, int port,
+ 			       const bool *trust, unsigned int n);
+--- a/drivers/net/dsa/realtek/rtl83xx-qos.c
++++ b/drivers/net/dsa/realtek/rtl83xx-qos.c
+@@ -134,6 +134,25 @@ int rtl83xx_port_set_default_prio(struct
+ }
+ EXPORT_SYMBOL_NS_GPL(rtl83xx_port_set_default_prio, "REALTEK_DSA");
+ 
++int rtl83xx_port_get_dscp_prio(struct dsa_switch *ds, int port, u8 dscp)
++{
++	struct realtek_priv *priv = ds->priv;
++	int tt;
++
++	if (!priv->ops->qos_get_dscp_prio)
++		return -EOPNOTSUPP;
++
++	if (dscp >= DSCP_MAX)
++		return -EINVAL;
++
++	tt = priv->ops->qos_get_dscp_prio(priv, dscp);
++	if (tt < 0)
++		return tt;
++
++	return ieee8021q_tt_to_pcp(tt);
++}
++EXPORT_SYMBOL_NS_GPL(rtl83xx_port_get_dscp_prio, "REALTEK_DSA");
++
+ int rtl83xx_port_get_apptrust(struct dsa_switch *ds, int port, u8 *sel,
+ 			      int *nsel)
+ {
+--- a/drivers/net/dsa/realtek/rtl83xx-qos.h
++++ b/drivers/net/dsa/realtek/rtl83xx-qos.h
+@@ -15,5 +15,6 @@ int rtl83xx_port_get_apptrust(struct dsa
+ 			      int *nsel);
+ int rtl83xx_port_set_apptrust(struct dsa_switch *ds, int port, const u8 *sel,
+ 			      int nsel);
++int rtl83xx_port_get_dscp_prio(struct dsa_switch *ds, int port, u8 dscp);
+ 
+ #endif /* _RTL83XX_QOS_H */

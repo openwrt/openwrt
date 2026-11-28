@@ -1,0 +1,167 @@
+From 471adb3a4fba1ab32193904e4be6f1fda9d90e78 Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sat, 10 Oct 2026 16:50:17 +0200
+Subject: [PATCH net-next v15 15/15] net: dsa: realtek: rtl8365mb: add support for RTL8367S-VB
+
+Add the RTL8367S-VB (chip ID 0x6642, version 0x0010) to the chip table.
+It is the first chip of family D, whose handling was added in the
+preceding patches, so this is the patch that makes it reachable.
+
+The SGMII/HSGMII SerDes of this chip sits on port 6 and the
+MII/TMII/RMII/RGMII interface on port 7, as on family C, but the external
+interface indices are one lower (EXT0 and EXT1 instead of EXT1 and EXT2).
+Unlike family C, rtl8365mb_family_d leaves jam_table unset (NULL), so no
+family C initialization jam sequence is run during switch setup; the
+subsystems touched by family D program their required registers
+explicitly.
+
+The chip exposes seven ports, numbered 0-4, 6 and 7. This is described
+by port_mask in its chip info, as for the other chips.
+rtl8365mb_family_d selects the family D implementations added in the
+preceding patches: the force-mode configuration, the VLAN 4k accessors,
+the PVID handling, the L2 entry (de)serializers and the QoS priority
+numbering.
+
+The L2 learning limit is the same as on family C (2112 entries), as
+given by the Realtek rtl8367 common API (rtl8367_common V1.4.2), so
+RTL8365MB_LEARN_LIMIT_MAX needs no per-family handling; only its
+comment is updated.
+
+Tested on a TP-Link Archer AX55 v1 (RTL8367S-VB, CPU port over HSGMII
+(2500base-x) to an IPQ5018) with bridge VLAN filtering and per-port
+PVIDs, and on a TP-Link EX511 v2 (RTL8367S-VB, CPU port over 1G SGMII
+to an IPQ5018). RGMII mode has not been tested. See the cover letter for
+details.
+
+Tested-by: Gustavo Foletto Mora <gusfmora@gmail.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/Kconfig          |  3 +-
+ drivers/net/dsa/realtek/rtl8365mb.h      |  4 --
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 55 +++++++++++++++++++++---
+ 3 files changed, 51 insertions(+), 11 deletions(-)
+
+--- a/drivers/net/dsa/realtek/Kconfig
++++ b/drivers/net/dsa/realtek/Kconfig
+@@ -35,7 +35,8 @@ config NET_DSA_REALTEK_RTL8365MB
+ 	depends on NET_DSA_REALTEK_SMI || NET_DSA_REALTEK_MDIO
+ 	select NET_DSA_TAG_RTL8_4
+ 	help
+-	  Select to enable support for Realtek RTL8365MB-VC and RTL8367S.
++	  Select to enable support for Realtek RTL8365MB-VC, RTL8367S and
++	  RTL8367S-VB.
+ 
+ config NET_DSA_REALTEK_RTL8366RB
+ 	tristate "Realtek RTL8366RB switch driver"
+--- a/drivers/net/dsa/realtek/rtl8365mb.h
++++ b/drivers/net/dsa/realtek/rtl8365mb.h
+@@ -71,10 +71,6 @@ struct rtl8365mb_family_info {
+ const struct rtl8365mb_family_info *
+ rtl8365mb_get_family_info(struct realtek_priv *priv);
+ 
+-int rtl8365mb_d_ext_config_forcemode(struct realtek_priv *priv, int port,
+-				     bool link, int speed, int duplex,
+-				     bool tx_pause, bool rx_pause);
+-
+ static inline bool rtl8365mb_is_d(struct realtek_priv *priv)
+ {
+ 	return rtl8365mb_get_family_info(priv)->family == RTL8365MB_FAMILY_D;
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -89,6 +89,14 @@
+  * things will work out-of-the-box for other chips, and a careful review of the
+  * vendor driver may be needed to expand support. The RTL8365MB-VC seems to be
+  * one of the simpler chips.
++ *
++ * The RTL8367S-VB (chip ID 0x6642) is not part of the family listed above. It
++ * belongs to a newer generation, which this driver calls family D. Its
++ * registers differ in the VLAN table, the external interface speed and RGMII
++ * configuration, the SerDes, the L2 lookup table (FDB/MDB entry layout, no
++ * EFID, LUT configuration registers) and the table access control register,
++ * so the code paths specific to it are selected with rtl8365mb_is_d() or
++ * through struct rtl8365mb_family_info.
+  */
+ 
+ #include <linux/bitfield.h>
+@@ -118,9 +126,9 @@
+ #define RTL8365MB_NUM_PHYREGS		32
+ #define RTL8365MB_PHYREGMAX		(RTL8365MB_NUM_PHYREGS - 1)
+ #define RTL8365MB_MAX_NUM_PORTS		11
+-/* Valid for the whole family except RTL8370B, which has 4160 entries.
+- * RTL8370B is mentioned in vendor code but it might not even belong
+- * to the same RTL8367C family.
++/* Valid for the whole RTL8367C family (and for family D, RTL8367S-VB)
++ * except RTL8370B, which has 4160 entries. RTL8370B is mentioned in
++ * vendor code but it might not even belong to the same RTL8367C family.
+  */
+ #define RTL8365MB_LEARN_LIMIT_MAX	2112
+ #define RTL8365MB_MAX_NUM_EXTINTS	3
+@@ -811,6 +819,10 @@ static int rtl8365mb_c_ext_config_forcem
+ 					    bool link, int speed, int duplex,
+ 					    bool tx_pause, bool rx_pause);
+ 
++static int rtl8365mb_d_ext_config_forcemode(struct realtek_priv *priv, int port,
++					    bool link, int speed, int duplex,
++					    bool tx_pause, bool rx_pause);
++
+ static const struct rtl8365mb_family_info rtl8365mb_family_c = {
+ 	.family = RTL8365MB_FAMILY_C,
+ 	.jam_table = rtl8365mb_c_init_jam,
+@@ -832,6 +844,24 @@ static const struct rtl8365mb_family_inf
+ 	.qos_set_untag_pcp = rtl8365mb_c_qos_set_untag_pcp,
+ };
+ 
++static const struct rtl8365mb_family_info rtl8365mb_family_d = {
++	.family = RTL8365MB_FAMILY_D,
++	.ext_config_forcemode = rtl8365mb_d_ext_config_forcemode,
++	.vlan_4k_read = rtl8365mb_d_vlan_4k_read,
++	.vlan_4k_write = rtl8365mb_d_vlan_4k_write,
++	.vlan_port_get_pvid = rtl8365mb_d_vlan_port_get_pvid,
++	.vlan_port_reset_pvid = rtl8365mb_d_vlan_port_reset_pvid,
++	.vlan_pvid_port_set = rtl8365mb_d_vlan_pvid_port_set,
++	.vlan_pvid_port_clear = rtl8365mb_d_vlan_pvid_port_clear,
++	.l2_entry_size = RTL8365MB_D_L2_ENTRY_SIZE,
++	.l2_data_to_uc = rtl8365mb_d_l2_data_to_uc,
++	.l2_uc_to_data = rtl8365mb_d_l2_uc_to_data,
++	.l2_data_to_mc = rtl8365mb_d_l2_data_to_mc,
++	.l2_mc_to_data = rtl8365mb_d_l2_mc_to_data,
++	.qos_iprio_to_hw = rtl8365mb_d_qos_iprio_to_hw,
++	.qos_hw_to_iprio = rtl8365mb_d_qos_hw_to_iprio,
++};
++
+ /**
+  * struct rtl8365mb_chip_info - static chip-specific info
+  * @name: human-readable chip name
+@@ -922,6 +952,19 @@ static const struct rtl8365mb_chip_info
+ 		},
+ 		.num_tx_queues = 8,
+ 	},
++	{
++		.name = "RTL8367S-VB",
++		.chip_id = 0x6642,
++		.chip_ver = 0x0010,
++		.family_info = &rtl8365mb_family_d,
++		.port_mask = PORT_MASK(GENMASK(4, 0) | BIT(6) | BIT(7)),
++		.extints = {
++			{ 6, 0, PHY_INTF(SGMII) | PHY_INTF(HSGMII) },
++			{ 7, 1, PHY_INTF(MII) | PHY_INTF(TMII) |
++				PHY_INTF(RMII) | PHY_INTF(RGMII) },
++		},
++		.num_tx_queues = 8,
++	},
+ };
+ 
+ enum rtl8365mb_stp_state {
+@@ -1943,9 +1986,9 @@ static int rtl8365mb_c_ext_config_forcem
+ 	return 0;
+ }
+ 
+-int rtl8365mb_d_ext_config_forcemode(struct realtek_priv *priv, int port,
+-				     bool link, int speed, int duplex,
+-				     bool tx_pause, bool rx_pause)
++static int rtl8365mb_d_ext_config_forcemode(struct realtek_priv *priv, int port,
++					    bool link, int speed, int duplex,
++					    bool tx_pause, bool rx_pause)
+ {
+ 	u32 r_tx_pause;
+ 	u32 r_rx_pause;

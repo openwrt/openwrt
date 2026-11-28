@@ -1,0 +1,313 @@
+From 314b6b104e771b8de5f3f24d2e8de294887e1cb1 Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sat, 21 Nov 2026 19:10:09 +0100
+Subject: [PATCH net-next v15 13/15] net: dsa: realtek: rtl8365mb: refactor QoS priority handling
+
+The shared QoS layer hands the backend internal priorities that are
+802.1Q traffic types, and the backend stores them in the chip as they
+are, together with a separate per-port PCP for untagged frames. Family D
+numbers its internal priorities differently and has no separate
+untagged-PCP register, which the next patch adds.
+
+Move the conversion between a traffic type and the chip's priority, and
+the programming of the PCP of untagged frames, behind three new hooks in
+struct rtl8365mb_family_info, as for the VLAN, PVID and L2 helpers:
+qos_iprio_to_hw, qos_hw_to_iprio and qos_set_untag_pcp. The existing
+behaviour becomes the family C implementation: the traffic type is
+stored as it is and the untagged PCP register is written as before.
+rtl8365mb_qos_qmap_init() now iterates over the chip's priorities and
+converts each one back to its traffic type. Name the qmap index
+hw_prio throughout, because it is already in the chip's numbering.
+
+No functional change.
+
+Tested-by: Gustavo Foletto Mora <gusfmora@gmail.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.h      |  25 +++++
+ drivers/net/dsa/realtek/rtl8365mb_main.c |   3 +
+ drivers/net/dsa/realtek/rtl8365mb_qos.c  | 119 ++++++++++++++++++-----
+ drivers/net/dsa/realtek/rtl8365mb_qos.h  |   8 +-
+ 4 files changed, 129 insertions(+), 26 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.h
++++ b/drivers/net/dsa/realtek/rtl8365mb.h
+@@ -16,6 +16,27 @@ struct rtl8365mb_vlan4k;
+ struct rtl8365mb_l2_uc;
+ struct rtl8365mb_l2_mc;
+ 
++/**
++ * struct rtl8365mb_family_info - family-specific data and operations
++ * @family: silicon family identifier
++ * @jam_table: family-specific initialization jam table
++ * @jam_size: number of entries in @jam_table
++ * @ext_config_forcemode: program an external interface force-mode register
++ * @vlan_4k_read: read a 4K VLAN table entry
++ * @vlan_4k_write: write a 4K VLAN table entry
++ * @vlan_port_get_pvid: read a port PVID
++ * @vlan_port_reset_pvid: restore a port PVID to its default
++ * @vlan_pvid_port_set: add a port to a PVID
++ * @vlan_pvid_port_clear: remove a port from a PVID
++ * @l2_entry_size: number of words in an L2 table entry
++ * @l2_data_to_uc: unpack a unicast L2 table entry
++ * @l2_uc_to_data: pack a unicast L2 table entry
++ * @l2_data_to_mc: unpack a multicast L2 table entry
++ * @l2_mc_to_data: pack a multicast L2 table entry
++ * @qos_iprio_to_hw: convert a traffic type to a hardware priority
++ * @qos_hw_to_iprio: convert a hardware priority to a traffic type
++ * @qos_set_untag_pcp: program the per-port untagged PCP where supported
++ */
+ struct rtl8365mb_family_info {
+ 	enum rtl8365mb_family family;
+ 	const struct rtl8365mb_jam_tbl_entry *jam_table;
+@@ -38,6 +59,10 @@ struct rtl8365mb_family_info {
+ 	void (*l2_uc_to_data)(const struct rtl8365mb_l2_uc *uc, u16 *data);
+ 	void (*l2_data_to_mc)(const u16 *data, struct rtl8365mb_l2_mc *mc);
+ 	void (*l2_mc_to_data)(const struct rtl8365mb_l2_mc *mc, u16 *data);
++	int (*qos_iprio_to_hw)(u8 iprio);
++	int (*qos_hw_to_iprio)(u8 hw);
++	int (*qos_set_untag_pcp)(struct realtek_priv *priv, int port,
++				 u8 untag_pcp);
+ };
+ 
+ const struct rtl8365mb_family_info *
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -827,6 +827,9 @@ static const struct rtl8365mb_family_inf
+ 	.l2_uc_to_data = rtl8365mb_c_l2_uc_to_data,
+ 	.l2_data_to_mc = rtl8365mb_c_l2_data_to_mc,
+ 	.l2_mc_to_data = rtl8365mb_c_l2_mc_to_data,
++	.qos_iprio_to_hw = rtl8365mb_c_qos_iprio_to_hw,
++	.qos_hw_to_iprio = rtl8365mb_c_qos_hw_to_iprio,
++	.qos_set_untag_pcp = rtl8365mb_c_qos_set_untag_pcp,
+ };
+ 
+ /**
+--- a/drivers/net/dsa/realtek/rtl8365mb_qos.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_qos.c
+@@ -18,10 +18,12 @@
+ #include <net/ieee8021q.h>
+ 
+ #include "realtek.h"
++#include "rtl8365mb.h"
+ #include "rtl8365mb_qos.h"
+ 
+-/* The chip's eight internal priorities carry 802.1Q traffic types, one
+- * internal priority per traffic type.
++/* The shared rtl83xx-qos.c layer hands this backend internal priorities
++ * that are 802.1Q traffic types. The chip's own priority is derived from
++ * them through the qos_* hooks of struct rtl8365mb_family_info.
+  */
+ static_assert(RTL8365MB_NUM_INTERNAL_PRIOS == IEEE8021Q_TT_MAX);
+ 
+@@ -40,12 +42,12 @@ static_assert(RTL8365MB_QOS_SEL_BITS <=
+ static_assert(RTL8365MB_QOS_SEL_STRIDE * RTL8365MB_QOS_SELS_PER_REG <=
+ 	      RTL8365MB_QOS_REG_BITS);
+ 
+-/* qmaps: the queue id of each internal priority, one table per qmap */
++/* qmaps: the queue id of each hardware priority, one table per qmap */
+ #define RTL8365MB_QOS_QMAP_TBL_REGS \
+ 	(RTL8365MB_NUM_INTERNAL_PRIOS / RTL8365MB_QOS_SELS_PER_REG)
+-#define RTL8365MB_QOS_QMAP_TBL_REG(_m, _iprio) \
++#define RTL8365MB_QOS_QMAP_TBL_REG(_m, _hw_prio) \
+ 	(0x0904 + (_m) * RTL8365MB_QOS_QMAP_TBL_REGS + \
+-	 (_iprio) / RTL8365MB_QOS_SELS_PER_REG)
++	 (_hw_prio) / RTL8365MB_QOS_SELS_PER_REG)
+ 
+ /* The qmap each port reads, one select per port */
+ #define RTL8365MB_QOS_PORT_QMAP_SEL_REG(_p) \
+@@ -218,54 +220,113 @@ static int rtl8365mb_qos_check_port(stru
+ 	return 0;
+ }
+ 
++/* Family C stores the traffic type as the chip's priority */
++int rtl8365mb_c_qos_iprio_to_hw(u8 iprio)
++{
++	return iprio;
++}
++
++int rtl8365mb_c_qos_hw_to_iprio(u8 hw)
++{
++	return hw;
++}
++
++int rtl8365mb_c_qos_set_untag_pcp(struct realtek_priv *priv, int port,
++				  u8 untag_pcp)
++{
++	return rtl8365mb_qos_regmap_update_field(priv,
++						 RTL8365MB_QOS_PORT_UNTAG_PCP_REG(port),
++						 rtl8365mb_qos_sel_mask(port),
++						 untag_pcp);
++}
++
++/* Convert an internal priority (an 802.1Q traffic type) to the value the
++ * chip uses. Return the value or a negative errno.
++ */
++static int rtl8365mb_qos_iprio_to_hw(struct realtek_priv *priv, u8 iprio)
++{
++	return rtl8365mb_get_family_info(priv)->qos_iprio_to_hw(iprio);
++}
++
++/* Convert a chip priority back to an internal priority (a traffic type) */
++static int rtl8365mb_qos_hw_to_iprio(struct realtek_priv *priv, u8 hw)
++{
++	return rtl8365mb_get_family_info(priv)->qos_hw_to_iprio(hw);
++}
++
+ int rtl8365mb_qos_get_port_prio(struct realtek_priv *priv, int port)
+ {
+-	return rtl8365mb_qos_regmap_read_field(priv,
+-					       RTL8365MB_QOS_PORT_PRI_REG(port),
+-					       rtl8365mb_qos_sel_mask(port));
++	int val;
++
++	val = rtl8365mb_qos_regmap_read_field(priv,
++					      RTL8365MB_QOS_PORT_PRI_REG(port),
++					      rtl8365mb_qos_sel_mask(port));
++	if (val < 0)
++		return val;
++
++	return rtl8365mb_qos_hw_to_iprio(priv, val);
+ }
+ 
+ int rtl8365mb_qos_set_port_prio(struct realtek_priv *priv, int port, u8 iprio,
+ 				u8 untag_pcp)
+ {
+-	u32 untag_reg = RTL8365MB_QOS_PORT_UNTAG_PCP_REG(port);
+ 	u32 reg = RTL8365MB_QOS_PORT_PRI_REG(port);
+ 	u32 mask = rtl8365mb_qos_sel_mask(port);
+-	int ret;
++	int hw, ret;
+ 
+ 	ret = rtl8365mb_qos_check_port(priv, port);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = rtl8365mb_qos_regmap_update_field(priv, untag_reg, mask,
+-						untag_pcp);
++	hw = rtl8365mb_qos_iprio_to_hw(priv, iprio);
++	if (hw < 0)
++		return hw;
++
++	ret = rtl8365mb_get_family_info(priv)->qos_set_untag_pcp(priv, port,
++								 untag_pcp);
+ 	if (ret)
+ 		return ret;
+ 
+-	return rtl8365mb_qos_regmap_update_field(priv, reg, mask, iprio);
++	return rtl8365mb_qos_regmap_update_field(priv, reg, mask, hw);
+ }
+ 
+ int rtl8365mb_qos_set_pcp_prio(struct realtek_priv *priv, u8 pcp, u8 iprio)
+ {
+ 	u32 reg = RTL8365MB_QOS_1Q_REMAP_REG(pcp);
+ 	u32 mask = rtl8365mb_qos_sel_mask(pcp);
++	int hw;
++
++	hw = rtl8365mb_qos_iprio_to_hw(priv, iprio);
++	if (hw < 0)
++		return hw;
+ 
+-	return rtl8365mb_qos_regmap_update_field(priv, reg, mask, iprio);
++	return rtl8365mb_qos_regmap_update_field(priv, reg, mask, hw);
+ }
+ 
+ int rtl8365mb_qos_get_dscp_prio(struct realtek_priv *priv, u8 dscp)
+ {
+-	return rtl8365mb_qos_regmap_read_field(priv,
+-					       RTL8365MB_QOS_DSCP_PRI_REG(dscp),
+-					       rtl8365mb_qos_sel_mask(dscp));
++	int val;
++
++	val = rtl8365mb_qos_regmap_read_field(priv,
++					      RTL8365MB_QOS_DSCP_PRI_REG(dscp),
++					      rtl8365mb_qos_sel_mask(dscp));
++	if (val < 0)
++		return val;
++
++	return rtl8365mb_qos_hw_to_iprio(priv, val);
+ }
+ 
+ int rtl8365mb_qos_set_dscp_prio(struct realtek_priv *priv, u8 dscp, u8 iprio)
+ {
+ 	u32 reg = RTL8365MB_QOS_DSCP_PRI_REG(dscp);
+ 	u32 mask = rtl8365mb_qos_sel_mask(dscp);
++	int hw;
++
++	hw = rtl8365mb_qos_iprio_to_hw(priv, iprio);
++	if (hw < 0)
++		return hw;
+ 
+-	return rtl8365mb_qos_regmap_update_field(priv, reg, mask, iprio);
++	return rtl8365mb_qos_regmap_update_field(priv, reg, mask, hw);
+ }
+ 
+ static int rtl8365mb_qos_set_port_qmap(struct realtek_priv *priv, int port,
+@@ -280,10 +341,10 @@ static int rtl8365mb_qos_set_port_qmap(s
+ }
+ 
+ static int rtl8365mb_qos_set_qmap_qid(struct realtek_priv *priv, int qmap,
+-				      u8 iprio, u8 qid)
++				      u8 hw_prio, u8 qid)
+ {
+-	u32 reg = RTL8365MB_QOS_QMAP_TBL_REG(qmap, iprio);
+-	u32 mask = rtl8365mb_qos_sel_mask(iprio);
++	u32 reg = RTL8365MB_QOS_QMAP_TBL_REG(qmap, hw_prio);
++	u32 mask = rtl8365mb_qos_sel_mask(hw_prio);
+ 
+ 	return rtl8365mb_qos_regmap_update_field(priv, reg, mask, qid);
+ }
+@@ -306,19 +367,27 @@ int rtl8365mb_qos_qmap_init(struct realt
+ {
+ 	unsigned int nq = priv->ds.num_tx_queues;
+ 	struct dsa_port *dp;
+-	int iprio, ret;
++	int hw_prio, ret;
+ 
+-	for (iprio = 0; iprio < RTL8365MB_NUM_INTERNAL_PRIOS; iprio++) {
+-		int tc = ieee8021q_tt_to_tc(iprio, nq);
++	/* The table is indexed by the chip's priority, not by the traffic
++	 * type.
++	 */
++	for (hw_prio = 0; hw_prio < RTL8365MB_NUM_INTERNAL_PRIOS; hw_prio++) {
++		int tt = rtl8365mb_qos_hw_to_iprio(priv, hw_prio);
++		int tc;
+ 		u8 qid;
+ 
++		if (tt < 0)
++			return tt;
++
++		tc = ieee8021q_tt_to_tc(tt, nq);
+ 		if (tc < 0)
+ 			return tc;
+ 
+ 		qid = rtl8365mb_qos_tc_to_qid(nq, tc);
+ 		ret = rtl8365mb_qos_set_qmap_qid(priv,
+ 						 RTL8365MB_QOS_QMAP_DEFAULT,
+-						 iprio, qid);
++						 hw_prio, qid);
+ 		if (ret)
+ 			return ret;
+ 	}
+--- a/drivers/net/dsa/realtek/rtl8365mb_qos.h
++++ b/drivers/net/dsa/realtek/rtl8365mb_qos.h
+@@ -14,7 +14,7 @@ struct realtek_priv;
+ /* Ports the QoS code handles */
+ #define RTL8365MB_QOS_MAX_PORTS		8
+ 
+-/* Internal priority -> queue id tables (qmaps) */
++/* Hardware priority -> queue id tables (qmaps) */
+ #define RTL8365MB_QOS_NUM_QMAPS		8
+ 
+ int rtl8365mb_qos_pridec_init(struct realtek_priv *priv);
+@@ -30,4 +30,10 @@ int rtl8365mb_qos_set_apptrust(struct re
+ int rtl8365mb_qos_get_apptrust(struct realtek_priv *priv, int port, bool *trust,
+ 			       unsigned int n);
+ 
++/* Hooks of struct rtl8365mb_family_info, one set per chip family */
++int rtl8365mb_c_qos_iprio_to_hw(u8 iprio);
++int rtl8365mb_c_qos_hw_to_iprio(u8 hw);
++int rtl8365mb_c_qos_set_untag_pcp(struct realtek_priv *priv, int port,
++				  u8 untag_pcp);
++
+ #endif /* _REALTEK_RTL8365MB_QOS_H */
