@@ -972,6 +972,18 @@ define U-Boot/mt7986_bananapi_bpi-r3-mini-snand
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ubi-ddr4
 endef
 
+define U-Boot/mt7986_elecom_wrc-x6000qs-ubi
+  NAME:=ELECOM WRC-X6000QS (UBI)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=elecom_wrc-x6000qs-ubi
+  UBOOT_CONFIG:=mt7986_elecom_wrc-x6000qs-ubi
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi-1m
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ubi-1m-ddr3
+endef
+
 define U-Boot/mt7986_glinet_gl-mt6000
   NAME:=GL.iNet GL-MT6000
   BUILD_SUBTARGET:=filogic
@@ -1606,6 +1618,7 @@ UBOOT_TARGETS := \
 	mt7986_bananapi_bpi-r3-nor \
 	mt7986_bananapi_bpi-r3-mini-emmc \
 	mt7986_bananapi_bpi-r3-mini-snand \
+	mt7986_elecom_wrc-x6000qs-ubi \
 	mt7986_glinet_gl-mt6000 \
 	mt7986_jdcloud_re-cp-03 \
 	mt7986_mercusys_h90x-v1 \

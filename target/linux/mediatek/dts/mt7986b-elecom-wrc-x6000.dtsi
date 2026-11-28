@@ -17,82 +17,93 @@
 		led-boot = &led_power_g;
 		led-failsafe = &led_power_r;
 		led-running = &led_power_g;
-		led-upgrade = &led_power_g;
+		led-upgrade = &led_power_w;
 	};
 
-	chosen {
+	chosen: chosen {
 		stdout-path = "serial0:115200n8";
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		led-0 {
-			color = <LED_COLOR_ID_GREEN>;
+		// 2GHz green
+		led_2g_g: led-0 {
 			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 		};
 
-		led-1 {
-			color = <LED_COLOR_ID_GREEN>;
+		// 5GHz green
+		led_5g_g: led-1 {
 			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 2 GPIO_ACTIVE_LOW>;
 		};
 
-		led-2 {
-			color = <LED_COLOR_ID_BLUE>;
+		// power blue
+		led_power_b: led-2 {
 			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 
-		led-3 {
+		// wps red
+		led_wps_r: led-3 {
 			function = LED_FUNCTION_WPS;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
-		led-4 {
-			color = <LED_COLOR_ID_RED>;
+		// 5GHz red
+		led_5g_r: led-4 {
 			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
 		};
 
-		led-5 {
-			color = <LED_COLOR_ID_WHITE>;
+		// 2GHz white
+		led_2g_w: led-5 {
 			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
-		led-6 {
-			color = <LED_COLOR_ID_WHITE>;
+		// 5GHz white
+		led_5g_w: led-6 {
 			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 
-		led-7 {
-			color = <LED_COLOR_ID_RED>;
+		// 2GHz red
+		led_2g_r: led-7 {
 			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 15 GPIO_ACTIVE_LOW>;
 		};
 
+		// power green
 		led_power_g: led-8 {
-			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 18 GPIO_ACTIVE_LOW>;
 		};
 
-		led-9 {
-			color = <LED_COLOR_ID_WHITE>;
+		// power white
+		led_power_w: led-9 {
 			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&pio 20 GPIO_ACTIVE_LOW>;
 		};
 
+		// power red
 		led_power_r: led-10 {
-			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 22 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -199,11 +210,12 @@
 	status = "okay";
 
 	gmac0: mac@0 {
+		/* towards internal switch port */
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
 
-		nvmem-cells = <&macaddr_factory_2a>;
+		nvmem-cells = <&macaddr_factory_2a 0>;
 		nvmem-cell-names = "mac-address";
 
 		fixed-link {
@@ -214,14 +226,15 @@
 	};
 
 	gmac1: mac@1 {
+		/* toward wan port */
+		status = "okay";
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
-		status = "okay";
 		phy-mode = "2500base-x";
 		phy-handle = <&ethphy5>;
+		openwrt,netdev-name = "wan";
 
-		label = "wan";
-		nvmem-cells = <&macaddr_factory_24>;
+		nvmem-cells = <&macaddr_factory_24 0>;
 		nvmem-cell-names = "mac-address";
 	};
 
@@ -230,9 +243,10 @@
 		#size-cells = <0>;
 
 		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
-		reset-delay-us = <600>;
-		reset-post-delay-us = <20000>;
+		reset-delay-us = <100000>;
+		reset-post-delay-us = <100000>;
 
+		/* WAN MaxLinear GPY211C 2.5Gbps phy */
 		ethphy5: ethernet-phy@5 {
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <5>;
@@ -284,6 +298,7 @@
 					label = "lan4";
 				};
 
+				/* CPU port */
 				port@6 {
 					reg = <6>;
 					ethernet = <&gmac0>;
@@ -307,7 +322,7 @@
 	num-cs = <2>;
 	cs-gpios = <0>, <0>;
 
-	flash@1 {
+	spi_nand: flash@1 {
 		compatible = "spi-nand";
 		reg = <1>;
 
@@ -315,15 +330,7 @@
 		spi-tx-bus-width = <4>;
 		spi-rx-bus-width = <4>;
 
-		mediatek,nmbm;
-		mediatek,bmt-max-ratio = <1>;
-		mediatek,bmt-max-reserved-blocks = <64>;
-		mediatek,bmt-remap-range =
-		<0x0000000 0x5a0000>,  /*     BL2 - Fwheader  (5.625 MiB) */
-		<0x37a0000 0x3b40000>, /*  Config - Fwheader2 (3.625 MiB) */
-		<0x6d40000 0x7580000>; /* Config2 - Backup    (8.25 MiB) */
-
-		partitions {
+		partitions: partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -354,19 +361,27 @@
 					};
 
 					macaddr_factory_4: mac-address@4 {
+						compatible = "mac-base";
 						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					macaddr_factory_a: mac-address@a {
+						compatible = "mac-base";
 						reg = <0xa 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					macaddr_factory_24: mac-address@24 {
+						compatible = "mac-base";
 						reg = <0x24 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					macaddr_factory_2a: mac-address@2a {
+						compatible = "mac-base";
 						reg = <0x2a 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -465,13 +480,13 @@
 
 	band@0 {
 		reg = <0>;
-		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cells = <&macaddr_factory_4 0>;
 		nvmem-cell-names = "mac-address";
 	};
 
 	band@1 {
 		reg = <1>;
-		nvmem-cells = <&macaddr_factory_a>;
+		nvmem-cells = <&macaddr_factory_a 0>;
 		nvmem-cell-names = "mac-address";
 	};
 };
