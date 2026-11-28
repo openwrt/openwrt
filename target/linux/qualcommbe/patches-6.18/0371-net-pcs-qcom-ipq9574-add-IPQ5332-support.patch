@@ -1,0 +1,24 @@
+From 5b70cbc681b1af138861ee35d5522b2a2bedef75 Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Thu, 23 Apr 2026 00:00:00 +0200
+Subject: [PATCH] net: pcs: qcom-ipq9574: add IPQ5332 support
+
+IPQ5332 can use the existing UNIPHY PCS implementation. Add the
+qcom,ipq5332-pcs compatible to the OF match table so the driver binds
+to IPQ5332 PCS instances.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ drivers/net/pcs/pcs-qcom-ipq9574.c | 1 +
+ 1 file changed, 1 insertions(+)
+
+--- a/drivers/net/pcs/pcs-qcom-ipq9574.c
++++ b/drivers/net/pcs/pcs-qcom-ipq9574.c
+@@ -1198,6 +1198,7 @@ static int ipq9574_pcs_probe(struct plat
+ 
+ static const struct of_device_id ipq9574_pcs_of_mtable[] = {
+ 	{ .compatible = "qcom,ipq9574-pcs" },
++	{ .compatible = "qcom,ipq5332-pcs" },
+ 	{ /* sentinel */ },
+ };
+ MODULE_DEVICE_TABLE(of, ipq9574_pcs_of_mtable);
