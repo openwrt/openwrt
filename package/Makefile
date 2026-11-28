@@ -187,7 +187,7 @@ ifneq ($(CONFIG_USE_APK),)
 		mkdir -p $$d; \
 		cd $$d || continue; \
 		ls *.apk >/dev/null 2>&1 || continue; \
-		if [ -f packages.adb ] && [ -f index.json ] && \
+		if [ -f packages.adb ] && [ -f index.json ] && [ -f Packages.manifest ] && \
 		   [ -z "$$(find . -maxdepth 1 \( -name '*.apk' -o -type d \) \
 				-newer index.json -print -quit 2>/dev/null)" ]; then \
 			continue; \
@@ -201,6 +201,8 @@ ifneq ($(CONFIG_USE_APK),)
 			*.apk; \
 		$(STAGING_DIR_HOST)/bin/apk adbdump --format json packages.adb | \
 			$(SCRIPT_DIR)/make-index-json.py -f apk -a "$(ARCH_PACKAGES)" - > index.json; \
+		$(STAGING_DIR_HOST)/bin/apk adbdump --format json packages.adb | \
+			$(SCRIPT_DIR)/make-index-json.py -f apk -a "$(ARCH_PACKAGES)" -p - > Packages.manifest; \
 	done
 ifdef CONFIG_JSON_CYCLONEDX_SBOM
 	@echo Creating CycloneDX package SBOMs...
