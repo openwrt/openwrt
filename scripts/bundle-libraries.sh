@@ -199,6 +199,15 @@ for BIN in "$@"; do
 
 		_mv "$BIN" "$RUNDIR/.${BIN##*/}.bin"
 
+		# Keep aliases from invoking the wrapper through another wrapper.
+		# This is relevant for host tools installed as g-prefixed binaries,
+		# such as readlink -> greadlink.
+		for LINK in "$RUNDIR"/*; do
+			[ -L "$LINK" ] || continue
+			[ "$(readlink "$LINK")" = "${BIN##*/}" ] || continue
+			_ln ".${BIN##*/}.bin" "$LINK"
+		done
+
 		cat <<-EOF > "$BIN"
 			#!/usr/bin/env bash
 			dir="\$(dirname "\$0")"
