@@ -1,0 +1,224 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sun, 05 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload root TBF qdiscs to the port shapers
+
+Offload a root TBF qdisc on a PPE port to the egress token bucket
+shaper of the port, byte based, taking the committed rate and the
+burst size from the qdisc. Removing the qdisc disables the shaper.
+Statistics dumps retain the qdisc's offloaded state; the hardware exposes
+no per-qdisc counters, so the qdisc core's software-visible counters remain
+unchanged by the callback.
+
+The shaper arithmetic follows the vendor driver: the shaper refreshes
+every port slot time (read from the slot configuration register, in
+8 ns scheduler cycles of the PPE clock, 353 MHz on the IPQ9574 and
+taken from the SoC variant), the token unit
+scales the value of one refresh credit and one bucket unit, and the
+finest token unit whose maximums cover the requested rate and burst
+is selected. Rates beyond what the shaper can express are rejected,
+leaving the qdisc in software.
+
+The port net devices now advertise NETIF_F_HW_TC, which the qdisc
+offload path requires.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -9,6 +9,7 @@
+ #include <linux/netdevice.h>
+ #include <linux/of_net.h>
+ #include <linux/phylink.h>
++#include <net/pkt_cls.h>
+ #include <linux/printk.h>
+ 
+ #include "edma.h"
+@@ -106,8 +107,8 @@ static int edma_port_open(struct net_dev
+ 	 * checksum offloading and other features. Each port is
+ 	 * responsible to maintain the feature set it supports.
+ 	 */
+-	netdev->features |= EDMA_NETDEV_FEATURES;
+-	netdev->hw_features |= EDMA_NETDEV_FEATURES;
++	netdev->features |= EDMA_NETDEV_FEATURES | NETIF_F_HW_TC;
++	netdev->hw_features |= EDMA_NETDEV_FEATURES | NETIF_F_HW_TC;
+ 	netdev->vlan_features |= EDMA_NETDEV_FEATURES;
+ 	netdev->wanted_features |= EDMA_NETDEV_FEATURES;
+ 
+@@ -336,12 +337,44 @@ static int edma_port_set_mac_address(str
+ 	return 0;
+ }
+ 
++/* Offload a root TBF qdisc to the egress token bucket shaper of the
++ * port.
++ */
++static int edma_port_setup_tbf(struct net_device *netdev,
++			       struct tc_tbf_qopt_offload *qopt)
++{
++	struct edma_port_priv *port_priv = netdev_priv(netdev);
++	struct ppe_port *port = port_priv->ppe_port;
++
++	if (qopt->parent != TC_H_ROOT)
++		return -EOPNOTSUPP;
++
++	switch (qopt->command) {
++	case TC_TBF_REPLACE:
++		return ppe_port_shaper_set(port->ppe_dev, port->port_id,
++					   qopt->replace_params.rate.rate_bytes_ps,
++					   qopt->replace_params.max_size);
++	case TC_TBF_DESTROY:
++		return ppe_port_shaper_set(port->ppe_dev, port->port_id,
++					   0, 0);
++	case TC_TBF_STATS:
++		/* There are no per-qdisc hardware counters. Keep the offload
++		 * state while the qdisc core retains its software-visible stats.
++		 */
++		return 0;
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
+ static int edma_port_setup_tc(struct net_device *netdev,
+ 			      enum tc_setup_type type, void *type_data)
+ {
+ 	switch (type) {
+ 	case TC_SETUP_FT:
+ 		return ppe_flowtable_setup_tc(netdev, type_data);
++	case TC_SETUP_QDISC_TBF:
++		return edma_port_setup_tbf(netdev, type_data);
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1737,6 +1737,91 @@ int ppe_port_bridge_learning_set(struct
+ 				  enable ? mask : 0);
+ }
+ 
++/* One refresh credit per token unit, byte based metering. */
++static const u32 ppe_shaper_token_units[] = {
++	2048 * 8, 512 * 8, 128 * 8, 32 * 8, 8 * 8, 2 * 8, 4, 1
++};
++
++/* The bucket size unit of the shapers, in bytes per token unit. */
++#define PPE_SHAPER_BURST_UNIT		65536
++
++/**
++ * ppe_port_shaper_set - Configure the egress token bucket shaper of a port
++ * @ppe_dev: PPE device
++ * @port: PPE port to shape
++ * @rate: Committed rate in bytes per second, 0 to disable the shaper
++ * @burst: Burst size in bytes
++ *
++ * Program the per-port shaper with byte based metering. The token
++ * unit scales both the refresh credits and the bucket size: the
++ * shaper refreshes every port slot time, making one credit worth
++ * 8000 * clock_kHz / (token * slot_ns) bits per second, and the
++ * finest token unit whose maximums cover the requested rate and burst
++ * is selected.
++ *
++ * Return: 0 on success, -ERANGE when the rate or burst exceed what
++ * the shaper can express, other negative error code on failure.
++ */
++int ppe_port_shaper_set(struct ppe_device *ppe_dev, int port, u64 rate,
++			u32 burst)
++{
++	u32 reg = PPE_PSCH_SHP_CFG_TBL_ADDR + PPE_PSCH_SHP_CFG_TBL_INC * port;
++	u64 rate_bits = rate * 8, rate_max, rate_bit, burst_max, burst_bit;
++	u32 val[2] = {}, slot, cycle_ns, token;
++	int i, ret;
++
++	if (!rate)
++		return regmap_bulk_write(ppe_dev->regmap, reg, val,
++					 ARRAY_SIZE(val));
++
++	ret = regmap_read(ppe_dev->regmap, PPE_PSCH_SHP_SLOT_CFG_PORT_ADDR,
++			  &slot);
++	if (ret)
++		return ret;
++
++	cycle_ns = FIELD_GET(PPE_PSCH_SHP_SLOT_CFG_PORT_TIME, slot) * 8;
++	if (!cycle_ns)
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(ppe_shaper_token_units); i++) {
++		token = ppe_shaper_token_units[i];
++
++		rate_max = div_u64((u64)FIELD_MAX(PPE_PSCH_SHP_W0_CIR) *
++				   8000 * ppe_dev->variant->shaper_clock_khz,
++				   (u64)token * cycle_ns);
++		burst_max = div_u64((u64)PPE_SHAPER_BURST_UNIT *
++				    FIELD_MAX(PPE_PSCH_SHP_W0_CBS), token) *
++			    1000;
++
++		rate_bit = div_u64(rate_max, FIELD_MAX(PPE_PSCH_SHP_W0_CIR));
++		burst_bit = div_u64(burst_max, FIELD_MAX(PPE_PSCH_SHP_W0_CBS));
++		if (!rate_bit || !burst_bit)
++			continue;
++
++		/* rate_bit is a floor division, so a rate can pass a
++		 * rate_max comparison yet quantise above the CIR field
++		 * maximum; admit only what the field can hold.
++		 */
++		if (div_u64(rate_bits, rate_bit) <=
++		    FIELD_MAX(PPE_PSCH_SHP_W0_CIR) &&
++		    (u64)burst * 1000 <= burst_max)
++			break;
++	}
++
++	if (i == ARRAY_SIZE(ppe_shaper_token_units))
++		return -ERANGE;
++
++	val[0] = FIELD_PREP(PPE_PSCH_SHP_W0_CIR,
++			    div_u64(rate_bits, rate_bit));
++	val[0] |= FIELD_PREP(PPE_PSCH_SHP_W0_CBS,
++			     clamp_t(u64, div_u64((u64)burst * 1000, burst_bit),
++				     1, FIELD_MAX(PPE_PSCH_SHP_W0_CBS)));
++	val[1] = FIELD_PREP(PPE_PSCH_SHP_W1_TOKEN_UNIT, i);
++	val[1] |= PPE_PSCH_SHP_W1_SHAPER_ENABLE;
++
++	return regmap_bulk_write(ppe_dev->regmap, reg, val, ARRAY_SIZE(val));
++}
++
+ /**
+  * ppe_port_stp_state_set - Set the spanning tree state of a PPE port
+  * @ppe_dev: PPE device
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
+@@ -353,6 +353,8 @@ int ppe_port_bridge_txmac_set(struct ppe
+ 			      bool enable);
+ int ppe_port_bridge_learning_set(struct ppe_device *ppe_dev, int port,
+ 				 bool enable);
++int ppe_port_shaper_set(struct ppe_device *ppe_dev, int port, u64 rate,
++			u32 burst);
+ int ppe_port_stp_state_set(struct ppe_device *ppe_dev, int port,
+ 			   enum ppe_stp_state state);
+ int ppe_fdb_entry_add(struct ppe_device *ppe_dev,
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -861,6 +861,25 @@
+ #define PPE_PSCH_SCH_DEPTH_CFG_INC		4
+ #define PPE_PSCH_SCH_DEPTH_CFG_SCH_DEPTH	GENMASK(7, 0)
+ 
++/* Port shaper time slot, in scheduler cycles of 8 ns. Together with
++ * the token unit it sets the value of one refresh credit.
++ */
++#define PPE_PSCH_SHP_SLOT_CFG_PORT_ADDR		0x400018
++#define PPE_PSCH_SHP_SLOT_CFG_PORT_TIME		GENMASK(11, 0)
++
++/* Per-port egress token bucket shapers. The refresh credits (CIR) and
++ * the bucket size (CBS) are scaled by the token unit; the meter unit
++ * selects byte or frame based metering.
++ */
++#define PPE_PSCH_SHP_CFG_TBL_ADDR		0x474000
++#define PPE_PSCH_SHP_CFG_TBL_ENTRIES		8
++#define PPE_PSCH_SHP_CFG_TBL_INC		0x10
++#define PPE_PSCH_SHP_W0_CIR			GENMASK(17, 0)
++#define PPE_PSCH_SHP_W0_CBS			GENMASK(31, 18)
++#define PPE_PSCH_SHP_W1_TOKEN_UNIT		GENMASK(2, 0)
++#define PPE_PSCH_SHP_W1_METER_UNIT		BIT(3)
++#define PPE_PSCH_SHP_W1_SHAPER_ENABLE		BIT(4)
++
+ /* PPE queue level scheduler configurations. */
+ #define PPE_L0_FLOW_MAP_TBL_ADDR		0x402000
+ #define PPE_L0_FLOW_MAP_TBL_ENTRIES		300
