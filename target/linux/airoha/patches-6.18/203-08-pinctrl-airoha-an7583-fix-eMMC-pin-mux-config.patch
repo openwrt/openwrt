@@ -1,23 +1,29 @@
-From 624a2ba252a64a87d2fc01ded1d5151d4d652731 Mon Sep 17 00:00:00 2001
+From ae698949b8d74036c199a199bc48153aba9a3f46 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robert.marko@sartura.hr>
 Date: Fri, 7 Aug 2026 14:30:00 +0200
-Subject: [PATCH 4/4] pinctrl: airoha: an7583: fix eMMC pin mux config
+Subject: [PATCH 08/12] pinctrl: airoha: an7583: fix eMMC pin mux config
 
-The AN7583 eMMC group uses pins 45-47, which are shared with the first
-SPI bus and GPIO. After the SCU IOMUX registers are reset at probe, the
-GPIO overrides for these pins remain enabled because the shared eMMC
-function group only sets GPIO_EMMC_MODE_MASK.
+The AN7583 eMMC group includes three pads shared with the first SPI
+bus: pinctrl pins 45-47, corresponding to GPIO43-45. Their GPIO
+operation is selected by bits 19-21 of REG_GPIO_PON_MODE.
 
-Fix this by clearing the GPIO mode bits for pins 45-47 when selecting eMMC.
+The eMMC mux configuration only enables GPIO_EMMC_MODE_MASK, leaving
+these pads in GPIO mode if their overrides were enabled by the
+bootloader.
+
+Clear the GPIO mode bits for these three pads when selecting eMMC.
+Preserve bit 22, which controls the SPI MISO/GPIO46 pad outside the
+eMMC group.
 
 Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
 ---
  drivers/pinctrl/airoha/pinctrl-an7583.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 --- a/drivers/pinctrl/airoha/pinctrl-an7583.c
 +++ b/drivers/pinctrl/airoha/pinctrl-an7583.c
-@@ -45,6 +45,7 @@
+@@ -44,6 +44,7 @@
  #define UART_RXD_GPIO_MODE_MASK			BIT(24)
  #define UART_TXD_GPIO_MODE_MASK			BIT(23)
  #define SPI_GPIO_MODE_MASK			GENMASK(22, 19)
@@ -25,7 +31,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  #define SPI_MISO_GPIO_MODE_MASK			BIT(22)
  #define SPI_MOSI_GPIO_MODE_MASK			BIT(21)
  #define SPI_CS_GPIO_MODE_MASK			BIT(20)
-@@ -994,7 +995,7 @@ static const struct airoha_pinctrl_func_
+@@ -991,7 +992,7 @@ static const struct airoha_pinctrl_func_
  		.regmap[0] = {
  			AIROHA_FUNC_MUX,
  			REG_GPIO_PON_MODE,
