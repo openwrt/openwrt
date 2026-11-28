@@ -151,7 +151,8 @@ ipq40xx_setup_interfaces()
 		;;
 	zte,mf287|\
 	zte,mf287plus|\
-	zte,mf287pro)
+	zte,mf287pro|\
+	zte,mf288)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;

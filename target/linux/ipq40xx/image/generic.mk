@@ -1458,6 +1458,14 @@ define Device/zte_mf287pro
 endef
 TARGET_DEVICES += zte_mf287pro
 
+define Device/zte_mf288
+	$(call Device/zte_mf28x_common)
+	DEVICE_PACKAGES += ipq-wifi-zte_mf288 ath10k-firmware-qca99x0-ct
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c1
+	DEVICE_MODEL := MF288
+endef
+TARGET_DEVICES += zte_mf288
+
 define Device/zte_mf289f
 	$(call Device/zte_mf28x_common)
 	DEVICE_MODEL := MF289F
