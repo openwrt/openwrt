@@ -28,7 +28,8 @@ realtek_setup_interfaces()
 	eltex,rg-5520)
 		ucidef_set_interface_lan "$lan_list"
 		;;
-	buffalo,wsr-1500ax2s)
+	buffalo,wsr-1500ax2s|\
+	tcl,t20-pro)
 		ucidef_set_interfaces_lan_wan "$lan_list" "wan"
 		;;
 	*)
@@ -302,6 +303,14 @@ realtek_setup_macs()
 		lan_mac=$(mtd_get_mac_binary board-info 0x1f1)
 		lan_mac_start=$lan_mac
 		eth0_mac=$lan_mac
+		;;
+	tcl,t20-pro)
+		lan_mac=$(realtek_get_mac_xml /tmp/ubi_factory/config_hs.xml \
+			ELAN_MAC_ADDR)
+		eth0_mac=$lan_mac
+		label_mac=$lan_mac
+		[ -n "$lan_mac" ] && \
+			ucidef_set_interface_macaddr wan "$(macaddr_add "$lan_mac" 1)"
 		;;
 	esac
 

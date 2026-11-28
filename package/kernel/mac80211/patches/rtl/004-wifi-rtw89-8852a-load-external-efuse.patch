@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pengji Li <wjjsn@qq.com>
+Subject: [PATCH] wifi: rtw89: 8852a: allow loading a logical eFuse map from a file
+
+Some embedded RTL8852AE designs leave the on-chip eFuse unprogrammed
+and keep board-specific calibration in a separate factory volume. Let
+the device tree name a file containing a logical eFuse map to use when
+the on-chip map has no valid MAC address or RFE type. Userspace is
+responsible for extracting the map before the driver is loaded.
+
+---
+--- a/drivers/net/wireless/realtek/rtw89/rtw8852a.c
++++ b/drivers/net/wireless/realtek/rtw89/rtw8852a.c
+@@ -2,6 +2,9 @@
+ /* Copyright(c) 2019-2020  Realtek Corporation
+  */
+ 
++#include <linux/firmware.h>
++#include <linux/property.h>
++
+ #include "coex.h"
+ #include "fw.h"
+ #include "mac.h"
+@@ -700,11 +703,45 @@
+ 	}
+ }
+ 
++static int rtw8852a_load_efuse_file(struct rtw89_dev *rtwdev, u8 *log_map)
++{
++	const struct rtw8852a_efuse *map = (const void *)log_map;
++	const struct firmware *fw;
++	const char *name;
++	int ret;
++
++	if (rtwdev->hci.type != RTW89_HCI_TYPE_PCIE ||
++	    (is_valid_ether_addr(map->e.mac_addr) && map->rfe_type != 0xff) ||
++	    device_property_read_string(rtwdev->dev, "realtek,efuse-file", &name))
++		return 0;
++
++	ret = request_firmware_direct(&fw, name, rtwdev->dev);
++	if (ret)
++		return ret;
++
++	map = (const void *)fw->data;
++	if (fw->size != rtwdev->chip->logical_efuse_size ||
++	    !is_valid_ether_addr(map->e.mac_addr) || map->rfe_type == 0xff)
++		ret = -EINVAL;
++	else
++		memcpy(log_map, fw->data, fw->size);
++	release_firmware(fw);
++
++	return ret;
++}
++
+ static int rtw8852a_read_efuse(struct rtw89_dev *rtwdev, u8 *log_map,
+ 			       enum rtw89_efuse_block block)
+ {
+ 	struct rtw89_efuse *efuse = &rtwdev->efuse;
+ 	struct rtw8852a_efuse *map;
++	int ret;
++
++	ret = rtw8852a_load_efuse_file(rtwdev, log_map);
++	if (ret) {
++		rtw89_err(rtwdev, "failed to load external eFuse: %d\n", ret);
++		return ret;
++	}
+ 
+ 	map = (struct rtw8852a_efuse *)log_map;
+ 
