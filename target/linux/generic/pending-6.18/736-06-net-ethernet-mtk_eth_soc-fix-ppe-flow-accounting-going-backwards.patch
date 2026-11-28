@@ -1,0 +1,402 @@
+From 838a891b35be5ac35420b17d4baf23566622d30a Mon Sep 17 00:00:00 2001
+From: Daniil Gentili <daniil@daniil.it>
+Date: Sat, 24 Oct 2026 22:17:19 +0000
+Subject: [PATCH] net: ethernet: mtk_eth_soc: fix ppe flow accounting going
+ backwards
+
+With hardware flow offloading, conntrack counters of offloaded flows got
+bogus jumps of about 2^32 packets and bytes, so tools like nlbwmon reported
+terabytes of traffic that never happened.
+
+mtk_flow_offload_stats() reports the difference between two readings of
+an entry's total, prev + acct[slot]. That total could go down:
+
+- when the slot stopped matching or got unbound, acct was added to prev
+  on every poll, but the entry stayed attached to the slot;
+- when the entry was detached (hash = 0xffff) or its slot rebound, the
+  slot's counts were dropped instead of being added to the entry.
+
+The u64 difference then underflowed and nf_ct_acct_add() truncated it to
+an unsigned int, adding about 2^32 to the conntrack counters.
+
+Keep a monotonic total per entry instead: remember how much of the slot's
+accounting data was already credited, and credit the rest whenever the
+entry is polled or detached. Also:
+
+- only detach entries bound to the slot being checked in
+  __mtk_ppe_check_skb(), not every entry of the bucket: the others stay
+  bound in hardware, and detaching them stopped their accounting and
+  idle time updates;
+- in __mtk_ppe_check_skb(), detach the other entries from the slot
+  before binding it, not after;
+- clear the subflow, not the L2 flow, when an L2 subflow goes away, and
+  credit its counts to the L2 flow wherever it is freed;
+- never report a negative delta to the flow offload core;
+- take ppe_lock in debugfs, the MIB read registers are shared and
+  clear on read.
+
+Signed-off-by: Daniil Gentili <daniil@daniil.it>
+---
+ drivers/net/ethernet/mediatek/mtk_ppe.c       | 156 +++++++++++++-----
+ drivers/net/ethernet/mediatek/mtk_ppe.h       |  14 +-
+ .../net/ethernet/mediatek/mtk_ppe_debugfs.c   |   6 +-
+ .../net/ethernet/mediatek/mtk_ppe_offload.c   |   9 +-
+ 4 files changed, 131 insertions(+), 54 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
+@@ -141,6 +141,19 @@ struct mtk_foe_accounting *mtk_ppe_mib_e
+ 	return acct;
+ }
+ 
++void mtk_ppe_acct_read(struct mtk_ppe *ppe, u16 index,
++		       struct mtk_foe_accounting *acct)
++{
++	struct mtk_foe_accounting *cur;
++
++	/* the MIB read registers are shared and clear on read */
++	spin_lock_bh(&ppe_lock);
++	cur = mtk_ppe_mib_entry_read(ppe, index);
++	if (cur)
++		*acct = *cur;
++	spin_unlock_bh(&ppe_lock);
++}
++
+ static void mtk_ppe_cache_clear(struct mtk_ppe *ppe)
+ {
+ 	ppe_set(ppe, MTK_PPE_CACHE_CTL, MTK_PPE_CACHE_CTL_CLEAR);
+@@ -514,6 +527,43 @@ mtk_flow_entry_match(struct mtk_eth *eth
+ 	return !memcmp(&entry->data.data, &data->data, len - 4);
+ }
+ 
++/*
++ * Add what the entry's PPE slot counted since the last call to the entry's
++ * totals. Every flow bound to a slot first detaches the entry that held it,
++ * so everything the slot counted since then belongs to this entry.
++ */
++static void
++mtk_flow_entry_sync_acct(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
++{
++	struct mtk_foe_accounting *acct;
++
++	if (entry->hash == 0xffff)
++		return;
++
++	acct = mtk_ppe_mib_entry_read(ppe, entry->hash);
++	if (!acct)
++		return;
++
++	/* slot data was reset behind our back: count it from zero */
++	if (acct->packets < entry->acct_packets ||
++	    acct->bytes < entry->acct_bytes) {
++		entry->acct_packets = 0;
++		entry->acct_bytes = 0;
++	}
++
++	entry->packets += acct->packets - entry->acct_packets;
++	entry->bytes += acct->bytes - entry->acct_bytes;
++	entry->acct_packets = acct->packets;
++	entry->acct_bytes = acct->bytes;
++}
++
++static void
++mtk_flow_entry_detach(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
++{
++	mtk_flow_entry_sync_acct(ppe, entry);
++	entry->hash = 0xffff;
++}
++
+ static void
+ __mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+ 		      bool set_state)
+@@ -537,11 +587,14 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
+ 		dma_wmb();
+ 		mtk_ppe_cache_clear(ppe);
+ 	}
+-	entry->hash = 0xffff;
++	mtk_flow_entry_detach(ppe, entry);
+ 
+ 	if (entry->type != MTK_FLOW_TYPE_L2_SUBFLOW)
+ 		return;
+ 
++	entry->l2_parent->prev_packets += entry->packets;
++	entry->l2_parent->prev_bytes += entry->bytes;
++
+ 	hlist_del_init(&entry->l2_list);
+ 	hlist_del_init(&entry->list);
+ 	kfree(entry);
+@@ -559,15 +612,13 @@ static int __mtk_foe_entry_idle_time(str
+ 		return now - timestamp;
+ }
+ 
++/* Returns true if the entry is still bound in hardware */
+ static bool
+-mtk_flow_entry_update(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+-		      u64 *packets, u64 *bytes)
++mtk_flow_entry_update(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
+ {
+-	struct mtk_foe_accounting *acct;
+ 	struct mtk_foe_entry foe = {};
+ 	struct mtk_foe_entry *hwe;
+ 	u16 hash = entry->hash;
+-	bool ret = false;
+ 	int len;
+ 
+ 	if (hash == 0xffff)
+@@ -577,36 +628,26 @@ mtk_flow_entry_update(struct mtk_ppe *pp
+ 	len = mtk_flow_entry_match_len(ppe->eth, &entry->data);
+ 	memcpy(&foe, hwe, len);
+ 
+-	if (!mtk_flow_entry_match(ppe->eth, entry, &foe, len) ||
+-	    FIELD_GET(MTK_FOE_IB1_STATE, foe.ib1) != MTK_FOE_STATE_BIND) {
+-		acct = mtk_ppe_acct_data(ppe, hash);
+-		if (acct) {
+-			entry->prev_packets += acct->packets;
+-			entry->prev_bytes += acct->bytes;
+-		}
+-
+-		goto out;
++	if (!mtk_flow_entry_match(ppe->eth, entry, &foe, len)) {
++		mtk_flow_entry_detach(ppe, entry);
++		return false;
+ 	}
+ 
+-	entry->data.ib1 = foe.ib1;
+-	acct = mtk_ppe_mib_entry_read(ppe, hash);
+-	ret = true;
++	mtk_flow_entry_sync_acct(ppe, entry);
+ 
+-out:
+-	if (acct) {
+-		*packets += acct->packets;
+-		*bytes += acct->bytes;
+-	}
++	if (FIELD_GET(MTK_FOE_IB1_STATE, foe.ib1) != MTK_FOE_STATE_BIND)
++		return false;
++
++	entry->data.ib1 = foe.ib1;
+ 
+-	return ret;
++	return true;
+ }
+ 
+ static void
+ mtk_flow_entry_update_l2(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
+ {
+ 	u32 ib1_ts_mask = mtk_get_ib1_ts_mask(ppe->eth);
+-	u64 *packets = &entry->packets;
+-	u64 *bytes = &entry->bytes;
++	u64 packets = 0, bytes = 0;
+ 	struct mtk_flow_entry *cur;
+ 	struct hlist_node *tmp;
+ 	int idle;
+@@ -615,13 +656,14 @@ mtk_flow_entry_update_l2(struct mtk_ppe
+ 	hlist_for_each_entry_safe(cur, tmp, &entry->l2_flows, l2_list) {
+ 		int cur_idle;
+ 
+-		if (!mtk_flow_entry_update(ppe, cur, packets, bytes)) {
+-			entry->prev_packets += cur->prev_packets;
+-			entry->prev_bytes += cur->prev_bytes;
+-			__mtk_foe_entry_clear(ppe, entry, false);
++		if (!mtk_flow_entry_update(ppe, cur)) {
++			__mtk_foe_entry_clear(ppe, cur, false);
+ 			continue;
+ 		}
+ 
++		packets += cur->packets;
++		bytes += cur->bytes;
++
+ 		cur_idle = __mtk_foe_entry_idle_time(ppe, cur->data.ib1);
+ 		if (cur_idle >= idle)
+ 			continue;
+@@ -630,23 +672,40 @@ mtk_flow_entry_update_l2(struct mtk_ppe
+ 		entry->data.ib1 &= ~ib1_ts_mask;
+ 		entry->data.ib1 |= cur->data.ib1 & ib1_ts_mask;
+ 	}
++
++	entry->packets = entry->prev_packets + packets;
++	entry->bytes = entry->prev_bytes + bytes;
+ }
+ 
++/* Returns the packets and bytes counted since the previous call */
+ void mtk_foe_entry_get_stats(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+-			     int *idle)
++			     int *idle, u64 *packets, u64 *bytes)
+ {
+-	entry->packets = entry->prev_packets;
+-	entry->bytes = entry->prev_bytes;
+-
+ 	spin_lock_bh(&ppe_lock);
+ 
+ 	if (entry->type == MTK_FLOW_TYPE_L2)
+ 		mtk_flow_entry_update_l2(ppe, entry);
+ 	else
+-		mtk_flow_entry_update(ppe, entry, &entry->packets, &entry->bytes);
++		mtk_flow_entry_update(ppe, entry);
+ 
+ 	*idle = __mtk_foe_entry_idle_time(ppe, entry->data.ib1);
+ 
++	/*
++	 * Totals must not shrink. If they ever do, don't report a negative
++	 * delta: conntrack adds it as an unsigned int, i.e. as about 2^32
++	 * packets and bytes.
++	 */
++	*packets = 0;
++	*bytes = 0;
++	if (entry->packets > entry->reported_packets) {
++		*packets = entry->packets - entry->reported_packets;
++		entry->reported_packets = entry->packets;
++	}
++	if (entry->bytes > entry->reported_bytes) {
++		*bytes = entry->bytes - entry->reported_bytes;
++		entry->reported_bytes = entry->bytes;
++	}
++
+ 	spin_unlock_bh(&ppe_lock);
+ }
+ 
+@@ -755,6 +814,7 @@ mtk_foe_entry_commit_subflow(struct mtk_
+ 		return;
+ 
+ 	flow_info->type = MTK_FLOW_TYPE_L2_SUBFLOW;
++	flow_info->l2_parent = entry;
+ 	flow_info->hash = hash;
+ 	hlist_add_head(&flow_info->list,
+ 		       &ppe->foe_flow[hash / soc->hash_offset]);
+@@ -785,12 +845,11 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 	const struct mtk_soc_data *soc = ppe->eth->soc;
+ 	struct hlist_head *head = &ppe->foe_flow[hash / soc->hash_offset];
+ 	struct mtk_foe_entry *hwe = mtk_foe_get_entry(ppe, hash);
+-	struct mtk_flow_entry *entry;
++	struct mtk_flow_entry *entry, *match = NULL;
+ 	struct mtk_foe_bridge key = {};
+ 	struct mtk_foe_entry foe = {};
+ 	struct hlist_node *n;
+ 	struct ethhdr *eh;
+-	bool found = false;
+ 	int entry_len;
+ 	u8 *tag;
+ 
+@@ -802,21 +861,30 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 	entry_len = mtk_flow_entry_match_len(ppe->eth, hwe);
+ 	memcpy(&foe, hwe, entry_len);
+ 
++	/*
++	 * Detach every other entry from this slot before binding it, so that
++	 * nobody else is credited with what the slot counts from now on.
++	 * Entries bound to other slots of the bucket stay.
++	 */
+ 	hlist_for_each_entry_safe(entry, n, head, list) {
+-		if (found ||
+-		    !mtk_flow_entry_match(ppe->eth, entry, &foe, entry_len)) {
+-			if (entry->hash != 0xffff)
+-				__mtk_foe_entry_clear(ppe, entry, false);
++		if (!match &&
++		    mtk_flow_entry_match(ppe->eth, entry, &foe, entry_len)) {
++			match = entry;
+ 			continue;
+ 		}
+ 
+-		entry->hash = hash;
+-		__mtk_foe_entry_commit(ppe, &entry->data, hash);
+-		found = true;
++		if (entry->hash == hash)
++			__mtk_foe_entry_clear(ppe, entry, false);
+ 	}
+ 
+-	if (found)
++	if (match) {
++		mtk_flow_entry_detach(ppe, match);
++		match->hash = hash;
++		__mtk_foe_entry_commit(ppe, &match->data, hash);
++		match->acct_packets = 0;
++		match->acct_bytes = 0;
+ 		goto out;
++	}
+ 
+ 	eh = eth_hdr(skb);
+ 	ether_addr_copy(key.dest_mac, eh->h_dest);
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.h
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.h
+@@ -304,8 +304,16 @@ struct mtk_flow_entry {
+ 	struct mtk_foe_entry data;
+ 	struct rhash_head node;
+ 	unsigned long cookie;
+-	u64 prev_packets, prev_bytes;
++	/* L2 subflows: the L2 flow they belong to */
++	struct mtk_flow_entry *l2_parent;
++	/* total counted by the PPE (L2 flows: sum over all subflows) */
+ 	u64 packets, bytes;
++	/* slot accounting data already added to packets/bytes */
++	u64 acct_packets, acct_bytes;
++	/* L2 flows: totals of subflows that are gone */
++	u64 prev_packets, prev_bytes;
++	/* totals already handed to the flow offload stats callback */
++	u64 reported_packets, reported_bytes;
+ };
+ 
+ struct mtk_mib_entry {
+@@ -352,6 +360,8 @@ void mtk_ppe_start(struct mtk_ppe *ppe);
+ int mtk_ppe_stop(struct mtk_ppe *ppe);
+ int mtk_ppe_prepare_reset(struct mtk_ppe *ppe);
+ struct mtk_foe_accounting *mtk_ppe_mib_entry_read(struct mtk_ppe *ppe, u16 index);
++void mtk_ppe_acct_read(struct mtk_ppe *ppe, u16 index,
++		       struct mtk_foe_accounting *acct);
+ 
+ void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash);
+ 
+@@ -403,6 +413,6 @@ int mtk_foe_entry_commit(struct mtk_ppe
+ void mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
+ int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index);
+ void mtk_foe_entry_get_stats(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+-			     int *idle);
++			     int *idle, u64 *packets, u64 *bytes);
+ 
+ #endif
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
+@@ -83,7 +83,7 @@ mtk_ppe_debugfs_foe_show(struct seq_file
+ 		struct mtk_foe_entry *entry = mtk_foe_get_entry(ppe, i);
+ 		struct mtk_foe_mac_info *l2;
+ 		struct mtk_flow_addr_info ai = {};
+-		struct mtk_foe_accounting *acct;
++		struct mtk_foe_accounting acct = {};
+ 		unsigned char h_source[ETH_ALEN];
+ 		unsigned char h_dest[ETH_ALEN];
+ 		int type, state;
+@@ -97,7 +97,7 @@ mtk_ppe_debugfs_foe_show(struct seq_file
+ 		if (bind && state != MTK_FOE_STATE_BIND)
+ 			continue;
+ 
+-		acct = mtk_ppe_mib_entry_read(ppe, i);
++		mtk_ppe_acct_read(ppe, i, &acct);
+ 
+ 		type = mtk_get_ib1_pkt_type(ppe->eth, entry->ib1);
+ 		seq_printf(m, "%05x %s %7s", i,
+@@ -161,7 +161,7 @@ mtk_ppe_debugfs_foe_show(struct seq_file
+ 			      " packets=%llu bytes=%llu\n",
+ 			   h_source, h_dest, ntohs(l2->etype),
+ 			   l2->vlan1, l2->vlan2, entry->ib1, ib2,
+-			   acct ? acct->packets : 0, acct ? acct->bytes : 0);
++			   acct.packets, acct.bytes);
+ 	}
+ 
+ 	return 0;
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -554,11 +554,10 @@ mtk_flow_offload_stats(struct mtk_eth *e
+ 	if (!entry)
+ 		return -ENOENT;
+ 
+-	packets = entry->packets;
+-	bytes = entry->bytes;
+-	mtk_foe_entry_get_stats(eth->ppe[entry->ppe_index], entry, &idle);
+-	f->stats.pkts += entry->packets - packets;
+-	f->stats.bytes += entry->bytes - bytes;
++	mtk_foe_entry_get_stats(eth->ppe[entry->ppe_index], entry, &idle,
++				&packets, &bytes);
++	f->stats.pkts += packets;
++	f->stats.bytes += bytes;
+ 	f->stats.lastused = jiffies - idle * HZ;
+ 
+ 	return 0;
