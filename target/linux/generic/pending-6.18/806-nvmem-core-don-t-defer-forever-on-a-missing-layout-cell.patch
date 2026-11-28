@@ -1,0 +1,67 @@
+From e9d91a53b7185505971f27fc9d4a3e9c3945e81c Mon Sep 17 00:00:00 2001
+From: Grische <github@grische.xyz>
+Date: Thu, 19 Nov 2026 04:20:30 +0100
+Subject: [PATCH] nvmem: core: don't defer forever on a cell that a bound layout lacks
+
+Commit fc29fd821d9a ("nvmem: core: Rework layouts to become regular
+devices") made of_nvmem_cell_get() return -EPROBE_DEFER when the NVMEM
+device has a layout and the cell is not found. This lets a consumer
+wait for the layout driver, which adds the cells in its probe. Once
+that probe has finished, a missing cell never appears, but
+of_nvmem_cell_get() still returns -EPROBE_DEFER and the consumer never
+probes.
+
+A layout that parses the contents of the device can lack a cell on
+some units. The U-Boot environment layout, for example, adds a cell
+only for a variable that is set. If the device tree describes the
+"ethaddr" cell and the environment does not set ethaddr, an Ethernet
+driver that takes its address from the cell never probes. After the
+deferred probe timeout, the kernel logs "deferred probe pending" for
+the Ethernet device.
+
+Return -EPROBE_DEFER only while the layout device is not bound, and
+-ENOENT after that. The consumer can then fall back, for example to a
+random MAC address.
+
+Read the bound state before the lookup, so that a cell that the layout
+adds after a failed lookup leads to -EPROBE_DEFER and not to -ENOENT.
+
+Fixes: fc29fd821d9a ("nvmem: core: Rework layouts to become regular devices")
+Assisted-by: Claude:claude-fable-5-2 Claude:claude-opus-5-5 sparse
+Signed-off-by: Grische <github@grische.xyz>
+---
+ drivers/nvmem/core.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -1477,6 +1477,7 @@ struct nvmem_cell *of_nvmem_cell_get(str
+ 	struct nvmem_cell_entry *cell_entry;
+ 	struct nvmem_cell *cell;
+ 	struct of_phandle_args cell_spec;
++	bool layout_bound;
+ 	int index = 0;
+ 	int cell_index = 0;
+ 	int ret;
+@@ -1527,11 +1528,20 @@ struct nvmem_cell *of_nvmem_cell_get(str
+ 		return ERR_PTR(ret);
+ 	}
+ 
++	/*
++	 * A layout adds all its cells in its probe, so a cell that is missing
++	 * once the layout device is bound will never appear. Read the bound
++	 * state first, as the probe may add the cell right after the lookup.
++	 */
++	layout_bound = nvmem->layout && device_is_bound(&nvmem->layout->dev);
+ 	cell_entry = nvmem_find_cell_entry_by_node(nvmem, cell_np);
+ 	of_node_put(cell_np);
+ 	if (!cell_entry) {
+ 		nvmem_layout_module_put(nvmem);
+-		ret = nvmem->layout ? -EPROBE_DEFER : -ENOENT;
++		if (nvmem->layout && !layout_bound)
++			ret = -EPROBE_DEFER;
++		else
++			ret = -ENOENT;
+ 		__nvmem_device_put(nvmem);
+ 		return ERR_PTR(ret);
+ 	}

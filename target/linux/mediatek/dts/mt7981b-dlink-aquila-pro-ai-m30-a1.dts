@@ -203,17 +203,12 @@
 				read-only;
 
 				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
+					compatible = "amit,psection";
 
-					macaddr_odm: macaddr@81 {
-						compatible = "mac-base";
-						reg = <0x81 0x6>;
+					macaddr_odm: base-mac-address {
 						#nvmem-cell-cells = <1>;
 					};
 				};
-
 			};
 
 			partition@69c0000 {
@@ -266,10 +261,26 @@
 };
 
 &wifi {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
-	nvmem-cells = <&eeprom_factory_0>, <&macaddr_odm 2>;
-	nvmem-cell-names = "eeprom", "mac-address";
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+
+	band@0 {
+		/* 2.4 GHz */
+		reg = <0>;
+		nvmem-cells = <&macaddr_odm 2>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		/* 5 GHz */
+		reg = <1>;
+		nvmem-cells = <&macaddr_odm 3>;
+		nvmem-cell-names = "mac-address";
+	};
 };
 
 &i2c0 {
