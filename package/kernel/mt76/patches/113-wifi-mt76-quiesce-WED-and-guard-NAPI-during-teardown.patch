@@ -1,0 +1,47 @@
+From e88992f4092e9b326c8d78e59431e9d62f04d39b Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Date: Wed, 18 Nov 2026 10:57:06 +0800
+Subject: [PATCH] wifi: mt76: quiesce WED and guard NAPI during teardown
+
+Hardware-owned RRO queues have descriptors but no registered host NAPI.
+Only delete RX NAPI instances that were registered, while retaining DMA
+ring and page-pool cleanup for all queues.
+
+During mt7996 unregister, stop every attached WED after mac80211 removes
+the interfaces and before freeing RRO memory or powering down the MCU.
+Keep detach in DMA cleanup to release the WED rings afterward.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+---
+ dma.c         | 3 ++-
+ mt7996/init.c | 7 +++++++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+--- a/dma.c
++++ b/dma.c
+@@ -1217,7 +1217,8 @@ void mt76_dma_cleanup(struct mt76_dev *d
+ 	mt76_for_each_q_rx(dev, i) {
+ 		struct mt76_queue *q = &dev->q_rx[i];
+ 
+-		netif_napi_del(&dev->napi[i]);
++		if (dev->napi[i].dev)
++			netif_napi_del(&dev->napi[i]);
+ 		mt76_dma_rx_cleanup(dev, q);
+ 
+ 		page_pool_destroy(q->page_pool);
+--- a/mt7996/init.c
++++ b/mt7996/init.c
+@@ -1845,6 +1845,13 @@ void mt7996_unregister_device(struct mt7
+ 	mt7996_unregister_thermal(&dev->phy);
+ 	mt7996_coredump_unregister(dev);
+ 	mt76_unregister_device(&dev->mt76);
++
++	/* Stop external DMA before releasing RRO memory and powering off MCU. */
++	if (mtk_wed_device_active(&dev->mt76.mmio.wed_hif2))
++		mtk_wed_device_stop(&dev->mt76.mmio.wed_hif2);
++	if (mtk_wed_device_active(&dev->mt76.mmio.wed))
++		mtk_wed_device_stop(&dev->mt76.mmio.wed);
++
+ 	mt7996_wed_rro_free(dev);
+ 	for (i = 0; i < ARRAY_SIZE(dev->mt76.napi); i++) {
+ 		if (dev->mt76.napi[i].dev)

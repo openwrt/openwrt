@@ -1,0 +1,193 @@
+From 729e57551a30f1596ee7ae804b46c6e1542c5d41 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Date: Wed, 18 Nov 2026 10:57:06 +0800
+Subject: [PATCH] wifi: mt76: mt7996: retire stale WED flows before full SER
+
+A local full reset recreates station WCIDs and interface BSS IDs while
+PPE can retain flow templates containing their old WINFO. Existing TCP
+connections can then stall through the old WED binding even though new
+connections and host TX work. Invalidating only the hardware entry does
+not suffice because PPE can bind the cached template again.
+
+Before the MT7987 WED v3.1 full reset acquires the mt76 mutex or reuses
+those IDs, block new forward paths and retire the affected NF software
+and hardware flows, preserving their conntrack entries. Cover every
+WLAN netdev of the wiphy and all its upper devices, including bridges
+and VLANs, because either direction's flow tuple can name an upper
+interface. Keep RTNL while examining devices, and leave RCU before
+calling the sleepable cleanup. Run cleanup twice so pending offload
+adds drained by the first pass are destroyed by the next GC pass.
+
+Get nf_flow_table_cleanup through symbol_get, without loading or
+depending on NF flowtable modules. Build the cleanup out when
+NF_FLOW_TABLE is disabled.
+
+Keep the forward-path gate closed until full reset has removed every
+old station link and VIF mapping. Publish that removal before releasing
+the gate, and require a newly connected station link before exporting
+its WINFO. A failed reset keeps the gate closed. Do not depend on the
+asynchronous reconfig_complete callback: mac80211 omits it when all
+interfaces are down, and an earlier reset's callback must not release
+a later reset's gate. Ordinary interface startup can establish a fresh
+station and resume offload without another reset or a module reload.
+
+Skip synchronous NF cleanup for an FE-initiated WED reset. That path
+holds the WED hw_lock while waiting for WLAN, and NF flow destruction
+takes the same lock. Preserve the FE driver's existing PPE recovery
+instead, and recheck the reset state after taking RTNL to cover a
+concurrent FE recovery.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+---
+ mt7996/mac.c    |   86 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ mt7996/main.c   |    6 +++
+ mt7996/mt7996.h |    1 
+ 3 files changed, 92 insertions(+), 1 deletion(-)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -4,7 +4,9 @@
+  */
+ 
+ #include <linux/etherdevice.h>
++#include <linux/rtnetlink.h>
+ #include <linux/timekeeping.h>
++#include <net/netfilter/nf_flow_table.h>
+ #include "coredump.h"
+ #include "mt7996.h"
+ #include "../dma.h"
+@@ -2492,6 +2494,71 @@ mt7996_mac_reset_vif_iter(void *data, u8
+ 	rcu_read_unlock();
+ }
+ 
++#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
++static bool
++mt7996_wed_flow_netdev(struct wiphy *wiphy, struct net_device *netdev)
++{
++	struct net_device *lower;
++
++	for_each_netdev(wiphy_net(wiphy), lower) {
++		if (!lower->ieee80211_ptr ||
++		    lower->ieee80211_ptr->wiphy != wiphy)
++			continue;
++
++		if (lower == netdev ||
++		    netdev_has_upper_dev_all_rcu(lower, netdev))
++			return true;
++	}
++
++	return false;
++}
++#endif
++
++static void
++mt7996_wed_flow_cleanup(struct mt7996_dev *dev)
++{
++#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
++	struct wiphy *wiphy = mt76_hw(dev)->wiphy;
++	void (*cleanup)(struct net_device *netdev);
++	struct net_device *netdev;
++	struct net *net;
++	int pass;
++
++	/* Optional: WED must also work without a loaded NF flowtable module. */
++	cleanup = symbol_get(nf_flow_table_cleanup);
++	if (!cleanup)
++		return;
++
++	rtnl_lock();
++	/*
++	 * FE recovery holds hw_lock while waiting for WLAN. Its own PPE reset
++	 * must not wait for an NF flow destroy taking that same lock.
++	 */
++	if (test_bit(MT76_STATE_WED_RESET, &dev->mphy.state))
++		goto out;
++
++	net = wiphy_net(wiphy);
++	/*
++	 * GC skips pending offload work. Drain it first, then run GC again to
++	 * destroy templates whose add completed during the first cleanup.
++	 */
++	for (pass = 0; pass < 2; pass++) {
++		for_each_netdev(net, netdev) {
++			bool match;
++
++			rcu_read_lock();
++			match = mt7996_wed_flow_netdev(wiphy, netdev);
++			rcu_read_unlock();
++			if (match)
++				cleanup(netdev);
++		}
++	}
++out:
++	rtnl_unlock();
++	symbol_put(nf_flow_table_cleanup);
++#endif
++}
++
+ static bool
+ mt7996_mac_full_reset(struct mt7996_dev *dev)
+ {
+@@ -2507,6 +2574,18 @@ mt7996_mac_full_reset(struct mt7996_dev
+ 	wake_up(&dev->mt76.mcu.wait);
+ 	ieee80211_stop_queues(hw);
+ 
++	if (mtk_wed_device_active(&dev->mt76.mmio.wed) &&
++	    mt76_wed_is_v3_1(&dev->mt76.mmio.wed) &&
++	    !test_bit(MT76_STATE_WED_RESET, &dev->mphy.state)) {
++		/* Block WINFO extraction before retiring cached templates. */
++		smp_store_release(&dev->recovery.flow_blocked, true);
++		/*
++		 * This work holds no mt76, wiphy or RTNL lock here. Invalidate
++		 * cached WINFO before reusing station WCIDs or interface BSS IDs.
++		 */
++		mt7996_wed_flow_cleanup(dev);
++	}
++
+ 	cancel_work_sync(&dev->wed_rro.work);
+ 	mt7996_for_each_phy(dev, phy)
+ 		cancel_delayed_work_sync(&phy->mt76->mac_work);
+@@ -2557,6 +2636,13 @@ mt7996_mac_full_reset(struct mt7996_dev
+ 
+ 	i = mt76_wcid_alloc(dev->mt76.wcid_mask, MT7996_WTBL_STA);
+ 	dev->mt76.global_wcid.idx = i;
++	/*
++	 * Old station links and VIF mappings are gone. Forward paths must now
++	 * wait for a newly connected station link, rather than an asynchronous
++	 * reconfig_complete callback that can belong to an earlier reset or be
++	 * omitted entirely when all interfaces are down.
++	 */
++	smp_store_release(&dev->recovery.flow_blocked, false);
+ 	dev->recovery.hw_full_reset = false;
+ 
+ 	mutex_unlock(&dev->mt76.mutex);
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -3248,12 +3248,16 @@ mt7996_net_fill_forward_path(struct ieee
+ 	struct mt7996_vif_link *link;
+ 	struct mtk_wed_device *wed;
+ 
++	/* Pair with publishing the retired station links at full-reset exit. */
++	if (smp_load_acquire(&dev->recovery.flow_blocked))
++		return -ENODEV;
++
+ 	link = mt7996_vif_link(dev, vif, msta->deflink_id);
+ 	if (!link)
+ 		return -EIO;
+ 
+ 	msta_link = mt7996_sta_link(msta, msta->deflink_id);
+-	if (!msta_link)
++	if (!msta_link || !READ_ONCE(msta_link->connected))
+ 		return -EIO;
+ 
+ 	if (!msta_link->wcid.sta || msta_link->wcid.idx > MT7996_WTBL_STA)
+--- a/mt7996/mt7996.h
++++ b/mt7996/mt7996.h
+@@ -515,6 +515,7 @@ struct mt7996_dev {
+ 		u32 state;
+ 		u32 wa_reset_count;
+ 		u32 wm_reset_count;
++		bool flow_blocked;
+ 		bool hw_full_reset:1;
+ 		bool hw_init_done:1;
+ 		bool restart:1;
