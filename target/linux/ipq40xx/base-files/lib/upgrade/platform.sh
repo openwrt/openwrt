@@ -121,6 +121,7 @@ platform_do_upgrade() {
 	glinet,gl-a1300|\
 	glinet,gl-ap1300|\
 	luma,wrtq-329acn|\
+	mbox,hsa-500|\
 	mobipromo,cm520-79f|\
 	netgear,lbr20|\
 	netgear,rbr20|\
