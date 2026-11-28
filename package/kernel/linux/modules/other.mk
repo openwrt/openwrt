@@ -60,7 +60,8 @@ $(eval $(call KernelPackage,eeprom-93cx6))
 define KernelPackage/eeprom-at24
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM AT24 support
-  KCONFIG:=CONFIG_EEPROM_AT24
+  KCONFIG:=CONFIG_EEPROM_AT24 \
+	CONFIG_NVMEM_SYSFS=y
   DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at24.ko
   AUTOLOAD:=$(call AutoProbe,at24)

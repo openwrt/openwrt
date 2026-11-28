@@ -1,0 +1,34 @@
+From 407934e0c6c237da4d7997873a2bce22bff1248a Mon Sep 17 00:00:00 2001
+From: Kosuke Shibuya <kakiringopcneko@gmail.com>
+Date: Thu, 22 Oct 2026 15:13:46 +0900
+Subject: [PATCH] allocate: mark unused inode bitmap bits as allocated
+
+Each inode bitmap occupies a whole block, even when the group has fewer
+inodes than that block can describe. Mark the trailing bits as allocated,
+as required by ext4, rather than leaving the calloc() zero padding intact.
+This avoids e2fsck reporting unset inode bitmap padding on fresh images.
+
+Signed-off-by: Kosuke Shibuya <kakiringopcneko@gmail.com>
+---
+ allocate.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/allocate.c
++++ b/allocate.c
+@@ -283,6 +283,7 @@ void reduce_allocation(struct block_allo
+ static void init_bg(struct block_group_info *bg, unsigned int i)
+ {
+ 	int header_blocks = 2 + aux_info.inode_table_blocks;
++	u32 inode;
+ 
+ 	bg->has_superblock = ext4_bg_has_super_block(i);
+ 
+@@ -292,6 +293,8 @@ static void init_bg(struct block_group_i
+ 	bg->bitmaps = calloc(info.block_size, 2);
+ 	bg->block_bitmap = bg->bitmaps;
+ 	bg->inode_bitmap = bg->bitmaps + info.block_size;
++	for (inode = info.inodes_per_group; inode < info.block_size * 8; inode++)
++		bitmap_set_bit(bg->inode_bitmap, inode);
+ 
+ 	bg->header_blocks = header_blocks;
+ 	bg->first_block = aux_info.first_data_block + i * info.blocks_per_group;
