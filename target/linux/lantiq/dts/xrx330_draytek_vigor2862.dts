@@ -1,0 +1,375 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "xrx330.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "draytek,vigor2862", "lantiq,xway", "lantiq,grx390";
+	model = "DrayTek Vigor 2862";
+
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
+	aliases {
+		led-boot = &led_act;
+		led-failsafe = &led_act;
+		led-running = &led_act;
+		led-upgrade = &led_act;
+		led-dsl = &led_dsl;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	/* panel LEDs on the STP, active low */
+	leds {
+		compatible = "gpio-leds";
+
+		led-dmz {
+			function = "dmz";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wcf {
+			function = "wcf";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led-qos {
+			function = "qos";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led-vpn {
+			function = "vpn";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 16 GPIO_ACTIVE_LOW>;
+		};
+
+		led_dsl: led-dsl {
+			function = "dsl";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 19 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wan2-online {
+			function = LED_FUNCTION_WAN_ONLINE;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led-usb2 {
+			function = LED_FUNCTION_USB;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 21 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&usb1_port1>;
+			linux,default-trigger = "usbport";
+		};
+
+		led-usb1 {
+			function = LED_FUNCTION_USB;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 22 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&usb0_port1>;
+			linux,default-trigger = "usbport";
+		};
+
+		led_act: led-act {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&stp 23 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	memory@0 {
+		device_type = "memory";
+		/*
+		 * top 1 MiB is used by the vendor firmware and by U-Boot's copy
+		 * of the GPHY firmware at 0x7fe0000, keep it untouched
+		 */
+		reg = <0x0 0x7f00000>;
+	};
+};
+
+/*
+ * U-Boot boots the GPHYs from its firmware copy at 0x7fe0000 (outside the
+ * kernel's memory), so the switch driver must not reset them or load firmware.
+ */
+/delete-node/ &gphy_fw;
+
+/*
+ * Front panel LAN1-LAN4 = switch ports (MDIO) 1, 4, 2, 3; the GPHY LEDs follow the jacks.
+ */
+&gswip_mdio {
+	phy1: ethernet-phy@1 {
+		reg = <0x1>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				function = LED_FUNCTION_ACTIVITY;
+				function-enumerator = <1>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+
+			led@1 {
+				reg = <1>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <1>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+		};
+	};
+
+	phy2: ethernet-phy@2 {
+		reg = <0x2>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				function = LED_FUNCTION_ACTIVITY;
+				function-enumerator = <3>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+
+			led@1 {
+				reg = <1>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <3>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+		};
+	};
+
+	phy3: ethernet-phy@3 {
+		reg = <0x3>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				function = LED_FUNCTION_ACTIVITY;
+				function-enumerator = <4>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+
+			led@1 {
+				reg = <1>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <4>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+		};
+	};
+
+	phy4: ethernet-phy@4 {
+		reg = <0x4>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				function = LED_FUNCTION_ACTIVITY;
+				function-enumerator = <2>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+
+			led@1 {
+				reg = <1>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <2>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+		};
+	};
+
+	/* AR8035, WAN2 */
+	phy7: ethernet-phy@7 {
+		reg = <0x7>;
+	};
+};
+
+&gswip_ports {
+	port@0 {
+		reg = <0>;
+		label = "wan";
+		phy-mode = "rgmii-id";
+		phy-handle = <&phy7>;
+		nvmem-cells = <&macaddr_drayboot_3fff8 2>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	port@1 {
+		reg = <1>;
+		label = "lan1";
+		phy-mode = "internal";
+		phy-handle = <&phy1>;
+	};
+
+	port@2 {
+		reg = <2>;
+		label = "lan3";
+		phy-mode = "internal";
+		phy-handle = <&phy2>;
+	};
+
+	port@3 {
+		reg = <3>;
+		label = "lan4";
+		phy-mode = "internal";
+		phy-handle = <&phy3>;
+	};
+
+	port@4 {
+		reg = <4>;
+		label = "lan2";
+		phy-mode = "internal";
+		phy-handle = <&phy4>;
+	};
+};
+
+&localbus {
+	flash@1 {
+		compatible = "lantiq,nand-xway";
+		lantiq,cs = <1>;
+		bank-width = <2>;
+		reg = <1 0x0 0x2000000>;
+
+		nand-use-soft-ecc-engine;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "drayboot-vendor";
+				reg = <0x0 0x1380000>;
+				read-only;
+			};
+
+			/* DrayBoot primary firmware slot, holds U-Boot */
+			partition@1380000 {
+				label = "u-boot";
+				reg = <0x1380000 0x100000>;
+				read-only;
+			};
+
+			partition@1480000 {
+				label = "kernel";
+				reg = <0x1480000 0x400000>;
+			};
+
+			/* ends at the DrayBoot backup slot, kept for recovery */
+			partition@1880000 {
+				label = "ubi";
+				reg = <0x1880000 0x1b00000>;
+			};
+		};
+	};
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_drayboot_3fff8 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+/* pinmux and chip selects are left as DrayBoot set them up */
+&spi {
+	status = "okay";
+
+	flash@1 {
+		compatible = "jedec,spi-nor";
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* DrayBoot, its GPHY firmware and the board data */
+			partition@0 {
+				label = "drayboot-spi";
+				reg = <0x0 0x40000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_drayboot_3fff8: macaddr@3fff8 {
+						compatible = "mac-base";
+						reg = <0x3fff8 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+/*
+ * LAN LEDs (active high) are driven by the GPHYs. Each phyN field drives
+ * one GPHY's activity/link pair: phy1 (GPHY0, LAN3) 2-3, phy2 (GPHY1, LAN2)
+ * 5-6, phy3 (GPHY2, LAN1) 8-9, phy4 (GPHY3, LAN4) 17-18. Output 11 is the
+ * VRX318 PCIe reset.
+ */
+&stp {
+	status = "okay";
+	lantiq,phy1 = <0x3>;
+	lantiq,phy2 = <0x3>;
+	lantiq,phy3 = <0x3>;
+	lantiq,phy4 = <0x3>;
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb_phy1 {
+	status = "okay";
+};
+
+/* VRX318 DSL modem */
+&pcie0 {
+	status = "okay";
+	reset-gpios = <&stp 11 GPIO_ACTIVE_LOW>;
+};
