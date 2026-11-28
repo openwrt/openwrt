@@ -1,0 +1,126 @@
+From 7cd5352f2d6f7e30168d9b074be4add300b1af51 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 23 Nov 2026 12:40:34 +0000
+Subject: [PATCH] wifi: brcmfmac: Make the HT/VHT capabilities track the
+ firmware
+
+The firmware's nmode and vhtmode depend on the locale - the SYN43436s
+CLM, for example, disables 11n for RU, UA, BY and the world locales -
+so they can change whenever the country is set. brcmf_setup_wiphybands
+runs at attach and again from the regulatory notifier, but it only ever
+adds HT/VHT capabilities, so what gets advertised depends on the
+history of country changes. In particular, wiphy_register calls the
+notifier, so the country passed on the kernel command line is applied
+before the first brcmf_setup_wiphybands: with RU it never registers
+HT, whereas booting with GB and later moving to RU leaves HT
+advertised although the firmware has 11n disabled.
+
+Clear the HT capabilities when nmode is 0, and the VHT capabilities
+when either nmode or vhtmode is 0, leaving them unchanged if the
+iovars can't be read. nmode was also used uninitialised in that case.
+
+Since brcmf_setup_wiphybands can now clear the 2GHz HT capabilities,
+brcmf_cfg80211_attach must check whether cfg80211 kept
+IEEE80211_HT_CAP_SUP_WIDTH_20_40 before calling it.
+
+See: https://github.com/raspberrypi/firmware/issues/2019
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ .../broadcom/brcm80211/brcmfmac/cfg80211.c    | 46 ++++++++++++++-----
+ 1 file changed, 34 insertions(+), 12 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -7678,11 +7678,12 @@ static int brcmf_setup_wiphybands(struct
+ 	struct brcmf_pub *drvr = cfg->pub;
+ 	struct brcmf_if *ifp = brcmf_get_ifp(drvr, 0);
+ 	struct wiphy *wiphy = cfg_to_wiphy(cfg);
+-	u32 nmode;
++	u32 nmode = 0;
+ 	u32 vhtmode = 0;
+ 	u32 bw_cap[2] = { WLC_BW_20MHZ_BIT, WLC_BW_20MHZ_BIT };
+ 	u32 rxchain;
+ 	u32 nchain;
++	int nmode_err, vht_err;
+ 	int err;
+ 	s32 i;
+ 	struct ieee80211_supported_band *band;
+@@ -7690,8 +7691,9 @@ static int brcmf_setup_wiphybands(struct
+ 	u32 txbf_bfe_cap = 0;
+ 	u32 txbf_bfr_cap = 0;
+ 
+-	(void)brcmf_fil_iovar_int_get(ifp, "vhtmode", &vhtmode);
+-	err = brcmf_fil_iovar_int_get(ifp, "nmode", &nmode);
++	vht_err = brcmf_fil_iovar_int_get(ifp, "vhtmode", &vhtmode);
++	nmode_err = brcmf_fil_iovar_int_get(ifp, "nmode", &nmode);
++	err = nmode_err;
+ 	if (err) {
+ 		bphy_err(drvr, "nmode error (%d)\n", err);
+ 	} else {
+@@ -7735,11 +7737,26 @@ static int brcmf_setup_wiphybands(struct
+ 		if (band == NULL)
+ 			continue;
+ 
+-		if (nmode)
+-			brcmf_update_ht_cap(band, bw_cap, nchain);
+-		if (vhtmode)
+-			brcmf_update_vht_cap(band, bw_cap, nchain, txstreams,
+-					     txbf_bfe_cap, txbf_bfr_cap);
++		/* The firmware's locale can disable 11n (and hence 11ac), so
++		 * nmode and vhtmode may change with the country. Clear the
++		 * capabilities when they are disabled, but leave them alone
++		 * if they couldn't be read.
++		 */
++		if (!nmode_err) {
++			if (nmode)
++				brcmf_update_ht_cap(band, bw_cap, nchain);
++			else
++				memset(&band->ht_cap, 0, sizeof(band->ht_cap));
++		}
++		if (!nmode_err && !vht_err) {
++			if (nmode && vhtmode)
++				brcmf_update_vht_cap(band, bw_cap, nchain,
++						     txstreams, txbf_bfe_cap,
++						     txbf_bfr_cap);
++			else
++				memset(&band->vht_cap, 0,
++				       sizeof(band->vht_cap));
++		}
+ 	}
+ 
+ 	return 0;
+@@ -8683,6 +8700,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+ 	s32 err = 0;
+ 	s32 io_type;
+ 	u16 *cap = NULL;
++	bool bw40_2g;
+ 
+ 	if (!ndev) {
+ 		bphy_err(drvr, "ndev is invalid\n");
+@@ -8762,16 +8780,20 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+ 		goto priv_out;
+ 	}
+ 
++	/* If cfg80211 didn't disable 40MHz HT CAP in wiphy_register(),
++	 * setup 40MHz in 2GHz band and enable OBSS scanning. Check this
++	 * before brcmf_setup_wiphybands(), which clears the HT capabilities
++	 * if the firmware has 11n disabled.
++	 */
++	bw40_2g = cap && (*cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40);
++
+ 	err = brcmf_setup_wiphybands(cfg);
+ 	if (err) {
+ 		bphy_err(drvr, "Setting wiphy bands failed (%d)\n", err);
+ 		goto wiphy_unreg_out;
+ 	}
+ 
+-	/* If cfg80211 didn't disable 40MHz HT CAP in wiphy_register(),
+-	 * setup 40MHz in 2GHz band and enable OBSS scanning.
+-	 */
+-	if (cap && (*cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40)) {
++	if (bw40_2g) {
+ 		err = brcmf_enable_bw40_2g(cfg);
+ 		if (!err)
+ 			err = brcmf_fil_iovar_int_set(ifp, "obss_coex",

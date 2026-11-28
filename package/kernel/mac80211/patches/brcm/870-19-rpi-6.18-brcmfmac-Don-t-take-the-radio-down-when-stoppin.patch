@@ -1,0 +1,151 @@
+From 7375d9e569fb56ad3c9f353324821b0838fbdcd5 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Thu, 19 Nov 2026 13:10:20 +0000
+Subject: [PATCH] wifi: brcmfmac: Don't take the radio down when stopping a
+ secondary AP
+
+brcmf_cfg80211_start_ap only takes the device down (BRCMF_C_DOWN) when
+the AP is on the primary interface or the firmware can't run multiple
+channels/bands, but brcmf_cfg80211_stop_ap always does a full
+DOWN/SET_AP 0/UP reset for the first AP interface. When the AP is a
+virtual interface alongside an associated STA (e.g. a NetworkManager
+"shared" hotspot on an __ap vif), stopping or restarting the AP
+therefore disconnects the upstream STA.
+
+Factor the start_ap condition out into brcmf_ap_owns_radio() and, when
+the AP doesn't own the radio, just disable its BSS with the "bss"
+iovar, as is already done for P2P GO interfaces.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ .../broadcom/brcm80211/brcmfmac/cfg80211.c    | 92 ++++++++++++-------
+ 1 file changed, 59 insertions(+), 33 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -5206,6 +5206,34 @@ brcmf_parse_configure_security(struct br
+ 	return err;
+ }
+ 
++/*
++ * An AP on the primary interface, or on firmware that can't run several
++ * interfaces at once, has the radio to itself. Starting and stopping it
++ * takes the whole device down and up, which would break any other
++ * interface (e.g. an upstream STA connection).
++ */
++static bool brcmf_ap_owns_radio(struct brcmf_if *ifp)
++{
++	return ifp->ifidx == 0 ||
++	       (!brcmf_feat_is_enabled(ifp, BRCMF_FEAT_RSDB) &&
++		!brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MCHAN));
++}
++
++static s32 brcmf_bss_disable(struct brcmf_if *ifp)
++{
++	struct brcmf_fil_bss_enable_le bss_enable;
++	s32 err;
++
++	bss_enable.bsscfgidx = cpu_to_le32(ifp->bsscfgidx);
++	bss_enable.enable = cpu_to_le32(0);
++	err = brcmf_fil_iovar_data_set(ifp, "bss", &bss_enable,
++				       sizeof(bss_enable));
++	if (err < 0)
++		bphy_err(ifp->drvr, "bss_enable config failed %d\n", err);
++
++	return err;
++}
++
+ static s32
+ brcmf_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *ndev,
+ 			struct cfg80211_ap_settings *settings)
+@@ -5304,10 +5332,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+ 			}
+ 		}
+ 
+-		if ((dev_role == NL80211_IFTYPE_AP) &&
+-		    ((ifp->ifidx == 0) ||
+-		     (!brcmf_feat_is_enabled(ifp, BRCMF_FEAT_RSDB) &&
+-		      !brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MCHAN)))) {
++		if (dev_role == NL80211_IFTYPE_AP && brcmf_ap_owns_radio(ifp)) {
+ 			err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_DOWN, 1);
+ 			if (err < 0) {
+ 				bphy_err(drvr, "BRCMF_C_DOWN error %d\n",
+@@ -5463,7 +5488,6 @@ static int brcmf_cfg80211_stop_ap(struct
+ 	struct brcmf_pub *drvr = cfg->pub;
+ 	struct brcmf_cfg80211_profile *profile = &ifp->vif->profile;
+ 	s32 err;
+-	struct brcmf_fil_bss_enable_le bss_enable;
+ 	struct brcmf_join_params join_params;
+ 
+ 	brcmf_dbg(TRACE, "Enter\n");
+@@ -5488,38 +5512,40 @@ static int brcmf_cfg80211_stop_ap(struct
+ 			return err;
+ 		}
+ 
+-		/* First BSS doesn't get a full reset */
+-		if (ifp->bsscfgidx == 0)
+-			brcmf_fil_iovar_int_set(ifp, "closednet", 0);
+-
+-		memset(&join_params, 0, sizeof(join_params));
+-		err = brcmf_fil_cmd_data_set(ifp, BRCMF_C_SET_SSID,
+-					     &join_params, sizeof(join_params));
+-		if (err < 0)
+-			bphy_err(drvr, "SET SSID error (%d)\n", err);
+-		err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_DOWN, 1);
+-		if (err < 0)
+-			bphy_err(drvr, "BRCMF_C_DOWN error %d\n", err);
+-		err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_AP, 0);
+-		if (err < 0)
+-			bphy_err(drvr, "setting AP mode failed %d\n", err);
+-		if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS))
+-			brcmf_fil_iovar_int_set(ifp, "mbss", 0);
+-		brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_REGULATORY,
+-				      ifp->vif->is_11d);
+-		/* Bring device back up so it can be used again */
+-		err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_UP, 1);
+-		if (err < 0)
+-			bphy_err(drvr, "BRCMF_C_UP error %d\n", err);
++		if (brcmf_ap_owns_radio(ifp)) {
++			/* First BSS doesn't get a full reset */
++			if (ifp->bsscfgidx == 0)
++				brcmf_fil_iovar_int_set(ifp, "closednet", 0);
++
++			memset(&join_params, 0, sizeof(join_params));
++			err = brcmf_fil_cmd_data_set(ifp, BRCMF_C_SET_SSID,
++						     &join_params,
++						     sizeof(join_params));
++			if (err < 0)
++				bphy_err(drvr, "SET SSID error (%d)\n", err);
++			err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_DOWN, 1);
++			if (err < 0)
++				bphy_err(drvr, "BRCMF_C_DOWN error %d\n", err);
++			err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_AP, 0);
++			if (err < 0)
++				bphy_err(drvr, "setting AP mode failed %d\n",
++					 err);
++			if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS))
++				brcmf_fil_iovar_int_set(ifp, "mbss", 0);
++			brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_REGULATORY,
++					      ifp->vif->is_11d);
++			/* Bring device back up so it can be used again */
++			err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_UP, 1);
++			if (err < 0)
++				bphy_err(drvr, "BRCMF_C_UP error %d\n", err);
++		} else {
++			/* Leave the radio, and other interfaces, running */
++			err = brcmf_bss_disable(ifp);
++		}
+ 
+ 		brcmf_vif_clear_mgmt_ies(ifp->vif);
+ 	} else {
+-		bss_enable.bsscfgidx = cpu_to_le32(ifp->bsscfgidx);
+-		bss_enable.enable = cpu_to_le32(0);
+-		err = brcmf_fil_iovar_data_set(ifp, "bss", &bss_enable,
+-					       sizeof(bss_enable));
+-		if (err < 0)
+-			bphy_err(drvr, "bss_enable config failed %d\n", err);
++		err = brcmf_bss_disable(ifp);
+ 	}
+ 	brcmf_set_mpc(ifp, 1);
+ 	clear_bit(BRCMF_VIF_STATUS_AP_CREATED, &ifp->vif->sme_state);
