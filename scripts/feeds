@@ -74,6 +74,10 @@ sub parse_file($$) {
 			}
 		}
 
+		if (defined $flags && $flags =~ /(?:^|\s)--post_update(?:\s|$)/) {
+			die "Feed '$name' in '$fname' line $line: --post_update requires =<script>\n";
+		}
+
 		if ($type eq "include") {
 			parse_file($urls, $existing) or
 			    die "Unable to open included file '$urls'";
@@ -257,6 +261,10 @@ sub update_feed_via($$$$$$$$) {
 	if ($m->{'post_update'}) {
 		my $cmd = $m->{'post_update'};
 		system("cd '$localpath'; $cmd") == 0 or return 1;
+	}
+	if (defined(my $hook = $flags->{'post_update'})) {
+		system($hook, $name, $localpath) == 0 or
+			die "Feed '$name': --post_update hook '$hook' failed\n";
 	}
 
 	return 0;
