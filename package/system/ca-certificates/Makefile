@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ca-certificates
 PKG_VERSION:=20260816
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_MAINTAINER:=
 
 PKG_LICENSE:=GPL-2.0-or-later MPL-2.0
@@ -43,6 +43,7 @@ define Package/ca-bundle
 endef
 
 define Build/Install
+	rm -f -- "$(PKG_INSTALL_DIR)/usr/share/ca-certificates/mozilla/"*.crt
 	mkdir -p \
 		$(PKG_INSTALL_DIR)/usr/sbin \
 		$(PKG_INSTALL_DIR)/usr/share/ca-certificates
