@@ -78,6 +78,83 @@
 			phy0: ethernet-phy@0 {
 				reg = <0x0>;
 			};
+
+			ethernet-switch@1d {
+				compatible = "realtek,rtl8365mb";
+				reg = <0x1d>;
+
+				ethernet-ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					ethernet-port@1 {
+						reg = <1>;
+						label = "lan4";
+						phy-handle = <&switch_phy1>;
+						nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+						nvmem-cell-names = "mac-address";
+					};
+
+					ethernet-port@2 {
+						reg = <2>;
+						label = "lan3";
+						phy-handle = <&switch_phy2>;
+						nvmem-cells = <&macaddr_uboot_ethaddr (-1)>;
+						nvmem-cell-names = "mac-address";
+					};
+
+					ethernet-port@3 {
+						reg = <3>;
+						label = "lan2";
+						phy-handle = <&switch_phy3>;
+						nvmem-cells = <&macaddr_uboot_ethaddr (-2)>;
+						nvmem-cell-names = "mac-address";
+					};
+
+					ethernet-port@4 {
+						reg = <4>;
+						label = "lan1";
+						phy-handle = <&switch_phy4>;
+						nvmem-cells = <&macaddr_uboot_ethaddr (-3)>;
+						nvmem-cell-names = "mac-address";
+					};
+
+					ethernet-port@6 {
+						reg = <6>;
+						label = "cpu";
+						ethernet = <&enet0>;
+						phy-mode = "rgmii";
+						tx-internal-delay-ps = <2000>;
+						rx-internal-delay-ps = <1200>;
+
+						fixed-link {
+							speed = <1000>;
+							full-duplex;
+						};
+					};
+				};
+
+				mdio {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					switch_phy1: ethernet-phy@1 {
+						reg = <1>;
+					};
+
+					switch_phy2: ethernet-phy@2 {
+						reg = <2>;
+					};
+
+					switch_phy3: ethernet-phy@3 {
+						reg = <3>;
+					};
+
+					switch_phy4: ethernet-phy@4 {
+						reg = <4>;
+					};
+				};
+			};
 		};
 
 		mdio@25000 {
@@ -164,6 +241,7 @@
 						env-size = <0x4000>;
 
 						macaddr_uboot_ethaddr: ethaddr {
+							#nvmem-cell-cells = <1>;
 						};
 					};
 				};
@@ -235,7 +313,7 @@
 			wifi@0,0 {
 				compatible = "pci168c,0030";
 				reg = <0x0000 0 0 0 0>;
-				nvmem-cells = <&macaddr_uboot_ethaddr>;
+				nvmem-cells = <&macaddr_uboot_ethaddr 0>;
 				nvmem-cell-names = "mac-address";
 			};
 		};
