@@ -337,7 +337,7 @@ SVN-Revision: 35130
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1490,7 +1490,7 @@ struct sk_buff *inet_gro_receive(struct
+@@ -1493,7 +1493,7 @@ struct sk_buff *inet_gro_receive(struct
  		goto out;
  
  	NAPI_GRO_CB(skb)->proto = proto;
@@ -865,7 +865,7 @@ SVN-Revision: 35130
  	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr)
  		return segs;
  
-@@ -272,7 +272,7 @@ struct sk_buff *tcp_gro_lookup(struct li
+@@ -273,7 +273,7 @@ struct sk_buff *tcp_gro_lookup(struct li
  			continue;
  
  		th2 = tcp_hdr(p);
@@ -874,7 +874,7 @@ SVN-Revision: 35130
  			NAPI_GRO_CB(p)->same_flow = 0;
  			continue;
  		}
-@@ -336,8 +336,8 @@ struct sk_buff *tcp_gro_receive(struct l
+@@ -337,8 +337,8 @@ struct sk_buff *tcp_gro_receive(struct l
  		  ~(TCP_FLAG_FIN | TCP_FLAG_PSH));
  	flush |= (__force int)(th->ack_seq ^ th2->ack_seq);
  	for (i = sizeof(*th); i < thlen; i += 4)

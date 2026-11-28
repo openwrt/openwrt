@@ -1,0 +1,93 @@
+From 7b97180d58a027672614af854d79e5639f17d180 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 21 Nov 2026 17:16:24 +0100
+Subject: [PATCH] net: gro: set the inner transport header of encapsulated fraglist packets
+
+The fraglist branches of tcp4_gro_complete() and tcp6_gro_complete()
+return before tcp_gro_complete(), and those of udp4_gro_complete() and
+udp6_gro_complete() before udp_gro_complete_segment(). Only the latter
+two set skb->inner_transport_header when skb->encapsulation is set:
+commit d51c5907e980 ("net, gro: Set inner transport header offset in
+tcp/udp GRO hook") added it to the regular branches only.
+
+The TCP fraglist branch completes the inner flow of every tunnel that
+GRO handles (UDP tunnel sockets, FOU/GUE, GRE, IPIP, SIT, ip6ip6,
+ip4ip6): tcp4_check_fraglist_gro() and tcp6_check_fraglist_gro() do not
+look at the encapsulation. The UDP one completes the inner flow of a
+UDP tunnel socket, whose udp_gro_complete() clears encap_mark, and of
+FOU/GUE, which clear it on receive; behind GRE, IPIP and SIT encap_mark
+stays set and the aggregate completes through
+udp_gro_complete_segment().
+
+Such an aggregate keeps an inner transport header from earlier
+processing. skb_gso_transport_seglen() computes the segment length from
+it, so ip_forward() and ip_finish_output_gso() compare a wrong length
+with the MTU; qdisc_pkt_len_segs_init() drops the aggregate with
+SKB_DROP_REASON_SKB_BAD_GSO when the offset lies in front of skb->data;
+and __skb_udp_tunnel_segment() sets the inner transport header of the
+packet it segments from it.
+
+Set the inner transport header in the fraglist branches as well. The
+transport header points at the inner TCP or UDP header there, as in
+the regular branches.
+
+With rx-gro-list on a virtio-net port of a router with VXLAN sockets,
+1000 VXLAN packets per case (outer IPv4, 1400 bytes; inner UDP or TCP
+over IPv4 or IPv6) forwarded unicast over a 1400-byte route reached the
+receiver 7 to 245 times per case on net, the router's egress counting
+the rest as dropped (4 runs of 8 cases), and 1000 times with this change
+(2 runs).
+
+Fixes: 9fd1ff5d2ac7 ("udp: Support UDP fraglist GRO/GSO.")
+Fixes: 8d95dc474f85 ("net: add code for TCP fraglist GRO")
+Link: https://lore.kernel.org/netdev/cover.1795295554.git.julius@bairaktaris.de/
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/net/ipv4/tcp_offload.c
++++ b/net/ipv4/tcp_offload.c
+@@ -487,6 +487,9 @@ INDIRECT_CALLABLE_SCOPE int tcp4_gro_com
+ 		skb_shinfo(skb)->gso_type |= SKB_GSO_FRAGLIST | SKB_GSO_TCPV4;
+ 		skb_shinfo(skb)->gso_segs = NAPI_GRO_CB(skb)->count;
+ 
++		if (skb->encapsulation)
++			skb->inner_transport_header = skb->transport_header;
++
+ 		__skb_incr_checksum_unnecessary(skb);
+ 
+ 		return 0;
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -973,6 +973,9 @@ INDIRECT_CALLABLE_SCOPE int udp4_gro_com
+ 		skb_shinfo(skb)->gso_type |= (SKB_GSO_FRAGLIST|SKB_GSO_UDP_L4);
+ 		skb_shinfo(skb)->gso_segs = NAPI_GRO_CB(skb)->count;
+ 
++		if (skb->encapsulation)
++			skb->inner_transport_header = skb->transport_header;
++
+ 		__skb_incr_checksum_unnecessary(skb);
+ 
+ 		return 0;
+--- a/net/ipv6/tcpv6_offload.c
++++ b/net/ipv6/tcpv6_offload.c
+@@ -90,6 +90,9 @@ INDIRECT_CALLABLE_SCOPE int tcp6_gro_com
+ 		skb_shinfo(skb)->gso_type |= SKB_GSO_FRAGLIST | SKB_GSO_TCPV6;
+ 		skb_shinfo(skb)->gso_segs = NAPI_GRO_CB(skb)->count;
+ 
++		if (skb->encapsulation)
++			skb->inner_transport_header = skb->transport_header;
++
+ 		__skb_incr_checksum_unnecessary(skb);
+ 
+ 		return 0;
+--- a/net/ipv6/udp_offload.c
++++ b/net/ipv6/udp_offload.c
+@@ -178,6 +178,9 @@ INDIRECT_CALLABLE_SCOPE int udp6_gro_com
+ 		skb_shinfo(skb)->gso_type |= (SKB_GSO_FRAGLIST|SKB_GSO_UDP_L4);
+ 		skb_shinfo(skb)->gso_segs = NAPI_GRO_CB(skb)->count;
+ 
++		if (skb->encapsulation)
++			skb->inner_transport_header = skb->transport_header;
++
+ 		__skb_incr_checksum_unnecessary(skb);
+ 
+ 		return 0;
