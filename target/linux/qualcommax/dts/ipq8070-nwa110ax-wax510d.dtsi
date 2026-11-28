@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2026 Michael Lotz <mmlr@mlotz.ch>
+ * Copyright (c) 2026 Andreas Erhard
+ *
+ * NWA110AX and WAX510D share the same hardware.
+ */
+
+/dts-v1/;
+
+#include "ipq807x-nwax10ax.dtsi"
+
+/ {
+	aliases {
+		ethernet0 = &swport1;
+		label-mac-device = &swport1;
+	};
+};
+
+&swport1 {
+	label = "uplink";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&label_mac 0>;
+};
