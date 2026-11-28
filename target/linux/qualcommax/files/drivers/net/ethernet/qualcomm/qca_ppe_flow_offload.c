@@ -17,6 +17,7 @@
  */
 
 #include <linux/bitfield.h>
+#include <linux/dsa/tag_qca.h>
 #include <linux/qca_edma.h>
 #include <linux/hash.h>
 #include <linux/if_pppox.h>
@@ -52,6 +53,11 @@ struct ppe_flow_data {
 	u16 ivid;
 	u16 pppoe_sid;
 	bool pppoe_valid;
+	/* Egress by a port of a switch behind the egress port: its uplink vid
+	 * and the size of its device.
+	 */
+	u16 sw_vid;
+	u32 sw_mtu;
 
 	struct net_device *odev;
 	/* The profile the entry is given; filled only where the flowtable
@@ -379,6 +385,67 @@ static int ppe_flow_port_by_ifindex(struct qca_ppe_priv *priv, int ifindex)
 	return -EOPNOTSUPP;
 }
 
+/* The vid of the uplink of a switch port, or of an 802.1Q VLAN @cvid on it. */
+static u16 ppe_sw_vid(const struct ppe_sw_port *sp, u16 cvid)
+{
+	return PPE_VID_SW | FIELD_PREP(PPE_SW_VID_PORT, sp->index) | cvid;
+}
+
+static const struct ppe_sw_port *ppe_sw_port_find(struct qca_ppe_priv *priv,
+						  int port, u16 vid)
+{
+	int i;
+
+	for (i = 0; i < PPE_SW_PORTS; i++) {
+		const struct ppe_sw_port *sp = &priv->sw_port[i];
+
+		if (sp->dev && sp->port == port &&
+		    ppe_sw_vid(sp, 0) == (vid & ~PPE_SW_VID_CVID))
+			return sp;
+	}
+
+	return NULL;
+}
+
+/* A flow that enters or leaves by a port of a switch behind one of this
+ * switch's ports is offloaded where that switch tags its frames with the QCA
+ * header behind the 802.1ad ethertype: the PPE reads and writes that as an
+ * S-tag, so it can name the switch port itself. With any other tag the PPE
+ * cannot tell the ports apart.
+ *
+ * A shaper of this driver whose uplink runs through that port, or is not known
+ * yet, keeps the flows of the switch's ports on the path they had, since the
+ * uplink is then named by the port alone.
+ */
+static const struct ppe_sw_port *
+ppe_sw_port_by_ifindex(struct qca_ppe_priv *priv, int ifindex)
+{
+	const struct ppe_sw_port *sp;
+	struct dsa_port *dp;
+	int i;
+
+	lockdep_assert_held(&priv->flow_lock);
+
+	for (i = 0; i < PPE_SW_PORTS; i++) {
+		sp = &priv->sw_port[i];
+		if (sp->dev && sp->dev->ifindex == ifindex)
+			break;
+	}
+	if (i == PPE_SW_PORTS)
+		return NULL;
+
+	dp = dsa_port_from_netdev(sp->dev);
+	if (sp->port < 0 || IS_ERR(dp) ||
+	    dp->cpu_dp->tag_ops->proto != DSA_TAG_PROTO_QCA_ETYPE)
+		return NULL;
+
+	if ((READ_ONCE(priv->ul_shaper) || READ_ONCE(priv->dl_shaper)) &&
+	    (priv->ul_port < 0 || priv->ul_port == sp->port))
+		return NULL;
+
+	return sp;
+}
+
 /* A flowtable flow ends at the first device of its path with a qdisc or a tc
  * hook, which on a shaped uplink is the WAN's L3 device: the shaper's
  * redirect sits there, in a clsact that ends both directions of the flow.
@@ -410,6 +477,141 @@ static int ppe_uplink_find(struct qca_ppe_priv *priv, int port, u16 vid)
 	return -ENOENT;
 }
 
+/* The S-tag exists only on a core port: an edge port parses the 802.1ad
+ * ethertype as payload, and neither adds the nexthop's S-tag nor applies an
+ * S-tag action on egress. The port a switch is behind is a core port in both
+ * directions while one of the switch's ports has an uplink, and so is the CPU
+ * port on egress, where the stripped tag is put back. The parser comes last on
+ * the way in and first on the way out, so the tag is never stripped without
+ * its way back.
+ */
+static void ppe_uplink_sw_roles(struct qca_ppe_priv *priv, int port, bool on)
+{
+	bool cpu = on;
+	int i;
+
+	for (i = 0; !on && i < PPE_PPPOE_SESSIONS; i++) {
+		const struct ppe_uplink *up = &priv->uplink[i];
+
+		if (!up->ref || !(up->vid & PPE_VID_SW))
+			continue;
+		if (up->port == port)
+			return;
+		cpu = true;
+	}
+
+	if (!on)
+		regmap_clear_bits(priv->regmap, PPE_PORT_PARSING(port),
+				  PPE_PORT_PARSING_CORE);
+	regmap_assign_bits(priv->regmap, PPE_PORT_EG_VLAN(QCA_PPE_CPU_PORT),
+			   PPE_PORT_EG_VLAN_CORE, cpu);
+	regmap_assign_bits(priv->regmap, PPE_PORT_EG_VLAN(port),
+			   PPE_PORT_EG_VLAN_CORE, on);
+	if (on)
+		regmap_set_bits(priv->regmap, PPE_PORT_PARSING(port),
+				PPE_PORT_PARSING_CORE);
+}
+
+/* The classification of one port of a switch behind @port, whose frames carry
+ * the QCA header behind the 802.1ad ethertype. Read as an S-tag, a frame the
+ * switch forwards from its port n has VID n and the header's version in the
+ * upper two PCP bits; a frame for its port n has VID
+ * QCA_HDR_XMIT_FROM_CPU | BIT(n).
+ *
+ * Ingress strips the tag and classifies into the uplink's VSI, as for an
+ * 802.1Q uplink, and the rule toward the CPU port puts it back, so the tagger
+ * still finds the switch port in a frame that missed the flow table. The
+ * header's priority has two bits in the PCP and DEI, which are not in the key,
+ * and one in the VID, which a second rule covers. A frame that came tagged
+ * has the header's bit for that set, and the uplink of an 802.1Q VLAN on the
+ * switch port keys on it and on the VLAN, strips both tags and has both put
+ * back. A frame with any other bit of the header set, a register or MIB frame
+ * among them, has another VID and passes untouched.
+ *
+ * Egress is tagged by the nexthop, which holds the VID only. The rule on the
+ * port gives that tag the header's version.
+ */
+static void ppe_uplink_sw_xlt(struct qca_ppe_priv *priv, int port, u16 vid,
+			      int vsi, int xlt, int eg_xlt)
+{
+	u32 sw = FIELD_GET(PPE_SW_VID_PORT, vid), pcp = QCA_HDR_VERSION << 1;
+	u32 cvid = FIELD_GET(PPE_SW_VID_CVID, vid);
+	u32 svid = sw | (cvid ? QCA_HDR_RECV_FRAME_IS_TAGGED : 0);
+	u32 act = FIELD_PREP(PPE_XLT_SVID_CMD, PPE_XLT_CVID_DEL) |
+		  (cvid ? FIELD_PREP(PPE_XLT_CVID_CMD, PPE_XLT_CVID_DEL) : 0);
+	u32 ckey = cvid ? PPE_XLT_CKEY_TAGGED : PPE_XLT_KEY_ANY;
+	u32 ckey0 = ckey & 1 ? PPE_XLT_CKEY_FMT_0 : 0;
+	u32 ckey1 = FIELD_PREP(PPE_XLT_CKEY_FMT_1, ckey >> 1) |
+		    (cvid ? PPE_XLT_CKEY_VID_INCL |
+			    FIELD_PREP(PPE_XLT_CKEY_VID, cvid) : 0);
+	u32 spcp0 = PPE_EG_XLT_SPCP_CMD |
+		    FIELD_PREP(PPE_EG_XLT_SPCP_0, pcp & 1);
+	u32 spcp1 = FIELD_PREP(PPE_EG_XLT_SPCP_1, pcp >> 1) |
+		    PPE_EG_XLT_SDEI_CMD;
+
+	regmap_write(priv->regmap, PPE_EG_XLT_ACTION(eg_xlt), spcp0);
+	regmap_write(priv->regmap, PPE_EG_XLT_ACTION_W1(eg_xlt), spcp1);
+	/* An entry of these tables is taken over when its last word is
+	 * written, so the words go in order.
+	 */
+	regmap_write(priv->regmap, PPE_EG_XLT_RULE(eg_xlt),
+		     PPE_EG_XLT_VALID |
+		     FIELD_PREP(PPE_EG_XLT_PORT_BMP, BIT(port)) |
+		     FIELD_PREP(PPE_EG_XLT_SKEY_FMT, PPE_XLT_CKEY_TAGGED) |
+		     PPE_EG_XLT_SKEY_VID_INCL |
+		     FIELD_PREP(PPE_EG_XLT_SKEY_VID,
+				QCA_HDR_XMIT_FROM_CPU | BIT(sw)));
+	regmap_write(priv->regmap, PPE_EG_XLT_RULE_W1(eg_xlt),
+		     FIELD_PREP(PPE_EG_XLT_CKEY_FMT, PPE_XLT_KEY_ANY));
+
+	regmap_write(priv->regmap, PPE_XLT_ACTION_TBL(xlt), act);
+	regmap_write(priv->regmap, PPE_XLT_ACTION_W1(xlt),
+		     PPE_XLT_VSI_CMD | FIELD_PREP(PPE_XLT_VSI, vsi));
+
+	regmap_write(priv->regmap, PPE_EG_XLT_ACTION(xlt),
+		     FIELD_PREP(PPE_EG_XLT_SVID_CMD, PPE_EG_XLT_CVID_ADD) |
+		     FIELD_PREP(PPE_EG_XLT_SVID, svid) | spcp0 |
+		     (cvid ? FIELD_PREP(PPE_EG_XLT_CVID_CMD,
+					PPE_EG_XLT_CVID_ADD) |
+			     FIELD_PREP(PPE_EG_XLT_CVID, cvid) : 0));
+	regmap_write(priv->regmap, PPE_EG_XLT_ACTION_W1(xlt), spcp1);
+	regmap_write(priv->regmap, PPE_EG_XLT_RULE(xlt),
+		     PPE_EG_XLT_VALID |
+		     FIELD_PREP(PPE_EG_XLT_PORT_BMP, BIT(QCA_PPE_CPU_PORT)) |
+		     PPE_EG_XLT_VSI_INCL | FIELD_PREP(PPE_EG_XLT_VSI, vsi) |
+		     PPE_EG_XLT_VSI_VALID |
+		     FIELD_PREP(PPE_EG_XLT_SKEY_FMT, PPE_XLT_SKEY_UNTAGGED));
+	regmap_write(priv->regmap, PPE_EG_XLT_RULE_W1(xlt),
+		     FIELD_PREP(PPE_EG_XLT_CKEY_FMT, PPE_XLT_KEY_ANY));
+
+	regmap_write(priv->regmap, PPE_XLT_RULE_TBL(xlt),
+		     PPE_XLT_VALID | FIELD_PREP(PPE_XLT_PORT_BMP, BIT(port)) |
+		     FIELD_PREP(PPE_XLT_SKEY_FMT, svid ? PPE_XLT_CKEY_TAGGED :
+							 PPE_XLT_CKEY_PRIO_TAGGED) |
+		     PPE_XLT_SKEY_VID_INCL |
+		     FIELD_PREP(PPE_XLT_SKEY_VID, svid) | ckey0);
+	regmap_write(priv->regmap, PPE_XLT_RULE_W1(xlt), ckey1);
+	regmap_write(priv->regmap, PPE_XLT_RULE_TBL(xlt) + 8, 0);
+
+	/* The header's priority, which the tagger does not read, has its
+	 * lowest bit in the VID: the same classification for that VID, in the
+	 * ingress entry of the index whose egress entry the port's rule has.
+	 */
+	regmap_write(priv->regmap, PPE_XLT_ACTION_TBL(eg_xlt), act);
+	regmap_write(priv->regmap, PPE_XLT_ACTION_W1(eg_xlt),
+		     PPE_XLT_VSI_CMD | FIELD_PREP(PPE_XLT_VSI, vsi));
+	regmap_write(priv->regmap, PPE_XLT_RULE_TBL(eg_xlt),
+		     PPE_XLT_VALID | FIELD_PREP(PPE_XLT_PORT_BMP, BIT(port)) |
+		     FIELD_PREP(PPE_XLT_SKEY_FMT, PPE_XLT_CKEY_TAGGED) |
+		     PPE_XLT_SKEY_VID_INCL |
+		     FIELD_PREP(PPE_XLT_SKEY_VID, svid | PPE_SW_VID_PRIO) |
+		     ckey0);
+	regmap_write(priv->regmap, PPE_XLT_RULE_W1(eg_xlt), ckey1);
+	regmap_write(priv->regmap, PPE_XLT_RULE_TBL(eg_xlt) + 8, 0);
+
+	ppe_uplink_sw_roles(priv, port, true);
+}
+
 /* Make an uplink route its ingress traffic in hardware, so the download
  * direction of an offloaded connection reaches the flow lookup on its inner
  * tuple.
@@ -426,7 +628,7 @@ static int ppe_uplink_get(struct qca_ppe_priv *priv, int port, u16 vid,
 {
 	u32 words[PPE_MY_MAC_WORDS] = {};
 	struct ppe_uplink *up;
-	int i, vsi, xlt = -1, ret;
+	int i, vsi, xlt = -1, eg_xlt = -1, ret;
 
 	i = ppe_uplink_find(priv, port, vid);
 	if (i >= 0) {
@@ -447,6 +649,13 @@ static int ppe_uplink_get(struct qca_ppe_priv *priv, int port, u16 vid,
 		xlt = ppe_xlt_idx_alloc(priv);
 		if (xlt < 0)
 			return xlt;
+	}
+	if (vid & PPE_VID_SW) {
+		eg_xlt = ppe_xlt_idx_alloc(priv);
+		if (eg_xlt < 0) {
+			ret = eg_xlt;
+			goto err_xlt;
+		}
 	}
 
 	vsi = ppe_vsi_alloc(priv);
@@ -477,7 +686,9 @@ static int ppe_uplink_get(struct qca_ppe_priv *priv, int port, u16 vid,
 	regmap_write(priv->regmap, PPE_L3_VSI_TBL(vsi),
 		     PPE_L3_VSI_IF_VALID | FIELD_PREP(PPE_L3_VSI_IF_INDEX, vsi));
 
-	if (vid) {
+	if (vid & PPE_VID_SW) {
+		ppe_uplink_sw_xlt(priv, port, vid, vsi, xlt, eg_xlt);
+	} else if (vid) {
 		/* The L3 stage does not parse through a residual 802.1Q tag:
 		 * a PPPoE session is only recognised, and the inner tuple
 		 * only reaches the flow lookup, once the rule also strips the
@@ -536,12 +747,15 @@ static int ppe_uplink_get(struct qca_ppe_priv *priv, int port, u16 vid,
 	up->vid = vid;
 	up->vsi = vsi;
 	up->xlt = xlt;
+	up->eg_xlt = eg_xlt;
 
 	return i;
 
 err_vsi:
 	ppe_vsi_free(priv, vsi);
 err_xlt:
+	if (eg_xlt >= 0)
+		ppe_xlt_idx_free(priv, &eg_xlt);
 	if (xlt >= 0)
 		ppe_xlt_idx_free(priv, &xlt);
 	return ret;
@@ -550,10 +764,19 @@ err_xlt:
 static void ppe_uplink_put(struct qca_ppe_priv *priv, int i)
 {
 	struct ppe_uplink *up = &priv->uplink[i];
-	int xlt = up->xlt;
+	int xlt = up->xlt, eg_xlt = up->eg_xlt;
 
 	if (--up->ref)
 		return;
+
+	if (up->vid & PPE_VID_SW)
+		ppe_uplink_sw_roles(priv, up->port, false);
+
+	/* A switch port's second ingress rule goes before the rule toward the
+	 * CPU port as well, for the reason given below.
+	 */
+	if (eg_xlt >= 0)
+		ppe_xlt_idx_free(priv, &up->eg_xlt);
 
 	if (xlt >= 0) {
 		/* Ingress first: the egress rule is what puts the tag back on
@@ -568,6 +791,12 @@ static void ppe_uplink_put(struct qca_ppe_priv *priv, int i)
 		regmap_write(priv->regmap, PPE_EG_XLT_RULE_W1(xlt), 0);
 		regmap_write(priv->regmap, PPE_EG_XLT_ACTION(xlt), 0);
 		regmap_write(priv->regmap, PPE_EG_XLT_ACTION_W1(xlt), 0);
+	}
+	if (eg_xlt >= 0) {
+		regmap_write(priv->regmap, PPE_EG_XLT_RULE(eg_xlt), 0);
+		regmap_write(priv->regmap, PPE_EG_XLT_RULE_W1(eg_xlt), 0);
+		regmap_write(priv->regmap, PPE_EG_XLT_ACTION(eg_xlt), 0);
+		regmap_write(priv->regmap, PPE_EG_XLT_ACTION_W1(eg_xlt), 0);
 	}
 	regmap_write(priv->regmap, PPE_L3_VSI_TBL(up->vsi), 0);
 	ppe_tbl_clear(priv, PPE_IN_L3_IF_TBL(up->vsi), PPE_L3_IF_WORDS);
@@ -721,6 +950,37 @@ static int ppe_flow_vlan_uplink_get(struct qca_ppe_priv *priv, int iport,
 	return ppe_uplink_get(priv, iport, vid, mac, dp->user->mtu);
 }
 
+/* A port of a switch behind @iport routes like a VLAN no bridge classifies:
+ * on an uplink of its own. Its frames are addressed to the port's device, or
+ * to the bridge it is a port of.
+ */
+static int ppe_flow_sw_uplink_get(struct qca_ppe_priv *priv, int iport,
+				  u16 vid)
+{
+	const struct ppe_sw_port *sp = ppe_sw_port_find(priv, iport, vid);
+	u16 cvid = FIELD_GET(PPE_SW_VID_CVID, vid);
+	struct net_device *dev, *br;
+	u8 mac[ETH_ALEN];
+
+	if (!sp)
+		return -EOPNOTSUPP;
+
+	rcu_read_lock();
+	dev = sp->dev;
+	if (cvid)
+		dev = __vlan_find_dev_deep_rcu(dev, htons(ETH_P_8021Q), cvid);
+	if (!dev) {
+		rcu_read_unlock();
+		return -EOPNOTSUPP;
+	}
+	br = netif_is_bridge_port(dev) ?
+	     netdev_master_upper_dev_get_rcu(dev) : NULL;
+	ether_addr_copy(mac, (br ?: dev)->dev_addr);
+	rcu_read_unlock();
+
+	return ppe_uplink_get(priv, iport, vid, mac, sp->dev->mtu);
+}
+
 /* The flow lookup only runs on packets the L3 stage accepted, and nothing in
  * the L2 half of this driver sets that up: the ingress interface has to route,
  * and the frame's destination address has to match a MY_MAC entry. Both are
@@ -750,6 +1010,10 @@ static int ppe_flow_alloc_ingress(struct qca_ppe_priv *priv, int iport,
 	ret = ppe_uplink_find(priv, iport, vid);
 	if (ret >= 0) {
 		priv->uplink[ret].ref++;
+	} else if (vid & PPE_VID_SW) {
+		ret = ppe_flow_sw_uplink_get(priv, iport, vid);
+		if (ret < 0)
+			return ret;
 	} else if (vid && ppe_flow_ingress_vsi(priv, iport, vid) < 0) {
 		ret = ppe_flow_vlan_uplink_get(priv, iport, vid);
 		if (ret < 0)
@@ -1031,6 +1295,117 @@ static void ppe_flow_shaper_track(struct qca_ppe_priv *priv,
 	}
 }
 
+/* The user ports of the other switches are kept by device, with the port of
+ * this switch their conduit is, so that the flowtable callbacks, which run
+ * without rtnl, do not follow DSA's pointers to find them. A flow through such
+ * a port is built from the port's conduit, address, size and bridge, and is
+ * dropped when one of them changes; the flowtable reinstalls what is still
+ * live.
+ */
+static int ppe_sw_port_conduit(struct qca_ppe_priv *priv,
+			       struct net_device *dev)
+{
+	struct net_device *lower;
+	struct list_head *iter;
+	struct dsa_port *dp;
+
+	/* The link to the conduit, which is what NETDEV_CHANGEUPPER
+	 * announces: DSA moves its own pointer after both events of a change.
+	 */
+	netdev_for_each_lower_dev(dev, lower, iter) {
+		dp = dsa_port_from_netdev(lower);
+		if (!IS_ERR(dp) && dp->ds == &priv->ds)
+			return dp->index;
+	}
+
+	return -1;
+}
+
+/* Whether @br is the bridge of the port or of a VLAN on it. */
+static bool ppe_sw_port_bridge(const struct ppe_sw_port *sp,
+			       const struct net_device *br)
+{
+	struct net_device *upper;
+	struct list_head *iter;
+
+	ASSERT_RTNL();
+
+	if (netdev_master_upper_dev_get(sp->dev) == br)
+		return true;
+
+	netdev_for_each_upper_dev_rcu(sp->dev, upper, iter)
+		if (is_vlan_dev(upper) &&
+		    netdev_master_upper_dev_get(upper) == br)
+			return true;
+
+	return false;
+}
+
+static void ppe_sw_port_event(struct qca_ppe_priv *priv, struct net_device *dev,
+			      unsigned long event)
+{
+	struct ppe_sw_port *sp, *slot = NULL;
+	struct ppe_flow_entry *entry, *tmp;
+	struct dsa_port *dp;
+	bool known = false;
+	int i, port;
+
+	ASSERT_RTNL();
+	lockdep_assert_held(&priv->flow_lock);
+	lockdep_assert_held(&priv->vlan_lock);
+
+	for (i = 0; i < PPE_SW_PORTS; i++) {
+		sp = &priv->sw_port[i];
+		if (!sp->dev) {
+			slot = slot ?: sp;
+			continue;
+		}
+
+		/* A conduit change is announced on the conduits only. */
+		port = sp->port;
+		if (event == NETDEV_CHANGEUPPER)
+			port = ppe_sw_port_conduit(priv, sp->dev);
+
+		/* A VLAN on the port is a device of its own, with an address
+		 * and a bridge of its own.
+		 */
+		if (sp->dev != dev && port == sp->port &&
+		    !(is_vlan_dev(dev) && vlan_dev_real_dev(dev) == sp->dev) &&
+		    !(event == NETDEV_CHANGEADDR && netif_is_bridge_master(dev) &&
+		      ppe_sw_port_bridge(sp, dev)))
+			continue;
+
+		list_for_each_entry_safe(entry, tmp, &priv->flow_list, list)
+			if ((entry->iport == sp->port &&
+			     (entry->ivid & ~PPE_SW_VID_CVID) ==
+			     ppe_sw_vid(sp, 0)) ||
+			    (entry->oport == sp->port &&
+			     (entry->ovid & ~PPE_SW_VID_CVID) ==
+			     ppe_sw_vid(sp, 0)))
+				ppe_flow_drop(priv, entry);
+
+		sp->port = port;
+		if (sp->dev != dev)
+			continue;
+		known = true;
+		if (event == NETDEV_UNREGISTER)
+			sp->dev = NULL;
+	}
+
+	if (known || event != NETDEV_REGISTER || !slot)
+		return;
+
+	/* The header names a port in a bitmap of seven. */
+	dp = dsa_port_from_netdev(dev);
+	if (IS_ERR(dp) || dp->ds == &priv->ds ||
+	    dp->index >= fls(QCA_HDR_XMIT_DP_BIT))
+		return;
+
+	slot->dev = dev;
+	slot->port = ppe_sw_port_conduit(priv, dev);
+	slot->index = dp->index;
+}
+
 /* Each half of the size check follows the device that owns it: the routing
  * domain's MRU follows the device that routes for the port, and the egress size
  * a flow was built with follows the port itself.
@@ -1055,6 +1430,14 @@ static int ppe_flow_netdev_event(struct notifier_block *nb, unsigned long event,
 	struct ppe_flow_entry *entry, *tmp;
 	struct dsa_port *dp;
 	int i;
+
+	if (event == NETDEV_REGISTER || event == NETDEV_UNREGISTER ||
+	    event == NETDEV_DOWN || event == NETDEV_CHANGEUPPER ||
+	    event == NETDEV_CHANGEMTU || event == NETDEV_CHANGEADDR) {
+		guard(mutex)(&priv->flow_lock);
+		guard(mutex)(&priv->vlan_lock);
+		ppe_sw_port_event(priv, dev, event);
+	}
 
 	if (event == NETDEV_REGISTER || event == NETDEV_UNREGISTER ||
 	    event == NETDEV_CHANGENAME || event == NETDEV_UP) {
@@ -1212,6 +1595,8 @@ static bool ppe_cpu_xmit_ok(const struct ppe_flow_data *data)
 static bool ppe_flow_on_uplink(struct qca_ppe_priv *priv, int port, u16 vid,
 			       u16 sid, bool upload)
 {
+	if (vid & PPE_VID_SW)
+		return false;
 	if (priv->ul_port < 0)
 		return !priv->port_br_dev[port];
 
@@ -1741,6 +2126,24 @@ bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow)
 	}
 	xdev = entry->xdev;
 
+	/* The tag of a switch behind the ingress port, and that of a VLAN on
+	 * the switch's port, are put back on everything that reaches the CPU
+	 * port from it, the frames of a flow among them. They are past the
+	 * tagger and the VLAN device.
+	 */
+	if ((entry->ivid & PPE_VID_SW) && skb_headlen(skb) >= ETH_HLEN &&
+	    ((const struct ethhdr *)skb->data)->h_proto == htons(QCA_HDR_ETYPE)) {
+		unsigned int len = QCA_ETYPE_HDR_LEN;
+
+		if (FIELD_GET(PPE_SW_VID_CVID, entry->ivid) &&
+		    skb_headlen(skb) >= ETH_HLEN + len + VLAN_HLEN &&
+		    *(__be16 *)(skb->data + ETH_HLEN + len - 2) ==
+		    htons(ETH_P_8021Q))
+			len += VLAN_HLEN;
+		memmove(skb->data + len, skb->data, 2 * ETH_ALEN);
+		__skb_pull(skb, len);
+	}
+
 	dev = dev_get_by_index_rcu(dev_net(skb->dev), xdev & PPE_XDEV_IFINDEX);
 	if (unlikely(!dev || !netif_running(dev)))
 		goto drop;
@@ -1981,6 +2384,12 @@ static int ppe_flow_egress_path(struct qca_ppe_priv *priv,
 	odp = dsa_to_port(&priv->ds, port);
 	eg_mtu = odp->user->mtu + ETH_HLEN +
 		 (data->vlan_valid && push ? VLAN_HLEN : 0);
+	/* The port's device carries the tag of the switch behind it on top of
+	 * the size of that switch's port.
+	 */
+	if (data->sw_vid)
+		eg_mtu = data->sw_mtu + ETH_HLEN + QCA_ETYPE_HDR_LEN +
+			 (data->vlan_valid && push ? VLAN_HLEN : 0);
 	/* A flow handed to a host device leaves at that device's size: the
 	 * uplink's, which for PPPoE is under the port's, or for a flow routed
 	 * out of the CPU port the size of the device outside the switch, not
@@ -2034,6 +2443,13 @@ static int ppe_flow_egress_path(struct qca_ppe_priv *priv,
 	ppe_entry_set(nh, PPE_NEXTHOP_PORT_OFF, PPE_NEXTHOP_PORT_LEN, nh_port);
 	ppe_entry_set(nh, PPE_NEXTHOP_POST_L3_IF_OFF,
 		      PPE_NEXTHOP_POST_L3_IF_LEN, eg_l3_if);
+	if (data->sw_vid) {
+		ppe_entry_set(nh, PPE_NEXTHOP_STAG_FMT_OFF,
+			      PPE_NEXTHOP_STAG_FMT_LEN, 1);
+		ppe_entry_set(nh, PPE_NEXTHOP_SVID_OFF, PPE_NEXTHOP_SVID_LEN,
+			      QCA_HDR_XMIT_FROM_CPU |
+			      BIT(FIELD_GET(PPE_SW_VID_PORT, data->sw_vid)));
+	}
 	if (data->vlan_valid && push) {
 		ppe_entry_set(nh, PPE_NEXTHOP_CTAG_FMT_OFF,
 			      PPE_NEXTHOP_CTAG_FMT_LEN, 1);
@@ -2065,7 +2481,32 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 	bool push;
 
 	port = ppe_flow_port_by_ifindex(priv, data->odev->ifindex);
-	if (port < 0 && ppe_cpu_xmit_ok(data)) {
+	/* A download a shaper takes still leaves through the port's device,
+	 * after the shaper.
+	 */
+	if (port < 0 && !data->pppoe_valid &&
+	    !(READ_ONCE(priv->dl_shaper) &&
+	      ppe_flow_on_uplink(priv, entry->iport, data->ivid, 0, false))) {
+		const struct ppe_sw_port *sp;
+
+		sp = ppe_sw_port_by_ifindex(priv, data->odev->ifindex);
+		if (sp) {
+			port = sp->port;
+			data->sw_vid = ppe_sw_vid(sp, data->vlan_valid ?
+						      data->vlan_id : 0);
+			data->sw_mtu = sp->dev->mtu;
+		}
+	}
+	/* A download the shaper takes for a VLAN on a port of another switch
+	 * gets its tag from ppe_flow_xmit() after the shaper, as one for a
+	 * VLAN on a port of this switch does.
+	 */
+	if (port < 0 && (ppe_cpu_xmit_ok(data) ||
+			 (ppe_cpu_xmit && data->vlan_valid &&
+			  !data->pppoe_valid && READ_ONCE(priv->dl_shaper) &&
+			  ppe_flow_on_uplink(priv, entry->iport, data->ivid, 0,
+					     false) &&
+			  ppe_sw_port_by_ifindex(priv, data->odev->ifindex)))) {
 		port = QCA_PPE_CPU_PORT;
 		entry->xdev = data->odev->ifindex;
 	}
@@ -2093,6 +2534,8 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 	entry->ovid = data->vlan_valid && !(entry->xdev & PPE_XDEV_UL) ?
 		      data->vlan_id :
 		      ppe_port_pvid(priv, nh_port);
+	if (data->sw_vid)
+		entry->ovid = data->sw_vid;
 
 	if (snat) {
 		u32 pub = ntohl(data->v4_src_new);
@@ -2124,8 +2567,15 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 	 * bridge classifies, arrives the same way on this port; set the port up
 	 * to route it so that direction offloads too.
 	 */
-	if (data->pppoe_valid ||
-	    (data->vlan_valid && !priv->port_br_dev[port])) {
+	if (data->sw_vid) {
+		ret = ppe_uplink_get(priv, port, data->sw_vid,
+				     data->eth.h_source, data->sw_mtu);
+		if (ret < 0)
+			goto err;
+		entry->uplink = ret;
+	} else if (port != QCA_PPE_CPU_PORT &&
+		   (data->pppoe_valid ||
+		    (data->vlan_valid && !priv->port_br_dev[port]))) {
 		ret = ppe_uplink_get(priv, port,
 				     data->vlan_valid ? data->vlan_id : 0,
 				     data->eth.h_source, odp->user->mtu);
@@ -2183,7 +2633,7 @@ static void ppe_flow_dev_add(struct net_device *dev, bool rx, u32 pkts,
 		u64_stats_add(rx ? &s->rx_packets : &s->tx_packets, pkts);
 		u64_stats_add(rx ? &s->rx_bytes : &s->tx_bytes, bytes);
 		u64_stats_update_end(&s->syncp);
-	} else if (netif_is_bridge_master(dev)) {
+	} else if (netif_is_bridge_master(dev) || dsa_user_dev_check(dev)) {
 		struct pcpu_sw_netstats *s = this_cpu_ptr(dev->tstats);
 
 		u64_stats_update_begin(&s->syncp);
@@ -2198,6 +2648,31 @@ static void ppe_flow_account_side(struct qca_ppe_priv *priv, int port,
 				  u16 vid, bool rx, u32 pkts, u64 bytes)
 {
 	struct net_device *dev = priv->port_br_dev[port];
+
+	/* Neither the device of a port of a switch behind this port nor the
+	 * bridge it is in saw the frames. The device is credited unless its
+	 * switch counts for it.
+	 */
+	if (vid & PPE_VID_SW) {
+		const struct ppe_sw_port *sp = ppe_sw_port_find(priv, port, vid);
+
+		if (!sp)
+			return;
+		if (!dsa_port_from_netdev(sp->dev)->ds->ops->get_stats64)
+			ppe_flow_dev_add(sp->dev, rx, pkts, bytes);
+		dev = sp->dev;
+		if (vid & PPE_SW_VID_CVID) {
+			dev = __vlan_find_dev_deep_rcu(dev, htons(ETH_P_8021Q),
+						       vid & PPE_SW_VID_CVID);
+			if (!dev)
+				return;
+			ppe_flow_dev_add(dev, rx, pkts, bytes);
+		}
+		dev = netdev_master_upper_dev_get_rcu(dev);
+		if (dev)
+			ppe_flow_dev_add(dev, rx, pkts, bytes);
+		return;
+	}
 
 	if (dev)
 		ppe_flow_dev_add(dev, rx, pkts, bytes);
@@ -2364,7 +2839,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	struct ppe_flow_entry *entry;
 	struct ppe_flow_data data = {};
 	struct flow_action_entry *act;
-	bool snat, dnat, v6, uplink_in = false;
+	bool snat, dnat, v6, uplink_in = false, sw_in = false;
 	int i, ret, nfw, nhw, iport;
 
 	guard(mutex)(&priv->flow_lock);
@@ -2392,6 +2867,17 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 			data.ivid = priv->ul_vid;
 			uplink_in = true;
 		}
+		if (iport < 0) {
+			const struct ppe_sw_port *sp;
+
+			sp = ppe_sw_port_by_ifindex(priv,
+						    match.key->ingress_ifindex);
+			if (sp) {
+				iport = sp->port;
+				data.ivid = ppe_sw_vid(sp, 0);
+				sw_in = true;
+			}
+		}
 		if (iport < 0)
 			return ppe_flow_reject(priv, PPE_REJECT_INGRESS_PORT);
 	}
@@ -2410,7 +2896,10 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 		flow_rule_match_vlan(rule, &match);
 		if (match.key->vlan_tpid != htons(ETH_P_8021Q))
 			return ppe_flow_reject(priv, PPE_REJECT_INGRESS_VLAN);
-		data.ivid = match.key->vlan_id;
+		if (sw_in)
+			data.ivid |= match.key->vlan_id;
+		else
+			data.ivid = match.key->vlan_id;
 	}
 
 	/* A replace for a cookie already held is the kernel refreshing a flow
