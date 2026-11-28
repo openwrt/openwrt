@@ -1,0 +1,172 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Ruvald Pedersen <wabsie@gmail.com>
+Date: Wed, 15 Jul 2026 22:30:00 +0200
+Subject: [PATCH] wifi: ath11k: use private page frag caches for RXDMA rings
+
+ath11k allocates RXDMA skb heads with dev_alloc_skb(), which draws from a
+shared per-CPU page_frag cache.  Two ownership captures found bounded ring
+and IDR occupancy while page-frag backing grew, and found current or
+historical cross-origin fragments on 86-87% of the final tracker-visible
+physical pages.  This lifetime mixing can retain sparsely occupied
+high-order pages even though logical buffer ownership remains bounded.
+
+Give each RXDMA ring its own page_frag cache and allocate both regular RX
+and monitor-status skb heads from it.  New fragments allocated through
+distinct dp_rxdma_ring instances can no longer share backing pages
+with one another or with CE allocations.  A monitor-destination path
+that intentionally reuses the data ring also reuses that ring's cache.
+This does not address lifetime stranding within one ring, so the live
+memory benefit must be measured separately.
+
+The existing alignment code calls skb_pull() on an empty skb, so a
+positive alignment delta is rejected and the data pointer does not move.
+Use skb_reserve() while the skb is still empty; the existing extra 128
+allocation bytes retain at least DP_RX_BUFFER_SIZE bytes of DMA tailroom.
+
+The refill paths already serialize each cache with the corresponding
+SRNG lock.  Quiesce HIF IRQ and NAPI processing before crash
+reconfiguration tears down the data path.  The preceding IRQ lifecycle
+patch makes this safe when suspend or reset has already disabled them.
+Drain the cache only after all ring-owned skbs have been unmapped and
+freed and the IDR is destroyed.
+
+Tested-on: IPQ8074 hw2.0 WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1
+Signed-off-by: Mark Ruvald Pedersen <wabsie@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/core.c  |  2 ++
+ drivers/net/wireless/ath/ath11k/dp.h    |  2 ++
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 47 ++++++++++++++++++++----
+ 3 files changed, 45 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2363,6 +2363,8 @@ static int ath11k_core_reconfigure_on_crash(struct ath11k_base *ab)
+ {
+ 	int ret;
+ 
++	ath11k_hif_irq_disable(ab);
++
+ 	mutex_lock(&ab->core_lock);
+ 	ath11k_thermal_unregister(ab);
+ 	ath11k_dp_pdev_free(ab);
+
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -7,6 +7,7 @@
+ #ifndef ATH11K_DP_H
+ #define ATH11K_DP_H
+ 
++#include <linux/mm_types.h>
+ #include "hal_rx.h"
+ 
+ #define MAX_RXDMA_PER_PDEV     2
+@@ -72,6 +73,7 @@
+ 
+ struct dp_rxdma_ring {
+ 	struct dp_srng refill_buf_ring;
++	struct page_frag_cache frag_cache;
+ 	struct idr bufs_idr;
+ 	/* Protects bufs_idr */
+ 	spinlock_t idr_lock;
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -4,10 +4,12 @@
+  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
++#include <linux/gfp.h>
+ #include <linux/ieee80211.h>
+ #include <linux/kernel.h>
+ #include <linux/skbuff.h>
+ #include <crypto/hash.h>
++#include <net/sock.h>
+ #include "core.h"
+ #include "debug.h"
+ #include "debugfs_htt_stats.h"
+@@ -340,6 +342,35 @@
+ 	return -ETIMEDOUT;
+ }
+ 
++static struct sk_buff *
++ath11k_dp_rx_alloc_skb(struct dp_rxdma_ring *rx_ring, unsigned int len)
++{
++	struct page_frag_cache *cache = &rx_ring->frag_cache;
++	gfp_t gfp_mask = GFP_ATOMIC | __GFP_NOWARN;
++	struct sk_buff *skb;
++	void *data;
++
++	len += NET_SKB_PAD;
++	len = SKB_HEAD_ALIGN(len);
++
++	if (sk_memalloc_socks())
++		gfp_mask |= __GFP_MEMALLOC;
++
++	/* Refill paths serialize the per-ring cache with the SRNG lock. */
++	data = page_frag_alloc(cache, len, gfp_mask);
++	if (!data)
++		return NULL;
++	skb = build_skb(data, len);
++	if (!skb) {
++		page_frag_free(data);
++		return NULL;
++	}
++
++	skb_reserve(skb, NET_SKB_PAD);
++
++	return skb;
++}
++
+ /* Returns number of Rx buffers replenished */
+ int ath11k_dp_rxbufs_replenish(struct ath11k_base *ab, int mac_id,
+ 			       struct dp_rxdma_ring *rx_ring,
+@@ -371,8 +402,8 @@
+ 	num_remain = req_entries;
+ 
+ 	while (num_remain > 0) {
+-		skb = dev_alloc_skb(DP_RX_BUFFER_SIZE +
+-				    DP_RX_BUFFER_ALIGN_SIZE);
++		skb = ath11k_dp_rx_alloc_skb(rx_ring, DP_RX_BUFFER_SIZE +
++					     DP_RX_BUFFER_ALIGN_SIZE);
+ 		if (!skb)
+ 			break;
+ 
+@@ -379,7 +410,7 @@ int ath11k_dp_rxbufs_replenish(struct ath11k_base *ab, int mac_id,
+ 		if (!IS_ALIGNED((unsigned long)skb->data,
+ 				DP_RX_BUFFER_ALIGN_SIZE)) {
+-			skb_pull(skb,
+-				 PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
+-				 skb->data);
++			skb_reserve(skb,
++				    PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
++				    skb->data);
+ 		}
+ 
+@@ -453,6 +484,8 @@
+ 	idr_destroy(&rx_ring->bufs_idr);
+ 	spin_unlock_bh(&rx_ring->idr_lock);
+ 
++	page_frag_cache_drain(&rx_ring->frag_cache);
++
+ 	return 0;
+ }
+ 
+@@ -2838,8 +2871,8 @@
+ 	struct sk_buff *skb;
+ 	dma_addr_t paddr;
+ 
+-	skb = dev_alloc_skb(DP_RX_BUFFER_SIZE +
+-			    DP_RX_BUFFER_ALIGN_SIZE);
++	skb = ath11k_dp_rx_alloc_skb(rx_ring, DP_RX_BUFFER_SIZE +
++				     DP_RX_BUFFER_ALIGN_SIZE);
+ 
+ 	if (!skb)
+ 		goto fail_alloc_skb;
+@@ -2846,7 +2879,7 @@ static struct sk_buff *ath11k_dp_rx_alloc_mon_status_buf(struct ath11k_base *ab,
+ 
+ 	if (!IS_ALIGNED((unsigned long)skb->data,
+ 			DP_RX_BUFFER_ALIGN_SIZE)) {
+-		skb_pull(skb, PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
++		skb_reserve(skb, PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
+ 			 skb->data);
+ 	}
+ 
