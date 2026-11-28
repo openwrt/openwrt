@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=px5g-mbedtls
-PKG_RELEASE:=14
+PKG_RELEASE:=15
 PKG_LICENSE:=LGPL-2.1
 
 PKG_BUILD_FLAGS:=no-mips16
@@ -46,7 +46,7 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
 
-TARGET_LDFLAGS += -lmbedtls -lmbedx509 -lmbedcrypto
+TARGET_LDFLAGS += -lmbedtls -lmbedx509 -ltfpsacrypto
 
 ifeq ($(BUILD_VARIANT),standalone)
   TARGET_LDFLAGS := -Wl,-Bstatic $(TARGET_LDFLAGS) -Wl,-Bdynamic
