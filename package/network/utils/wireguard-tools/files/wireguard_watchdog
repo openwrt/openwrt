@@ -28,7 +28,7 @@ check_peer_activity() {
   config_get_bool disabled "${cfg}" "disabled" 0
   config_get public_key "${cfg}" "public_key"
   config_get endpoint_host "${cfg}" "endpoint_host"
-  config_get endpoint_port "${cfg}" "endpoint_port"
+  config_get endpoint_port "${cfg}" "endpoint_port" "51820"
 
   if [ "${disabled}" -eq 1 ]; then
     # skip disabled peers
