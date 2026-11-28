@@ -35,7 +35,7 @@ BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 define Build/combined
   $(INSTALL_DIR) $@.boot/
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/efi/openwrt/
-	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
+	-$(CP) $(TARGET_DIR_ORIG)/boot/. $@.boot/boot/
 	$(if $(filter $(1),efi),
 		$(INSTALL_DIR) $@.boot/efi/boot
 		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_aarch64),aa64,arm).efi $@.boot/efi/openwrt/
