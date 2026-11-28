@@ -178,7 +178,7 @@
 +boot_ubi=ubi part ubi && setenv bootargs && run boot_ubi_production ; run boot_ubi_recovery
 +boot_ubi_production=led $bootled_pwr on ; run ubi_read_production && bootm $loadaddr ; led $bootled_pwr off
 +boot_ubi_recovery=led $bootled_rec on ; run ubi_read_recovery ; bootm $loadaddr#$bootconf ; ubi remove recovery ; led $bootled_rec off
-+emmc_init=run emmc_init_bl && run emmc_init_openwrt ; env default bootcmd ; saveenv ; saveenv
++emmc_init=run emmc_init_bl && run emmc_init_openwrt ; env default bootcmd ; setenv filesize ; saveenv ; saveenv
 +emmc_init_bl=run sdmmc_read_emmc_bl2 && run emmc_write_bl2 && run sdmmc_read_emmc_hdr && run emmc_write_hdr && run sdmmc_read_emmc_fip && run emmc_write_fip
 +emmc_init_openwrt=run sdmmc_read_recovery && iminfo $loadaddr && run emmc_write_recovery ; run sdmmc_read_production && iminfo $loadaddr && run emmc_write_production
 +emmc_write_bl2=mmc dev 0 1 && mmc partconf 0 1 1 1 && mmc erase 0x0 0x400 && mmc write $loadaddr 0x0 0x100 ; mmc partconf 0 1 1 0

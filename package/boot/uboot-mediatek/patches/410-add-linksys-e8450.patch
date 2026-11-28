@@ -397,7 +397,7 @@
 +ubi_write_production=ubi check fit && env exists replacevol && ubi remove fit ; if ubi check fit ; then else run ubi_remove_rootfs ; ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize ; fi
 +ubi_write_recovery=ubi check recovery && env exists replacevol && ubi remove recovery ; if ubi check recovery ; then else run ubi_remove_rootfs ; ubi create recovery $filesize dynamic && ubi write $loadaddr recovery $filesize ; fi
 +_create_env=ubi create ubootenv 0x1f000 dynamic ; ubi create ubootenv2 0x1f000 dynamic
-+_init_env=setenv _init_env ; if ubi check ubootenv && ubi check ubootenv2 ; then else run _create_env ; fi ; setenv _create_env ; saveenv || run ubi_format ; saveenv || run ubi_format
++_init_env=setenv _init_env ; if ubi check ubootenv && ubi check ubootenv2 ; then else run _create_env ; fi ; setenv _create_env ; setenv filesize ; saveenv || run ubi_format ; saveenv || run ubi_format
 +_firstboot=setenv _firstboot ; run _switch_to_menu ; run ethaddr_factory ; run _init_env ; run boot_first
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"

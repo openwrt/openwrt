@@ -142,7 +142,7 @@
 +boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run mmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr ; fi
 +boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr
 +boot_mmc=run boot_production ; run boot_recovery
-+emmc_init=run emmc_init_bl && run emmc_init_openwrt ; env default bootcmd ; saveenv
++emmc_init=run emmc_init_bl && run emmc_init_openwrt ; env default bootcmd ; setenv filesize ; saveenv
 +emmc_init_bl=run sdmmc_read_emmc_hdr && run emmc_write_hdr && run sdmmc_read_preloader && run emmc_write_preloader && run sdmmc_read_uboot && run emmc_write_uboot
 +emmc_init_openwrt=run sdmmc_read_recovery && run emmc_write_recovery ; run sdmmc_read_production && run emmc_write_production
 +emmc_write_hdr=mmc dev 0 0 ; mmc erase 0x0 0x2000 ; mmc write $loadaddr 0x0 0x4 ; mmc dev 0 1 ; mmc partconf 0 1 1 1 ; mmc erase 0x0 0x400 ; mmc write $loadaddr 0x0 0x4 ; mmc partconf 0 1 1 0

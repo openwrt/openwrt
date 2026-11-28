@@ -668,7 +668,7 @@ Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
 +ubi_write_production=ubi check fit && ubi remove fit ; run ubi_remove_rootfs ; ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize
 +ubi_write_recovery=ubi check recovery && ubi remove recovery ; run ubi_remove_rootfs ; ubi create recovery $filesize dynamic && ubi write $loadaddr recovery $filesize
 +mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
-+emmc_init=mmc dev 0 && mmc bootbus 0 0 0 0 && run emmc_init_bl && run emmc_init_openwrt ; env default bootcmd ; saveenv ; saveenv
++emmc_init=mmc dev 0 && mmc bootbus 0 0 0 0 && run emmc_init_bl && run emmc_init_openwrt ; env default bootcmd ; setenv filesize ; saveenv ; saveenv
 +emmc_init_bl=run ubi_read_emmc_install && setenv fileaddr $loadaddr && run emmc_write_bl2 && setexpr fileaddr $loadaddr + 0x100000 && run emmc_write_fip && setexpr fileaddr $loadaddr + 0x500000 && run emmc_write_hdr
 +emmc_init_openwrt=run ubi_read_recovery && iminfo $loadaddr && run emmc_write_recovery ; run ubi_read_production && iminfo $loadaddr && run emmc_write_production
 +emmc_write_bl2=mmc partconf 0 1 1 1 && mmc erase 0x0 0x400 && mmc write $fileaddr 0x0 0x400 ; mmc partconf 0 1 1 0
