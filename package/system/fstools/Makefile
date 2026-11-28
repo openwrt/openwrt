@@ -34,6 +34,7 @@ include $(INCLUDE_DIR)/cmake.mk
 CMAKE_OPTIONS += $(if $(CONFIG_FSTOOLS_UBIFS_EXTROOT),-DCMAKE_UBIFS_EXTROOT=y)
 CMAKE_OPTIONS += $(if $(CONFIG_FSTOOLS_OVL_MOUNT_FULL_ACCESS_TIME),-DCMAKE_OVL_MOUNT_FULL_ACCESS_TIME=y)
 CMAKE_OPTIONS += $(if $(CONFIG_FSTOOLS_OVL_MOUNT_COMPRESS_ZLIB),-DCMAKE_OVL_MOUNT_COMPRESS_ZLIB=y)
+CMAKE_OPTIONS += -DCMAKE_ROOTDEV_OVERLAY_ALIGN=$(CONFIG_FSTOOLS_ROOTDEV_OVERLAY_ALIGN)
 
 define Package/fstools
   SECTION:=base
@@ -65,6 +66,13 @@ define Package/fstools/config
 		default n
 		help
 			This option enables the compression using zlib on the storage device.
+
+	config FSTOOLS_ROOTDEV_OVERLAY_ALIGN
+		depends on PACKAGE_fstools
+		int "Alignment of overlay partition in byte"
+		default 0x10000
+		help
+			This option configures the alignment of the overlay partition on the root device.
 endef
 
 define Package/snapshot-tool
