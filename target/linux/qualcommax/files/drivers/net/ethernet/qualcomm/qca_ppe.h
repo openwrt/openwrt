@@ -1273,6 +1273,10 @@ struct ppe_data {
 	u8 num_gmacs;
 	u8 mru_mtu_ctrl_stride;
 	u8 loopback_port;
+	/* First of the virtual source ports a CPU-injected frame can carry, up
+	 * to PPE_MAX_VPORT; zero where the injection has not been tried.
+	 */
+	u8 first_vport;
 	u8 bm_phy_end;
 	u8 bm_internal_start;
 	u16 bm_group_buf;
@@ -1298,6 +1302,7 @@ enum ppe_flow_reject {
 	PPE_REJECT_ACTION,
 	PPE_REJECT_L2,
 	PPE_REJECT_EGRESS_PORT,
+	PPE_REJECT_VP_EGRESS,
 	PPE_REJECT_NAT_BOTH,
 	PPE_REJECT_NAT_IPV6,
 	PPE_REJECT_RESOURCE,
@@ -1476,6 +1481,49 @@ struct ppe_sb_occ {
 
 struct ppe_flow_entry;
 
+struct ppe_vp;
+
+/* The tuple a frame of a flow arrives with, and the virtual port it arrives
+ * on: what the flow can be told by before the PPE has touched it. Zero in
+ * every byte a short address or a missing field leaves, so the key compares
+ * and hashes whole.
+ */
+struct ppe_vp_key {
+	union {
+		__be32 v4[2];
+		struct in6_addr v6[2];
+	} addr;
+	__be16 port[2];
+	u8 proto;
+	u8 v6;
+	u8 vp;
+	u8 pad;
+};
+
+/* A flow offloaded with a virtual port as its ingress. @key.vp is zero for
+ * every other flow. @hold and @pass are jiffies, zero when unset: until @hold
+ * the flow's frames take the host's path, because the PPE just returned one;
+ * from @pass the bridge is taught the flow's source address by a frame of its
+ * own, to keep what only the host sees of a flow, the bridge's address entry,
+ * alive.
+ */
+struct ppe_vp_flow {
+	struct hlist_node node;
+	unsigned long hold;
+	unsigned long pass;
+	struct ppe_vp_key key;
+};
+
+/* The flow a CPU last found for a frame, with the table's generation it was
+ * found in: while that is still the table's, no flow has come or gone since,
+ * and a frame of the same tuple is that flow's.
+ */
+struct ppe_vp_cache {
+	struct ppe_vp_key key;
+	struct ppe_vp_flow *f;
+	unsigned int gen;
+};
+
 struct qca_ppe_priv {
 	struct dsa_switch ds;
 	struct regmap *regmap;
@@ -1522,6 +1570,12 @@ struct qca_ppe_priv {
 	 */
 	int dl_shaper;
 	int ul_shaper;
+	/* The devices dl_shaper and uplink_dev name, so that a frame handed to
+	 * them does not look them up by ifindex. Set under flow_lock with the
+	 * index, and cleared by the netdev notifier before the device goes.
+	 */
+	struct net_device __rcu *dl_ndev;
+	struct net_device __rcu *uplink_ndev;
 	char dl_shaper_name[IFNAMSIZ];
 	char ul_shaper_name[IFNAMSIZ];
 	/* The WAN's L3 device, named apart from the shapers so that its path
@@ -1552,6 +1606,7 @@ struct qca_ppe_priv {
 	u32 flow_stale;
 	u32 flow_sparse_promoted;
 	u32 flow_sparse_demoted;
+	u32 sparse_tick;
 	/* Guards the VSI, translation-index and bridge-VLAN state, and the
 	 * read-modify-write an MDB update makes of an FDB entry. The switchdev
 	 * ops reach it under rtnl, the FDB and MDB work from a workqueue that
@@ -1624,6 +1679,20 @@ struct qca_ppe_priv {
 	struct net_device *port_br_dev[QCA_PPE_MAX_PORTS];
 	u32 vlan_filtering;
 	struct notifier_block netdev_nb;
+	/* Virtual source ports of non-switch bridge ports, by port number;
+	 * written under both locks.
+	 */
+	struct ppe_vp __rcu *vp[PPE_MAX_VPORT];
+	unsigned int vp_next;
+	struct hlist_head *vp_hash;
+	u32 vp_hash_mask;
+	/* Counts the flows added to and removed from vp_hash, under flow_lock;
+	 * read without it, with the per-CPU cache of the last flow found.
+	 */
+	unsigned int vp_gen;
+	struct ppe_vp_cache __percpu *vp_cache;
+	bool vp_stopped;
+	struct notifier_block vp_nb;
 	u16 port_pvid[QCA_PPE_MAX_PORTS];
 	struct clk *ppe_clk;
 	struct clk *port_rx_clk[QCA_PPE_MAX_PORTS];
@@ -1819,6 +1888,12 @@ unsigned long ppe_clk_rate(struct qca_ppe_priv *priv);
 void ppe_debugfs_init(struct qca_ppe_priv *priv);
 void ppe_debugfs_exit(struct qca_ppe_priv *priv);
 
+/* The small-packet rule's length and priority, which the hardware rule and the
+ * stamp of a frame handed to Wi-Fi share.
+ */
+extern ushort ppe_small_pkt_len;
+extern ushort ppe_small_pkt_prio;
+
 void ppe_acl_init(struct qca_ppe_priv *priv);
 void ppe_acl_exit(struct qca_ppe_priv *priv);
 int qca_ppe_cls_flower_add(struct dsa_switch *ds, int port,
@@ -1839,6 +1914,9 @@ int ppe_setup_ft_block(struct qca_ppe_priv *priv,
 		       struct flow_block_offload *f);
 int ppe_flow_offload_init(struct qca_ppe_priv *priv);
 bool ppe_flow_xmit(struct dsa_switch *ds, struct sk_buff *skb, u32 flow);
+struct qca_edma_gso;
+bool ppe_flow_gso(struct dsa_switch *ds, const struct sk_buff *skb, u32 flow,
+		  struct qca_edma_gso *gso);
 void ppe_flow_shaper_get(struct qca_ppe_priv *priv, bool upload, char *name);
 void ppe_flow_ct_dscp_set(struct qca_ppe_priv *priv, bool on);
 void ppe_flow_uplink_get(struct qca_ppe_priv *priv, char *name);
@@ -1853,6 +1931,24 @@ int ppe_flow_shaper_set(struct qca_ppe_priv *priv, bool upload,
 #define PPE_XDEV_DL		BIT_ULL(33)
 #define PPE_XDEV_UL		BIT_ULL(34)
 void ppe_flow_purge_vsi(struct qca_ppe_priv *priv, u32 vsi);
+void ppe_flow_drop_vp(struct qca_ppe_priv *priv, int vp,
+		      const struct net_device *br);
 void ppe_flow_offload_exit(struct qca_ppe_priv *priv);
+
+struct qca_ppe_bridge_vsi *bridge_vsi_find(struct qca_ppe_priv *priv,
+					   struct net_device *br_dev);
+void ppe_port_vsi_set(struct qca_ppe_priv *priv, int port, u32 vsi);
+void ppe_port_mru_mtu_set(struct qca_ppe_priv *priv, int port, u32 frame_size);
+
+int ppe_vp_init(struct qca_ppe_priv *priv);
+void ppe_vp_stop(struct qca_ppe_priv *priv);
+void ppe_vp_exit(struct qca_ppe_priv *priv);
+void ppe_vp_bridge_up(struct qca_ppe_priv *priv, struct net_device *br_dev);
+void ppe_vp_bridge_down(struct qca_ppe_priv *priv, struct net_device *br_dev);
+void ppe_vp_debugfs_init(struct qca_ppe_priv *priv);
+int ppe_vp_ingress(struct qca_ppe_priv *priv, int ifindex, int *port, u8 *id);
+void ppe_vp_flow_add(struct qca_ppe_priv *priv, struct ppe_vp_flow *f);
+void ppe_vp_flow_del(struct qca_ppe_priv *priv, struct ppe_vp_flow *f);
+bool ppe_vp_rx(struct dsa_switch *ds, struct sk_buff *skb, u32 port);
 
 #endif

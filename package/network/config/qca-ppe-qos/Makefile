@@ -15,7 +15,7 @@ define Package/qca-ppe-qos
   TITLE:=Qualcomm PPE hardware QoS classifiers
   DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_qualcommax_ipq60xx) \
 	+KERNEL_DCB:dcb +tc +kmod-sched-flower +kmod-sched-act-pedit \
-	+kmod-sched-prio +kmod-sched-ets +kmod-sched-mqprio +kmod-sched-act-police
+	+kmod-sched +kmod-sched-prio +kmod-sched-ets +kmod-sched-mqprio +kmod-sched-act-police
 endef
 
 define Package/qca-ppe-qos/description
