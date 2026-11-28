@@ -1076,53 +1076,102 @@ static int otto_dsa_mdio_loaded(void)
 	return 0;
 }
 
+/* The serial LED controller of RTL93xx has 4 LED sets of up to 4 LEDs per port */
+#define OTTO_DSA_LED_SETS		4
+#define OTTO_DSA_LEDS_PER_PORT		4
+
+/* Number of LEDs per port in LED set @set, or -EINVAL if it is not usable */
+static int otto_dsa_led_set_size(struct device_node *led_node, u32 set)
+{
+	char name[sizeof("led_set4294967295")];
+	int size;
+
+	if (set >= OTTO_DSA_LED_SETS)
+		return -EINVAL;
+
+	snprintf(name, sizeof(name), "led_set%u", set);
+	size = of_property_count_u32_elems(led_node, name);
+	if (size < 1 || size > OTTO_DSA_LEDS_PER_PORT)
+		return -EINVAL;
+
+	return size;
+}
+
+static int otto_dsa_port_leds_probe(struct otto_dsa_priv *priv, struct device_node *dn,
+				    struct device_node *led_node, u32 pn)
+{
+	u32 set, set_fiber;
+	int leds;
+
+	if (of_property_read_u32(dn, "led-set", &set))
+		set = 0;
+
+	leds = otto_dsa_led_set_size(led_node, set);
+	if (leds < 0) {
+		dev_err(priv->dev, "Invalid led-set %u for port %u\n", set, pn);
+		return leds;
+	}
+
+	/* Both media of a port share its LEDs, so their sets must be of the same size */
+	if (of_property_read_u32(dn, "realtek,led-set-fiber", &set_fiber))
+		set_fiber = set;
+	if (set_fiber != set && otto_dsa_led_set_size(led_node, set_fiber) != leds) {
+		dev_err(priv->dev, "realtek,led-set-fiber %u for port %u is invalid or differs in size from led-set %u\n",
+			set_fiber, pn, set);
+		return -EINVAL;
+	}
+
+	priv->ports[pn].led_set = set;
+	priv->ports[pn].led_set_fiber = set_fiber;
+	priv->ports[pn].leds_on_this_port = leds;
+
+	return 0;
+}
+
 static int otto_dsa_ports_probe(struct otto_dsa_priv *priv)
 {
-	struct device_node *dn, *phy_node, *led_node;
+	struct device_node *ports __free(device_node) =
+		of_get_child_by_name(priv->dev->of_node, "ethernet-ports");
+	struct device_node *led_node __free(device_node) =
+		of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
+	struct device_node *phy_node;
 	u32 pn;
 
-	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-switch");
-	if (!dn) {
-		dev_err(priv->dev, "No RTL switch node in DTS\n");
+	if (!ports) {
+		dev_err(priv->dev, "No ethernet-ports node in DTS\n");
 		return -ENODEV;
 	}
 
-	led_node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
-
-	for_each_node_by_name(dn, "port") {
+	for_each_available_child_of_node_scoped(ports, dn) {
 		const char *managed;
-		u32 led_set;
-		char led_set_str[16] = {0};
-
-		if (!of_device_is_available(dn))
-			continue;
+		int err;
 
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
+		if (pn > priv->r->cpu_port) {
+			dev_err(priv->dev, "Port node %u is beyond the CPU port\n", pn);
+			continue;
+		}
+
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
+		priv->ports[pn].phy = !!phy_node;
+		of_node_put(phy_node);
 		priv->ports[pn].has_pcs = fwnode_property_present(of_fwnode_handle(dn),
 								  "pcs-handle");
-		if (pn != priv->r->cpu_port && !phy_node && !priv->ports[pn].has_pcs) {
+		if (pn != priv->r->cpu_port && !priv->ports[pn].phy && !priv->ports[pn].has_pcs) {
 			dev_err(priv->dev, "Port node %d has neither pcs-handle nor phy-handle\n", pn);
 			continue;
 		}
 
 		priv->ports[pn].leds_on_this_port = 0;
-		if (led_node) {
-			if (of_property_read_u32(dn, "led-set", &led_set))
-				led_set = 0;
-			priv->ports[pn].led_set = led_set;
-			sprintf(led_set_str, "led_set%d", led_set);
-			priv->ports[pn].leds_on_this_port = of_property_count_u32_elems(led_node, led_set_str);
-			if (priv->ports[pn].leds_on_this_port > 4) {
-				of_node_put(dn);
-				dev_err(priv->dev, "led_set %d for port %d configuration is invalid\n", led_set, pn);
-				return -ENODEV;
-			}
+		/* The CPU port has no LEDs */
+		if (led_node && pn != priv->r->cpu_port) {
+			err = otto_dsa_port_leds_probe(priv, dn, led_node, pn);
+			if (err)
+				return err;
 		}
 
-		priv->ports[pn].phy = !!phy_node;
 		/* In-band status as phylink reads it */
 		if (!of_property_read_string(dn, "managed", &managed) &&
 		    !strcmp(managed, "in-band-status"))

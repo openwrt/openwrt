@@ -1,0 +1,336 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/* RTL8214FC combo port: the RJ45 jack and the SFP cage have LEDs of their own */
+#define SWITCH_PORT_COMBO(p, l, s, i, m) \
+	port##p: port@##p { \
+		reg = <##p>; \
+		label = SWITCH_PORT_LABEL(l) ; \
+		led-set = <0>; \
+		realtek,led-set-fiber = <1>; \
+		pcs-handle = <&serdes##s i>; \
+		phy-handle = <&phy##p>; \
+		phy-mode = #m ; \
+	};
+
+/* RTL8214QF fiber port: XSGMII needs in-band autonegotiation */
+#define SWITCH_PORT_QF(p, l, s, i, m) \
+	port##p: port@##p { \
+		reg = <##p>; \
+		label = SWITCH_PORT_LABEL(l) ; \
+		led-set = <2>; \
+		pcs-handle = <&serdes##s i>; \
+		phy-handle = <&phy##p>; \
+		phy-mode = #m ; \
+		managed = "in-band-status"; \
+	};
+
+/ {
+	compatible = "acorid,gls7700-24f8g-4x", "realtek,rtl9301-soc";
+	model = "Acorid GLS7700-24F8G-4X";
+
+	aliases {
+		label-mac-device = &ethernet0;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>, /* 256 MiB lowmem */
+		      <0x20000000 0x10000000>; /* 256 MiB highmem */
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			/* Labelled "Default" */
+			label = "reset";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	/*
+	 * LED sets of the vendor firmware: 0 for the RJ45 jacks of ports 1-8, 1 for their
+	 * SFP cages, 2 for the SFP ports 9-24, 3 for the SFP+ ports 25-28
+	 */
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+		realtek,led-mode = <RTL93XX_LED_MODE_SERIAL>;
+		realtek,led-copper-port-mask = <0x000000ff>;
+		realtek,led-fiber-port-mask = <0x0fffffff>;
+		realtek,led-combo-port-mask = <0x00000000>;
+
+		led_set0 = <(RTL93XX_LED_SET_1G | RTL93XX_LED_SET_LINK)
+			    (RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M | RTL93XX_LED_SET_10M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+		led_set1 = <(RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+		led_set2 = <(RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+		led_set3 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_1G |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_10G | RTL93XX_LED_SET_1G |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+	};
+
+	sfp0: sfp-p25 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp0>;
+		mod-def0-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		los-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp1: sfp-p26 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp1>;
+		mod-def0-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		los-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp2: sfp-p27 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp2>;
+		mod-def0-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+		los-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp3: sfp-p28 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp3>;
+		mod-def0-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		los-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	i2c_sfp0: i2c@2 { reg = <2>; };
+	i2c_sfp1: i2c@4 { reg = <4>; };
+	i2c_sfp2: i2c@6 { reg = <6>; };
+	i2c_sfp3: i2c@7 { reg = <7>; };
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "LOADER";
+				reg = <0x0000000 0x00e0000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "BDINFO";
+				reg = <0x00e0000 0x0010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_ubootenv_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@f0000 {
+				label = "SYSINFO";
+				reg = <0x00f0000 0x0010000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "JFFS2_CFG";
+				reg = <0x0100000 0x0100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "JFFS2_LOG";
+				reg = <0x0200000 0x0100000>;
+				read-only;
+			};
+
+			/* Vendor firmware */
+			partition@300000 {
+				label = "RUNTIME";
+				reg = <0x0300000 0x0e80000>;
+				read-only;
+			};
+
+			/* RUNTIME2 */
+			partition@1180000 {
+				label = "firmware";
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x83800000>;
+				reg = <0x1180000 0x0d80000>;
+			};
+
+			partition@1f00000 {
+				label = "OEMINFO";
+				reg = <0x1f00000 0x0100000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+/* RTL8214FC */
+&mdio_bus0 {
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C22(0, 0)
+		PHY_C22(1, 1)
+		PHY_C22(2, 2)
+		PHY_C22(3, 3)
+	};
+
+	ethernet-phy-package@4 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <4>;
+
+		PHY_C22(4, 4)
+		PHY_C22(5, 5)
+		PHY_C22(6, 6)
+		PHY_C22(7, 7)
+	};
+};
+
+/* RTL8214QF */
+&mdio_bus1 {
+	ethernet-phy-package@8 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <8>;
+
+		PHY_C22(8, 8)
+		PHY_C22(9, 9)
+		PHY_C22(10, 10)
+		PHY_C22(11, 11)
+	};
+
+	ethernet-phy-package@12 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <12>;
+
+		PHY_C22(12, 12)
+		PHY_C22(13, 13)
+		PHY_C22(14, 14)
+		PHY_C22(15, 15)
+	};
+};
+
+/* RTL8214QF */
+&mdio_bus2 {
+	ethernet-phy-package@16 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <16>;
+
+		PHY_C22(16, 16)
+		PHY_C22(17, 17)
+		PHY_C22(18, 18)
+		PHY_C22(19, 19)
+	};
+
+	ethernet-phy-package@20 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <20>;
+
+		PHY_C22(20, 20)
+		PHY_C22(21, 21)
+		PHY_C22(22, 22)
+		PHY_C22(23, 23)
+	};
+};
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT_COMBO(0, 1, 0, 0, qsgmii)
+		SWITCH_PORT_COMBO(1, 2, 0, 1, qsgmii)
+		SWITCH_PORT_COMBO(2, 3, 0, 2, qsgmii)
+		SWITCH_PORT_COMBO(3, 4, 0, 3, qsgmii)
+		SWITCH_PORT_COMBO(4, 5, 1, 0, qsgmii)
+		SWITCH_PORT_COMBO(5, 6, 1, 1, qsgmii)
+		SWITCH_PORT_COMBO(6, 7, 1, 2, qsgmii)
+		SWITCH_PORT_COMBO(7, 8, 1, 3, qsgmii)
+
+		SWITCH_PORT_QF(8, 9, 2, 0, usxgmii)
+		SWITCH_PORT_QF(9, 10, 2, 1, usxgmii)
+		SWITCH_PORT_QF(10, 11, 2, 2, usxgmii)
+		SWITCH_PORT_QF(11, 12, 2, 3, usxgmii)
+		SWITCH_PORT_QF(12, 13, 2, 4, usxgmii)
+		SWITCH_PORT_QF(13, 14, 2, 5, usxgmii)
+		SWITCH_PORT_QF(14, 15, 2, 6, usxgmii)
+		SWITCH_PORT_QF(15, 16, 2, 7, usxgmii)
+
+		SWITCH_PORT_QF(16, 17, 3, 0, usxgmii)
+		SWITCH_PORT_QF(17, 18, 3, 1, usxgmii)
+		SWITCH_PORT_QF(18, 19, 3, 2, usxgmii)
+		SWITCH_PORT_QF(19, 20, 3, 3, usxgmii)
+		SWITCH_PORT_QF(20, 21, 3, 4, usxgmii)
+		SWITCH_PORT_QF(21, 22, 3, 5, usxgmii)
+		SWITCH_PORT_QF(22, 23, 3, 6, usxgmii)
+		SWITCH_PORT_QF(23, 24, 3, 7, usxgmii)
+
+		SWITCH_PORT_SFP(24, 25, 4, 3, 0)
+		SWITCH_PORT_SFP(25, 26, 6, 3, 1)
+		SWITCH_PORT_SFP(26, 27, 8, 3, 2)
+		SWITCH_PORT_SFP(27, 28, 9, 3, 3)
+
+		port@28 {
+			reg = <28>;
+			ethernet = <&ethernet0>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
