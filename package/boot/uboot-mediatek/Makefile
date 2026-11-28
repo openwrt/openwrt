@@ -64,6 +64,24 @@ define U-Boot/mt7620_mt7530_rfb
   UBOOT_IMAGE:=u-boot-with-spl.bin
 endef
 
+define U-Boot/mt7620_zyxel_lte3301-m209
+  NAME:=Zyxel LTE3301-M209
+  UBOOT_CONFIG:=mt7620_zyxel_lte3301-m209
+  BUILD_DEVICES:=zyxel_lte3301-m209
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt7620
+  UBOOT_IMAGE:=u-boot-with-spl.bin
+endef
+
+define U-Boot/mt7620_zyxel_lte3301-q222
+  NAME:=Zyxel LTE3301-Q222
+  UBOOT_CONFIG:=mt7620_zyxel_lte3301-q222
+  BUILD_DEVICES:=zyxel_lte3301-q222
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt7620
+  UBOOT_IMAGE:=u-boot-with-spl.bin
+endef
+
 define U-Boot/mt7621_rfb
   NAME:=MT7621 Reference Board
   UBOOT_CONFIG:=mt7621_rfb
@@ -1528,6 +1546,8 @@ endef
 UBOOT_TARGETS := \
 	mt7620_mt7530_rfb \
 	mt7620_rfb \
+	mt7620_zyxel_lte3301-m209 \
+	mt7620_zyxel_lte3301-q222 \
 	mt7621_nand_rfb \
 	mt7621_rfb \
 	mt7621_zbtlink_zbt-wg3526-16m \
