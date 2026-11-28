@@ -317,7 +317,8 @@ menu "Global build settings"
 
 	choice
 		prompt "User space Stack-Smashing Protection"
-		default PKG_CC_STACKPROTECTOR_REGULAR
+		default PKG_CC_STACKPROTECTOR_REGULAR if (SMALL_FLASH || LOW_MEMORY_FOOTPRINT)
+		default PKG_CC_STACKPROTECTOR_STRONG
 		help
 		  Enable GCC Stack Smashing Protection (SSP) for userspace applications
 		config PKG_CC_STACKPROTECTOR_NONE
