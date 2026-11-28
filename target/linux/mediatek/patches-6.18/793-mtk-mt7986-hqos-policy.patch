@@ -1,0 +1,264 @@
+From c6743063989ca00a2a633f79c41711c93d0c0559 Mon Sep 17 00:00:00 2001
+From: Alexander A <st7105@gmail.com>
+Date: Thu, 26 Nov 2026 07:36:40 +0300
+Subject: net: ethernet: mtk_eth_soc: map MT7986 traffic classes per GMAC
+
+Allow a shared traffic class to select distinct queues on different GMACs.
+
+Signed-off-by: Alexander A <st7105@gmail.com>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c   | 62 +++++++++++-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h   |  5 +
+ .../net/ethernet/mediatek/mtk_ppe_debugfs.c   | 95 +++++++++++++++++++
+ .../net/ethernet/mediatek/mtk_ppe_offload.c   |  3 +-
+ 4 files changed, 163 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -797,6 +797,28 @@ int mtk_hqos_priority_queue(struct mtk_e
+ 	return priority & 0xf;
+ }
+ 
++/* A class is shared by a flow; each GMAC can select a different queue. */
++int mtk_hqos_port_queue(struct mtk_eth *eth, int port, u32 priority)
++{
++	int cls = mtk_hqos_priority_queue(eth, priority);
++	u8 mapped;
++
++	if (cls < 0 || port < 0 || port >= MTK_MAX_DEVS)
++		return cls;
++	mapped = READ_ONCE(eth->hqos.port_queue[port][cls]);
++	return mapped ? mapped - 1 : cls;
++}
++
++static u32 mtk_hqos_scheduler_config(struct mtk_eth *eth, unsigned int q, u32 val)
++{
++	u8 scheduler = eth->hqos.scheduler[q];
++
++	if (!scheduler)
++		return val;
++	return (val & ~GENMASK(31, 30)) |
++	       FIELD_PREP(GENMASK(31, 30), scheduler - 1);
++}
++
+ static u32 mtk_hqos_decode_rate(u32 val)
+ {
+ 	u32 rate = FIELD_GET(MTK_QTX_SCH_MAX_RATE_MAN, val);
+@@ -877,6 +899,7 @@ static void mtk_hqos_write_queue(struct
+ 	eth->hqos.baseline[idx] = val;
+ 	val = mtk_hqos_queue_config(val, eth->hqos.rate[idx],
+ 				    eth->hqos.minimum[idx], eth->hqos.weight[idx]);
++	val = mtk_hqos_scheduler_config(eth, idx, val);
+ 	mtk_w32(eth, val, eth->soc->reg_map->qdma.qtx_sch + ofs);
+ 	spin_unlock_bh(&eth->hqos.lock);
+ }
+@@ -898,6 +921,7 @@ int mtk_hqos_set_rate(struct mtk_eth *et
+ 	eth->hqos.rate[queue] = rate;
+ 	val = mtk_hqos_queue_config(eth->hqos.baseline[queue], rate,
+ 				    eth->hqos.minimum[queue], eth->hqos.weight[queue]);
++	val = mtk_hqos_scheduler_config(eth, queue, val);
+ 	mtk_w32(eth, val, eth->soc->reg_map->qdma.qtx_sch +
+ 		MTK_QTX_OFFSET * queue);
+ 	spin_unlock_bh(&eth->hqos.lock);
+@@ -928,12 +952,48 @@ int mtk_hqos_set_queue(struct mtk_eth *e
+ 	eth->hqos.rate[queue] = rate;
+ 	eth->hqos.minimum[queue] = minimum;
+ 	eth->hqos.weight[queue] = weight;
++	val = mtk_hqos_scheduler_config(eth, queue, val);
+ 	mtk_w32(eth, val, eth->soc->reg_map->qdma.qtx_sch +
+ 		MTK_QTX_OFFSET * queue);
+ 	spin_unlock_bh(&eth->hqos.lock);
+ 	return 0;
+ }
+ 
++/* One validated policy replaces every scheduler assignment and port map.
++ * Scheduler 0/1 retain the native WFQ mode and bandwidth settings.
++ */
++int mtk_hqos_set_policy(struct mtk_eth *eth, const int *policy)
++{
++	unsigned int q, port, n = MTK_HQOS_QUEUES;
++	u32 val;
++
++	ASSERT_RTNL();
++	if (!mtk_hqos_supported(eth))
++		return -EOPNOTSUPP;
++	for (q = 0; q < MTK_HQOS_QUEUES; q++)
++		if (policy[q] < -1 || policy[q] > 1)
++			return -EINVAL;
++	for (port = 0; port < MTK_MAX_DEVS; port++)
++		for (q = 0; q < MTK_HQOS_QUEUES; q++, n++)
++			if (policy[n] < -1 || policy[n] >= MTK_HQOS_QUEUES ||
++			    (policy[n] >= 0 && !eth->netdev[port]))
++				return -EINVAL;
++	spin_lock_bh(&eth->hqos.lock);
++	for (q = 0; q < MTK_HQOS_QUEUES; q++) {
++		eth->hqos.scheduler[q] = policy[q] + 1;
++		val = mtk_hqos_queue_config(eth->hqos.baseline[q],
++			eth->hqos.rate[q], eth->hqos.minimum[q], eth->hqos.weight[q]);
++		val = mtk_hqos_scheduler_config(eth, q, val);
++		mtk_w32(eth, val, eth->soc->reg_map->qdma.qtx_sch + MTK_QTX_OFFSET * q);
++	}
++	n = MTK_HQOS_QUEUES;
++	for (port = 0; port < MTK_MAX_DEVS; port++)
++		for (q = 0; q < MTK_HQOS_QUEUES; q++, n++)
++			WRITE_ONCE(eth->hqos.port_queue[port][q], policy[n] + 1);
++	spin_unlock_bh(&eth->hqos.lock);
++	return 0;
++}
++
+ static void mtk_set_queue_speed(struct mtk_eth *eth, unsigned int idx,
+ 				int speed)
+ {
+@@ -5302,7 +5362,7 @@ static u16 mtk_select_queue(struct net_d
+ 	struct mtk_mac *mac = netdev_priv(dev);
+ 	unsigned int dp_idx;
+ 	unsigned int queue = 0;
+-	int hqos_queue = mtk_hqos_priority_queue(mac->hw, skb->priority);
++	int hqos_queue = mtk_hqos_port_queue(mac->hw, mac->id, skb->priority);
+ 
+ 	if (hqos_queue >= 0 && hqos_queue < dev->num_tx_queues)
+ 		return hqos_queue;
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -1384,6 +1384,9 @@ struct mtk_hqos {
+ 	u32 rate[MTK_HQOS_QUEUES];
+ 	u32 minimum[MTK_HQOS_QUEUES];
+ 	u32 weight[MTK_HQOS_QUEUES];
++	/* Zero means inherited; explicit values are stored plus one. */
++	u8 scheduler[MTK_HQOS_QUEUES];
++	u8 port_queue[MTK_MAX_DEVS][MTK_HQOS_QUEUES];
+ 	u32 baseline[MTK_HQOS_QUEUES];
+ };
+ 
+@@ -1630,6 +1633,8 @@ int mtk_gmac_rgmii_path_setup(struct mtk
+ int mtk_gmac_usxgmii_path_setup(struct mtk_eth *eth, int mac_id);
+ 
+ bool mtk_hqos_supported(struct mtk_eth *eth);
++int mtk_hqos_port_queue(struct mtk_eth *eth, int port, u32 priority);
++int mtk_hqos_set_policy(struct mtk_eth *eth, const int *policy);
+ int mtk_hqos_priority_queue(struct mtk_eth *eth, u32 priority);
+ int mtk_hqos_set_rate(struct mtk_eth *eth, unsigned int queue, u32 rate);
+ u32 mtk_hqos_effective_config(u32 baseline, u32 rate);
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
+@@ -344,6 +344,100 @@ static const struct file_operations mtk_
+ 	.release = single_release,
+ };
+ 
++/* ABI: 16 scheduler IDs, then 16 queue IDs for each GMAC; -1 inherits.
++ * Every write is a complete policy. Existing PPE entries require new flows.
++ */
++#define MTK_HQOS_POLICY_SIZE (MTK_HQOS_QUEUES * (1 + MTK_MAX_DEVS))
++
++static bool mtk_hqos_running(struct mtk_eth *eth)
++{
++	int i;
++
++	if (test_bit(MTK_RESETTING, &eth->state))
++		return false;
++	for (i = 0; i < MTK_MAX_DEVS; i++)
++		if (eth->netdev[i] && netif_running(eth->netdev[i]))
++			return true;
++	return false;
++}
++
++static int mtk_hqos_policy_show(struct seq_file *m, void *unused)
++{
++	struct mtk_eth *eth = ((struct mtk_ppe *)m->private)->eth;
++	int policy[MTK_HQOS_POLICY_SIZE], q, port, n = MTK_HQOS_QUEUES;
++	u32 sched;
++
++	rtnl_lock();
++	if (!mtk_hqos_running(eth)) {
++		rtnl_unlock();
++		return -EBUSY;
++	}
++	spin_lock_bh(&eth->hqos.lock);
++	for (q = 0; q < MTK_HQOS_QUEUES; q++)
++		policy[q] = (int)eth->hqos.scheduler[q] - 1;
++	for (port = 0; port < MTK_MAX_DEVS; port++)
++		for (q = 0; q < MTK_HQOS_QUEUES; q++)
++			policy[n++] = (int)eth->hqos.port_queue[port][q] - 1;
++	sched = mtk_r32(eth, eth->soc->reg_map->qdma.tx_sch_rate);
++	spin_unlock_bh(&eth->hqos.lock);
++	seq_puts(m, "policy");
++	for (q = 0; q < MTK_HQOS_POLICY_SIZE; q++)
++		seq_printf(m, " %d", policy[q]);
++	seq_puts(m, "\n");
++	for (port = 0; port < MTK_MAX_DEVS; port++)
++		if (eth->netdev[port])
++			seq_printf(m, "port %d %s\n", port, eth->netdev[port]->name);
++	seq_printf(m, "scheduler 0 0x%04x\nscheduler 1 0x%04x\n",
++		   sched & 0xffff, sched >> 16);
++	rtnl_unlock();
++	return 0;
++}
++
++static int mtk_hqos_policy_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, mtk_hqos_policy_show, inode->i_private);
++}
++
++static ssize_t mtk_hqos_policy_write(struct file *file, const char __user *user,
++				   size_t count, loff_t *pos)
++{
++	struct mtk_eth *eth = ((struct mtk_ppe *)((struct seq_file *)file->private_data)->private)->eth;
++	int policy[MTK_HQOS_POLICY_SIZE], n = 0, ret;
++	char buf[512], *cursor = buf, *token;
++
++	if (!capable(CAP_NET_ADMIN))
++		return -EPERM;
++	if (!count || count >= sizeof(buf))
++		return -EINVAL;
++	if (copy_from_user(buf, user, count))
++		return -EFAULT;
++	buf[count] = '\0';
++	if (memchr(buf, '\0', count))
++		return -EINVAL;
++	while ((token = strsep(&cursor, " \t\n"))) {
++		if (!*token)
++			continue;
++		if (n == MTK_HQOS_POLICY_SIZE || kstrtoint(token, 10, &policy[n]))
++			return -EINVAL;
++		n++;
++	}
++	if (n != MTK_HQOS_POLICY_SIZE)
++		return -EINVAL;
++	rtnl_lock();
++	ret = mtk_hqos_running(eth) ? mtk_hqos_set_policy(eth, policy) : -EBUSY;
++	rtnl_unlock();
++	return ret ? ret : count;
++}
++
++static const struct file_operations mtk_hqos_policy_fops = {
++	.owner = THIS_MODULE,
++	.open = mtk_hqos_policy_open,
++	.read = seq_read,
++	.write = mtk_hqos_policy_write,
++	.llseek = seq_lseek,
++	.release = single_release,
++};
++
+ int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index)
+ {
+ 	struct dentry *root;
+@@ -354,6 +448,7 @@ int mtk_ppe_debugfs_init(struct mtk_ppe
+ 	if (!index && mtk_hqos_supported(ppe->eth)) {
+ 		debugfs_create_file("hqos_rate", 0600, root, ppe, &mtk_hqos_fops);
+ 		debugfs_create_file("hqos_queue", 0600, root, ppe, &mtk_hqos_queue_fops);
++		debugfs_create_file("hqos_policy", 0600, root, ppe, &mtk_hqos_policy_fops);
+ 	}
+ 	debugfs_create_file("entries", S_IRUGO, root, ppe, &mtk_ppe_debugfs_foe_all_fops);
+ 	debugfs_create_file("bind", S_IRUGO, root, ppe, &mtk_ppe_debugfs_foe_bind_fops);
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -303,7 +303,8 @@ mtk_flow_set_output_device(struct mtk_et
+ 		queue = pse_port - 1;
+ 	}
+ 	/* WED/Wi-Fi output bypasses this block; keep its mapping intact. */
+-	hqos_queue = mtk_hqos_priority_queue(eth, priority);
++	mac = netdev_priv(dev);
++	hqos_queue = mtk_hqos_port_queue(eth, mac->id, priority);
+ 	if (hqos_queue >= 0)
+ 		queue = hqos_queue;
+ 	mtk_foe_entry_set_queue(eth, foe, queue);

@@ -1,0 +1,107 @@
+From 0773efc9b89c791db5cf634afa273e40d2ab6f00 Mon Sep 17 00:00:00 2001
+From: Alexander A <st7105@gmail.com>
+Date: Thu, 26 Nov 2026 07:36:39 +0300
+Subject: net: ethernet: mtk_eth_soc: select MT7986 queues by explicit skb
+ priority
+
+Select Ethernet hardware queues without consuming packet routing marks.
+
+Signed-off-by: Alexander A <st7105@gmail.com>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c     | 12 ++++++++++++
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h     |  1 +
+ drivers/net/ethernet/mediatek/mtk_ppe_offload.c | 14 +++++++++++---
+ 3 files changed, 24 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -789,6 +789,14 @@ bool mtk_hqos_supported(struct mtk_eth *
+ 	       eth->soc->num_tx_queues == MTK_HQOS_QUEUES;
+ }
+ 
++int mtk_hqos_priority_queue(struct mtk_eth *eth, u32 priority)
++{
++	if (!mtk_hqos_supported(eth) || (priority & 0xfffffff0) != 0x4d540000)
++		return -1;
++
++	return priority & 0xf;
++}
++
+ static u32 mtk_hqos_decode_rate(u32 val)
+ {
+ 	u32 rate = FIELD_GET(MTK_QTX_SCH_MAX_RATE_MAN, val);
+@@ -5231,6 +5239,10 @@ static u16 mtk_select_queue(struct net_d
+ 	struct mtk_mac *mac = netdev_priv(dev);
+ 	unsigned int dp_idx;
+ 	unsigned int queue = 0;
++	int hqos_queue = mtk_hqos_priority_queue(mac->hw, skb->priority);
++
++	if (hqos_queue >= 0 && hqos_queue < dev->num_tx_queues)
++		return hqos_queue;
+ 
+ 	if (netdev_uses_dsa(dev)) {
+ 		dp_idx = skb_get_queue_mapping(skb);
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -1628,6 +1628,7 @@ int mtk_gmac_rgmii_path_setup(struct mtk
+ int mtk_gmac_usxgmii_path_setup(struct mtk_eth *eth, int mac_id);
+ 
+ bool mtk_hqos_supported(struct mtk_eth *eth);
++int mtk_hqos_priority_queue(struct mtk_eth *eth, u32 priority);
+ int mtk_hqos_set_rate(struct mtk_eth *eth, unsigned int queue, u32 rate);
+ u32 mtk_hqos_effective_config(u32 baseline, u32 rate);
+ 
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -16,6 +16,7 @@
+ #include "mtk_wed.h"
+ 
+ struct mtk_flow_data {
++	u32 priority;
+ 	struct ethhdr eth;
+ 
+ 	union {
+@@ -236,11 +237,12 @@ mtk_flow_get_dsa_port(struct net_device
+ static int
+ mtk_flow_set_output_device(struct mtk_eth *eth, struct mtk_foe_entry *foe,
+ 			   struct net_device *dev, const u8 *dest_mac,
+-			   int *wed_index, u16 *wcid, unsigned int num_tags)
++			   int *wed_index, u16 *wcid, unsigned int num_tags,
++			   u32 priority)
+ {
+ 	struct mtk_wdma_info info = {};
+ 	struct mtk_mac *mac;
+-	int pse_port, dsa_port, queue, err;
++	int pse_port, dsa_port, queue, err, hqos_queue;
+ 	u16 push_vid = 0;
+ 
+ 	if (mtk_flow_get_wdma_info(dev, dest_mac, &info) == 0) {
+@@ -300,6 +302,10 @@ mtk_flow_set_output_device(struct mtk_et
+ 	} else {
+ 		queue = pse_port - 1;
+ 	}
++	/* WED/Wi-Fi output bypasses this block; keep its mapping intact. */
++	hqos_queue = mtk_hqos_priority_queue(eth, priority);
++	if (hqos_queue >= 0)
++		queue = hqos_queue;
+ 	mtk_foe_entry_set_queue(eth, foe, queue);
+ 
+ out:
+@@ -447,6 +453,8 @@ mtk_flow_offload_replace(struct mtk_eth
+ 			odev = act->dev;
+ 			break;
+ 		case FLOW_ACTION_PRIORITY:
++			data.priority = act->priority;
++			break;
+ 		case FLOW_ACTION_CSUM:
+ 			break;
+ 		case FLOW_ACTION_VLAN_PUSH:
+@@ -551,7 +559,7 @@ mtk_flow_offload_replace(struct mtk_eth
+ 
+ 	err = mtk_flow_set_output_device(eth, &foe, odev, data.eth.h_dest,
+ 					 &wed_index, &wcid,
+-					 data.vlan.num + data.pppoe.num);
++					 data.vlan.num + data.pppoe.num, data.priority);
+ 	if (err)
+ 		return err;
+ 
