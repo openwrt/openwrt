@@ -10,8 +10,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/pci/controller/pcie-mediatek.c | 25 +++++++++++++++++++++++++
  1 file changed, 25 insertions(+)
 
---- a/drivers/pci/controller/pcie-mediatek.c
-+++ b/drivers/pci/controller/pcie-mediatek.c
+Index: linux-6.18.64/drivers/pci/controller/pcie-mediatek.c
+===================================================================
+--- linux-6.18.64.orig/drivers/pci/controller/pcie-mediatek.c
++++ linux-6.18.64/drivers/pci/controller/pcie-mediatek.c
 @@ -31,6 +31,13 @@
  
  #include "../pci.h"
@@ -26,7 +28,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  /* PCIe shared registers */
  #define PCIE_SYS_CFG		0x00
  #define PCIE_INT_ENABLE		0x0c
-@@ -234,6 +241,8 @@ struct mtk_pcie {
+@@ -241,6 +248,8 @@ struct mtk_pcie {
  
  	struct list_head ports;
  	const struct mtk_pcie_soc *soc;
@@ -35,7 +37,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  };
  
  static void mtk_pcie_subsys_powerdown(struct mtk_pcie *pcie)
-@@ -680,6 +689,22 @@ static int mtk_pcie_startup_port_v2(stru
+@@ -687,6 +696,22 @@ static int mtk_pcie_startup_port_v2(stru
  	u32 val;
  	int err;
  

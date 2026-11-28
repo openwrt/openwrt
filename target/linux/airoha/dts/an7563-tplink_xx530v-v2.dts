@@ -1,0 +1,474 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+/*
+ * TP-Link XX530v V2 (hw id "XX530vV2", vendor platform "JEDI"):
+ * Airoha AN7552CT (the xPON package of the AN7563 die), 2x Cortex-A53 in
+ * AArch32, 256 MiB PCDDR3, 128 MiB SPI-NAND (ESMT F50L1G41LB) with the
+ * EcoNet BMT, GPON with an EN7571 laser driver, 4-port internal switch,
+ * MT7916 (DBDC) on both PCIe links.
+ *
+ * The stock Econet U-Boot 2014.04 is kept and boots this board on its own.
+ * Its default bootcmd is
+ *
+ *     bootcmd=flash tpimg;bootm 81800200
+ *
+ * "flash tpimg" reads the 512-byte TP-Link image tag from MTD_OFS_KERNEL
+ * (0x620000), takes kernelLen from offset 0x78 of it and reloads
+ * tag + kernelLen bytes to CONFIG_SYS_LOAD_ADDR (0x81800000), so the FIT
+ * lands at 0x81800200 where "bootm" finds it.  The kernel is decompressed
+ * to 0x80088000.
+ *
+ * Consequently the "kernel" partition below must hold the tagged FIT as raw
+ * bytes - no UBI there - and the rootfs goes into the UBI partition that
+ * follows.  See the partition table at the bottom of this file.
+ */
+
+/* ATF / BL31 resident area set up by the bootloader */
+/memreserve/ 0x80000000 0x88000;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "an7563.dtsi"
+
+/ {
+	model = "TP-Link XX530v V2";
+	compatible = "tplink,xx530v-v2", "airoha,an7552", "airoha,an7563";
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &gdm1;
+	};
+
+	chosen {
+		/*
+		 * Inert on this board, but kept in sync with CONFIG_CMDLINE in
+		 * target/linux/airoha/an7563/config-6.18 so the intended
+		 * command line is documented in one place too.  The stock
+		 * bootloader overwrites this property unconditionally:
+		 * image_setup_libfdt() calls fdt_chosen() with force=1
+		 * (common/image-fdt.c:460), and fdt_chosen() then does
+		 * fdt_setprop() with getenv("bootargs") because of the
+		 * (path == NULL) || force test (common/fdt_support.c:265).
+		 * CONFIG_CMDLINE_FORCE is what actually decides it.
+		 */
+		bootargs = "console=ttyS0,115200n8 root=/dev/ubiblock0_0 rootfstype=squashfs";
+
+		/*
+		 * This one is ours.  The bootloader leaves /chosen alone when
+		 * the bootargs env variable is unset (the tftpboot/loady path),
+		 * and earlycon without an explicit port resolves the console
+		 * through of_chosen_stdout(), which reads exactly this.
+		 */
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x10000000>;
+	};
+
+	/*
+	 * xhci-mtk asks for "vbus" and "vusb33" and falls back to a dummy
+	 * regulator for both.  The stock firmware has no USB power GPIO
+	 * (led.conf and the stock DTB list none), so both rails are taken
+	 * as always on: the 5 V VBUS of the port and the 3.3 V of the xHCI
+	 * PHY.  If a GPIO switches VBUS on the board, put it on reg_usb_5v.
+	 */
+	reg_usb_5v: regulator-usb-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-vbus-5v";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&an7563_pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <100>;
+		};
+
+		wifi {
+			label = "wifi";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&an7563_pinctrl 5 GPIO_ACTIVE_LOW>;
+			debounce-interval = <100>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 27 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_xpon: xpon {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "pon";
+			gpios = <&an7563_pinctrl 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led_los: los {
+			color = <LED_COLOR_ID_RED>;
+			function = "los";
+			gpios = <&an7563_pinctrl 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led_inet: inet {
+			function = LED_FUNCTION_WAN_ONLINE;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 20 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_wl2g: wl2g {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_wl5g: wl5g {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 1 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led_fxs: fxs {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "phone";
+			gpios = <&an7563_pinctrl 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led_fxsr: fxs-ring {
+			color = <LED_COLOR_ID_RED>;
+			function = "phone-ring";
+			gpios = <&an7563_pinctrl 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_usb: usb {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 21 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan: lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&an7563_pinctrl 8 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&an7563_pinctrl {
+	pcie0_rst_pins: pcie0-rst-pins {
+		conf {
+			pins = "pcie_reset0";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pcie1_rst_pins: pcie1-rst-pins {
+		conf {
+			pins = "pcie_reset1";
+			drive-open-drain = <1>;
+		};
+	};
+};
+
+&gdm1 {
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+/*
+ * GDM2 is the WAN port and is what makes airoha-eth touch QDMA1: the driver
+ * picks &eth->qdma[1] for every non-LAN GDM device, so bringing this port
+ * up starts the qdma1 rings, its four IRQ banks (SPI 38, 58, 59, 60) and the
+ * GDM2 stats counters.
+ *
+ * This board is a GPON ONU: GDM2 feeds the on-chip xPON MAC, so there is no
+ * PCS and no PHY behind it (phy-mode "internal", fixed-link).
+ *
+ * The MAC cell is what keeps this netdev's address stable across boots.
+ * Without it of_get_ethdev_address() finds nothing, the driver falls back to
+ * eth_hw_addr_random() and every reboot logs a different "generated random
+ * MAC address" line.  It is the &pon node's second cell (line below), and the
+ * same one gdm1 takes: one factory address, shared, and nothing to conflict
+ * over because neither address is ever sent - gdm1's goes to the frame engine
+ * for the LAN ports and this one stays local, the datapath putting the GEM in
+ * message header 0 so the OLT assigns what frames arrive with.  Only the low
+ * bytes ever reach a register (airoha_set_macaddr() writes the MSBs to
+ * REG_FE_WAN_MAC_H).
+ */
+&gdm2 {
+	status = "okay";
+	phy-mode = "internal";
+
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <2500>;
+		full-duplex;
+	};
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy4 {
+	status = "okay";
+};
+
+&switch {
+	ports {
+		port@1 {
+			label = "lan4";
+			status = "okay";
+		};
+
+		port@2 {
+			label = "lan3";
+			status = "okay";
+		};
+
+		port@3 {
+			label = "lan2";
+			status = "okay";
+		};
+
+		port@4 {
+			label = "lan1";
+			status = "okay";
+		};
+
+	};
+};
+
+/*
+ * The port is a 4 pin USB 2.0 socket (no SuperSpeed pairs; a USB 3.0 stick
+ * links at 480 Mb/s on the stock unit too), so the USB3 side is left out:
+ * its PHY is not listed, and the xHCI's only U3 port is disabled.
+ */
+&usb0 {
+	phys = <&usb0_phy PHY_TYPE_USB2>;
+	mediatek,u3p-dis-msk = <0x1>;
+	vbus-supply = <&reg_usb_5v>;
+	vusb33-supply = <&reg_3p3v>;
+	status = "okay";
+};
+
+&usb0_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		device_type = "pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			/*
+			 * EEPROM is read by mt76 from tclinux + 0x420000
+			 * (4 KiB).  No firmware-file fallback on purpose: if
+			 * the cell cannot be read the failure has to be visible.
+			 */
+			nvmem-cells = <&eeprom_wifi>;
+			nvmem-cell-names = "eeprom";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/*
+			 * MACs as on the stock unit: 2.4 GHz (ra0) the board
+			 * MAC, 5 GHz (rai0) the board MAC + 2.  The EEPROM
+			 * holds the generic 00:0c:43:26:60:18.
+			 */
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&macaddr_lan 0>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				reg = <1>;
+				nvmem-cells = <&macaddr_lan 2>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_rst_pins>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		device_type = "pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+		};
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+
+&spi_nand {
+	/*
+	 * The stock bootloader manages a reserve pool at the end of the chip
+	 * (it logs "bmt pool size: 81") and refuses to come up if the kernel
+	 * computes a different one, so the pool size is asserted rather than
+	 * derived.
+	 */
+	econet,bmt;
+	econet,bbt-table-size = <250>;
+	econet,assert-reserve-size = <81>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * U-Boot 2014.04 with its environment at 0x7c000.  The
+		 * bootloader owns this area; nothing may rewrite it from
+		 * Linux, because that would drop the vendor environment and
+		 * with it the "flash tpimg" boot path.
+		 */
+		partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00080000>;
+			read-only;
+		};
+
+		/*
+		 * 0x80000..0x420000 is not mapped at all: the stock DTB's
+		 * table for it is stale and the area holds nothing this
+		 * needs.  Leaving it out means it cannot be written by
+		 * accident.
+		 *
+		 * MISC, read-only.  Every offset below is the one the vendor
+		 * code and U-Boot use, unchanged:
+		 *
+		 *   0x000000  config        (vendor web settings)
+		 *   0x080000  MT7916 EEPROM / radio calibration (4 KiB)
+		 *   0x0c0000  EN7571 BOSA calibration record
+		 *   0x04f100  LAN MAC           (OTHER_OFS_MAC)
+		 *   0x04f110  flashId + device key (OTHER_OFS_OEMID)
+		 *   0x04f1e0  label MAC, 0x04f1f0 its type word
+		 *   0x04f500  serial number
+		 *   0x0ef201 GPON serial number, 16 ASCII hex digits
+		 *
+		 * Read through nvmem from the kernel, so the MAC never has
+		 * to be fetched from userspace (mtdblock on a raw NAND
+		 * partition warns and bypasses the BMT mapping).
+		 */
+		partition@420000 {
+			label = "oem";
+			reg = <0x00420000 0x00200000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				bosa_calibration: bosa-calibration@c0000 {
+					reg = <0xc0000 0xe0>;	/* flash 0x4e0000 */
+				};
+
+				macaddr_lan: macaddr@4f100 {
+					compatible = "mac-base";
+					reg = <0x4f100 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				gpon_serial: gpon-serial@ef201 {
+					reg = <0xef201 0x10>;	/* flash 0x50f201 */
+				};
+
+				sn: sn@4f500 {
+					reg = <0x4f500 0xd>;
+				};
+
+				eeprom_wifi: eeprom@80000 {
+					reg = <0x80000 0x1000>;
+				};
+			};
+		};
+
+		/*
+		 * MTD_OFS_KERNEL: the one address the bootloader hardcodes.
+		 * "flash tpimg" reads the 512-byte TP-Link image tag here and
+		 * reloads tag + kernelLen bytes, so this partition holds the
+		 * tagged FIT and nothing else - no UBI, which would put an
+		 * erase counter header where the bootloader expects the tag.
+		 */
+		partition@620000 {
+			label = "kernel";
+			reg = <0x00620000 0x01000000>;
+		};
+
+		/*
+		 * Rootfs and overlay.  Starts at the erase block right after
+		 * the kernel and runs up to the BBT/BMT reserve pool at
+		 * 0x75e0000 (block 943 of 1024).
+		 */
+		partition@1620000 {
+			label = "ubi";
+			reg = <0x01620000 0x05fc0000>;
+			compatible = "linux,ubi";
+		};
+	};
+};
